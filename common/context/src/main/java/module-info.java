@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,10 @@
 module io.helidon.common.context {
     requires java.logging;
     requires io.helidon.common;
+    requires io.helidon.common.serviceloader;
 
     exports io.helidon.common.context;
+    exports io.helidon.common.context.spi;
+
+    uses io.helidon.common.context.spi.DataPropagationProvider;
 }

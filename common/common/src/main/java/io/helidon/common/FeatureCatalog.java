@@ -378,6 +378,20 @@ final class FeatureCatalog {
                     .path("Messaging", "Kafka")
                     .experimental(true)
                     .nativeSupported(false));
+        add("io.helidon.messaging.connectors.jms",
+            FeatureDescriptor.builder()
+                    .name("JMS Connector")
+                    .description("Reactive messaging connector for JMS")
+                    .path("Messaging", "JMS")
+                    .experimental(true)
+                    .nativeSupported(false));
+        add("io.helidon.messaging.connectors.aq",
+            FeatureDescriptor.builder()
+                    .name("Oracle AQ Connector")
+                    .description("Reactive messaging connector for Oracle AQ")
+                    .path("Messaging", "OracleAQ")
+                    .experimental(true)
+                    .nativeSupported(false));
         add("io.helidon.security.abac.policy.el",
             FeatureDescriptor.builder()
                     .name("EL")

@@ -16,17 +16,20 @@
 
 package io.helidon.microprofile.metrics;
 
-import java.util.Properties;
 import java.util.stream.IntStream;
 
+import javax.inject.Inject;
 import javax.json.JsonObject;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.microprofile.server.Server;
+import io.helidon.microprofile.tests.junit5.AddConfig;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricFilter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
@@ -42,31 +45,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Class HelloWorldTest.
  */
+@HelidonTest
+@AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "true")
 public class HelloWorldTest extends MetricsMpServiceTest {
 
-    private static MetricRegistry syntheticSimpleTimerRegistry;
+    @Inject
+    WebTarget webTarget;
 
     @BeforeAll
-    public static void initializeServer() {
+    public static void initialize() {
         System.setProperty("jersey.config.server.logging.verbosity", "FINE");
-        Properties configProperties = new Properties();
-        configProperties.setProperty("metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME,
-                "true");
-        initializeServer(configProperties);
-    }
-
-    static void initializeServer(Properties configProperties) {
-        syntheticSimpleTimerRegistry = initSyntheticSimpleTimerRegistry();
-        Server.Builder builder = MetricsMpServiceTest.prepareServerBuilder();
-        Config config = Config.create(ConfigSources.create(configProperties));
-        builder.config(config);
-        MetricsMpServiceTest.finishServerInitialization(builder);
-    }
-
-    private static MetricRegistry initSyntheticSimpleTimerRegistry() {
-        MetricRegistry result = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.BASE);
-        result.remove(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME);
-        return result;
+        MetricsMpServiceTest.initTest();
     }
 
     @BeforeEach
@@ -77,8 +66,10 @@ public class HelloWorldTest extends MetricsMpServiceTest {
     @Test
     public void testMetrics() {
         IntStream.range(0, 5).forEach(
-                i -> client.target(baseUri())
-                        .path("helloworld").request().accept(MediaType.TEXT_PLAIN_TYPE)
+                i -> webTarget
+                        .path("helloworld")
+                        .request()
+                        .accept(MediaType.TEXT_PLAIN_TYPE)
                         .get(String.class));
         assertThat(getCounter("helloCounter").getCount(), is(5L));
     }
@@ -90,27 +81,38 @@ public class HelloWorldTest extends MetricsMpServiceTest {
 
     void testSyntheticSimpleTimer(long expectedSyntheticSimpleTimerCount) {
         IntStream.range(0, 6).forEach(
-                i -> client.target(baseUri())
-                        .path("helloworld/withArg").request(MediaType.TEXT_PLAIN_TYPE)
-                        .put(Entity.text("Joe")).readEntity(String.class));
+                i -> webTarget
+                        .path("helloworld/withArg")
+                        .request(MediaType.TEXT_PLAIN_TYPE)
+                        .put(Entity.text("Joe"))
+                        .readEntity(String.class));
 
         SimpleTimer syntheticSimpleTimer = getSyntheticSimpleTimer();
         assertThat(syntheticSimpleTimer.getCount(), Is.is(expectedSyntheticSimpleTimerCount));
     }
 
-    static SimpleTimer getSyntheticSimpleTimer() {
+    SimpleTimer getSyntheticSimpleTimer() {
         Tag[] tags = new Tag[] {new Tag("class", HelloWorldResource.class.getName()),
                 new Tag("method", "messageWithArg_java.lang.String")};
-        SimpleTimer syntheticSimpleTimer = syntheticSimpleTimerRegistry.simpleTimer(
+        assertThat("Synthetic simple timer "
+                        + MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME
+                        + " should appear in registry but does not",
+                syntheticSimpleTimerRegistry().getSimpleTimers((metricID, metric) ->
+                        metricID.getName().equals(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME)).isEmpty(),
+                is(false));
+        SimpleTimer syntheticSimpleTimer = syntheticSimpleTimerRegistry().simpleTimer(
                 MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METADATA, tags);
         return syntheticSimpleTimer;
     }
 
     @AfterEach
     public void checkMetricsUrl() {
-        JsonObject app = client.target(baseUri())
-                .path("metrics").request().accept(MediaType.APPLICATION_JSON_TYPE)
-                .get(JsonObject.class).getJsonObject("application");
+        JsonObject app = webTarget
+                .path("metrics")
+                .request()
+                .accept(MediaType.APPLICATION_JSON_TYPE)
+                .get(JsonObject.class)
+                .getJsonObject("application");
         assertThat(app.getJsonNumber("helloCounter").intValue(), is(5));
     }
 }

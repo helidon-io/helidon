@@ -181,6 +181,7 @@
         <module>messaging</module>
         <module>fault-tolerance</module>
         <module>graphql</module>
+        <module>logging</module>
     </modules>
 
 

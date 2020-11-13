@@ -138,6 +138,21 @@ security:
         roles: ["user"]
 ----
 
+==== Overriding configuration
+When a configuration needs to be overridden, we may have problems with the list
+type of the `providers` configuration. To simplify overrides using properties,
+you can explicitly setup a type of provider using a `type` key.
+
+Example:
+[source,properties]
+----
+security.providers.1.type=header-atn
+security.providers.1.header-atn.authenticate=false
+----
+
+Would explicitly override the second provider (`http-basic-auth` in example above) with
+`header-atn` provider. Note that the `type` and the key of the provider must match.
+
 === Hybrid pattern (Builder & Configuration)
 
 [source,java]

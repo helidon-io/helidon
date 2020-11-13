@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
-  ~ Copyright (c)  2020 Oracle and/or its affiliates.
+  ~ Copyright (c) 2020 Oracle and/or its affiliates.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -37,5 +37,7 @@
     <modules>
         <module>kafka-websocket-mp</module>
         <module>kafka-websocket-se</module>
+        <module>jms-websocket-mp</module>
+        <module>oracle-aq-websocket-mp</module>
     </modules>
 </project>

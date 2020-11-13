@@ -19,6 +19,9 @@ package io.helidon.microprofile.metrics;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 
+import io.helidon.common.LazyValue;
+import io.helidon.metrics.RegistryFactory;
+
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
@@ -29,8 +32,7 @@ import org.eclipse.microprofile.metrics.annotation.RegistryType;
 @ApplicationScoped
 final class RegistryProducer {
 
-    private static final io.helidon.metrics.RegistryFactory REGISTRY_FACTORY =
-            io.helidon.metrics.RegistryFactory.getInstance();
+    private static final LazyValue<RegistryFactory> REGISTRY_FACTORY = LazyValue.create(RegistryFactory::getInstance);
 
     private RegistryProducer() {
     }
@@ -43,19 +45,19 @@ final class RegistryProducer {
     @Produces
     @RegistryType(type = Type.APPLICATION)
     public static org.eclipse.microprofile.metrics.MetricRegistry getApplicationRegistry() {
-        return REGISTRY_FACTORY.getRegistry(Type.APPLICATION);
+        return REGISTRY_FACTORY.get().getRegistry(Type.APPLICATION);
     }
 
     @Produces
     @RegistryType(type = Type.BASE)
     public static org.eclipse.microprofile.metrics.MetricRegistry getBaseRegistry() {
-        return REGISTRY_FACTORY.getRegistry(Type.BASE);
+        return REGISTRY_FACTORY.get().getRegistry(Type.BASE);
     }
 
     @Produces
     @RegistryType(type = Type.VENDOR)
     public static org.eclipse.microprofile.metrics.MetricRegistry getVendorRegistry() {
-        return REGISTRY_FACTORY.getRegistry(Type.VENDOR);
+        return REGISTRY_FACTORY.get().getRegistry(Type.VENDOR);
     }
 
     /**

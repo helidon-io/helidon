@@ -34,6 +34,7 @@
 
     <modules>
         <module>messaging</module>
+        <module>connectors</module>
         <module>kafka</module>
     </modules>
 </project>

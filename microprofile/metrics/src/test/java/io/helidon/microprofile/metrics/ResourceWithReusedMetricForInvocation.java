@@ -25,9 +25,9 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 @Dependent
 public class ResourceWithReusedMetricForInvocation {
 
-    private static final String TAG_1 = "tag_1=value_1";
-    private static final String TAG_2 = "tag_2=value_2";
-    private static final String OTHER_REUSED_NAME = "reusedRetrieveDelay";
+    static final String TAG_1 = "tag_1=value_1";
+    static final String TAG_2 = "tag_2=value_2";
+    static final String OTHER_REUSED_NAME = "reusedRetrieveDelay";
 
     @GET
     @Path("method1")

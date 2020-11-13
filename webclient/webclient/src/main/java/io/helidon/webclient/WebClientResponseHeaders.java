@@ -79,4 +79,19 @@ public interface WebClientResponseHeaders extends Headers {
      */
     Optional<String> etag();
 
+    /**
+     * Content length of the response payload.
+     *
+     * @return content length
+     */
+    Optional<Long> contentLength();
+
+    /**
+     * Transfer encoding of the response.
+     *
+     * @return transfer encoding
+     */
+    List<String> transferEncoding();
+
+
 }

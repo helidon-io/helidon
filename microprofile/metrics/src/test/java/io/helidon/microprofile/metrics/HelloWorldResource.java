@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,16 @@
 
 package io.helidon.microprofile.metrics;
 
+import org.eclipse.microprofile.metrics.MetricRegistry;
+
 import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static io.helidon.microprofile.metrics.MetricsMpServiceTest.getCounter;
 
 /**
  * HelloWorldResource class.
@@ -38,10 +34,13 @@ import static io.helidon.microprofile.metrics.MetricsMpServiceTest.getCounter;
 @RequestScoped
 public class HelloWorldResource {
 
+    @Inject
+    MetricRegistry metricRegistry;
+
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public String message() {
-        getCounter("helloCounter").inc();
+        metricRegistry.counter("helloCounter").inc();
         return "Hello World";
     }
 
