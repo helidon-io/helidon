@@ -31,6 +31,12 @@ mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     -Dmaven.test.failure.ignore=true \
     -Pexamples,archetypes,spotbugs,javadoc,sources,tck,tests,pipeline
 
+# native image integration test
+# for now part of build, will be a separate step
+# this will make the `test-runtime.sh` scripts below obsolete
+# as it support testing classpath, module path and native image
+etc/scripts/tests/itg-native-image-se1.sh
+
 #
 # test running from jar file, and then from module path
 #
