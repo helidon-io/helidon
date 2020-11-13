@@ -15,11 +15,17 @@
  */
 package io.helidon.tests.integration.nativeimage.se1;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import javax.websocket.server.ServerEndpointConfig;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
@@ -44,6 +50,10 @@ import static io.helidon.config.ConfigSources.file;
  * Main class of this integration test.
  */
 public final class Se1Main {
+    private static final Logger LOGGER = Logger.getLogger(Se1Main.class.getName());
+
+    private static WebServer webServer;
+
     /**
      * Cannot be instantiated.
      */
@@ -55,6 +65,13 @@ public final class Se1Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
+        String property = System.getProperty("java.class.path");
+        if (null == property || property.trim().isEmpty()) {
+            LOGGER.info("Running on module path");
+        } else {
+            LOGGER.info("Running on class path");
+        }
+
         startServer();
     }
 
@@ -70,7 +87,7 @@ public final class Se1Main {
         Config config = buildConfig();
 
         // Get webserver config from the "server" section of application.yaml
-        WebServer server = WebServer.builder()
+        webServer = WebServer.builder()
                 .routing(createRouting(config))
                 .config(config.get("server"))
                 .tracer(TracerBuilder.create(config.get("tracing")).build())
@@ -81,22 +98,22 @@ public final class Se1Main {
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
-        server.start()
-                .thenAccept(ws -> {
-                    System.out.println(
-                            "WEB server is up! http://localhost:" + ws.port() + "/greet");
-                    ws.whenShutdown().thenRun(()
-                                                      -> System.out.println("WEB server is DOWN. Good bye!"));
-                })
-                .exceptionally(t -> {
-                    System.err.println("Startup failed: " + t.getMessage());
-                    t.printStackTrace(System.err);
-                    return null;
-                });
-
         // Server threads are not daemon. No need to block. Just react.
+        webServer.start()
+                .await(10, TimeUnit.SECONDS);
 
-        return server;
+        System.out.println(
+                "WEB server is up! http://localhost:" + webServer.port() + "/greet");
+        Properties props = new Properties();
+        props.setProperty("port", String.valueOf(webServer.port()));
+        try {
+            props.store(Files.newOutputStream(Paths.get("runtime.properties")), "WebServer");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        webServer.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
+        return webServer;
     }
 
     private static Config buildConfig() {
@@ -141,11 +158,12 @@ public final class Se1Main {
                 .register("/wc", webClientService)
                 .register("/zipkin", zipkinService)
                 .register("/ws",
-                        TyrusSupport.builder().register(
-                                ServerEndpointConfig.Builder.create(
-                                        WebSocketEndpoint.class, "/messages")
-                                        .build())
-                                .build())
+                          TyrusSupport.builder().register(
+                                  ServerEndpointConfig.Builder.create(
+                                          WebSocketEndpoint.class, "/messages")
+                                          .build())
+                                  .build())
+                .get("/shutdown", (req, res) -> System.exit(0))
                 .build();
     }
 

@@ -16,101 +16,173 @@
 
 package io.helidon.tests.integration.nativeimage.se1;
 
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Collections;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
 
-import io.helidon.webserver.WebServer;
+import io.helidon.common.http.Http;
+import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.security.Security;
+import io.helidon.security.providers.common.OutboundTarget;
+import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
+import io.helidon.webclient.security.WebClientSecurity;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
- * Unit test for {@link Se1Main}.
+ * Unit test for {@link io.helidon.tests.integration.nativeimage.se1.Se1Main}.
  */
 class Se1MainTest {
-    private static WebServer webServer;
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
+    private static final Logger LOGGER = Logger.getLogger(Se1MainTest.class.getName());
+
+    private static WebClient webClient;
+    private static HelidonTestProcess runner;
 
     @BeforeAll
     public static void startTheServer() throws Exception {
-        webServer = Se1Main.startServer();
+        WebClient.Builder clientBuilder = WebClient.builder();
+        runner = HelidonTestProcess
+                .create("helidon.tests.integration.nativeimage.se1",
+                        Se1Main.class,
+                        "helidon-tests-native-image-se-1",
+                        Se1Main::startServer,
+                        Se1Main::stopServer);
+        LOGGER.info("Runtime type: " + runner.execType());
 
-        long timeout = 2000; // 2 seconds should be enough to start the server
-        long now = System.currentTimeMillis();
+        runner.startApplication();
 
-        while (!webServer.isRunning()) {
-            Thread.sleep(100);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
-            }
+        Thread.sleep(2000);
+        // read the port
+        Properties props = new Properties();
+        try {
+            props.load(Files.newBufferedReader(Paths.get("runtime.properties")));
+        } catch (IOException e) {
+            fail("Could not find properties with port", e);
         }
+        String port = props.getProperty("port");
+        clientBuilder.baseUri("http://localhost:" + port);
+
+        webClient = clientBuilder.addMediaSupport(JsonpSupport.create())
+                .addService(WebClientSecurity
+                                    .create(Security.builder()
+                                                    .addProvider(HttpBasicAuthProvider.builder()
+                                                                         .addOutboundTarget(OutboundTarget.builder("all")
+                                                                                                    .addHost("*")
+                                                                                                    .build())
+                                                                         .build()).build()))
+                .build();
     }
 
     @AfterAll
-    public static void stopServer() throws Exception {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
-        }
+    public static void stopServer() {
+        runner.stopApplication();
     }
 
     @Test
-    public void testHelloWorld() throws Exception {
-        HttpURLConnection conn;
+    void testDefaultGreeting() {
+        JsonObject response = webClient.get()
+                .path("/greet")
+                .request(JsonObject.class)
+                .await(10, TimeUnit.SECONDS);
 
-        conn = getURLConnection("GET","/greet");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response1");
-        JsonReader jsonReader = JSON.createReader(conn.getInputStream());
-        JsonObject jsonObject = jsonReader.readObject();
-        Assertions.assertEquals("Hello World!", jsonObject.getString("message"),
-                                "default message");
-
-        conn = getURLConnection("GET", "/greet/Joe");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2 - not authenticated");
-        jsonReader = JSON.createReader(conn.getInputStream());
-        jsonObject = jsonReader.readObject();
-        Assertions.assertEquals("Hello Joe!", jsonObject.getString("message"),
-                                "hello Joe message");
-
-        conn = getURLConnection("PUT", "/greet/greeting");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setDoOutput(true);
-        OutputStream os = conn.getOutputStream();
-        os.write("{\"greeting\" : \"Hola\"}".getBytes());
-        os.close();
-        Assertions.assertEquals(204, conn.getResponseCode(), "HTTP response3");
-
-        conn = getURLConnection("GET", "/greet/Jose");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response4");
-        jsonReader = JSON.createReader(conn.getInputStream());
-        jsonObject = jsonReader.readObject();
-        Assertions.assertEquals("Hola Jose!", jsonObject.getString("message"),
-                                "hola Jose message");
-
-        conn = getURLConnection("GET", "/health");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
-
-        conn = getURLConnection("GET", "/metrics");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
+        assertThat(response.getString("message"), is("Hello World!"));
     }
 
-    private HttpURLConnection getURLConnection(String method, String path) throws Exception {
-        URL url = new URL("http://localhost:" + webServer.port() + path);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod(method);
-        conn.setRequestProperty("Accept", "application/json");
-        System.out.println("Connecting: " + method + " " + url);
-        return conn;
+    @Test
+    void testNamedGreeting() {
+        JsonObject response = webClient.get()
+                .path("/greet/Joe")
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .request(JsonObject.class)
+                .await(10, TimeUnit.SECONDS);
+
+        // greeting based on security, not path
+        assertThat(response.getString("message"), is("Hello jack!"));
     }
+
+    @Test
+    public void testChangedGreeting() throws Exception {
+        JsonBuilderFactory json = Json.createBuilderFactory(Map.of());
+        JsonObject request = json.createObjectBuilder()
+                .add("greeting", "Hola")
+                .build();
+
+        WebClientResponse putResponse = webClient.put()
+                .path("/greet/greeting")
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .submit(request)
+                .await(10, TimeUnit.SECONDS);
+
+        assertThat(putResponse.status(), is(Http.Status.NO_CONTENT_204));
+
+        JsonObject response = webClient.get()
+                .path("/greet/Jose")
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .request(JsonObject.class)
+                .await(10, TimeUnit.SECONDS);
+
+        assertThat(response.getString("message"), is("Hola jack!"));
+
+        request = json.createObjectBuilder()
+                .add("greeting", "Hello")
+                .build();
+
+        putResponse = webClient.put()
+                .path("/greet/greeting")
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .submit(request)
+                .await(10, TimeUnit.SECONDS);
+
+        assertThat("Set back to Hello", putResponse.status(), is(Http.Status.NO_CONTENT_204));
+
+        response = webClient.get()
+                .path("/greet/Jose")
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .request(JsonObject.class)
+                .await(10, TimeUnit.SECONDS);
+
+        assertThat("Original greeting again", response.getString("message"), is("Hello jack!"));
+    }
+
+    @Test
+    void testHealthEndpoint() {
+        WebClientResponse healthResponse = webClient.get()
+                .path("/health")
+                .request()
+                .await(10, TimeUnit.SECONDS);
+
+        assertThat(healthResponse.status(), is(Http.Status.OK_200));
+    }
+
+    @Test
+    void testMetricsEndpoint() {
+        WebClientResponse healthResponse = webClient.get()
+                .path("/metrics")
+                .request()
+                .await(10, TimeUnit.SECONDS);
+
+        assertThat(healthResponse.status(), is(Http.Status.OK_200));
+    }
+
 }
