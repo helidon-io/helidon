@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -358,7 +358,7 @@ class Schema implements ElementGenerator {
      * @return true if the type name is contained within the type list
      */
     public boolean containsTypeWithName(String type) {
-        return listSchemaTypes.stream().filter(t -> t.name().equals(type)).count() == 1;
+        return listSchemaTypes.stream().anyMatch(t -> t.name().equals(type));
     }
 
     /**
@@ -368,7 +368,7 @@ class Schema implements ElementGenerator {
      * @return true if the type name is contained within the input type list
      */
     public boolean containsInputTypeWithName(String type) {
-        return listInputTypes.stream().filter(t -> t.name().equals(type)).count() == 1;
+        return listInputTypes.stream().anyMatch(t -> t.name().equals(type));
     }
 
     /**
@@ -378,7 +378,7 @@ class Schema implements ElementGenerator {
      * @return true if the scalar name is contained within the scalar list
      */
     public boolean containsScalarWithName(String scalar) {
-        return listSchemaScalars.stream().filter(s -> s.name().equals(scalar)).count() == 1;
+        return listSchemaScalars.stream().anyMatch(s -> s.name().equals(scalar));
     }
 
     /**
@@ -388,7 +388,7 @@ class Schema implements ElementGenerator {
      * @return true if the enum name is contained within the enum list
      */
     public boolean containsEnumWithName(String enumName) {
-        return listSchemaEnums.stream().filter(e -> e.name().equals(enumName)).count() == 1;
+        return listSchemaEnums.stream().anyMatch(e -> e.name().equals(enumName));
     }
 
     /**

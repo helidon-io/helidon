@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,10 +75,9 @@ class SchemaDirective implements ElementGenerator {
 
         if (listSchemaArguments.size() > 0) {
             sb.append("(");
-            AtomicBoolean isFirst = new AtomicBoolean(true);
+            final AtomicBoolean isFirst = new AtomicBoolean(true);
             listSchemaArguments.forEach(a -> {
-                String delim = isFirst.get() ? "" : ", ";
-                isFirst.set(false);
+                String delim = isFirst.getAndSet(false) ? "" : ", ";
 
                 sb.append(delim).append(a.argumentName()).append(": ").append(a.argumentType());
                 if (a.mandatory()) {

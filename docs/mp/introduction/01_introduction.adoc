@@ -104,7 +104,7 @@ Build gRPC servers and clients.
 //Health Checks
 [CARD]
 .Health Checks
-[icon=graphic_eq,link=mp/health/01_introduction.adoc]
+[icon=favorite_outline,link=mp/health/01_introduction.adoc]
 --
 Expose health statuses of your applications.
 --

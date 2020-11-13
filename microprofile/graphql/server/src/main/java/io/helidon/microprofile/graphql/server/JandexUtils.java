@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ class JandexUtils {
 
     /**
      * Return all the Jandex index files with the given name. If the name is absolute then
-     * return the singl file.
+     * return the single file.
      *
      * @param indexFileName  index file name
      * @return a {@link List} of the index file names

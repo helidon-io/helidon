@@ -1,6 +1,6 @@
 # Microprofile GraphQL Example
 
-This example creates a simple Task API using Helidon's implementation of the Microprofile GraphQL API Specification (1.0.3)
+This example creates a simple Task API using Helidon's implementation of the Microprofile GraphQL API Specification.
 
 See [here](https://github.com/eclipse/microprofile-graphql) for more information on the 
 Microprofile GraphQL Specification as well as the [Helidon documentation](https://helidon.io/docs/v2/#/mp/introduction/01_introduction)
