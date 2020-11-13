@@ -68,6 +68,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
     /**
      * Original JMS message received.
      *
+     * @param <MSG> expected sub-type of {@link javax.jms.Message}
      * @return original JMS message received
      * @throws java.lang.ClassCastException when original payload cannot be casted to expected type
      */
@@ -200,6 +201,8 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
     /**
      * Outgoing JMS message builder.
      * Makes possible to create JMS message with properties.
+     *
+     * @param <PAYLOAD> payload type
      */
     class OutgoingJmsMessageBuilder<PAYLOAD> implements Builder<Message<PAYLOAD>> {
 
