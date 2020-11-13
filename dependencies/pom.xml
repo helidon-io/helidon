@@ -500,6 +500,12 @@
                 <groupId>org.glassfish.tyrus</groupId>
                 <artifactId>tyrus-core</artifactId>
                 <version>${version.lib.tyrus}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.websocket</groupId>
+                        <artifactId>javax.websocket-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.tyrus</groupId>
@@ -510,6 +516,12 @@
                 <groupId>org.glassfish.tyrus</groupId>
                 <artifactId>tyrus-server</artifactId>
                 <version>${version.lib.tyrus}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.websocket</groupId>
+                        <artifactId>javax.websocket-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- Security related -->
