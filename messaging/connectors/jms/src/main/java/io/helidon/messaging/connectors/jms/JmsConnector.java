@@ -75,10 +75,24 @@ import org.reactivestreams.FlowAdapters;
 public class JmsConnector implements IncomingConnectorFactory, OutgoingConnectorFactory, Stoppable {
 
     private static final Logger LOGGER = Logger.getLogger(JmsConnector.class.getName());
+
     /**
      * Microprofile messaging JMS connector name.
      */
     public static final String CONNECTOR_NAME = "helidon-jms";
+
+    /**
+     * Select in case factory is injected as a named bean or configured with name.
+     */
+    protected static final String NAMED_FACTORY_ATTRIBUTE = "named-factory";
+    /**
+     * User name used with ConnectionFactory.
+     */
+    protected static final String USERNAME_ATTRIBUTE = "username";
+    /**
+     * Password used with ConnectionFactory.
+     */
+    protected static final String PASSWORD_ATTRIBUTE = "password";
 
     static final String ACK_MODE_ATTRIBUTE = "acknowledge-mode";
     static final String TRANSACTED_ATTRIBUTE = "transacted";
@@ -93,18 +107,6 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     static final String JNDI_PROPS_ATTRIBUTE = "env-properties";
     static final String JNDI_JMS_FACTORY_ATTRIBUTE = "jms-factory";
     static final String JNDI_DESTINATION_ATTRIBUTE = "destination";
-    /**
-     * Select in case factory is injected as a named bean or configured with name.
-     */
-    protected static final String NAMED_FACTORY_ATTRIBUTE = "named-factory";
-    /**
-     * User name used with ConnectionFactory.
-     */
-    protected static final String USERNAME_ATTRIBUTE = "username";
-    /**
-     * Password used with ConnectionFactory.
-     */
-    protected static final String PASSWORD_ATTRIBUTE = "password";
 
     static final AcknowledgeMode ACK_MODE_DEFAULT = AcknowledgeMode.AUTO_ACKNOWLEDGE;
     static final boolean TRANSACTED_DEFAULT = false;

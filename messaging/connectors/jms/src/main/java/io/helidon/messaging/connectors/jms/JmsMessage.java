@@ -176,7 +176,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
      * @return Message builder
      */
     static <PAYLOAD> OutgoingJmsMessageBuilder<PAYLOAD> builder(PAYLOAD payload) {
-        return new OutgoingJmsMessageBuilder<PAYLOAD>(payload);
+        return new OutgoingJmsMessageBuilder<>(payload);
     }
 
     /**
@@ -198,7 +198,8 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
     }
 
     /**
-     * @param <PAYLOAD>
+     * Outgoing JMS message builder.
+     * Makes possible to create JMS message with properties.
      */
     class OutgoingJmsMessageBuilder<PAYLOAD> implements Builder<Message<PAYLOAD>> {
 
@@ -209,7 +210,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
         private String type;
 
         private OutgoingJmsMessageBuilder(final PAYLOAD payload) {
-            message = new OutgoingJmsMessage<PAYLOAD>(payload);
+            message = new OutgoingJmsMessage<>(payload);
         }
 
         private OutgoingJmsMessageBuilder(javax.jms.Message msg) throws JMSException {
@@ -219,8 +220,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
         /**
          * Set or replace JMS payload.
          *
-         * @param name  the name of the JMS property
-         * @param value boolean value to stored as JMS property
+         * @param payload new payload
          */
         OutgoingJmsMessageBuilder<PAYLOAD> payload(PAYLOAD payload) {
             message.setPayload(payload);
