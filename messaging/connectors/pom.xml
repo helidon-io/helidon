@@ -16,40 +16,22 @@
   ~
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>io.helidon.messaging</groupId>
         <artifactId>helidon-messaging-project</artifactId>
         <version>2.1.1-SNAPSHOT</version>
     </parent>
+    <artifactId>helidon-messaging-connectors-project</artifactId>
+    <name>Helidon Messaging Connectors Project</name>
 
-    <groupId>io.helidon.messaging.aq</groupId>
-    <artifactId>helidon-messaging-aq</artifactId>
-    <packaging>jar</packaging>
-    <name>Helidon Messaging Oracle AQ Connector</name>
+    <packaging>pom</packaging>
 
-    <dependencies>
-        <dependency>
-            <groupId>io.helidon.messaging.jms</groupId>
-            <artifactId>helidon-messaging-jms</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.enterprise</groupId>
-            <artifactId>jakarta.enterprise.cdi-api</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.database.messaging</groupId>
-            <artifactId>aqapi</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.ojdbc</groupId>
-            <artifactId>ojdbc10</artifactId>
-        </dependency>
-    </dependencies>
+    <modules>
+        <module>jms</module>
+        <module>aq</module>
+    </modules>
 </project>
