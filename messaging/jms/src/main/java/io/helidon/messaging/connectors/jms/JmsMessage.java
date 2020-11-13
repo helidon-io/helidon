@@ -69,8 +69,9 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
      * Original JMS message received.
      *
      * @return original JMS message received
+     * @throws java.lang.ClassCastException when original payload cannot be casted to expected type
      */
-    javax.jms.Message getJmsMessage();
+    <MSG extends javax.jms.Message> MSG getJmsMessage();
 
     /**
      * Return type identifier set by sending JMS client.
