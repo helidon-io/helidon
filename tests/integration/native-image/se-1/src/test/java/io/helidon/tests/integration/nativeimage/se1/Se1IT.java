@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,25 @@
 package io.helidon.tests.integration.nativeimage.se1;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
+import javax.websocket.CloseReason;
+import javax.websocket.DeploymentException;
+import javax.websocket.Endpoint;
+import javax.websocket.EndpointConfig;
+import javax.websocket.MessageHandler;
+import javax.websocket.Session;
 
 import io.helidon.common.http.Http;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -37,10 +46,11 @@ import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
 
+import org.glassfish.tyrus.client.ClientManager;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -48,37 +58,26 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Unit test for {@link io.helidon.tests.integration.nativeimage.se1.Se1Main}.
  */
-class Se1MainTest {
-    private static final Logger LOGGER = Logger.getLogger(Se1MainTest.class.getName());
-
+abstract class Se1IT {
     private static WebClient webClient;
-    private static HelidonTestProcess runner;
+    private static HelidonProcessRunner runner;
+    private static String port;
 
-    @BeforeAll
-    public static void startTheServer() throws Exception {
-        WebClient.Builder clientBuilder = WebClient.builder();
-        runner = HelidonTestProcess
-                .create("helidon.tests.integration.nativeimage.se1",
+    protected static void startTheServer(HelidonProcessRunner.ExecType type) {
+        runner = HelidonProcessRunner
+                .create(type,
+                        "helidon.tests.integration.nativeimage.se1",
                         Se1Main.class,
                         "helidon-tests-native-image-se-1",
                         Se1Main::startServer,
                         Se1Main::stopServer);
-        LOGGER.info("Runtime type: " + runner.execType());
 
         runner.startApplication();
+        port = String.valueOf(runner.port());
 
-        Thread.sleep(2000);
-        // read the port
-        Properties props = new Properties();
-        try {
-            props.load(Files.newBufferedReader(Paths.get("runtime.properties")));
-        } catch (IOException e) {
-            fail("Could not find properties with port", e);
-        }
-        String port = props.getProperty("port");
-        clientBuilder.baseUri("http://localhost:" + port);
-
-        webClient = clientBuilder.addMediaSupport(JsonpSupport.create())
+        webClient = WebClient.builder()
+                .baseUri("http://localhost:" + port)
+                .addMediaSupport(JsonpSupport.create())
                 .addService(WebClientSecurity
                                     .create(Security.builder()
                                                     .addProvider(HttpBasicAuthProvider.builder()
@@ -185,4 +184,65 @@ class Se1MainTest {
         assertThat(healthResponse.status(), is(Http.Status.OK_200));
     }
 
+    @Test
+    void testWebSocketEndpoint()
+            throws IOException, DeploymentException, InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<String> openFuture = new CompletableFuture<>();
+        CompletableFuture<String> closeFuture = new CompletableFuture<>();
+        AtomicReference<List<String>> messagesRef = new AtomicReference<>();
+        AtomicReference<Throwable> error = new AtomicReference<>();
+
+        ClientManager.createClient()
+                .connectToServer(new Endpoint() {
+                    @Override
+                    public void onOpen(Session session, EndpointConfig endpointConfig) {
+                        List<String> messages = new LinkedList<>();
+                        messagesRef.set(messages);
+                        openFuture.complete("opened");
+                        session.addMessageHandler(new MessageHandler.Whole<String>() {
+                            @Override
+                            public void onMessage(String s) {
+                                messages.add(s);
+                                if (messages.size() == 2) {
+                                    try {
+                                        session.close();
+                                    } catch (IOException e) {
+                                        error.set(e);
+                                    }
+                                }
+                            }
+                        });
+
+                        try {
+                            session.getBasicRemote().sendText("Message");
+                            session.getBasicRemote().sendText("1");
+                            session.getBasicRemote().sendText("SEND");
+                            session.getBasicRemote().sendText("Message2");
+                            session.getBasicRemote().sendText("SEND");
+                        } catch (IOException e) {
+                            error.set(e);
+                        }
+                    }
+
+                    @Override
+                    public void onError(Session session, Throwable thr) {
+                        error.set(thr);
+                        closeFuture.completeExceptionally(thr);
+                    }
+
+                    @Override
+                    public void onClose(Session session, CloseReason closeReason) {
+                        closeFuture.complete("closed");
+                    }
+                }, URI.create("ws://localhost:" + port + "/ws/messages"));
+
+        closeFuture.get(10, TimeUnit.SECONDS);
+
+        Throwable throwable = error.get();
+        if (throwable != null) {
+            fail("Failed to handle websocket", throwable);
+        }
+        assertThat(openFuture.isDone(), is(true));
+        assertThat(messagesRef.get(), hasItems("Message1", "Message2"));
+    }
 }

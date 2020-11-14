@@ -51,7 +51,7 @@ public class WebClientService implements Service {
 
     public WebClientService(Config config, MockZipkinService zipkinService) {
         this.zipkinService = zipkinService;
-        this.context = "http://localhost:" + config.get("port").asInt().orElse(7076);
+        this.context = "http://localhost:" + config.get("server.port").asInt().orElse(7076);
         client = WebClient.builder()
                 .baseUri(context)
                 .addReader(JsonbSupport.reader())

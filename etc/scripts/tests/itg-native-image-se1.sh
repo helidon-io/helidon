@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,34 +50,12 @@ echo '*******************************'
 
 mvn ${MAVEN_ARGS} \
     clean install -e \
-    -Dmaven.test.failure.ignore=true -Ppipeline
+    -Dmaven.test.failure.ignore=true
 
 echo '*******************************'
-echo '** Building SE native image'
+echo '** Building and Testing SE native image'
 echo '*******************************'
 cd "${WS_DIR}"/tests/integration/native-image/se-1
 
-mvn ${MAVEN_ARGS} \
-    clean package -e \
-    -Pnative-image,pipeline
-
-echo '*******************************'
-echo '** Tests on hotspot'
-echo '*******************************'
-mvn ${MAVEN_ARGS} \
-    test -e \
-    -Pclass-path,pipeline
-
-echo '*******************************'
-echo '** Tests on native'
-echo '*******************************'
-mvn ${MAVEN_ARGS} \
-    test -e \
-    -Pnative-tests,pipeline
-
-echo '*******************************'
-echo '** Tests on hotspot using module path'
-echo '*******************************'
-mvn ${MAVEN_ARGS} \
-    test -e \
-    -Pmodule-path,pipeline
+mvn ${MAVEN_ARGS} clean package verify \
+    -e -Pnative-image

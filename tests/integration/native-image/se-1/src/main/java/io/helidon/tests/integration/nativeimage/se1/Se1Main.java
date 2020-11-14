@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 import javax.websocket.server.ServerEndpointConfig;
 
 import io.helidon.common.LogConfig;
-import io.helidon.common.LogConfig;
+import io.helidon.common.NativeImageHelper;
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
 import io.helidon.health.HealthSupport;
@@ -65,12 +65,18 @@ public final class Se1Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
-        String property = System.getProperty("java.class.path");
-        if (null == property || property.trim().isEmpty()) {
-            LOGGER.info("Running on module path");
+        if (NativeImageHelper.isRuntime()) {
+            LOGGER.info("Running in native image");
         } else {
-            LOGGER.info("Running on class path");
+            String property = System.getProperty("java.class.path");
+            if (null == property || property.trim().isEmpty()) {
+                LOGGER.info("Running on module path");
+            } else {
+                LOGGER.info("Running on class path");
+            }
         }
+
+        LOGGER.info("Environment variable SERVER_PORT: " + System.getenv("SERVER_PORT"));
 
         startServer();
     }
@@ -167,4 +173,8 @@ public final class Se1Main {
                 .build();
     }
 
+    static void stopServer() {
+        webServer.shutdown()
+                .await(10, TimeUnit.SECONDS);
+    }
 }

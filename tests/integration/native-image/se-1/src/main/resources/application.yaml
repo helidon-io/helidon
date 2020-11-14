@@ -25,7 +25,7 @@ tracing:
   service: "helidon-se"
   protocol: "http"
   host: "localhost"
-  port: 7076
+  port: ${server.port}
   api-version: 2
   # mocked zipkin
   path: "/zipkin/api/v2/spans"
