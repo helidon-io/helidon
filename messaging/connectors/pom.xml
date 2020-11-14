@@ -33,5 +33,6 @@
     <modules>
         <module>jms</module>
         <module>aq</module>
+        <module>mqtt</module>
     </modules>
 </project>

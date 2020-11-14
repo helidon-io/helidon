@@ -52,4 +52,8 @@ continue to [JMS with WebSocket MP Example](jms-websocket-mp/README.md)
 For demonstration of Helidon MP Messaging with Oracle Advance Queueing connector, 
 continue to [Oracle AQ with WebSocket MP Example](oracle-aq-websocket-mp/README.md)
 
+## Helidon MP Reactive Messaging with MQTT Example
+For demonstration of Helidon MP Messaging with MQTT connector, 
+continue to [MQTT with WebSocket MP Example](mqtt-websocket-mp/README.md)
+
 

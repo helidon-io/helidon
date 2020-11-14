@@ -21,12 +21,14 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.spi.DeploymentException;
 
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
 import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
@@ -39,9 +41,19 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.reactivestreams.FlowAdapters;
 
+/**
+ * MicroProfile Reactive Messaging MQTT connector.
+ */
+@ApplicationScoped
+@Connector(MqttConnector.CONNECTOR_NAME)
 public class MqttConnector implements IncomingConnectorFactory, OutgoingConnectorFactory {
 
     private static final Logger LOGGER = Logger.getLogger(MqttConnector.class.getName());
+
+    /**
+     * Microprofile messaging MQTT connector name.
+     */
+    public static final String CONNECTOR_NAME = "helidon-mqtt";
 
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
@@ -54,6 +66,7 @@ public class MqttConnector implements IncomingConnectorFactory, OutgoingConnecto
         try {
             IMqttClient client = new MqttClient(server, clientId);
             BufferedEmittingPublisher<Message<MqttMessage>> emitter = BufferedEmittingPublisher.create();
+            client.connect();
             client.subscribe(topic, (s, mqttMessage) -> emitter.emit(Message.of(mqttMessage)));
             return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(emitter));
         } catch (MqttException e) {
@@ -71,6 +84,7 @@ public class MqttConnector implements IncomingConnectorFactory, OutgoingConnecto
 
         try {
             IMqttClient client = new MqttClient(server, clientId);
+            client.connect();
             return ReactiveStreams.<Message<MqttMessage>>builder()
                     .peek(m -> publish(client, topic, m.getPayload()))
                     .onError(t -> LOGGER.log(Level.SEVERE, "Error intercepted on channel " + channel, t))
