@@ -31,6 +31,9 @@ module helidon.tests.integration.nativeimage.se1 {
     requires io.helidon.webserver;
     requires io.helidon.webserver.tyrus;
     requires io.helidon.webclient;
+    requires helidon.tests.integration.nativeimage.staticcontent;
+
+    opens web;
 
     exports io.helidon.tests.integration.nativeimage.se1;
 }

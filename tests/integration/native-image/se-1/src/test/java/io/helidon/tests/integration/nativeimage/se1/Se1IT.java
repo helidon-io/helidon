@@ -185,6 +185,33 @@ abstract class Se1IT {
     }
 
     @Test
+    void testStaticContentAnotherJar() {
+        String content = webClient.get()
+                .path("/static/jar/resource.txt")
+                .request(String.class)
+                .await(10, TimeUnit.SECONDS);
+        assertThat(content, is("jar-resource-text"));
+    }
+
+    @Test
+    void testStaticContentThisJar() {
+        String content = webClient.get()
+                .path("/static/classpath/resource.txt")
+                .request(String.class)
+                .await(10, TimeUnit.SECONDS);
+        assertThat(content, is("classpath-resource-text"));
+    }
+
+    @Test
+    void testStaticContentPath() {
+        String content = webClient.get()
+                .path("/static/path/resource.txt")
+                .request(String.class)
+                .await(10, TimeUnit.SECONDS);
+        assertThat(content, is("file-resource-text"));
+    }
+
+    @Test
     void testWebSocketEndpoint()
             throws IOException, DeploymentException, InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<String> openFuture = new CompletableFuture<>();

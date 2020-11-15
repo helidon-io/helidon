@@ -156,7 +156,7 @@ public final class Se1Main {
         return Routing.builder()
                 .register("/static/path", StaticContentSupport.create(Paths.get("web")))
                 .register("/static/classpath", StaticContentSupport.create("web"))
-                .register("/static/jar", StaticContentSupport.create("web-jar"))
+                .register("/static/jar", StaticContentSupport.create("webjar"))
                 .register(WebSecurity.create(config.get("security")))
                 .register(health)                   // Health at "/health"
                 .register(metrics)                  // Metrics at "/metrics"

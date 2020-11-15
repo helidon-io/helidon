@@ -1,0 +1,7 @@
+{
+    "resources": [
+        {
+            "pattern": "webjar/resource.txt"
+        }
+    ]
+}
