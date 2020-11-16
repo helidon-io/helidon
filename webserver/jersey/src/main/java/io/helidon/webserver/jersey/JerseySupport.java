@@ -106,6 +106,7 @@ public class JerseySupport implements Service {
     private final ExecutorService service;
     private final JerseyHandler handler = new JerseyHandler();
     private final HelidonJerseyContainer container;
+    private final Thread serviceShutdownHook;
 
     /**
      * Creates a Jersey Support based on the provided JAX-RS application.
@@ -120,6 +121,10 @@ public class JerseySupport implements Service {
                 ? builder.executorService
                 : getDefaultThreadPool(builder.config);
         this.service = Contexts.wrap(executorService);
+
+        // Prevents reads/writes after Netty event loops are shutdown
+        serviceShutdownHook = new Thread(service::shutdownNow);
+        Runtime.getRuntime().addShutdownHook(serviceShutdownHook);
 
         // make sure we have a wrapped async executor as well
         if (builder.asyncExecutorService == null) {
@@ -138,6 +143,15 @@ public class JerseySupport implements Service {
     public void update(Routing.Rules routingRules) {
         routingRules.any(handler);
         appHandler.onStartup(container);
+    }
+
+    /**
+     * Returns registered shutdown hook for testing purposes.
+     *
+     * @return service shutdown hook
+     */
+    Thread serviceShutdownHook() {
+        return serviceShutdownHook;
     }
 
     private static synchronized ExecutorService getDefaultThreadPool(Config config) {

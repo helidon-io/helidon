@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
 package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -28,6 +30,8 @@ import org.reactivestreams.Subscription;
  * Publisher calling underlined messaging method for every received item.
  */
 class InternalSubscriber implements Subscriber<Object> {
+
+    private static final Logger LOGGER = Logger.getLogger(InternalSubscriber.class.getName());
 
     private Subscription subscription;
     private final IncomingMethod incomingMethod;
@@ -53,7 +57,7 @@ class InternalSubscriber implements Subscriber<Object> {
         } catch (Exception e) {
             // Notify publisher to stop sending
             subscription.cancel();
-            throw new MessagingException(e);
+            LOGGER.log(Level.SEVERE, e, () -> "Error when invoking @Incoming method " + method.getName());
         }
     }
 

@@ -37,5 +37,6 @@
     <modules>
         <module>gh1487</module>
         <module>gh2297</module>
+        <module>gh2455</module>
     </modules>
 </project>

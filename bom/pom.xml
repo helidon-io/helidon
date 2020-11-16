@@ -835,10 +835,41 @@
                 <artifactId>helidon-messaging-kafka</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging.jms</groupId>
+                <artifactId>helidon-messaging-jms</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging.aq</groupId>
+                <artifactId>helidon-messaging-aq</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Testing -->
             <dependency>
                 <groupId>io.helidon.microprofile.tests</groupId>
                 <artifactId>helidon-microprofile-tests-junit5</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <!-- Logging -->
+            <dependency>
+                <groupId>io.helidon.logging</groupId>
+                <artifactId>helidon-logging-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.logging</groupId>
+                <artifactId>helidon-logging-jul</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.logging</groupId>
+                <artifactId>helidon-logging-slf4j</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.logging</groupId>
+                <artifactId>helidon-logging-log4j</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
         </dependencies>
