@@ -20,7 +20,71 @@ mvn clean install
 java -jar target/helidon-examples-microprofile-graphql.jar
 ```
 
-## Issuing GraphQL requests 
+## Issuing GraphQL requests via REST
+
+Access the `/graphql` endpoint via `http://127.0.0.1:7001/graphql`:
+
+1. Display the generated GraphQL Schema
+
+    ```bash
+    curl http://127.0.0.1:7001/graphql/schema.graphql
+    ```       
+   
+   This will produce the following:
+   
+    ```graphql
+    type Mutation {
+      "Create a task with the given description"
+      createTask(description: String): Task
+      "Remove all completed tasks and return the tasks left"
+      deleteCompletedTasks: [Task]
+      "Delete a task and return the deleted task details"
+      deleteTask(id: String): Task
+      "Update a task"
+      updateTask(completed: Boolean, description: String, id: String): Task
+    }
+    
+    type Query {
+      "Return a given task"
+      findTask(id: String): Task
+      "Query tasks and optionally specified only completed"
+      tasks(completed: Boolean): [Task]
+    }
+    
+    type Task {
+      completed: Boolean!
+      createdAt: BigInteger!
+      description: String
+      id: String
+    }
+    
+    "Custom: Built-in java.math.BigInteger"
+    scalar BigInteger
+    ``` 
+   
+1. Create a Task
+
+    ```bash
+    curl -X POST http://127.0.0.1:7001/graphql -d '{"query":"mutation createTask { createTask(description: \"Task Description 1\") { id description createdAt completed }}"}'    
+    ```   
+   
+    Response is a newly created task:
+    
+    ```json 
+    {"data":{"createTask":{"id":"0d4a8d","description":"Task Description 1","createdAt":1605501774877,"completed":false}}
+    ```  
+
+## Incorporating the GraphiQL UI
+
+The [GraphiQL UI](https://github.com/graphql/graphiql), which provides a UI to execute GraphQL commands, is not included by default in Helidon's Microprofile GraphQL 
+implementation. Uou can follow the guide below to incorporate the UID into this example:
+
+1. Copy the contents in the sample index.html file from [here](https://github.com/graphql/graphiql/blob/main/packages/graphiql/README.md)
+into the file at `examples/microprofile/graphql/src/main/resources/web/index.html`
+
+1. Change the URL in the line `fetch('https://my/graphql', {` to `http://127.0.0.1:7001/graphql`
+
+1. Build and run the example using the instructions above.
 
 1. Access the GraphiQL UI via the following URL: http://127.0.0.1:7001/ui.
 

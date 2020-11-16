@@ -24,7 +24,7 @@
 
 
 The Microprofile GraphQL APIs are an extension to <<microprofile/01_introduction.adoc, Helidon MP>>
-to allow building of applications that can expose a GraphQL endpoint and optionally a link:https://github.com/graphql/graphiql[GraphiQL] API.
+to allow building of applications that can expose a GraphQL endpoint.
 
 == About the MicroProfile GraphQL Specification
 Helidon MP implements the MicroProfile GraphQL
@@ -176,29 +176,23 @@ using the `jandex-maven-plugin` for all API and POJO classes that are used.
 
 == Accessing the GraphQL end-points
 
-After starting your application you should see a message similar to the following
-indicating the GraphQL application has be started:
+After starting your application you should see a message similar to the following indicating the GraphQL support is available:
 
 [source,bash]
 .Sample Startup output
 ----
-[Mon. Nov. 02 14:54:11 AWST 2020] INFO: io.helidon.microprofile.server.ServerCdiExtension addApplication
-     - Registering JAX-RS Application: GraphQLApplication
+2020.11.16 12:29:58 INFO io.helidon.common.HelidonFeatures Thread[features-thread,5,main]: Helidon MP 2.1.1-SNAPSHOT features: [CDI, Config, Fault Tolerance, GraphQL, Health, JAX-RS, Metrics, Open API, Security, Server, Tracing]
+2020.11.16 12:29:58 INFO io.helidon.common.HelidonFeatures.experimental Thread[features-thread,5,main]: You are using experimental features. These APIs may change, please follow changelog!
+2020.11.16 12:29:58 INFO io.helidon.common.HelidonFeatures.experimental Thread[features-thread,5,main]: 	Experimental feature: GraphQL (GraphQL)
 ----
 
-Once you access the built-in GraphiQL endpoint at `http://host:port/ui` or
-using your GraphQL client via the `http://host:port/graphql` end-point a message indicating the
-GraphQL Schema has been generated will be displayed as shown if your log level is set to `FINE`:
+You can then use your GraphQL client via the default endpoint `http://host:port/graphql`.
 
-[source,bash]
-.Sample Schema Message
-----
-[Mon. Nov. 02 14:54:16 AWST 2020] FINE: io.helidon.microprofile.graphql.server.ExecutionContext <init> - Generated schema:
-... Schema displayed here
-----
+The GraphQL Schema is available via `http://host:port/graphql/schema.graphql`.
 
-.GraphQL UI
-image::mp/graphql_01_introduction_graphiql.png[GraphiQL]
+NOTE: If you wish to use the GraphiQL UI (https://github.com/graphql/graphiql) then please see the Helidon Microprofile GraphQL
+example at the following URL:
+https://github.com/oracle/helidon/tree/master/examples/microprofile/graphql
 
 == Configuration Options
 

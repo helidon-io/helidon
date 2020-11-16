@@ -54,8 +54,6 @@ import static org.hamcrest.Matchers.notNullValue;
 @AddExtension(JaxRsCdiExtension.class)
 @AddExtension(ConfigCdiExtension.class)
 @AddExtension(CdiComponentProvider.class)
-@AddConfig(key = "server.static.classpath.context", value = "/ui")
-@AddConfig(key = "server.static.classpath.location", value = "/web")
 public class GraphQLEndpointIT
         extends AbstractGraphQLEndpointIT {
 
@@ -92,14 +90,6 @@ public class GraphQLEndpointIT
         graphQLResults = getJsonResponse(response);
         System.err.println(JsonUtils.convertMapToJson(graphQLResults));
         assertThat(graphQLResults.size(), CoreMatchers.is(1));
-    }
-
-    @Test
-    public void testUIEndpoint() {
-        WebTarget webTarget = getGraphQLWebTarget().path(UI).path("index.html");
-        Response response = webTarget.request().get();
-        assertThat(response, is(notNullValue()));
-        assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
     }
 
     @Test
