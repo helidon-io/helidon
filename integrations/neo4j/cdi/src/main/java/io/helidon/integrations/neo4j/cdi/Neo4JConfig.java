@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2020 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package io.helidon.integrations.neo4j.cdi;
 
 import java.io.File;
@@ -9,10 +26,12 @@ import io.helidon.config.Config;
 /**
  * Created by Dmitry Alexandrov on 12.11.20.
  */
-public class Neo4jSupport {
+public class Neo4JConfig {
 
+    //authentication
     public final String username;
     public final String password;
+    //general
     public final String uri;
     public final boolean encrypted;
     //pool
@@ -29,7 +48,7 @@ public class Neo4jSupport {
     public boolean disabled;
     public org.neo4j.driver.Config.TrustStrategy internalRepresentation;
 
-    private Neo4jSupport(Builder builder) {
+    private Neo4JConfig(Builder builder) {
         this.username = builder.username;
         this.password = builder.password;
         this.uri = builder.uri;
@@ -49,7 +68,7 @@ public class Neo4jSupport {
 
     }
 
-    public static Neo4jSupport create(Config config) {
+    public static Neo4JConfig create(Config config) {
         return builder().config(config).build();
     }
 
@@ -93,7 +112,7 @@ public class Neo4jSupport {
         TRUST_SYSTEM_CA_SIGNED_CERTIFICATES
     }
 
-    public static class Builder implements io.helidon.common.Builder<Neo4jSupport> {
+    public static class Builder implements io.helidon.common.Builder<Neo4JConfig> {
         public boolean encrypted;
         public boolean disabled;
         public String username;
@@ -117,8 +136,8 @@ public class Neo4jSupport {
         }
 
         @Override
-        public Neo4jSupport build() {
-            return new Neo4jSupport(this);
+        public Neo4JConfig build() {
+            return new Neo4JConfig(this);
         }
 
         public Builder config(Config config) {
