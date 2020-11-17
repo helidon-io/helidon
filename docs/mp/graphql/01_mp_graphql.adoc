@@ -26,6 +26,11 @@
 The Microprofile GraphQL APIs are an extension to <<microprofile/01_introduction.adoc, Helidon MP>>
 to allow building of applications that can expose a GraphQL endpoint.
 
+== Experimental
+
+WARNING: The Helidon GraphQL feature is currently experimental and the APIs are
+ subject to changes until GraphQL support is stabilized.
+
 == About the MicroProfile GraphQL Specification
 Helidon MP implements the MicroProfile GraphQL
 link:https://github.com/eclipse/microprofile-graphql[spec] version {micprofile-graphql-version}.

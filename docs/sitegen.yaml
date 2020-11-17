@@ -121,6 +121,14 @@ backend:
               items:
                 - includes:
                     - "se/grpc/*.adoc"
+            - title: "GraphQL server"
+              pathprefix: "/se/graphql"
+              glyph:
+                type: "icon"
+                value: "graphic_eq"
+              items:
+                - includes:
+                    - "se/graphql/*.adoc"
             - title: "Health Checks"
               pathprefix: "/se/health"
               glyph:

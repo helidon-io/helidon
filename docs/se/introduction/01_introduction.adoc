@@ -69,7 +69,13 @@ Add support for CORS to your application using a Helidon module.
 --
 Provides a unified, reactive API for working with databases in non-blocking way.
 --
-
+//GraphQL
+[CARD]
+.GraphQL
+[icon=graphic_eq,link=se/graphql/01_introduction.adoc]
+--
+Build GraphQL servers.
+--
 //gRPC
 [CARD]
 .gRPC
