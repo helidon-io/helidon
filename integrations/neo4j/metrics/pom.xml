@@ -35,6 +35,14 @@
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.cdi</groupId>
+            <artifactId>helidon-microprofile-cdi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.server</groupId>
+            <artifactId>helidon-microprofile-server</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

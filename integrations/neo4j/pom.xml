@@ -32,7 +32,7 @@
     <name>Helidon Neo4j Integrations</name>
 
     <modules>
-        <module>cdi</module>
+        <module>support</module>
         <module>health</module>
         <module>metrics</module>
     </modules>

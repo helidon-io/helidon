@@ -15,18 +15,36 @@
  *
  */
 
-package io.helidon.integrations.neo4j.cdi;
+package io.helidon.integrations.neo4j;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Optional;
+import java.util.logging.Level;
 
 import io.helidon.config.Config;
+import io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.Service;
+
+
+import org.neo4j.driver.AuthToken;
+import org.neo4j.driver.AuthTokens;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Logging;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Created by Dmitry Alexandrov on 12.11.20.
  */
-public class Neo4JConfig {
+public class Neo4jSupport implements Service {
+
+    private static final boolean isMetricsPresent = checkForMetrics();
+
+    private Optional<Driver> driver = Optional.empty();
 
     //authentication
     public final String username;
@@ -48,7 +66,7 @@ public class Neo4JConfig {
     public boolean disabled;
     public org.neo4j.driver.Config.TrustStrategy internalRepresentation;
 
-    private Neo4JConfig(Builder builder) {
+    private Neo4jSupport(Builder builder) {
         this.username = builder.username;
         this.password = builder.password;
         this.uri = builder.uri;
@@ -66,9 +84,39 @@ public class Neo4JConfig {
         this.certFile = builder.certFile;
         this.hostnameVerificationEnabled = builder.hostnameVerificationEnabled;
 
+        initDriver();
+
+        if (isMetricsPresent) {
+            new Neo4jMetricsSupport().initNeo4JMetrics(driver);
+        }
     }
 
-    public static Neo4JConfig create(Config config) {
+    public Driver driver(){
+        return driver.get();
+    }
+
+    private void initDriver(){
+        AuthToken authToken = AuthTokens.none();
+        if (disabled) {
+            authToken = AuthTokens.basic(username, password);
+        }
+
+        org.neo4j.driver.Config.ConfigBuilder configBuilder = createBaseConfig();
+        configureSsl(configBuilder);
+        configurePoolSettings(configBuilder);
+
+         driver = Optional.ofNullable(GraphDatabase.driver(uri, authToken, configBuilder.build()));
+
+    }
+
+    @Override
+    public void update(Routing.Rules rules) {
+        // If Neo4J support in Helidon adds no new endpoints,
+        // then we do not need to do anything here.
+    }
+
+
+    public static Neo4jSupport create(Config config) {
         return builder().config(config).build();
     }
 
@@ -106,13 +154,59 @@ public class Neo4JConfig {
         return internalRepresentation;
     }
 
+
+    private static boolean checkForMetrics() {
+        try {
+            Class.forName("io.helidon.metrics.RegistryFactory");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    private static org.neo4j.driver.Config.ConfigBuilder createBaseConfig() {
+        org.neo4j.driver.Config.ConfigBuilder configBuilder = org.neo4j.driver.Config.builder();
+        Logging logging;
+        try {
+            logging = Logging.slf4j();
+        } catch (Exception e) {
+            logging = Logging.javaUtilLogging(Level.INFO);
+        }
+        configBuilder.withLogging(logging);
+        return configBuilder;
+    }
+
+    private void configureSsl(org.neo4j.driver.Config.ConfigBuilder configBuilder) {
+
+        if (encrypted) {
+            configBuilder.withEncryption();
+            configBuilder.withTrustStrategy(toInternalRepresentation());
+        } else {
+            configBuilder.withoutEncryption();
+        }
+    }
+
+    private void configurePoolSettings(org.neo4j.driver.Config.ConfigBuilder configBuilder) {
+
+        configBuilder.withMaxConnectionPoolSize(maxConnectionPoolSize);
+        configBuilder.withConnectionLivenessCheckTimeout(idleTimeBeforeConnectionTest.toMillis(), MILLISECONDS);
+        configBuilder.withMaxConnectionLifetime(maxConnectionLifetime.toMillis(), MILLISECONDS);
+        configBuilder.withConnectionAcquisitionTimeout(connectionAcquisitionTimeout.toMillis(), MILLISECONDS);
+
+        if (metricsEnabled) {
+            configBuilder.withDriverMetrics();
+        } else {
+            configBuilder.withoutDriverMetrics();
+        }
+    }
+
     public enum Strategy {
         TRUST_ALL_CERTIFICATES,
         TRUST_CUSTOM_CA_SIGNED_CERTIFICATES,
         TRUST_SYSTEM_CA_SIGNED_CERTIFICATES
     }
 
-    public static class Builder implements io.helidon.common.Builder<Neo4JConfig> {
+    public static class Builder implements io.helidon.common.Builder<Neo4jSupport> {
         public boolean encrypted;
         public boolean disabled;
         public String username;
@@ -136,8 +230,8 @@ public class Neo4JConfig {
         }
 
         @Override
-        public Neo4JConfig build() {
-            return new Neo4JConfig(this);
+        public Neo4jSupport build() {
+            return new Neo4jSupport(this);
         }
 
         public Builder config(Config config) {

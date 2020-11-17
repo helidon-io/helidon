@@ -18,8 +18,6 @@
  * Neo4j metrics support module.
  */
 module io.helidon.integrations.neo4j.metrics {
-    requires java.logging;
-    requires java.management;
 
     requires io.helidon.common;
     requires io.helidon.common.serviceloader;
@@ -30,6 +28,11 @@ module io.helidon.integrations.neo4j.metrics {
     requires java.json;
     requires microprofile.config.api;
     requires io.helidon.config.mp;
+    requires jakarta.enterprise.cdi.api;
+    requires io.helidon.microprofile.server;
+    requires microprofile.metrics.api;
     requires io.helidon.metrics;
+
+    exports io.helidon.integrations.neo4j.metrics;
 
 }

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.integrations.neo4j.Neo4jCdiExtension;
+
 /**
  * Neo4j CDI support module.
  */
@@ -23,6 +25,7 @@ module io.helidon.integrations.neo4j.cdi {
 
     requires io.helidon.common;
     requires io.helidon.common.serviceloader;
+    requires io.helidon.webserver;
 
     requires org.neo4j.driver;
 
@@ -32,10 +35,11 @@ module io.helidon.integrations.neo4j.cdi {
     requires microprofile.config.api;
     requires io.helidon.config;
     requires io.helidon.config.mp;
+    requires io.helidon.integrations.neo4j.metrics;
 
-    exports io.helidon.integrations.neo4j.cdi;
+    exports io.helidon.integrations.neo4j;
 
     opens io.helidon.integrations.neo4j.cdi to weld.core.impl, io.helidon.microprofile.cdi;
 
-    provides javax.enterprise.inject.spi.Extension with io.helidon.integrations.neo4j.cdi.Neo4jCdiExtension;
+    provides javax.enterprise.inject.spi.Extension with Neo4jCdiExtension;
 }

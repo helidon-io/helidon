@@ -17,10 +17,13 @@
 
 package io.helidon.integrations.neo4j.metrics;
 
-import io.helidon.config.Config;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.Service;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -29,14 +32,9 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.neo4j.driver.ConnectionPoolMetrics;
 import org.neo4j.driver.Driver;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import static java.util.Map.entry;
 
-public class Neo4JSupport implements Service {
+public class Neo4jMetricsSupport {
 
     private static final String NEO4J_METRIC_NAME_PREFIX = "neo4j.";
 
@@ -44,51 +42,11 @@ public class Neo4JSupport implements Service {
 
     private Optional<ConnectionPoolMetrics> connectionPoolMetrics = Optional.empty();
 
-    private Neo4JSupport(Builder builder) {
-        initNeo4JMetrics();
-    }
+    public void initNeo4JMetrics(Optional<Driver> driver) {
 
-    public static Builder builder() {
-        return new Builder();
-    }
+        this.driver = driver;
 
-    public static Neo4JSupport create() {
-        return builder().build();
-    }
-
-    public static Neo4JSupport create(Config config) {
-        return builder().config(config).build();
-    }
-
-    @Override
-    public void update(Routing.Rules rules) {
-        // If Neo4J support in Helidon adds no new endpoints,
-        // then we do not need to do anything here.
-    }
-
-    public static class Builder implements io.helidon.common.Builder<Neo4JSupport> {
-
-        private Config config; //
-
-        private Builder() {
-
-        }
-
-
-        @Override
-        public Neo4JSupport build() {
-            return new Neo4JSupport(this);
-        }
-
-        public Builder config(Config config) {
-            // harvest Neo4J config information from Helidon config.
-            this.config = config;
-            return this;
-        }
-    }
-
-    private void initNeo4JMetrics() {
-        // Assuming for the moment that VENDOR is the correct registry to use.
+        // I am assuming for the moment that VENDOR is the correct registry to use.
         MetricRegistry neo4JMetricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
 
         Map<String, Function<ConnectionPoolMetrics, Long>> counters = Map.ofEntries(
@@ -110,7 +68,7 @@ public class Neo4JSupport implements Service {
         );
 
         counters.forEach((name, supplier) -> registerCounter(neo4JMetricRegistry, name, supplier));
-        gauges.forEach((name, supplier) -> registerGauge(neo4JMetricRegistry, name, supplier, 0));
+        gauges.forEach((name, supplier) -> registerGauge(neo4JMetricRegistry, name, supplier));
     }
 
     private synchronized Optional<ConnectionPoolMetrics> getConnectionPoolMetrics() {
@@ -138,15 +96,14 @@ public class Neo4JSupport implements Service {
         metricRegistry.register(metadata, wrapper);
     }
 
-    private void registerGauge(MetricRegistry metricRegistry, String name, Function<ConnectionPoolMetrics, Integer> fn,
-                               int defaultValue) {
+    private void registerGauge(MetricRegistry metricRegistry, String name, Function<ConnectionPoolMetrics, Integer> fn) {
         Metadata metadata = Metadata.builder()
                 .withName(NEO4J_METRIC_NAME_PREFIX + name)
                 .withType(MetricType.GAUGE)
                 .notReusable()
                 .build();
-        Neo4JGaugeWrapper wrapper =
-                new Neo4JGaugeWrapper(() -> getConnectionPoolMetrics().map(fn).orElse(defaultValue));
+        Neo4JGaugeWrapper<Integer> wrapper =
+                new Neo4JGaugeWrapper(() -> getConnectionPoolMetrics().map(fn).orElse(0));
         metricRegistry.register(metadata, wrapper);
     }
 
@@ -174,16 +131,16 @@ public class Neo4JSupport implements Service {
         }
     }
 
-    private static class Neo4JGaugeWrapper implements Gauge<Integer> {
+    private static class Neo4JGaugeWrapper<T> implements Gauge<T> {
 
-        private final Supplier<Integer> supplier;
+        private final Supplier<T> supplier;
 
-        private Neo4JGaugeWrapper(Supplier<Integer> supplier) {
+        private Neo4JGaugeWrapper(Supplier<T> supplier) {
             this.supplier = supplier;
         }
 
         @Override
-        public Integer getValue() {
+        public T getValue() {
             return supplier.get();
         }
     }
