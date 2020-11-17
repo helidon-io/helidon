@@ -9,7 +9,6 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
 
-import org.jboss.logging.Logger;
 import org.neo4j.driver.AccessMode;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
@@ -21,8 +20,6 @@ import org.neo4j.driver.summary.ServerInfo;
 @Readiness
 @ApplicationScoped
 public class Neo4jHealthCheck implements HealthCheck {
-
-    private static final Logger log = Logger.getLogger(Neo4jHealthCheck.class);
 
     /**
      * The Cypher statement used to verify Neo4j is up.
@@ -56,7 +53,6 @@ public class Neo4jHealthCheck implements HealthCheck {
             try {
                 resultSummary = runHealthCheckQuery();
             } catch (SessionExpiredException sessionExpiredException) {
-                log.warn(MESSAGE_SESSION_EXPIRED);
                 resultSummary = runHealthCheckQuery();
             }
             return buildStatusUp(resultSummary, builder);

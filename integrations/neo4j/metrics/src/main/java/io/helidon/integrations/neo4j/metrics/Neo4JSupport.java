@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.integrations.metrics;
+package io.helidon.integrations.neo4j.metrics;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.RegistryFactory;
