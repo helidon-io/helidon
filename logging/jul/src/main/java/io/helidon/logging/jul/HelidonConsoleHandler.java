@@ -16,6 +16,8 @@
 
 package io.helidon.logging.jul;
 
+import io.helidon.common.Reflected;
+
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
@@ -24,6 +26,7 @@ import java.util.logging.StreamHandler;
  * A {@link StreamHandler} that writes to {@link System#out standard out} and uses a {@link HelidonFormatter} for formatting.
  * Sets the level to {@link Level#ALL} so that level filtering is performed solely by the loggers.
  */
+@Reflected
 public class HelidonConsoleHandler extends StreamHandler {
 
     /**
