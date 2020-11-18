@@ -59,6 +59,12 @@
             <version>2.1.1-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.neo4j.health</groupId>
+            <artifactId>helidon-integrations-neo4j-health</artifactId>
+            <version>2.1.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
 </project>

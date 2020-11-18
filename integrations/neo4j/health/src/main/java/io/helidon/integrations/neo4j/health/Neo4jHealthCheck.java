@@ -1,5 +1,21 @@
-package io.helidon.integrations.neo4j.health;
+/*
+ * Copyright (c) 2020 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 
+package io.helidon.integrations.neo4j.health;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -8,7 +24,6 @@ import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
-
 import org.neo4j.driver.AccessMode;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
@@ -32,7 +47,8 @@ public class Neo4jHealthCheck implements HealthCheck {
     /**
      * Message logged before retrying a health check.
      */
-    private static final String MESSAGE_SESSION_EXPIRED = "Neo4j session has expired, retrying one single time to retrieve server health.";
+    private static final String MESSAGE_SESSION_EXPIRED = "Neo4j session has expired, retrying one single time to retrieve "
+            + "server health.";
     /**
      * The default session config to use while connecting.
      */
@@ -40,25 +56,21 @@ public class Neo4jHealthCheck implements HealthCheck {
             .withDefaultAccessMode(AccessMode.WRITE)
             .build();
 
-    @Inject
-    Driver driver;
 
-    @Override
-    public HealthCheckResponse call() {
+    private Driver driver;
 
-        HealthCheckResponseBuilder builder = HealthCheckResponse.named("Neo4j connection health check").up();
-        try {
-            ResultSummary resultSummary;
-            // Retry one time when the session has been expired
-            try {
-                resultSummary = runHealthCheckQuery();
-            } catch (SessionExpiredException sessionExpiredException) {
-                resultSummary = runHealthCheckQuery();
-            }
-            return buildStatusUp(resultSummary, builder);
-        } catch (Exception e) {
-            return builder.down().withData("reason", e.getMessage()).build();
-        }
+    @Inject //will be ignored outside of CDI
+    Neo4jHealthCheck(Driver driver) {
+        this.driver = driver;
+    }
+
+    /**
+     * To be used in SE context
+     * @param driver
+     * @return
+     */
+    public static Neo4jHealthCheck create(Driver driver) {
+        return new Neo4jHealthCheck(driver);
     }
 
     /**
@@ -80,6 +92,24 @@ public class Neo4jHealthCheck implements HealthCheck {
         }
 
         return builder.build();
+    }
+
+    @Override
+    public HealthCheckResponse call() {
+
+        HealthCheckResponseBuilder builder = HealthCheckResponse.named("Neo4j connection health check").up();
+        try {
+            ResultSummary resultSummary;
+            // Retry one time when the session has been expired
+            try {
+                resultSummary = runHealthCheckQuery();
+            } catch (SessionExpiredException sessionExpiredException) {
+                resultSummary = runHealthCheckQuery();
+            }
+            return buildStatusUp(resultSummary, builder);
+        } catch (Exception e) {
+            return builder.down().withData("reason", e.getMessage()).build();
+        }
     }
 
     private ResultSummary runHealthCheckQuery() {

@@ -32,6 +32,7 @@ module io.helidon.integrations.neo4j.health {
     requires java.json;
     requires microprofile.config.api;
     requires io.helidon.config.mp;
+    requires io.helidon.webserver;
 
     exports io.helidon.integrations.neo4j.health;
 }

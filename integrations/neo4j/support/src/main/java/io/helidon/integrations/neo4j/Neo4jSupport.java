@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 
 import io.helidon.config.Config;
+import io.helidon.integrations.neo4j.health.Neo4jHealthSupport;
 import io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
@@ -43,6 +44,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class Neo4jSupport implements Service {
 
     private static final boolean isMetricsPresent = checkForMetrics();
+    private static final boolean isHealthPresent = checkForHealth();
 
     private Optional<Driver> driver = Optional.empty();
 
@@ -85,11 +87,21 @@ public class Neo4jSupport implements Service {
 
         initDriver();
 
+        //check if metrics support module is present, and initialize it
         if (isMetricsPresent) {
             new Neo4jMetricsSupport().initNeo4JMetrics(driver);
         }
+
+        //check if health support module is present, and initialize it
+        if (isHealthPresent){
+            new Neo4jHealthSupport().initNeo4jHealth(driver);
+        }
     }
 
+    /**
+     * The main entry point to the Neo4j Support
+     * @return
+     */
     public Driver driver(){
         return driver.get();
     }
@@ -158,6 +170,16 @@ public class Neo4jSupport implements Service {
         try {
             Class.forName("io.helidon.metrics.RegistryFactory");
             Class.forName("io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    private static boolean checkForHealth() {
+        try {
+            Class.forName("io.helidon.health.HealthSupport");
+            Class.forName("io.helidon.integrations.neo4j.health.Neo4jHealthSupport");
             return true;
         } catch (ClassNotFoundException e) {
             return false;
