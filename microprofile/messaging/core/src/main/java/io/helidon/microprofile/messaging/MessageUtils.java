@@ -40,6 +40,20 @@ class MessageUtils {
     private MessageUtils() {
     }
 
+    static Object wrap(Object o) {
+        if (o instanceof Message) {
+            return o;
+        }
+        return Message.of(o);
+    }
+
+    static Object unwrap(Object o) {
+        if (o instanceof Message) {
+            return ((Message<?>) o).getPayload();
+        }
+        return o;
+    }
+
     /**
      * Unwrap values to expected types.
      * <br>
