@@ -41,7 +41,7 @@ import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFact
  * initialized after we configure logging, which unfortunately excludes Helidon loggers.
  * You would need to use JUL or slf4j to have Helidon logs combined with application logs.
  */
-public class Main {
+public final class Main {
     static {
         // replace JUL log manager with Log4j log manager, so we log all to it
         System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
@@ -49,6 +49,9 @@ public class Main {
 
     private static java.util.logging.Logger julLogger;
     private static Logger logger;
+
+    private Main() {
+    }
 
     /**
      * Starts the example.

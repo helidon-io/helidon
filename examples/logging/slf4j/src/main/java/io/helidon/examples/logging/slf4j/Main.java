@@ -32,10 +32,21 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
-public class Main {
+/**
+ * Main class of the example, runnable from command line.
+ */
+public final class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
     private static final java.util.logging.Logger JUL_LOGGER = java.util.logging.Logger.getLogger(Main.class.getName());
 
+    private Main() {
+    }
+
+    /**
+     * Starts the example.
+     *
+     * @param args not used
+     */
     public static void main(String[] args) {
         // use slf4j for JUL as well
         setupLogging();

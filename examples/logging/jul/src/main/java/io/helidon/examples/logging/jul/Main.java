@@ -32,8 +32,11 @@ import io.helidon.webserver.WebServer;
 /**
  * Main class of the example, runnable from command line.
  */
-public class Main {
+public final class Main {
     private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+
+    private Main() {
+    }
 
     /**
      * Starts the example.
