@@ -1094,7 +1094,7 @@ class SchemaGenerator {
                         || nonNullAnnotation != null && defaultValue == null;
 
             } catch (NoSuchFieldException ignored) {
-                LOGGER.warning("No such field " + pd.getName());
+                LOGGER.fine("No such field " + pd.getName() + " on class " + clazz.getName());
             }
 
             if (fieldHasIdAnnotation || method.getAnnotation(Id.class) != null) {
