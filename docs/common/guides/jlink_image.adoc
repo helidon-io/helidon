@@ -33,12 +33,30 @@ as well as how to build it in a Docker image.
 | <<about/03_prerequisites.adoc,Helidon Prerequisites>>
 |===
 
-== Verify Java 11 or Newer
+== Verify JDK
+
+JDK 11 or newer is required.
 
 [source,bash]
 ----
 $JAVA_HOME/bin/java --version
 ----
+
+Creating a custom runtime image requires that the JDK modules are present as `*.jmod` files, and some distributions
+do not provide them by default. Check the `jmods` directory to ensure they are present:
+
+[source,bash]
+----
+ls $JAVA_HOME/jmods
+----
+
+[TIP]
+.OpenJDK on Linux
+https://en.wikipedia.org/wiki/List_of_Linux_distributions#RPM-based[RPM based] distributions provide `\*.jmod` files in separate
+`java-*-openjdk-jmods` packages.
+https://en.wikipedia.org/wiki/List_of_Linux_distributions#Debian-based[Debian based] distributions provide `\*.jmod` files only
+in the `openjdk-*-jdk-headless` packages.
+
 
 == Generate The Project
 
