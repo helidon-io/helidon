@@ -45,12 +45,14 @@ public final class JsonpSupport implements MediaSupport {
     private final JsonpBodyWriter writer;
     private final JsonpBodyStreamWriter streamWriter;
     private final JsonpEsBodyStreamWriter esStreamWriter;
+    private final JsonpNdBodyStreamWriter ndStreamWriter;
 
     private JsonpSupport(JsonReaderFactory readerFactory, JsonWriterFactory writerFactory) {
         reader = new JsonpBodyReader(readerFactory);
         writer = new JsonpBodyWriter(writerFactory);
         streamWriter = new JsonpBodyStreamWriter(writerFactory);
         esStreamWriter = new JsonpEsBodyStreamWriter(writerFactory);
+        ndStreamWriter = new JsonpNdBodyStreamWriter(writerFactory);
     }
 
     /**
@@ -140,7 +142,7 @@ public final class JsonpSupport implements MediaSupport {
 
     /**
      * Return a default JSON-P entity event stream writer.
-     * This writer is for {@code text/event-stream} content type.
+     * This writer is for {@link io.helidon.common.http.MediaType#TEXT_EVENT_STREAM} content type.
      *
      * @return new JSON-P body stream writer instance
      */
@@ -150,13 +152,34 @@ public final class JsonpSupport implements MediaSupport {
 
     /**
      * Create a new JSON-P entity stream writer based on {@link JsonWriterFactory} instance.
-     * This writer is for {@code text/event-stream} content type.
+     * This writer is for {@link io.helidon.common.http.MediaType#TEXT_EVENT_STREAM} content type.
      *
      * @param writerFactory json writer factory
      * @return new JSON-P body stream writer instance
      */
     public static MessageBodyStreamWriter<JsonStructure> eventStreamWriter(JsonWriterFactory writerFactory) {
         return new JsonpEsBodyStreamWriter(writerFactory);
+    }
+
+    /**
+     * Return a default JSON-P entity event stream writer.
+     * This writer is for {@link io.helidon.common.http.MediaType#APPLICATION_X_NDJSON} content type.
+     *
+     * @return new JSON-P body stream writer instance
+     */
+    public static MessageBodyStreamWriter<JsonStructure> ndJsonStreamWriter() {
+        return DEFAULT.get().ndStreamWriter;
+    }
+
+    /**
+     * Create a new JSON-P entity stream writer based on {@link JsonWriterFactory} instance.
+     * This writer is for {@link io.helidon.common.http.MediaType#APPLICATION_X_NDJSON} content type.
+     *
+     * @param writerFactory json writer factory
+     * @return new JSON-P body stream writer instance
+     */
+    public static MessageBodyStreamWriter<JsonStructure> ndJsonStreamWriter(JsonWriterFactory writerFactory) {
+        return new JsonpNdBodyStreamWriter(writerFactory);
     }
 
     /**
@@ -203,12 +226,31 @@ public final class JsonpSupport implements MediaSupport {
      * \n
      * </code></pre>
      *
-     * This writer is for {@code text/event-stream} content type.
+     * This writer is for {@link io.helidon.common.http.MediaType#TEXT_EVENT_STREAM} content type.
      *
      * @return JSON processing stream writer.
      */
     public MessageBodyStreamWriter<JsonStructure> eventStreamWriterInstance() {
         return esStreamWriter;
+    }
+
+    /**
+     * Return JSON-P stream writer.
+     * <p>
+     * This stream writer supports {@link java.util.concurrent.Flow.Publisher publishers}
+     * of {@link javax.json.JsonStructure} (such as {@link javax.json.JsonObject}),
+     * writing them as separate entries in the following format:
+     * <pre><code>
+     * {"json":"data"}\n
+     * {"json2":"data2"}
+     * </code></pre>
+     *
+     * This writer is for {@link io.helidon.common.http.MediaType#APPLICATION_X_NDJSON} content type.
+     *
+     * @return JSON processing stream writer.
+     */
+    public MessageBodyStreamWriter<JsonStructure> ndJsonStreamWriterInstance() {
+        return ndStreamWriter;
     }
 
     @Override
@@ -223,7 +265,7 @@ public final class JsonpSupport implements MediaSupport {
 
     @Override
     public Collection<MessageBodyStreamWriter<?>> streamWriters() {
-        return List.of(streamWriter, esStreamWriter);
+        return List.of(streamWriter, ndStreamWriter, esStreamWriter);
     }
 
     /**

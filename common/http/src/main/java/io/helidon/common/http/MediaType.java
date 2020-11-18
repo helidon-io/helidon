@@ -147,6 +147,11 @@ public final class MediaType implements AcceptPredicate<MediaType> {
      */
     public static final MediaType TEXT_EVENT_STREAM;
 
+    /**
+     * A {@link MediaType} constant representing {@code application/x-ndjson} media type.
+     */
+    public static final MediaType APPLICATION_X_NDJSON;
+
     static {
         Map<String, MediaType> knownTypes = new HashMap<>();
 
@@ -212,6 +217,9 @@ public final class MediaType implements AcceptPredicate<MediaType> {
 
         TEXT_EVENT_STREAM = new MediaType("text", "event-stream");
         knownTypes.put("text/event-stream", TEXT_EVENT_STREAM);
+
+        APPLICATION_X_NDJSON = new MediaType("application", "x-ndjson");
+        knownTypes.put("application/x-ndjson", APPLICATION_X_NDJSON);
 
         KNOWN_TYPES = Collections.unmodifiableMap(knownTypes);
     }
