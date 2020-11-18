@@ -40,4 +40,15 @@ class TenantTest {
                 .get();
         assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
     }
+
+    @Test
+    public void test2() {
+        Response r;
+        for (int i = 0; i < 3; i++) {
+            r = baseTarget.path("test2")
+                    .request()
+                    .get();
+            assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
+        }
+    }
 }
