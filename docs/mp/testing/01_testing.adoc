@@ -55,6 +55,8 @@ In addition to this simplification, the following annotations are supported:
 - `io.helidon.microprofile.tests.junit5.AddConfig` - to add one or more configuration properties to MicroProfile config
         without the need of creating a `microprofile-config.properties` file
 - `io.helidon.microprofile.tests.junit5.DisableDiscovery` - to disable automated discovery of beans and extensions
+- `io.helidon.microprofile.tests.junit5.ScanBeansForConfig` - to scan beans added with `@AddBeans` for additional `@AddConfig` 's
+- `io.helidon.microprofile.tests.junit5.BeforeContainer` - marks a static method to be invoked before CDI container is started
 
 [source,java]
 .Code sample

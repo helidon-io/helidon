@@ -22,6 +22,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -102,6 +104,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
     public void beforeAll(ExtensionContext context) {
         testClass = context.getRequiredTestClass();
 
+        beforeContainer();
+
         AddConfig[] configs = getAnnotations(testClass, AddConfig.class);
         classLevelConfigMeta.addConfig(configs);
         classLevelConfigMeta.configuration(testClass.getAnnotation(Configuration.class));
@@ -112,6 +116,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
 
         AddBean[] beans = getAnnotations(testClass, AddBean.class);
         classLevelBeans.addAll(Arrays.asList(beans));
+
+        classLevelConfigMeta.addConfig(scanBeansConfig());
 
         HelidonTest testAnnot = testClass.getAnnotation(HelidonTest.class);
         if (testAnnot != null) {
@@ -161,6 +167,35 @@ class HelidonJunitExtension implements BeforeAllCallback,
         }
 
         return (T[]) result;
+    }
+
+    private AddConfig[] scanBeansConfig() {
+        if (!testClass.isAnnotationPresent(ScanBeansForConfig.class)) return new AddConfig[0];
+        List<AddConfig> result = new ArrayList<>();
+        for (AddBean addBean : classLevelBeans) {
+            Class<?> beanClazz = addBean.value();
+            result.addAll(List.of(getAnnotations(beanClazz, AddConfig.class)));
+        }
+        return result.toArray(new AddConfig[0]);
+    }
+
+    private void beforeContainer() {
+        Class<?> clazz = testClass;
+        try {
+            while (clazz != Object.class) {
+                for (Method m : clazz.getDeclaredMethods()) {
+                    if (Objects.isNull(m.getAnnotation(BeforeContainer.class))) continue;
+                    if (!Modifier.isStatic(m.getModifiers())) {
+                        throw new RuntimeException("Method annotated with @BeforeContainer has to be static");
+                    }
+                    m.setAccessible(true);
+                    m.invoke(null);
+                }
+                clazz = clazz.getSuperclass();
+            }
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException("Cannot invoke beforeContainer method", e);
+        }
     }
 
     @Override

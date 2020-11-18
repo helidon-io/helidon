@@ -36,6 +36,8 @@ import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -66,6 +68,26 @@ public class MqttConnector implements IncomingConnectorFactory, OutgoingConnecto
         try {
             IMqttClient client = new MqttClient(server, clientId);
             BufferedEmittingPublisher<Message<MqttMessage>> emitter = BufferedEmittingPublisher.create();
+            client.setCallback(new MqttCallback() {
+                @Override
+                public void connectionLost(final Throwable throwable) {
+                    try {
+                        client.connect();
+                    } catch (MqttException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void messageArrived(final String s, final MqttMessage mqttMessage) throws Exception {
+
+                }
+
+                @Override
+                public void deliveryComplete(final IMqttDeliveryToken iMqttDeliveryToken) {
+
+                }
+            });
             client.connect();
             client.subscribe(topic, (s, mqttMessage) -> emitter.emit(Message.of(mqttMessage)));
             return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(emitter));
@@ -96,8 +118,12 @@ public class MqttConnector implements IncomingConnectorFactory, OutgoingConnecto
 
     void publish(IMqttClient client, String topic, MqttMessage msg) {
         try {
+            if (!client.isConnected()) {
+                client.connect();
+            }
             client.publish(topic, msg);
         } catch (MqttException e) {
+            e.printStackTrace();
             throw new IllegalStateException(e);
         }
     }
