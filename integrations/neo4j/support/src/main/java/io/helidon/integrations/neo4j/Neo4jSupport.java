@@ -64,7 +64,6 @@ public class Neo4jSupport implements Service {
     public final File certFile;
     public final boolean hostnameVerificationEnabled;
     public boolean disabled;
-    public org.neo4j.driver.Config.TrustStrategy internalRepresentation;
 
     private Neo4jSupport(Builder builder) {
         this.username = builder.username;
@@ -158,6 +157,7 @@ public class Neo4jSupport implements Service {
     private static boolean checkForMetrics() {
         try {
             Class.forName("io.helidon.metrics.RegistryFactory");
+            Class.forName("io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport");
             return true;
         } catch (ClassNotFoundException e) {
             return false;

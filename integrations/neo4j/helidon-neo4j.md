@@ -7,10 +7,10 @@ Neo4j is a de facto standard for graph databases worldwide. Supporting it out of
 
 ## from Helidon side
 
-For Helidon MP there are three projects:
-* cdi - an extension for driver initialization;
-* health – health check
-* metrics – metrics exposition  
+For Helidon MP and SE there are three projects:
+* Support: Contains SE integration with the main idea to expose a configured driver. There is also the CDI extension that delegates all the initialization and configuration to SE support.
+* Health: health checks for the Neo4j based on the driver. Provided as a separate module. Just include the dependency, and it should work.  
+* Metrics: metrics exposition. Provides a wrapper over Neo4j mectrics and exposes them for SE. They are available as MP Metrics as well. Provided as a separate module. Just include the dependency, and it should work.  
 
 At this point there is no need to create or use any kind of Object Mapping. Exposing the driver, providing health checks 
 and metrics should be considered as enough. 
