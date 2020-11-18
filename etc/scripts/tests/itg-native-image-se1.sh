@@ -57,5 +57,5 @@ echo '** Building and Testing SE native image'
 echo '*******************************'
 cd "${WS_DIR}"/tests/integration/native-image/se-1
 
-mvn ${MAVEN_ARGS} clean package verify \
+mvn ${MAVEN_ARGS} clean verify \
     -e -Pnative-image
