@@ -15,16 +15,6 @@
  */
 
 /**
- * Helidon Slf4j MDC module.
+ * Slf4j example with Mapped diagnostics context (MDC) in Helidon.
  */
-module io.helidon.logging.slf4j {
-    requires io.helidon.common.context;
-    requires io.helidon.logging.common;
-
-    requires org.slf4j;
-
-    exports io.helidon.logging.slf4j;
-
-    provides io.helidon.common.context.spi.DataPropagationProvider with io.helidon.logging.slf4j.Slf4jMdcPropagator;
-    provides io.helidon.logging.common.spi.MdcProvider with io.helidon.logging.slf4j.Slf4jMdcProvider;
-}
+package io.helidon.examples.logging.slf4j;
