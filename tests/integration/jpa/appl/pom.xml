@@ -34,8 +34,7 @@ limitations under the License.
     <properties>
         <mainClass>io.helidon.microprofile.cdi.Main</mainClass>
         <mainClassH2>org.h2.tools.Server</mainClassH2>
-        <h2.db.password>p4ssw0rd</h2.db.password>
-        <h2.db.port>9092</h2.db.port>
+        <version.plugin.docker-maven-plugin>0.34.1</version.plugin.docker-maven-plugin>
     </properties>
 
     <dependencies>
@@ -143,6 +142,15 @@ limitations under the License.
                 <filtering>true</filtering>
             </resource>
         </resources>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>${version.plugin.docker-maven-plugin}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
