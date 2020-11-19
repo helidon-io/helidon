@@ -34,6 +34,9 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.neo4j.driver.Driver;
 
 /**
+ * A CDI Extension for Neo4j support. To be used in MP environment. Delegates all of it activities to
+ * {@link io.helidon.integrations.neo4j.Neo4jSupport} for initialization and configuration.
+ *
  * Created by Dmitry Alexandrov on 12.11.20.
  */
 public class Neo4jCdiExtension implements Extension {

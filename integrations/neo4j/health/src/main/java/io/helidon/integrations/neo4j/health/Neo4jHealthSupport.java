@@ -17,33 +17,33 @@
 
 package io.helidon.integrations.neo4j.health;
 
-import java.util.Optional;
-
 import io.helidon.health.HealthSupport;
+import io.helidon.integrations.neo4j.Neo4jHelper;
 import io.helidon.webserver.Routing;
 
 import org.neo4j.driver.Driver;
 
+
 /**
+ * Health support module for Neo4j.
+ *
+ * Implements {@link io.helidon.integrations.neo4j.Neo4jHelper}
+ *
  * Created by Dmitry Alexandrov on 18.11.20.
  */
-public class Neo4jHealthSupport {
+public class Neo4jHealthSupport implements Neo4jHelper {
 
-    private Optional<Driver> driver = Optional.empty();
+    @Override
+    public void init(Driver driver) {
 
-    public void initNeo4jHealth(Optional<Driver> driver) {
-        this.driver = driver;
+        //create health for neo4j
+        HealthSupport health = HealthSupport.builder()
+                .addLiveness(Neo4jHealthCheck.create(driver))
+                .build();
 
-        if (driver.isPresent()) {
-            //create health for neo4j
-            HealthSupport health = HealthSupport.builder()
-                    .addLiveness(Neo4jHealthCheck.create(driver.get()))
-                    .build();
-
-            //register
-            Routing.builder()
-                    .register(health)
-                    .build();
-        }
+        //register
+        Routing.builder()
+                .register(health)
+                .build();
     }
 }

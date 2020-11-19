@@ -32,6 +32,7 @@ module io.helidon.integrations.neo4j.metrics {
     requires io.helidon.microprofile.server;
     requires microprofile.metrics.api;
     requires io.helidon.metrics;
+    requires io.helidon.integrations.neo4j.cdi;
 
     exports io.helidon.integrations.neo4j.metrics;
 

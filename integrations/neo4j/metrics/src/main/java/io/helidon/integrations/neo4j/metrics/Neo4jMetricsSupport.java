@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.integrations.neo4j.Neo4jHelper;
 import io.helidon.metrics.RegistryFactory;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -34,19 +35,27 @@ import org.neo4j.driver.Driver;
 
 import static java.util.Map.entry;
 
-public class Neo4jMetricsSupport {
+/**
+ * Neo4j helper class to support metrics. Provided as a separate package to be included as a dependency.
+ *
+ * Implements {@link io.helidon.integrations.neo4j.Neo4jHelper}
+ *
+ * Created by Dmitry Alexandrov on 18.11.20.
+ */
+public class Neo4jMetricsSupport implements Neo4jHelper {
 
     private static final String NEO4J_METRIC_NAME_PREFIX = "neo4j.";
 
-    private Optional<Driver> driver = Optional.empty();
+    private Driver driver;
 
     private Optional<ConnectionPoolMetrics> connectionPoolMetrics = Optional.empty();
 
-    public void initNeo4JMetrics(Optional<Driver> driver) {
+    @Override
+    public void init(Driver driver) {
 
         this.driver = driver;
 
-        // I am assuming for the moment that VENDOR is the correct registry to use.
+        // Assuming for the moment that VENDOR is the correct registry to use.
         MetricRegistry neo4JMetricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
 
         Map<String, Function<ConnectionPoolMetrics, Long>> counters = Map.ofEntries(
@@ -73,15 +82,11 @@ public class Neo4jMetricsSupport {
 
     private synchronized Optional<ConnectionPoolMetrics> getConnectionPoolMetrics() {
         if (!connectionPoolMetrics.isPresent()) {
-            // TODO - remove the driver.isPresent check once driver is set using config
-            if (driver.isPresent()) {
                 connectionPoolMetrics = driver
-                        .get()
                         .metrics()
                         .connectionPoolMetrics()
                         .stream()
                         .findFirst();
-            }
         }
         return connectionPoolMetrics;
     }

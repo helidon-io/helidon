@@ -20,15 +20,13 @@ package io.helidon.integrations.neo4j;
 import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 
 import io.helidon.config.Config;
-import io.helidon.integrations.neo4j.health.Neo4jHealthSupport;
-import io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
-
 
 import org.neo4j.driver.AuthToken;
 import org.neo4j.driver.AuthTokens;
@@ -39,14 +37,14 @@ import org.neo4j.driver.Logging;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
+ * Main entry point for Neo4j support for Helidon.
+ * Performs configuration and the prepared driver.
+ *
+ * Implements {@link io.helidon.webserver.Service}
+ *
  * Created by Dmitry Alexandrov on 12.11.20.
  */
 public class Neo4jSupport implements Service {
-
-    private static final boolean isMetricsPresent = checkForMetrics();
-    private static final boolean isHealthPresent = checkForHealth();
-
-    private Optional<Driver> driver = Optional.empty();
 
     //authentication
     public final String username;
@@ -66,6 +64,9 @@ public class Neo4jSupport implements Service {
     public final File certFile;
     public final boolean hostnameVerificationEnabled;
     public boolean disabled;
+    //helpers
+    private List<Neo4jHelper> helpers;
+    private Driver driver;
 
     private Neo4jSupport(Builder builder) {
         this.username = builder.username;
@@ -85,47 +86,13 @@ public class Neo4jSupport implements Service {
         this.certFile = builder.certFile;
         this.hostnameVerificationEnabled = builder.hostnameVerificationEnabled;
 
-        initDriver();
+        this.driver = initDriver();
 
-        //check if metrics support module is present, and initialize it
-        if (isMetricsPresent) {
-            new Neo4jMetricsSupport().initNeo4JMetrics(driver);
-        }
-
-        //check if health support module is present, and initialize it
-        if (isHealthPresent){
-            new Neo4jHealthSupport().initNeo4jHealth(driver);
-        }
-    }
-
-    /**
-     * The main entry point to the Neo4j Support
-     * @return
-     */
-    public Driver driver(){
-        return driver.get();
-    }
-
-    private void initDriver(){
-        AuthToken authToken = AuthTokens.none();
-        if (disabled) {
-            authToken = AuthTokens.basic(username, password);
-        }
-
-        org.neo4j.driver.Config.ConfigBuilder configBuilder = createBaseConfig();
-        configureSsl(configBuilder);
-        configurePoolSettings(configBuilder);
-
-         driver = Optional.ofNullable(GraphDatabase.driver(uri, authToken, configBuilder.build()));
+        //initialize helpers
+        this.helpers = new ArrayList<>(builder.helpers);
+        helpers.forEach(helper -> helper.init(driver));
 
     }
-
-    @Override
-    public void update(Routing.Rules rules) {
-        // If Neo4J support in Helidon adds no new endpoints,
-        // then we do not need to do anything here.
-    }
-
 
     public static Neo4jSupport create(Config config) {
         return builder().config(config).build();
@@ -135,7 +102,62 @@ public class Neo4jSupport implements Service {
         return new Builder();
     }
 
-    public org.neo4j.driver.Config.TrustStrategy toInternalRepresentation() {
+    /**
+     * Neo4j base config helper method
+     *
+     * @return
+     */
+    private static org.neo4j.driver.Config.ConfigBuilder createBaseConfig() {
+        org.neo4j.driver.Config.ConfigBuilder configBuilder = org.neo4j.driver.Config.builder();
+        Logging logging;
+        try {
+            logging = Logging.slf4j();
+        } catch (Exception e) {
+            logging = Logging.javaUtilLogging(Level.INFO);
+        }
+        configBuilder.withLogging(logging);
+        return configBuilder;
+    }
+
+    /**
+     * The main entry point to the Neo4j Support
+     * @return
+     */
+    public Driver driver() {
+        return driver;
+    }
+
+    /**
+     * Neo4j base driver construction method
+     *
+     * @return
+     */
+    private Driver initDriver() {
+        AuthToken authToken = AuthTokens.none();
+        if (disabled) {
+            authToken = AuthTokens.basic(username, password);
+        }
+
+        org.neo4j.driver.Config.ConfigBuilder configBuilder = createBaseConfig();
+        configureSsl(configBuilder);
+        configurePoolSettings(configBuilder);
+
+        return GraphDatabase.driver(uri, authToken, configBuilder.build());
+
+    }
+
+    /**
+     * Currently our service does not any endpoints
+     *
+     * @param rules a routing rules to update
+     */
+    @Override
+    public void update(Routing.Rules rules) {
+        // If Neo4J support in Helidon adds no new endpoints,
+        // then we do not need to do anything here.
+    }
+
+    private org.neo4j.driver.Config.TrustStrategy toInternalRepresentation() {
 
         org.neo4j.driver.Config.TrustStrategy internalRepresentation;
         Strategy nonNullStrategy = strategy == null ? Strategy.TRUST_SYSTEM_CA_SIGNED_CERTIFICATES : strategy;
@@ -163,39 +185,6 @@ public class Neo4jSupport implements Service {
             internalRepresentation.withoutHostnameVerification();
         }
         return internalRepresentation;
-    }
-
-
-    private static boolean checkForMetrics() {
-        try {
-            Class.forName("io.helidon.metrics.RegistryFactory");
-            Class.forName("io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
-
-    private static boolean checkForHealth() {
-        try {
-            Class.forName("io.helidon.health.HealthSupport");
-            Class.forName("io.helidon.integrations.neo4j.health.Neo4jHealthSupport");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
-
-    private static org.neo4j.driver.Config.ConfigBuilder createBaseConfig() {
-        org.neo4j.driver.Config.ConfigBuilder configBuilder = org.neo4j.driver.Config.builder();
-        Logging logging;
-        try {
-            logging = Logging.slf4j();
-        } catch (Exception e) {
-            logging = Logging.javaUtilLogging(Level.INFO);
-        }
-        configBuilder.withLogging(logging);
-        return configBuilder;
     }
 
     private void configureSsl(org.neo4j.driver.Config.ConfigBuilder configBuilder) {
@@ -247,6 +236,9 @@ public class Neo4jSupport implements Service {
         public Strategy strategy;
         public File certFile;
         public boolean hostnameVerificationEnabled;
+
+        //helpers
+        public List<Neo4jHelper> helpers = new ArrayList<Neo4jHelper>(2);
 
         private Builder() {
         }
@@ -349,6 +341,11 @@ public class Neo4jSupport implements Service {
 
         public Builder hostnameVerificationEnabled(boolean hostnameVerificationEnabled) {
             this.hostnameVerificationEnabled = hostnameVerificationEnabled;
+            return this;
+        }
+
+        public Builder helper(Neo4jHelper helper) {
+            helpers.add(helper);
             return this;
         }
     }

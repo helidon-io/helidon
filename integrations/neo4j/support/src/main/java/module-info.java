@@ -35,8 +35,6 @@ module io.helidon.integrations.neo4j.cdi {
     requires microprofile.config.api;
     requires io.helidon.config;
     requires io.helidon.config.mp;
-    requires io.helidon.integrations.neo4j.metrics;
-    requires io.helidon.integrations.neo4j.health;
 
     exports io.helidon.integrations.neo4j;
 
