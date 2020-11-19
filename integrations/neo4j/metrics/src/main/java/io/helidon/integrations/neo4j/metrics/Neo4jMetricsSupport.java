@@ -50,6 +50,14 @@ public class Neo4jMetricsSupport implements Neo4jHelper {
 
     private Optional<ConnectionPoolMetrics> connectionPoolMetrics = Optional.empty();
 
+    private Neo4jMetricsSupport() {
+        //private constructor
+    }
+
+    public static Neo4jMetricsSupport create() {
+        return new Neo4jMetricsSupport();
+    }
+
     @Override
     public void init(Driver driver) {
 
@@ -82,11 +90,11 @@ public class Neo4jMetricsSupport implements Neo4jHelper {
 
     private synchronized Optional<ConnectionPoolMetrics> getConnectionPoolMetrics() {
         if (!connectionPoolMetrics.isPresent()) {
-                connectionPoolMetrics = driver
-                        .metrics()
-                        .connectionPoolMetrics()
-                        .stream()
-                        .findFirst();
+            connectionPoolMetrics = driver
+                    .metrics()
+                    .connectionPoolMetrics()
+                    .stream()
+                    .findFirst();
         }
         return connectionPoolMetrics;
     }

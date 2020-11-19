@@ -23,7 +23,6 @@ import io.helidon.webserver.Routing;
 
 import org.neo4j.driver.Driver;
 
-
 /**
  * Health support module for Neo4j.
  *
@@ -32,6 +31,14 @@ import org.neo4j.driver.Driver;
  * Created by Dmitry Alexandrov on 18.11.20.
  */
 public class Neo4jHealthSupport implements Neo4jHelper {
+
+    private Neo4jHealthSupport() {
+        //private constructor
+    }
+
+    public static Neo4jHealthSupport create() {
+        return new Neo4jHealthSupport();
+    }
 
     @Override
     public void init(Driver driver) {
