@@ -121,10 +121,6 @@ public final class Main {
         builder.add(appenderComponentBuilder);
         builder.add(builder.newRootLogger(Level.INFO)
                             .add(builder.newAppenderRef("Stdout")));
-        Configurator.reconfigure(builder.build());
-
-        java.util.logging.LogManager logManager = java.util.logging.LogManager.getLogManager();
-        System.out.println("Log manager: " + logManager.getClass().getName());
-        logManager.reset();
+        Configurator.initialize(builder.build());
     }
 }
