@@ -43,15 +43,10 @@ A typical health check combines the statuses of all the dependencies that
 
 === Prerequisites
 
-Declare the following dependencies in your project:
+Declare the following dependency in your project:
 
 [source,xml]
 ----
-<dependency>
-    <groupId>io.helidon.media</groupId>
-    <artifactId>helidon-media-jsonp</artifactId>
-</dependency>
-
 <dependency>
     <groupId>io.helidon.health</groupId>
     <artifactId>helidon-health</artifactId>
@@ -138,22 +133,6 @@ HealthSupport health = HealthSupport.builder()
     .addLiveness(hc)
     .build();
 ----
-
-NOTE: Health check requires the `JSON-P` support to be enabled. See the example
- below.
-
-=== Example
-
-[source,java]
-.Enable JSON-P support on the server
-----
-WebServer server = WebServer.builder(createRouting(config)) // <.>
-    .addMediaSupport(JsonpSupport.create()) // <.>
-    .build();
-----
-<.> Your routing, as shown below.
-<.> Enable support for `JSON-P`.
-
 
 [source,java]
 .Register a custom health check:
