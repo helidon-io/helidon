@@ -415,7 +415,7 @@ public class GreetingProvider {
     }
 }
 ----
-<1> The `getMessage` method will be traced since it is externally invoked by `GreetResource`.
+<1> The `getMessage` method will be traced since it is externally invoked by `Neo4jResource`.
 <2> The `getMessage2` method will not be traced, even with the @Traced annotation, since it is called internally by `getMessage`.
 
 [source,bash]
@@ -521,7 +521,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
-import org.glassfish.jersey.server.Uri;
+import io.helidon.examples.integrations.neo4j.mp.Neo4jDataProvider;import org.glassfish.jersey.server.Uri;
 
 @Path("/greet")
 @RequestScoped
@@ -531,10 +531,10 @@ public class GreetResource {
   private WebTarget target; // <1>
 
   private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-  private final GreetingProvider greetingProvider;
+  private final Neo4jDataProvider neo4jDataProvider;
 
   @Inject
-  public GreetResource(GreetingProvider greetingConfig) {
+  public GreetResource(Neo4jDataProvider greetingConfig) {
     this.greetingProvider = greetingConfig;
   }
 

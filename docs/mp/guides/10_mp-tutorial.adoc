@@ -160,7 +160,7 @@ the startup sequence. You can set the `mainClass` property to
 `io.helidon.microprofile.cdi.Main` and it will use Helidon's default
 main class.
 
-The `GreetResource` is defined in the `GreetResource.java` class as shown
+The `Neo4jResource` is defined in the `GreetResource.java` class as shown
 below: 
 
 [source,java]
@@ -397,7 +397,7 @@ public class GreetingProvider {
  This method demonstrates how to read configuration information into
  the application.  A getter and setter are also included in this class.
 
-The `GreetResource` must be updated to use this value instead of the 
+The `Neo4jResource` must be updated to use this value instead of the
  hard coded response.  Make the following updates to that class:
 
 [source,java]
@@ -445,12 +445,12 @@ public class GreetResource {
 }
 ---- 
 
-<1> This updated class adds a `GreetingProvider` and uses constructor injection
+<1> This updated class adds a `Neo4jDataProvider` and uses constructor injection
  to get the value from the configuration file.  
 <2> The logic to create the 
  response message is refactored into a `createResponse` method and the 
  `getDefaultMessage()` method is updated to use this new method.
-<3> In `createResponse()` the message is obtained from the `GreetingProvider`
+<3> In `createResponse()` the message is obtained from the `Neo4jDataProvider`
  which in turn got it from the configuration files. 
 
 Rebuild and run the application. Notice that it now uses the greeting
@@ -601,7 +601,7 @@ import javax.ws.rs.core.Response;
  It also defines a path of "/greeting".  Notice that the method
  argument is a `JsonObject`. Inside the method body there is code
  to check for the expected JSON, extract the value and update the
- message in the `GreetingProvider`.
+ message in the `Neo4jDataProvider`.
 
 Rebuild and run the application.  Test the new services using curl
  commands similar to those shown below:
@@ -875,7 +875,7 @@ public class GreetHealthcheck implements HealthCheck {
  Helidon that this class provides a custom health check.  You can 
  learn more about the available annotations in the https://github.com/eclipse/microprofile-health/blob/master/spec/src/main/asciidoc/protocol-wireformat.adoc[MicroProfile Health Protocol and Wireformat] document.
 <2> This class also has the `ApplicationScoped` annotation, as seen previously.
-<3> The `GreetingProvider` is injected using Context and Dependency
+<3> The `Neo4jDataProvider` is injected using Context and Dependency
  Injection.  This example will use the greeting to determine whether
  the application is healthy, this is a contrived example for demonstration
  purposes.

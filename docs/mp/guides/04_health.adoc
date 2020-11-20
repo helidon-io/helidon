@@ -131,14 +131,14 @@ using CDI.  The following example shows how to add a custom liveness health-chec
 package io.helidon.examples.quickstart.mp;
 
 import javax.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.health.HealthCheck;
+import io.helidon.examples.integrations.neo4j.mp.Neo4jDataProvider;import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
 
 @Liveness // <1>
 @ApplicationScoped // <2>
 public class GreetLivenessCheck implements HealthCheck {
-  private GreetingProvider provider;
+  private Neo4jDataProvider provider;
 
   @Override
   public HealthCheckResponse call() {

@@ -551,7 +551,7 @@ at runtime.  As discussed previously, Helidon reads configuration from a config 
 to translate the source into an immutable in-memory tree representing the configuration’s structure and values.
 Your application uses the `Config` object to access the in-memory tree, retrieving config data.
 
-The generated project already accesses configuration data in the `GreetingProvider` class  as  follows:
+The generated project already accesses configuration data in the `Neo4jDataProvider` class  as  follows:
 
 [source,java]
 .View the following code from `GreetingProvider.java`:
@@ -574,9 +574,9 @@ public class GreetingProvider {
     }
 }
 ----
-<1> This class is application scoped so a single instance of `GreetingProvider` will be shared across the entire application.
+<1> This class is application scoped so a single instance of `Neo4jDataProvider` will be shared across the entire application.
 <2> Define a thread-safe reference that will refer to the message member variable.
-<3> The value of the configuration property `app.greeting` is injected into the `GreetingProvider`.
+<3> The value of the configuration property `app.greeting` is injected into the `Neo4jDataProvider`.
 constructor as a `String` parameter named `message`.
 
 
@@ -614,7 +614,7 @@ public class GreetingProvider {
     }
 }
 ----
-<1> Inject the value of `app.greeting` into the `GreetingProvider` object.
+<1> Inject the value of `app.greeting` into the `Neo4jDataProvider` object.
 <2> Define a class member variable to hold the greeting.
 
 [source,bash]
@@ -630,8 +630,8 @@ curl http://localhost:8080/greet
 === Injecting the Config object
 
 You can inject the `Config` object into the class and access it directly as shown below.
-This object is not initialized when the `GreetingProvider` constructor is called, so you need to provide
-a method (`onStartup`) that observes `@Initialized`.  This method will be called when `GreetingProvider` is ready for
+This object is not initialized when the `Neo4jDataProvider` constructor is called, so you need to provide
+a method (`onStartup`) that observes `@Initialized`.  This method will be called when `Neo4jDataProvider` is ready for
 use.
 
 [source,java]
@@ -664,7 +664,7 @@ public class GreetingProvider {
 }
 ----
 <1> Add three new imports.
-<2> Inject the `Config` object into the `GreetingProvider` object.
+<2> Inject the `Config` object into the `Neo4jDataProvider` object.
 <3> Get the `app.greeting` value from the `Config` object and set the member variable.
 
 [source,bash]

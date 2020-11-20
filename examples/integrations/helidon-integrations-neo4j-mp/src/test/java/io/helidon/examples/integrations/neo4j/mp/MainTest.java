@@ -1,17 +1,28 @@
-package io.helidon.examples.quickstart.se;
+/*
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import java.util.Collections;
-import java.util.concurrent.TimeUnit;
+package io.helidon.examples.integrations.neo4j.mp;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonBuilderFactory;
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.spi.CDI;
 import javax.json.JsonObject;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 
-import io.helidon.examples.integrations.neo4j.se.Main;
-import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.webclient.WebClient;
-import io.helidon.webserver.WebServer;
+import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -22,25 +33,13 @@ import org.neo4j.driver.GraphDatabase;
 
 import org.testcontainers.containers.Neo4jContainer;
 
-/**
- * @author Dmitry Aleksandrov
- */
-
-
-public class MainTest {
-
+class MainTest {
+    private static Server server;
     private static Neo4jContainer neo4jContainer;
-
-    private static WebServer webServer;
-    private static WebClient webClient;
-
 
     @BeforeAll
     public static void startTheServer() throws Exception {
-
-        neo4jContainer = new Neo4jContainer<>("neo4j:4.0")
-                .withAdminPassword("secret");
-        neo4jContainer.start();
+        server = Server.create().start();
 
         try (var driver = GraphDatabase.driver(neo4jContainer.getBoltUrl(), AuthTokens.basic("neo4j", "secret"));
                 var session = driver.session()
@@ -67,32 +66,12 @@ public class MainTest {
 
         // Don't know how to set this dynamically otherwise in Helidon
         System.setProperty("neo4j.uri", neo4jContainer.getBoltUrl());
-
-        webServer = Main.startServer();
-
-        long timeout = 2000; // 2 seconds should be enough to start the server
-        long now = System.currentTimeMillis();
-
-        while (!webServer.isRunning()) {
-            Thread.sleep(100);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
-            }
-        }
-
-        webClient = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port())
-                .addMediaSupport(JsonpSupport.create())
-                .build();
     }
 
     @AfterAll
-    public static void stopServer() throws Exception {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
-        }
+    static void destroyClass() {
+        CDI<Object> current = CDI.current();
+        ((SeContainer) current).close();
     }
 
     @AfterAll
@@ -101,36 +80,19 @@ public class MainTest {
     }
 
     @Test
-    void testMovies() throws Exception {
+    void testMovies() {
 
-        webClient.get()
-                .path("api/movies")
-                .request(JsonArray.class)
-                .thenAccept(result -> Assertions.assertEquals("The Matrix", result.getJsonObject(0).getString("title")))
-                .toCompletableFuture()
-                .get();
+        Client client = ClientBuilder.newClient();
 
-    }
-
-    @Test
-    public void testHealth() throws Exception {
-
-        webClient.get()
-                .path("/health")
+        JsonObject jsonObject = client
+                .target(getConnectionString("/movies"))
                 .request()
-                .thenAccept(response -> Assertions.assertEquals(200, response.status().code()))
-                .toCompletableFuture()
-                .get();
+                .get(JsonObject.class);
+        Assertions.assertEquals("The Matrix",jsonObject.getString("title"));
+
     }
 
-    @Test
-    public void testMetrics() throws Exception {
-        webClient.get()
-                .path("/metrics")
-                .request()
-                .thenAccept(response -> Assertions.assertEquals(200, response.status().code()))
-                .toCompletableFuture()
-                .get();
+    private String getConnectionString(String path) {
+        return "http://localhost:" + server.port() + path;
     }
-
 }
