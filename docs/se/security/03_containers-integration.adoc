@@ -163,7 +163,6 @@ The provider must have outbound security configured for identity to be propagate
 [source,java]
 .Call remote target with outbound security
 ----
-// I expect you have injected the ClientSecurityFeature as shown above
 Client client = ClientBuilder.newClient();
 
 try {
@@ -171,7 +170,7 @@ try {
     String response = client.target("http://www.google.com")
         .request()
         // configure the security context for this request (as client and targets may be re-used)
-        .property(ClientSecurityFeature.PROPERTY_CONTEXT, securityContext)
+        .property(ClientSecurity.PROPERTY_CONTEXT, securityContext)
         .get(String.class);
 } finally {
     client.close();

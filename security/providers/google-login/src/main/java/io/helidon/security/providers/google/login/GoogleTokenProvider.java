@@ -530,7 +530,8 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
             config.get("proxy-port").asInt().ifPresent(this::proxyPort);
             config.get("realm").asString().ifPresent(this::realm);
             config.get("token").as(TokenHandler::create).ifPresent(this::tokenProvider);
-            config.get("outbound").as(OutboundConfig::create).ifPresent(this::outboundConfig);
+            // OutboundConfig.create() expects provider configuration, not outbound
+            config.get("outbound").ifExists(outbound -> outboundConfig(OutboundConfig.create(config)));
 
             return this;
         }
