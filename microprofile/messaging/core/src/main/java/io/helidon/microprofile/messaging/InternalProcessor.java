@@ -133,11 +133,11 @@ class InternalProcessor implements Processor<Object, Object> {
 
     private Object postProcess(final Object incomingValue, final Object outgoingValue) {
         Message<?> wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoingValue, Message.class);
-        method.afterInvoke(incomingValue, wrappedOutgoing);
         if (method.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)) {
             Message<?> wrappedIncoming = (Message<?>) MessageUtils.unwrap(incomingValue, Message.class);
             wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoingValue, Message.class, wrappedIncoming::ack);
         }
+        method.afterInvoke(incomingValue, wrappedOutgoing);
         return wrappedOutgoing;
     }
 

@@ -36,12 +36,15 @@ public class BasicHookBean {
 
     @Incoming("channel1")
     @Outgoing("channel2")
+    @LRA(LRA.Type.NEW)
     public String process(String incoming) {
+        System.out.println("processing > "+incoming);
         return incoming.toUpperCase();
     }
 
     @Incoming("channel2")
+    @LRA(LRA.Type.REQUIRED)
     public void consume(String incoming) {
-        System.out.println(">>>" + incoming);
+        System.out.println("consuming  > "+incoming);
     }
 }

@@ -17,10 +17,6 @@
 
 package io.helidon.microprofile.messaging;
 
-import org.eclipse.microprofile.reactive.messaging.Message;
-import org.eclipse.microprofile.reactive.messaging.spi.Connector;
-import org.junit.jupiter.api.Test;
-
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.Priority;
@@ -28,17 +24,20 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.inject.Inject;
 
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.messaging.hook.BasicHookBean;
+import io.helidon.microprofile.messaging.hook.LRA;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
+
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.junit.jupiter.api.Test;
 
 @HelidonTest
 @DisableDiscovery
@@ -55,19 +54,26 @@ public class HookTest {
     private void makeConnections(@Observes @Priority(PLATFORM_AFTER + 80) @Initialized(ApplicationScoped.class) Object event,
                                  BeanManager beanManager) {
         System.out.println("registering");
-        messagingCdiExtension.registerMessagingMethodInvocationHook((method, message) -> {
-            MessageContext.lookup(message).put("txId", idSeq.incrementAndGet());
-            Long txId = (Long) MessageContext.lookup(message).get("txId");
-            System.out.println("TxId:" + txId + " Invoking method " + method.getName());
-        }, (method, o) -> {
-            System.out.println("output "+o);
-            Long txId = (Long) MessageContext.lookup((Message<?>) o).get("txId");
-            System.out.println("TxId:" + txId + " Invoked method " + method.getName());
-        });
+        messagingCdiExtension.registerMessagingMethodInvocationHook(
+                (method, message) -> {
+                    //BEFORE INVOKE
+                    LRA lra = method.getMethod().getAnnotation(LRA.class);
+                    if (lra != null && lra.value() == LRA.Type.NEW) {
+                        MessageContext.lookup(message).put("txId", idSeq.incrementAndGet());
+                    }
+
+                    var txId = (Long) MessageContext.lookup(message).get("txId");
+                    System.out.println("TxId:" + txId + " START " + method.getName());
+
+                }, (method, o) -> {
+                    //AFTER INVOKE
+                    var txId = (Long) MessageContext.lookup((Message<?>) o).get("txId");
+                    System.out.println("TxId:" + txId + "   END " + method.getName());
+                });
     }
 
     @Test
-    void name() {
+    void run() {
 
     }
 }
