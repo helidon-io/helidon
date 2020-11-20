@@ -756,6 +756,23 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- Long Running Actions -->
+            <dependency>
+                <groupId>io.helidon.microprofile.lra</groupId>
+                <artifactId>helidon-microprofile-lra-client</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.lra</groupId>
+                <artifactId>helidon-microprofile-lra-client-spi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.lra</groupId>
+                <artifactId>helidon-microprofile-lra-client-narayana</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
             <!-- integrations -->
             <dependency>
                 <groupId>io.helidon.integrations.db</groupId>

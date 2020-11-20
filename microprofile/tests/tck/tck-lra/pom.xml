@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2017 Red Hat, Inc. and/or its affiliates.
+  ~
+  ~ Licensed under the Apache License version 2.0, available at http://www.apache.org/licenses/LICENSE-2.0
+  -->
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.microprofile.tests</groupId>
+        <artifactId>tck-project</artifactId>
+        <version>2.3.2-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>tck-lra</artifactId>
+    <name>Helidon Microprofile Tests TCK LRA</name>
+
+    <properties>
+        <tck.lra.server.host>localhost</tck.lra.server.host>
+        <tck.lra.server.port>8080</tck.lra.server.port>
+        <tck.lra.coordinator.url>http://localhost:8070/lra-coordinator</tck.lra.coordinator.url>
+    </properties>
+    
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.microprofile.tests</groupId>
+            <artifactId>helidon-arquillian</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.lra</groupId>
+            <artifactId>helidon-microprofile-lra-client</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.lra</groupId>
+            <artifactId>helidon-microprofile-lra-client-narayana</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.lra</groupId>
+            <artifactId>microprofile-lra-tck</artifactId>
+            <version>1.0-RC3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-ri</artifactId>
+            <version>3.0.0</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.shrinkwrap</groupId>
+            <artifactId>shrinkwrap-api</artifactId>
+            <version>1.2.6</version>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>mock-coordinator</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>io.helidon.microprofile.lra</groupId>
+                    <artifactId>helidon-mock-lra-coordinator</artifactId>
+                    <version>${project.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <inherited>false</inherited>
+                <configuration>
+                    <dependenciesToScan>
+                        <dependency>org.eclipse.microprofile.lra:microprofile-lra-tck</dependency>
+                    </dependenciesToScan>
+                    <systemPropertyVariables>
+                        <server.host>${tck.lra.server.host}</server.host>
+                        <server.port>${tck.lra.server.port}</server.port>
+                        <lra.coordinator.url>${tck.lra.coordinator.url}</lra.coordinator.url>
+                    </systemPropertyVariables>
+
+                    <includes>
+                        <include>**/*Test*.java</include>
+                    </includes>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-junit4</artifactId>
+                        <version>${version.plugin.surefire}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+</project>

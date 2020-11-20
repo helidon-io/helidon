@@ -19,6 +19,7 @@ package io.helidon.microprofile.arquillian;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -87,6 +88,16 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     // runnables that must be executed on stop
     private static final ConcurrentLinkedQueue<Runnable> STOP_RUNNABLES = new ConcurrentLinkedQueue<>();
 
+    public List<Archive<?>> getAdditionalArchives() {
+        return additionalArchives;
+    }
+
+    public HelidonContainerConfiguration getContainerConfig() {
+        return containerConfig;
+    }
+
+    private final List<Archive<?>> additionalArchives = new ArrayList<>();
+
     /**
      * The configuration for this container.
      */
@@ -147,6 +158,10 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
             copyArchiveToDeployDir(archive, context.deployDir);
 
+            for (Archive<?> additionalArchive : additionalArchives) {
+                copyArchiveToDeployDir(additionalArchive, context.deployDir);
+            }
+
             List<Path> classPath = new ArrayList<>();
 
             Path rootDir = context.deployDir.resolve("");
@@ -166,6 +181,10 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         } catch (IOException e) {
             LOGGER.log(Level.INFO, "Failed to start container", e);
             throw new DeploymentException("Failed to copy the archive assets into the deployment directory", e);
+        } catch (InvocationTargetException e) {
+            throw lookForSupressedDeploymentException(e.getTargetException())
+                    .map(d -> new org.jboss.arquillian.container.spi.client.container.DeploymentException("Oj!", d))
+                    .orElseThrow(() -> new DefinitionException(e));
         } catch (ReflectiveOperationException e) {
             LOGGER.log(Level.INFO, "Failed to start container", e);
             throw new DefinitionException(e);        // validation exceptions
@@ -176,6 +195,29 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         //        pm.addContext(new HTTPContext("Helidon", "localhost", containerConfig.getPort()));
         //        return pm;
         return new ProtocolMetaData();
+    }
+
+    static Optional<Exception> lookForSupressedDeploymentException(Throwable t) {
+        if (t == null) {
+            return Optional.empty();
+        }
+        if (javax.enterprise.inject.spi.DeploymentException.class.isAssignableFrom(t.getClass())) {
+            return Optional.of((javax.enterprise.inject.spi.DeploymentException) t);
+        }
+        if (IllegalStateException.class.isAssignableFrom(t.getClass())) {
+            return Optional.of((IllegalStateException) t);
+        }
+        var deploymentException = lookForSupressedDeploymentException(t.getCause());
+        for (Throwable suppressed : t.getSuppressed()) {
+            var candicate = lookForSupressedDeploymentException(suppressed);
+            if (candicate.isPresent()) {
+                deploymentException = candicate;
+            }
+        }
+        if (deploymentException.isPresent()) {
+            return deploymentException;
+        }
+        return Optional.empty();
     }
 
     void startServer(RunContext context, Path[] classPath)
@@ -201,9 +243,9 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         }
 
         context.classLoader = new HelidonContainerClassloader(parent,
-                                                              urlClassloader,
-                                                              excludedLibrariesPattern,
-                                                              containerConfig.getUserParentClassloader());
+                urlClassloader,
+                excludedLibrariesPattern,
+                containerConfig.getUserParentClassloader());
 
         context.oldClassLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(context.classLoader);
@@ -228,6 +270,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         Config config = ConfigProviderResolver.instance()
                 .getBuilder()
                 .withSources(findMpConfigSources(classPath))
+                .withSources(MpConfigSources.create(containerConfig.getCustomMap()))
                 .addDiscoveredConverters()
                 // will read application.yaml
                 .addDiscoveredSources()

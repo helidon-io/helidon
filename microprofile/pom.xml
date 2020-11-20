@@ -55,5 +55,6 @@
         <module>cors</module>
         <module>graphql</module>
         <module>scheduling</module>
+        <module>lra</module>
     </modules>
 </project>

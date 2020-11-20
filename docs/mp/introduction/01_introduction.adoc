@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -136,6 +136,14 @@ Work with JPA in Helidon MP in all the ways that you’re familiar with.
 Defines a compact and self-contained way for securely transmitting information between parties as a JSON object.
 --
 
+
+//LRA
+[CARD]
+.Long Running Actions
+[icon=pending_actions,link=mp/lra/01_introduction.adoc]
+--
+Distributed transactions for microservices following SAGA pattern.
+--
 
 
 //Metrics

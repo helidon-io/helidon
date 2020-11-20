@@ -108,6 +108,7 @@
         <version.lib.microprofile-reactive-streams-operators-core>1.0.1</version.lib.microprofile-reactive-streams-operators-core>
         <version.lib.microprofile-rest-client>2.0</version.lib.microprofile-rest-client>
         <version.lib.microprofile-tracing>1.3.3</version.lib.microprofile-tracing>
+        <version.lib.microprofile-lra-api>1.0-RC3</version.lib.microprofile-lra-api>
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
@@ -712,6 +713,11 @@
                         <artifactId>cdi-api</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.lra</groupId>
+                <artifactId>microprofile-lra-api</artifactId>
+                <version>${version.lib.microprofile-lra-api}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss</groupId>
