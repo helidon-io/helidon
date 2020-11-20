@@ -52,6 +52,7 @@ import io.micronaut.context.env.PropertySource;
 import io.micronaut.core.annotation.AnnotationMetadata;
 import io.micronaut.core.io.service.ServiceDefinition;
 import io.micronaut.core.io.service.SoftServiceLoader;
+import io.micronaut.inject.AdvisedBeanType;
 import io.micronaut.inject.BeanDefinition;
 import io.micronaut.inject.BeanDefinitionReference;
 import io.micronaut.inject.ExecutableMethod;
@@ -309,19 +310,12 @@ public class MicronautCdiExtension implements Extension {
                 .map(ServiceDefinition::load)
                 .filter(BeanDefinitionReference::isPresent)
                 .map(ref -> {
-                    Class<?> beanType = ref.getBeanType();
+                    Class<?> beanType;
 
-                    String className = ref.getBeanType().getName();
-                    if (className.endsWith("$Intercepted")) {
-                        // either superclass is the one we want, or first implemented interface
-                        if (Object.class.equals(beanType.getSuperclass())) {
-                            Class<?>[] interfaces = beanType.getInterfaces();
-                            if (interfaces.length > 0) {
-                                beanType = interfaces[0];
-                            }
-                        } else {
-                            beanType = beanType.getSuperclass();
-                        }
+                    if (ref instanceof AdvisedBeanType) {
+                        beanType = ((AdvisedBeanType) ref).getInterceptedType();
+                    } else {
+                        beanType = ref.getBeanType();
                     }
 
                     return new MicronautBean(beanType, ref);
@@ -331,9 +325,9 @@ public class MicronautCdiExtension implements Extension {
         // using my own collection, so the field is final
         beanDefinitions.addAll(beans);
 
-        for (MicronautBean defRef : beanDefinitions) {
-            mBeanToDefRef.computeIfAbsent(defRef.beanType(), it -> new LinkedList<>())
-                    .add(defRef);
+        for (MicronautBean micronautBean : beanDefinitions) {
+            mBeanToDefRef.computeIfAbsent(micronautBean.beanType(), it -> new LinkedList<>())
+                    .add(micronautBean);
         }
 
         unprocessedBeans.putAll(mBeanToDefRef);
@@ -390,10 +384,7 @@ public class MicronautCdiExtension implements Extension {
     private BeanDefinitionReference<?> findMicronautBeanDefinition(List<MicronautBean> mBeans) {
         for (MicronautBean mBean : mBeans) {
             BeanDefinitionReference<?> ref = mBean.definitionRef();
-            //            if (ref instanceof AdvisedBeanType) {
-            //                continue;
-            //            }
-            if (ref.getBeanType().getName().endsWith("$Intercepted")) {
+            if (ref instanceof AdvisedBeanType) {
                 continue;
             }
             return ref;
