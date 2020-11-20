@@ -17,11 +17,8 @@
 
 package io.helidon.microprofile.messaging;
 
-import java.lang.reflect.InvocationTargetException;
-
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.DeploymentException;
 
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
@@ -44,32 +41,26 @@ class OutgoingMethod extends AbstractMessagingMethod {
     public void init(BeanManager beanManager, Config config) {
         super.init(beanManager, config);
         if (getType().isInvokeAtAssembly()) {
-            try {
-                switch (getType()) {
-                    case OUTGOING_PUBLISHER_MSG_2_VOID:
-                        publisher = (Publisher<?>) getMethod().invoke(getBeanInstance());
-                        break;
-                    case OUTGOING_PUBLISHER_PAYL_2_VOID:
-                        publisher = new WrappingPublisher((Publisher<?>) getMethod().invoke(getBeanInstance()));
-                        break;
-                    case OUTGOING_PUBLISHER_BUILDER_MSG_2_VOID:
-                        publisher = ((PublisherBuilder<?>) getMethod().invoke(getBeanInstance()))
-                                .buildRs();
-                        break;
-                    case OUTGOING_PUBLISHER_BUILDER_PAYL_2_VOID:
-                        publisher = new WrappingPublisher(((PublisherBuilder<?>) getMethod().invoke(getBeanInstance()))
-                                .buildRs());
-                        break;
-                    default:
-                        throw new UnsupportedOperationException(String
-                                .format("Not implemented signature %s", getType()));
-                }
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new DeploymentException(e);
+            switch (getType()) {
+                case OUTGOING_PUBLISHER_MSG_2_VOID:
+                    publisher = this.invoke();
+                    break;
+                case OUTGOING_PUBLISHER_PAYL_2_VOID:
+                    publisher = new WrappingPublisher(this.invoke());
+                    break;
+                case OUTGOING_PUBLISHER_BUILDER_MSG_2_VOID:
+                    publisher = ((PublisherBuilder<?>) this.invoke()).buildRs();
+                    break;
+                case OUTGOING_PUBLISHER_BUILDER_PAYL_2_VOID:
+                    publisher = new WrappingPublisher(((PublisherBuilder<?>) this.invoke()).buildRs());
+                    break;
+                default:
+                    throw new UnsupportedOperationException(String
+                            .format("Not implemented signature %s", getType()));
             }
         } else {
             // Invoke on each request publisher
-            publisher = new InternalPublisher(getMethod(), getBeanInstance());
+            publisher = new InternalPublisher(this);
         }
     }
 

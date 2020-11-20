@@ -46,12 +46,12 @@ import org.reactivestreams.Subscription;
 class InternalProcessor implements Processor<Object, Object> {
 
 
-    private final ProcessorMethod processorMethod;
+    private final ProcessorMethod method;
     private Subscriber<? super Object> subscriber;
     private final CompletableQueue<Object> completableQueue;
 
-    InternalProcessor(ProcessorMethod processorMethod) {
-        this.processorMethod = processorMethod;
+    InternalProcessor(ProcessorMethod method) {
+        this.method = method;
         this.completableQueue = CompletableQueue.create();
     }
 
@@ -77,11 +77,10 @@ class InternalProcessor implements Processor<Object, Object> {
     @Override
     public void onNext(final Object incomingValue) {
         try {
-            Method method = processorMethod.getMethod();
+            Method method = this.method.getMethod();
             //Params size is already validated by ProcessorMethod
             Class<?> paramType = method.getParameterTypes()[0];
-            Object processedValue = method.invoke(processorMethod.getBeanInstance(),
-                    preProcess(incomingValue, paramType));
+            Object processedValue = this.method.invoke(preProcess(incomingValue, paramType));
             //Method returns publisher, time for flattening its PROCESSOR_MSG_2_PUBLISHER or *_BUILDER
             if (processedValue instanceof Publisher || processedValue instanceof PublisherBuilder) {
                 //Flatten, we are sure its invoke on every request method now
@@ -114,12 +113,11 @@ class InternalProcessor implements Processor<Object, Object> {
     }
 
     private Object preProcess(final Object incomingValue, final Class<?> expectedParamType) {
-        if (processorMethod.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
-                && incomingValue instanceof Message) {
-            Message<?> incomingMessage = (Message<?>) incomingValue;
+        Message<?> incomingMessage = (Message<?>) incomingValue;
+        if (method.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)) {
             incomingMessage.ack();
         }
-
+        method.beforeInvoke(incomingMessage);
         return MessageUtils.unwrap(incomingValue, expectedParamType);
     }
 
@@ -135,7 +133,8 @@ class InternalProcessor implements Processor<Object, Object> {
 
     private Object postProcess(final Object incomingValue, final Object outgoingValue) {
         Message<?> wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoingValue, Message.class);
-        if (processorMethod.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)) {
+        method.afterInvoke(incomingValue, wrappedOutgoing);
+        if (method.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)) {
             Message<?> wrappedIncoming = (Message<?>) MessageUtils.unwrap(incomingValue, Message.class);
             wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoingValue, Message.class, wrappedIncoming::ack);
         }

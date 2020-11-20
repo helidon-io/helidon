@@ -26,7 +26,7 @@ import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 /**
  * Supported method signatures as described in the MicroProfile Reactive Messaging Specification.
  */
-enum MethodSignatureType {
+public enum MethodSignatureType {
     /**
      * Processor method signature type.
      * <br>

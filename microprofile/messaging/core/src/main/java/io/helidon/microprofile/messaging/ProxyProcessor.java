@@ -39,54 +39,64 @@ import org.reactivestreams.Subscription;
  */
 class ProxyProcessor implements Processor<Object, Object> {
 
-    private final ProcessorMethod processorMethod;
+    private final ProcessorMethod method;
     private final Publisher<Object> publisher;
     private Subscriber<? super Object> subscriber;
     private Processor<Object, Object> processor;
     private boolean subscribed = false;
 
     @SuppressWarnings("unchecked")
-    ProxyProcessor(ProcessorMethod processorMethod) {
-        this.processorMethod = processorMethod;
+    ProxyProcessor(ProcessorMethod method) {
+        this.method = method;
 
-        switch (processorMethod.getType()) {
+        switch (method.getType()) {
             case PROCESSOR_PUBLISHER_BUILDER_MSG_2_PUBLISHER_BUILDER_MSG:
             case PROCESSOR_PUBLISHER_BUILDER_PAYL_2_PUBLISHER_BUILDER_PAYL:
                 PublisherBuilder<Object> paramPublisherBuilder = ReactiveStreams.fromPublisher(this);
-                publisher = ((PublisherBuilder<Object>) processorMethod
-                        .invoke(paramPublisherBuilder)).buildRs();
+                publisher = ((PublisherBuilder<Object>) method.invoke(paramPublisherBuilder)).buildRs();
                 break;
             case PROCESSOR_PUBLISHER_MSG_2_PUBLISHER_MSG:
             case PROCESSOR_PUBLISHER_PAYL_2_PUBLISHER_PAYL:
-                publisher = processorMethod.invoke(this);
+                publisher = method.invoke(this);
                 break;
             case PROCESSOR_PROCESSOR_BUILDER_MSG_2_VOID:
-                processor = ((ProcessorBuilder<Object, Object>) processorMethod
-                        .invoke()).buildRs();
+                processor = ReactiveStreams.builder()
+                        .peek(method::beforeInvoke)
+                        .via((ProcessorBuilder<Object, Object>) method.invoke())
+                        .peek(m -> method.afterInvoke(null, m))
+                        .buildRs();
                 publisher = processor;
                 break;
             case PROCESSOR_PROCESSOR_BUILDER_PAYL_2_VOID:
                 processor = ReactiveStreams.builder()
+                        .peek(method::beforeInvoke)
                         .map(MessageUtils::unwrap)
-                        .via((ProcessorBuilder<Object, Object>) processorMethod.invoke())
+                        .via((ProcessorBuilder<Object, Object>) method.invoke())
                         .map(MessageUtils::wrap)
+                        .peek(m -> method.afterInvoke(null, m))
                         .buildRs();
                 publisher = processor;
                 break;
             case PROCESSOR_PROCESSOR_MSG_2_VOID:
-                processor = processorMethod.invoke();
+                processor = ReactiveStreams.builder()
+                        .peek(method::beforeInvoke)
+                        .via((Processor<Object, Object>) method.invoke())
+                        .peek(m -> method.afterInvoke(null, m))
+                        .buildRs();
                 publisher = processor;
                 break;
             case PROCESSOR_PROCESSOR_PAYL_2_VOID:
                 processor = ReactiveStreams.builder()
+                        .peek(method::beforeInvoke)
                         .map(MessageUtils::unwrap)
-                        .via((Processor<Object, Object>) processorMethod.invoke())
+                        .via((Processor<Object, Object>) method.invoke())
                         .map(MessageUtils::wrap)
+                        .peek(m -> method.afterInvoke(null, m))
                         .buildRs();
                 publisher = processor;
                 break;
             default:
-                throw new UnsupportedOperationException("Unknown signature type " + processorMethod.getType());
+                throw new UnsupportedOperationException("Unknown signature type " + method.getType());
         }
 
     }
@@ -114,7 +124,7 @@ class ProxyProcessor implements Processor<Object, Object> {
     @Override
     public void onNext(Object o) {
         preProcess(o);
-        subscriber.onNext(MessageUtils.unwrap(o, this.processorMethod.getMethod()));
+        subscriber.onNext(MessageUtils.unwrap(o, this.method.getMethod()));
     }
 
     @Override
@@ -128,7 +138,7 @@ class ProxyProcessor implements Processor<Object, Object> {
     }
 
     private void preProcess(Object incomingValue) {
-        if (processorMethod.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
+        if (method.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
                 && incomingValue instanceof Message) {
             Message<?> incomingMessage = (Message<?>) incomingValue;
             incomingMessage.ack();

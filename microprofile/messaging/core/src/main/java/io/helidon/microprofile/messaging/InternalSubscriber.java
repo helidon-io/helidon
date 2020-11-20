@@ -17,7 +17,6 @@
 
 package io.helidon.microprofile.messaging;
 
-import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,10 +33,10 @@ class InternalSubscriber implements Subscriber<Object> {
     private static final Logger LOGGER = Logger.getLogger(InternalSubscriber.class.getName());
 
     private Subscription subscription;
-    private final IncomingMethod incomingMethod;
+    private final IncomingMethod method;
 
     InternalSubscriber(IncomingMethod incomingMethod) {
-        this.incomingMethod = incomingMethod;
+        this.method = incomingMethod;
     }
 
     @Override
@@ -48,11 +47,10 @@ class InternalSubscriber implements Subscriber<Object> {
 
     @Override
     public void onNext(Object message) {
-        Method method = incomingMethod.getMethod();
         try {
-            Class<?> paramType = method.getParameterTypes()[0];
+            Class<?> paramType = method.getMethod().getParameterTypes()[0];
             Object preProcessedMessage = preProcess(message, paramType);
-            Object methodResult = method.invoke(incomingMethod.getBeanInstance(), preProcessedMessage);
+            Object methodResult = method.invoke(preProcessedMessage);
             postProcess(message, methodResult);
         } catch (Exception e) {
             // Notify publisher to stop sending
@@ -62,17 +60,18 @@ class InternalSubscriber implements Subscriber<Object> {
     }
 
     private Object preProcess(final Object incomingValue, final Class<?> expectedParamType) {
-        if (incomingMethod.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
-                && incomingValue instanceof Message) {
-            Message<?> incomingMessage = (Message<?>) incomingValue;
+        Message<?> incomingMessage = (Message<?>) incomingValue;
+        if (method.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)) {
             incomingMessage.ack();
         }
-
+        method.beforeInvoke(incomingMessage);
         return MessageUtils.unwrap(incomingValue, expectedParamType);
     }
 
     private void postProcess(final Object incomingValue, final Object outgoingValue) {
-        if (incomingMethod.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)
+        //use same value so context gets paired
+        method.afterInvoke(incomingValue, incomingValue);
+        if (method.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)
                 && incomingValue instanceof Message) {
 
             Message<?> incomingMessage = (Message<?>) incomingValue;

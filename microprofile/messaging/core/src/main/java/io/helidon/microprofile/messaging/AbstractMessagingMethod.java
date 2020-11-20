@@ -20,6 +20,7 @@ package io.helidon.microprofile.messaging;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
@@ -29,8 +30,9 @@ import io.helidon.common.Errors;
 import io.helidon.config.Config;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
+import org.eclipse.microprofile.reactive.messaging.Message;
 
-abstract class AbstractMessagingMethod {
+abstract class AbstractMessagingMethod implements MessagingMethod {
 
     private String incomingChannelName;
     private String outgoingChannelName;
@@ -41,6 +43,8 @@ abstract class AbstractMessagingMethod {
     private final Method method;
     private final Errors.Collector errors;
     private Acknowledgment.Strategy ackStrategy;
+    private BiConsumer<MessagingMethod, Object> afterInvokeCallback;
+    private BiConsumer<MessagingMethod, Message<?>> beforeInvokeCallback;
 
 
     AbstractMessagingMethod(Method method, Errors.Collector errors) {
@@ -75,7 +79,11 @@ abstract class AbstractMessagingMethod {
         this.beanInstance = ChannelRouter.lookup(bean, beanManager);
     }
 
-    Method getMethod() {
+    public String getName() {
+        return method.getName();
+    }
+
+    public Method getMethod() {
         return method;
     }
 
@@ -83,7 +91,7 @@ abstract class AbstractMessagingMethod {
         return errors;
     }
 
-    Object getBeanInstance() {
+    public Object getBeanInstance() {
         return beanInstance;
     }
 
@@ -95,11 +103,11 @@ abstract class AbstractMessagingMethod {
         return method.getDeclaringClass();
     }
 
-    String getIncomingChannelName() {
+    public String getIncomingChannelName() {
         return incomingChannelName;
     }
 
-    String getOutgoingChannelName() {
+    public String getOutgoingChannelName() {
         return outgoingChannelName;
     }
 
@@ -111,7 +119,7 @@ abstract class AbstractMessagingMethod {
         this.outgoingChannelName = outgoingChannelName;
     }
 
-    MethodSignatureType getType() {
+    public MethodSignatureType getType() {
         return type;
     }
 
@@ -119,7 +127,7 @@ abstract class AbstractMessagingMethod {
         this.type = type;
     }
 
-    Acknowledgment.Strategy getAckStrategy() {
+    public Acknowledgment.Strategy getAckStrategy() {
         return ackStrategy;
     }
 
@@ -137,5 +145,33 @@ abstract class AbstractMessagingMethod {
                 Optional.ofNullable(method.getAnnotation(Acknowledgment.class))
                         .map(Acknowledgment::value)
                         .orElse(type.getDefaultAckType());
+    }
+
+
+    void beforeInvoke(Object incoming) {
+        if (this.beforeInvokeCallback != null) {
+            beforeInvokeCallback.accept(this, (Message<?>) incoming);
+        }
+    }
+
+    void afterInvoke(Object incoming, Object outgoing) {
+        if (this.afterInvokeCallback != null) {
+            // if possible sneak message context to outgoing message
+            if (incoming != outgoing
+                    && incoming != null
+                    && outgoing instanceof Message
+            ) {
+                MessageContext.copy((Message<?>) incoming, (Message<?>) outgoing);
+            }
+            afterInvokeCallback.accept(this, outgoing);
+        }
+    }
+
+    void beforeInvokeCallback(BiConsumer<MessagingMethod, Message<?>> callback) {
+        this.beforeInvokeCallback = callback;
+    }
+
+    void afterInvokeCallback(BiConsumer<MessagingMethod, Object> callback) {
+        this.afterInvokeCallback = callback;
     }
 }

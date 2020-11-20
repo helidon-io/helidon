@@ -44,7 +44,9 @@ class ProxySubscriber<T> implements Subscriber<T> {
 
     @Override
     public void onNext(T o) {
+        method.beforeInvoke(o);
         originalSubscriber.onNext(preProcess(o));
+        method.afterInvoke(o, null);
         postProcess(o);
     }
 
@@ -59,12 +61,10 @@ class ProxySubscriber<T> implements Subscriber<T> {
     }
 
     private T preProcess(T incomingValue) {
-        if (method.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
-                && incomingValue instanceof Message) {
-            Message<?> incomingMessage = (Message<?>) incomingValue;
+        Message<?> incomingMessage = (Message<?>) incomingValue;
+        if (method.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)) {
             incomingMessage.ack();
         }
-
         return incomingValue;
     }
 

@@ -17,8 +17,6 @@
 
 package io.helidon.microprofile.messaging;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,15 +33,13 @@ import org.reactivestreams.Subscription;
 class InternalPublisher implements Publisher<Object>, Subscription {
 
     private Subscriber<? super Object> subscriber;
-    private final Method method;
-    private final Object beanInstance;
+    private final OutgoingMethod method;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final CompletableQueue<Object> completableQueue;
     private final RequestedCounter requestedCounter = new RequestedCounter();
 
-    InternalPublisher(Method method, Object beanInstance) {
+    InternalPublisher(OutgoingMethod method) {
         this.method = method;
-        this.beanInstance = beanInstance;
         completableQueue = CompletableQueue.create((o, throwable) -> {
             if (Objects.isNull(throwable)) {
                 subscriber.onNext(o.getValue());
@@ -68,18 +64,16 @@ class InternalPublisher implements Publisher<Object>, Subscription {
 
     @SuppressWarnings("unchecked")
     private void trySubmit() {
-        try {
-            while (!completableQueue.isBackPressureLimitReached() && requestedCounter.tryDecrement() && !closed.get()) {
-                Object result = method.invoke(beanInstance);
-                if (result instanceof CompletionStage) {
-                    CompletionStage<Object> completionStage = (CompletionStage<Object>) result;
-                    completableQueue.add(completionStage.toCompletableFuture());
-                } else {
-                    subscriber.onNext(result);
-                }
+        while (!completableQueue.isBackPressureLimitReached() && requestedCounter.tryDecrement() && !closed.get()) {
+            method.beforeInvoke(null);
+            Object result = method.invoke();
+            method.afterInvoke(null, result);
+            if (result instanceof CompletionStage) {
+                CompletionStage<Object> completionStage = (CompletionStage<Object>) result;
+                completableQueue.add(completionStage.toCompletableFuture());
+            } else {
+                subscriber.onNext(result);
             }
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            subscriber.onError(e);
         }
     }
 

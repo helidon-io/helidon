@@ -17,6 +17,9 @@
 package io.helidon.microprofile.messaging;
 
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -35,6 +38,7 @@ import javax.enterprise.inject.spi.WithAnnotations;
 import io.helidon.common.Errors;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 
@@ -70,6 +74,11 @@ public class MessagingCdiExtension implements Extension {
                 .entrySet()
                 .stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().isReady().get()));
+    }
+
+    public void registerMessagingMethodInvocationHook(BiConsumer<MessagingMethod, Message<?>> before,
+                                                      BiConsumer<MessagingMethod, Object> after){
+        channelRouter.addMethodHook(before, after);
     }
 
     private void registerChannelMethods(

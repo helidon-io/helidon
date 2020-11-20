@@ -19,9 +19,12 @@ package io.helidon.microprofile.messaging;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
+import java.util.function.BiConsumer;
 
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.AnnotatedMethod;
@@ -34,6 +37,7 @@ import io.helidon.config.Config;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
@@ -55,6 +59,8 @@ class ChannelRouter {
     private final List<Bean<?>> incomingConnectorFactoryList = new ArrayList<>();
     private final List<Bean<?>> outgoingConnectorFactoryList = new ArrayList<>();
     private BeanManager beanManager;
+    private final List<BiConsumer<MessagingMethod, Message<?>>> beforeHooks = new LinkedList<>();
+    private final List<BiConsumer<MessagingMethod, Object>> afterHooks = new LinkedList<>();
 
     /**
      * Register bean reference with at least one annotated messaging method method.
@@ -69,7 +75,7 @@ class ChannelRouter {
                 .forEach(m -> m.setDeclaringBean(bean));
     }
 
-    Map<String, UniversalChannel> getChannelMap(){
+    Map<String, UniversalChannel> getChannelMap() {
         return channelMap;
     }
 
@@ -155,6 +161,8 @@ class ChannelRouter {
     private void addIncomingMethod(AnnotatedMethod<?> m) {
         IncomingMethod incomingMethod = new IncomingMethod(m, errors);
         incomingMethod.validate();
+        incomingMethod.beforeInvokeCallback(this::beforeMethod);
+        incomingMethod.afterInvokeCallback(this::afterMethod);
 
         String channelName = incomingMethod.getIncomingChannelName();
 
@@ -167,6 +175,8 @@ class ChannelRouter {
     private void addOutgoingMethod(AnnotatedMethod<?> m) {
         OutgoingMethod outgoingMethod = new OutgoingMethod(m, errors);
         outgoingMethod.validate();
+        outgoingMethod.beforeInvokeCallback(this::beforeMethod);
+        outgoingMethod.afterInvokeCallback(this::afterMethod);
 
         String channelName = outgoingMethod.getOutgoingChannelName();
 
@@ -179,6 +189,8 @@ class ChannelRouter {
     private void addProcessorMethod(AnnotatedMethod<?> m) {
         ProcessorMethod channelMethod = new ProcessorMethod(m, errors);
         channelMethod.validate();
+        channelMethod.beforeInvokeCallback(this::beforeMethod);
+        channelMethod.afterInvokeCallback(this::afterMethod);
 
         String incomingChannelName = channelMethod.getIncomingChannelName();
         String outgoingChannelName = channelMethod.getOutgoingChannelName();
@@ -217,5 +229,18 @@ class ChannelRouter {
 
     Errors.Collector getErrors() {
         return errors;
+    }
+
+    private void beforeMethod(MessagingMethod method, Message<?> msg) {
+        this.beforeHooks.forEach(h -> h.accept(method, msg));
+    }
+
+    private void afterMethod(MessagingMethod method, Object after) {
+        this.afterHooks.forEach(h -> h.accept(method, after));
+    }
+
+    void addMethodHook(final BiConsumer<MessagingMethod, Message<?>> before, final BiConsumer<MessagingMethod, Object> after) {
+        this.beforeHooks.add(before);
+        this.afterHooks.add(after);
     }
 }
