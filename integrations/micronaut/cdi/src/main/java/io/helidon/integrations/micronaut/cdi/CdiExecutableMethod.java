@@ -208,7 +208,7 @@ final class CdiExecutableMethod extends AbstractExecutableMethod {
         for (var entry : declaredAnnotations.entrySet()) {
             if (stereotypeMap.containsKey(Repeatable.class)) {
                 // I need to ignore this (used only when there is just one repetition)
-                // this gets processed as part of teh Repeatable container
+                // this gets processed as part of the Repeatable container
                 continue;
             }
             String annotName = entry.getKey().getName();

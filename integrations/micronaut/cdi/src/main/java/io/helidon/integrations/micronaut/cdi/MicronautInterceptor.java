@@ -83,6 +83,7 @@ public class MicronautInterceptor {
         io.micronaut.aop.MethodInvocationContext context = MicronautMethodInvocationContext
                 .create(cdiCtx, executableMethod, interceptors, remaining);
 
+        // There is always at least one interceptor, as otherwise this class would never be registered with CDI
         MethodInterceptor<?, ?> next = remaining.next();
         LOGGER.finest(() -> "Micronaut interceptor: " + next.getClass().getName());
         return next.intercept(context);

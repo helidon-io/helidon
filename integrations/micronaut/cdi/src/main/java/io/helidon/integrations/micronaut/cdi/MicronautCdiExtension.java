@@ -64,14 +64,16 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 /**
  * Extension integrating CDI with Micronaut.
  * This extensions adds Micronaut beans to be injectable into CDI beans (limited to {@link javax.inject.Singleton}
- * scope), adn adds support for invoking Micronaut interceptors.
+ * scope), and adds support for invoking Micronaut interceptors.
  */
 public class MicronautCdiExtension implements Extension {
+    private static final String MICRONAUT_BEAN_PREFIX = "micronaut-";
+
     private final AtomicReference<ApplicationContext> micronautContext = new AtomicReference<>();
     private final Map<Method, ExecutableMethod<?, ?>> executableMethodCache = new HashMap<>();
     private final Map<Method, MethodInterceptorMetadata> methods = new HashMap<>();
     // all bean definitions as seen by Micronaut
-    private List<MicronautBean> beanDefinitions = new LinkedList<>();
+    private final List<MicronautBean> beanDefinitions = new LinkedList<>();
     // map of an actual class (user's source code) mapping to Micronaut bean definition
     private final Map<Class<?>, List<MicronautBean>> mBeanToDefRef = new HashMap<>();
     // Micronaut beans not yet processed by CDI
@@ -171,7 +173,7 @@ public class MicronautCdiExtension implements Extension {
     void afterBeanDiscovery(@Priority(PLATFORM_BEFORE) @Observes AfterBeanDiscovery event) {
         event.addBean()
                 .addType(ApplicationContext.class)
-                .id("micronaut-context")
+                .id(MICRONAUT_BEAN_PREFIX  + "context")
                 .scope(ApplicationScoped.class)
                 .produceWith(instance -> micronautContext.get());
 
@@ -193,7 +195,7 @@ public class MicronautCdiExtension implements Extension {
             // primary
             event.addBean()
                     .addType(beanType)
-                    .id("micronaut-" + beanType.getName())
+                    .id(MICRONAUT_BEAN_PREFIX + beanType.getName())
                     // inject using dependent - manage scope by micronaut context
                     .scope(Dependent.class)
                     .produceWith(instance -> micronautContext.get().getBean(beanType));
@@ -220,7 +222,7 @@ public class MicronautCdiExtension implements Extension {
 
                     BeanConfigurator<Object> newBean = event.addBean()
                             .addType(beanType)
-                            .id("micronaut-" + ref.getBeanDefinitionName())
+                            .id(MICRONAUT_BEAN_PREFIX + ref.getBeanDefinitionName())
                             .scope(Dependent.class)
                             .produceWith(instance -> micronautContext.get().getBean(beanType, composite));
 
@@ -337,6 +339,27 @@ public class MicronautCdiExtension implements Extension {
         unprocessedBeans.putAll(mBeanToDefRef);
     }
 
+    private void findMicronautInterceptors(Set<Class<?>> classInterceptors,
+                                           Map<Method, Set<Class<?>>> allMethodInterceptors,
+                                           BeanDefinitionReference<?> miBean) {
+        // find all annotations with Around stereotype and find its Type annotation to add interceptors
+        findInterceptors(classInterceptors, miBean.getAnnotationMetadata());
+
+        BeanDefinition<?> beanDef = miBean.load();
+
+        Collection<? extends ExecutableMethod<?, ?>> executableMethods = beanDef.getExecutableMethods();
+        for (ExecutableMethod<?, ?> executableMethod : executableMethods) {
+            Set<Class<?>> methodInterceptors = new HashSet<>();
+
+            findInterceptors(methodInterceptors, executableMethod);
+
+            this.executableMethodCache.putIfAbsent(executableMethod.getTargetMethod(), executableMethod);
+
+            allMethodInterceptors.computeIfAbsent(executableMethod.getTargetMethod(), it -> new HashSet<>())
+                    .addAll(methodInterceptors);
+        }
+    }
+
     /**
      * Find Micronaut interceptor annotations and locate interceptor classes to be used.
      *
@@ -349,44 +372,19 @@ public class MicronautCdiExtension implements Extension {
                 .filter(type -> type.getAnnotation(Around.class) != null)
                 .map(type -> type.getAnnotation(Type.class))
                 .map(Type::value)
-                .map(Set::of)
-                .flatMap(Set::stream)
+                .flatMap(Stream::of)
                 .forEach(interceptors::add);
     }
 
-    private void findMicronautInterceptors(Set<Class<?>> classInterceptors,
-                                           Map<Method, Set<Class<?>>> allMethodInterceptors,
-                                           BeanDefinitionReference<?> miBean) {
-        // find all annotations with Around stereotype and find its Type annotation to add interceptors
-        miBean.getAnnotationMetadata()
+    private void findInterceptors(Set<Class<?>> interceptors, AnnotationMetadata annotationMetadata) {
+        annotationMetadata
                 .getAnnotationTypesByStereotype(Around.class)
                 .stream()
                 .map(it -> it.getAnnotation(Type.class))
                 .filter(Objects::nonNull)
                 .map(Type::value)
                 .flatMap(Stream::of)
-                .forEach(classInterceptors::add);
-
-        BeanDefinition<?> beanDef = miBean.load();
-
-        Collection<? extends ExecutableMethod<?, ?>> executableMethods = beanDef.getExecutableMethods();
-        for (ExecutableMethod<?, ?> executableMethod : executableMethods) {
-            Set<Class<?>> methodInterceptors = new HashSet<>();
-
-            executableMethod
-                    .getAnnotationTypesByStereotype(Around.class)
-                    .stream()
-                    .map(it -> it.getAnnotation(Type.class))
-                    .filter(Objects::nonNull)
-                    .map(Type::value)
-                    .flatMap(Stream::of)
-                    .forEach(methodInterceptors::add);
-
-            this.executableMethodCache.putIfAbsent(executableMethod.getTargetMethod(), executableMethod);
-
-            allMethodInterceptors.computeIfAbsent(executableMethod.getTargetMethod(), it -> new HashSet<>())
-                    .addAll(methodInterceptors);
-        }
+                .forEach(interceptors::add);
     }
 
     private BeanDefinitionReference<?> findMicronautBeanDefinition(List<MicronautBean> mBeans) {

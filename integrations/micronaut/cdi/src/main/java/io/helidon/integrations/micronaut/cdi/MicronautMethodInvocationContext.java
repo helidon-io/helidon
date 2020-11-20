@@ -67,10 +67,10 @@ class MicronautMethodInvocationContext implements MethodInvocationContext {
         this.mutableArguments = LazyValue.create(() -> {
             Map<String, MutableArgumentValue<?>> args = new LinkedHashMap<>();
             Object[] parameters = cdiContext.getParameters();
-            Argument[] argumentNames = executableMethod.getArguments();
+            Argument[] arguments = executableMethod.getArguments();
 
-            for (int i = 0; i < argumentNames.length; i++) {
-                Argument argument = argumentNames[i];
+            for (int i = 0; i < arguments.length; i++) {
+                Argument argument = arguments[i];
                 Object parameterValue = parameters[i];
                 args.put(argument.getName(),
                          new MutableArgument<Object>(argument, parameterValue));
