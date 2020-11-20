@@ -20,8 +20,6 @@ package io.helidon.integrations.neo4j;
 import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 
 import io.helidon.config.Config;
@@ -129,7 +127,7 @@ public class Neo4jSupport implements Service {
      */
     private Driver initDriver() {
         AuthToken authToken = AuthTokens.none();
-        if (disabled) {
+        if (!disabled) {
             authToken = AuthTokens.basic(username, password);
         }
 
@@ -222,10 +220,10 @@ public class Neo4jSupport implements Service {
         //pool
         public boolean metricsEnabled;
         public boolean logLeakedSessions;
-        public int maxConnectionPoolSize;
-        public Duration idleTimeBeforeConnectionTest;
-        public Duration maxConnectionLifetime;
-        public Duration connectionAcquisitionTimeout;
+        public int maxConnectionPoolSize = 100;
+        public Duration idleTimeBeforeConnectionTest = Duration.ofMillis(-1);
+        public Duration maxConnectionLifetime = Duration.ofHours(1);
+        public Duration connectionAcquisitionTimeout = Duration.ofMinutes(1);
 
         //trust
         public Strategy strategy;
@@ -241,19 +239,19 @@ public class Neo4jSupport implements Service {
         }
 
         public Builder config(Config config) {
-            config.get("driver.authentication.username").asString().ifPresent(this::username);
-            config.get("driver.authentication.password").asString().ifPresent(this::password);
-            config.get("driver.uri").asString().ifPresent(this::uri);
-            config.get("driver.encrypted").asBoolean().ifPresent(this::encrypted);
-            config.get("driver.disabled").asBoolean().ifPresent(this::disabled);
+            config.get("authentication.username").asString().ifPresent(this::username);
+            config.get("authentication.password").asString().ifPresent(this::password);
+            config.get("uri").asString().ifPresent(this::uri);
+            config.get("encrypted").asBoolean().ifPresent(this::encrypted);
+            config.get("cddisabled").asBoolean().ifPresent(this::disabled);
 
             //pool
             config.get("pool.metricsEnabled").asBoolean().ifPresent(this::metricsEnabled);
             config.get("pool.logLeakedSessions").asBoolean().ifPresent(this::logLeakedSessions);
             config.get("pool.maxConnectionPoolSize").asInt().ifPresent(this::maxConnectionPoolSize);
-            config.get("pool.idleTimeBeforeConnectionTest").asLong().ifPresent(this::idleTimeBeforeConnectionTest);
-            config.get("pool.maxConnectionLifetime").asLong().ifPresent(this::maxConnectionLifetime);
-            config.get("pool.connectionAcquisitionTimeout").asLong().ifPresent(this::connectionAcquisitionTimeout);
+            config.get("pool.idleTimeBeforeConnectionTest").asString().ifPresent(this::idleTimeBeforeConnectionTest);
+            config.get("pool.maxConnectionLifetime").asString().ifPresent(this::maxConnectionLifetime);
+            config.get("pool.connectionAcquisitionTimeout").asString().ifPresent(this::connectionAcquisitionTimeout);
 
             //trust
             config.get("trustsettings.strategy").asString().ifPresent(this::strategy);
@@ -305,19 +303,18 @@ public class Neo4jSupport implements Service {
             return this;
         }
 
-        //TODO: is this ok???
-        public Builder idleTimeBeforeConnectionTest(long idleTimeBeforeConnectionTest) {
-            this.idleTimeBeforeConnectionTest = Duration.ofSeconds(maxConnectionPoolSize);
+        public Builder idleTimeBeforeConnectionTest(String idleTimeBeforeConnectionTest) {
+            this.idleTimeBeforeConnectionTest = Duration.parse(idleTimeBeforeConnectionTest);
             return this;
         }
 
-        public Builder maxConnectionLifetime(long maxConnectionLifetime) {
-            this.maxConnectionLifetime = Duration.ofSeconds(maxConnectionLifetime);
+        public Builder maxConnectionLifetime(String maxConnectionLifetime) {
+            this.maxConnectionLifetime = Duration.parse(maxConnectionLifetime);
             return this;
         }
 
-        public Builder connectionAcquisitionTimeout(long connectionAcquisitionTimeout) {
-            this.connectionAcquisitionTimeout = Duration.ofSeconds(connectionAcquisitionTimeout);
+        public Builder connectionAcquisitionTimeout(String connectionAcquisitionTimeout) {
+            this.connectionAcquisitionTimeout = Duration.parse(connectionAcquisitionTimeout);
             return this;
         }
 

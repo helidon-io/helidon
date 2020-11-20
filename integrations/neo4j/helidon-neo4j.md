@@ -13,7 +13,7 @@ For Helidon MP and SE there are three projects:
 * Metrics: metrics exposition. Provides a wrapper over Neo4j mectrics and exposes them for SE. They are available as MP Metrics as well. Provided as a separate module. 
 
 Usage:
-```Java
+```java
 Neo4JSupport neo4j = Neo4JSupport.builder()
         .config(config)
         .helper(Neo4JMetricsSupport.create()) //optional support for Neo4j Metrics

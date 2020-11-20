@@ -32,6 +32,7 @@
 
     <modules>
         <module>cdi</module>
+        <module>helidon-integrations-neo4j-se</module>
     </modules>
 
 </project>

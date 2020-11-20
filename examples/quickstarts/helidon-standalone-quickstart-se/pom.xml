@@ -27,7 +27,7 @@
 
     <properties>
         <helidon.version>2.1.1-SNAPSHOT</helidon.version>
-        <mainClass>io.helidon.examples.quickstart.se.Main</mainClass>
+        <mainClass>io.helidon.examples.integrations.neo4j.se.Main</mainClass>
 
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
