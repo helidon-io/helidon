@@ -18,11 +18,11 @@
 package io.helidon.integrations.neo4j.metrics;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import io.helidon.integrations.neo4j.Neo4jHelper;
 import io.helidon.metrics.RegistryFactory;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -38,11 +38,10 @@ import static java.util.Map.entry;
 /**
  * Neo4j helper class to support metrics. Provided as a separate package to be included as a dependency.
  *
- * Implements {@link io.helidon.integrations.neo4j.Neo4jHelper}
- *
- * Created by Dmitry Alexandrov on 18.11.20.
+ * @author Dmitry Aleksandrov
+ * @author Tim Quinn
  */
-public class Neo4jMetricsSupport implements Neo4jHelper {
+public class Neo4jMetricsSupport {
 
     private static final String NEO4J_METRIC_NAME_PREFIX = "neo4j.";
 
@@ -50,18 +49,34 @@ public class Neo4jMetricsSupport implements Neo4jHelper {
 
     private Optional<ConnectionPoolMetrics> connectionPoolMetrics = Optional.empty();
 
-    private Neo4jMetricsSupport() {
-        //private constructor
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public static Neo4jMetricsSupport create() {
-        return new Neo4jMetricsSupport();
+    private Neo4jMetricsSupport(Builder builder) {
+        driver = builder.driver;
+        init(driver);
     }
 
-    @Override
-    public void init(Driver driver) {
+    public static class Builder implements io.helidon.common.Builder<Neo4jMetricsSupport> {
 
-        this.driver = driver;
+        private Driver driver;
+
+        private Builder() {
+        }
+
+        public Neo4jMetricsSupport build() {
+            Objects.requireNonNull(driver, "Must set driver before building");
+            return new Neo4jMetricsSupport(this);
+        }
+
+        public Builder driver(Driver driver) {
+            this.driver = driver;
+            return this;
+        }
+    }
+
+    private void init(Driver driver) {
 
         // Assuming for the moment that VENDOR is the correct registry to use.
         MetricRegistry neo4JMetricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
@@ -116,7 +131,7 @@ public class Neo4jMetricsSupport implements Neo4jHelper {
                 .notReusable()
                 .build();
         Neo4JGaugeWrapper<Integer> wrapper =
-                new Neo4JGaugeWrapper(() -> getConnectionPoolMetrics().map(fn).orElse(0));
+                new Neo4JGaugeWrapper<Integer>(() -> getConnectionPoolMetrics().map(fn).orElse(0));
         metricRegistry.register(metadata, wrapper);
     }
 

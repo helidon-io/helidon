@@ -12,7 +12,7 @@
 
     <groupId>io.helidon.integrations.neo4j.health</groupId>
     <artifactId>helidon-integrations-neo4j-health</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <name>Helidon Neo4j Health Integrations</name>
 
     <dependencies>

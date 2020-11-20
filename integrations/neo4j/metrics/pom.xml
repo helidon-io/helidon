@@ -11,7 +11,7 @@
 
     <groupId>io.helidon.integrations.neo4j.metrics</groupId>
     <artifactId>helidon-integrations-neo4j-metrics</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <name>Helidon Neo4j Metrics Integrations</name>
 
     <dependencies>

@@ -36,7 +36,9 @@ import org.neo4j.driver.summary.ServerInfo;
  * Health support module for Neo4j. Follows the standard MicroProfile HealthCheck pattern.
  *
  * Implements {@link org.eclipse.microprofile.health.HealthCheck}
- * Created by Dmitry Alexandrov on 18.11.20.
+
+ * @author Dmitry Aleksandrov
+ * @author Tim Quinn
  */
 @Readiness
 @ApplicationScoped

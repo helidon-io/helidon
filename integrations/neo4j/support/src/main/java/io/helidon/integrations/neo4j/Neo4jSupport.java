@@ -42,7 +42,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *
  * Implements {@link io.helidon.webserver.Service}
  *
- * Created by Dmitry Alexandrov on 12.11.20.
+ * @author Dmitry Aleksandrov
+ * @author Tim Quinn
  */
 public class Neo4jSupport implements Service {
 
@@ -65,7 +66,6 @@ public class Neo4jSupport implements Service {
     public final boolean hostnameVerificationEnabled;
     public boolean disabled;
     //helpers
-    private List<Neo4jHelper> helpers;
     private Driver driver;
 
     private Neo4jSupport(Builder builder) {
@@ -87,11 +87,6 @@ public class Neo4jSupport implements Service {
         this.hostnameVerificationEnabled = builder.hostnameVerificationEnabled;
 
         this.driver = initDriver();
-
-        //initialize helpers
-        this.helpers = new ArrayList<>(builder.helpers);
-        helpers.forEach(helper -> helper.init(driver));
-
     }
 
     public static Neo4jSupport create(Config config) {
@@ -237,9 +232,6 @@ public class Neo4jSupport implements Service {
         public File certFile;
         public boolean hostnameVerificationEnabled;
 
-        //helpers
-        public List<Neo4jHelper> helpers = new ArrayList<Neo4jHelper>(2);
-
         private Builder() {
         }
 
@@ -341,11 +333,6 @@ public class Neo4jSupport implements Service {
 
         public Builder hostnameVerificationEnabled(boolean hostnameVerificationEnabled) {
             this.hostnameVerificationEnabled = hostnameVerificationEnabled;
-            return this;
-        }
-
-        public Builder helper(Neo4jHelper helper) {
-            helpers.add(helper);
             return this;
         }
     }
