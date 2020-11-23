@@ -25,14 +25,14 @@
         <artifactId>helidon-examples-project</artifactId>
         <version>2.1.1-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.examples.integrations</groupId>
-    <artifactId>helidon-examples-integrations-project</artifactId>
-    <name>Helidon Integrations Examples</name>
+    <groupId>io.helidon.examples.integrations.neo4j</groupId>
+    <artifactId>helidon-examples-integrations-neo4j-project</artifactId>
+    <name>Helidon Neo4j Integrations Examples</name>
     <packaging>pom</packaging>
 
     <modules>
-        <module>cdi</module>
-        <module>neo4j</module>
+        <module>helidon-integrations-neo4j-se</module>
+        <module>helidon-integrations-neo4j-mp</module>
     </modules>
 
 </project>

@@ -55,7 +55,8 @@ public class Neo4jMetricsSupport {
 
     private Neo4jMetricsSupport(Builder builder) {
         driver = builder.driver;
-        init(driver);
+        //FIXME: should be moved out to make the init more explicit?
+        init();
     }
 
     public static class Builder implements io.helidon.common.Builder<Neo4jMetricsSupport> {
@@ -76,7 +77,7 @@ public class Neo4jMetricsSupport {
         }
     }
 
-    private void init(Driver driver) {
+    private void init() {
 
         // Assuming for the moment that VENDOR is the correct registry to use.
         MetricRegistry neo4JMetricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);

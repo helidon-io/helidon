@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.integrations.neo4j.metrics.Neo4jMetricsCdiExtension;
+
 /**
  * Neo4j metrics support module.
  */
@@ -33,7 +35,12 @@ module io.helidon.integrations.neo4j.metrics {
     requires microprofile.metrics.api;
     requires io.helidon.metrics;
     requires io.helidon.integrations.neo4j.cdi;
+    requires jakarta.interceptor.api;
 
     exports io.helidon.integrations.neo4j.metrics;
+
+    opens io.helidon.integrations.neo4j.cdi to weld.core.impl, io.helidon.microprofile.cdi;
+
+    provides javax.enterprise.inject.spi.Extension with Neo4jMetricsCdiExtension;
 
 }

@@ -25,9 +25,9 @@
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
         <version>2.1.1-SNAPSHOT</version>
-        <relativePath>../../../applications/mp/pom.xml</relativePath>
+        <relativePath>../../../../applications/mp/pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon.examples</groupId>
+    <groupId>io.helidon.examples.integrations.neo4j</groupId>
     <artifactId>helidon-integrations-neo4j-mp</artifactId>
     <name>Helidon Neo4J MP integration Example</name>
 

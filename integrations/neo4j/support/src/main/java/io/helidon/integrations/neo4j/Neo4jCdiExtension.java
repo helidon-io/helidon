@@ -35,7 +35,7 @@ import org.neo4j.driver.Driver;
 
 /**
  * A CDI Extension for Neo4j support. To be used in MP environment. Delegates all of it activities to
- * {@link io.helidon.integrations.neo4j.Neo4jSupport} for initialization and configuration.
+ * {@link Neo4j} for initialization and configuration.
  *
  * @author Dmitry Aleksandrov
  */
@@ -44,8 +44,6 @@ public class Neo4jCdiExtension implements Extension {
     private static final String NEO4J_METRIC_NAME_PREFIX = "neo4j.";
 
     void afterBeanDiscovery(@Observes AfterBeanDiscovery addEvent, BeanManager beanManager) {
-        final org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
-        final Config helidonConfig = MpConfig.toHelidonConfig(config).get(NEO4J_METRIC_NAME_PREFIX);
 
         addEvent.addBean()
                 .types(Driver.class)
@@ -56,9 +54,13 @@ public class Neo4jCdiExtension implements Extension {
                 .name(Driver.class.getName())
                 .beanClass(Driver.class)
                 .createWith(creationContext -> {
-                    ConfigValue<Neo4jSupport> configValue = helidonConfig.as(Neo4jSupport::create);
-                    Neo4jSupport neo4JSupport = configValue.get();
-                    return neo4JSupport.driver();
+                    org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
+                    Config helidonConfig = MpConfig.toHelidonConfig(config).get(NEO4J_METRIC_NAME_PREFIX);
+
+                    ConfigValue<Neo4j> configValue = helidonConfig.as(Neo4j::create);
+
+                    Neo4j neo4J = configValue.get();
+                    return neo4J.driver();
                 });
     }
 

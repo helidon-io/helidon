@@ -43,7 +43,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @author Dmitry Aleksandrov
  * @author Tim Quinn
  */
-public class Neo4jSupport implements Service {
+public class Neo4j implements Service {
 
     //authentication
     public final String username;
@@ -66,7 +66,7 @@ public class Neo4jSupport implements Service {
     //helpers
     private Driver driver;
 
-    private Neo4jSupport(Builder builder) {
+    private Neo4j(Builder builder) {
         this.username = builder.username;
         this.password = builder.password;
         this.uri = builder.uri;
@@ -87,7 +87,7 @@ public class Neo4jSupport implements Service {
         this.driver = initDriver();
     }
 
-    public static Neo4jSupport create(Config config) {
+    public static Neo4j create(Config config) {
         return builder().config(config).build();
     }
 
@@ -210,7 +210,7 @@ public class Neo4jSupport implements Service {
         TRUST_SYSTEM_CA_SIGNED_CERTIFICATES
     }
 
-    public static class Builder implements io.helidon.common.Builder<Neo4jSupport> {
+    public static class Builder implements io.helidon.common.Builder<Neo4j> {
         public boolean encrypted;
         public boolean disabled;
         public String username;
@@ -234,8 +234,8 @@ public class Neo4jSupport implements Service {
         }
 
         @Override
-        public Neo4jSupport build() {
-            return new Neo4jSupport(this);
+        public Neo4j build() {
+            return new Neo4j(this);
         }
 
         public Builder config(Config config) {

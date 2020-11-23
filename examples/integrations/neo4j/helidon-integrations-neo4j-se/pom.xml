@@ -25,7 +25,7 @@
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-se</artifactId>
         <version>2.1.1-SNAPSHOT</version>
-        <relativePath>../../../applications/se/pom.xml</relativePath>
+        <relativePath>../../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.integrations.neo4j</groupId>
     <artifactId>helidon-integrations-heo4j-se</artifactId>

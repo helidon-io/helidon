@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.integrations.neo4j.metrics.Neo4JMetricsExtension
+io.helidon.integrations.neo4j.metrics.Neo4jMetricsCdiExtension

@@ -25,7 +25,7 @@ import io.helidon.examples.integrations.neo4j.se.api.MovieService;
 import io.helidon.examples.integrations.neo4j.se.domain.MovieRepository;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.integrations.neo4j.Neo4jSupport;
+import io.helidon.integrations.neo4j.Neo4j;
 import io.helidon.integrations.neo4j.health.Neo4jHealthChecks;
 import io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport;
 import io.helidon.media.jsonb.JsonbSupport;
@@ -105,11 +105,11 @@ public final class Main {
 
         MetricsSupport metrics = MetricsSupport.create();
 
-        Neo4jSupport neo4jSupport = Neo4jSupport.create(config.get("neo4j"));
-        Neo4jMetricsSupport.builder().driver(neo4jSupport.driver()).build();
-        Neo4jHealthChecks neo4jHealthChecks = Neo4jHealthChecks.builder().driver(neo4jSupport.driver()).build();
+        Neo4j neo4J = Neo4j.create(config.get("neo4j"));
+        Neo4jMetricsSupport.builder().driver(neo4J.driver()).build();
+        Neo4jHealthChecks neo4jHealthChecks = Neo4jHealthChecks.builder().driver(neo4J.driver()).build();
 
-        Driver neo4jDriver = neo4jSupport.driver();
+        Driver neo4jDriver = neo4J.driver();
 
         MovieService movieService = new MovieService (new MovieRepository(neo4jDriver));
 
