@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 #
 # Copyright (c) 2018, 2020 Oracle and/or its affiliates.
 #
@@ -39,22 +39,13 @@ readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
+uname -a
+
+env | sort
+
+ps -ax
+
 mvn ${MAVEN_ARGS} --version
 
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
-    clean install -e \
-    -DskipTests \
-    -Dmaven.test.failure.ignore=true \
-    -Pexamples,archetypes,spotbugs,javadoc,sources,tck,tests,pipeline
-
-#
-# test running from jar file, and then from module path
-#
-# The first integration test tests all MP features except for JPA/JTA
-# with multiple JAX-RS applications including security
-#tests/integration/native-image/mp-1/test-runtime.sh
-# The third integration test tests Helidon Quickstart MP
-#tests/integration/native-image/mp-3/test-runtime.sh
-
-# Build site and agregated javadocs
-#mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml site
+(cd tests/integration/jpa && \
+  mvn ${MAVEN_ARGS} clean install -Dmysql -pl model,appl)

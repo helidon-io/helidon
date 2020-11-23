@@ -25,45 +25,18 @@ pipeline {
     NPM_CONFIG_REGISTRY = credentials('npm-registry')
   }
   stages {
-    stage('default') {
-      parallel {
-        stage('build'){
-          steps {
-            script {
-              try {
-                sh './etc/scripts/build.sh'
-              } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt, **/target/failsafe-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
-              }
-            }
-          }
+    stage('test-mysql') {
+      agent {
+        kubernetes {
+          inheritFrom 'k8s-slave'
+          defaultContainer 'jnlp'
+          yamlFile 'etc/pods/mysql.yaml'
         }
-        stage('copyright'){
-          steps {
-            sh './etc/scripts/copyright.sh'
-          }
-        }
-        stage('checkstyle'){
-          steps {
-            sh './etc/scripts/checkstyle.sh'
-          }
-        }
-      }
-    }
-    stage('release') {
-      when {
-        branch '**/release-*'
-      }
-      environment {
-        GITHUB_SSH_KEY = credentials('helidonrobot-github-ssh-private-key')
-        MAVEN_SETTINGS_FILE = credentials('helidonrobot-maven-settings-ossrh')
-        GPG_PUBLIC_KEY = credentials('helidon-gpg-public-key')
-        GPG_PRIVATE_KEY = credentials('helidon-gpg-private-key')
-        GPG_PASSPHRASE = credentials('helidon-gpg-passphrase')
       }
       steps {
-        sh './etc/scripts/release.sh release_build'
+        container('jnlp') {
+          sh './etc/scripts/test-integ-mysql.sh'
+        }
       }
     }
   }
