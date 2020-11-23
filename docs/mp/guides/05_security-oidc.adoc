@@ -1,0 +1,542 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon MP OIDC Security Provider
+:h1Prefix: MP
+:description: Helidon OIDC Security Provider guide
+:keywords: helidon, security, guide, oidc, provider
+
+This guide describes how to set up Keycloak and Helidon
+to secure an application with OIDC security provider.
+
+== What you need
+
+[width=50%,role="flex, sm7"]
+|===
+|About 20 minutes
+|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
+|===
+
+* <<Keycloak Installation,Keycloak Installation>>
+* <<Set up Keycloak,Set up Keycloak>>
+* <<Set up Helidon,Set up Helidon>>
+* <<Restrict access to a specific role,Restrict access to a specific role>>
+
+=== Keycloak Installation
+
+==== On Docker
+
+To install Keycloak with Docker, open a terminal and make sure the port 8080 is free.
+
+[source,bash]
+.Enter the following command
+----
+docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin quay.io/keycloak/keycloak:11.0.2
+----
+
+This will start Keycloak on local port 8080. It will create the admin user with username `admin` and password `admin`
+Feel free to modify 11.0.2 by any keycloak version of your wish.
+If you are running docker behind a proxy server, make sure it is either configured into docker or
+disabled. Otherwise, you might face a connection timeout because docker cannot download the required data.
+
+To verify that Keycloak is running correctly, go to the admin console : http://localhost:8080/auth/admin
+Log in using the username and password mentioned above: `admin`.
+
+You should be logged in successfully, and it prompts the admin console.
+
+==== On JDK
+
+Download the last version of Keycloak from Keycloak website : https://www.keycloak.org/downloads
+In the table Server choose Standalone server distribution. ZIP or Tar format are available, click on either
+to download Keycloak.
+
+After extracting the archive file, you should have a directory named keycloak followed by the version. For example,
+if you chose version 11.0.2, the folder must be named keycloak-11.0.2.
+
+Open keycloak folder to make it your current directory.
+[source,bash]
+.Run this command from command prompt to open the directory:
+----
+cd keycloak-11.0.2
+----
+
+===== Start Keycloak
+
+To start keycloak and have it ready for further steps, run the following command.
+
+[source,bash]
+.On Linux run:
+----
+bin/standalone.sh
+----
+
+[source,bash]
+.On Windows run:
+----
+bin/standalone.bat
+----
+
+Keycloak runs on localhost:8080 by default.
+
+===== Create an admin user
+
+You need to create an admin user because it does not come by default when installing Keycloak.
+To do this, open  http://localhost:8080/auth in your favorite browser.
+
+A window `Welcome to Keycloak` should be prompted. If not, check if any error appear in the terminal.
+
+Fill the form by adding Username and Password. Click on `Create` to create the admin user.
+
+Above Administration Console should be printed "User created" in a green rectangle.
+
+To check that the admin user was created correctly, click on Administration user which should redirect you
+to a Login form. Enter the Username and Password created earlier to log in.
+
+After successfully logged in, the admin console is prompted.
+
+=== Set up Keycloak
+
+To set up Keycloak properly, go to the admin console: http://localhost:8080/auth/admin
+
+If you are using Docker, use Username `admin` and password `admin` as it is the default admin user.
+Otherwise, use the username and password you used to create the admin user.
+
+==== Create a realm
+
+A realm is the place where groups of applications, and their environment, can be created. It gathers :
+
+- One or several applications
+- One or several users
+- Sessions
+- Events
+- Clients and their scopes
+
+By default, there is a realm called `Master`. It is used to manage Keycloak. It is not recommended to associate your
+application with this realm as it could disturb Keycloak functioning.
+
+To create a new realm to manage your application:
+
+. Open Keycloak admin console http://localhost:8080/auth/admin.
+. Hover the mouse over the dropdown in the top-left corner where it says `Master`, and press `Add realm`.
+. Fill the form by adding the realm name, `myRealm` for example.
+. Click on `Create` to create the new realm.
+
+To verify that your realm is created, on the top-left corner where it said `Master` previously
+should be now your realm name or `myRealm` is you followed the example.
+
+To switch from a realm to another, hover the realm name, and the other realm created appear in the dropdown.
+Click on any realm name to change the current realm. Make sure all configuration or modification are saved before changing
+the current realm or be subject to lose your configuration.
+
+==== Create a user
+
+Initially there are no users in a new realm. An unlimited number of user can be created per realm.
+A realm contains resources such as client which can be accessed by users.
+
+To create a new user:
+
+. Open the Keycloak admin console: http://localhost:8080/auth/admin
+. Click on `Users` in the left menu
+. Press `Add user`
+. Fill the form (Username is the only mandatory field) with this value Username: `myUser`
+. Click `Save`
+
+A new user is just created but it needs a password to be able to login. To initialize it, do this:
+
+. Click on `Credentials` at the top of the page, under `Myuser`.
+. Fill `Password` and `Password confirmation` with the user password of your choice.
+. If the `Temporary` field is set to `ON`, the user has to  update password on next login. Click `ON`
+to make it `OFF` and prevent it.
+. Press `Set Password`.
+. A pop-up window is popping off. Click on `Set Password` to confirm the new password.
+
+To verify that the new user is created correctly:
+
+. Open the Keycloak account console: http://localhost:8080/auth/realms/myRealm/account.
+. Login with `myUser` and password chosen earlier.
+
+You should now be logged-in to the account console where users can manage their accounts.
+
+==== Create a Client
+
+To create your first client:
+
+. Open the Keycloak admin console: http://localhost:8080/auth/admin.
+. Make sure the current realm is `myRealm` and not `Master`.
+. Navigate to the left menu, into configure section, click on `Clients`. This window displays a table with every client
+from the realm.
+. Click on `Create`.
+. Fill the following:
+.. `Client ID` : `myClientID`
+.. `Client Protocol` : `openid-connect`
+. Press `Save`
+.. Modify `Access type` : `confidential`
+.. Update `Valid Redirect URIs` : http://localhost:7987/*
+.. Click on `+` to add the new URI.
+. Click on `Save`.
+
+A new tab named `Credentials` is created. Click on it to access this new tab.
+
+- Select `Client Authenticator` : `Client ID and Secret`
+- Click on `generate secret` to generate client secret.
+
+Keycloak is now configured and ready. Keep keycloak running on your terminal and open a new tab to
+set up Helidon.
+
+=== Set up Helidon
+
+Use the Helidon MP Maven archetype to create a simple project. It will be used as an example
+to show how to set up Helidon. Replace `{helidon-version}` by the latest helidon version.
+It will download the quickstart project into the current directory.
+
+[source,bash,subs="attributes+"]
+.Run the Maven archetype
+----
+mvn -U archetype:generate -DinteractiveMode=false \
+    -DarchetypeGroupId=io.helidon.archetypes \
+    -DarchetypeArtifactId=helidon-quickstart-mp \
+    -DarchetypeVersion={helidon-version} \
+    -DgroupId=io.helidon.examples \
+    -DartifactId=helidon-quickstart-mp \
+    -Dpackage=io.helidon.examples.quickstart.mp
+----
+
+[source,bash]
+.The project will be built and run from the helidon-quickstart-mp directory:
+----
+cd helidon-quickstart-mp
+----
+
+==== Update project dependencies
+
+Update the pom.xml file and add the following Helidon dependency to the `<dependencies>` section.
+
+[source,xml]
+.Add the following dependency to `pom.xml`:
+----
+<dependency>
+    <groupId>io.helidon.microprofile</groupId>
+    <artifactId>helidon-microprofile-oidc</artifactId>
+</dependency>
+----
+
+==== Add OIDC security properties
+
+The OIDC security provider configuration can be joined to helidon configuration file.
+This file is located here: `src/main/resources/application.yaml`. It can be easily used to configure the web server
+without modifying application code.
+
+[source,yaml]
+.Create application.yaml file and add the following line
+----
+security:
+  providers:
+    - abac:
+      # Adds ABAC Provider - it does not require any configuration
+    - oidc:
+        redirect-uri: "/oidc/redirect/*"
+        audience: "account"
+        client-id: "myClientID"   // <1>
+        client-secret: "Client secret generated into Keycloak client credential"  // <2>
+        identity-uri: "http://localhost:8080/auth/realms/myRealm"   // <3>
+        frontend-uri: "http://localhost:7987"   // <4>
+----
+<1> `client-id` must be the same as the one configure in keycloak.
+<2> The client secret generate by Keycloak during `Create a client` section.
+<3> `identity-uri` is used to redirect the user to keycloak.
+<4> `frontend-uri` will direct you back to the application.
+
+The client secret is the one generate into Keycloak Client Credentials. It must be copy past into `client-id` variable
+from application.yaml.
+
+Make sure keycloak and the application are not running on the same port.
+The application port value can be changed into microprofile-config.properties.
+
+[source,properties]
+.Change these properties to configure the server host and port
+----
+server.port=7987
+server.host=localhost
+----
+
+If the port 7987 is already used, check what port is free on your machine.
+
+[source,properties]
+.Replace the old port into microprofile-config.properties
+----
+server.port="{Your-new-port}"
+----
+
+[source,yaml]
+.Replace the old port into application.yaml
+----
+frontend-uri: "http://localhost:{Your-new-port}"
+----
+
+==== Secure your application
+
+The `GreetResource` class is a JAX-RS resource available at the endpoint `/greet`. Use `@Authenticated` annotation to protect
+any method or endpoint.
+Modify the `getDefaultMessage` method with the `@Authenticated` to limit its access.
+
+[source,java]
+.Import `Authenticated` annotation:
+----
+import io.helidon.security.annotations.Authenticated;
+----
+
+[source,java]
+.Add `@Authenticated` to secure `getDefaultMessage`
+----
+    @Authenticated
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public JsonObject getDefaultMessage() {
+        return createResponse("World");
+    }
+----
+
+When a client will send an HTTP GET request at the endpoint `http://localhost:7987/greet`, he will be redirected to keycloak.
+Keycloak will check if the client has the required authorisation to access this endpoint. If the client can log in successfully,
+keycloak redirect it to the wished endpoint. If the client cannot log in, or the required access data are incomplete,
+Keycloak refuses the access.
+
+==== Try it !
+
+Now, Helidon and Keycloak are correctly configured, and your application is safe.
+
+[source,bash]
+.Build the application, skipping unit tests, then run it:
+----
+mvn package -DskipTests=true
+java -jar target/helidon-quickstart-mp.jar
+----
+
+The tests must be skipped, otherwise it produces test failure. As the `/greet` endpoint for GET request is
+now protected, its access is limited, and the tests are not built to take oidc security in account.
+
+. Open your favourite browser and try to access `http://localhost:7987/greet/Michael`.
+. You should not be redirected and receive greeting from the application.
+. Enter the following into URL : `http://localhost:7987/greet`.
+. Keycloak redirect you to its login page.
+. Enter the username and associated password:
+.. `Username` : `myUser`
+.. `Password`: `password`
+. After successful log in, keycloak redirect you to the `http://localhost:7987/greet` endpoint and print Hello word.
+. Press `Ctrl+C` to stop the application.
+
+From the actual settings, the user needs to log in only once, then Keycloak saves all the connection data.
+
+==== Update tests to the secure environment
+
+At this stage of the application, tests cannot pass because of OIDC security. The only way to authenticate a user is
+through the front end of that server which can be accessed with the browser for example.
+
+In order to keep security and test the application locally, a new security provider must be provided. By adding specific
+configuration to the test, it is possible to override the application configuration.
+
+The following explains how to set a basic authentication instead of oidc security provider only for the tests. Which means,
+at the end of this guide, the application will be secured by oidc and the tests will use basic authentication.
+
+In the test folder `helidon-quickstart-mp/src/test`:
+
+[source,bash]
+.Create a new directory and another one inside
+----
+mkdir resources
+cd resources
+touch application.yaml
+----
+
+Open the application.yaml file you just created.
+
+[source,yaml]
+.Copy these properties into the new application.yaml
+----
+app:
+  greeting: "Hello"
+
+server:
+  port: 7987
+  host: localhost
+
+security:
+  providers:
+    - abac:
+    - http-basic-auth:
+        users:
+          - login: "jack"
+            password: "jackIsGreat"
+----
+
+By adding this new application.yaml, it will append the properties to the application.yaml located into `java/resources`.
+The oidc properties are not overridden, and the server cannot decide which security provider to choose.
+
+Excluding oidc dependency during the test leaves only basic authentication security available for the tests.
+
+[source,xml]
+.Add this plugin to the build
+----
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <configuration>
+        <classpathDependencyExcludes>
+            <classpathDependencyExclude>io.helidon.microprofile:helidon-microprofile-oidc</classpathDependencyExclude>
+        </classpathDependencyExcludes>
+    </configuration>
+</plugin>
+----
+
+In the `MainTest.java` file, tests need to be modified to check the application security when accessing `/greet` path with a
+`GET` method.
+
+First step is to configure the server with the new application.yaml.
+
+[source,java]
+.Import the Config class
+----
+import io.helidon.config.Config;
+----
+
+[source,java]
+.Replace the startTheServer method by this one:
+----
+@BeforeAll
+    public static void startTheServer() {
+        server = Server.builder()
+                .config(Config.create())
+                .build()
+                .start();
+        serverUrl = "http://localhost:" + server.port();
+    }
+----
+
+The server has now one security provider, basic authentication configured.
+Next step is to modify the test to check that the application is correctly protected.
+
+[source,java]
+.Replace the JsonObject declaration into testHelloWorld method by this code:
+----
+JsonObject jsonObject;
+Response response = client
+        .target(serverUrl)
+        .path("/greet")
+        .request()
+        .get(Response.class);
+
+Assertions.assertEquals(401, response.getStatus());
+----
+
+This piece of code uses the webclient to access the application on `/greet` path with a `GET` method. The http basic
+authentication security provider protects this path, so the client should receive an HTTP 401 code for unauthorized.
+
+Only `jack` user has access to this part of the application.
+
+[source,java]
+.Add new check to the testHelloWorld method:
+----
+String encoding = Base64.getEncoder().encodeToString("jack:jackIsGreat".getBytes());
+
+jsonObject = client
+        .target(serverUrl)
+        .path("/greet")
+        .request()
+        .header(Http.Header.AUTHORIZATION, "Basic " + encoding)
+        .get(JsonObject.class);
+
+Assertions.assertEquals("Hello World!", jsonObject.getString("message"),
+                "default message");
+----
+
+The username and password are encoded and placed inside the header in order to authenticate as jack to access the application.
+If the authentication is successful, the application send the `Hello World` back as a `JsonObject`.
+
+Now, the project can be build without skiping test.
+
+[source,bash]
+.Build the project
+----
+mvn clean install
+----
+
+==== Restrict access to a specific role
+
+To give less access to a specific endpoint, it is possible to configure user role. So the application will grant access
+only the user with the required role.
+
+Navigate to the GreetResource and find the `getDefaultMessage` with @Authenticate annotation.
+
+[source,java]
+.Import the RolesAllowed annotation
+----
+import javax.annotation.security.RolesAllowed;
+----
+
+[source,java]
+.Add the @RolesAllowed annotation under the @Authenticate annotation:
+----
+@RolesAllowed("admin")
+----
+
+The annotation parameter is the role with access to the method. In this case, only user with admin role can
+have access.
+
+Then, add a user and roles to the `helidon-quickstart-mp/src/test/resources/application.yaml` file.
+
+[source,yaml]
+.Add jack roles and create a new user named john:
+----
+- http-basic-auth:
+        users:
+          - login: "jack"
+            password: "jackIsGreat"
+            roles: [ "admin", "user" ]
+          - login: "john"
+            password: "johnPassword"
+            roles: [ "user" ]
+----
+
+Now, only Jack has access to secure endpoint as he has an `admin` role. Jhon, as a simple user, can not access it.
+Once it is done, go to the tests to check the application behavior.
+The test from previous section is still passing because jack has access.
+
+The user `john` has only the `user` role so when accessing protected endpoint, a 403 (Forbidden) http code is returned.
+
+[source,java]
+.Check that jhon does not have access
+----
+encoding = Base64.getEncoder().encodeToString("john:johnPassword".getBytes());
+
+response = client
+        .target(serverUrl)
+        .path("/greet")
+        .request()
+        .header(Http.Header.AUTHORIZATION, "Basic " + encoding)
+        .get(Response.class);
+
+Assertions.assertEquals(403, response.getStatus());
+----
+
+[source,bash]
+.Build the project
+----
+mvn clean install
+----
+
+The tests pass, and your application is secured with specific roles in addition to user IDs.
