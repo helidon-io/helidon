@@ -123,6 +123,34 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     private final Map<String, SessionMetadata> sessionRegister = new HashMap<>();
 
     /**
+     * Creates a new instance of JmsConnector with the required configuration.
+     *
+     * @param config Helidon {@link io.helidon.config.Config config}
+     * @return the new instance
+     */
+    public static JmsConnector create(io.helidon.config.Config config) {
+        return new JmsConnector(config, null);
+    }
+
+    /**
+     * Creates a new instance of JmsConnector with empty configuration.
+     *
+     * @return the new instance
+     */
+    public static JmsConnector create() {
+        return new JmsConnector(io.helidon.config.Config.empty(), null);
+    }
+
+    /**
+     * Custom config builder for JMS connector.
+     *
+     * @return new JMS specific config builder
+     */
+    public static JmsConfigBuilder configBuilder() {
+        return new JmsConfigBuilder();
+    }
+
+    /**
      * Create new JmsConnector.
      *
      * @param connectionFactories connection factory beans
