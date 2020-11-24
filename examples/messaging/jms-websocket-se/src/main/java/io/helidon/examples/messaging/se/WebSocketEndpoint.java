@@ -18,8 +18,6 @@
 
 package io.helidon.examples.messaging.se;
 
-import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,6 +35,8 @@ import io.helidon.messaging.Channel;
 import io.helidon.messaging.Messaging;
 import io.helidon.messaging.connectors.jms.JmsConfigBuilder;
 import io.helidon.messaging.connectors.jms.JmsConnector;
+
+import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
 
 public class WebSocketEndpoint extends Endpoint {
 

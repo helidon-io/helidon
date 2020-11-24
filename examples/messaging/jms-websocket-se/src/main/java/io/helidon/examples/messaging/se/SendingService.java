@@ -18,8 +18,6 @@
 
 package io.helidon.examples.messaging.se;
 
-import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
-
 import io.helidon.config.Config;
 import io.helidon.messaging.Channel;
 import io.helidon.messaging.Emitter;
@@ -28,6 +26,8 @@ import io.helidon.messaging.connectors.jms.JmsConfigBuilder;
 import io.helidon.messaging.connectors.jms.JmsConnector;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
+
+import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
 
 public class SendingService implements Service {
 
