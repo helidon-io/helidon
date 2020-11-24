@@ -58,7 +58,6 @@ public class WebSocketEndpoint extends Endpoint {
         Channel<String> fromJms = Channel.<String>builder()
                 .name("from-jms")
                 .publisherConfig(JmsConnector.configBuilder()
-                        .jndiJmsFactory("ConnectionFactory")
                         .jndiInitialFactory(ActiveMQInitialContextFactory.class.getName())
                         .jndiProviderUrl(url)
                         .type(JmsConfigBuilder.Type.QUEUE)
