@@ -32,6 +32,10 @@ import io.helidon.webserver.Service;
 @ApplicationScoped
 @RoutingPath("/reactive")
 public class ReactiveService implements Service {
+
+    /**
+     * Inject the security.
+     */
     @Inject
     private Security security;
 

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Michael J. Simons
+ * author Michael J. Simons.
  */
 public class Actor {
 
@@ -12,16 +12,13 @@ public class Actor {
 
     private final List<String> roles;
 
+    /**
+     * Constructor.
+     * @param name
+     * @param roles
+     */
     public Actor(String name, final List<String> roles) {
         this.name = name;
         this.roles = new ArrayList<>(roles);
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public List<String> getRoles() {
-        return roles;
     }
 }

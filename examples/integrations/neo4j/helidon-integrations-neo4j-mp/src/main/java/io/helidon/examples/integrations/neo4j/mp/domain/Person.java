@@ -1,9 +1,8 @@
 package io.helidon.examples.integrations.neo4j.mp.domain;
 
-
 /**
- * @author Mark Angrish
- * @author Michael J. Simons
+ * author Mark Angrish
+ * author Michael J. Simons
  */
 public class Person {
 
@@ -11,6 +10,12 @@ public class Person {
 
     private Integer born;
 
+    /**
+     * Person constructor.
+     *
+     * @param born
+     * @param name
+     */
     public Person(Integer born, String name) {
         this.born = born;
         this.name = name;
@@ -28,6 +33,7 @@ public class Person {
         this.born = born;
     }
 
+    @SuppressWarnings("checkstyle:OperatorWrap")
     @Override
     public String toString() {
         return "Person{" +

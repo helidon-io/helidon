@@ -40,29 +40,27 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *
  * Implements {@link io.helidon.webserver.Service}
  *
- * @author Dmitry Aleksandrov
- * @author Tim Quinn
  */
 public class Neo4j implements Service {
 
     //authentication
-    public final String username;
-    public final String password;
+    private final String username;
+    private final String password;
     //general
-    public final String uri;
-    public final boolean encrypted;
+    private final String uri;
+    private final boolean encrypted;
     //pool
-    public final boolean metricsEnabled;
-    public final boolean logLeakedSessions;
-    public final int maxConnectionPoolSize;
-    public final Duration idleTimeBeforeConnectionTest;
-    public final Duration maxConnectionLifetime;
-    public final Duration connectionAcquisitionTimeout;
+    private final boolean metricsEnabled;
+    private final boolean logLeakedSessions;
+    private final int maxConnectionPoolSize;
+    private final Duration idleTimeBeforeConnectionTest;
+    private final Duration maxConnectionLifetime;
+    private final Duration connectionAcquisitionTimeout;
     //trust
-    public final Strategy strategy;
-    public final File certFile;
-    public final boolean hostnameVerificationEnabled;
-    public boolean disabled;
+    private final Strategy strategy;
+    private final File certFile;
+    private final boolean hostnameVerificationEnabled;
+    private boolean disabled;
     //helpers
     private Driver driver;
 
@@ -87,16 +85,27 @@ public class Neo4j implements Service {
         this.driver = initDriver();
     }
 
+    /**
+     * Create the Neo4j support using builder.
+     *
+     * @param config from the extenal configuration
+     * @return Neo4j support
+     */
     public static Neo4j create(Config config) {
         return builder().config(config).build();
     }
 
+    /**
+     * Following the builder pattern.
+     *
+     * @return the builder
+     */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Neo4j base config helper method
+     * Neo4j base config helper method.
      *
      * @return
      */
@@ -113,17 +122,18 @@ public class Neo4j implements Service {
     }
 
     /**
-     * The main entry point to the Neo4j Support
-     * @return
+     * The main entry point to the Neo4j Support.
+     *
+     * @return neo4j driver
      */
     public Driver driver() {
         return driver;
     }
 
     /**
-     * Neo4j base driver construction method
+     * Neo4j base driver construction method.
      *
-     * @return
+     * @return the driver
      */
     private Driver initDriver() {
         AuthToken authToken = AuthTokens.none();
@@ -140,7 +150,7 @@ public class Neo4j implements Service {
     }
 
     /**
-     * Currently our service does not any endpoints
+     * Currently our service does not any endpoints.
      *
      * @param rules a routing rules to update
      */
@@ -204,40 +214,52 @@ public class Neo4j implements Service {
         }
     }
 
-    public enum Strategy {
+    /**
+     * Security strategy.
+     */
+    enum Strategy {
         TRUST_ALL_CERTIFICATES,
         TRUST_CUSTOM_CA_SIGNED_CERTIFICATES,
         TRUST_SYSTEM_CA_SIGNED_CERTIFICATES
     }
 
     public static class Builder implements io.helidon.common.Builder<Neo4j> {
-        public boolean encrypted;
-        public boolean disabled;
-        public String username;
-        public String password;
-        public String uri;
+        private boolean encrypted;
+        private boolean disabled;
+        private String username;
+        private String password;
+        private String uri;
 
         //pool
-        public boolean metricsEnabled;
-        public boolean logLeakedSessions;
-        public int maxConnectionPoolSize = 100;
-        public Duration idleTimeBeforeConnectionTest = Duration.ofMillis(-1);
-        public Duration maxConnectionLifetime = Duration.ofHours(1);
-        public Duration connectionAcquisitionTimeout = Duration.ofMinutes(1);
+        private boolean metricsEnabled;
+        private boolean logLeakedSessions;
+        private int maxConnectionPoolSize = 100;
+        private Duration idleTimeBeforeConnectionTest = Duration.ofMillis(-1);
+        private Duration maxConnectionLifetime = Duration.ofHours(1);
+        private Duration connectionAcquisitionTimeout = Duration.ofMinutes(1);
 
         //trust
-        public Strategy strategy;
-        public File certFile;
-        public boolean hostnameVerificationEnabled;
+        private Strategy strategy;
+        private File certFile;
+        private boolean hostnameVerificationEnabled;
 
         private Builder() {
         }
 
+        /**
+         *
+         * @return
+         */
         @Override
         public Neo4j build() {
             return new Neo4j(this);
         }
 
+        /**
+         * Read the configuration from external file and initialize the builder.
+         * @param config external configuration
+         * @return the builder
+         */
         public Builder config(Config config) {
             config.get("authentication.username").asString().ifPresent(this::username);
             config.get("authentication.password").asString().ifPresent(this::password);
@@ -261,74 +283,74 @@ public class Neo4j implements Service {
             return this;
         }
 
-        public Builder username(String username) {
+        private Builder username(String username) {
             this.username = username;
             return this;
 
         }
 
-        public Builder password(String password) {
+        private Builder password(String password) {
             this.password = password;
             return this;
         }
 
-        public Builder uri(String uri) {
+        private Builder uri(String uri) {
             this.uri = uri;
             return this;
         }
 
-        public Builder encrypted(boolean encrypted) {
+        private Builder encrypted(boolean encrypted) {
             this.encrypted = encrypted;
             return this;
         }
 
-        public Builder disabled(boolean disabled) {
+        private Builder disabled(boolean disabled) {
             this.disabled = disabled;
             return this;
         }
 
         //pool
-        public Builder metricsEnabled(boolean metricsEnabled) {
+        private Builder metricsEnabled(boolean metricsEnabled) {
             this.metricsEnabled = metricsEnabled;
             return this;
         }
 
-        public Builder logLeakedSessions(boolean logLeakedSessions) {
+        private Builder logLeakedSessions(boolean logLeakedSessions) {
             this.logLeakedSessions = logLeakedSessions;
             return this;
         }
 
-        public Builder maxConnectionPoolSize(int maxConnectionPoolSize) {
+        private Builder maxConnectionPoolSize(int maxConnectionPoolSize) {
             this.maxConnectionPoolSize = maxConnectionPoolSize;
             return this;
         }
 
-        public Builder idleTimeBeforeConnectionTest(String idleTimeBeforeConnectionTest) {
+        private Builder idleTimeBeforeConnectionTest(String idleTimeBeforeConnectionTest) {
             this.idleTimeBeforeConnectionTest = Duration.parse(idleTimeBeforeConnectionTest);
             return this;
         }
 
-        public Builder maxConnectionLifetime(String maxConnectionLifetime) {
+        private Builder maxConnectionLifetime(String maxConnectionLifetime) {
             this.maxConnectionLifetime = Duration.parse(maxConnectionLifetime);
             return this;
         }
 
-        public Builder connectionAcquisitionTimeout(String connectionAcquisitionTimeout) {
+        private Builder connectionAcquisitionTimeout(String connectionAcquisitionTimeout) {
             this.connectionAcquisitionTimeout = Duration.parse(connectionAcquisitionTimeout);
             return this;
         }
 
-        public Builder strategy(String strategy) {
+        private Builder strategy(String strategy) {
             this.strategy = Strategy.valueOf(strategy);
             return this;
         }
 
-        public Builder certFile(String certFile) {
+        private Builder certFile(String certFile) {
             this.certFile = Path.of(certFile).toFile();
             return this;
         }
 
-        public Builder hostnameVerificationEnabled(boolean hostnameVerificationEnabled) {
+        private Builder hostnameVerificationEnabled(boolean hostnameVerificationEnabled) {
             this.hostnameVerificationEnabled = hostnameVerificationEnabled;
             return this;
         }

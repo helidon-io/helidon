@@ -21,8 +21,8 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.examples</groupId>
-        <artifactId>helidon-examples-project</artifactId>
+        <groupId>io.helidon.examples.integrations</groupId>
+        <artifactId>helidon-examples-integrations-project</artifactId>
         <version>2.1.1-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.examples.integrations.neo4j</groupId>

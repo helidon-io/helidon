@@ -4,15 +4,25 @@ import java.util.List;
 
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Value;
-
+/**
+ * author Michael J. Simons.
+ */
 public final class MovieRepository {
 
     private final Driver driver;
 
+    /**
+     * Constructor.
+     * @param driver
+     */
     public MovieRepository(Driver driver) {
         this.driver = driver;
     }
 
+    /**
+     * Return al Movies.
+     * @return list with movies
+     */
     public List<Movie> findAll() {
 
         try (var session = driver.session()) {

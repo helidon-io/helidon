@@ -33,6 +33,10 @@ public class Neo4jDataProvider {
 
     private MovieRepository movieRepository;
 
+    /**
+     * Constructor.
+     * @param driver
+     */
     @Inject
     public Neo4jDataProvider(Driver driver) {
         this.movieRepository = new MovieRepository(driver);

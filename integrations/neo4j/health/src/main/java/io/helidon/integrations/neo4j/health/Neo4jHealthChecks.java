@@ -17,19 +17,16 @@
 
 package io.helidon.integrations.neo4j.health;
 
-import org.eclipse.microprofile.health.HealthCheck;
-import org.neo4j.driver.Driver;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 
+import org.eclipse.microprofile.health.HealthCheck;
+import org.neo4j.driver.Driver;
+
 /**
  * Health support module for Neo4j.
- *
- * @author Dmitry Aleksandrov
- * @author Tim Quinn
  */
 public class Neo4jHealthChecks {
 
@@ -37,19 +34,34 @@ public class Neo4jHealthChecks {
     private final Collection<HealthCheck> readinessChecks;
     private final Collection<HealthCheck> livenessChecks = Collections.emptySet();
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
     private Neo4jHealthChecks(Builder builder) {
         this.driver = builder.driver;
         readinessChecks = Set.of(Neo4jHealthCheck.create(driver));
     }
 
+    /**
+     * Following the builder pattern.
+     *
+     * @return builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Getting all the readiness checks.
+     *
+     * @return health checks
+     */
     public Collection<HealthCheck> readinessChecks() {
         return readinessChecks;
     }
 
+    /**
+     * Getting all the liveness checks.
+     *
+     * @return health checks
+     */
     public Collection<HealthCheck> livenessChecks() {
         return livenessChecks;
     }
@@ -61,11 +73,22 @@ public class Neo4jHealthChecks {
         private Builder() {
         }
 
+        /**
+         * Build the health checks.
+         *
+         * @return the wrapper class
+         */
         public Neo4jHealthChecks build() {
             Objects.requireNonNull(driver, "Must set driver before building");
             return new Neo4jHealthChecks(this);
         }
 
+        /**
+         * Setter for the driver.
+         *
+         * @param driver from the neo4j support.
+         * @return builder
+         */
         public Builder driver(Driver driver) {
             this.driver = driver;
             return this;

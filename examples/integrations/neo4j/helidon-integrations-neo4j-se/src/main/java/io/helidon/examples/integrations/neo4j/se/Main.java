@@ -111,7 +111,7 @@ public final class Main {
 
         Driver neo4jDriver = neo4J.driver();
 
-        MovieService movieService = new MovieService (new MovieRepository(neo4jDriver));
+        MovieService movieService = new MovieService(new MovieRepository(neo4jDriver));
 
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks

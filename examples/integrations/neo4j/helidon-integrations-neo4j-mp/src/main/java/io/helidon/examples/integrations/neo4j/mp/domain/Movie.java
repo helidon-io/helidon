@@ -1,12 +1,11 @@
 package io.helidon.examples.integrations.neo4j.mp.domain;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Mark Angrish
- * @author Michael J. Simons
+ * author Mark Angrish
+ * author Michael J. Simons
  */
 public class Movie {
 
@@ -20,6 +19,12 @@ public class Movie {
 
     private Integer released;
 
+    /**
+     * Constructor.
+     *
+     * @param title
+     * @param description
+     */
     public Movie(String title, String description) {
         this.title = title;
         this.description = description;

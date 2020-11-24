@@ -28,21 +28,27 @@ import javax.ws.rs.core.MediaType;
 @Path("/movies")
 @RequestScoped
 public class Neo4jResource {
-    private static Jsonb JSONB = JsonbBuilder.create();
+    private static final Jsonb JSONB = JsonbBuilder.create();
 
     /**
      * The greeting message provider.
      */
     private final Neo4jDataProvider neo4jDataProvider;
 
+    /**
+     * Constructor.
+     *
+     * @param neo4jDataProvider
+     */
     @Inject
     public Neo4jResource(Neo4jDataProvider neo4jDataProvider) {
         this.neo4jDataProvider = neo4jDataProvider;
     }
 
     /**
-     * All movies
+     * All movies.
      *
+     * @return json String with all movies
      */
     @SuppressWarnings("checkstyle:designforextension")
     @GET

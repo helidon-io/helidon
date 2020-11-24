@@ -37,21 +37,14 @@ import static java.util.Map.entry;
 
 /**
  * Neo4j helper class to support metrics. Provided as a separate package to be included as a dependency.
- *
- * @author Dmitry Aleksandrov
- * @author Tim Quinn
  */
 public class Neo4jMetricsSupport {
 
     private static final String NEO4J_METRIC_NAME_PREFIX = "neo4j.";
 
-    private Driver driver;
+    private final Driver driver;
 
     private Optional<ConnectionPoolMetrics> connectionPoolMetrics = Optional.empty();
-
-    public static Builder builder() {
-        return new Builder();
-    }
 
     private Neo4jMetricsSupport(Builder builder) {
         driver = builder.driver;
@@ -59,22 +52,13 @@ public class Neo4jMetricsSupport {
         init();
     }
 
-    public static class Builder implements io.helidon.common.Builder<Neo4jMetricsSupport> {
-
-        private Driver driver;
-
-        private Builder() {
-        }
-
-        public Neo4jMetricsSupport build() {
-            Objects.requireNonNull(driver, "Must set driver before building");
-            return new Neo4jMetricsSupport(this);
-        }
-
-        public Builder driver(Driver driver) {
-            this.driver = driver;
-            return this;
-        }
+    /**
+     * Following the builder pattern.
+     *
+     * @return builder
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     private void init() {
@@ -134,6 +118,35 @@ public class Neo4jMetricsSupport {
         Neo4JGaugeWrapper<Integer> wrapper =
                 new Neo4JGaugeWrapper<Integer>(() -> getConnectionPoolMetrics().map(fn).orElse(0));
         metricRegistry.register(metadata, wrapper);
+    }
+
+    public static class Builder implements io.helidon.common.Builder<Neo4jMetricsSupport> {
+
+        private Driver driver;
+
+        private Builder() {
+        }
+
+        /**
+         * Builder for the wrapper class.
+         *
+         * @return wrapper
+         */
+        public Neo4jMetricsSupport build() {
+            Objects.requireNonNull(driver, "Must set driver before building");
+            return new Neo4jMetricsSupport(this);
+        }
+
+        /**
+         * Submit the Neo4j driver.
+         *
+         * @param driver from the support class
+         * @return Builder
+         */
+        public Builder driver(Driver driver) {
+            this.driver = driver;
+            return this;
+        }
     }
 
     private static class Neo4JCounterWrapper implements Counter {

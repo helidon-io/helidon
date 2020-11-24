@@ -37,7 +37,6 @@ import org.neo4j.driver.Driver;
  * A CDI Extension for Neo4j support. To be used in MP environment. Delegates all of it activities to
  * {@link Neo4j} for initialization and configuration.
  *
- * @author Dmitry Aleksandrov
  */
 public class Neo4jCdiExtension implements Extension {
 

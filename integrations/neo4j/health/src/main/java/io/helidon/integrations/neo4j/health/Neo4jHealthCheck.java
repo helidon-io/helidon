@@ -36,9 +36,6 @@ import org.neo4j.driver.summary.ServerInfo;
  * Health support module for Neo4j. Follows the standard MicroProfile HealthCheck pattern.
  *
  * Implements {@link org.eclipse.microprofile.health.HealthCheck}
-
- * @author Dmitry Aleksandrov
- * @author Tim Quinn
  */
 @Readiness
 @ApplicationScoped
@@ -48,23 +45,12 @@ public class Neo4jHealthCheck implements HealthCheck {
      * The Cypher statement used to verify Neo4j is up.
      */
     private static final String CYPHER = "RETURN 1 AS result";
-    /**
-     * Message indicating that the health check failed.
-     */
-    private static final String MESSAGE_HEALTH_CHECK_FAILED = "Neo4j health check failed";
-    /**
-     * Message logged before retrying a health check.
-     */
-    private static final String MESSAGE_SESSION_EXPIRED = "Neo4j session has expired, retrying one single time to retrieve "
-            + "server health.";
-    /**
-     * The default session config to use while connecting.
-     */
+
     private static final SessionConfig DEFAULT_SESSION_CONFIG = SessionConfig.builder()
             .withDefaultAccessMode(AccessMode.WRITE)
             .build();
 
-    private Driver driver;
+    private final Driver driver;
 
     @Inject
         //will be ignored outside of CDI
@@ -73,9 +59,9 @@ public class Neo4jHealthCheck implements HealthCheck {
     }
 
     /**
-     * To be used in SE context
-     * @param driver
-     * @return
+     * To be used in SE context.
+     * @param driver create
+     * @return {@link org.neo4j.driver.Driver}
      */
     public static Neo4jHealthCheck create(Driver driver) {
         return new Neo4jHealthCheck(driver);
@@ -124,8 +110,7 @@ public class Neo4jHealthCheck implements HealthCheck {
         // We use WRITE here to make sure UP is returned for a server that supports
         // all possible workloads
         try (Session session = this.driver.session(DEFAULT_SESSION_CONFIG)) {
-            ResultSummary resultSummary = session.run(CYPHER).consume();
-            return resultSummary;
+            return session.run(CYPHER).consume();
         }
     }
 }
