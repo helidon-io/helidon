@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -277,7 +275,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     @Override
     public WebClientRequestBuilder queryParam(String name, String... values) {
         for (String value : values) {
-            queryParams.add(name, URLEncoder.encode(value, StandardCharsets.UTF_8));
+            queryParams.add(name, value);
         }
         return this;
     }

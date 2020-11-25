@@ -362,6 +362,20 @@ final class FeatureCatalog {
                     .path("Messaging", "Kafka")
                     .experimental(true)
                     .nativeSupported(false));
+        add("io.helidon.messaging.connectors.jms",
+            FeatureDescriptor.builder()
+                    .name("JMS Connector")
+                    .description("Reactive messaging connector for JMS")
+                    .path("Messaging", "JMS")
+                    .experimental(true)
+                    .nativeSupported(false));
+        add("io.helidon.messaging.connectors.aq",
+            FeatureDescriptor.builder()
+                    .name("Oracle AQ Connector")
+                    .description("Reactive messaging connector for Oracle AQ")
+                    .path("Messaging", "OracleAQ")
+                    .experimental(true)
+                    .nativeSupported(false));
         add("io.helidon.security.abac.policy.el",
             FeatureDescriptor.builder()
                     .name("EL")
@@ -466,6 +480,12 @@ final class FeatureCatalog {
             "Tracing",
             "Reactive web client support for tracing",
             "WebClient", "Tracing");
+        add("io.helidon.logging.log4j",
+            FeatureDescriptor.builder()
+                    .name("Log4j")
+                    .path("Logging", "Log4j")
+                    .description("Log4j MDC support")
+                    .nativeDescription("Only programmatic configuration supported, does not work with Helidon loggers"));
 
         /*
          * Packages that are not a feature
@@ -501,6 +521,8 @@ final class FeatureCatalog {
         exclude("io.helidon.integrations.graal.mp.nativeimage.extension");
         exclude("io.helidon.integrations.jta.weld");
         exclude("io.helidon.jersey.common");
+        exclude("io.helidon.logging.common");
+        exclude("io.helidon.logging.jul");
         exclude("io.helidon.media.common");
         exclude("io.helidon.media.common.spi");
         exclude("io.helidon.openapi.internal");

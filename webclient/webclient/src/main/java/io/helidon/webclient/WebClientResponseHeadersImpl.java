@@ -95,6 +95,18 @@ class WebClientResponseHeadersImpl extends ReadOnlyParameters implements WebClie
         return first(Http.Header.ETAG).map(this::unquoteETag);
     }
 
+    @Override
+    public Optional<Long> contentLength() {
+        return first(Http.Header.CONTENT_LENGTH)
+                .map(Long::parseLong)
+                .or(Optional::empty);
+    }
+
+    @Override
+    public List<String> transferEncoding() {
+        return all(Http.Header.TRANSFER_ENCODING);
+    }
+
     private String unquoteETag(String etag) {
         if (etag == null || etag.isEmpty()) {
             return etag;

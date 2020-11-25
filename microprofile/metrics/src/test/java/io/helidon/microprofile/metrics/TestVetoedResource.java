@@ -16,9 +16,11 @@
  */
 package io.helidon.microprofile.metrics;
 
+import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -28,6 +30,7 @@ import java.lang.reflect.Method;
 
 @HelidonTest
 @AddExtension(VetoCdiExtension.class)
+@AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "true")
 public class TestVetoedResource extends MetricsMpServiceTest {
 
     @Test

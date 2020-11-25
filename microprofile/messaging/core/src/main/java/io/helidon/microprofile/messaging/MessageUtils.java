@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,20 @@ import org.reactivestreams.Subscriber;
 class MessageUtils {
 
     private MessageUtils() {
+    }
+
+    static Object wrap(Object o) {
+        if (o instanceof Message) {
+            return o;
+        }
+        return Message.of(o);
+    }
+
+    static Object unwrap(Object o) {
+        if (o instanceof Message) {
+            return ((Message<?>) o).getPayload();
+        }
+        return o;
     }
 
     /**

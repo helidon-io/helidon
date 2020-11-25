@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,6 @@
  */
 
 package io.helidon.microprofile.messaging;
-
-import java.lang.reflect.InvocationTargetException;
-
-import javax.enterprise.inject.spi.DeploymentException;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -52,40 +48,45 @@ class ProxyProcessor implements Processor<Object, Object> {
     @SuppressWarnings("unchecked")
     ProxyProcessor(ProcessorMethod processorMethod) {
         this.processorMethod = processorMethod;
-        try {
-            switch (processorMethod.getType()) {
-                case PROCESSOR_PUBLISHER_BUILDER_MSG_2_PUBLISHER_BUILDER_MSG:
-                case PROCESSOR_PUBLISHER_BUILDER_PAYL_2_PUBLISHER_BUILDER_PAYL:
-                    PublisherBuilder<Object> paramPublisherBuilder = ReactiveStreams.fromPublisher(this);
-                    publisher = ((PublisherBuilder<Object>) processorMethod
-                            .getMethod()
-                            .invoke(processorMethod.getBeanInstance(), paramPublisherBuilder)).buildRs();
-                    break;
-                case PROCESSOR_PUBLISHER_MSG_2_PUBLISHER_MSG:
-                case PROCESSOR_PUBLISHER_PAYL_2_PUBLISHER_PAYL:
-                    publisher = ((Publisher<Object>) processorMethod
-                            .getMethod()
-                            .invoke(processorMethod.getBeanInstance(), this));
-                    break;
-                case PROCESSOR_PROCESSOR_BUILDER_MSG_2_VOID:
-                case PROCESSOR_PROCESSOR_BUILDER_PAYL_2_VOID:
-                    processor = ((ProcessorBuilder<Object, Object>) processorMethod
-                            .getMethod()
-                            .invoke(processorMethod.getBeanInstance())).buildRs();
-                    publisher = processor;
-                    break;
-                case PROCESSOR_PROCESSOR_MSG_2_VOID:
-                case PROCESSOR_PROCESSOR_PAYL_2_VOID:
-                    processor = ((Processor<Object, Object>) processorMethod
-                            .getMethod()
-                            .invoke(processorMethod.getBeanInstance()));
-                    publisher = processor;
-                    break;
-                default:
-                    throw new UnsupportedOperationException("Unknown signature type " + processorMethod.getType());
-            }
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new DeploymentException(e);
+
+        switch (processorMethod.getType()) {
+            case PROCESSOR_PUBLISHER_BUILDER_MSG_2_PUBLISHER_BUILDER_MSG:
+            case PROCESSOR_PUBLISHER_BUILDER_PAYL_2_PUBLISHER_BUILDER_PAYL:
+                PublisherBuilder<Object> paramPublisherBuilder = ReactiveStreams.fromPublisher(this);
+                publisher = ((PublisherBuilder<Object>) processorMethod
+                        .invoke(paramPublisherBuilder)).buildRs();
+                break;
+            case PROCESSOR_PUBLISHER_MSG_2_PUBLISHER_MSG:
+            case PROCESSOR_PUBLISHER_PAYL_2_PUBLISHER_PAYL:
+                publisher = processorMethod.invoke(this);
+                break;
+            case PROCESSOR_PROCESSOR_BUILDER_MSG_2_VOID:
+                processor = ((ProcessorBuilder<Object, Object>) processorMethod
+                        .invoke()).buildRs();
+                publisher = processor;
+                break;
+            case PROCESSOR_PROCESSOR_BUILDER_PAYL_2_VOID:
+                processor = ReactiveStreams.builder()
+                        .map(MessageUtils::unwrap)
+                        .via((ProcessorBuilder<Object, Object>) processorMethod.invoke())
+                        .map(MessageUtils::wrap)
+                        .buildRs();
+                publisher = processor;
+                break;
+            case PROCESSOR_PROCESSOR_MSG_2_VOID:
+                processor = processorMethod.invoke();
+                publisher = processor;
+                break;
+            case PROCESSOR_PROCESSOR_PAYL_2_VOID:
+                processor = ReactiveStreams.builder()
+                        .map(MessageUtils::unwrap)
+                        .via((Processor<Object, Object>) processorMethod.invoke())
+                        .map(MessageUtils::wrap)
+                        .buildRs();
+                publisher = processor;
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown signature type " + processorMethod.getType());
         }
 
     }

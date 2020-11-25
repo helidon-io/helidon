@@ -17,7 +17,7 @@
 
 if [[ "$(docker images -q helidon-test-kafka 2>/dev/null)" == "" ]]; then
   # helidon:test-kafka not found, build it
-  docker build ./docker -t helidon-test-kafka -f ./docker/Dockerfile.kafka
+  docker build ./docker/kafka -t helidon-test-kafka -f ./docker/kafka/Dockerfile.kafka
 fi
 
 if [ ! "$(docker ps -q -f name=helidon_kafka)" ]; then
@@ -26,7 +26,11 @@ if [ ! "$(docker ps -q -f name=helidon_kafka)" ]; then
     docker rm helidon_kafka
   fi
   # Run test Kafka in new container, stop it by pressing Ctrl+C
-  docker run -it --name helidon_kafka --network="host" helidon-test-kafka
+  docker run -it \
+   --rm \
+   --publish 2181:2181 \
+   --publish 29092:9092 \
+   --publish 9092:29092 \
+   --name helidon_kafka \
+   helidon-test-kafka
 fi
-# Clean up exited container
-docker rm helidon_kafka

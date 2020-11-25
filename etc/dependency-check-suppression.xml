@@ -53,4 +53,74 @@
    <cpe>cpe:/a:java-websocket_project:java-websocket</cpe>
 </suppress>
 
+
+<!-- GraalVM -->
+<!-- JDK CVE for remote code execution in Java Web Start and applets running untrusted code.
+     Does not apply to our use of GraalVM -->
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-20.2.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.sdk/graal\-sdk@.*$</packageUrl>
+   <cve>CVE-2020-14803</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: objectfile-20.2.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.nativeimage/objectfile@.*$</packageUrl>
+   <cve>CVE-2020-14803</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: pointsto-20.2.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.nativeimage/pointsto@.*$</packageUrl>
+   <cve>CVE-2020-14803</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: svm-20.2.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.nativeimage/svm@.*$</packageUrl>
+   <cve>CVE-2020-14803</cve>
+</suppress>
+
+
+<!-- GraalVM -->
+<!-- This suppresses multiple CVEs related to old versions of the JDK -->
+<suppress>
+   <notes><![CDATA[
+   file name: truffle-nfi-20.2.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.truffle/truffle\-nfi@.*$</packageUrl>
+   <cpe>cpe:/a:oracle:graalvm</cpe>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: truffle-nfi-20.2.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.truffle/truffle\-nfi@.*$</packageUrl>
+   <cpe>cpe:/a:oracle:openjdk</cpe>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: truffle-nfi-20.2.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.truffle/truffle\-nfi@.*$</packageUrl>
+   <cpe>cpe:/a:sun:openjdk</cpe>
+</suppress>
+
+<!-- junit 4 -->
+<!-- This CVE is fixed in junit 4.13.1 and only applies when using Java 1.6
+     or earlier. We use version 4.13.1 and require Java 11 or above
+     so this CVE does not apply -->
+<suppress>
+   <notes><![CDATA[
+   file name: junit-4.13.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/junit/junit@.*$</packageUrl>
+   <vulnerabilityName>CVE-2020-15250</vulnerabilityName>
+</suppress>
+
 </suppressions>

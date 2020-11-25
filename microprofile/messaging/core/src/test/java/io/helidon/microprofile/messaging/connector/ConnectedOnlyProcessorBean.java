@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,10 @@ package io.helidon.microprofile.messaging.connector;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Any;
+import javax.inject.Inject;
 
 /**
  * This test is modified version of official tck test in version 1.0
@@ -28,6 +31,12 @@ import javax.enterprise.context.ApplicationScoped;
  */
 @ApplicationScoped
 public class ConnectedOnlyProcessorBean {
+
+    @Inject
+    @PostConstruct
+    public void reset(@Any IterableConnector c) {
+        c.reset();
+    }
 
     @Incoming("iterable-channel-in")
     @Outgoing("iterable-channel-out")

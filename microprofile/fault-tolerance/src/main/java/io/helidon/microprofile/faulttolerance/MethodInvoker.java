@@ -310,7 +310,7 @@ class MethodInvoker implements FtSupplier<Object> {
         try {
             requestController = CDI.current().select(RequestContextController.class).get();
             requestScope = CDI.current().select(RequestScope.class).get();
-            requestContext = requestScope.current();
+            requestContext = requestScope.referenceCurrent();
         } catch (Exception e) {
             requestScope = null;
             LOGGER.fine(() -> "Request context not active for method " + method
@@ -401,6 +401,11 @@ class MethodInvoker implements FtSupplier<Object> {
 
             // Update resultFuture based on outcome of asyncFuture
             asyncFuture.whenComplete((result, throwable) -> {
+                // Release request context if referenced
+                if (requestContext != null) {
+                    requestContext.release();
+                }
+
                 if (throwable != null) {
                     if (throwable instanceof CancellationException) {
                         single.cancel();
@@ -441,6 +446,11 @@ class MethodInvoker implements FtSupplier<Object> {
                 cause = map(e.getCause());
             } catch (Throwable t) {
                 cause = map(t);
+            } finally {
+                // Release request context if referenced
+                if (requestContext != null) {
+                    requestContext.release();
+                }
             }
             updateMetricsAfter(cause);
             if (cause != null) {
@@ -554,8 +564,21 @@ class MethodInvoker implements FtSupplier<Object> {
         if (introspector.hasFallback()) {
             Fallback<Object> fallback = Fallback.builder()
                     .fallback(throwable -> {
-                        CommandFallback cfb = new CommandFallback(context, introspector, throwable);
-                        return toCompletionStageSupplier(cfb::execute).get();
+                        try {
+                            // Reference request context if request scope is active
+                            if (requestScope != null) {
+                                requestContext = requestScope.referenceCurrent();
+                            }
+
+                            // Execute callback logic
+                            CommandFallback cfb = new CommandFallback(context, introspector, throwable);
+                            return toCompletionStageSupplier(cfb::execute).get();
+                        } finally {
+                            // Release request context if referenced
+                            if (requestContext != null) {
+                                requestContext.release();
+                            }
+                        }
                     })
                     .applyOn(mapTypes(introspector.getFallback().applyOn()))
                     .skipOn(mapTypes(introspector.getFallback().skipOn()))

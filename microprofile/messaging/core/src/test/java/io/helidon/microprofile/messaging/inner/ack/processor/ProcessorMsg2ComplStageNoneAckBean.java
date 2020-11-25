@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import javax.enterprise.context.ApplicationScoped;
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -47,7 +47,7 @@ public class ProcessorMsg2ComplStageNoneAckBean implements AssertableTestBean {
     public static final String TEST_DATA = "test-data";
     private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
     private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
-    private final CopyOnWriteArrayList<String> RESULT_DATA = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<String> resultData = new CopyOnWriteArrayList<>();
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
@@ -69,14 +69,14 @@ public class ProcessorMsg2ComplStageNoneAckBean implements AssertableTestBean {
     @Incoming("inner-consumer")
     @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
     public CompletionStage<Void> receiveMessage(Message<String> msg) {
-        RESULT_DATA.add(msg.getPayload());
+        resultData.add(msg.getPayload());
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public void assertValid() {
-        assertThat("Not acked!", ackFuture.isDone());
-        assertThat("Not acked before processing!", completedBeforeProcessor.get());
-        assertThat(RESULT_DATA, is(List.of(TEST_DATA)));
+        assertThat("Should not acked!", !ackFuture.isDone());
+        assertThat("Should not acked before processing!", !completedBeforeProcessor.get());
+        assertThat(resultData, containsInAnyOrder(List.of(TEST_DATA).toArray(new String[0])));
     }
 }

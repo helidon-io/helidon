@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 
 package io.helidon.microprofile.messaging;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -109,7 +108,7 @@ class InternalProcessor implements Processor<Object, Object> {
                     subscriber.onNext(postProcess(incomingValue, processedValue));
                 }
             }
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        } catch (Throwable e) {
             subscriber.onError(e);
         }
     }

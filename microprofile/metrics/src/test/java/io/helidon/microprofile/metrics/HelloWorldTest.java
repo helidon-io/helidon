@@ -55,13 +55,7 @@ public class HelloWorldTest extends MetricsMpServiceTest {
     @BeforeAll
     public static void initialize() {
         System.setProperty("jersey.config.server.logging.verbosity", "FINE");
-
-    }
-
-    private static MetricRegistry initSyntheticSimpleTimerRegistry() {
-        MetricRegistry result = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.BASE);
-        result.remove(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME);
-        return result;
+        MetricsMpServiceTest.initTest();
     }
 
     @BeforeEach

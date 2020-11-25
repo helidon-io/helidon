@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,6 @@ public class ChannelTest extends AbstractCDITest {
 
     @ParameterizedTest
     @MethodSource("testCaseSource")
-    @Disabled("Fails due to backpressure issues in InternalProcessor, reenable once fixed")
     void innerChannelBeanTest(CdiTestCase testCase) {
         Optional<? extends Class<? extends Throwable>> expectedThrowable = testCase.getExpectedThrowable();
         if (expectedThrowable.isPresent()) {

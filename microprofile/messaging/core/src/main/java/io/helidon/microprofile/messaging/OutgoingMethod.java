@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.reactivestreams.Publisher;
 
+
 class OutgoingMethod extends AbstractMessagingMethod {
 
     private Publisher<?> publisher;
@@ -46,12 +47,18 @@ class OutgoingMethod extends AbstractMessagingMethod {
             try {
                 switch (getType()) {
                     case OUTGOING_PUBLISHER_MSG_2_VOID:
-                    case OUTGOING_PUBLISHER_PAYL_2_VOID:
                         publisher = (Publisher<?>) getMethod().invoke(getBeanInstance());
                         break;
+                    case OUTGOING_PUBLISHER_PAYL_2_VOID:
+                        publisher = new WrappingPublisher((Publisher<?>) getMethod().invoke(getBeanInstance()));
+                        break;
                     case OUTGOING_PUBLISHER_BUILDER_MSG_2_VOID:
+                        publisher = ((PublisherBuilder<?>) getMethod().invoke(getBeanInstance()))
+                                .buildRs();
+                        break;
                     case OUTGOING_PUBLISHER_BUILDER_PAYL_2_VOID:
-                        publisher = ((PublisherBuilder<?>) getMethod().invoke(getBeanInstance())).buildRs();
+                        publisher = new WrappingPublisher(((PublisherBuilder<?>) getMethod().invoke(getBeanInstance()))
+                                .buildRs());
                         break;
                     default:
                         throw new UnsupportedOperationException(String

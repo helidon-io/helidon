@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,8 @@
 
 package io.helidon.microprofile.messaging;
 
-import java.lang.reflect.InvocationTargetException;
-
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.DeploymentException;
 
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
@@ -63,31 +60,26 @@ class IncomingMethod extends AbstractMessagingMethod {
     public void init(BeanManager beanManager, Config config) {
         super.init(beanManager, config);
         if (getType().isInvokeAtAssembly()) {
-            try {
-                switch (getType()) {
-                    case INCOMING_SUBSCRIBER_MSG_2_VOID:
-                    case INCOMING_SUBSCRIBER_PAYL_2_VOID:
-                        Subscriber<? super Object> originalPaylSubscriber =
-                                (Subscriber<? super Object>) getMethod().invoke(getBeanInstance());
-                        Subscriber<? super Object> unwrappedSubscriber =
-                                UnwrapProcessor.of(this.getMethod(), originalPaylSubscriber);
-                        subscriber = new ProxySubscriber<>(this, unwrappedSubscriber);
-                        break;
-                    case INCOMING_SUBSCRIBER_BUILDER_MSG_2_VOID:
-                    case INCOMING_SUBSCRIBER_BUILDER_PAYL_2_VOID:
-                        SubscriberBuilder<? super Object, ?> originalSubscriberBuilder =
-                                (SubscriberBuilder<? super Object, ?>) getMethod().invoke(getBeanInstance());
-                        Subscriber<? super Object> unwrappedBuilder =
-                                UnwrapProcessor.of(this.getMethod(), originalSubscriberBuilder.build());
-                        subscriber = new ProxySubscriber<>(this, unwrappedBuilder);
-                        break;
-                    default:
-                        throw new UnsupportedOperationException(String
-                                .format("Not implemented signature %s", getType()));
-                }
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new DeploymentException(e);
+            switch (getType()) {
+                case INCOMING_SUBSCRIBER_MSG_2_VOID:
+                case INCOMING_SUBSCRIBER_PAYL_2_VOID:
+                    Subscriber<? super Object> originalPaylSubscriber = invoke();
+                    Subscriber<? super Object> unwrappedSubscriber =
+                            UnwrapProcessor.of(this.getMethod(), originalPaylSubscriber);
+                    subscriber = new ProxySubscriber<>(this, unwrappedSubscriber);
+                    break;
+                case INCOMING_SUBSCRIBER_BUILDER_MSG_2_VOID:
+                case INCOMING_SUBSCRIBER_BUILDER_PAYL_2_VOID:
+                    SubscriberBuilder<? super Object, ?> originalSubscriberBuilder = invoke();
+                    Subscriber<? super Object> unwrappedBuilder =
+                            UnwrapProcessor.of(this.getMethod(), originalSubscriberBuilder.build());
+                    subscriber = new ProxySubscriber<>(this, unwrappedBuilder);
+                    break;
+                default:
+                    throw new UnsupportedOperationException(String
+                            .format("Not implemented signature %s", getType()));
             }
+
         } else {
             // Invoke on each message subscriber
             subscriber = new InternalSubscriber(this);

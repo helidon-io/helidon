@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.spi.AuditProvider;
 import io.helidon.security.spi.AuthenticationProvider;
@@ -80,6 +81,7 @@ public class Security {
 
     private static final Set<String> RESERVED_PROVIDER_KEYS = Set.of(
             "name",
+            "type",
             "class",
             "is-authentication-provider",
             "is-authorization-provider",
@@ -951,7 +953,9 @@ public class Security {
         }
 
         private void providerFromConfig(Map<String, SecurityProviderService> configKeyToService,
-                                        Map<String, SecurityProviderService> classNameToService, String knownKeys, Config pConf) {
+                                        Map<String, SecurityProviderService> classNameToService,
+                                        String knownKeys,
+                                        Config pConf) {
             AtomicReference<SecurityProviderService> service = new AtomicReference<>();
             AtomicReference<Config> providerSpecific = new AtomicReference<>();
 
@@ -1053,24 +1057,38 @@ public class Security {
                                          Config pConf,
                                          AtomicReference<SecurityProviderService> service,
                                          AtomicReference<Config> providerSpecific) {
-            // everything else is based on provider specific configuration
-            pConf.asNodeList().get().stream().filter(this::notReservedProviderKey).forEach(providerSpecificConf -> {
-                if (!providerSpecific.compareAndSet(null, providerSpecificConf)) {
-                    throw new SecurityException("More than one provider configurations found, each provider can only"
-                                                        + " have one provider specific config. Conflict: "
-                                                        + providerSpecific.get().key()
-                                                        + " and " + providerSpecificConf.key());
-                }
 
-                String keyName = providerSpecificConf.name();
-                if (configKeyToService.containsKey(keyName)) {
-                    service.set(configKeyToService.get(keyName));
-                } else {
-                    throw new SecurityException("Configuration key " + providerSpecificConf.key()
-                                                        + " is not a valid provider configuration. Supported keys: "
-                                                        + knownKeys);
-                }
-            });
+            ConfigValue<String> type = pConf.get("type").asString();
+            if (type.isPresent()) {
+                // explicit type, ignore search below
+                findProviderService(service, configKeyToService, type.get(), knownKeys);
+                providerSpecific.set(pConf.get(type.get()));
+            } else {
+                // everything else is based on provider specific configuration
+                pConf.asNodeList().get().stream().filter(this::notReservedProviderKey).forEach(providerSpecificConf -> {
+                    if (!providerSpecific.compareAndSet(null, providerSpecificConf)) {
+                        throw new SecurityException("More than one provider configurations found, each provider can only"
+                                                            + " have one provider specific config. Conflict: "
+                                                            + providerSpecific.get().key()
+                                                            + " and " + providerSpecificConf.key());
+                    }
+
+                    findProviderService(service, configKeyToService, providerSpecificConf.name(), knownKeys);
+                });
+            }
+        }
+
+        private void findProviderService(AtomicReference<SecurityProviderService> service,
+                                         Map<String, SecurityProviderService> configKeyToService,
+                                         String name,
+                                         String knownKeys) {
+            if (configKeyToService.containsKey(name)) {
+                service.set(configKeyToService.get(name));
+            } else {
+                throw new SecurityException("Configuration key " + name
+                                                    + " is not a valid provider configuration. Supported keys: "
+                                                    + knownKeys);
+            }
         }
 
         private String loadProviderServices(Map<String, SecurityProviderService> configKeyToService,

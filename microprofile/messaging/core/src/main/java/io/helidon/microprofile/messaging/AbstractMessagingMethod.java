@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 
 package io.helidon.microprofile.messaging;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.DeploymentException;
 
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
@@ -56,6 +58,10 @@ abstract class AbstractMessagingMethod {
     }
 
     void validate() {
+        if (type == null) {
+            // already failed on unsupported signature
+            return;
+        }
         Optional.ofNullable(method.getAnnotation(Acknowledgment.class))
                 .map(Acknowledgment::value)
                 .filter(s -> !type.getSupportedAckStrategies().contains(s))
@@ -115,6 +121,15 @@ abstract class AbstractMessagingMethod {
 
     Acknowledgment.Strategy getAckStrategy() {
         return ackStrategy;
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> T invoke(Object... args) {
+        try {
+            return (T) this.getMethod().invoke(this.getBeanInstance(), args);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new DeploymentException(e);
+        }
     }
 
     private void resolveAckStrategy() {
