@@ -29,14 +29,12 @@ pipeline {
       agent {
         kubernetes {
           inheritFrom 'k8s-slave'
-          defaultContainer 'jnlp'
           yamlFile 'etc/pods/mysql.yaml'
+          yamlMergeStrategy merge()
         }
       }
       steps {
-        container('jnlp') {
-          sh './etc/scripts/test-integ-mysql.sh'
-        }
+        sh './etc/scripts/test-integ-mysql.sh'
       }
     }
   }
