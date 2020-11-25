@@ -91,6 +91,10 @@ class SchemaType extends AbstractDescriptiveElement implements ElementGenerator 
      */
     @Override
     public String getSchemaAsString() {
+        if (listSchemaFieldDefinitions.size() == 0) {
+            // should not generate anything if no field definitions
+            return "";
+        }
         StringBuilder sb = new StringBuilder(getSchemaElementDescription(null))
                 .append(getGraphQLName())
                 .append(SPACER)
@@ -202,6 +206,14 @@ class SchemaType extends AbstractDescriptiveElement implements ElementGenerator 
      */
     public void addFieldDefinition(SchemaFieldDefinition schemaFieldDefinition) {
         listSchemaFieldDefinitions.add(schemaFieldDefinition);
+    }
+
+    /**
+     * Return true if there is one or more {@link SchemaFieldDefinition}s.
+     * @return true if there is one or more {@link SchemaFieldDefinition}s
+     */
+    public boolean hasFieldDefinitions() {
+        return listSchemaFieldDefinitions != null && listSchemaFieldDefinitions.size() > 0;
     }
 
     /**

@@ -19,6 +19,7 @@ package io.helidon.microprofile.graphql.server;
 import java.beans.IntrospectionException;
 import java.io.IOException;
 
+import io.helidon.microprofile.graphql.server.test.queries.NoopQueriesAndMutations;
 import javax.inject.Inject;
 
 import io.helidon.microprofile.graphql.server.test.types.Level0;
@@ -34,6 +35,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for multi-level object graphs - Level0.
  */
 @AddBean(Level0.class)
+@AddBean(NoopQueriesAndMutations.class)
 class Level0IT extends AbstractGraphQlCdiIT {
 
     @Inject
@@ -43,7 +45,7 @@ class Level0IT extends AbstractGraphQlCdiIT {
 
     @Test
     public void testLevel0() throws IOException, IntrospectionException, ClassNotFoundException {
-        setupIndex(indexFileName, Level0.class);
+        setupIndex(indexFileName, Level0.class, NoopQueriesAndMutations.class);
         Schema schema = createSchema();
         assertThat(schema.containsTypeWithName("Level0"), is(true));
         assertThat(schema.containsTypeWithName("Level1"), is(true));

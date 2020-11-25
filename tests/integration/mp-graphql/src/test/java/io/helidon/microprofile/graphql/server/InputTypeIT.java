@@ -18,6 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
+import io.helidon.microprofile.graphql.server.test.queries.NoopQueriesAndMutations;
 import javax.inject.Inject;
 
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputType;
@@ -39,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 @AddBean(SimpleContactInputTypeWithName.class)
 @AddBean(SimpleContactInputTypeWithNameValue.class)
 @AddBean(SimpleContactInputTypeWithAddress.class)
+@AddBean(NoopQueriesAndMutations.class)
 class InputTypeIT extends AbstractGraphQlCdiIT {
 
     @Inject
@@ -49,7 +51,8 @@ class InputTypeIT extends AbstractGraphQlCdiIT {
     @Test
     void testInputType() throws IOException {
         setupIndex(indexFileName, SimpleContactInputType.class, SimpleContactInputTypeWithName.class,
-                   SimpleContactInputTypeWithNameValue.class, SimpleContactInputTypeWithAddress.class);
+                   SimpleContactInputTypeWithNameValue.class, SimpleContactInputTypeWithAddress.class,
+                   NoopQueriesAndMutations.class);
         Schema schema = createSchema();
 
         assertAll(

@@ -168,14 +168,19 @@ class Schema implements ElementGenerator {
 
         sb.append("schema ").append(OPEN_CURLY).append(NEWLINE);
 
-        // only output "query" if we have a query type
-        if (containsTypeWithName(queryName)) {
+        // only output "query", "mutation" and "subscription" types if the
+        // type has at least one field definition
+        SchemaType queryType = getTypeByName(queryName);
+        SchemaType mutationType = getTypeByName(mutationName);
+        SchemaType subscriptionType = getTypeByName(subscriptionName);
+
+        if (queryType != null && queryType.hasFieldDefinitions()) {
             sb.append(SPACER).append("query: ").append(queryName).append('\n');
         }
-        if (containsTypeWithName(mutationName)) {
+        if (mutationType != null && mutationType.hasFieldDefinitions()) {
             sb.append(SPACER).append("mutation: ").append(mutationName).append('\n');
         }
-        if (containsTypeWithName(subscriptionName)) {
+        if (subscriptionType != null && subscriptionType.hasFieldDefinitions()) {
             sb.append(SPACER).append("subscription: ").append(subscriptionName).append('\n');
         }
 

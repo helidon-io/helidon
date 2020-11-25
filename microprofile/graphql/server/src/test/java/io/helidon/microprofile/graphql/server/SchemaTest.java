@@ -35,39 +35,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for {@link Schema} class.
  */
 class SchemaTest extends AbstractGraphQLTest {
-
-    private static final Class<?> STRING = String.class;
-
-    @Test
-    public void testEmptySchemaAsString() {
-        Schema schema = Schema.create();
-        assertThat(schema.getSchemaAsString(), is("schema {\n}\n\n"));
-    }
-
-    @Test
-    public void testTopLevelSchemaAsString() {
-        Schema schema = Schema.create();
-        schema.addType(createSchemaType("Query", null));
-        assertResultsMatch(schema.getSchemaAsString(), "test-results/schema-test-01.txt");
-
-        schema.addType(createSchemaType("Mutation", null));
-        assertResultsMatch(schema.getSchemaAsString(), "test-results/schema-test-02.txt");
-
-        schema.addType(createSchemaType("Subscription", ""));
-        assertResultsMatch(schema.getSchemaAsString(), "test-results/schema-test-03.txt");
-
-        SchemaArgument argument = createArgument("dateFormat", "String", true, null, STRING);
-
-        SchemaDirective schemaDirective = SchemaDirective.builder()
-                .name("format")
-                .addLocation(FIELD_DEFINITION.name())
-                .addArgument(argument).build();
-        
-        schema.addDirective(schemaDirective);
-
-        assertResultsMatch(schema.getSchemaAsString(), "test-results/schema-test-04.txt");
-    }
-
+    
     @Test
     public void testScalars() {
         Schema schema = Schema.create();

@@ -464,16 +464,6 @@ class SchemaGeneratorTest extends AbstractGraphQLTest {
     }
 
     @Test
-    public void testMultipleLevelsOfGenerics() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapMethods = schemaGenerator
-                .retrieveGetterBeanMethods(MultiLevelListsAndArrays.class, false);
-        assertThat(mapMethods, is(notNullValue()));
-        assertThat(mapMethods.size(), is(8));
-        Schema schema = schemaGenerator.generateSchemaFromClasses(Set.of(MultiLevelListsAndArrays.class));
-        generateGraphQLSchema(schema);
-    }
-
-    @Test
     public void testArrayLevelsAndRootArray() {
         String[] oneLevelString = new String[1];
         String[][] twoLevelString = new String[2][1];

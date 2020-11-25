@@ -28,7 +28,8 @@ import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.tests.junit5.AddConfig;
+import io.helidon.microprofile.graphql.server.test.queries.NoopQueriesAndMutations;
+import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -54,6 +55,7 @@ import static org.hamcrest.Matchers.notNullValue;
 @AddExtension(JaxRsCdiExtension.class)
 @AddExtension(ConfigCdiExtension.class)
 @AddExtension(CdiComponentProvider.class)
+@AddBean(NoopQueriesAndMutations.class)
 public class GraphQLEndpointIT
         extends AbstractGraphQLEndpointIT {
 

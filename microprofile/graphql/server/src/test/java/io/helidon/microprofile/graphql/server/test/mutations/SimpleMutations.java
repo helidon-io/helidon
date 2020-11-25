@@ -27,7 +27,7 @@ import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
-
+import org.eclipse.microprofile.graphql.Query;
 
 /**
  * Class that holds simple mutations definitions with various numbers of arguments.
@@ -41,6 +41,11 @@ public class SimpleMutations {
 
     @Inject
     private TestDB testDB;
+
+    @Query
+    public String helloWorld() {
+        return "Hello World";
+    }
 
     @Mutation
     public SimpleContact createNewContact() {

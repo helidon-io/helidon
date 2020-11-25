@@ -19,6 +19,7 @@ package io.helidon.microprofile.graphql.server;
 import java.beans.IntrospectionException;
 import java.io.IOException;
 
+import io.helidon.microprofile.graphql.server.test.queries.NoopQueriesAndMutations;
 import javax.inject.Inject;
 
 import io.helidon.microprofile.graphql.server.test.types.Person;
@@ -35,6 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for naming of Pojo's.
  */
 @AddBean(Person.class)
+@AddBean(NoopQueriesAndMutations.class)
 class PojoNamingIT extends AbstractGraphQlCdiIT {
 
     @Inject
@@ -47,7 +49,7 @@ class PojoNamingIT extends AbstractGraphQlCdiIT {
      */
     @Test
     public void testTypeGenerationWithNoName() throws IntrospectionException, ClassNotFoundException, IOException {
-        setupIndex(indexFileName, Person.class);
+        setupIndex(indexFileName, Person.class, NoopQueriesAndMutations.class);
         Schema schema = createSchema();
         assertThat(schema.getTypeByName("Person"), is(notNullValue()));
         assertThat(schema.getTypeByName("Address"), is(notNullValue()));
@@ -61,7 +63,7 @@ class PojoNamingIT extends AbstractGraphQlCdiIT {
      */
     @Test
     public void testPersonWithName() throws IOException, IntrospectionException, ClassNotFoundException {
-        setupIndex(indexFileName, PersonWithName.class);
+        setupIndex(indexFileName, PersonWithName.class, NoopQueriesAndMutations.class);
         Schema schema = createSchema();
 
         assertThat(schema, is(notNullValue()));

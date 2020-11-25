@@ -18,6 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
+import io.helidon.microprofile.graphql.server.test.queries.NoopQueriesAndMutations;
 import javax.inject.Inject;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.Test;
 @AddBean(Motorbike.class)
 @AddBean(AbstractVehicle.class)
 @AddBean(TestDB.class)
+@AddBean(NoopQueriesAndMutations.class)
 class InterfaceOnlyAnnotatedIT extends AbstractGraphQlCdiIT {
 
     @Inject
@@ -46,7 +48,8 @@ class InterfaceOnlyAnnotatedIT extends AbstractGraphQlCdiIT {
 
     @Test
     void testInterfaceDiscoveryWithImplementorsWithNoTypeAnnotation() throws IOException {
-        setupIndex(indexFileName, Vehicle.class, Car.class, Motorbike.class, AbstractVehicle.class);
+        setupIndex(indexFileName, Vehicle.class, Car.class, Motorbike.class, AbstractVehicle.class,
+                   NoopQueriesAndMutations.class);
         assertInterfaceResults();
     }
 }
