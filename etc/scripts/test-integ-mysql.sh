@@ -39,13 +39,10 @@ readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
-uname -a
-
-env | sort
-
-ps -ax
-
 mvn ${MAVEN_ARGS} --version
+
+(cd ${HOME}/.m2/repository/io/helidon && \
+  find . -name '*.jar' -print)
 
 (cd tests/integration/jpa && \
   mvn ${MAVEN_ARGS} clean install -Dmysql -pl model,appl)

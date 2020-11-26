@@ -233,6 +233,18 @@ limitations under the License.
                 </configuration>
                 <executions>
                     <execution>
+                        <id>start</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>io.helidon.tests.integration.jpa.appl.start.*IT</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>test</id>
                         <phase>integration-test</phase>
                         <goals>

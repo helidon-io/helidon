@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.jpa.appl.test;
+package io.helidon.tests.integration.jpa.appl.start;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -28,6 +28,8 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
 import io.helidon.tests.integration.jpa.appl.Utils;
+import io.helidon.tests.integration.jpa.appl.test.ClientUtils;
+import io.helidon.tests.integration.jpa.appl.test.Validate;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
