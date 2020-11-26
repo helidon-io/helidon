@@ -188,7 +188,6 @@ class SchemaGenerator {
      * @return a {@link Schema}
      * @throws java.lang.IllegalStateException in case the schema cannot be generated
      */
-    @SuppressWarnings("rawtypes")
     public Schema generateSchema() {
         int count = collectedApis.size();
 

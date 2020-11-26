@@ -77,7 +77,7 @@ Access the `/graphql` endpoint via `http://127.0.0.1:7001/graphql`:
 ## Incorporating the GraphiQL UI
 
 The [GraphiQL UI](https://github.com/graphql/graphiql), which provides a UI to execute GraphQL commands, is not included by default in Helidon's Microprofile GraphQL 
-implementation. Uou can follow the guide below to incorporate the UID into this example:
+implementation. You can follow the guide below to incorporate the UI into this example:
 
 1. Copy the contents in the sample index.html file from [here](https://github.com/graphql/graphiql/blob/main/packages/graphiql/README.md)
 into the file at `examples/microprofile/graphql/src/main/resources/web/index.html`

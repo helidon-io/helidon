@@ -54,7 +54,7 @@ public class Main {
                .thenApply(webServer -> {
                    String endpoint = "http://localhost:" + webServer.port();
                    System.out.println("GraphQL started on " + endpoint + "/graphql");
-                   System.out.println("GraphQL schema availanle on " + endpoint + "/graphql/schema.graphql");
+                   System.out.println("GraphQL schema available on " + endpoint + "/graphql/schema.graphql");
                    return null;
                });
     }
