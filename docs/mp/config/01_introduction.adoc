@@ -122,7 +122,7 @@ from meta configuration.
 The meta-config allows configuration of config sources and other configuration options,
 including retry policies and polling strategies.
 
-If a file named `meta-config.yaml`, or `meta-config.properties` is in the current directory or
+If a file named `meta-config.yaml`, or `meta-config.properties` is in the threadContext directory or
 on the classpath and there is no explicit setup of `Config` in the code, the configuration will
 be loaded from the `meta-config` file.
 

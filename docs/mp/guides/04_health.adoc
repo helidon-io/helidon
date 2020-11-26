@@ -151,7 +151,7 @@ public class GreetLivenessCheck implements HealthCheck {
 ----
 <1> Annotation indicating this is a liveness health-check.
 <2> Annotation indicating there is a single liveness `HealthCheck` object during the lifetime of the application.
-<3> Build the HealthCheckResponse with status `UP` and the current time.
+<3> Build the HealthCheckResponse with status `UP` and the threadContext time.
 
 [source,bash]
 .Build and run the application, then verify the custom liveness health endpoint:

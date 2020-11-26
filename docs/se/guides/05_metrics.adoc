@@ -622,7 +622,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 The `Gauge` metric measures a discreet value at a point in time, such as a temperature.  The metric is not normally
 tied to a REST endpoint, rather it should be registered during application startup.  When the `/metrics/application` endpoint
 is invoked, Helidon will call the `getValue` method of each registered `Gauge`.  The following example demonstrates
-how a `Gauge` is used to get the current temperature.
+how a `Gauge` is used to get the threadContext temperature.
 
 [source,java]
 .Add new imports to `Main.java` and replace the `Main.createRouting` method with the following code:
@@ -714,7 +714,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
   "temperature": 11 // <1>
 }
 ----
-<1> The current temperature is returned.  Invoke the `/metrics/application` endpoint again and you should get a different value.
+<1> The threadContext temperature is returned.  Invoke the `/metrics/application` endpoint again and you should get a different value.
 
 [[simple_timer_metric]]
 ==== Simple timer metric

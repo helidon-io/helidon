@@ -190,9 +190,9 @@ import io.opentracing.Span; // <1>
 <1> Add new import statement.
 <2> Get the `Tracer` object from the request.
 <3> Build a new span named `getDefaultMessageHandler`.
-<4> Make the a new span a child of the current span.
-<5> Start the span.  The current timestamp is used as the starting time for the span.
-<6> Finish the span.  The current timestamp is used as the ending time for the span.
+<4> Make the a new span a child of the threadContext span.
+<5> Start the span.  The threadContext timestamp is used as the starting time for the span.
+<6> Finish the span.  The threadContext timestamp is used as the ending time for the span.
 
 
 [source,bash]
@@ -576,7 +576,7 @@ public class GreetService implements Service {
 }
 ----
 <1> Add `outboundMessageHandler` to the routing rules.
-<2> Create and start a span that is a child of the current span.
+<2> Create and start a span that is a child of the threadContext span.
 <3> Set a property with the `SpanContext`.
 <4> Invoke the second service.
 <5> Stop the span.

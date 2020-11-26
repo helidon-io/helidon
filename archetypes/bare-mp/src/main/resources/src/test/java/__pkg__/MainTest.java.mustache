@@ -56,7 +56,7 @@ class MainTest {
 
     @AfterAll
     static void destroyClass() {
-        CDI<Object> current = CDI.current();
-        ((SeContainer) current).close();
+        CDI<Object> threadContext = CDI.threadContext();
+        ((SeContainer) threadContext).close();
     }
 }

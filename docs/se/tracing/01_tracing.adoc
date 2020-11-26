@@ -183,7 +183,7 @@ The traced configuration has the following layers:
 
 The components using tracing configuration use the
 `TracingConfigUtil`. This uses the `io.helidon.common.Context` to retrieve
-current configuration.
+threadContext configuration.
 
 
 ==== Configuration using builder

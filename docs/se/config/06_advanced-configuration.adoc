@@ -235,9 +235,9 @@ assert config.get("data.providers.0.name")               // <6>
 
 <1> Specifies the prefix `app` for the associated source.
 <2> `Supplier<ConfigSource>` for the file
- `app.conf` loaded from the current `classpath`.
+ `app.conf` loaded from the threadContext `classpath`.
 <3> Specifies the prefix `data` for the associated source.
-<4> Supplier<ConfigSource> for the file `app.conf` loaded from the current `classpath`.
+<4> Supplier<ConfigSource> for the file `app.conf` loaded from the threadContext `classpath`.
 <5> Key `app.greeting` combines the `app` prefix and the original key `greeting`
 from the `app.conf` source.
 <6> Key `data.providers.0.name` combines the `data` prefix and
@@ -495,7 +495,7 @@ The `Config.create()` method determines the default configuration from
 the following search:
 
 . Attempt to load _meta-config_ from at most one of the following files,
-first on the file system in current directory, then on classpath, checked in this order:
+first on the file system in threadContext directory, then on classpath, checked in this order:
 .. `meta-config.yaml` - meta configuration file in YAML format
 .. `meta-config.conf` - meta configuration file in HOCON format
 .. `meta-config.json` - meta configuration file in JSON format
@@ -830,7 +830,7 @@ overrides they that prescribe can change.
 can supply values even if the key is absent from the config source.
 
 Each override entry consists of a Java properties-format definition. The key is an
-expression (which can use wildcards) to match config keys read from the current
+expression (which can use wildcards) to match config keys read from the threadContext
 config sources, and the override value is the new value for any key matching the
 key expression from that entry. Order is important. The
 config system tests every key expression/value pair one by one in the order they appear
@@ -848,7 +848,7 @@ A token reference is a key token starting with `$`, optionally enclosed between
 
 As an example use case, you can use token references to declare the default values (see
 `resolving-tokens.yaml` below), while the references may be resolved in another
-config source, which identifies a current environment (see `env.yaml` examples
+config source, which identifies a threadContext environment (see `env.yaml` examples
 below). You can then use the same overrides for different environments, say `test` and `prod`.
 The configuration in each environment is then overridden with a different values
 using wildcards (see `overrides.properties` below).

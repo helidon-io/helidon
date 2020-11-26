@@ -3,7 +3,7 @@
 This change was merged into master.
 Module: `common/mapper`
 Since: Helidon 1.2.2
-Please consult javadocs for current documentation.
+Please consult javadocs for threadContext documentation.
 
 Provide an API to map an arbitrary Java type to another arbitrary Java type.
 

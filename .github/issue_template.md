@@ -12,7 +12,7 @@
 ----------
 
 ## Problem Description
-[//]: # "Describe the bug in detail highlighting current behavior vs expected behavior"
+[//]: # "Describe the bug in detail highlighting threadContext behavior vs expected behavior"
 [//]: # "State if the problem is easily reproducible or happens intermittently"
 [//]: # "Include stack traces or command outputs"
 

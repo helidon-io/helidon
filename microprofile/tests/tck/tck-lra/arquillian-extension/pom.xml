@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <artifactId>lra-test</artifactId>
+    <groupId>org.jboss.narayana.rts</groupId>
+    <version>5.10.7.Final-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>lra-test-arquillian-extension</artifactId>
+  <name>LRA tests: Arquillian extension</name>
+  <description>Arquillian extensions needed for LRA tests to work</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.eclipse.microprofile.lra</groupId>
+      <artifactId>microprofile-lra-api</artifactId>
+      <version>${version.microprofile.lra.api}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.microprofile.lra</groupId>
+      <artifactId>microprofile-lra-tck</artifactId>
+<!--      <version>${version.microprofile.lra.tck}</version>-->
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
+
+
+    <dependency>
+      <groupId>org.jboss.narayana.rts</groupId>
+      <artifactId>narayana-lra</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.narayana.rts</groupId>
+      <artifactId>lra-client</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.helidon.lra</groupId>
+      <artifactId>helidon-lra-client</artifactId>
+      <version>2.0.2-SNAPSHOT</version>
+    </dependency>
+
+
+
+
+    <dependency>
+      <groupId>org.jboss.shrinkwrap</groupId>
+      <artifactId>shrinkwrap-api</artifactId>
+      <version>${version.org.jboss.shrinkwrap}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.arquillian.junit</groupId>
+      <artifactId>arquillian-junit-container</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.weld.se</groupId>
+      <artifactId>weld-se-shaded</artifactId>
+      <version>${version.org.jboss.weld.se}</version>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
+
+
+</project>

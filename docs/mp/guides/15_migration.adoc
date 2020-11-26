@@ -43,7 +43,7 @@ unversioned core and full bundles:
 * `io.helidon.microprofile.server.Main` has been deprecated. Use `io.helidon.microprofile.cdi.Main` instead.
 * `io.helidon.microprofile.server.Server` is still available, although the features are much reduced.
 * You no longer need to initialize Java Util Logging explicitly. Put `logging.properties` on the classpath
-  or in the current directory to be automatically picked up to configure Java Util Logging.
+  or in the threadContext directory to be automatically picked up to configure Java Util Logging.
 
 == JAX-RS Applications
 
@@ -85,10 +85,10 @@ and started. This has resulted in some changes in APIs and behavior:
 * `MpService` and `MpServiceContext` have been removed.
   ** Methods from context have been moved to `JaxRsCdiExtension` and `ServerCdiExtension`.
   These can be accessed from CDI extension through `BeanManager.getExtension`.
-  ** Methods `register` can be used on current `io.helidon.context.Context`
+  ** Methods `register` can be used on threadContext `io.helidon.context.Context`
   ** `MpService` equivalent is a CDI extension. All Helidon services were refactored to
       CDI extension (you can use these for reference).
-* `Server.cdiContainer` is removed, use `CDI.current()` instead.
+* `Server.cdiContainer` is removed, use `CDI.threadContext()` instead.
 
 
 == Metrics

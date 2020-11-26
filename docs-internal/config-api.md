@@ -78,12 +78,12 @@ Currently known sources that should be refactored:
 ### Change support
 Current change support is too complex and uses APIs not suitable for the purpose:
 1. Flow API should not be used in Config API
-2. method "onChange" should be "onChange(Consumer<Config>)" - current expects a function with undefined behavior for returned 
+2. method "onChange" should be "onChange(Consumer<Config>)" - threadContext expects a function with undefined behavior for returned 
     boolean
 3. Remove dependency on SubmissionPublisher (and on project Reactor transitively)
 
 ## Polling strategies
-1. Check if these can be simplified, as current API and SPI is not easy to use.
+1. Check if these can be simplified, as threadContext API and SPI is not easy to use.
 2. Make sure one thing can be achieved only one way - e.g why do we have
     polling and watching both available for File config sources?
     

@@ -55,7 +55,7 @@ The handler forwards the request to the downstream handlers by
 ----
 <1> handler for any HTTP method using the `/hello` path
 <2> business logic implementation
-<3> forward the current request to the downstream handler
+<3> forward the threadContext request to the downstream handler
 
 * call `req.next(throwable)` to forward the handling to the
  <<webserver/05_error-handling.adoc,error handlers>>
@@ -73,7 +73,7 @@ The handler forwards the request to the downstream handlers by
 ----
 <1> handler for any HTTP method using the `/hello` path
 <2> custom logic 
-<3> forward the current request to the downstream handler
+<3> forward the threadContext request to the downstream handler
 <4> forward the request to the error handler
 
 The handling logic can explicitly forward the execution to a different thread. 

@@ -79,7 +79,7 @@ behavioral changes:
 - gRPC: Fix issue with gRPC clients and services where method signatures have types with nested generics [2283](https://github.com/oracle/helidon/pull/2283)
 - gRPC: Update gRPC Version [2388](https://github.com/oracle/helidon/pull/2388)
 - CDI: Service class fixed. [2317](https://github.com/oracle/helidon/pull/2317)
-- CDI: CDI.current().getBeanManager() now available during shutdown [2438](https://github.com/oracle/helidon/pull/2438)
+- CDI: CDI.threadContext().getBeanManager() now available during shutdown [2438](https://github.com/oracle/helidon/pull/2438)
 - Examples: Fix 2391 Bug in generated Dockerfile.native from quickstart-mp [2393](https://github.com/oracle/helidon/pull/2393)
 - Examples: Update standalone quickstarts. [2360](https://github.com/oracle/helidon/pull/2360)
 - Examples: Updated maven surefire plugin to helidon-standalone-quickstart-mp [1849](https://github.com/oracle/helidon/pull/1849)
@@ -239,7 +239,7 @@ Changes between 2.0.0-RC2 and 2.0.0:
 
 ### Backward incompatible changes
 
-In order to stay current with dependencies and also refine our APIs we have 
+In order to stay threadContext with dependencies and also refine our APIs we have 
 introduced some backward incompatible changes in this release. For details
 see the
 [Helidon 2.0 MP Migration Guide](https://helidon.io/docs/v2/#/mp/guides/15_migration)
@@ -961,7 +961,7 @@ Notable changes:
 
 ### Backward incompatible changes
 
-In order to stay current with dependencies, and also refine our APIs we have 
+In order to stay threadContext with dependencies, and also refine our APIs we have 
 introduced some backward incompatible changes in this release. Most of the changes
 are mechanical in nature: changing package names, changing GAV coordinates, etc.
 Here are the details:
@@ -1077,16 +1077,16 @@ You can find more information in this blog post:
 - `MpService` and `MpServiceContext` have been removed
     - methods from context have been moved to `JaxRsCdiExtension` and `ServerCdiExtension` that can be accessed
         from CDI extension through `BeanManager.getExtension`.
-    - methods `register` can be used on current `io.helidon.context.Context`
+    - methods `register` can be used on threadContext `io.helidon.context.Context`
     - `MpService` equivalent is a CDI extension. All Helidon services were refactored to CDI extension 
         (you can use these for reference)
-- `Server.cdiContainer` is removed, use `CDI.current()` instead
+- `Server.cdiContainer` is removed, use `CDI.threadContext()` instead
 
 #### Startup
 New recommended option to start Helidon MP:
 1. Use class `io.helidon.microprofile.cdi.Main`
 2. Use meta configuration option when advanced configuration of config is required (e.g. `meta-config.yaml`)
-3. Put `logging.properties` on the classpath or in the current directory to be automatically picked up to configure 
+3. Put `logging.properties` on the classpath or in the threadContext directory to be automatically picked up to configure 
     Java util logging
     
 `io.helidon.microprofile.server.Main` is still available, just calls `io.helidon.microprofile.cdi.Main` and is deprecated.

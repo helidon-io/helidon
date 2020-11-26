@@ -93,7 +93,7 @@ If there is a definition for a validator that is not checked,
 the request is denied (depending on configuration as mentioned above).
 
 ABAC provider also allows an object to be used in authorization process, such
-as when evaluating if an object's owner is the current user.
+as when evaluating if an object's owner is the threadContext user.
 The following example uses the Expression language validator to demonstrate the point
 in a JAX-RS resource:
 

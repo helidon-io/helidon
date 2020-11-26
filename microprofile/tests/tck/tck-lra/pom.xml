@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2017 Red Hat, Inc. and/or its affiliates.
+  ~
+  ~ Licensed under the Apache License version 2.0, available at http://www.apache.org/licenses/LICENSE-2.0
+  -->
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.jboss.narayana.rts</groupId>
+        <artifactId>lra-parent</artifactId>
+        <version>5.10.7.Final-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>lra-test</artifactId>
+    <name>LRA tests</name>
+    <description>LRA tests running LRA TCKs and Narayana LRA internal testsuite</description>
+    <packaging>pom</packaging>
+    
+    <properties>
+        <lra.coordinator.exec.plugin.phase>none</lra.coordinator.exec.plugin.phase> <!-- not starting coordinator by default, need -Parq -->
+        <lra.coordinator.port>8080</lra.coordinator.port>
+        <lra.coordinator.log.console.disable></lra.coordinator.log.console.disable>
+        <lra.coordinator.log.file.enable></lra.coordinator.log.file.enable>
+        <lra.coordinator.log.file.path></lra.coordinator.log.file.path>
+        <lra.coordinator.log.file.level></lra.coordinator.log.file.level>
+        <lra.coordinator.log.file.module.arjuna></lra.coordinator.log.file.module.arjuna>
+        <lra.coordinator.log.file.module.narayana></lra.coordinator.log.file.module.narayana>
+        <lra.coordinator.debug.params></lra.coordinator.debug.params> <!-- has content when -Ddebug.coordinator is specified -->
+        <lra.coordinator.debug.port>8787</lra.coordinator.debug.port>
+        <lra.coordinator.jar.path>${project.basedir}/../coordinator-quarkus/target/lra-coordinator-runner.jar</lra.coordinator.jar.path>
+    </properties>
+    
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-client</artifactId>
+            <version>${version.org.jboss.resteasy}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.narayana.rts</groupId>
+            <artifactId>lra-client</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.narayana.rts</groupId>
+            <artifactId>narayana-lra</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.thorntail</groupId>
+            <artifactId>arquillian</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    
+    <profiles>
+        <profile>
+            <id>debug.lra.coordinator</id>
+            <activation>
+                <property>
+                    <name>debug.coordinator</name>
+                </property>
+            </activation>
+            <properties>
+                <lra.coordinator.debug.params>-Xrunjdwp:transport=dt_socket,address=${lra.coordinator.debug.port},server=y,suspend=y</lra.coordinator.debug.params>
+            </properties>
+        </profile>
+        
+        <profile>
+            <id>trace.lra.coordinator</id>
+            <activation>
+                <property>
+                    <name>trace.coordinator</name>
+                </property>
+            </activation>
+            <properties>
+                <!-- # Disabling console trace level logging (By default logger level is INFO)-->
+                <lra.coordinator.log.console.disable>-Dquarkus.log.console.enable=false</lra.coordinator.log.console.disable>
+                <!--# Enabling file trace logging-->
+                <lra.coordinator.log.file.enable>-Dquarkus.log.file.enable=true</lra.coordinator.log.file.enable>
+                <lra.coordinator.log.file.level>-Dquarkus.log.file.level=TRACE</lra.coordinator.log.file.level>
+                <!--# Send output to a trace.log file under the target/failsafe-reports/ directory-->
+                <lra.coordinator.log.file.path>-Dquarkus.log.file.path=${project.build.directory}/failsafe-reports/lra-coordinator-trace.log</lra.coordinator.log.file.path>
+                <!--# Setting categories to TRACE level-->
+                <lra.coordinator.log.file.module.arjuna>-Dquarkus.log.category."com.arjuna".level=TRACE</lra.coordinator.log.file.module.arjuna>
+                <lra.coordinator.log.file.module.narayana>-Dquarkus.log.category."io.narayana.lra".level=TRACE</lra.coordinator.log.file.module.narayana>
+
+            </properties>
+        </profile>
+
+        <profile>
+            <id>start.lra.coodinator.before.it.tests</id>
+            <activation>
+                <property>
+                    <name>!no.lra.coordinator</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.honton.chas</groupId>
+                        <artifactId>process-exec-maven-plugin</artifactId>
+                        <version>0.9.2</version>
+                        <executions>
+                            <execution>
+                                <id>start-it-test-lra-coordinator</id>
+                                <phase>${lra.coordinator.exec.plugin.phase}</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                                <configuration>
+                                    <name>lra-coordinator-it-test</name>
+                                    <workingDir>${basedir}</workingDir>
+                                    <healthCheckUrl>http://localhost:${lra.coordinator.port}/lra-coordinator</healthCheckUrl>
+                                    <waitForInterrupt>false</waitForInterrupt>
+                                    <waitAfterLaunch>90</waitAfterLaunch>
+                                    <!--<processLogFile>${project.build.directory}/failsafe-reports/lra-coordinator-startup.log</processLogFile>-->
+                                    <environment>
+                                        <thorntail.http.port>${lra.coordinator.port}</thorntail.http.port>
+                                        <thorntail.transactions.node-identifier>2</thorntail.transactions.node-identifier>
+                                    </environment>
+                                    <arguments>
+                                        <argument>${java.home}/bin/java</argument>
+                                        <argument>-Djava.net.preferIPv4Stack=true</argument>
+                                        <argument>${lra.coordinator.debug.params}</argument>
+                                        <argument>${lra.coordinator.log.console.disable}</argument>
+                                        <argument>${lra.coordinator.log.file.enable}</argument>
+                                        <argument>${lra.coordinator.log.file.level}</argument>
+                                        <argument>${lra.coordinator.log.file.path}</argument>
+                                        <argument>${lra.coordinator.log.file.module.arjuna}</argument>
+                                        <argument>${lra.coordinator.log.file.module.narayana}</argument>
+                                        <argument>-DRecoveryEnvironmentBean.periodicRecoveryPeriod=10</argument>
+                                        <argument>-DRecoveryEnvironmentBean.recoveryBackoffPeriod=5</argument>
+                                        <argument>-DObjectStoreEnvironmentBean.objectStoreDir=${project.build.directory}/lra_txn_logs</argument>
+                                        <argument>-DObjectStoreEnvironmentBean.communicationStore.objectStoreDir=${project.build.directory}/lra_txn_logs</argument>
+                                        <argument>-jar</argument>
+                                        <argument>${lra.coordinator.jar.path}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>stop-it-test-lra-coordinator</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>stop-all</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+    <modules>
+        <module>tck</module>
+        <!-- <module>basic</module> -->
+        <module>arquillian-extension</module>
+    </modules>
+</project>

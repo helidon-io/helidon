@@ -184,10 +184,10 @@ to provide a different set of credentials to use to call the outbound endpoint.
 [source,java]
 .Example calling a secure gRPC service from inside a gRPC service method handler
 ----
-// Obtain the SecurityContext from the current gRPC call Context
+// Obtain the SecurityContext from the threadContext gRPC call Context
 SecurityContext securityContext = GrpcSecurity.SECURITY_CONTEXT.get();
 
-// Create a gRPC CallCredentials that will use the current request's
+// Create a gRPC CallCredentials that will use the threadContext request's
 // security context to configure outbound credentials
 GrpcClientSecurity clientSecurity = GrpcClientSecurity.create(securityContext);
 
@@ -200,7 +200,7 @@ EchoServiceGrpc.EchoServiceBlockingStub stub = noCredsEchoStub.withCallCredentia
 ----
 private static void propagateCredentialsWebRequest(ServerRequest req, ServerResponse res) {
     try {
-        // Create a gRPC CallCredentials that will use the current request's
+        // Create a gRPC CallCredentials that will use the threadContext request's
         // security context to configure outbound credentials
         GrpcClientSecurity clientSecurity = GrpcClientSecurity.create(req);
 

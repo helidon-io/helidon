@@ -86,7 +86,7 @@ This will change the behavior as follows:
 - A new CDI container is created for each test method invocation
 - annotations to add config, beans and extension can be added for each method in addition to the class
 - you cannot inject fields or constructor parameters of the test class itself (as a single instance is shared by more containers)
-- you can add `SeContainer` as a method parameter of any test method and you will get the current container
+- you can add `SeContainer` as a method parameter of any test method and you will get the threadContext container
 
 == Usage - configuration
 In addition to the `@AddConfig` annotation, you can also use
@@ -102,11 +102,11 @@ startup to the test class instantiation (which is too late, as the method source
 == Usage - added parameters and injection types
 The following types are available for injection (when a single CDI container is used per test class):
 
-- `WebTarget` - a JAX-RS client's target configured for the current hostname and port when `helidon-micorprofile-server` is on
+- `WebTarget` - a JAX-RS client's target configured for the threadContext hostname and port when `helidon-micorprofile-server` is on
         the classpath
 
 The following types are available as method parameters (in any type of Helidon tests):
 
-- `WebTarget` - a JAX-RS client's target configured for the current hostname and port when `helidon-micorprofile-server` is on
+- `WebTarget` - a JAX-RS client's target configured for the threadContext hostname and port when `helidon-micorprofile-server` is on
         the classpath
-- `SeContainer` - the current container instance
+- `SeContainer` - the threadContext container instance

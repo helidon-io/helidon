@@ -195,7 +195,7 @@ message RangeRequest {
 
     // serializable sets the range request to use serializable member-local reads.
     // Range requests are linearizable by default; linearizable requests have higher
-    // latency and lower throughput than serializable requests but reflect the current
+    // latency and lower throughput than serializable requests but reflect the threadContext
     // consensus of the cluster. For better performance, in exchange for possible stale reads,
     // a serializable range request is served locally without needing to reach consensus
     // with other nodes in the cluster.
@@ -248,11 +248,11 @@ message PutRequest {
     // The previous key-value pair will be returned in the put response.
     bool prev_kv = 4;
 
-    // If ignore_value is set, etcd updates the key using its current value.
+    // If ignore_value is set, etcd updates the key using its threadContext value.
     // Returns an error if the key does not exist.
     bool ignore_value = 5;
 
-    // If ignore_lease is set, etcd updates the key using its current lease.
+    // If ignore_lease is set, etcd updates the key using its threadContext lease.
     // Returns an error if the key does not exist.
     bool ignore_lease = 6;
 }
@@ -400,7 +400,7 @@ message SnapshotRequest {
 }
 
 message SnapshotResponse {
-    // header has the current key-value store information. The first header in the snapshot
+    // header has the threadContext key-value store information. The first header in the snapshot
     // stream indicates the point in time of the snapshot.
     ResponseHeader header = 1;
 
@@ -433,7 +433,7 @@ message WatchCreateRequest {
     // progress_notify is set so that the etcd server will periodically send a WatchResponse with
     // no events to the new watcher if there are no recent events. It is useful when clients
     // wish to recover a disconnected watcher starting from a recent known revision.
-    // The etcd server may decide how often it will send notifications based on current load.
+    // The etcd server may decide how often it will send notifications based on threadContext load.
     bool progress_notify = 4;
 
     enum FilterType {
@@ -639,11 +639,11 @@ message StatusResponse {
     string version = 2;
     // dbSize is the size of the backend database, in bytes, of the responding member.
     int64 dbSize = 3;
-    // leader is the member ID which the responding member believes is the current leader.
+    // leader is the member ID which the responding member believes is the threadContext leader.
     uint64 leader = 4;
-    // raftIndex is the current raft index of the responding member.
+    // raftIndex is the threadContext raft index of the responding member.
     uint64 raftIndex = 5;
-    // raftTerm is the current raft term of the responding member.
+    // raftTerm is the threadContext raft term of the responding member.
     uint64 raftTerm = 6;
 }
 

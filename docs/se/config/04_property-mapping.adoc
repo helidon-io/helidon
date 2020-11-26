@@ -94,7 +94,7 @@ T as(Class<? extends T> type);
 T as(Function<Config, T> mapper);
 T as(GenericType<T> genericType);
 
-which maps the current node to a type.
+which maps the threadContext node to a type.
 
 The next example, and later
 ones below showing complex type mapping, use the example

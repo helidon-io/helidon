@@ -65,7 +65,7 @@ security:
       outbound:
         - name: "internal-services"
           hosts: ["*.example.org"]
-          # Propagates current user's identity or identity from request property
+          # Propagates threadContext user's identity or identity from request property
           outbound-token:
             header: "X-Internal-Auth"
         - name: "partner-service"
@@ -90,7 +90,7 @@ The following table shows all configuration options of the provider and their de
 |`users` |{nbsp} |List of users when using configuration based approach. As an alternative, you can implement a java service (see below).
 |`outbound` |{nbsp} |A list of outbound configurations
 |`outbound.*.name` |{nbsp} |Required name of outbound configuration
-|`outbound.*.username` |{nbsp} |Optional username used for outbound security; if not provided, current identity is propagated
+|`outbound.*.username` |{nbsp} |Optional username used for outbound security; if not provided, threadContext identity is propagated
 |`outbound.*.password` |{nbsp} |Optional password used for outbound security
 |`outbound.*.transports` |any transport |An array of transports this outbound configuration should be used for
 |`outbound.*.hosts` |any host |An array of hosts this outbound configuration should be used for, can be a regular expression
@@ -120,7 +120,7 @@ Subject is created based on the username and roles provided by the user store.
 
 When identity propagation is configured, there are several options for identifying username and password to propagate:
 
-1. We propagate the current username and password (inbound request must be authenticated using basic authentication).
+1. We propagate the threadContext username and password (inbound request must be authenticated using basic authentication).
 2. We use username and password from an explicitly configured property (See `HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER`
     and `HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD`)
 3. We use username and password associated with an outbound target (see example configuration above)
@@ -128,7 +128,7 @@ When identity propagation is configured, there are several options for identifyi
 Identity is propagated only if:
 
 1. There is an outbound target configured for the endpoint
-2. Or there is an explicitly configured username/password for the current request (through request property)
+2. Or there is an explicitly configured username/password for the threadContext request (through request property)
 
 *Custom user store*
 

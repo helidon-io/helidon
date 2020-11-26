@@ -24,7 +24,7 @@
 Helidon Security provides the following features
 
 . Authentication - support for authenticating incoming requests, creating a
- security Subject with Principal and Grants. Principal represents current user/service.
+ security Subject with Principal and Grants. Principal represents threadContext user/service.
  Grant may represent a Role, Scope etc.
  Responsibility to create Principals and Grants lies with with AuthenticationProvider
  SPI. The following Principals are expected and supported out of the box:

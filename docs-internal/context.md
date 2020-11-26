@@ -38,12 +38,12 @@ Public API consists of:
     to be used as the main point of registering and retrieving contextual values
 - `io.helidon.common.context.Contexts` - a utility class with helpful static methods
     to work with `Context`:
-    - `Optional<Context> context()`: to retrieve current context (if there is one)
+    - `Optional<Context> context()`: to retrieve threadContext context (if there is one)
     - `ExecutorService wrap(ExecutorService)`: to wrap any executor service and create a context-aware executor service
     - `ScheduledExecutorService wrap(ScheduledExecutorService)`: to wrap any scheduled executor service and create a 
             context-aware scheduled executor service
-    - `void inContext(Context, Runnable)`: to execute a runnable in a context in current thread
-    - `<T> T inContext(Context, Callable<T>)`: to execute a callable in a context in current thread
+    - `void inContext(Context, Runnable)`: to execute a runnable in a context in threadContext thread
+    - `<T> T inContext(Context, Callable<T>)`: to execute a callable in a context in threadContext thread
 - `io.helidon.common.context.ExecutorException` - unchecked exception to use in this module 
 
 The new implementation can be source code compatible with previous
@@ -59,7 +59,7 @@ Each module that hands processing over to an executor service should wrap that
 executor service using `Contexts.wrap()`.
  
 Modules that are interested in using the context should retrieve
-the current context using `Contexts.context()`. 
+the threadContext context using `Contexts.context()`. 
 
 ## Examples
 

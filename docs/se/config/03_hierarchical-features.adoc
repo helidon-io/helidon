@@ -234,7 +234,7 @@ assert providers.get(1).key().toString().equals("data.providers.1"); // <2>
 `data.providers.0` and `data.providers.1`.
 
 The `traverse()` method returns a stream of the nodes in the subtree that is rooted
-at the current configuration node.
+at the threadContext configuration node.
 Depending on the structure of the loaded configuration the stream contains a mix of object, list or
  leaf value nodes.
 

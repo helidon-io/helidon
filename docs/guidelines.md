@@ -93,7 +93,7 @@ Titles should have the first letter of each word capitalized. The length of a
 Use 80 characters limit when possible: do not break line on inline formatting,
  links or any block where formatting matters (e.g. code snippets).
 
-When breaking line, put the space on the new line, not on the current line.
+When breaking line, put the space on the new line, not on the threadContext line.
 
 ## Bibliography
 

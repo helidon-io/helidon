@@ -72,7 +72,7 @@ public class InitializeDb {
      *
      * @param dbClient database client
      * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
+     * @throws InterruptedException if the threadContext thread was interrupted
      */
     private static void initData(DbClient dbClient) throws InterruptedException, ExecutionException {
         dbClient.execute(exec -> initTypes(exec).flatMapSingle(count -> initPokemons(exec)))

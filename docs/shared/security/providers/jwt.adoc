@@ -104,7 +104,7 @@ The following table shows all configuration options of the provider and their de
 |`sign-token.outbound.*.jwk-kid` |{nbsp} |If this key is defined, we are generating a new token, otherwise we propagate existing. Defines the key id of a key definition in the JWK file to use for signing the outbound token
 |`sign-token.outbound.*.jwt-kid` |{nbsp} |A key to use in the generated JWT - this is for the other service to locate the verification key in their JWK
 |`sign-token.outbound.*.jwt-audience` |{nbsp} |Audience this key is generated for (e.g. http://www.example.org/api/myService) - validated by the other service
-|`sign-token.outbound.*.jwt-not-before-seconds` |`5` |Makes this key valid this amount of seconds into the past. Allows a certain time-skew for the generated token to be valid before current time (e.g. when we expect a certain misalignment of clocks)
+|`sign-token.outbound.*.jwt-not-before-seconds` |`5` |Makes this key valid this amount of seconds into the past. Allows a certain time-skew for the generated token to be valid before threadContext time (e.g. when we expect a certain misalignment of clocks)
 |`sign-token.outbound.*.jwt-validity-seconds` |1 day |Token validity in seconds
 |===
 

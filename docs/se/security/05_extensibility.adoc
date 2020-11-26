@@ -57,7 +57,7 @@ In case the protocol is multi-request (e.g. challenge for basic authentication),
 To create a custom authorization provider, create a class that implements
 `io.helidon.security.spi.AuthorizationProvider`.
 Implementation is responsible for taking a request and checking whether the
- request can continue processing (e.g. if the current user and/or service subject
+ request can continue processing (e.g. if the threadContext user and/or service subject
  has a right to execute it).
 
 If authentication is configured, the Security component guarantees it resolved

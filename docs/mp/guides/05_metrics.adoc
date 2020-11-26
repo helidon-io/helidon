@@ -690,7 +690,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 
 The metrics you have tested so far are updated in response to an application REST request, i.e GET `/cards`.  These
 metrics can be declared in a request scoped class and Helidon will store the metric in the `MetricRegistry`, so the value persists
-across requests. When GET `/metrics/application` is invoked, Helidon will return the current value of the metric stored in the `MetricRegistry`.
+across requests. When GET `/metrics/application` is invoked, Helidon will return the threadContext value of the metric stored in the `MetricRegistry`.
 The `Gauge` metric is different from all the other metrics. The application must provide a getter to return the gauge value in an
 application scoped class. When GET `/metrics/application` is invoked, Helidon will call the `Gauge` getter, store that value
 in the `MetricsRegistry`, and return it as part of the metrics response payload.  So, the `Gauge` metric value is updated real-time, in response to the

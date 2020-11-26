@@ -86,7 +86,7 @@ The following log entries are supported in Helidon:
 |%h                 |`HostLogEntry`                 |IP address of the remote host
 |%l                 |`UserIdLogEntry`               |Client identity, always undefined in Helidon
 |%u                 |`UserLogEntry`                 |The username of logged-in user (when Security is used)
-|%t                 |`TimestampLogEntry`            |The current timestamp
+|%t                 |`TimestampLogEntry`            |The threadContext timestamp
 |%r                 |`RequestLineLogEntry`          |The request line (method, path and HTTP version)
 |%s                 |`StatusLogEntry`               |The HTTP status returned to the client
 |%b                 |`SizeLogEntry`                 |The response entity size (if available)

@@ -75,7 +75,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 ----
 
-The archetype generates a Maven project in your current directory
+The archetype generates a Maven project in your threadContext directory
 (for example, `helidon-quickstart-{helidon-lc-flavor}`). Change into this directory and build.
 
 [source,bash,subs="attributes+"]

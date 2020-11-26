@@ -31,7 +31,7 @@ Examples are given for H2, Oracle, or MySQL databases (note that MySQL is curren
 To switch between JDBC drivers:
 
 - Uncomment the appropriate dependency in `pom.xml`
-- Uncomment the configuration section in `application.yaml` and comment out the current one
+- Uncomment the configuration section in `application.yaml` and comment out the threadContext one
 
 ## Build
 

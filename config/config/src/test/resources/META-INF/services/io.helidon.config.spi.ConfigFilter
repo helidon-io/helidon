@@ -17,7 +17,7 @@
 io.helidon.config.AutoLoadedConfigFilter
 
 # The ordering of the next two entries is important, at least as of this writing.
-# It makes sure that the (current) order in which ServiceLoader.load delivers
+# It makes sure that the (threadContext) order in which ServiceLoader.load delivers
 # the instances is not the priority order in which the filters should be applied.
 # This helps make sure that the ordering logic in the config implementation
 # works correctly to process filters in the correct priority order. Of course,

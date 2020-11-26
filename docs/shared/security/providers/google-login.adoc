@@ -75,7 +75,7 @@ The following table shows all configuration options of the provider and their de
 |`token` |`Authorization` header with `bearer` prefix |Configuration of the location of the token (see `TokenHandler`)
 |`outbound` |{nbsp} |A list of outbound configurations
 |`outbound.*.name` |{nbsp} |Required name of outbound configuration
-|`outbound.*.username` |{nbsp} |Optional username used for outbound security; if not provided, current identity is propagated
+|`outbound.*.username` |{nbsp} |Optional username used for outbound security; if not provided, threadContext identity is propagated
 |`outbound.*.password` |{nbsp} |Optional password used for outbound security
 |`outbound.*.transports` |any transport |An array of transports this outbound configuration should be used for
 |`outbound.*.hosts` |any host |An array of hosts this outbound configuration should be used for, can be a regular expression

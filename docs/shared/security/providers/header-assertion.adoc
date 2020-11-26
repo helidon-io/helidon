@@ -58,7 +58,7 @@ security:
       outbound:
         - name: "internal-services"
           hosts: ["*.example.org"]
-          # propagates the current user or service id using the same header as authentication
+          # propagates the threadContext user or service id using the same header as authentication
         - name: "partner-service"
           hosts: ["*.partner.org"]
           # propagates an explicit username in a custom header
@@ -84,7 +84,7 @@ The following table shows all configuration options of the provider and their de
 |`atn-token` |`none` | Token extraction and propagation, you can define which header to use and how to extract it
 |`outbound` |{nbsp} |A list of outbound configurations
 |`outbound.*.name` |{nbsp} |Required name of outbound configuration
-|`outbound.*.username` |{nbsp} |Optional username used for outbound security; if not provided, current identity is propagated
+|`outbound.*.username` |{nbsp} |Optional username used for outbound security; if not provided, threadContext identity is propagated
 |`outbound.*.transports` |any transport |An array of transports this outbound configuration should be used for
 |`outbound.*.hosts` |any host |An array of hosts this outbound configuration should be used for, can be a regular expression
 |`outbound.*.paths` |any path |An array of paths this outbound configuration should be used for (such as `/greet`), can be a regular expression
@@ -98,7 +98,7 @@ The following table shows all configuration options of the provider and their de
 
 ==== How does it work?
 This provider inspects a specified request header and extracts the username/service name from it and
-asserts it as current subject's principal.
+asserts it as threadContext subject's principal.
 
 This can be used when we use perimeter authentication (e.g. there is a gateway that takes
 care of authentication and propagates the user in a header).
@@ -108,7 +108,7 @@ care of authentication and propagates the user in a header).
 Identity is propagated only if an outbound target matches the target service.
 
 The following options exist when propagating identity:
-1. We propagate the current username using the configured header
+1. We propagate the threadContext username using the configured header
 2. We use username associated with an outbound target (see example configuration above)
 
 

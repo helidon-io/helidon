@@ -50,7 +50,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.se
 ----
 
-The archetype generates a Maven project in your current directory
+The archetype generates a Maven project in your threadContext directory
 (for example, `helidon-quickstart-se`). Change into this directory.
 
 [source,bash]

@@ -115,7 +115,7 @@ ResourceConfig resourceConfig = new ResourceConfig()
 
 === Protecting a resource
 
-The current approach does not have a configuration option. The security must be
+The threadContext approach does not have a configuration option. The security must be
  configured through annotations.
 Security currently supports @Authenticated and @Authorized. When a resource is annotated with one of these
  annotations (application class, resource class, or resource method), security will
@@ -131,7 +131,7 @@ Security currently supports @Authenticated and @Authorized. When a resource is a
 @Produces(MediaType.TEXT_PLAIN)
 // due to Jersey approach to path matching, we need two methods to match both the "root" and "root" + subpaths
 public String getHelloName(@PathParam("name") String name) {
-    return "Hello " + name + ", your current subject: " + securityContext.getSubject();
+    return "Hello " + name + ", your threadContext subject: " + securityContext.getSubject();
 }
 ----
 

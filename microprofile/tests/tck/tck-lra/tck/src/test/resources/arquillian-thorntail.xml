@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jboss.org/schema/arquillian" xsi:schemaLocation="http://jboss.org/schema/arquillian
+    http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+
+    <container qualifier="managedContainer" default="true" mode="suite">
+        <configuration>
+            <property name="host">localhost</property>
+            <property name="port">${thorntail.arquillian.daemon.port:12345}</property>
+            <property name="javaVmArguments">${lra.tck.suite.debug.params} -Dthorntail.http.host=${lra.tck.suite.host} -Dthorntail.http.port=${lra.tck.suite.port} -Dlra.tck.coordinator.hostname=localhost -Dlra.tck.coordinator.port=${lra.coordinator.port} -Dlra.http.host=localhost -Dlra.http.port=${lra.coordinator.port} -Dlra.tck.timeout.factor=${lra.tck.timeout.factor} ${thorntail.test.logging.category.arjuna} ${thorntail.test.logging.category.narayana}</property>
+        </configuration>
+    </container>
+
+
+<!--    <container qualifier="helidon-embedded" default="true">-->
+<!--        <configuration>-->
+<!--            <property name="port">8080</property>-->
+<!--            <property name="deleteTmp">true</property>-->
+<!--        </configuration>-->
+<!--    </container>-->
+</arquillian>

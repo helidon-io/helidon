@@ -23,7 +23,7 @@
     <section id="todoapp" class="todoapp">
       <header class="header">
         <h1>todos</h1>
-        <input class="new-todo" data-bind="value: current, valueUpdate: 'afterkeydown', enterKey: add"
+        <input class="new-todo" data-bind="value: threadContext, valueUpdate: 'afterkeydown', enterKey: add"
                placeholder="What needs to be done?" autofocus>
       </header>
       <section class="main" data-bind="visible: todos().length">

@@ -185,7 +185,7 @@ HealthSupport health = HealthSupport.builder()
   .build();
 
 ----
-<1> Add a custom liveness health-check. This example returns `UP` and current time.
+<1> Add a custom liveness health-check. This example returns `UP` and threadContext time.
 
 [source,bash]
 .Build and run the application, then verify the custom health endpoint:

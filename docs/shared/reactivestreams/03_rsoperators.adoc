@@ -55,15 +55,15 @@ ReactiveStreams.of("1", "2", "3", "4", "5")
 |peek| Invoke consumer for every item passing this operator
 |filter| Drop item when expression result to false
 |map| Transform items
-|flatMap| Flatten supplied stream to current stream
-|flatMapIterable| Flatten supplied iterable to current stream
+|flatMap| Flatten supplied stream to threadContext stream
+|flatMapIterable| Flatten supplied iterable to threadContext stream
 |flatMapCompletionStage| Map elements to completion stage and wait for each to be completed, keeps the order
 |flatMapRSPublisher| Map elements to Publishers and flatten this sub streams to original stream
 |takeWhile| Let items pass until expression is true, first time its false completes
 |dropWhile| Drop items until expression is true, first time its false let everything pass
 |skip| Drop first n items
 |distinct| Let pass only distinct items
-|via| Connect supplied processor to current stream return supplied processor
+|via| Connect supplied processor to threadContext stream return supplied processor
 |onError| Invoke supplied consumer when onError signal received
 |onErrorResume| Emit one last supplied item when onError signal received
 |onErrorResumeWith| When onError signal received continue emitting from supplied publisher builder

@@ -380,7 +380,7 @@ onComplete --> upstream.cancel
 ```
 
 Outer `Subscriber` makes a bad request:
-(As soon as the current part is done, report `onError`, and appear to upstream
+(As soon as the threadContext part is done, report `onError`, and appear to upstream
 as a cancelled `Subscription` after that)
 
 ```

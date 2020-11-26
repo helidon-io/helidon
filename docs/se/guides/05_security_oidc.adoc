@@ -68,7 +68,7 @@ to download Keycloak.
 After extracting the archive file, you should have a directory named keycloak followed by the version. For example,
 if you chose version 11.0.2, the folder must be named keycloak-11.0.2.
 
-Open keycloak folder to make it your current directory.
+Open keycloak folder to make it your threadContext directory.
 [source,bash]
 .Run this command from command prompt to open the directory:
 ----
@@ -140,8 +140,8 @@ To verify that your realm is created, on the top-left corner where it said `Mast
 should be now your realm name or `myRealm` is you followed the example.
 
 To switch from a realm to another, hover the realm name, and the other realm created appear in the dropdown.
-Click on any realm name to change the current realm. Make sure all configuration or modification are saved before changing
-the current realm or be subject to lose your configuration.
+Click on any realm name to change the threadContext realm. Make sure all configuration or modification are saved before changing
+the threadContext realm or be subject to lose your configuration.
 
 ==== Create a user
 
@@ -177,7 +177,7 @@ You should now be logged-in to the account console where users can manage their 
 To create your first client:
 
 . Open the Keycloak admin console: http://localhost:8080/auth/admin.
-. Make sure the current realm is `myRealm` and not `Master`.
+. Make sure the threadContext realm is `myRealm` and not `Master`.
 . Navigate to the left menu, into configure section, click on `Clients`. This window displays a table with every client
 from the realm.
 . Click on `Create`.
@@ -202,7 +202,7 @@ set up Helidon.
 
 Use the Helidon SE Maven archetype to create a simple project. It will be used as an example
 to show how to set up Helidon. Replace `{helidon-version}` by the latest helidon version.
-It will download the quickstart project into the current directory.
+It will download the quickstart project into the threadContext directory.
 
 [source,bash,subs="attributes+"]
 .Run the Maven archetype

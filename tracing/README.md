@@ -94,7 +94,7 @@ response = webTarget
             .request()
             // tracer information - not required if global tracer should be used
             .property(ClientTracingFilter.TRACER_PROPERTY_NAME, tracer)
-            // the current tracing span context to be used as a parent for outbound request
+            // the threadContext tracing span context to be used as a parent for outbound request
             // if not provided a new span with no parent would be created
             .property(ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, spanContext)
             .get();
@@ -156,7 +156,7 @@ response = webTarget
             .request()
             // tracer information - not required if global tracer should be used
             .property(ClientTracingFilter.TRACER_PROPERTY_NAME, tracer)
-            // the current tracing span context to be used as a parent for outbound request
+            // the threadContext tracing span context to be used as a parent for outbound request
             // if not provided a new span with no parent would be created
             .property(ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, spanContext)
             .get();

@@ -524,7 +524,7 @@
                 <version>${version.lib.google-api-client}</version>
                 <exclusions>
                     <exclusion>
-                        <!-- must use current version -->
+                        <!-- must use threadContext version -->
                         <groupId>org.apache.httpcomponents</groupId>
                         <artifactId>httpclient</artifactId>
                     </exclusion>
@@ -534,7 +534,7 @@
                         <artifactId>guava-jdk5</artifactId>
                     </exclusion>
                     <exclusion>
-                        <!-- must use current version -->
+                        <!-- must use threadContext version -->
                         <groupId>com.fasterxml.jackson.core</groupId>
                         <artifactId>jackson-core</artifactId>
                     </exclusion>

@@ -85,7 +85,7 @@ As an alternative to using the low-level API, this example uses config to create
                 .build();
         CorsSupport.Builder builder = CorsSupport.builder();
 
-        Config config = Config.create(); // Created from the current config sources
+        Config config = Config.create(); // Created from the threadContext config sources
         config.get("my-cors") // <1>
                 .ifExists(builder::mappedConfig);
         config.get("restrictive-cors") // <2>

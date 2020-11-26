@@ -25,7 +25,7 @@ with respect to:
  
   1. The only place where `next` is assigned is in `onNext`, before the next chunk is published
 
-  2. Initially `next` and `current` are identical; first `request(1)` is called on subscription
+  2. Initially `next` and `threadContext` are identical; first `request(1)` is called on subscription
 
   3. All subsequent calls to `request(1)` happen after the publishing of the chunk is observed 
   by `read(...)`
@@ -33,12 +33,12 @@ with respect to:
   4. It follows from (3) and (1) that one and only one assignment to `next` happens before 
   observing the chunk by `read(...)` --provided the Publisher observes backpressure
  
-  5. Such `next` is never lost, because it is copied into `current` before `request(1)`, 
+  5. Such `next` is never lost, because it is copied into `threadContext` before `request(1)`, 
   therefore a new assignment of `next` in `onNext` never loses the reference to a future 
   with an unobserved chunk --provided the Publisher observes backpressure
  
   6. The publishing of the chunk by `onNext` synchronizes-with the observation of the 
-  chunk by a `read(...)`: (1) and (5) ensure `current` observed by `read(...)` is the same 
+  chunk by a `read(...)`: (1) and (5) ensure `threadContext` observed by `read(...)` is the same 
   `next` at the time `onNext` is invoked, so `onNext` completes the same future as accessed 
   by `read(...)`. Moreover, the store to `next` by `onNext` and load of `next` by 
   `read(...)` are in happens-before relationship due to this synchronizes-with edge, 
@@ -48,34 +48,34 @@ with respect to:
   A conforming Publisher establishes total order of `onNext`, therefore, a total order of 
   assignments to `next` and `Future.complete`:
  
-  - `onSubscribe`: assert `current == next`
+  - `onSubscribe`: assert `threadContext == next`
     - `request(1)`
  
-  - `onNext`: assert `current == next`
+  - `onNext`: assert `threadContext == next`
     - `prev = next`
     - `next = new Future`      (A)
-    - `prev.complete(chunk)`   (B): assert `prev == this.current`
+    - `prev.complete(chunk)`   (B): assert `prev == this.threadContext`
  
   - `read(...)`
-    - `current.get()`          (C): (C) synchronizes-with (B): any read is blocked until (B)
+    - `threadContext.get()`          (C): (C) synchronizes-with (B): any read is blocked until (B)
   
   - `read(...)` (same or subsequent read)
-    - `current.get()`: synchronizes-with (B)
+    - `threadContext.get()`: synchronizes-with (B)
     - chunk is seen to be consumed entirely: release the chunk, and request next:
-    - `current = next`:        (D): (A) happens-before (D), no further `onNext` intervenes
-       invariant: `current` never references a released chunk as seen by `close(...)`,
+    - `threadContext = next`:        (D): (A) happens-before (D), no further `onNext` intervenes
+       invariant: `threadContext` never references a released chunk as seen by `close(...)`,
        assuming `read(...)` and `close(...)` are totally ordered --either by
        program order, or through out-of-bands synchronization
     - `request(1)`: assert a conforming Publisher does not invoke onNext before this
  
-  - `onNext`: assert `current == next`: a conforming `Publisher` does not invoke `onNext` before 
+  - `onNext`: assert `threadContext == next`: a conforming `Publisher` does not invoke `onNext` before 
   `request(1)`
     - `prev = next`
     - `next = new Future`       (E)
-    - `prev.complete(chunk)`    (F): assert `prev == current`
+    - `prev.complete(chunk)`    (F): assert `prev == threadContext`
  
   - `read(...)`
-    - `current.get()`: (G): (G) synchronizes-with (F): any read after (D) is blocked until (F)
+    - `threadContext.get()`: (G): (G) synchronizes-with (F): any read after (D) is blocked until (F)
   
  
   - `onComplete` / `onError`: assert: `next` has not been completed: stream is either empty 
@@ -83,19 +83,19 @@ with respect to:
     - `next.complete(...)`: (H): assert conforming `Publisher` ensures `next` assignments 
     by `onNext` are visible here by totally ordering `onNext` / `onComplete` / `onError`
  
-  - `read(...)`: assert eventually `current == next`: either initially, or after some read 
+  - `read(...)`: assert eventually `threadContext == next`: either initially, or after some read 
   that consumed the chunk in its entirety and requested the new chunk
-    - `current.get()`: (I): (I) synchronizes-with (H)
+    - `threadContext.get()`: (I): (I) synchronizes-with (H)
     - signal EOF
  
   -` close(...)`: 
-   - assert `current` never references a released chunk; it either eventually references a chunk
+   - assert `threadContext` never references a released chunk; it either eventually references a chunk
     that has been produced by `onNext` and has not been consumed fully by `read(...)`, or a null
     produced by `onComplete` / `onError`
-   - assert if `next != current`, `next` will never produce a new chunk: this is the case
+   - assert if `next != threadContext`, `next` will never produce a new chunk: this is the case
     if and only if `onNext` has occurred, but `read(...)` has not consumed the chunk in its 
     entirety, hence has not requested any new chunks
-   - `current.whenComplete(release)`
+   - `threadContext.whenComplete(release)`
    
    ## References
    

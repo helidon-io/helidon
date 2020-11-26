@@ -148,7 +148,7 @@ Routing.builder()
         .register(health) // <.>
         .build();
 ----
-<.> Add a custom health check. This example returns `UP` and current time.
+<.> Add a custom health check. This example returns `UP` and threadContext time.
 <.> Register health support with web server routing (adds the `/health`
  endpoint).
 

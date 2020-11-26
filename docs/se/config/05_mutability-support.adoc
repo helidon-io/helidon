@@ -35,7 +35,7 @@ config sources by:
 
 1. using the metadata the config system maintains,
 2. responding to changes when the config sources are updated, or
-3. using ``Supplier``s of particular config values to obtain the always-current
+3. using ``Supplier``s of particular config values to obtain the always-threadContext
 value for a key.
 
 == Using Config Metadata
@@ -60,8 +60,8 @@ method and then use it for these operations:
 that used the context.
 |`Config last()` |Returns the most recently loaded configuration that used the context.
 |`Config reload()` |Reloads the
-entire config tree from the current contents of the same config sources used to 
-load the tree in which the current node resides.
+entire config tree from the threadContext contents of the same config sources used to
+load the tree in which the threadContext node resides.
 |===
 
 Note that the config context describes or replaces a currently-loaded config tree. 
@@ -239,14 +239,14 @@ Your application _does not_ need to subscribe to the new `Config` instance passe
 to your `onNext` method. The original subscription remains in force for changes
 to the "new" instance.
 
-== Accessing Always-current Values
+== Accessing Always-threadContext Values
 Some applications do not need to respond to changes as they happen. Instead it's
-sufficient that they simply have access to the current value for a particular
+sufficient that they simply have access to the threadContext value for a particular
 key in the configuration.
 
 Each `asXXX` method on the `Config` class has a companion `asXXXSupplier` method. 
 These supplier methods return `Supplier<XXX>`, and when your application invokes 
-the supplier's `get` method the config system returns the _then-current value_ 
+the supplier's `get` method the config system returns the _then-threadContext value_
 as stored in the config source.
 
 [source,java]
@@ -259,10 +259,10 @@ Supplier<String> greetingSupplier = config.get("greeting")                     /
 
 System.out.println("Always actual greeting value: " + greetingSupplier.get()); // <3>
 ----
-<1> Navigate to the `Config` node for which you want access to the always-current
+<1> Navigate to the `Config` node for which you want access to the always-threadContext
 value.
 <2> Retrieve and store the returned supplier for later use. 
-<3> Invoke the supplier's `get()` method to retrieve the current value of the node.
+<3> Invoke the supplier's `get()` method to retrieve the threadContext value of the node.
 
 [IMPORTANT]
 =========
