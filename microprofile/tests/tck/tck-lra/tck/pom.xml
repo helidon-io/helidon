@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.jboss.narayana.rts</groupId>
+        <artifactId>lra-test</artifactId>
+        <version>5.10.7.Final-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>lra-test-tck</artifactId>
+    <name>LRA tests: MicroProfile TCK</name>
+
+    <properties>
+        <lra.coordinator.jar.path>/Users/pparkins/go/src/github.com/danielkec/helidon/lra/coordinator/target/lra-coordinator-helidon-0.0.1-SNAPSHOT.jar</lra.coordinator.jar.path>
+
+        <lra.tck.suite.host>localhost</lra.tck.suite.host>
+        <lra.tck.suite.port>8180</lra.tck.suite.port>
+        <lra.tck.suite.debug.params></lra.tck.suite.debug.params> <!-- has content when -Ddebug.tck is specified -->
+        <lra.tck.suite.debug.port>8788</lra.tck.suite.debug.port>
+        <!-- TCK TckTests#timeLimit test needs a short, but non zero, delay -->
+        <lra.tck.timeout.factor>1.0</lra.tck.timeout.factor>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+<!--                <reportSets>-->
+<!--                    <reportSet>-->
+<!--                        <id>integration-tests</id>-->
+<!--                        <reports>-->
+<!--                            <report>failsafe-report-only</report>-->
+<!--                        </reports>-->
+<!--                    </reportSet>-->
+<!--                </reportSets>-->
+                <configuration>
+                    <dependenciesToScan>
+                        <dependency>org.eclipse.microprofile.lra:microprofile-lra-tck</dependency>
+                    </dependenciesToScan>
+                    <includes>
+<!--                        Tests run: 133, Failures: 16-->
+                        <include>**/*.java</include>
+<!-- <include>**/*TckTests*.java</include>-->
+                    </includes>
+                    <systemPropertyVariables combine.children="append">
+                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
+                        <lra.tck.suite.host>${lra.tck.suite.host}</lra.tck.suite.host>
+                        <lra.tck.suite.port>${lra.tck.suite.port}</lra.tck.suite.port>
+                        <thorntail.test.logging.category.arjuna>${thorntail.test.logging.category.arjuna}</thorntail.test.logging.category.arjuna>
+                        <thorntail.test.logging.category.narayana>${thorntail.test.logging.category.narayana}</thorntail.test.logging.category.narayana>
+                        <lra.coordinator.port>${lra.coordinator.port}</lra.coordinator.port>
+                        <lra.tck.suite.debug.params>${lra.tck.suite.debug.params}</lra.tck.suite.debug.params>
+                        <lra.tck.timeout.factor>${lra.tck.timeout.factor}</lra.tck.timeout.factor>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.eclipse.microprofile.lra</groupId>
+            <artifactId>microprofile-lra-tck</artifactId>
+<!--            <version>${version.microprofile.lra.tck}</version>-->
+            <version>1.0-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.narayana.rts</groupId>
+            <artifactId>lra-proxy-api</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.narayana.rts</groupId>
+            <artifactId>lra-test-arquillian-extension</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>${version.apache.httpclient}</version>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <!-- when arq profile is activated we expect to start coordinator -->
+            <id>arq</id>
+            <properties>
+                <lra.coordinator.exec.plugin.phase>pre-integration-test</lra.coordinator.exec.plugin.phase>
+            </properties>
+        </profile>
+        <profile>
+            <id>debug.lra.tck.suite</id>
+            <activation>
+                <property>
+                    <name>debug.tck</name>
+                </property>
+            </activation>
+            <properties>
+                <lra.tck.suite.debug.params>-Xrunjdwp:transport=dt_socket,address=${lra.tck.suite.debug.port},server=y,suspend=y</lra.tck.suite.debug.params>
+            </properties>
+        </profile>
+        <profile>
+            <id>trace.lra.tck.suite</id>
+            <activation>
+                <property>
+                    <name>trace.tck</name>
+                </property>
+            </activation>
+            <properties>
+                <thorntail.test.logging.category.arjuna>-Dthorntail.logging.com.arjuna=TRACE</thorntail.test.logging.category.arjuna>
+                <thorntail.test.logging.category.narayana>-Dthorntail.logging.io.narayana.lra=TRACE</thorntail.test.logging.category.narayana>
+            </properties>
+        </profile>
+    </profiles>
+</project>
