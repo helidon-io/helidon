@@ -1,0 +1,14 @@
+{
+    "annotated":[
+    ],
+    "class-hierarchy": [
+        "org.apache.kafka.common.serialization.Serializer",
+        "org.apache.kafka.common.serialization.Deserializer",
+        "org.apache.kafka.clients.consumer.ConsumerPartitionAssignor",
+        "org.apache.kafka.clients.producer.Partitioner"
+    ],
+    "classes": [
+    ],
+    "exclude": [
+    ]
+}

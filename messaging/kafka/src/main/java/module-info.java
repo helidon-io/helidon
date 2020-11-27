@@ -30,6 +30,7 @@ module io.helidon.messaging.connectors.kafka {
     requires io.helidon.common.configurable;
     requires io.helidon.messaging;
     requires microprofile.config.api;
+    requires svm;
 
     exports io.helidon.messaging.connectors.kafka;
 }
