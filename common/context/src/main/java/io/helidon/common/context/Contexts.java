@@ -69,6 +69,8 @@ public final class Contexts {
      * Global context is also used as a parent for newly created contexts, unless you specify a parent using
      * {@link Context.Builder#parent(Context)}.
      * Registering any instance in this context will make it available to any component in this JVM.
+     *
+     * @return global context instance, never null
      */
     public static Context globalContext() {
         return GLOBAL_CONTEXT.get();
