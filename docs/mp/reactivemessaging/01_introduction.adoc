@@ -177,7 +177,7 @@ just add following dependency:
 * Readiness - channel is considered DOWN until `onSubscribe` signal is intercepted on it.
 
 
-If you check you health endpoints `/health/live` and `/health/ready` you will discover
+If you check your health endpoints `/health/live` and `/health/ready` you will discover
 every messaging channel to have its own probe.
 
 [source,json]
