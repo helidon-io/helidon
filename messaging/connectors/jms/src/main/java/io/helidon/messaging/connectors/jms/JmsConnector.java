@@ -116,20 +116,24 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     static final String TYPE_PROP_DEFAULT = "queue";
     static final String JNDI_JMS_FACTORY_DEFAULT = "ConnectionFactory";
 
+    static final String SCHEDULER_THREAD_NAME_PREFIX = "jms-poll-";
+    static final String EXECUTOR_THREAD_NAME_PREFIX = "jms-";
+
     private final Instance<ConnectionFactory> connectionFactories;
 
     private final ScheduledExecutorService scheduler;
     private final ExecutorService executor;
     private final Map<String, SessionMetadata> sessionRegister = new HashMap<>();
+    private Map<String, ConnectionFactory> connectionFactoryMap;
 
     /**
-     * Creates a new instance of JmsConnector with the required configuration.
+     * Provides a {@link io.helidon.messaging.connectors.jms.JmsConnectorBuilder} for creating
+     * a {@link io.helidon.messaging.connectors.jms.JmsConnector} instance.
      *
-     * @param config Helidon {@link io.helidon.config.Config config}
-     * @return the new instance
+     * @return new Builder instance
      */
-    public static JmsConnector create(io.helidon.config.Config config) {
-        return new JmsConnector(config, null);
+    public static JmsConnectorBuilder builder() {
+        return new JmsConnectorBuilder();
     }
 
     /**
@@ -138,7 +142,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
      * @return the new instance
      */
     public static JmsConnector create() {
-        return new JmsConnector(io.helidon.config.Config.empty(), null);
+        return builder().config(io.helidon.config.Config.empty()).build();
     }
 
     /**
@@ -160,15 +164,24 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     protected JmsConnector(io.helidon.config.Config config, Instance<ConnectionFactory> connectionFactories) {
         this.connectionFactories = connectionFactories;
         scheduler = ScheduledThreadPoolSupplier.builder()
-                .threadNamePrefix("jms-poll-")
+                .threadNamePrefix(SCHEDULER_THREAD_NAME_PREFIX)
                 .config(config)
                 .build()
                 .get();
         executor = ThreadPoolSupplier.builder()
-                .threadNamePrefix("jms-")
+                .threadNamePrefix(EXECUTOR_THREAD_NAME_PREFIX)
                 .config(config)
                 .build()
                 .get();
+    }
+
+    JmsConnector(Map<String, ConnectionFactory> connectionFactoryMap,
+                 ScheduledExecutorService scheduler,
+                 ExecutorService executor) {
+        this.connectionFactories = null;
+        this.connectionFactoryMap = connectionFactoryMap;
+        this.scheduler = scheduler;
+        this.executor = executor;
     }
 
     @Override
@@ -243,12 +256,22 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         }
         ConfigValue<String> factoryName = ctx.config().get(NAMED_FACTORY_ATTRIBUTE).asString();
         if (factoryName.isPresent()) {
-            return Optional.ofNullable(connectionFactories)
-                    .flatMap(s -> s.select(NamedLiteral.of(factoryName.get())).stream().findFirst());
+            // Check SE map and MP instance for named factories
+            return Optional.ofNullable(connectionFactoryMap)
+                    .flatMap(map -> Optional.ofNullable(map.get(factoryName.get())))
+                    .or(() ->
+                            Optional.ofNullable(connectionFactories)
+                                    .flatMap(s -> s.select(NamedLiteral.of(factoryName.get()))
+                                            .stream()
+                                            .findFirst()
+                                    )
+                    );
         }
 
-        return Optional.ofNullable(connectionFactories)
-                .flatMap(s -> s.stream().findFirst());
+        // Check SE map and MP instance for any factories
+        return Optional.ofNullable(connectionFactoryMap)
+                .flatMap(map -> map.values().stream().findFirst())
+                .or(() -> Optional.ofNullable(connectionFactories).flatMap(s -> s.stream().findFirst()));
     }
 
     @Override

@@ -18,6 +18,8 @@ package io.helidon.messaging.connectors.jms;
 
 import java.util.Map;
 
+import javax.naming.spi.InitialContextFactory;
+
 import io.helidon.messaging.ConnectorConfigBuilder;
 
 import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
@@ -42,6 +44,18 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      */
     public JmsConfigBuilder property(String key, String value) {
         super.property(key, value);
+        return this;
+    }
+
+    /**
+     * To select from manually configured {@link javax.jms.ConnectionFactory ConnectionFactories} over
+     * {@link JmsConnectorBuilder#connectionFactory(String, javax.jms.ConnectionFactory) JmsConnectorBuilder#connectionFactory()}.
+     *
+     * @param factoryName connection factory name
+     * @return this builder
+     */
+    public JmsConfigBuilder namedFactory(String factoryName) {
+        super.property(JmsConnector.NAMED_FACTORY_ATTRIBUTE, factoryName);
         return this;
     }
 
@@ -241,6 +255,21 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      */
     public JmsConfigBuilder jndiInitialFactory(String jndiInitialFactory) {
         super.property("jndi." + JmsConnector.JNDI_PROPS_ATTRIBUTE + ".java.naming.factory.initial", jndiInitialFactory);
+        return this;
+    }
+
+    /**
+     * JNDI initial factory.
+     *
+     * <ul>
+     * <li>Type: string</li>
+     * </ul>
+     *
+     * @param jndiInitialFactory JNDI initial factory
+     * @return this builder
+     */
+    public JmsConfigBuilder jndiInitialFactory(Class<? extends InitialContextFactory> jndiInitialFactory) {
+        this.jndiInitialFactory(jndiInitialFactory.getName());
         return this;
     }
 

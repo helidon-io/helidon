@@ -47,7 +47,7 @@ Connecting streams to JMS with Reactive Messaging couldn't be easier.
 Channel<String> fromJms = Channel.<String>builder()<1><2>
         .name("from-jms")
         .publisherConfig(JmsConnector.configBuilder()
-                .jndiInitialFactory(ActiveMQInitialContextFactory.class.getName())
+                .jndiInitialFactory(ActiveMQInitialContextFactory.class)
                 .jndiProviderUrl("tcp://127.0.0.1:61616")
                 .type(JmsConfigBuilder.Type.QUEUE)
                 .destination("se-example-queue-1")
@@ -74,7 +74,7 @@ Messaging messaging = Messaging.builder()
 ----
 Channel<String> toJms = Channel.<String>builder()<1><2>
         .subscriberConfig(JmsConnector.configBuilder()
-                .jndiInitialFactory(ActiveMQInitialContextFactory.class.getName())
+                .jndiInitialFactory(ActiveMQInitialContextFactory.class)
                 .jndiProviderUrl("tcp://127.0.0.1:61616")
                 .type(JmsConfigBuilder.Type.QUEUE)
                 .destination("se-example-queue-1")
