@@ -161,3 +161,34 @@ Declare the following dependency in your project:
    <artifactId>helidon-microprofile-messaging</artifactId>
 </dependency>
 ----
+
+=== Health check
+Messaging in Helidon has built in health probes for liveness and readiness. To activate it
+just add following dependency:
+[source,xml]
+----
+<dependency>
+   <groupId>io.helidon.microprofile.messaging</groupId>
+   <artifactId>helidon-microprofile-messaging-health</artifactId>
+</dependency>
+----
+
+* Liveness - channel is considered UP until `cancel` or `onError` signal is intercepted on it.
+* Readiness - channel is considered DOWN until `onSubscribe` signal is intercepted on it.
+
+
+If you check you health endpoints `/health/live` and `/health/ready` you will discover
+every messaging channel to have its own probe.
+
+[source,json]
+----
+{
+    "name": "messaging",
+    "state": "UP",
+    "status": "UP",
+    "data": {
+        "my-channel-1": "UP",
+        "my-channel-2": "UP"
+    }
+}
+----
