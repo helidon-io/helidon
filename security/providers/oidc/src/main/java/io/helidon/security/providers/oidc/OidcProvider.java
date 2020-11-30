@@ -47,6 +47,7 @@ import javax.ws.rs.core.Response;
 import io.helidon.common.Errors;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.config.DeprecatedConfig;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -639,7 +640,8 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
             }
             config.get("propagate").asBoolean().ifPresent(this::propagate);
             if (null == outboundConfig) {
-                config.get("outbound").ifExists(outbound -> outboundConfig(OutboundConfig.create(outbound)));
+                // the OutboundConfig.create() expects the provider configuration, not the outbound configuration
+                config.get("outbound").ifExists(outbound -> outboundConfig(OutboundConfig.create(config)));
             }
             config.get("use-jwt-groups").asBoolean().ifPresent(this::useJwtGroups);
 
@@ -718,7 +720,10 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                                 .flatMap(cfg -> cfg.get("propagate").asBoolean().asOptional())
                                 .orElse(true);
                         TokenHandler handler = outboundTarget.getConfig()
-                                .flatMap(cfg -> cfg.get("token").as(TokenHandler::create).asOptional())
+                                .flatMap(cfg ->
+                                    DeprecatedConfig.get(cfg, "outbound-token", "token")
+                                            .as(TokenHandler::create)
+                                            .asOptional())
                                 .orElse(defaultTokenHandler);
                         return new OidcOutboundTarget(propagate, handler);
                     })).orElse(defaultTarget);

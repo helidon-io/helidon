@@ -228,6 +228,6 @@ SecurityContext securityContext = GrpcSecurity.SECURITY_CONTEXT.get();
 Response webResponse = client.target(url)
         .path("/test")
         .request()
-        .property(ClientSecurityFeature.PROPERTY_CONTEXT, securityContext)
+        .property(ClientSecurity.PROPERTY_CONTEXT, securityContext)
         .get();
 ----

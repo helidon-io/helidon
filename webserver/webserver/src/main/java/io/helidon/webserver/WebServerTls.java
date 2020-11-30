@@ -362,7 +362,7 @@ public final class WebServerTls {
             RANDOM.get().nextBytes(passwordBytes);
             char[] password = Base64.getEncoder().encodeToString(passwordBytes).toCharArray();
 
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
             ks.load(null, null);
             ks.setKeyEntry("key",
                            privateKeyConfig.privateKey().orElseThrow(() -> new RuntimeException("Private key not available")),
@@ -385,7 +385,7 @@ public final class WebServerTls {
                 certs = trustConfig.certs();
             }
 
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
             ks.load(null, null);
 
             int i = 1;
