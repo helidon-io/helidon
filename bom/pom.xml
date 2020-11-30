@@ -675,6 +675,11 @@
                 <artifactId>helidon-microprofile-messaging</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.messaging</groupId>
+                <artifactId>helidon-microprofile-messaging-health</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- integrations -->
             <dependency>
