@@ -161,16 +161,21 @@ class MethodInvoker implements FtSupplier<Object> {
      * FT handler created for the method.
      */
     private static class MethodState {
-        private FtHandlerTyped<Object> handler;
         private Retry retry;
         private Bulkhead bulkhead;
         private CircuitBreaker breaker;
+        private Timeout timeout;
         private State lastBreakerState;
         private long breakerTimerOpen;
         private long breakerTimerClosed;
         private long breakerTimerHalfOpen;
         private long startNanos;
     }
+
+    /**
+     * FT handler for this invoker.
+     */
+    private FtHandlerTyped<Object> handler;
 
     /**
      * A key used to lookup {@code MethodState} instances, which include FT handlers.
@@ -302,15 +307,18 @@ class MethodInvoker implements FtSupplier<Object> {
                 methodState.breakerTimerHalfOpen = 0L;
                 methodState.startNanos = System.nanoTime();
             }
-            methodState.handler = createMethodHandler(methodState);
+            initMethodHandler(methodState);
             return methodState;
         });
+
+        // Create a new method handler to ensure correct context in fallback
+        handler = createMethodHandler(methodState);
 
         // Gather information about current request scope if active
         try {
             requestController = CDI.current().select(RequestContextController.class).get();
             requestScope = CDI.current().select(RequestScope.class).get();
-            requestContext = requestScope.current();
+            requestContext = requestScope.referenceCurrent();
         } catch (Exception e) {
             requestScope = null;
             LOGGER.fine(() -> "Request context not active for method " + method
@@ -380,7 +388,7 @@ class MethodInvoker implements FtSupplier<Object> {
         Supplier<Single<?>> supplier = () -> {
             try {
                 return Contexts.runInContextWithThrow(helidonContext,
-                        () -> methodState.handler.invoke(toCompletionStageSupplier(context::proceed)));
+                        () -> handler.invoke(toCompletionStageSupplier(context::proceed)));
             } catch (Exception e) {
                 return Single.error(e);
             }
@@ -401,6 +409,11 @@ class MethodInvoker implements FtSupplier<Object> {
 
             // Update resultFuture based on outcome of asyncFuture
             asyncFuture.whenComplete((result, throwable) -> {
+                // Release request context if referenced
+                if (requestContext != null) {
+                    requestContext.release();
+                }
+
                 if (throwable != null) {
                     if (throwable instanceof CancellationException) {
                         single.cancel();
@@ -441,6 +454,11 @@ class MethodInvoker implements FtSupplier<Object> {
                 cause = map(e.getCause());
             } catch (Throwable t) {
                 cause = map(t);
+            } finally {
+                // Release request context if referenced
+                if (requestContext != null) {
+                    requestContext.release();
+                }
             }
             updateMetricsAfter(cause);
             if (cause != null) {
@@ -486,38 +504,27 @@ class MethodInvoker implements FtSupplier<Object> {
     }
 
     /**
-     * Creates a FT handler for an invocation by inspecting annotations. Handlers
-     * are composed as follows:
-     *
-     *  fallback(retry(circuitbreaker(timeout(bulkhead(method)))))
-     *
-     * Note that timeout includes the time an invocation may be queued in a
-     * bulkhead, so it needs to be before the bulkhead call.
+     * Initializes method state by creating handlers for all FT annotations
+     * except fallbacks. A fallback can reference the current invocation context
+     * (via fallback method parameters) and cannot be cached.
      *
      * @param methodState State related to this invocation's method.
      */
-    private FtHandlerTyped<Object> createMethodHandler(MethodState methodState) {
-        FaultTolerance.TypedBuilder<Object> builder = FaultTolerance.typedBuilder();
-
-        // Create and add bulkhead
+    private void initMethodHandler(MethodState methodState) {
         if (introspector.hasBulkhead()) {
             methodState.bulkhead = Bulkhead.builder()
                     .limit(introspector.getBulkhead().value())
                     .queueLength(introspector.isAsynchronous() ? introspector.getBulkhead().waitingTaskQueue() : 0)
                     .build();
-            builder.addBulkhead(methodState.bulkhead);
         }
 
-        // Create and add timeout handler
         if (introspector.hasTimeout()) {
-            Timeout timeout = Timeout.builder()
+            methodState.timeout = Timeout.builder()
                     .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
                     .currentThread(!introspector.isAsynchronous())
                     .build();
-            builder.addTimeout(timeout);
         }
 
-        // Create and add circuit breaker
         if (introspector.hasCircuitBreaker()) {
             methodState.breaker = CircuitBreaker.builder()
                     .delay(Duration.of(introspector.getCircuitBreaker().delay(),
@@ -528,34 +535,73 @@ class MethodInvoker implements FtSupplier<Object> {
                     .applyOn(mapTypes(introspector.getCircuitBreaker().failOn()))
                     .skipOn(mapTypes(introspector.getCircuitBreaker().skipOn()))
                     .build();
-            builder.addBreaker(methodState.breaker);
         }
 
-        // Create and add retry handler
         if (introspector.hasRetry()) {
-            Retry retry = Retry.builder()
+            methodState.retry = Retry.builder()
                     .retryPolicy(Retry.JitterRetryPolicy.builder()
                             .calls(introspector.getRetry().maxRetries() + 1)
                             .delay(Duration.of(introspector.getRetry().delay(),
-                                               introspector.getRetry().delayUnit()))
+                                    introspector.getRetry().delayUnit()))
                             .jitter(Duration.of(introspector.getRetry().jitter(),
-                                                introspector.getRetry().jitterDelayUnit()))
+                                    introspector.getRetry().jitterDelayUnit()))
                             .build())
                     .overallTimeout(Duration.of(introspector.getRetry().maxDuration(),
-                                                introspector.getRetry().durationUnit()))
+                            introspector.getRetry().durationUnit()))
                     .applyOn(mapTypes(introspector.getRetry().retryOn()))
                     .skipOn(mapTypes(introspector.getRetry().abortOn()))
                     .build();
-            builder.addRetry(retry);
-            methodState.retry = retry;      // keep reference to Retry
+        }
+    }
+
+    /**
+     * Creates a FT handler for this invocation. Handlers are composed as follows:
+     *
+     *  fallback(retry(circuitbreaker(timeout(bulkhead(method)))))
+     *
+     * Uses the cached handlers defined in the method state for this invocation's
+     * method, except for fallback.
+     *
+     * @param methodState State related to this invocation's method.
+     */
+    private FtHandlerTyped<Object> createMethodHandler(MethodState methodState) {
+        FaultTolerance.TypedBuilder<Object> builder = FaultTolerance.typedBuilder();
+
+        if (methodState.bulkhead != null) {
+            builder.addBulkhead(methodState.bulkhead);
         }
 
-        // Create and add fallback handler
+        if (methodState.timeout != null) {
+            builder.addTimeout(methodState.timeout);
+        }
+
+        if (methodState.breaker != null) {
+            builder.addBreaker(methodState.breaker);
+        }
+
+        if (methodState.retry != null) {
+            builder.addRetry(methodState.retry);
+        }
+
+        // Create and add fallback handler for this invocation
         if (introspector.hasFallback()) {
             Fallback<Object> fallback = Fallback.builder()
                     .fallback(throwable -> {
-                        CommandFallback cfb = new CommandFallback(context, introspector, throwable);
-                        return toCompletionStageSupplier(cfb::execute).get();
+                        try {
+                            // Reference request context if request scope is active
+                            if (requestScope != null) {
+                                requestContext = requestScope.referenceCurrent();
+                            }
+
+                            // Execute callback logic
+                            CommandFallback cfb = new CommandFallback(context, introspector, throwable);
+                            return toCompletionStageSupplier(cfb::execute).get();
+                        } finally {
+                            // Release request context if referenced
+                            if (requestContext != null) {
+                                requestContext.release();
+                            }
+                        }
                     })
                     .applyOn(mapTypes(introspector.getFallback().applyOn()))
                     .skipOn(mapTypes(introspector.getFallback().skipOn()))

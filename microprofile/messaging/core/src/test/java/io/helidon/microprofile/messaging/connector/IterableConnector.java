@@ -19,6 +19,9 @@ package io.helidon.microprofile.messaging.connector;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -26,6 +29,7 @@ import javax.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
+import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
 import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
@@ -40,8 +44,10 @@ import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 @Connector("iterable-connector")
 public class IterableConnector implements IncomingConnectorFactory, OutgoingConnectorFactory {
 
+    private static final Logger LOGGER = Logger.getLogger(IterableConnector.class.getName());
+
     public static final String[] TEST_DATA = {"test1", "test2", "test3"};
-    public static final CountDownLatch LATCH = new CountDownLatch(TEST_DATA.length);
+    private CountDownLatch latch = new CountDownLatch(TEST_DATA.length);
     private static final Set<String> PROCESSED_DATA =
             Arrays.stream(IterableConnector.TEST_DATA).collect(Collectors.toSet());
 
@@ -54,10 +60,25 @@ public class IterableConnector implements IncomingConnectorFactory, OutgoingConn
     public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(Config config) {
         return ReactiveStreams.<Message<?>>builder()
                 .map(Message::getPayload)
-                .forEach(p -> {
+                .peek(p -> {
                     if (PROCESSED_DATA.contains(p)) {
-                        LATCH.countDown();
+                        latch.countDown();
                     }
-                });
+                })
+                .onError(t -> LOGGER.log(Level.SEVERE, t, () -> "Error intercepted in channel "
+                        + config.getValue(ConnectorFactory.CHANNEL_NAME_ATTRIBUTE, String.class)))
+                .ignore();
+    }
+
+    public boolean await() throws InterruptedException {
+        return latch.await(2, TimeUnit.SECONDS);
+    }
+
+    public void reset() {
+        latch = new CountDownLatch(TEST_DATA.length);
+    }
+
+    public void reset(int i) {
+        latch = new CountDownLatch(i);
     }
 }
