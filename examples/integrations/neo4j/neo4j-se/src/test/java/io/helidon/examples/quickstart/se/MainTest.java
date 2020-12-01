@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2020 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.examples.quickstart.se;
 
 import java.util.concurrent.TimeUnit;
@@ -19,7 +35,7 @@ import org.neo4j.driver.GraphDatabase;
 import org.testcontainers.containers.Neo4jContainer;
 
 /**
- * author Dmitry Aleksandrov
+ * Main test class for Neo4j Helidon SE quickstarter.
  */
 public class MainTest {
 
@@ -30,7 +46,7 @@ public class MainTest {
 
 
     @BeforeAll
-    public static void startTheServer() throws Exception {
+    private static void startTheServer() throws Exception {
 
         neo4jContainer = new Neo4jContainer<>("neo4j:4.0")
                 .withAdminPassword("secret");
@@ -81,7 +97,7 @@ public class MainTest {
     }
 
     @AfterAll
-    public static void stopServer() throws Exception {
+    private static void stopServer() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
                     .toCompletableFuture()

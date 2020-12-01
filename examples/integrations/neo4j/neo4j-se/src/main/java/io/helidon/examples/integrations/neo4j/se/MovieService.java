@@ -23,7 +23,9 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 /**
- * author Michael J. Simons
+ * The Movie service.
+ *
+ * Implements {@link io.helidon.webserver.Service}
  */
 public class MovieService implements Service {
 
@@ -37,6 +39,11 @@ public class MovieService implements Service {
         this.movieRepository = movieRepository;
     }
 
+    /**
+     * Main routing done here.
+     *
+     * @param rules
+     */
     @Override
     public void update(Routing.Rules rules) {
         rules.get("/api/movies", this::findMoviesHandler);

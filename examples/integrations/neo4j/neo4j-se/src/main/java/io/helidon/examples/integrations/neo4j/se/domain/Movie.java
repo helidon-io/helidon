@@ -20,8 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * author Mark Angrish
- * author Michael J. Simons
+ * The Movie class.
  */
 public class Movie {
 

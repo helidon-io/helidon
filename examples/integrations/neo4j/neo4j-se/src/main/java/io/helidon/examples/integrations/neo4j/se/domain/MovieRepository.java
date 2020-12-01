@@ -23,7 +23,7 @@ import org.neo4j.driver.Value;
 
 
 /**
- * author Michael J. Simons
+ * The Movie repository.
  */
 public final class MovieRepository {
 

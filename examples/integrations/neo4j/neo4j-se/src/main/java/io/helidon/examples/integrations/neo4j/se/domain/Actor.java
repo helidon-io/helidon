@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * author Michael J. Simons
+ * The Actor class.
  */
 public class Actor {
 

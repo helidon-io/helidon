@@ -18,8 +18,7 @@ package io.helidon.examples.integrations.neo4j.se.domain;
 
 
 /**
- * author Mark Angrish
-  author Michael J. Simons
+ * The Person class.
  */
 public class Person {
 
