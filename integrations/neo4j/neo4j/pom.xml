@@ -20,32 +20,29 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>io.helidon.integrations.neo4j</groupId>
         <artifactId>helidon-integrations-neo4j-project</artifactId>
         <version>2.1.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-integrations-neo4j-metrics</artifactId>
-    <name>Helidon Neo4j Metrics Integrations</name>
+    <artifactId>helidon-integrations-neo4j</artifactId>
+    <name>Helidon Integrations Neo4j</name>
 
     <dependencies>
-        <dependency>
-            <groupId>io.helidon.integrations.neo4j</groupId>
-            <artifactId>helidon-integrations-neo4j</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.microprofile.metrics</groupId>
-            <artifactId>microprofile-metrics-api</artifactId>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
             <!-- only needed for compilation, not required in runtime -->
@@ -53,6 +50,17 @@
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-mp</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

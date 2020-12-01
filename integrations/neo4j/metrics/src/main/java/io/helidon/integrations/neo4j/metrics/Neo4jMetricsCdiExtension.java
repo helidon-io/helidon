@@ -22,7 +22,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.Extension;
 
@@ -31,13 +30,15 @@ import org.neo4j.driver.Driver;
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 /**
- * Created by Dmitry Alexandrov on 23.11.20.
+ * CDI Extension, instantiated by CDI.
  */
 public class Neo4jMetricsCdiExtension implements Extension {
 
-    private void addMetrics(@Observes @Priority(PLATFORM_AFTER + 101) @Initialized(ApplicationScoped.class) Object event,
-                            BeanManager beanManager) {
+    private void addMetrics(@Observes @Priority(PLATFORM_AFTER + 101) @Initialized(ApplicationScoped.class) Object event) {
         Instance<Driver> driver = CDI.current().select(Driver.class);
-        Neo4jMetricsSupport.builder().driver(driver.get()).build();
+        Neo4jMetricsSupport.builder()
+                .driver(driver.get())
+                .build()
+                .initialize();
     }
 }

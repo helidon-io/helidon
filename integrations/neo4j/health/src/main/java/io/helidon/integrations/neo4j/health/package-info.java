@@ -1,4 +1,4 @@
 /**
- * Created by Dmitry Alexandrov on 24.11.20.
+ * Health check for Neo4j.
  */
 package io.helidon.integrations.neo4j.health;
