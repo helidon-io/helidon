@@ -102,6 +102,7 @@
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-java>8.0.11</version.lib.mysql-connector-java>
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
+        <version.lib.neo4j>4.1.1</version.lib.neo4j>
         <version.lib.netty>4.1.51.Final</version.lib.netty>
         <version.lib.oci-java-sdk-objectstorage>1.10.0</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>19.6.0.0</version.lib.ojdbc8>
@@ -1133,6 +1134,11 @@
                 <groupId>org.apache.activemq</groupId>
                 <artifactId>activemq-kahadb-store</artifactId>
                 <version>${version.lib.activemq}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.neo4j.driver</groupId>
+                <artifactId>neo4j-java-driver</artifactId>
+                <version>${version.lib.neo4j}</version>
             </dependency>
             <!-- imported boms -->
             <dependency>

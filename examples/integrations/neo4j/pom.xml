@@ -31,8 +31,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>helidon-integrations-neo4j-se</module>
-        <module>helidon-integrations-neo4j-mp</module>
+        <module>neo4j-mp</module>
+        <module>neo4j-se</module>
     </modules>
 
 </project>

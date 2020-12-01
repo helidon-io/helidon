@@ -872,6 +872,22 @@
                 <artifactId>helidon-logging-log4j</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <!-- Neo4j -->
+            <dependency>
+                <groupId>io.helidon.integrations.neo4j</groupId>
+                <artifactId>helidon-integrations-neo4j</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.neo4j</groupId>
+                <artifactId>helidon-integrations-neo4j-health</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.neo4j</groupId>
+                <artifactId>helidon-integrations-neo4j-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

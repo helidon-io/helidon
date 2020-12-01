@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
+package io.helidon.integrations.neo4j;
+
 /**
- * Neo4j health checks module.
+ * Helidon exception marking a problem with Neo4j integration setup or runtime.
  */
-module io.helidon.integrations.neo4j.health {
-    requires microprofile.health.api;
-    requires org.neo4j.driver;
+public class Neo4jException extends RuntimeException {
+    public Neo4jException(String message) {
+        super(message);
+    }
 
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
-
-    exports io.helidon.integrations.neo4j.health;
-
-    opens io.helidon.integrations.neo4j.health to weld.core.impl, io.helidon.microprofile.cdi;
+    public Neo4jException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

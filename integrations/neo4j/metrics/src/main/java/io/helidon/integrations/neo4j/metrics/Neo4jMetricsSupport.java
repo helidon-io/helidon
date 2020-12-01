@@ -17,17 +17,24 @@
 
 package io.helidon.integrations.neo4j.metrics;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.LazyValue;
 import io.helidon.metrics.RegistryFactory;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.neo4j.driver.ConnectionPoolMetrics;
@@ -40,16 +47,18 @@ import static java.util.Map.entry;
  */
 public class Neo4jMetricsSupport {
 
-    private static final String NEO4J_METRIC_NAME_PREFIX = "neo4j.";
+    private static final String NEO4J_METRIC_NAME_PREFIX = "neo4j";
 
+    private final AtomicReference<Collection<ConnectionPoolMetrics>> lastPoolMetrics = new AtomicReference<>();
+    private final AtomicReference<ScheduledFuture<?>> reinitFuture = new AtomicReference<>();
+    private final AtomicReference<Boolean> metricsInitialized = new AtomicReference<>(false);
+    private final LazyValue<MetricRegistry> metricRegistry;
     private final Driver driver;
 
-    private Optional<ConnectionPoolMetrics> connectionPoolMetrics = Optional.empty();
-
     private Neo4jMetricsSupport(Builder builder) {
-        driver = builder.driver;
-        //FIXME: should be moved out to make the init more explicit?
-        init();
+        this.driver = builder.driver;
+        // Assuming for the moment that VENDOR is the correct registry to use.
+        metricRegistry = LazyValue.create(() -> RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR));
     }
 
     /**
@@ -61,11 +70,33 @@ public class Neo4jMetricsSupport {
         return new Builder();
     }
 
-    private void init() {
+    /**
+     * Register metrics and start monitoring.
+     */
+    public void initialize() {
+        this.lastPoolMetrics.set(driver.metrics().connectionPoolMetrics());
 
-        // Assuming for the moment that VENDOR is the correct registry to use.
-        MetricRegistry neo4JMetricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
+        reinit();
 
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "neo4j-metrics-init"));
+        reinitFuture.set(executor.scheduleAtFixedRate(() -> maybeRefreshMetrics(executor), 10, 10, TimeUnit.SECONDS));
+    }
+
+    private void maybeRefreshMetrics(ScheduledExecutorService executor) {
+        Collection<ConnectionPoolMetrics> currentPoolMetrics = driver.metrics().connectionPoolMetrics();
+
+        if (!metricsInitialized.get() && currentPoolMetrics.size() >= 1) {
+            lastPoolMetrics.set(currentPoolMetrics);
+            reinit();
+
+            if (metricsInitialized.get()) {
+                reinitFuture.get().cancel(false);
+                executor.shutdown();
+            }
+        }
+    }
+
+    private void reinit() {
         Map<String, Function<ConnectionPoolMetrics, Long>> counters = Map.ofEntries(
                 entry("acquired", ConnectionPoolMetrics::acquired),
                 entry("closed", ConnectionPoolMetrics::closed),
@@ -83,43 +114,57 @@ public class Neo4jMetricsSupport {
                 entry("idle", ConnectionPoolMetrics::idle),
                 entry("inUse", ConnectionPoolMetrics::inUse)
         );
-
-        counters.forEach((name, supplier) -> registerCounter(neo4JMetricRegistry, name, supplier));
-        gauges.forEach((name, supplier) -> registerGauge(neo4JMetricRegistry, name, supplier));
-    }
-
-    private synchronized Optional<ConnectionPoolMetrics> getConnectionPoolMetrics() {
-        if (!connectionPoolMetrics.isPresent()) {
-            connectionPoolMetrics = driver
-                    .metrics()
-                    .connectionPoolMetrics()
-                    .stream()
-                    .findFirst();
+        for (ConnectionPoolMetrics it : lastPoolMetrics.get()) {
+            //String poolPrefix = NEO4J_METRIC_NAME_PREFIX + "-" + it.id() + "-";
+            String poolPrefix = NEO4J_METRIC_NAME_PREFIX + "-";
+            counters.forEach((name, supplier) -> registerCounter(metricRegistry.get(), it, poolPrefix, name, supplier));
+            gauges.forEach((name, supplier) -> registerGauge(metricRegistry.get(), it, poolPrefix, name, supplier));
+            // we only care about the first one
+            metricsInitialized.set(true);
+            break;
         }
-        return connectionPoolMetrics;
     }
 
-    private void registerCounter(MetricRegistry metricRegistry, String name, Function<ConnectionPoolMetrics, Long> fn) {
-        Metadata metadata = Metadata.builder()
-                .withName(NEO4J_METRIC_NAME_PREFIX + name)
-                .withType(MetricType.COUNTER)
-                .notReusable()
-                .build();
-        Neo4JCounterWrapper wrapper = new Neo4JCounterWrapper(() -> getConnectionPoolMetrics().map(fn).orElse(0L));
-        metricRegistry.register(metadata, wrapper);
+    private void registerCounter(MetricRegistry metricRegistry,
+                                 ConnectionPoolMetrics cpm,
+                                 String poolPrefix,
+                                 String name,
+                                 Function<ConnectionPoolMetrics, Long> fn) {
+
+        String counterName = poolPrefix + name;
+        if (metricRegistry.getCounters().get(new MetricID(counterName)) == null) {
+            Metadata metadata = Metadata.builder()
+                    .withName(counterName)
+                    .withType(MetricType.COUNTER)
+                    .notReusable()
+                    .build();
+            Neo4JCounterWrapper wrapper = new Neo4JCounterWrapper(() -> fn.apply(cpm));
+            metricRegistry.register(metadata, wrapper);
+        }
     }
 
-    private void registerGauge(MetricRegistry metricRegistry, String name, Function<ConnectionPoolMetrics, Integer> fn) {
-        Metadata metadata = Metadata.builder()
-                .withName(NEO4J_METRIC_NAME_PREFIX + name)
-                .withType(MetricType.GAUGE)
-                .notReusable()
-                .build();
-        Neo4JGaugeWrapper<Integer> wrapper =
-                new Neo4JGaugeWrapper<Integer>(() -> getConnectionPoolMetrics().map(fn).orElse(0));
-        metricRegistry.register(metadata, wrapper);
+    private void registerGauge(MetricRegistry metricRegistry,
+                               ConnectionPoolMetrics cpm,
+                               String poolPrefix,
+                               String name,
+                               Function<ConnectionPoolMetrics, Integer> fn) {
+
+        String gaugeName = poolPrefix + name;
+        if (metricRegistry.getGauges().get(new MetricID(gaugeName)) == null) {
+            Metadata metadata = Metadata.builder()
+                    .withName(poolPrefix + name)
+                    .withType(MetricType.GAUGE)
+                    .notReusable()
+                    .build();
+            Neo4JGaugeWrapper<Integer> wrapper =
+                    new Neo4JGaugeWrapper<>(() -> fn.apply(cpm));
+            metricRegistry.register(metadata, wrapper);
+        }
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport}.
+     */
     public static class Builder implements io.helidon.common.Builder<Neo4jMetricsSupport> {
 
         private Driver driver;

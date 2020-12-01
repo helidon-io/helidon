@@ -480,6 +480,23 @@ final class FeatureCatalog {
             "Tracing",
             "Reactive web client support for tracing",
             "WebClient", "Tracing");
+        add("io.helidon.integrations.neo4j",
+            FeatureDescriptor.builder()
+                    .name("Neo4j integration")
+                    .description("Integration with Neo4j driver")
+                    .path("Neo4j")
+                    .experimental(true)
+                    .nativeSupported(false));
+        add("io.helidon.integrations.neo4j.health",
+            FeatureDescriptor.builder()
+                    .name("Neo4j Health")
+                    .description("Health check for Neo4j integration")
+                    .path("Neo4j", "Health"));
+        add("io.helidon.integrations.neo4j.metrics",
+            FeatureDescriptor.builder()
+                    .name("Neo4j Metrics")
+                    .description("Metrics for Neo4j integration")
+                    .path("Neo4j", "Metrics"));
 
         /*
          * Packages that are not a feature
