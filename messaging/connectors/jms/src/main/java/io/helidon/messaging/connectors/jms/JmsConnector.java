@@ -48,6 +48,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+import io.helidon.common.Builder;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
@@ -127,7 +128,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     private Map<String, ConnectionFactory> connectionFactoryMap;
 
     /**
-     * Provides a {@link io.helidon.messaging.connectors.jms.JmsConnectorBuilder} for creating
+     * Provides a {@link JmsConnectorBuilder} for creating
      * a {@link io.helidon.messaging.connectors.jms.JmsConnector} instance.
      *
      * @return new Builder instance
@@ -493,6 +494,110 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
             }
         } catch (JMSException jmsException) {
             throw new MessagingException("Error when creating destination.", jmsException);
+        }
+
+    }
+
+    /**
+     * Builder for {@link io.helidon.messaging.connectors.jms.JmsConnector}.
+     */
+    public static class JmsConnectorBuilder implements Builder<JmsConnector> {
+
+        private final Map<String, ConnectionFactory> connectionFactoryMap = new HashMap<>();
+        private ScheduledExecutorService scheduler;
+        private ExecutorService executor;
+        private io.helidon.config.Config config;
+
+        /**
+         * Add custom {@link javax.jms.ConnectionFactory ConnectionFactory} referencable by supplied name with
+         * {@link JmsConnector#NAMED_FACTORY_ATTRIBUTE}.
+         *
+         * @param name              referencable connection factory name
+         * @param connectionFactory custom connection factory
+         * @return this builder
+         */
+        public JmsConnectorBuilder connectionFactory(String name, ConnectionFactory connectionFactory) {
+            connectionFactoryMap.put(name, connectionFactory);
+            return this;
+        }
+
+        /**
+         * Custom configuration for connector.
+         *
+         * @param config custom config
+         * @return this builder
+         */
+        public JmsConnectorBuilder config(io.helidon.config.Config config) {
+            this.config = config;
+            return this;
+        }
+
+        /**
+         * Custom executor for asynchronous operations like acknowledgement.
+         *
+         * @param executor custom executor service
+         * @return this builder
+         */
+        public JmsConnectorBuilder executor(ExecutorService executor) {
+            this.executor = executor;
+            return this;
+        }
+
+        /**
+         * Custom executor for loop pulling messages from JMS.
+         *
+         * @param scheduler custom scheduled executor service
+         * @return this builder
+         */
+        public JmsConnectorBuilder scheduler(ScheduledExecutorService scheduler) {
+            this.scheduler = scheduler;
+            return this;
+        }
+
+        /**
+         * Custom executor supplier for asynchronous operations like acknowledgement.
+         *
+         * @param executorSupplier custom executor service
+         * @return this builder
+         */
+        public JmsConnectorBuilder executor(ThreadPoolSupplier executorSupplier) {
+            this.executor = executorSupplier.get();
+            return this;
+        }
+
+        /**
+         * Custom executor supplier for loop pulling messages from JMS.
+         *
+         * @param schedulerPoolSupplier custom scheduled executor service
+         * @return this builder
+         */
+        public JmsConnectorBuilder scheduler(ScheduledThreadPoolSupplier schedulerPoolSupplier) {
+            this.scheduler = schedulerPoolSupplier.get();
+            return this;
+        }
+
+        @Override
+        public JmsConnector build() {
+            if (config == null) {
+                config = io.helidon.config.Config.create();
+            }
+
+            if (executor == null) {
+                executor = ThreadPoolSupplier.builder()
+                        .threadNamePrefix(JmsConnector.EXECUTOR_THREAD_NAME_PREFIX)
+                        .config(config)
+                        .build()
+                        .get();
+            }
+            if (scheduler == null) {
+                scheduler = ScheduledThreadPoolSupplier.builder()
+                        .threadNamePrefix(JmsConnector.SCHEDULER_THREAD_NAME_PREFIX)
+                        .config(config)
+                        .build()
+                        .get();
+            }
+
+            return new JmsConnector(connectionFactoryMap, scheduler, executor);
         }
 
     }
