@@ -57,6 +57,7 @@
         <module>webclient</module>
         <module>cors</module>
         <module>messaging</module>
+        <module>logging</module>
     </modules>
 
     <build>

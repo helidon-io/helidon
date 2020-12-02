@@ -30,12 +30,12 @@ while sleep 2; do
     echo "KAFKA IS UP !!!"
 
     echo "Creating test topics"
-    bash "$KAFKA_TOPICS" \
+    bash $KAFKA_TOPICS \
       --create \
       --replication-factor 1 \
       --partitions 10 \
       --topic messaging-test-topic-1
-    bash "$KAFKA_TOPICS" \
+    bash $KAFKA_TOPICS \
       --create \
       --replication-factor 1 \
       --partitions 10 \
