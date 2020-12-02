@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,16 +32,20 @@ import org.eclipse.microprofile.health.Liveness;
 /**
  * A health check that verifies whether the server is running out of Java heap space. If heap usage exceeds a
  * specified threshold, then the health check will fail.
- *
- * By default, this health check has a threshold of .98 (98%). If heap usage exceeds this level, then the server
+ * <p>
+ * By default, this health check has a threshold of {@value DEFAULT_THRESHOLD} ({@value DEFAULT_THRESHOLD}%).
+ * If heap usage exceeds this level, then the server
  * is considered to be unhealthy. This default can be modified using the
- * {@code healthCheck.heapMemory.thresholdPercent} property. The threshold should be set to a fraction, such as
- * .50 for 50% or .99 for 99%.
- *
+ * {@value CONFIG_KEY_THRESHOLD_PERCENT} property. The threshold should be set as a percent, such as
+ * 50 for 50% or 99 for 99%. The default is .
+ * </p>
+ * <p>
  * This health check is automatically created and registered through CDI.
- *
- * This health check can be referred to in properties as "heapMemory". So for example, to exclude this
- * health check from being exposed, use "helidon.health.exclude: heapMemory".
+ * </p>
+ * <p>
+ * This health check can be referred to in properties as {@code heapMemory}. So for example, to exclude this
+ * health check from being exposed, use {@code helidon.health.exclude: heapMemory}.
+ * </p>
  */
 @Liveness
 @ApplicationScoped // this will be ignored if not within CDI
@@ -52,6 +56,8 @@ public final class HeapMemoryHealthCheck implements HealthCheck {
      */
     public static final double DEFAULT_THRESHOLD = 98;
 
+    public static final String CONFIG_KEY_THRESHOLD_PERCENT = "helidon.health.heapMemory.thresholdPercent";
+
     private final Runtime rt;
     private final double thresholdPercent;
 
@@ -59,7 +65,7 @@ public final class HeapMemoryHealthCheck implements HealthCheck {
     @Inject
     HeapMemoryHealthCheck(
             Runtime runtime,
-            @ConfigProperty(name = "helidon.health.heapMemory.thresholdPercent", defaultValue = "98") double threshold) {
+            @ConfigProperty(name = CONFIG_KEY_THRESHOLD_PERCENT, defaultValue = "98") double threshold) {
         this.thresholdPercent = threshold;
         this.rt = runtime;
     }

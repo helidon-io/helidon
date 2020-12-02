@@ -20,6 +20,8 @@
 :h1Prefix: SE
 :description: Helidon health checks
 :keywords: helidon, health-checks, health, check
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.health.checks/io/helidon/health/checks
+
 
 This document describes the health check API available with Helidon SE.
 
@@ -175,12 +177,32 @@ TIP: Balance collecting a lot of information with the need to avoid overloading
 
 === Built-in health-checks
 
-A set of built-in health checks can be optionally enabled to report various
- health check statuses that are commonly used:
+You can use Helidon-provided health checks to report various
+ common health check statuses:
 
-* deadlock detection
-* available disk space
-* available heap memory
+[[built-in-health-checks-table]]
+[cols="1,1,3,20"]
+|=======
+|Built-in health check |Health check name |JavaDoc |Config properties [default value]
+
+|deadlock detection
+|`deadlock`
+| link:{javadoc-base-url-api}/DeadlockHealthCheck.html[`DeadlockHealthCheck`]
+| n/a
+
+|available disk space
+|`diskSpace`
+| link:{javadoc-base-url-api}/DiskSpaceHealthCheck.html[`DiskSpaceHealthCheck`]
+|`helidon.healthCheck.diskSpace.thresholdPercent` [`99.999`] +
+ +
+`helidon.healthCheck.diskSpace.path` [`/`]
+|available heap memory
+| `heapMemory`
+| link:{javadoc-base-url-api}/HeapMemoryHealthCheck.html[`HeapMemoryHealthCheck`]
+|`helidon.healthCheck.heapMemory.thresholdPercent` [`98`]
+|=======
+
+The following code adds the default built-in health checks to your application:
 
 [source,java]
 ----
@@ -193,10 +215,25 @@ Routing.builder()
         .build();
 ----
 <.> Add built-in health checks (requires the `helidon-health-checks`
- dependency).
+ dependency) using defaults.
 <.> Register the created health support with web server routing (adds the 
 `/health` endpoint).
 
+You can control the thresholds for built-in health checks in either of two ways:
+
+* Create the health checks individually
+using their builders instead of using the `HealthChecks` convenience class.
+Follow the JavaDoc links in the <<built-in-health-checks-table,table>> above.
+
+* Configure the behavior of the built-in health checks using the config property keys in the
+<<built-in-health-checks-table,table>>.
+
+Further, you can suppress one or more of the built-in health checks by setting the configuration item
+`helidon.health.exclude` to a comma-separated list of the health check names
+(from the <<built-in-health-checks-table,table>>) you want to exclude.
+
+== Health report
+Accessing the Helidon-provided `/health` endpoint reports the health of your application:
 [source,json]
 .JSON response.
 ----
@@ -235,6 +272,9 @@ Routing.builder()
     ]
 }
 ----
+
+
+
 
 === Strict JSON Output
 
