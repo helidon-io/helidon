@@ -19,7 +19,7 @@
 = Health Checks
 :description: Helidon health checks
 :keywords: helidon, health-checks, health, check
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.health.checks/io/helidon/health/checks
+:javadoc-base-url-api: {javadoc-base-url}?io/helidon/health/checks
 
 This document describes the health check API available with Helidon SE.
 
