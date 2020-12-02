@@ -70,6 +70,9 @@ public class TracingCdiExtension implements Extension {
                 .config(config)
                 .build();
 
+        // tracer is available in global
+        Contexts.globalContext().register(tracer);
+
         server.serverBuilder()
                 .tracer(tracer);
 
