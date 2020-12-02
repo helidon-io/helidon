@@ -33,7 +33,12 @@ COPY init_topics.sh init_topics.sh
 
 RUN chmod a+x ./*.sh
 
+RUN echo listener.security.protocol.map=INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT >> config/server.properties \
+&& echo advertised.listeners=INSIDE://localhost:9092,OUTSIDE://localhost:29092 >> config/server.properties \
+&& echo listeners=INSIDE://0.0.0.0:9092,OUTSIDE://0.0.0.0:29092 >> config/server.properties \
+&& echo inter.broker.listener.name=INSIDE >> config/server.properties
+
 # Expose Zookeeper and Kafka ports
-EXPOSE 2181 9092
+EXPOSE 2181 9092 29092
 
 CMD bash start_kafka.sh

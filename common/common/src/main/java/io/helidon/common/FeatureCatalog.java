@@ -290,6 +290,24 @@ final class FeatureCatalog {
                     .flavor(HelidonFlavor.MP)
                     .nativeDescription("Does not support execution of default methods on interfaces."));
 
+        add("io.helidon.integrations.micronaut.cdi",
+            FeatureDescriptor.builder()
+                    .name("Micronaut")
+                    .description("Micronaut integration")
+                    .path("CDI", "Micronaut")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true)
+        );
+
+        add("io.helidon.integrations.micronaut.cdi.data",
+            FeatureDescriptor.builder()
+                    .name("Micronaut Data")
+                    .description("Micronaut Data integration")
+                    .path("CDI", "Micronaut", "Data")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true)
+        );
+
         /*
          * Common modules
          */
@@ -497,6 +515,12 @@ final class FeatureCatalog {
                     .name("Neo4j Metrics")
                     .description("Metrics for Neo4j integration")
                     .path("Neo4j", "Metrics"));
+        add("io.helidon.logging.log4j",
+            FeatureDescriptor.builder()
+                    .name("Log4j")
+                    .path("Logging", "Log4j")
+                    .description("Log4j MDC support")
+                    .nativeDescription("Only programmatic configuration supported, does not work with Helidon loggers"));
 
         /*
          * Packages that are not a feature
@@ -532,6 +556,8 @@ final class FeatureCatalog {
         exclude("io.helidon.integrations.graal.mp.nativeimage.extension");
         exclude("io.helidon.integrations.jta.weld");
         exclude("io.helidon.jersey.common");
+        exclude("io.helidon.logging.common");
+        exclude("io.helidon.logging.jul");
         exclude("io.helidon.media.common");
         exclude("io.helidon.media.common.spi");
         exclude("io.helidon.openapi.internal");

@@ -58,6 +58,6 @@ public class SubscriberPublToSubsBean implements AssertableTestBean {
 
     @Override
     public void assertValid() {
-        assertThat(resultData, containsInAnyOrder(TEST_DATA));
+        assertThat(resultData, containsInAnyOrder(TEST_DATA.toArray(new String[0])));
     }
 }

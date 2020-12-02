@@ -134,11 +134,6 @@ HealthSupport health = HealthSupport.builder()
     .build();
 ----
 
-NOTE: Health check requires the `JSON-P` support to be enabled. See the example
- below.
-
-=== Example
-
 [source,java]
 .Register a custom health check:
 ----
@@ -146,17 +141,15 @@ HealthSupport health = HealthSupport.builder()
     .addLiveness(() -> HealthCheckResponse.named("exampleHealthCheck")
                  .up()
                  .withData("time", System.currentTimeMillis())
-                 .build()) // <1>
+                 .build()) // <.>
     .build();
 
 Routing.builder()
-        .register(JsonSupport.create()) // <2>
-        .register(health) // <3>
+        .register(health) // <.>
         .build();
 ----
-<1> Add a custom health check. This example returns `UP` and current time.
-<2> Enable support for `JSON`.
-<3> Register health support with web server routing (adds the `/health`
+<.> Add a custom health check. This example returns `UP` and current time.
+<.> Register health support with web server routing (adds the `/health`
  endpoint).
 
 TIP: Balance collecting a lot of information with the need to avoid overloading
@@ -192,18 +185,16 @@ A set of built-in health checks can be optionally enabled to report various
 [source,java]
 ----
 HealthSupport health = HealthSupport.builder()
-    .addLiveness(HealthChecks.healthChecks()) // <1>
+    .addLiveness(HealthChecks.healthChecks()) // <.>
     .build();
 
 Routing.builder()
-        .register(JsonSupport.create()) // <2>
-        .register(health) // <3>
+        .register(health) // <.>
         .build();
 ----
-<1> Add built-in health checks (requires the `helidon-health-checks`
+<.> Add built-in health checks (requires the `helidon-health-checks`
  dependency).
-<2> Register the `JSON-P` support in the WebServer routing.
-<3> Register the created health support with web server routing (adds the 
+<.> Register the created health support with web server routing (adds the 
 `/health` endpoint).
 
 [source,json]

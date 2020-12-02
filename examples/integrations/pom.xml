@@ -32,7 +32,11 @@
 
     <modules>
         <module>cdi</module>
+<<<<<<< HEAD
         <module>neo4j</module>
+=======
+        <module>micronaut</module>
+>>>>>>> upstream/master
     </modules>
 
 </project>

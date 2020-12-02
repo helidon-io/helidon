@@ -25,7 +25,7 @@
 :h1Prefix: SE
 
 Helidon SE is a compact toolkit that embraces the latest Java SE features:
-reactive streams, asynchrous and functional programming, and fluent-style
+reactive streams, asynchronous and functional programming, and fluent-style
 APIs.
 
 == About Helidon SE Components

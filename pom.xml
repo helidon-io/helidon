@@ -60,10 +60,12 @@
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.jgit>4.9.9.201903122025-r</version.lib.jgit>
         <version.lib.jsch>0.1.55</version.lib.jsch>
+        <version.lib.kafka-junit5>3.2.1</version.lib.kafka-junit5>
         <version.lib.netty.tcnative>2.0.26.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
-        <version.lib.rxjava>2.0.8</version.lib.rxjava>
+        <version.lib.rxjava>2.2.10</version.lib.rxjava>
+        <version.lib.scala>2.12.10</version.lib.scala>
         <!-- This is to force upgrade of transitive dep from arquillian -->
         <!-- 2.x versions used http (not https) to access maven central -->
         <version.lib.shrinkwrap-resolver>3.0.1</version.lib.shrinkwrap-resolver>
@@ -739,6 +741,47 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka_2.12</artifactId>
+                <version>${version.lib.kafka}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>scala-library</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>scala-reflect</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.salesforce.kafka.test</groupId>
+                <artifactId>kafka-junit5</artifactId>
+                <version>${version.lib.kafka-junit5}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper</artifactId>
+                <version>${version.lib.zookeeper}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <scope>test</scope>
+                <version>${version.lib.scala}</version>
+            </dependency>
             <dependency>
                 <groupId>io.opentracing</groupId>
                 <artifactId>opentracing-mock</artifactId>

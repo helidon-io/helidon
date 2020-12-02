@@ -70,7 +70,7 @@ final class JacksonBodyWriter implements MessageBodyWriter<Object> {
         return new JacksonBodyWriter(objectMapper);
     }
 
-    private static final class ObjectToChunks implements Mapper<Object, Publisher<DataChunk>> {
+    static final class ObjectToChunks implements Mapper<Object, Publisher<DataChunk>> {
 
         private final ObjectMapper objectMapper;
         private final Charset charset;

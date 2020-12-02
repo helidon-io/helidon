@@ -20,7 +20,10 @@ package io.helidon.microprofile.messaging.connector;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Any;
+import javax.inject.Inject;
 
 /**
  * This test is modified version of official tck test in version 1.0
@@ -28,6 +31,12 @@ import javax.enterprise.context.ApplicationScoped;
  */
 @ApplicationScoped
 public class ConnectedOnlyProcessorBean {
+
+    @Inject
+    @PostConstruct
+    public void reset(@Any IterableConnector c) {
+        c.reset();
+    }
 
     @Incoming("iterable-channel-in")
     @Outgoing("iterable-channel-out")

@@ -21,7 +21,7 @@ module io.helidon.logging.slf4j {
     requires io.helidon.common.context;
     requires io.helidon.logging.common;
 
-    requires slf4j.api;
+    requires org.slf4j;
 
     exports io.helidon.logging.slf4j;
 

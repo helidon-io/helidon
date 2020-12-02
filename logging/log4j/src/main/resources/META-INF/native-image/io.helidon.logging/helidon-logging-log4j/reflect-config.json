@@ -1,0 +1,22 @@
+[
+    {
+        "name": "org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration",
+        "allDeclaredConstructors": true,
+        "allDeclaredMethods": true
+    },
+    {
+        "name": "org.apache.logging.log4j.core.config.AppenderRef",
+        "allDeclaredConstructors": true,
+        "allDeclaredMethods": true
+    },
+    {
+        "name": "org.apache.logging.log4j.core.config.LoggersPlugin",
+        "allDeclaredConstructors": true,
+        "allDeclaredMethods": true
+    },
+    {
+        "name": "org.apache.logging.log4j.core.config.AppendersPlugin",
+        "allDeclaredConstructors": true,
+        "allDeclaredMethods": true
+    }
+]
