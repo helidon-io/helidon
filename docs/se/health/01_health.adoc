@@ -181,25 +181,30 @@ You can use Helidon-provided health checks to report various
  common health check statuses:
 
 [[built-in-health-checks-table]]
-[cols="1,1,3,20"]
+[cols="1,1,3,15,3"]
 |=======
-|Built-in health check |Health check name |JavaDoc |Config properties [default value]
+|Built-in health check |Health check name |JavaDoc |Config properties |Default config value
 
 |deadlock detection
 |`deadlock`
 | link:{javadoc-base-url-api}/DeadlockHealthCheck.html[`DeadlockHealthCheck`]
 | n/a
+| n/a
 
 |available disk space
 |`diskSpace`
 | link:{javadoc-base-url-api}/DiskSpaceHealthCheck.html[`DiskSpaceHealthCheck`]
-|`helidon.healthCheck.diskSpace.thresholdPercent` [`99.999`] +
+|`helidon.healthCheck.diskSpace.thresholdPercent` +
  +
-`helidon.healthCheck.diskSpace.path` [`/`]
+`helidon.healthCheck.diskSpace.path`
+| `99.999` +
+ +
+`/`
 |available heap memory
 | `heapMemory`
 | link:{javadoc-base-url-api}/HeapMemoryHealthCheck.html[`HeapMemoryHealthCheck`]
-|`helidon.healthCheck.heapMemory.thresholdPercent` [`98`]
+|`helidon.healthCheck.heapMemory.thresholdPercent`
+|`98`
 |=======
 
 The following code adds the default built-in health checks to your application:
@@ -214,8 +219,8 @@ Routing.builder()
         .register(health) // <.>
         .build();
 ----
-<.> Add built-in health checks (requires the `helidon-health-checks`
- dependency) using defaults.
+<.> Add built-in health checks using defaults (requires the `helidon-health-checks`
+ dependency).
 <.> Register the created health support with web server routing (adds the 
 `/health` endpoint).
 
