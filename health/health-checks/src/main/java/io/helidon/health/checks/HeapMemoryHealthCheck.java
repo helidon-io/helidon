@@ -37,7 +37,7 @@ import org.eclipse.microprofile.health.Liveness;
  * If heap usage exceeds this level, then the server
  * is considered to be unhealthy. This default can be modified using the
  * {@value CONFIG_KEY_THRESHOLD_PERCENT} property. The threshold should be set as a percent, such as
- * 50 for 50% or 99 for 99%. The default is .
+ * 50 for 50% or 99 for 99%.
  * </p>
  * <p>
  * This health check is automatically created and registered through CDI.
