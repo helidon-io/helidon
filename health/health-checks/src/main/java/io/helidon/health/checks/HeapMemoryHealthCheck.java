@@ -56,6 +56,9 @@ public final class HeapMemoryHealthCheck implements HealthCheck {
      */
     public static final double DEFAULT_THRESHOLD = 98;
 
+    /**
+     * Config property key for heap memory threshold.
+     */
     public static final String CONFIG_KEY_THRESHOLD_PERCENT = "helidon.health.heapMemory.thresholdPercent";
 
     private final Runtime rt;
