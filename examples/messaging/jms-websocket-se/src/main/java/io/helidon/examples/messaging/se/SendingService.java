@@ -22,8 +22,8 @@ import io.helidon.config.Config;
 import io.helidon.messaging.Channel;
 import io.helidon.messaging.Emitter;
 import io.helidon.messaging.Messaging;
-import io.helidon.messaging.connectors.jms.JmsConfigBuilder;
 import io.helidon.messaging.connectors.jms.JmsConnector;
+import io.helidon.messaging.connectors.jms.Type;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 
@@ -45,7 +45,7 @@ public class SendingService implements Service {
                 .subscriberConfig(JmsConnector.configBuilder()
                         .jndiInitialFactory(ActiveMQInitialContextFactory.class.getName())
                         .jndiProviderUrl(url)
-                        .type(JmsConfigBuilder.Type.QUEUE)
+                        .type(Type.QUEUE)
                         .destination(destination)
                         .build()
                 ).build();

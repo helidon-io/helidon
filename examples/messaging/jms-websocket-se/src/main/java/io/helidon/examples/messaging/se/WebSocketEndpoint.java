@@ -33,8 +33,8 @@ import javax.websocket.Session;
 import io.helidon.config.Config;
 import io.helidon.messaging.Channel;
 import io.helidon.messaging.Messaging;
-import io.helidon.messaging.connectors.jms.JmsConfigBuilder;
 import io.helidon.messaging.connectors.jms.JmsConnector;
+import io.helidon.messaging.connectors.jms.Type;
 
 import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
 
@@ -60,7 +60,7 @@ public class WebSocketEndpoint extends Endpoint {
                 .publisherConfig(JmsConnector.configBuilder()
                         .jndiInitialFactory(ActiveMQInitialContextFactory.class.getName())
                         .jndiProviderUrl(url)
-                        .type(JmsConfigBuilder.Type.QUEUE)
+                        .type(Type.QUEUE)
                         .destination(destination)
                         .build()
                 )
