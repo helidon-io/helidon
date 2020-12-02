@@ -1,28 +1,29 @@
 # Helidon Quickstart MP Example
 
-This example implements a simple Hello World REST service using MicroProfile.
+This example implements a simple Neo4j REST service using MicroProfile.
 
 ## Build and run
 
-With JDK11+
+Bring up a Neo4j instance via Docker
+
+```bash
+docker run --publish=7474:7474 --publish=7687:7687 -e 'NEO4J_AUTH=neo4j/secret'  neo4j:4.0
+```
+
+Goto the Neo4j browser and play the first step of the movies graph: [`:play movies`](http://localhost:7474/browser/?cmd=play&arg=movies).
+
+
+Then build with JDK11+
 ```bash
 mvn package
-java -jar target/helidon-quickstart-mp.jar
+java -jar target/helidon-integrations-neo4j-mp.jar
 ```
 
 ## Exercise the application
 
 ```
-curl -X GET http://localhost:8080/greet
-{"message":"Hello World!"}
+curl -X GET http://localhost:8080/movies
 
-curl -X GET http://localhost:8080/greet/Joe
-{"message":"Hello Joe!"}
-
-curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http://localhost:8080/greet/greeting
-
-curl -X GET http://localhost:8080/greet/Jose
-{"message":"Hola Jose!"}
 ```
 
 ## Try health and metrics
@@ -47,13 +48,13 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ## Build the Docker Image
 
 ```
-docker build -t helidon-quickstart-mp .
+docker build -t helidon-integrations-neo4j-mp .
 ```
 
 ## Start the application with Docker
 
 ```
-docker run --rm -p 8080:8080 helidon-quickstart-mp:latest
+docker run --rm -p 8080:8080 helidon-integrations-neo4j-mp:latest
 ```
 
 Exercise the application as described above
@@ -61,10 +62,10 @@ Exercise the application as described above
 ## Deploy the application to Kubernetes
 
 ```
-kubectl cluster-info                         # Verify which cluster
-kubectl get pods                             # Verify connectivity to cluster
-kubectl create -f app.yaml               # Deploy application
-kubectl get service helidon-quickstart-mp  # Verify deployed service
+kubectl cluster-info                                # Verify which cluster
+kubectl get pods                                    # Verify connectivity to cluster
+kubectl create -f app.yaml                          # Deploy application
+kubectl get service helidon-integrations-neo4j-mp   # Verify deployed service
 ```
 
 ## Build a native image with GraalVM
@@ -106,13 +107,13 @@ Start the application:
 Build the "native" Docker Image
 
 ```
-docker build -t helidon-quickstart-mp-native -f Dockerfile.native .
+docker build -t helidon-integrations-neo4j-mp-native -f Dockerfile.native .
 ```
 
 Start the application:
 
 ```
-docker run --rm -p 8080:8080 helidon-quickstart-mp-native:latest
+docker run --rm -p 8080:8080 helidon-integrations-neo4j-mp-native:latest
 ```
 
 
@@ -142,7 +143,7 @@ See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plug
 Start the application:
 
 ```
-./target/helidon-quickstart-mp-jri/bin/start
+./target/helidon-integrations-neo4j-mp-jri/bin/start
 ```
 
 ### Multi-stage Docker build
@@ -150,17 +151,17 @@ Start the application:
 Build the JRI as a Docker Image
 
 ```
-docker build -t helidon-quickstart-mp-jri -f Dockerfile.jlink .
+docker build -t helidon-integrations-neo4j-mp-jri -f Dockerfile.jlink .
 ```
 
 Start the application:
 
 ```
-docker run --rm -p 8080:8080 helidon-quickstart-mp-jri:latest
+docker run --rm -p 8080:8080 helidon-integrations-neo4j-mp-jri:latest
 ```
 
 See the start script help:
 
 ```
-docker run --rm helidon-quickstart-mp-jri:latest --help
+docker run --rm helidon-integrations-neo4j-mp-jri:latest --help
 ```

@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.integrations.neo4j</groupId>
     <artifactId>helidon-integrations-neo4j-mp</artifactId>
-    <name>Helidon Neo4J MP integration Example</name>
+    <name>Helidon Neo4j MP integration Example</name>
 
     <dependencies>
         <dependency>

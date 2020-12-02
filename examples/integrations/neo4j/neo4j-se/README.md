@@ -13,7 +13,7 @@ Goto the Neo4j browser and play the first step of the movies graph: [`:play movi
 Build and run with With JDK11+
 ```bash
 mvn package
-java -jar target/helidon-integrations-heo4j-se.jar  
+java -jar target/helidon-integrations-neo4j-se.jar  
 ```
 
 Then access the rest API like this:
@@ -79,10 +79,10 @@ Exercise the application as described above
 ## Deploy the application to Kubernetes
 
 ```
-kubectl cluster-info                # Verify which cluster
-kubectl get pods                    # Verify connectivity to cluster
-kubectl create -f app.yaml   # Deply application
-kubectl get service helidon-integrations-heo4j-se  # Get service info
+kubectl cluster-info                                 # Verify which cluster
+kubectl get pods                                     # Verify connectivity to cluster
+kubectl create -f app.yaml                           # Deply application
+kubectl get service helidon-integrations-heo4j-se    # Get service info
 ```
 
 ## Build a native image with GraalVM

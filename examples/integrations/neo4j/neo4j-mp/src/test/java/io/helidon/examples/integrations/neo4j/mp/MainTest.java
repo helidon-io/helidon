@@ -41,7 +41,7 @@ class MainTest {
     private static Server server;
     private static Neo4jContainer neo4jContainer;
 
-    @BeforeAll
+    //@BeforeAll Decide if we need testcontainers.
     public static void startTheServer() throws Exception {
         neo4jContainer = new Neo4jContainer<>("neo4j:4.0")
                 .withAdminPassword("secret");
@@ -76,13 +76,13 @@ class MainTest {
         System.setProperty("neo4j.uri", neo4jContainer.getBoltUrl());
     }
 
-    @AfterAll
+    //@AfterAll
     static void destroyClass() {
         CDI<Object> current = CDI.current();
         ((SeContainer) current).close();
     }
 
-    @AfterAll
+    //@AfterAll
     public static void stopNeo4j() {
         neo4jContainer.stop();
     }

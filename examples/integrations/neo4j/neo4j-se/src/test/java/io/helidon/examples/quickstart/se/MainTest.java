@@ -45,7 +45,7 @@ public class MainTest {
     private static WebClient webClient;
 
 
-    @BeforeAll
+    //@BeforeAll Decide if we need testcontainers.
     private static void startTheServer() throws Exception {
 
         neo4jContainer = new Neo4jContainer<>("neo4j:4.0")
@@ -96,7 +96,7 @@ public class MainTest {
                 .build();
     }
 
-    @AfterAll
+    //@AfterAll
     private static void stopServer() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
@@ -105,7 +105,7 @@ public class MainTest {
         }
     }
 
-    @AfterAll
+    //@AfterAll
     public static void stopNeo4j() {
         neo4jContainer.stop();
     }
