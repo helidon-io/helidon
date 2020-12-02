@@ -54,7 +54,7 @@ public class JmsSeTest extends AbstractJmsTest {
                 .subscriberConfig(JmsConnector.configBuilder()
                         .namedFactory(factoryName)
                         .destination(destination)
-                        .type(JmsConfigBuilder.Type.QUEUE)
+                        .type(Type.QUEUE)
                         .build())
                 .build();
 
@@ -63,7 +63,7 @@ public class JmsSeTest extends AbstractJmsTest {
                 .publisherConfig(JmsConnector.configBuilder()
                         .namedFactory(factoryName)
                         .destination(destination)
-                        .type(JmsConfigBuilder.Type.QUEUE)
+                        .type(Type.QUEUE)
                         .build())
                 .build();
 
@@ -103,7 +103,7 @@ public class JmsSeTest extends AbstractJmsTest {
                         .jndiInitialFactory(ActiveMQInitialContextFactory.class)
                         .jndiProviderUrl(url)
                         .destination(destination)
-                        .type(JmsConfigBuilder.Type.QUEUE)
+                        .type(Type.QUEUE)
                         .build())
                 .build();
 
@@ -113,7 +113,7 @@ public class JmsSeTest extends AbstractJmsTest {
                         .jndiInitialFactory(ActiveMQInitialContextFactory.class)
                         .jndiProviderUrl(url)
                         .destination(destination)
-                        .type(JmsConfigBuilder.Type.QUEUE)
+                        .type(Type.QUEUE)
                         .build())
                 .build();
 

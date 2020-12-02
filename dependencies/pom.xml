@@ -79,6 +79,7 @@
         <version.lib.jsonb-api>1.0.2</version.lib.jsonb-api>
         <version.lib.jsonp-api>1.1.6</version.lib.jsonp-api>
         <version.lib.jsonp-impl>1.1.6</version.lib.jsonp-impl>
+        <version.lib.jta>1.1</version.lib.jta>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.junit>5.6.2</version.lib.junit>
         <version.lib.kafka-junit5>3.2.1</version.lib.kafka-junit5>
@@ -558,6 +559,11 @@
                 <groupId>com.oracle.database.messaging</groupId>
                 <artifactId>aqapi</artifactId>
                 <version>${version.lib.database.messaging}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.transaction</groupId>
+                <artifactId>jta</artifactId>
+                <version>${version.lib.jta}</version>
             </dependency>
 
             <!-- Microprofile related -->

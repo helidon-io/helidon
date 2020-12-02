@@ -176,9 +176,16 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                 .get();
     }
 
-    JmsConnector(Map<String, ConnectionFactory> connectionFactoryMap,
-                 ScheduledExecutorService scheduler,
-                 ExecutorService executor) {
+    /**
+     * Create new JmsConnector.
+     *
+     * @param connectionFactoryMap custom connection factories
+     * @param scheduler            custom scheduler for polling
+     * @param executor             custom executor for async tasks
+     */
+    protected JmsConnector(Map<String, ConnectionFactory> connectionFactoryMap,
+                           ScheduledExecutorService scheduler,
+                           ExecutorService executor) {
         this.connectionFactories = null;
         this.connectionFactoryMap = connectionFactoryMap;
         this.scheduler = scheduler;

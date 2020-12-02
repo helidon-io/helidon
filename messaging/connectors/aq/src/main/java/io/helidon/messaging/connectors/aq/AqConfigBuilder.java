@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c)  2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,22 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging.connectors.jms;
-
-import java.util.Map;
-
-import javax.naming.spi.InitialContextFactory;
+package io.helidon.messaging.connectors.aq;
 
 import io.helidon.messaging.ConnectorConfigBuilder;
+import io.helidon.messaging.connectors.jms.AcknowledgeMode;
+import io.helidon.messaging.connectors.jms.Type;
 
 import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 
-
 /**
- * Build Jms specific config.
+ * Build AQ specific config.
  */
-public final class JmsConfigBuilder extends ConnectorConfigBuilder {
+public class AqConfigBuilder extends ConnectorConfigBuilder {
 
-    JmsConfigBuilder() {
+    AqConfigBuilder() {
         super();
-        super.property(ConnectorFactory.CONNECTOR_ATTRIBUTE, JmsConnector.CONNECTOR_NAME);
+        super.property(ConnectorFactory.CONNECTOR_ATTRIBUTE, AqConnector.CONNECTOR_NAME);
     }
 
     /**
@@ -42,21 +39,25 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param value property value
      * @return this builder
      */
-    public JmsConfigBuilder property(String key, String value) {
+    public AqConfigBuilder property(String key, String value) {
         super.property(key, value);
         return this;
     }
 
     /**
-     * To select from manually configured {@link javax.jms.ConnectionFactory ConnectionFactories} over
-     * {@link JmsConnector.JmsConnectorBuilder#connectionFactory(String, javax.jms.ConnectionFactory)
-     * JmsConnectorBuilder#connectionFactory()}.
+     * Mapping to {@link javax.sql.DataSource DataSource} supplied with
+     * {@link io.helidon.messaging.connectors.aq.AqConnector.AqConnectorBuilder#dataSource(String, javax.sql.DataSource)
+     * AqConnectorBuilder.dataSource()}.
      *
-     * @param factoryName connection factory name
+     * <ul>
+     * <li>Type: string</li>
+     * </ul>
+     *
+     * @param dataSourceName data source identifier
      * @return this builder
      */
-    public JmsConfigBuilder namedFactory(String factoryName) {
-        super.property(JmsConnector.NAMED_FACTORY_ATTRIBUTE, factoryName);
+    public AqConfigBuilder dataSource(String dataSourceName) {
+        super.property(AqConnector.DATASOURCE_ATTRIBUTE, dataSourceName);
         return this;
     }
 
@@ -80,7 +81,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param acknowledgeMode AUTO_ACKNOWLEDGE, CLIENT_ACKNOWLEDGE, DUPS_OK_ACKNOWLEDGE
      * @return this builder
      */
-    public JmsConfigBuilder acknowledgeMode(AcknowledgeMode acknowledgeMode) {
+    public AqConfigBuilder acknowledgeMode(AcknowledgeMode acknowledgeMode) {
         super.property("acknowledge-mode", acknowledgeMode.name());
         return this;
     }
@@ -97,7 +98,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param transacted true if so
      * @return this builder
      */
-    public JmsConfigBuilder transacted(boolean transacted) {
+    public AqConfigBuilder transacted(boolean transacted) {
         super.property("transacted", String.valueOf(transacted));
         return this;
     }
@@ -112,7 +113,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param username JMS connection user name
      * @return this builder
      */
-    public JmsConfigBuilder username(String username) {
+    public AqConfigBuilder username(String username) {
         super.property("username", username);
         return this;
     }
@@ -127,24 +128,27 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param password JMS connection password
      * @return this builder
      */
-    public JmsConfigBuilder password(String password) {
+    public AqConfigBuilder password(String password) {
         super.property("password", password);
         return this;
     }
 
     /**
-     * Specify if connection is {@link Type#QUEUE queue}  or {@link Type#TOPIC topic}.
+     * Specify if connection is {@link io.helidon.messaging.connectors.jms.Type#QUEUE queue}
+     * or {@link io.helidon.messaging.connectors.jms.Type#TOPIC topic}.
      *
      * <ul>
      * <li>Type: enum</li>
-     * <li>Default: {@link Type#QUEUE QUEUE}</li>
-     * <li>Valid Values: {@link Type#QUEUE QUEUE}, {@link Type#TOPIC TOPIC}</li>
+     * <li>Default: {@link io.helidon.messaging.connectors.jms.Type#QUEUE QUEUE}</li>
+     * <li>Valid Values: {@link io.helidon.messaging.connectors.jms.Type#QUEUE QUEUE},
+     * {@link io.helidon.messaging.connectors.jms.Type#TOPIC TOPIC}</li>
      * </ul>
      *
-     * @param type {@link Type#QUEUE queue} or {@link Type#TOPIC topic}
+     * @param type {@link io.helidon.messaging.connectors.jms.Type#QUEUE queue} or
+     *             {@link io.helidon.messaging.connectors.jms.Type#TOPIC topic}
      * @return this builder
      */
-    public JmsConfigBuilder type(Type type) {
+    public AqConfigBuilder type(Type type) {
         super.property("type", type.toString());
         return this;
     }
@@ -159,7 +163,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param destination queue or topic name
      * @return this builder
      */
-    public JmsConfigBuilder destination(String destination) {
+    public AqConfigBuilder destination(String destination) {
         super.property("destination", destination);
         return this;
     }
@@ -174,7 +178,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param destination queue name
      * @return this builder
      */
-    public JmsConfigBuilder queue(String destination) {
+    public AqConfigBuilder queue(String destination) {
         this.type(Type.QUEUE);
         this.destination(destination);
         return this;
@@ -190,7 +194,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param destination topic name
      * @return this builder
      */
-    public JmsConfigBuilder topic(String destination) {
+    public AqConfigBuilder topic(String destination) {
         this.type(Type.TOPIC);
         this.destination(destination);
         return this;
@@ -208,7 +212,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param messageSelector message selector expression
      * @return this builder
      */
-    public JmsConfigBuilder messageSelector(String messageSelector) {
+    public AqConfigBuilder messageSelector(String messageSelector) {
         super.property("message-selector", messageSelector);
         return this;
     }
@@ -224,7 +228,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param pollTimeout timeout of polling for next message
      * @return this builder
      */
-    public JmsConfigBuilder pollTimeout(long pollTimeout) {
+    public AqConfigBuilder pollTimeout(long pollTimeout) {
         super.property("poll-timeout", String.valueOf(pollTimeout));
         return this;
     }
@@ -240,7 +244,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param periodExecutions period for executing poll cycles in millis
      * @return this builder
      */
-    public JmsConfigBuilder periodExecutions(long periodExecutions) {
+    public AqConfigBuilder periodExecutions(long periodExecutions) {
         super.property("period-executions", String.valueOf(periodExecutions));
         return this;
     }
@@ -256,85 +260,8 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param sessionGroupId identifier for channels sharing same JMS session
      * @return this builder
      */
-    public JmsConfigBuilder sessionGroupId(String sessionGroupId) {
+    public AqConfigBuilder sessionGroupId(String sessionGroupId) {
         super.property("session-group-id", sessionGroupId);
         return this;
     }
-
-    /**
-     * JNDI name of JMS factory.
-     *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
-     * @param jndiJmsFactory JNDI name of JMS factory
-     * @return this builder
-     */
-    public JmsConfigBuilder jndiJmsFactory(String jndiJmsFactory) {
-        super.property("jndi.jms-factory", jndiJmsFactory);
-        return this;
-    }
-
-    /**
-     * JNDI initial factory.
-     *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
-     * @param jndiInitialFactory JNDI initial factory
-     * @return this builder
-     */
-    public JmsConfigBuilder jndiInitialFactory(String jndiInitialFactory) {
-        super.property("jndi." + JmsConnector.JNDI_PROPS_ATTRIBUTE + ".java.naming.factory.initial", jndiInitialFactory);
-        return this;
-    }
-
-    /**
-     * JNDI initial factory.
-     *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
-     * @param jndiInitialFactory JNDI initial factory
-     * @return this builder
-     */
-    public JmsConfigBuilder jndiInitialFactory(Class<? extends InitialContextFactory> jndiInitialFactory) {
-        this.jndiInitialFactory(jndiInitialFactory.getName());
-        return this;
-    }
-
-    /**
-     * JNDI provider url.
-     *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
-     * @param jndiProviderUrl JNDI provider url
-     * @return this builder
-     */
-    public JmsConfigBuilder jndiProviderUrl(String jndiProviderUrl) {
-        super.property("jndi." + JmsConnector.JNDI_PROPS_ATTRIBUTE + ".java.naming.provider.url", jndiProviderUrl);
-        return this;
-    }
-
-    /**
-     * Environment properties used for creating initial context java.naming.factory.initial, java.naming.provider.url.
-     *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
-     * @param initialContextProps properties used for creating JNDI initial context
-     * @return this builder
-     */
-    public JmsConfigBuilder jndiInitialContextProperties(Map<String, String> initialContextProps) {
-        initialContextProps.forEach((key, val) -> super.property("jndi.env-properties." + key, val));
-        return this;
-    }
-
-
 }

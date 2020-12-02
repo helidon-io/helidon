@@ -12,152 +12,172 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.messaging.connectors.aq;
 
-import java.util.Optional;
-import java.util.concurrent.Executor;
-import java.util.function.BiConsumer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.enterprise.inject.spi.CDI;
-import javax.inject.Inject;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
 import javax.sql.DataSource;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
-import io.helidon.messaging.MessagingException;
-import io.helidon.messaging.connectors.jms.ConnectionContext;
-import io.helidon.messaging.connectors.jms.JmsConnector;
-import io.helidon.messaging.connectors.jms.JmsMessage;
-import io.helidon.messaging.connectors.jms.SessionMetadata;
+import io.helidon.common.Builder;
+import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
+import io.helidon.common.configurable.ThreadPoolSupplier;
 
-import oracle.jms.AQjmsConnectionFactory;
-import org.eclipse.microprofile.reactive.messaging.Message;
-import org.eclipse.microprofile.reactive.messaging.spi.Connector;
+import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 
 /**
- * MicroProfile Reactive Messaging Oracle AQ connector.
+ * Reactive Messaging Oracle AQ connector.
  */
-@ApplicationScoped
-@Connector(AqConnector.CONNECTOR_NAME)
-public class AqConnector extends JmsConnector {
+public interface AqConnector extends ConnectorFactory {
 
     /**
-     * Microprofile messaging Oracle AQ connector name.
+     * Oracle AQ connector name.
      */
-    public static final String CONNECTOR_NAME = "helidon-aq";
-
-    private static final String DATASOURCE_ATTRIBUTE = "data-source";
-    private static final String URL_ATTRIBUTE = "url";
-
-    private final Instance<AQjmsConnectionFactory> connectionFactories;
+    String CONNECTOR_NAME = "helidon-aq";
 
     /**
-     * Create new AQConnector.
+     * Configuration key for data source identifier.
+     */
+    String DATASOURCE_ATTRIBUTE = "data-source";
+
+    /**
+     * Configuration key for Oracle db connection string.
+     */
+    String URL_ATTRIBUTE = "url";
+
+    /**
+     * Configuration key for thread name prefix used for asynchronous operations like acknowledgement.
+     */
+    String EXECUTOR_THREAD_NAME_PREFIX = "aq-";
+
+    /**
+     * Configuration key for thread name prefix used for polling.
+     */
+    String SCHEDULER_THREAD_NAME_PREFIX = "aq-poll-";
+
+    /**
+     * Provides a {@link io.helidon.messaging.connectors.jms.JmsConnector.JmsConnectorBuilder} for creating
+     * a {@link io.helidon.messaging.connectors.jms.JmsConnector} instance.
      *
-     * @param config root config for thread context
+     * @return new Builder instance
      */
-    @Inject
-    AqConnector(Config config, Instance<AQjmsConnectionFactory> connectionFactories) {
-        super(config, null);
-        this.connectionFactories = connectionFactories;
+    static AqConnectorBuilder builder() {
+        return new AqConnectorBuilder();
     }
 
-    @Override
-    protected Optional<? extends ConnectionFactory> getFactory(ConnectionContext ctx) {
+    /**
+     * Custom config builder for AQ connector.
+     *
+     * @return new AQ specific config builder
+     */
+    static AqConfigBuilder configBuilder() {
+        return new AqConfigBuilder();
+    }
 
-        // Named factory
-        ConfigValue<String> factoryName = ctx.config().get(NAMED_FACTORY_ATTRIBUTE).asString();
-        if (factoryName.isPresent()) {
-            Config factory = ctx.config().get("factory").get(factoryName.get());
-            if (factory.exists()) {
-                // from config
-                try {
-                    return Optional.of(createAqFactory(factory));
-                } catch (JMSException e) {
-                    throw new MessagingException("Error when preparing AQjmsConnectionFactory " + factoryName.get(), e);
-                }
-            } else {
-                // or named bean
-                return Optional.ofNullable(connectionFactories)
-                        .flatMap(s -> s.stream().findFirst());
+    /**
+     * Builder for {@link AqConnectorImpl}.
+     */
+    class AqConnectorBuilder implements Builder<AqConnectorImpl> {
+
+        private final Map<String, DataSource> dataSourceMap = new HashMap<>();
+        private ScheduledExecutorService scheduler;
+        private ExecutorService executor;
+        private io.helidon.config.Config config;
+
+        /**
+         * Add custom {@link javax.jms.ConnectionFactory ConnectionFactory} referencable by supplied name with
+         * {@link io.helidon.messaging.connectors.jms.JmsConnector#NAMED_FACTORY_ATTRIBUTE}.
+         *
+         * @param name       referencable connection factory name
+         * @param dataSource custom connection factory
+         * @return this builder
+         */
+        public AqConnectorBuilder dataSource(String name, DataSource dataSource) {
+            dataSourceMap.put(name, dataSource);
+            return this;
+        }
+
+        /**
+         * Custom configuration for connector.
+         *
+         * @param config custom config
+         * @return this builder
+         */
+        public AqConnectorBuilder config(io.helidon.config.Config config) {
+            this.config = config;
+            return this;
+        }
+
+        /**
+         * Custom executor for asynchronous operations like acknowledgement.
+         *
+         * @param executor custom executor service
+         * @return this builder
+         */
+        public AqConnectorBuilder executor(ExecutorService executor) {
+            this.executor = executor;
+            return this;
+        }
+
+        /**
+         * Custom executor for loop pulling messages from JMS.
+         *
+         * @param scheduler custom scheduled executor service
+         * @return this builder
+         */
+        public AqConnectorBuilder scheduler(ScheduledExecutorService scheduler) {
+            this.scheduler = scheduler;
+            return this;
+        }
+
+        /**
+         * Custom executor supplier for asynchronous operations like acknowledgement.
+         *
+         * @param executorSupplier custom executor service
+         * @return this builder
+         */
+        public AqConnectorBuilder executor(ThreadPoolSupplier executorSupplier) {
+            this.executor = executorSupplier.get();
+            return this;
+        }
+
+        /**
+         * Custom executor supplier for loop pulling messages from JMS.
+         *
+         * @param schedulerPoolSupplier custom scheduled executor service
+         * @return this builder
+         */
+        public AqConnectorBuilder scheduler(ScheduledThreadPoolSupplier schedulerPoolSupplier) {
+            this.scheduler = schedulerPoolSupplier.get();
+            return this;
+        }
+
+        @Override
+        public AqConnectorImpl build() {
+            if (config == null) {
+                config = io.helidon.config.Config.create();
             }
-        }
 
-        // per channel config
-        if (ctx.config().get(URL_ATTRIBUTE).exists() || ctx.config().get(DATASOURCE_ATTRIBUTE).exists()) {
-            try {
-                return Optional.of(createAqFactory(ctx.config()));
-            } catch (JMSException e) {
-                throw new MessagingException("Error when preparing AQjmsConnectionFactory", e);
+            if (executor == null) {
+                executor = ThreadPoolSupplier.builder()
+                        .threadNamePrefix(AqConnector.EXECUTOR_THREAD_NAME_PREFIX)
+                        .config(config)
+                        .build()
+                        .get();
             }
-        }
-
-        // Check out not named beans
-        return Optional.ofNullable(connectionFactories)
-                .flatMap(s -> s.stream()
-                        .filter(AQjmsConnectionFactory.class::isInstance)
-                        .findFirst()
-                );
-    }
-
-    private AQjmsConnectionFactory createAqFactory(Config c) throws JMSException {
-        ConfigValue<String> user = c.get(USERNAME_ATTRIBUTE).asString();
-        ConfigValue<String> password = c.get(PASSWORD_ATTRIBUTE).asString();
-        ConfigValue<String> url = c.get(URL_ATTRIBUTE).asString();
-        ConfigValue<String> dataSourceName = c.get(DATASOURCE_ATTRIBUTE).asString();
-        AQjmsConnectionFactory fact = new AQjmsConnectionFactory();
-        if (dataSourceName.isPresent()) {
-            if (user.isPresent()) {
-                throw new MessagingException("When " + DATASOURCE_ATTRIBUTE + " is set, properties "
-                        + String.join(", ", USERNAME_ATTRIBUTE, PASSWORD_ATTRIBUTE, URL_ATTRIBUTE)
-                        + " are forbidden!");
+            if (scheduler == null) {
+                scheduler = ScheduledThreadPoolSupplier.builder()
+                        .threadNamePrefix(AqConnector.SCHEDULER_THREAD_NAME_PREFIX)
+                        .config(config)
+                        .build()
+                        .get();
             }
 
-            Instance<DataSource> dataSources = CDI.current().select(DataSource.class, NamedLiteral.of(dataSourceName.get()));
-            if (dataSources.isResolvable()) {
-                fact.setDatasource(dataSources.get());
-            } else {
-                throw new MessagingException("Datasource " + dataSourceName.get()
-                        + (dataSources.isAmbiguous() ? " is ambiguous!" : " not found!"));
-            }
+            return new AqConnectorImpl(dataSourceMap, scheduler, executor);
         }
-        if (url.isPresent()) {
-            fact.setJdbcURL(url.get());
-        }
-        if (user.isPresent()) {
-            fact.setUsername(user.get());
-        }
-        if (password.isPresent()) {
-            fact.setPassword(password.get());
-        }
-        return fact;
-    }
-
-
-    @Override
-    protected JmsMessage<?> createMessage(javax.jms.Message message,
-                                          Executor executor,
-                                          SessionMetadata sessionMetadata) {
-        return new AqMessageImpl<>(super.createMessage(message, executor, sessionMetadata), sessionMetadata);
-    }
-
-    @Override
-    protected BiConsumer<Message<?>, JMSException> sendingErrorHandler(Config config) {
-        return (m, e) -> {
-            throw new MessagingException("Error during sending Oracle AQ JMS message.", e);
-        };
-    }
-
-    @Override
-    public void stop() {
-        super.stop();
     }
 }
