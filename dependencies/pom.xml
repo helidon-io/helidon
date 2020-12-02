@@ -560,11 +560,6 @@
                 <artifactId>aqapi</artifactId>
                 <version>${version.lib.database.messaging}</version>
             </dependency>
-            <dependency>
-                <groupId>javax.transaction</groupId>
-                <artifactId>jta</artifactId>
-                <version>${version.lib.jta}</version>
-            </dependency>
 
             <!-- Microprofile related -->
             <dependency>
