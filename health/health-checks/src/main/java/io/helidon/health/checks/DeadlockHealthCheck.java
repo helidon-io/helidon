@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,10 @@ import org.eclipse.microprofile.health.Liveness;
 
 /**
  * A health check that looks for thread deadlocks. Automatically created and registered via CDI.
- *
- * This health check can be referred to in properties as "deadlock". So for example, to exclude this
- * health check from being exposed, use "helidon.health.exclude: deadlock".
+ * <p>
+ * This health check can be referred to in properties as {@code deadlock}. So for example, to exclude this
+ * health check from being exposed, use {@code helidon.health.exclude: deadlock}.
+ * </p>
  */
 @Liveness
 @ApplicationScoped // this will be ignored if not within CDI
