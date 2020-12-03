@@ -40,20 +40,24 @@ import org.eclipse.microprofile.health.Liveness;
  * A health check that verifies whether the server is running out of disk space. This health check will
  * check whether the usage of the disk associated with a specific path exceeds a given threshold. If it does,
  * then the health check will fail.
- *
+ * <p>
  * By default, this health check has a threshold of 100%, meaning that it will never fail the threshold check.
- * Also, by defaut, it will check the root path "/". These defaults can be modified using the
- * {@code healthCheck.diskSpace.path} property, and the {@code healthCheck.diskSpace.thresholdPercent}
- * property. The threshold should be set to a fraction, such as .50 for 50% or .99 for 99%. If disk usage
+ * Also, by default, it will check the root path {@code /}. These defaults can be modified using the
+ * {@value CONFIG_KEY_PATH} property (default {@value DEFAULT_PATH}), and the {@value CONFIG_KEY_THRESHOLD_PERCENT}
+ * property (default {@value DEFAULT_THRESHOLD}, virtually 100). The threshold should be set to a percent, such as 50 for 50% or
+ * 99 for 99%. If disk usage
  * exceeds this threshold, then the health check will fail.
- *
+ * </p>
+ * <p>
  * Unless ephemeral disk space is being used, it is often not sufficient to simply restart a server in the event
  * that that health check fails.
- *
+ *<p>
  * This health check is automatically created and registered through CDI.
- *
- * This health check can be referred to in properties as "diskSpace". So for example, to exclude this
- * health check from being exposed, use "helidon.health.exclude: diskSpace".
+ *</p>
+ * <p>
+ * This health check can be referred to in properties as {@code diskSpace}. So for example, to exclude this
+ * health check from being exposed, use {@code helidon.health.exclude: diskSpace}.
+ * </p>
  */
 @Liveness
 @ApplicationScoped // this will be ignored if not within CDI

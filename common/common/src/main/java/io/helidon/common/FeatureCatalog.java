@@ -290,6 +290,24 @@ final class FeatureCatalog {
                     .flavor(HelidonFlavor.MP)
                     .nativeDescription("Does not support execution of default methods on interfaces."));
 
+        add("io.helidon.integrations.micronaut.cdi",
+            FeatureDescriptor.builder()
+                    .name("Micronaut")
+                    .description("Micronaut integration")
+                    .path("CDI", "Micronaut")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true)
+        );
+
+        add("io.helidon.integrations.micronaut.cdi.data",
+            FeatureDescriptor.builder()
+                    .name("Micronaut Data")
+                    .description("Micronaut Data integration")
+                    .path("CDI", "Micronaut", "Data")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true)
+        );
+
         /*
          * Common modules
          */

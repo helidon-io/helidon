@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,13 +171,25 @@ public interface Context {
         private static final AtomicLong CHILD_CONTEXT_COUNTER = new AtomicLong(1);
         private Context parent;
         private String id;
+        private boolean notGlobal = true;
 
         @Override
         public Context build() {
-            if (null == id) {
+            if (id == null) {
                 id = generateId();
             }
+
+            if (notGlobal && (parent == null)) {
+                // only configure a parent for non-global context. Global context is the only one that has a null parent
+                parent = Contexts.globalContext();
+            }
+
             return new ListContext(this);
+        }
+
+        Builder global() {
+            notGlobal = false;
+            return this;
         }
 
         private String generateId() {

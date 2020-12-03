@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,17 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 
+import io.helidon.common.LazyValue;
+
 /**
  * Support for handling {@link io.helidon.common.context.Context} across thread boundaries.
  */
 public final class Contexts {
     private static final ThreadLocal<Stack<Context>> REGISTRY = ThreadLocal.withInitial(Stack::new);
+    private static final LazyValue<Context> GLOBAL_CONTEXT = LazyValue.create(() -> Context.builder()
+            .id("helidon")
+            .global()
+            .build());
 
     private Contexts() {
     }
@@ -55,6 +61,19 @@ public final class Contexts {
         }
 
         return Optional.ofNullable(contextStack.peek());
+    }
+
+    /**
+     * Global context is always present and statically shared in this JVM.
+     * This is similar to Singleton scope when using an injection engine.
+     * Global context is also used as a parent for newly created contexts, unless you specify a parent using
+     * {@link Context.Builder#parent(Context)}.
+     * Registering any instance in this context will make it available to any component in this JVM.
+     *
+     * @return global context instance, never null
+     */
+    public static Context globalContext() {
+        return GLOBAL_CONTEXT.get();
     }
 
     /**
