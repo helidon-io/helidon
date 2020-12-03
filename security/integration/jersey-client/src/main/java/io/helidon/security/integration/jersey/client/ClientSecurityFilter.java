@@ -19,6 +19,7 @@ package io.helidon.security.integration.jersey.client;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,10 +31,12 @@ import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
 import io.helidon.security.OutboundSecurityResponse;
+import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
@@ -51,6 +54,7 @@ import io.helidon.security.integration.common.SecurityTracing;
 public class ClientSecurityFilter implements ClientRequestFilter {
 
     private static final Logger LOGGER = Logger.getLogger(ClientSecurityFilter.class.getName());
+    private static final AtomicLong CONTEXT_COUNTER = new AtomicLong();
 
     /**
      * Create an instance of this filter (used by Jersey or for unit tests, do not use explicitly in your production code).
@@ -76,9 +80,29 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         if (securityContext.isPresent()) {
             outboundSecurity(requestContext, securityContext.get());
         } else {
-            LOGGER.finest("Security not propagated, as security context is not available "
-                                  + "neither in context, nor as the property \""
+            LOGGER.finest("Security context not available, using empty one. You can define it using "
+                                  + "property \""
                                   + ClientSecurity.PROPERTY_CONTEXT + "\" on request");
+
+            // use current context, or create a new one if we run outside of Helidon context
+            Context context = Contexts.context()
+                    .orElseGet(() -> Context.builder()
+                            .id("security-" + CONTEXT_COUNTER.incrementAndGet())
+                            .build());
+
+            // create a new security context for current request (not authenticated)
+            Optional<SecurityContext> newSecurityContext = context.get(Security.class)
+                .map(it -> it.createContext(context.id()));
+
+            if (newSecurityContext.isPresent()) {
+                // run in the context we obtained above with the new security context
+                // we may still propagate security information (such as when we explicitly configure outbound
+                // security in outbound target of a provider
+                Contexts.runInContext(context, () -> outboundSecurity(requestContext, newSecurityContext.get()));
+            } else {
+                // we cannot do anything - security is not available in global or current context, cannot propagate
+                LOGGER.finest("Security is not available in global or current context, cannot propagate identity.");
+            }
         }
     }
 
