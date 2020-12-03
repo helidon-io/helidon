@@ -19,6 +19,7 @@ package io.helidon.examples.graphql.basics;
 import java.util.UUID;
 
 import io.helidon.common.Reflected;
+
 import org.eclipse.microprofile.graphql.NonNull;
 
 /**
