@@ -74,6 +74,8 @@ class GraphQlSupportTest {
         data = (Map<String, Object>) response.get("data");
         assertThat("GET errors: " + response.get("errors"), data, notNullValue());
         assertThat("GET", data.get("hello"), is("world"));
+
+        server.shutdown();
     }
 
     private static GraphQLSchema buildSchema() {

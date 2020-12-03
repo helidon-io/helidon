@@ -303,12 +303,12 @@ class CustomScalars {
          */
         private Object convert(Object input) throws CoercingParseLiteralException {
             if (input instanceof String) {
-                return (String) input;
+                return input;
             }
 
             for (Class<?> clazz : clazzes) {
-                if (input.getClass().isInstance(clazz)) {
-                    return clazz.cast(input);
+                if (clazz.isInstance(input)) {
+                    return input;
                 }
             }
 

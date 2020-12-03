@@ -406,8 +406,7 @@ final class SchemaGeneratorHelper {
      * @return true if the class name is a primitive or array of primitives.
      */
     protected static boolean isPrimitive(String clazz) {
-        return JAVA_PRIMITIVE_TYPES.contains(clazz)
-                || PRIMITIVE_ARRAY_MAP.values().stream().anyMatch(v -> v.contains(clazz));
+        return JAVA_PRIMITIVE_TYPES.contains(clazz) || PRIMITIVE_ARRAY_MAP.containsValue(clazz);
     }
 
     /**
@@ -417,7 +416,7 @@ final class SchemaGeneratorHelper {
      * @return true true of the class name is an array of primitives.
      */
     protected static boolean isPrimitiveArray(String clazz) {
-        return PRIMITIVE_ARRAY_MAP.values().stream().anyMatch(v -> v.contains(clazz));
+        return PRIMITIVE_ARRAY_MAP.containsValue(clazz);
     }
 
     /**

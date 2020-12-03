@@ -122,7 +122,7 @@ class DataFetcherUtils {
                 for (SchemaArgument argument : args) {
                     // ensure a Map is not used as an input type
                     Class<?> originalType = argument.originalType();
-                    if (originalType != null && originalType.isAssignableFrom(Map.class)) {
+                    if (originalType != null && Map.class.isAssignableFrom(originalType)) {
                         ensureRuntimeException(LOGGER, MAP_MESSAGE);
                     }
 
