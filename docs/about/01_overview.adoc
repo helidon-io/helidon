@@ -40,11 +40,18 @@ Microprofile implementation.
 ====
 
 
-
-== Get going
+== Get Going
 
 [PILLARS]
 ====
+[CARD]
+.Get Started
+[icon=arrow_circle_up,link=about/03_prerequisites.adoc]
+--
+Get started with Helidon.
+--
+
+
 [CARD]
 .Javadocs
 [icon=library_books,link=apidocs/index.html?overview-summary.html,link-type=url]
