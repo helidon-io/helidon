@@ -105,6 +105,15 @@ into the file at `examples/microprofile/graphql/src/main/resources/web/index.htm
         ...task
       }
     }
+
+    # Create a task with empty description - will return error message
+    # Normally unchecekd exceptions will not be displayed but
+    # We have overriden this in the microprofile-config.properties
+    mutation createTaskWithoutDescription {
+      createTask {
+        ...task
+      }
+    }
     
     # Find all the tasks
     query findAllTasks {

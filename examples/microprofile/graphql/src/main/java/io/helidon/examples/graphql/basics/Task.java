@@ -19,6 +19,7 @@ package io.helidon.examples.graphql.basics;
 import java.util.UUID;
 
 import io.helidon.common.Reflected;
+import org.eclipse.microprofile.graphql.NonNull;
 
 /**
  * A data class representing a single To Do List task.
@@ -39,11 +40,13 @@ public class Task {
     /**
      * The task ID.
      */
+    @NonNull
     private String id;
 
     /**
      * The task description.
      */
+    @NonNull
     private String description;
 
     /**

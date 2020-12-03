@@ -29,7 +29,6 @@ import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
-import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
 
 /**
@@ -52,6 +51,9 @@ public class TaskApi {
     @Mutation
     @Description("Create a task with the given description")
     public Task createTask(@Name("description") String description) {
+        if (description == null) {
+            throw new IllegalArgumentException("Description must be provided");
+        }
         Task task = new Task(description);
         tasks.put(task.getId(), task);
         return task;
@@ -64,7 +66,7 @@ public class TaskApi {
      * @return a {@link Collection} of {@link Task}s
      */
     @Query
-    @Description("Query tasks and optionally specified only completed")
+    @Description("Query tasks and optionally specify only completed")
     public Collection<Task> getTasks(@Name("completed") Boolean completed) {
         return tasks.values().stream()
                 .filter(task -> completed == null || task.isCompleted() == completed)
@@ -80,7 +82,7 @@ public class TaskApi {
      */
     @Query
     @Description("Return a given task")
-    public Task findTask(@Name("id") @NonNull String id) throws TaskNotFoundException {
+    public Task findTask(@Name("id") String id) throws TaskNotFoundException {
         return Optional.ofNullable(tasks.get(id))
                 .orElseThrow(() -> new TaskNotFoundException(MESSAGE + id));
     }
@@ -122,7 +124,7 @@ public class TaskApi {
      */
     @Mutation
     @Description("Update a task")
-    public Task updateTask(@Name("id") @NonNull String id,
+    public Task updateTask(@Name("id") String id,
                            @Name("description") String description,
                            @Name("completed") Boolean completed) throws TaskNotFoundException {
 
