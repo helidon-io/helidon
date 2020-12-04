@@ -501,15 +501,12 @@ transaction automatically.
 
 == Add Logging
 
-Add the following file under `src/main/resources`:
+Add the following content to the `logging.properties` file under
+`src/main/resources`:
 
 [source,properties]
 .`src/main/resources/logging.properties`
 ----
-.level=INFO
-handlers=io.helidon.common.HelidonConsoleHandler
-java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$s %3$s !thread!: %5$s%6$s%n
-
 com.zaxxer.hikari.level=INFO
 h2database.level=WARNING
 io.netty.level=INFO
@@ -541,7 +538,7 @@ Execute the following:
 
 [source,bash]
 ----
-curl http://localhost:8080/example/response/Marco
+curl http://localhost:8080/greet/response/Marco
 ----
 
 Observe that `Polo` is returned.
