@@ -30,8 +30,8 @@ API (JPA)] from within a Helidon MP application.
 |===
 |About 30 minutes
 |<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|<<guides/07_datasource.adoc,An understanding of named data source support in Helidon MP>>
-|<<guides/08_jta.adoc,An understanding of transaction support in Helidon MP>>
+|<<mp/guides/07_datasource.adoc,An understanding of named data source support in Helidon MP>>
+|<<mp/guides/08_jta.adoc,An understanding of transaction support in Helidon MP>>
 |An understanding of JPA itself
 |===
 

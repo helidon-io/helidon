@@ -30,7 +30,7 @@ https://jakarta.ee/specifications/transactions/1.3/[Java Transaction API
 |===
 |About 10 minutes
 |<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|<<guides/02_quickstart.adoc,A Helidon MP application, such as Helidon MP Quickstart>>
+|<<mp/guides/02_quickstart.adoc,A Helidon MP application, such as Helidon MP Quickstart>>
 |===
 
 == Add The Helidon JTA Integration to Your Helidon MP Application's Runtime Classpath
