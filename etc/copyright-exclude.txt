@@ -42,3 +42,4 @@ empty_file
 frontend/node
 node_modules
 archetype-resources/pom.xml
+etc/dependency-check-suppression.xml
