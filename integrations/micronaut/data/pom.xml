@@ -78,7 +78,7 @@
         </dependency>
         <dependency>
             <groupId>io.micronaut.sql</groupId>
-            <artifactId>micronaut-jdbc-hikari</artifactId>
+            <artifactId>micronaut-jdbc-ucp</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

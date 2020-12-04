@@ -1152,6 +1152,11 @@
             </dependency>
             <dependency>
                 <groupId>io.micronaut.sql</groupId>
+                <artifactId>micronaut-jdbc-ucp</artifactId>
+                <version>${version.lib.micronaut.sql}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut.sql</groupId>
                 <artifactId>micronaut-jdbc</artifactId>
                 <version>${version.lib.micronaut.sql}</version>
             </dependency>
