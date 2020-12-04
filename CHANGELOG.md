@@ -7,7 +7,64 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [2.1.1-SNAPSHOT]
+## [2.2.0-SNAPSHOT]
+
+2.2.0 is a minor release of Helidon. It contains bug fixes and enhancements. Notable enhancements:
+
+- Experimental: Micronaut extension support [2467](https://github.com/oracle/helidon/pull/2467)
+- Experimental: Loom (VirtualThread) support in Helidon MP [2417](https://github.com/oracle/helidon/pull/2417)
+
+### Compatibility
+
+2.2.0 is API compatible with 2.1.0.
+
+### CHANGES    
+
+- WebServer: Support for a max payload limit on client requests [2491](https://github.com/oracle/helidon/pull/2491)
+- WebServer: Add a shutdown hook to executor service in JerseySupport [2505](https://github.com/oracle/helidon/pull/2505)
+- WebClient: Methods contentLength and transferEncoding added [2490](https://github.com/oracle/helidon/pull/2490)
+- WebClient: Double query escaping in WebClient fixed [2513](https://github.com/oracle/helidon/pull/2513)
+- Tracing: add tags before span start in jersey ClientTracingFilter #1942 [2512](https://github.com/oracle/helidon/pull/2512)
+- Tracing: Make sure span.finish() is not called twice [2466](https://github.com/oracle/helidon/pull/2466)
+- Tests: Fix pom.xml of helidon-microprofile-tests-junit5 [2485](https://github.com/oracle/helidon/pull/2485)
+- Tests: Convert tests to use the new infrastructure [2498](https://github.com/oracle/helidon/pull/2498)
+- Tests: Adds a unit test proving that multiple persistence units can be injected [2503](https://github.com/oracle/helidon/pull/2503)
+- Tests: Address intermittent test failures [2517](https://github.com/oracle/helidon/pull/2517)
+- Security: Using the default keystore type instead of JKS [2536](https://github.com/oracle/helidon/pull/2536)
+- Security: Support for overriding configuration of security providers [2511](https://github.com/oracle/helidon/pull/2511)
+- Security: Global context and its use in Security [2549](https://github.com/oracle/helidon/pull/2549)
+- Security: Fixed docs and impl - outbound security [2538](https://github.com/oracle/helidon/pull/2538)
+- Micronaut integration [2467](https://github.com/oracle/helidon/pull/2467)
+- Metrics: Add vetoed-bean support to metrics CDI extension [2507](https://github.com/oracle/helidon/pull/2507)
+- Messaging: Messaging discrepancies [2453](https://github.com/oracle/helidon/pull/2453)
+- Messaging: JMS Reactive Messaging connector [2282](https://github.com/oracle/helidon/pull/2282)
+- Media: Json stream writers [2523](https://github.com/oracle/helidon/pull/2523)
+- Loom: Initial stab at incorporating some Loom features into Helidon in a way that will work under JDK 11 or 16-loom-ea [2417](https://github.com/oracle/helidon/pull/2417)
+- Logging: MDC logging support [2479](https://github.com/oracle/helidon/pull/2479)
+- Logging: Examples of logging with Helidon [2533](https://github.com/oracle/helidon/pull/2533)
+- Health: Add messaging health dependency to bom [2556](https://github.com/oracle/helidon/pull/2556)
+- Fault Tolerance: Revised logic for handling request scopes and contexts in Jersey/HK2 [2534](https://github.com/oracle/helidon/pull/2534)
+- Fault Tolerance: Request scope propagation for non-async calls in FT [2495](https://github.com/oracle/helidon/pull/2495)
+- Fault Tolerance: Do not create and cache handlers for fallbacks [2546](https://github.com/oracle/helidon/pull/2546)
+- Examples: Make example Kafka working on MAC [2541](https://github.com/oracle/helidon/pull/2541)
+- Examples: Fix uses of jlink-image directories to use new "-jri" suffix. [2469](https://github.com/oracle/helidon/pull/2469)
+- Docs: Updated path reference to fix the broken link. [2509](https://github.com/oracle/helidon/pull/2509)
+- Docs: Update jlink guide with .jmod requirement. [2535](https://github.com/oracle/helidon/pull/2535)
+- Docs: Update doc's microprofile version to 3.3 [2488](https://github.com/oracle/helidon/pull/2488)
+- Docs: Some minor doc improvements [2527](https://github.com/oracle/helidon/pull/2527)
+- Docs: SE intro: fixed typo [2545](https://github.com/oracle/helidon/pull/2545)
+- Docs: Increase visibility of Getting started in Overview [2568](https://github.com/oracle/helidon/pull/2568)
+- Docs: Improve doc for built-in health check thresholds, etc. [2559](https://github.com/oracle/helidon/pull/2559)
+- Docs: Helidon SE OIDC Security provider guide [2310](https://github.com/oracle/helidon/pull/2310)
+- Docs: Helidon MP OIDC Security provider guide [2311](https://github.com/oracle/helidon/pull/2311)
+- Docs: Fix instructions for enabling JSON-P for Health-Checks. [2528](https://github.com/oracle/helidon/pull/2528)
+- Dependencies: remove weld-probe-core [2506](https://github.com/oracle/helidon/pull/2506)
+- Dependencies: Upgrage GraalVM [2510](https://github.com/oracle/helidon/pull/2510)
+- Dependencies: Upgrade apache-httpclient, google-api-client and snakeyaml [2482](https://github.com/oracle/helidon/pull/2482)
+- Dependencies: Upgrade GraalVM version to 20.2.0 in Dockerfiles [2514](https://github.com/oracle/helidon/pull/2514)
+- Dependencies: Update ojdbc deps [2530](https://github.com/oracle/helidon/pull/2530)
+- Dependencies: Move scala dep from bom [2542](https://github.com/oracle/helidon/pull/2542)
+- Dependencies: Add dependency-check-maven plugin [2472](https://github.com/oracle/helidon/pull/2472)
 
 ## [2.1.0]
 
@@ -1116,7 +1173,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.1.1-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.1.0...HEAD
+[2.2.0-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.1.0...HEAD
 [2.1.0]: https://github.com/oracle/helidon/compare/2.0.2...2.1.0
 [2.0.2]: https://github.com/oracle/helidon/compare/2.0.1...2.0.2
 [2.0.1]: https://github.com/oracle/helidon/compare/2.0.0...2.0.1
