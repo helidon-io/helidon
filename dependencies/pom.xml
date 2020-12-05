@@ -57,7 +57,7 @@
         <version.lib.guava>28.1-jre</version.lib.guava>
         <version.lib.h2>1.4.199</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.hibernate>5.4.18.Final</version.lib.hibernate>
+        <version.lib.hibernate>5.4.25.Final</version.lib.hibernate>
         <version.lib.hikaricp>3.4.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.inject>1.0</version.lib.inject>
