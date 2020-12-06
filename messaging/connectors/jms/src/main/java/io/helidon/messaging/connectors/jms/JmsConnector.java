@@ -125,7 +125,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     private final ScheduledExecutorService scheduler;
     private final ExecutorService executor;
     private final Map<String, SessionMetadata> sessionRegister = new HashMap<>();
-    private Map<String, ConnectionFactory> connectionFactoryMap;
+    private final Map<String, ConnectionFactory> connectionFactoryMap;
 
     /**
      * Provides a {@link JmsConnectorBuilder} for creating
@@ -164,6 +164,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     @Inject
     protected JmsConnector(io.helidon.config.Config config, Instance<ConnectionFactory> connectionFactories) {
         this.connectionFactories = connectionFactories;
+        this.connectionFactoryMap = Map.of();
         scheduler = ScheduledThreadPoolSupplier.builder()
                 .threadNamePrefix(SCHEDULER_THREAD_NAME_PREFIX)
                 .config(config)
@@ -265,8 +266,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         ConfigValue<String> factoryName = ctx.config().get(NAMED_FACTORY_ATTRIBUTE).asString();
         if (factoryName.isPresent()) {
             // Check SE map and MP instance for named factories
-            return Optional.ofNullable(connectionFactoryMap)
-                    .flatMap(map -> Optional.ofNullable(map.get(factoryName.get())))
+            return Optional.ofNullable(connectionFactoryMap.get(factoryName.get()))
                     .or(() ->
                             Optional.ofNullable(connectionFactories)
                                     .flatMap(s -> s.select(NamedLiteral.of(factoryName.get()))
@@ -277,9 +277,10 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         }
 
         // Check SE map and MP instance for any factories
-        return Optional.ofNullable(connectionFactoryMap)
-                .flatMap(map -> map.values().stream().findFirst())
-                .or(() -> Optional.ofNullable(connectionFactories).flatMap(s -> s.stream().findFirst()));
+        return connectionFactoryMap.values().stream().findFirst()
+                .or(() -> Optional.ofNullable(connectionFactories)
+                        .flatMap(s -> s.stream().findFirst())
+                );
     }
 
     @Override
