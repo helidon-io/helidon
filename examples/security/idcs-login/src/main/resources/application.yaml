@@ -31,13 +31,13 @@ security:
   - abac:
     # Adds ABAC Provider - it does not require any configuration
   - oidc:
-      client-id: "${ALIAS=security.properties.idcs-client-id}"
-      client-secret: "${ALIAS=security.properties.idcs-client-secret}"
-      identity-uri: "${ALIAS=security.properties.idcs-uri}"
+      client-id: "${security.properties.idcs-client-id}"
+      client-secret: "${security.properties.idcs-client-secret}"
+      identity-uri: "${security.properties.idcs-uri}"
       # A prefix used for custom scopes
       scope-audience: "http://localhost:7987/test-application"
-      proxy-host: "${ALIAS=security.properties.proxy-host}"
-      frontend-uri: "${ALIAS=security.properties.frontend-uri}"
+      proxy-host: "${security.properties.proxy-host}"
+      frontend-uri: "${security.properties.frontend-uri}"
       # support for non-public signature JWK (and maybe other IDCS specific handling)
       server-type: "idcs"
   - idcs-role-mapper:
@@ -46,9 +46,9 @@ security:
         # we must repeat IDCS configuration, as in this case
         # IDCS serves both as open ID connect authenticator and
         # as a role mapper. Using minimal configuration here
-        client-id: "${ALIAS=security.properties.idcs-client-id}"
-        client-secret: "${ALIAS=security.properties.idcs-client-secret}"
-        identity-uri: "${ALIAS=security.properties.idcs-uri}"
+        client-id: "${security.properties.idcs-client-id}"
+        client-secret: "${security.properties.idcs-client-secret}"
+        identity-uri: "${security.properties.idcs-uri}"
   web-server:
     # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
     paths:
