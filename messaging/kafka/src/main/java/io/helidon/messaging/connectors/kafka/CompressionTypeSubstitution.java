@@ -92,10 +92,8 @@ final class CompressionTypeHelper {
             zstdLoadNativeLibs();
             return (OutputStream) LAZY_OUTPUT_ZSTD.get().newInstance(orig);
         } catch (KafkaException e) {
-            e.printStackTrace();
             throw e;
         } catch (Exception e) {
-            e.printStackTrace();
             throw new KafkaException(e);
         }
     }
