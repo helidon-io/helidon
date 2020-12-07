@@ -138,7 +138,7 @@ using the provide
 
 === Class Data Sharing (CDS) Archive
 
-Aslo included in the custom image is a Class Data Sharing (CDS) archive that
+Also included in the custom image is a Class Data Sharing (CDS) archive that
 improves your application's startup performance and in-memory footprint.
 You can learn more about Class Data Sharing in the
 https://docs.oracle.com/en/java/javase/11/vm/class-data-sharing.html[JDK documentation].

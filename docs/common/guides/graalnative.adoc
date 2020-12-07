@@ -35,7 +35,7 @@ In this guide you will learn how to build a native image locally on your machine
 
 == Install GraalVM and the Native Image Command
 
-After https://github.com/oracle/graal/releases[downloading and installing] GraalVM,
+After https://github.com/graalvm/graalvm-ce-builds/releases[downloading and installing] GraalVM,
 set the `GRAALVM_HOME` environment variable to point at your GraalVM installation.
 
 [source,bash]
