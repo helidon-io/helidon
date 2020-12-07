@@ -159,7 +159,7 @@ public interface AqConnector extends ConnectorFactory {
         @Override
         public AqConnectorImpl build() {
             if (config == null) {
-                config = io.helidon.config.Config.create();
+                config = io.helidon.config.Config.empty();
             }
 
             if (executor == null) {

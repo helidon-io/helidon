@@ -587,7 +587,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         @Override
         public JmsConnector build() {
             if (config == null) {
-                config = io.helidon.config.Config.create();
+                config = io.helidon.config.Config.empty();
             }
 
             if (executor == null) {

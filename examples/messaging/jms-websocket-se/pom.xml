@@ -26,8 +26,8 @@
         <version>2.1.1-SNAPSHOT</version>
         <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon.examples.messaging.se</groupId>
-    <artifactId>jms-websocket-se</artifactId>
+    <groupId>io.helidon.examples.jms</groupId>
+    <artifactId>helidon-examples-jms-websocket-se</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>jms-websocket-se</name>
 

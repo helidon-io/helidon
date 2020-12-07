@@ -1,4 +1,4 @@
-# Helidon Messaging with JMS Examples
+# Helidon Messaging with JMS Example
 
 ## Prerequisites
 * Java 11+ 
@@ -7,6 +7,6 @@
 
 ## Build & Run
 1. `mvn clean install`
-2. `java -jar se-example.jar`
+2. `java -jar helidon-examples-jms-websocket-se.jar`
 3. Visit http://localhost:7001
 
