@@ -14,28 +14,21 @@
  * limitations under the License.
  */
 
-import io.helidon.integrations.neo4j.Neo4jCdiExtension;
-
 /**
  * Neo4j support module.
  */
 module io.helidon.integrations.neo4j {
     requires java.logging;
-    requires java.management;
 
-    requires io.helidon.common;
+    requires static jakarta.enterprise.cdi.api;
+    requires static jakarta.inject.api;
+    requires jakarta.interceptor.api;
     requires io.helidon.config;
+    requires io.helidon.config.mp;
 
     requires org.neo4j.driver;
 
-    // MicroProfile dependencies are all optional (when used in SE)
-    requires static jakarta.enterprise.cdi.api;
-    requires static microprofile.config.api;
-    requires static io.helidon.config.mp;
-
     exports io.helidon.integrations.neo4j;
 
-    opens io.helidon.integrations.neo4j to weld.core.impl, io.helidon.microprofile.cdi;
-
-    provides javax.enterprise.inject.spi.Extension with Neo4jCdiExtension;
+    provides javax.enterprise.inject.spi.Extension with io.helidon.integrations.neo4j.Neo4jCdiExtension;
 }

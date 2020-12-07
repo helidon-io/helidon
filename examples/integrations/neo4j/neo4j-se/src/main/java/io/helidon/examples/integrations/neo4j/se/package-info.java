@@ -17,7 +17,6 @@
 /**
  * SE Neo4j demo application
  * <p>
- * Start with {@link io.helidon.examples.integrations.neo4j.se.Main} class.
  *
  * @see io.helidon.examples.integrations.neo4j.se.Main
  */

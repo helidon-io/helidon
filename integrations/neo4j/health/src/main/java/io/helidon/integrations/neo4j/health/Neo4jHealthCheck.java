@@ -35,7 +35,6 @@ import org.neo4j.driver.summary.ServerInfo;
 /**
  * Health support module for Neo4j. Follows the standard MicroProfile HealthCheck pattern.
  *
- * Implements {@link org.eclipse.microprofile.health.HealthCheck}
  */
 @Readiness
 @ApplicationScoped
@@ -61,19 +60,19 @@ public class Neo4jHealthCheck implements HealthCheck {
     /**
      * To be used in SE context.
      * @param driver create
-     * @return {@link org.neo4j.driver.Driver}
+     * @return Driver
      */
     public static Neo4jHealthCheck create(Driver driver) {
         return new Neo4jHealthCheck(driver);
     }
 
     /**
-     * Applies the given {@link ResultSummary} to the {@link HealthCheckResponseBuilder builder} and calls {@code build}
+     * Applies the given ResultSummaryto the HealthCheckResponseBuilder builder and calls build
      * afterwards.
      *
      * @param resultSummary the result summary returned by the server
      * @param builder the health builder to be modified
-     * @return the final {@link HealthCheckResponse health check response}
+     * @return the final HealthCheckResponse health check response
      */
     private static HealthCheckResponse buildStatusUp(ResultSummary resultSummary, HealthCheckResponseBuilder builder) {
         ServerInfo serverInfo = resultSummary.server();

@@ -27,8 +27,3 @@ neo4j:
     password: secret
   pool:
     metricsEnabled: true
-
-#  experimental:
-#    http2:
-#      enable: true
-#      max-content-length: 16384

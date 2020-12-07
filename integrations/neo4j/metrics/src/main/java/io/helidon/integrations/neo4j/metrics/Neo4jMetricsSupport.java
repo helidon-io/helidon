@@ -163,7 +163,7 @@ public class Neo4jMetricsSupport {
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport}.
+     * Fluent API builder for Neo4jMetricsSupport.
      */
     public static class Builder implements io.helidon.common.Builder<Neo4jMetricsSupport> {
 

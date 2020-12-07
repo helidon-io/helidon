@@ -58,7 +58,7 @@ public final class Main {
 
     /**
      * Start the server.
-     * @return the created {@link WebServer} instance
+     * @return the created WebServer instance
      * @throws IOException if there are problems reading logging properties
      */
     public static WebServer startServer() throws IOException {
@@ -95,7 +95,7 @@ public final class Main {
     }
 
     /**
-     * Creates new {@link Routing}.
+     * Creates new Routing.
      *
      * @return routing configured with JSON support, a health check, and a service
      * @param config configuration of this server

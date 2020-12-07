@@ -25,7 +25,6 @@ import io.helidon.webserver.Service;
 /**
  * The Movie service.
  *
- * Implements {@link io.helidon.webserver.Service}
  */
 public class MovieService implements Service {
 
