@@ -20,6 +20,8 @@ package io.helidon.messaging.connectors.kafka;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 
 import io.helidon.common.LazyValue;
@@ -39,6 +41,8 @@ final class CompressionTypeHelper {
 
     private CompressionTypeHelper() {
     }
+
+    private static boolean zstdNativeLibLoaded = false;
 
     static final LazyValue<Constructor<?>> LAZY_INPUT_ZSTD =
             LazyValue.create(() -> findConstructor("com.github.luben.zstd.ZstdInputStream", InputStream.class));
@@ -69,18 +73,36 @@ final class CompressionTypeHelper {
         }
     }
 
+    static void zstdLoadNativeLibs() throws ReflectiveOperationException {
+        // loading jni libs in static blocks is not supported
+        // see https://github.com/oracle/graal/issues/439#issuecomment-394341725
+        if (!zstdNativeLibLoaded) {
+            Class<?> clazz = Class.forName("com.github.luben.zstd.util.Native");
+            Field loadedField = clazz.getDeclaredField("loaded");
+            loadedField.setAccessible(true);
+            loadedField.setBoolean(null, false);
+            Method loadMethod = clazz.getDeclaredMethod("load");
+            loadMethod.invoke(null);
+            zstdNativeLibLoaded = true;
+        }
+    }
+
     static OutputStream zstdOutputStream(OutputStream orig) {
         try {
+            zstdLoadNativeLibs();
             return (OutputStream) LAZY_OUTPUT_ZSTD.get().newInstance(orig);
         } catch (KafkaException e) {
+            e.printStackTrace();
             throw e;
         } catch (Exception e) {
+            e.printStackTrace();
             throw new KafkaException(e);
         }
     }
 
     static InputStream zstdInputStream(ByteBuffer orig) {
         try {
+            zstdLoadNativeLibs();
             return (InputStream) LAZY_INPUT_ZSTD.get().newInstance(new ByteBufferInputStream(orig));
         } catch (KafkaException e) {
             throw e;

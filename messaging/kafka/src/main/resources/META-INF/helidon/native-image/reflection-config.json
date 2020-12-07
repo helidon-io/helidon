@@ -8,6 +8,11 @@
         "org.apache.kafka.clients.producer.Partitioner"
     ],
     "classes": [
+        "org.xerial.snappy.SnappyInputStream",
+        "org.xerial.snappy.SnappyOutputStream",
+        "com.github.luben.zstd.ZstdInputStream",
+        "com.github.luben.zstd.ZstdOutputStream",
+        "com.github.luben.zstd.util.Native"
     ],
     "exclude": [
     ]
