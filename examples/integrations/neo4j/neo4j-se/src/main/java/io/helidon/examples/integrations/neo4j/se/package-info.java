@@ -15,7 +15,7 @@
  */
 
 /**
- * SE Neo4j demo application
+ * SE Neo4j demo application.
  * <p>
  *
  * @see io.helidon.examples.integrations.neo4j.se.Main

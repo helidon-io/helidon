@@ -74,7 +74,7 @@ public final class Neo4j {
     }
 
     /**
-     * Fluent API builder for Neo4j
+     * Fluent API builder for Neo4j.
      */
     public static final class Builder implements io.helidon.common.Builder<Neo4j> {
         private boolean encrypted;
