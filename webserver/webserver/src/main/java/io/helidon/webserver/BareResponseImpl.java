@@ -68,7 +68,6 @@ class BareResponseImpl implements BareResponse {
     private final CompletableFuture<BareResponse> responseFuture;
     private final CompletableFuture<BareResponse> headersFuture;
     private final BooleanSupplier requestContentConsumed;
-    private final Thread thread;
     private final long requestId;
     private final HttpHeaders requestHeaders;
     private final ChannelFuture channelClosedFuture;
@@ -79,24 +78,21 @@ class BareResponseImpl implements BareResponse {
     private volatile DefaultHttpResponse response;
     private volatile boolean lengthOptimization;
     private volatile boolean isWebSocketUpgrade = false;
-
-    private CompletableFuture prev;
+    private CompletableFuture<?> prev;
 
     /**
      * @param ctx the channel handler context
      * @param request the request
      * @param requestContentConsumed whether the request content is consumed
-     * @param thread the outbound event loop thread which will be used to write the response
+     * @param prev Future that represents previous request completion for HTTP pipelining
      * @param requestId the correlation ID that is added to the log statements
      */
     BareResponseImpl(ChannelHandlerContext ctx,
                      HttpRequest request,
                      BooleanSupplier requestContentConsumed,
-                     CompletableFuture prev, // future for previous request completion - to order responses
-                     Thread thread,
+                     CompletableFuture<?> prev,
                      long requestId) {
         this.requestContentConsumed = requestContentConsumed;
-        this.thread = thread;
         this.responseFuture = new CompletableFuture<>();
         this.headersFuture = new CompletableFuture<>();
         this.ctx = ctx;

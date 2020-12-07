@@ -80,7 +80,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private long actualPayloadSize;
     private boolean ignorePayload;
 
-    private CompletableFuture prev;
+    private CompletableFuture<?> prev;
     private boolean lastContent;
 
     ForwardingHandler(Routing routing,
@@ -200,10 +200,10 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
             // Create response and handler for its completion
             BareResponseImpl bareResponse =
-                    new BareResponseImpl(ctx, request, publisherRef::isCompleted, prev, Thread.currentThread(), requestId);
-            prev = new CompletableFuture();
+                    new BareResponseImpl(ctx, request, publisherRef::isCompleted, prev, requestId);
+            prev = new CompletableFuture<>();
 
-            final CompletableFuture thisResp = prev;
+            final CompletableFuture<?> thisResp = prev;
 
             bareResponse.whenCompleted()
                         .thenRun(() -> {
