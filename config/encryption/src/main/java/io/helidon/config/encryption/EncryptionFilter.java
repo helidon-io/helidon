@@ -40,7 +40,7 @@ import io.helidon.config.spi.ConfigFilter;
  * property or environment variable)</li>
  * <li>${RSA=base64} - encrypted password using a public key (private key must be available to Prime instance,
  * its location must be provided to prime through configuration, system property or environment variable)</li>
- * <li>${ALIAS=alias_name} - no longer needed, please use {@code ${alias_name}</li>
+ * <li>${ALIAS=alias_name} - no longer needed, please use {@code ${alias_name}}</li>
  * <li>${CLEAR=text} - clear-text password. Intentionally denoting this value as a protectable one, so we can enforce encryption
  * (e.g. in prod)</li>
  * </ul>
