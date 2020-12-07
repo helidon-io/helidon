@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -79,6 +80,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private long actualPayloadSize;
     private boolean ignorePayload;
 
+    private CompletableFuture prev;
+    private boolean lastContent;
+
     ForwardingHandler(Routing routing,
                       NettyWebServer webServer,
                       SSLEngine sslEngine,
@@ -106,6 +110,13 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         if (requestContext == null) {
             // there was no publisher associated with this connection
             // this happens in case there was no http request made on this connection
+
+            // this also happens after LastHttpContent has been consumed by channelRead0
+            if (lastContent) {
+                // if the last thing that went through channelRead0 was LastHttpContent, then
+                // there is no request handler that should be enforcing backpressure
+                ctx.channel().config().setAutoRead(true);
+            }
             return;
         }
 
@@ -121,6 +132,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 System.identityHashCode(this), System.identityHashCode(ctx.channel()), msg.getClass()));
 
         if (msg instanceof HttpRequest) {
+            lastContent = false;
             // Turns off auto read
             ctx.channel().config().setAutoRead(false);
 
@@ -144,7 +156,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             // Queue, context and publisher creation
             ReferenceHoldingQueue<DataChunk> queue = new ReferenceHoldingQueue<>();
             queues.add(queue);
-            requestContext = new RequestContext(new HttpRequestScopedPublisher(ctx, queue), request);
+            final RequestContext requestContext = new RequestContext(new HttpRequestScopedPublisher(ctx, queue), request);
+            this.requestContext = requestContext;
+
             // the only reason we have the 'ref' here is that the field might get assigned with null
             final HttpRequestScopedPublisher publisherRef = requestContext.publisher();
             long requestId = REQUEST_ID_GENERATOR.incrementAndGet();
@@ -180,12 +194,19 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 }
             }
 
+            if (prev != null && prev.isDone()) {
+                prev = null;
+            }
+
             // Create response and handler for its completion
             BareResponseImpl bareResponse =
-                    new BareResponseImpl(ctx, request, publisherRef::isCompleted, Thread.currentThread(), requestId);
+                    new BareResponseImpl(ctx, request, publisherRef::isCompleted, prev, Thread.currentThread(), requestId);
+            prev = new CompletableFuture();
+
+            final CompletableFuture thisResp = prev;
+
             bareResponse.whenCompleted()
                         .thenRun(() -> {
-                            RequestContext requestContext = this.requestContext;
                             if (requestContext != null) {
                                 requestContext.responseCompleted(true);
                             }
@@ -198,9 +219,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                             }
                             publisherRef.clearBuffer(DataChunk::release);
 
-                            // Enable auto-read only after response has been completed
-                            // to avoid a race condition with the next response
-                            ctx.channel().config().setAutoRead(true);
+                            thisResp.complete(null);
                         });
             if (HttpUtil.is100ContinueExpected(request)) {
                 send100Continue(ctx);
@@ -230,6 +249,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 throw new IllegalStateException("There is no request context associated with this http content. "
                                                 + "This is never expected to happen!");
             }
+            lastContent = false;
 
             HttpContent httpContent = (HttpContent) msg;
 
@@ -271,6 +291,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
             if (msg instanceof LastHttpContent) {
                 if (!isWebSocketUpgrade) {
+                    lastContent = true;
                     requestContext.publisher().complete();
                     requestContext = null; // just to be sure that current http req/res session doesn't interfere with other ones
                 }

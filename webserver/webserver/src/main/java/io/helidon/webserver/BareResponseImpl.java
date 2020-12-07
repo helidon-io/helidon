@@ -80,6 +80,8 @@ class BareResponseImpl implements BareResponse {
     private volatile boolean lengthOptimization;
     private volatile boolean isWebSocketUpgrade = false;
 
+    private CompletableFuture prev;
+
     /**
      * @param ctx the channel handler context
      * @param request the request
@@ -90,6 +92,7 @@ class BareResponseImpl implements BareResponse {
     BareResponseImpl(ChannelHandlerContext ctx,
                      HttpRequest request,
                      BooleanSupplier requestContentConsumed,
+                     CompletableFuture prev, // future for previous request completion - to order responses
                      Thread thread,
                      long requestId) {
         this.requestContentConsumed = requestContentConsumed;
@@ -100,6 +103,7 @@ class BareResponseImpl implements BareResponse {
         this.requestId = requestId;
         this.keepAlive = HttpUtil.isKeepAlive(request);
         this.requestHeaders = request.headers();
+        this.prev = prev;
 
         // We need to keep this listener so we can remove it when this response completes. If we don't, we leak
         // while the channel remains open since each response adds a new listener that references 'this'.
@@ -209,7 +213,17 @@ class BareResponseImpl implements BareResponse {
      * @param throwable if {@code not-null} then this response is completed exceptionally.
      */
     private void completeInternal(Throwable throwable) {
-        if (!internallyClosed.compareAndSet(false, true)) {
+        boolean wasClosed = !internallyClosed.compareAndSet(false, true);
+
+        if (prev == null) {
+            completeInternalPipe(wasClosed, throwable);
+        } else {
+            prev = prev.thenRun(() -> completeInternalPipe(wasClosed, throwable));
+        }
+    }
+
+    private void completeInternalPipe(boolean wasClosed, Throwable throwable) {
+        if (wasClosed) {
             // if already closed, as the contract specifies, don't fail
             completeResponseFuture(throwable);
             return;
@@ -311,18 +325,32 @@ class BareResponseImpl implements BareResponse {
         }
         if (data != null) {
             if (data.isFlushChunk()) {
-                ctx.flush();
+                if (prev == null) {
+                   ctx.flush();
+                } else {
+                   prev = prev.thenRun(ctx::flush);
+                }
                 return;
             }
+
+            if (lengthOptimization && firstChunk == null) {
+                firstChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
+                return;
+            }
+
+            if (prev == null) {
+                onNextPipe(data);
+            } else {
+                prev = prev.thenRun(() -> onNextPipe(data));
+            }
+        }
+    }
+
+    private void onNextPipe(DataChunk data) {
             if (lengthOptimization) {
-                if (firstChunk == null) {
-                    firstChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
-                    return;
-                }
                 initWriteResponse();
             }
             sendData(data);
-        }
     }
 
     /**
