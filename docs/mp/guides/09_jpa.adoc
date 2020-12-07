@@ -22,16 +22,16 @@
 :keywords: helidon, guide, transaction, jpa, microprofile
 
 This guide shows how to configure and use the
-https://jcp.org/en/jsr/detail?id=338[Java Persistence API (JPA)] from
-within a Helidon MP application.
+https://jakarta.ee/specifications/persistence/2.2/[Java Persistence
+API (JPA)] from within a Helidon MP application.
 
 == What You Need
 
 |===
 |About 30 minutes
 |<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|<<guides/20_datasource.adoc,An understanding of named data source support in Helidon MP>>
-|<<guides/22_jta.adoc,An understanding of transaction support in Helidon MP>>
+|<<mp/guides/07_datasource.adoc,An understanding of named data source support in Helidon MP>>
+|<<mp/guides/08_jta.adoc,An understanding of transaction support in Helidon MP>>
 |An understanding of JPA itself
 |===
 
@@ -57,9 +57,7 @@ mvn -U archetype:generate \
     -DarchetypeVersion={helidon-version} \
     -DgroupId=io.helidon.example \
     -DartifactId=helidon-jpa \
-    -Dpackage=io.helidon.example.jpa \
-    -DrestResourceName=ExampleResource \
-    -DapplicationName=ExampleApplication
+    -Dpackage=io.helidon.example.jpa
 ----
 
 Now `cd` into `helidon-jpa`.  The rest of this guide will assume all
@@ -278,44 +276,46 @@ public class Greeting implements Serializable { <4>
 <1> (Some of the annotations in this example, like this one, have
 sensible defaults, but the example specifies them explicitly for
 clarity.)  This
-https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Access.html[`Access`
+https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/access[`Access`
 annotation] says that JPA will access this class' fields directly,
 rather than via getter and setter methods.
 
 <2> The
-https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Entity.html[`Entity`
+https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/entity[`Entity`
 annotation] identifies this class as a JPA entity.  The
-https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Entity.html#name--[`name`
+https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/entity#name()[`name`
 element] value can be used in JPQL queries.
 
 <3> The
-https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Table.html[`Table`
+https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/table[`Table`
 annotation] identifies the database table to which this class will be
 mapped.
 
-<4> JPA entities should be `Serializable`.
+<4> JPA entities should be
+https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html[`Serializable`].
 
 <5> The
-https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Column.html[`Column`
+https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/column[`Column`
 annotation] specifies what column in the database the annotated field
 maps to.  The elements of the `Column` annotation further describe the
 column.
 
 <6> The
-https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Id.html[`Id`
+https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/id[`Id`
 annotation] indicates this field will be mapped to the primary key of
 the database table.
 
 <7> The
-https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Basic.html[`Basic`
+https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/basic[`Basic`
 annotation] indicates this field will be mapped to an ordinary
 ("basic") column.
 
 <8> All JPA entities need a zero-argument constructor, but it doesn't
 have to be `public`.  This constructor satisfies this requirement.  It
-is marked `Deprecated` and is non-`public` so that normal users have
-to supply data for the `salutation` and `response` fields via the
-other constructor.
+is marked
+https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Deprecated.html[`Deprecated`]
+and is non-`public` so that normal users have to supply data for the
+`salutation` and `response` fields via the other constructor.
 
 <9> This is the constructor normal users will use.
 
@@ -393,51 +393,38 @@ Add the following plugin configuration in your `pom.xml`:
 <plugin>
     <groupId>com.ethlo.persistence.tools</groupId>
     <artifactId>eclipselink-maven-plugin</artifactId>
-    <dependencies> <!--1-->
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-        </dependency>
-    </dependencies>
     <executions>
         <execution>
             <id>weave</id>
             <phase>process-classes</phase>
             <goals>
-                <goal>weave</goal> <!--2-->
+                <goal>weave</goal> <!--1-->
             </goals>
         </execution>
         <execution>
             <id>modelgen</id>
             <phase>generate-sources</phase>
             <goals>
-                <goal>modelgen</goal> <!--3-->
+                <goal>modelgen</goal> <!--2-->
             </goals>
         </execution>
     </executions>
 </plugin>
 ----
 
-<1> https://github.com/ethlo/eclipselink-maven-plugin[This plugin]
-requires this `<dependencies>` section as a workaround.
+<1> Static weaving is performed on compiled classes in place.
 
-<2> Static weaving is performed on compiled classes in place.
-
-<3> The
+<2> The
 https://javaee.github.io/tutorial/persistence-criteria002.html#GJIUP[JPA
 static metamodel] is generated by this goal.
 
 == Inject a Container-Managed `EntityManager`
 
-In the `src/main/java/io/helidon/example/jpa/ExampleResource.java` file, add the following
+In the `src/main/java/io/helidon/example/jpa/GreetResource.java` file, add the following
 imports:
 
 [source,java]
-.`src/main/java/io/helidon/example/jpa/ExampleResource.java`
+.`src/main/java/io/helidon/example/jpa/GreetResource.java`
 ----
 import javax.enterprise.context.Dependent;
 import javax.persistence.EntityManager;
@@ -447,44 +434,48 @@ import javax.persistence.PersistenceContext;
 Annotate the resource class declaration with `@Dependent`:
 
 [source,java]
-.`src/main/java/io/helidon/example/jpa/ExampleResource.java`
+.`src/main/java/io/helidon/example/jpa/GreetResource.java`
 ----
 @Dependent <1>
-public class ExampleResource {
+public class GreetResource {
 ----
 
-<1> This ensures that `io.helidon.example.jpa.ExampleResource` is a
-discoverable CDI bean.
+<1> This ensures that `io.helidon.example.jpa.GreetResource` is a
+discoverable CDI bean, because it is an example of a
+https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#bean_defining_annotations[bean-defining
+annotation].
 
 Then add the following annotated field declaration:
 
 [source,java]
-.`src/main/java/io/helidon/example/jpa/ExampleResource.java`
+.`src/main/java/io/helidon/example/jpa/GreetResource.java`
 ----
 @PersistenceContext <1>
 private EntityManager em;
 ----
 
 <1> The
-https://javaee.github.io/javaee-spec/javadocs/javax/persistence/PersistenceContext.html[`@PersistenceContext`
-annotation] indicates that you want an `EntityManager` injected here.
+https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/persistencecontext[`@PersistenceContext`
+annotation] indicates that you want an
+https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/entitymanager[`EntityManager`]
+injected here.
 
 == Use the Injected `EntityManager`
 
-In the `src/main/java/io/helidon/example/jpa/ExampleResource.java`
+In the `src/main/java/io/helidon/example/jpa/GreetResource.java`
 file, add the following import:
 
 [source,java]
-.`src/main/java/io/helidon/example/jpa/ExampleResource.java`
+.`src/main/java/io/helidon/example/jpa/GreetResource.java`
 ----
 import javax.transaction.Transactional;
 import javax.ws.rs.PathParam;
 ----
 
-Add the following resource method to the `ExampleResource` class:
+Add the following resource method to the `GreetResource` class:
 
 [source,java]
-.`src/main/java/io/helidon/example/jpa/ExampleResource.java`
+.`src/main/java/io/helidon/example/jpa/GreetResource.java`
 ----
 @GET
 @Path("response/{salutation}")
@@ -510,15 +501,12 @@ transaction automatically.
 
 == Add Logging
 
-Add the following file under `src/main/resources`:
+Add the following content to the `logging.properties` file under
+`src/main/resources`:
 
 [source,properties]
 .`src/main/resources/logging.properties`
 ----
-.level=INFO
-handlers=io.helidon.common.HelidonConsoleHandler
-java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$s %3$s !thread!: %5$s%6$s%n
-
 com.zaxxer.hikari.level=INFO
 h2database.level=WARNING
 io.netty.level=INFO
@@ -550,7 +538,7 @@ Execute the following:
 
 [source,bash]
 ----
-curl http://localhost:8080/example/response/Marco
+curl http://localhost:8080/greet/response/Marco
 ----
 
 Observe that `Polo` is returned.
