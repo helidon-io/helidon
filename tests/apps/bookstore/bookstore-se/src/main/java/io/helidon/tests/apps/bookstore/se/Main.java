@@ -16,9 +16,7 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
-import java.io.IOException;
-import java.util.logging.LogManager;
-
+import io.helidon.common.LogConfig;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
@@ -31,8 +29,8 @@ import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.ExperimentalConfiguration;
 import io.helidon.webserver.Http2Configuration;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServerTls;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerTls;
 
 /**
  * Simple Hello World rest application.
@@ -57,9 +55,8 @@ public final class Main {
      * Application main entry point.
      *
      * @param args command line arguments.
-     * @throws IOException if there are problems reading logging properties
      */
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
         startServer();
     }
 
@@ -67,9 +64,8 @@ public final class Main {
      * Start the server.
      *
      * @return the created {@link WebServer} instance
-     * @throws IOException if there are problems reading logging properties
      */
-    static WebServer startServer() throws IOException {
+    static WebServer startServer() {
         return startServer(false, false);
     }
 
@@ -79,12 +75,10 @@ public final class Main {
      * @param ssl Enable ssl support.
      * @param http2 Enable http2 support.
      * @return the created {@link WebServer} instance
-     * @throws IOException if there are problems reading logging properties
      */
-    static WebServer startServer(boolean ssl, boolean http2) throws IOException {
+    static WebServer startServer(boolean ssl, boolean http2) {
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();

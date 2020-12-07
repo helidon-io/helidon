@@ -25,9 +25,9 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 
+import io.helidon.common.LogConfig;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.testsupport.LoggingTestUtils;
 
 import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
 import org.glassfish.jersey.client.ClientConfig;
@@ -56,7 +56,7 @@ public final class JerseyExampleMain {
 
     public static void main(String... args) throws InterruptedException, ExecutionException, TimeoutException {
 
-        LoggingTestUtils.initializeLogging();
+        LogConfig.configureRuntime();
 
         INSTANCE.webServer(false);
     }

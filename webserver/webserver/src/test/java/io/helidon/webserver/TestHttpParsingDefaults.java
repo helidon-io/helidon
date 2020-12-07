@@ -16,12 +16,11 @@
 
 package io.helidon.webserver;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.LogManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
@@ -42,6 +41,8 @@ class TestHttpParsingDefaults {
 
     @BeforeAll
     static void initClass() throws InterruptedException, ExecutionException, TimeoutException {
+        LogConfig.configureRuntime();
+
         webServer = WebServer.builder(Routing.builder()
                                               .any(TestHttpParsingDefaults::handleRequest)
                                               .build())
@@ -55,13 +56,6 @@ class TestHttpParsingDefaults {
                 .validateHeaders(false)
                 .keepAlive(true)
                 .build();
-
-        try {
-            LogManager.getLogManager()
-                    .readConfiguration(TestHttpParsingDefaults.class.getResourceAsStream("/logging-test.properties"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     @AfterAll

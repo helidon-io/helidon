@@ -16,9 +16,7 @@
 
 package io.helidon.examples.dbclient.pokemons;
 
-import java.io.IOException;
-import java.util.logging.LogManager;
-
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.dbclient.DbClient;
@@ -56,9 +54,8 @@ public final class PokemonMain {
      * Application main entry point.
      *
      * @param args Command line arguments. Run with MongoDB support when 1st argument is mongo, run with JDBC support otherwise.
-     * @throws java.io.IOException if there are problems reading logging properties
      */
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
         if (args != null && args.length > 0 && args[0] != null && "mongo".equals(args[0].toLowerCase())) {
             System.out.println("MongoDB database selected");
             mongo = true;
@@ -73,12 +70,11 @@ public final class PokemonMain {
      * Start the server.
      *
      * @return the created {@link io.helidon.webserver.WebServer} instance
-     * @throws java.io.IOException if there are problems reading logging properties
      */
-    static WebServer startServer() throws IOException {
+    static WebServer startServer() {
 
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(PokemonMain.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
         Config config = isMongo() ? Config.create(ConfigSources.classpath(MONGO_CFG)) : Config.create();

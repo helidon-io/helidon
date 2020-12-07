@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,12 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import javax.annotation.Priority;
 
+import io.helidon.common.LogConfig;
 import io.helidon.grpc.client.test.StringServiceGrpc;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.GrpcRouting;
@@ -90,7 +90,7 @@ public class ProtoGrpcServiceClientIT {
     @BeforeAll
     public static void startServer() throws Exception {
 
-        LogManager.getLogManager().readConfiguration();
+        LogConfig.configureRuntime();
 
         GrpcRouting routing = GrpcRouting.builder()
                 .intercept(headerCheckingInterceptor)

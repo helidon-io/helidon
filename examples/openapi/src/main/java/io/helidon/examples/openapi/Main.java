@@ -16,9 +16,7 @@
 
 package io.helidon.examples.openapi;
 
-import java.io.IOException;
-import java.util.logging.LogManager;
-
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
@@ -42,22 +40,19 @@ public final class Main {
     /**
      * Application main entry point.
      * @param args command line arguments.
-     * @throws IOException if there are problems reading logging properties
      */
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
         startServer();
     }
 
     /**
      * Start the server.
      * @return the created {@link WebServer} instance
-     * @throws IOException if there are problems reading logging properties
      */
-    static WebServer startServer() throws IOException {
+    static WebServer startServer() {
 
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
