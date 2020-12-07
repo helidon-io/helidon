@@ -14,6 +14,9 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 - Experimental: Micronaut extension support [2467](https://github.com/oracle/helidon/pull/2467)
 - Experimental: Loom (VirtualThread) support in Helidon MP [2417](https://github.com/oracle/helidon/pull/2417)
 
+Experimental features are ready for use, but their APIs should be considered unstable and 
+subject to change. 
+
 ### Compatibility
 
 2.2.0 is API compatible with 2.1.0.
