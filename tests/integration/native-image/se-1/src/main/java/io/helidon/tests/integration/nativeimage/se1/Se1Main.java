@@ -15,11 +15,12 @@
  */
 package io.helidon.tests.integration.nativeimage.se1;
 
-import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Set;
-import java.util.logging.LogManager;
 
+import javax.websocket.server.ServerEndpointConfig;
+
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
 import io.helidon.health.HealthSupport;
@@ -35,8 +36,6 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.tyrus.TyrusSupport;
 
 import org.eclipse.microprofile.health.HealthCheckResponse;
-
-import javax.websocket.server.ServerEndpointConfig;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -54,22 +53,18 @@ public final class Se1Main {
     /**
      * Application main entry point.
      * @param args command line arguments.
-     * @throws java.io.IOException if there are problems reading logging properties
      */
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
         startServer();
     }
 
     /**
      * Start the server.
      * @return the created {@link io.helidon.webserver.WebServer} instance
-     * @throws IOException if there are problems reading logging properties
      */
-    static WebServer startServer() throws IOException {
-
+    static WebServer startServer() {
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Se1Main.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
         Config config = buildConfig();

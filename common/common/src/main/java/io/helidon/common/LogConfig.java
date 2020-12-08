@@ -35,6 +35,7 @@ import java.util.logging.Logger;
  * system properties, or set system property {@value #SYS_PROP_DISABLE_CONFIG} to {@code true}.
  */
 public final class LogConfig {
+    private static final String TEST_LOGGING_FILE = "logging-test.properties";
     private static final String LOGGING_FILE = "logging.properties";
     private static final String SYS_PROP_DISABLE_CONFIG = "io.helidon.logging.config.disabled";
     private static final String SYS_PROP_LOGGING_CLASS = "java.util.logging.config.class";
@@ -106,21 +107,34 @@ public final class LogConfig {
             logConfigStream = new BufferedInputStream(Files.newInputStream(path));
             source = "file: " + path.toAbsolutePath();
         } else {
-            // second look for classpath (only the first one in production classpath)
-            InputStream resourceStream = LogConfig.class.getResourceAsStream("/" + LOGGING_FILE);
-            if (resourceStream != null) {
-                logConfigStream = new BufferedInputStream(resourceStream);
-                source = "classpath: /" + LOGGING_FILE;
-            } else {
-                // once more for the current classloader
-                resourceStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(LOGGING_FILE);
-                if (resourceStream != null) {
-                    logConfigStream = new BufferedInputStream(resourceStream);
-                    source = "context classpath: /" + LOGGING_FILE;
-                } else {
-                    return source;
-                }
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+
+            // check if there is a logging-test.properties first (we are running within a unit test)
+            InputStream resourceStream = classPath(TEST_LOGGING_FILE);
+            String cpSource = "classpath: /" + TEST_LOGGING_FILE;
+
+            if (resourceStream == null) {
+                resourceStream = contextClassPath(TEST_LOGGING_FILE, cl);
+                cpSource = "context classpath: /" + TEST_LOGGING_FILE;
             }
+
+            if (resourceStream == null) {
+                resourceStream = classPath(LOGGING_FILE);
+                cpSource = "classpath: /" + LOGGING_FILE;
+            }
+
+            if (resourceStream == null) {
+                resourceStream = contextClassPath(LOGGING_FILE, cl);
+                cpSource = "context classpath: /" + LOGGING_FILE;
+            }
+
+            if (resourceStream == null) {
+                // defaults
+                return source;
+            }
+
+            logConfigStream = new BufferedInputStream(resourceStream);
+            source = cpSource;
         }
 
         try {
@@ -130,6 +144,14 @@ public final class LogConfig {
         }
 
         return source;
+    }
+
+    private static InputStream contextClassPath(String loggingFile, ClassLoader cl) {
+        return cl.getResourceAsStream(loggingFile);
+    }
+
+    private static InputStream classPath(String loggingFile) {
+        return LogConfig.class.getResourceAsStream("/" + loggingFile);
     }
 
     /**

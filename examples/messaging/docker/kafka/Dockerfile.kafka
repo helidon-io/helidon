@@ -18,7 +18,7 @@ FROM openjdk:8-jre-alpine
 
 ENV VERSION=2.5.0
 
-RUN apk add --no-cache bash curl jq
+RUN apk add --no-cache bash curl jq gcompat
 
 # Find closest mirror, download and extract Kafka
 RUN MIRROR=$(curl -s 'https://www.apache.org/dyn/closer.cgi?as_json=1' | jq -r '.http[0]') \

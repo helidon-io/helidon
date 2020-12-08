@@ -18,12 +18,12 @@ package io.helidon.grpc.metrics;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.http.MediaType;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
@@ -83,7 +83,7 @@ public class MetricsIT {
 
     @BeforeAll
     public static void setup() throws Exception {
-        LogManager.getLogManager().readConfiguration(MetricsIT.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // start the server at a free port
         startWebServer();
