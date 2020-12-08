@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c)  2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,23 @@
  * limitations under the License.
  */
 
-module io.helidon.messaging.connectors.aq {
-    requires transitive io.helidon.messaging.connectors.jms;
-    requires java.logging;
-    requires javax.jms.api;
-    requires static io.helidon.config.mp;
-    requires io.helidon.common.configurable;
-    requires io.helidon.messaging;
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
-    requires aqapi;
-    requires java.sql;
+package io.helidon.messaging.connectors.jms;
 
-    exports io.helidon.messaging.connectors.aq;
+/**
+ * Type of the JMS connection.
+ */
+public enum Type {
+    /**
+     * Queue connection type, every message is consumed by one client only.
+     */
+    QUEUE,
+    /**
+     * Topic connection type, every message is delivered to all subscribed clients.
+     */
+    TOPIC;
+
+    @Override
+    public String toString() {
+        return super.name().toLowerCase();
+    }
 }

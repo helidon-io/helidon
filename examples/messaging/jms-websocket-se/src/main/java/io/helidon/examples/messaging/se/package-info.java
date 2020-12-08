@@ -12,19 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-module io.helidon.messaging.connectors.aq {
-    requires transitive io.helidon.messaging.connectors.jms;
-    requires java.logging;
-    requires javax.jms.api;
-    requires static io.helidon.config.mp;
-    requires io.helidon.common.configurable;
-    requires io.helidon.messaging;
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
-    requires aqapi;
-    requires java.sql;
-
-    exports io.helidon.messaging.connectors.aq;
-}
+/**
+ * Helidon SE Reactive Messaging with Jms Example.
+ */
+package io.helidon.examples.messaging.se;

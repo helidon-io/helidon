@@ -46,8 +46,8 @@ Connector name: `helidon-jms`
 
 .Attributes
 |===
-|`username` | User name used to connect Oracle DB with AQ
-|`password` | Password to connect Oracle DB with AQ
+|`username` | User name used to connect JMS session
+|`password` | Password to connect JMS session
 |`type` | Possible values are: `queue`, `topic`
 |`destination` | Queue or topic name
 |`acknowledge-mode` |Possible values are: `AUTO_ACKNOWLEDGE`- session automatically acknowledges a client's receipt of a message,
@@ -123,13 +123,13 @@ mp:
       helidon-jms:
         named-factory: active-mq-factory
 
-    outgoing.to-aq:
+    outgoing.to-jms:
       connector: helidon-jms
       session-group-id: order-connection-1
       destination: TESTQUEUE
       type: queue
 
-    incoming.from-aq:
+    incoming.from-jms:
       connector: helidon-jms
       session-group-id: order-connection-1
       destination: TESTQUEUE

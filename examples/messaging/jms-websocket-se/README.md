@@ -7,6 +7,6 @@
 
 ## Build & Run
 1. `mvn clean install`
-2. `java -jar helidon-examples-jms-websocket-mp.jar`
+2. `java -jar helidon-examples-jms-websocket-se.jar`
 3. Visit http://localhost:7001
 
