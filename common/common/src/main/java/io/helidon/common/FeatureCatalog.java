@@ -395,7 +395,7 @@ final class FeatureCatalog {
                     .description("Reactive messaging connector for Kafka")
                     .path("Messaging", "Kafka")
                     .experimental(true)
-                    .nativeSupported(false));
+                    .nativeSupported(true));
         add("io.helidon.messaging.connectors.jms",
             FeatureDescriptor.builder()
                     .name("JMS Connector")
