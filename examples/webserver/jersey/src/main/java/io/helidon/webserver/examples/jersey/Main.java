@@ -16,10 +16,9 @@
 
 package io.helidon.webserver.examples.jersey;
 
-import java.io.IOException;
 import java.util.concurrent.CompletionStage;
-import java.util.logging.LogManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
@@ -41,11 +40,10 @@ public final class Main {
      * Run the Jersey WebServer Example.
      *
      * @param args arguments are not used
-     * @throws IOException in case of an IO error
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         // configure logging in order to not have the standard JVM defaults
-        LogManager.getLogManager().readConfiguration(Main.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // start the server on port 8080
         startServer(8080);

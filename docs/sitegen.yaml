@@ -24,6 +24,7 @@ engine:
       javadoc-base-url: "./apidocs/"
       helidon-version: "${project.version}"
       microprofile-openapi-version: "${version.lib.microprofile-openapi-api}"
+      micprofile-graphql-version: "${version.lib.microprofile-graphql}"
       jandex-plugin-version: ${version.plugin.jandex}
       mp-version: "3.3"
       guides-dir: "${project.basedir}/../examples/guides"
@@ -120,6 +121,14 @@ backend:
               items:
                 - includes:
                     - "se/grpc/*.adoc"
+            - title: "GraphQL server"
+              pathprefix: "/se/graphql"
+              glyph:
+                type: "icon"
+                value: "graphic_eq"
+              items:
+                - includes:
+                    - "se/graphql/*.adoc"
             - title: "Health Checks"
               pathprefix: "/se/health"
               glyph:
@@ -277,6 +286,14 @@ backend:
               items:
                 - includes:
                     - "mp/grpc/*.adoc"
+            - title: "GraphQL"
+              pathprefix: "/mp/graphql"
+              glyph:
+                type: "icon"
+                value: "graphic_eq"
+              items:
+                - includes:
+                    - "mp/graphql/*.adoc"
             - title: "Health Checks"
               pathprefix: "/mp/health"
               glyph:

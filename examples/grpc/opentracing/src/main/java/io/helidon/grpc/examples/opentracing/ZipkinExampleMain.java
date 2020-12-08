@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package io.helidon.grpc.examples.opentracing;
 
-import java.util.logging.LogManager;
-
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.grpc.examples.common.GreetService;
 import io.helidon.grpc.examples.common.StringService;
@@ -49,8 +48,7 @@ public class ZipkinExampleMain {
         Config config = Config.create();
 
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                ZipkinExampleMain.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package io.helidon.grpc.examples.security.abac;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
-import java.util.logging.LogManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.grpc.examples.common.StringService;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
@@ -50,12 +50,9 @@ public class AbacServer {
      * Main entry point.
      *
      * @param args  the program arguments
-     *
-     * @throws Exception if an error occurs
      */
-    public static void main(String[] args) throws Exception {
-        LogManager.getLogManager().readConfiguration(
-                AbacServer.class.getResourceAsStream("/logging.properties"));
+    public static void main(String[] args) {
+        LogConfig.configureRuntime();
 
         Security security = Security.builder()
                 .addProvider(AtnProvider.builder().build())   // add out custom provider

@@ -16,9 +16,23 @@
 
 package io.helidon.messaging.connectors.jms;
 
-enum AcknowledgeMode {
+/**
+ * Enumeration equivalent for JMS api's {@link javax.jms.Session#AUTO_ACKNOWLEDGE},
+ * {@link javax.jms.Session#CLIENT_ACKNOWLEDGE} and {@link javax.jms.Session#DUPS_OK_ACKNOWLEDGE} constants.
+ */
+public enum AcknowledgeMode {
+    /**
+     * Acknowledges automatically after message reception over JMS api.
+     */
     AUTO_ACKNOWLEDGE(1),
+    /**
+     * Message is acknowledged when {@link org.eclipse.microprofile.reactive.messaging.Message#ack} is invoked either
+     * manually or by {@link org.eclipse.microprofile.reactive.messaging.Acknowledgment} policy.
+     */
     CLIENT_ACKNOWLEDGE(2),
+    /**
+     * Messages are acknowledged lazily which can result in duplicate messages being delivered.
+     */
     DUPS_OK_ACKNOWLEDGE(3);
 
     private int ackMode;
@@ -27,10 +41,16 @@ enum AcknowledgeMode {
         this.ackMode = ackMode;
     }
 
-    static AcknowledgeMode parse(String name){
+    static AcknowledgeMode parse(String name) {
         return AcknowledgeMode.valueOf(name.trim().toUpperCase());
     }
 
+    /**
+     * Returns JMS api constant equivalent of this ack mode as specified in
+     * {@link javax.jms.Connection#createSession(boolean, int)}.
+     *
+     * @return 1 for AUTO_ACKNOWLEDGE or 2 for CLIENT_ACKNOWLEDGE or 3 for DUPS_OK_ACKNOWLEDGE
+     */
     public int getAckMode() {
         return ackMode;
     }

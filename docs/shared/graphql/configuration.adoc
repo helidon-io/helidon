@@ -1,0 +1,48 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+=== Helidon GraphQL
+In addition, we provide the following configuration options:
+
+
+The following configuration keys can be used to set up integration with WebServer:
+
+[cols="2,2,5"]
+
+|===
+|key |default value |description
+
+|`graphql.web-context` |`/graphql` |Context that serves the GraphQL endpoint.
+|`graphql.schema-uri` |`/schema.graphql` |URI that serves the schema (under web context)
+|`graphql.cors` |{nbsp} |CORS configuration for this service
+|`graphql.executor-service` |{nbsp} |Configuration of `ServerThreadPoolSupplier` used to set up executor service
+
+|===
+
+The following configuration keys can be used to set up GraphQL invocation:
+
+[cols="2,2,5"]
+
+|===
+|key |default value |description
+
+|`graphql.default-error-message` |`Server Error` |Error message to send to caller in case of error
+|`graphql.exception-white-list` |{nbsp} |Array of checked exception classes that should return default error message
+|`graphql.exception-black-list` |{nbsp} |Array of unchecked exception classes that should return message to caller (instead of default error message)
+
+|===
