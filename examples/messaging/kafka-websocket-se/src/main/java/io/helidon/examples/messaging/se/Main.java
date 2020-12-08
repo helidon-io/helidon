@@ -18,12 +18,9 @@
 
 package io.helidon.examples.messaging.se;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.logging.LogManager;
-
 import javax.websocket.server.ServerEndpointConfig;
 
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.StaticContentSupport;
@@ -45,9 +42,8 @@ public final class Main {
      * Application main entry point.
      *
      * @param args command line arguments.
-     * @throws IOException if there are problems reading logging properties
      */
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
         startServer();
     }
 
@@ -55,11 +51,10 @@ public final class Main {
      * Start the server.
      *
      * @return the created {@link WebServer} instance
-     * @throws IOException if there are problems reading logging properties
      */
-    static WebServer startServer() throws IOException {
+    static WebServer startServer() {
         // load logging configuration
-        setupLogging();
+        LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
@@ -94,7 +89,7 @@ public final class Main {
     /**
      * Creates new {@link Routing}.
      *
-     * @param config configuration of this server
+     * @param sendingService service to configure
      * @return routing configured with JSON support, a health check, and a service
      */
     private static Routing createRouting(SendingService sendingService) {
@@ -112,14 +107,5 @@ public final class Main {
                                         .build())
                                 .build())
                 .build();
-    }
-
-    /**
-     * Configure logging from logging.properties file.
-     */
-    private static void setupLogging() throws IOException {
-        try (InputStream is = Main.class.getResourceAsStream("/logging.properties")) {
-            LogManager.getLogManager().readConfiguration(is);
-        }
     }
 }

@@ -16,10 +16,9 @@
 
 package io.helidon.demo.todos.backend;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.logging.LogManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
 
@@ -42,14 +41,11 @@ public final class Main {
      * Application main entry point.
      *
      * @param args command line arguments
-     * @throws IOException if an error occurred while reading logging
-     * configuration
      */
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
 
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         Config config = buildConfig();
 
