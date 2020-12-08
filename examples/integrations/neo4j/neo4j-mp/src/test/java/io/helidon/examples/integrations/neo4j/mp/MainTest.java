@@ -87,8 +87,8 @@ class MainTest {
         neo4jContainer.stop();
     }
 
-    @Test
-    @Ignore// Currently ignore. Decide if we need testcontainers.
+    //@Test
+    //@Ignore// Currently ignore. Decide if we need testcontainers.
     void testMovies() {
 
         Client client = ClientBuilder.newClient();

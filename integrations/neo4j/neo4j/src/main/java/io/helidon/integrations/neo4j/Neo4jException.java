@@ -23,7 +23,7 @@ public class Neo4jException extends RuntimeException {
     /**
      * Neo4jException constructor with message.
      *
-     * @param message
+     * @param message parameter
      */
     public Neo4jException(String message) {
         super(message);
@@ -32,8 +32,8 @@ public class Neo4jException extends RuntimeException {
     /**
      * Neo4jException constructor with message and throwable.
      *
-     * @param message
-     * @param cause
+     * @param message parameter
+     * @param cause parameter
      */
     public Neo4jException(String message, Throwable cause) {
         super(message, cause);

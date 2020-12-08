@@ -43,7 +43,7 @@ public class MainTest {
 
     private static WebServer webServer;
     private static WebClient webClient;
-    private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
+    //private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
 
 
     //@BeforeAll Decide if we need testcontainers.
@@ -111,8 +111,8 @@ public class MainTest {
         neo4jContainer.stop();
     }
 
-    @Test
-    @Ignore// Currently ignore. Decide if we need testcontainers.
+    //@Test
+    //@Ignore// Currently ignore. Decide if we need testcontainers.
     void testMovies() throws Exception {
 
         webClient.get()
@@ -124,8 +124,8 @@ public class MainTest {
 
     }
 
-    @Test
-    @Ignore// Currently ignore. Decide if we need testcontainers.
+    //@Test
+    //@Ignore// Currently ignore. Decide if we need testcontainers.
     public void testHealth() throws Exception {
 
         webClient.get()
@@ -136,8 +136,8 @@ public class MainTest {
                 .get();
     }
 
-    @Test
-    @Ignore// Currently ignore. Decide if we need testcontainers.
+    //@Test
+    //@Ignore// Currently ignore. Decide if we need testcontainers.
     public void testMetrics() throws Exception {
         webClient.get()
                 .path("/metrics")

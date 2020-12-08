@@ -24,17 +24,13 @@ import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
-import org.neo4j.driver.AccessMode;
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.Session;
-import org.neo4j.driver.SessionConfig;
+import org.neo4j.driver.*;
 import org.neo4j.driver.exceptions.SessionExpiredException;
 import org.neo4j.driver.summary.ResultSummary;
 import org.neo4j.driver.summary.ServerInfo;
 
 /**
  * Health support module for Neo4j. Follows the standard MicroProfile HealthCheck pattern.
- *
  */
 @Readiness
 @ApplicationScoped
@@ -59,6 +55,7 @@ public class Neo4jHealthCheck implements HealthCheck {
 
     /**
      * To be used in SE context.
+     *
      * @param driver create
      * @return Driver
      */
@@ -71,7 +68,7 @@ public class Neo4jHealthCheck implements HealthCheck {
      * afterwards.
      *
      * @param resultSummary the result summary returned by the server
-     * @param builder the health builder to be modified
+     * @param builder       the health builder to be modified
      * @return the final HealthCheckResponse health check response
      */
     private static HealthCheckResponse buildStatusUp(ResultSummary resultSummary, HealthCheckResponseBuilder builder) {
@@ -108,8 +105,12 @@ public class Neo4jHealthCheck implements HealthCheck {
     private ResultSummary runHealthCheckQuery() {
         // We use WRITE here to make sure UP is returned for a server that supports
         // all possible workloads
-        try (Session session = this.driver.session(DEFAULT_SESSION_CONFIG)) {
-            return session.run(CYPHER).consume();
+        if (driver != null) {
+            Session session = this.driver.session(DEFAULT_SESSION_CONFIG);
+
+            Result run = session.run(CYPHER);
+            return run.consume();
         }
+        return null;
     }
 }

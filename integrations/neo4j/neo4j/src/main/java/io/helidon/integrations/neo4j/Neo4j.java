@@ -103,8 +103,9 @@ public final class Neo4j {
         }
 
         /**
+         * The main build method.
          *
-         * @return
+         * @return Neo4j
          */
         @Override
         public Neo4j build() {
@@ -145,7 +146,7 @@ public final class Neo4j {
         /**
          * Create username.
          *
-         * @param username
+         * @param username parameter
          * @return Builder
          */
         public Builder username(String username) {
@@ -159,7 +160,7 @@ public final class Neo4j {
         /**
          * Create password.
          *
-         * @param password
+         * @param password parameter
          * @return Builder
          */
         public Builder password(String password) {
@@ -171,7 +172,7 @@ public final class Neo4j {
         /**
          * Create uri.
          *
-         * @param uri
+         * @param uri parameter
          * @return Builder
          */
         public Builder uri(String uri) {
@@ -183,7 +184,7 @@ public final class Neo4j {
         /**
          * Enable ecrypted field.
          *
-         * @param encrypted
+         * @param encrypted parameter
          * @return Builder
          */
         public Builder encrypted(boolean encrypted) {
@@ -194,7 +195,7 @@ public final class Neo4j {
         /**
          * Enable authentication.
          *
-         * @param authenticationEnabled
+         * @param authenticationEnabled parameter
          * @return Builder
          */
         public Builder authenticationEnabled(boolean authenticationEnabled) {
@@ -205,7 +206,7 @@ public final class Neo4j {
         /**
          * Enagle metrics.
          *
-         * @param metricsEnabled
+         * @param metricsEnabled parameter
          * @return Builder
          */
         public Builder metricsEnabled(boolean metricsEnabled) {
@@ -216,7 +217,7 @@ public final class Neo4j {
         /**
          * Eable log leaked sessions.
          *
-         * @param logLeakedSessions
+         * @param logLeakedSessions parameter
          * @return Builder
          */
         public Builder logLeakedSessions(boolean logLeakedSessions) {
@@ -227,7 +228,7 @@ public final class Neo4j {
         /**
          * Set pool size.
          *
-         * @param maxConnectionPoolSize
+         * @param maxConnectionPoolSize parameter
          * @return Builder
          */
         public Builder maxConnectionPoolSize(int maxConnectionPoolSize) {
@@ -238,7 +239,7 @@ public final class Neo4j {
         /**
          * Set idle time.
          *
-         * @param idleTimeBeforeConnectionTest
+         * @param idleTimeBeforeConnectionTest parameter
          * @return Builder
          */
         public Builder idleTimeBeforeConnectionTest(Duration idleTimeBeforeConnectionTest) {
@@ -250,7 +251,7 @@ public final class Neo4j {
         /**
          * Set max life time.
          *
-         * @param maxConnectionLifetime
+         * @param maxConnectionLifetime parameter
          * @return Builder
          */
         public Builder maxConnectionLifetime(Duration maxConnectionLifetime) {
@@ -262,7 +263,7 @@ public final class Neo4j {
         /**
          * Set connection acquisition timeout.
          *
-         * @param connectionAcquisitionTimeout
+         * @param connectionAcquisitionTimeout parameter
          * @return Builder
          */
         public Builder connectionAcquisitionTimeout(Duration connectionAcquisitionTimeout) {
@@ -274,7 +275,7 @@ public final class Neo4j {
         /**
          * Set trust strategy.
          *
-         * @param strategy
+         * @param strategy parameter
          * @return Builder
          */
         public Builder trustStrategy(TrustStrategy strategy) {
@@ -285,7 +286,7 @@ public final class Neo4j {
         /**
          * Set certificate path.
          *
-         * @param certFile
+         * @param certFile parameter
          * @return Builder
          */
         public Builder certificate(Path certFile) {
@@ -296,7 +297,7 @@ public final class Neo4j {
         /**
          * Enable hostname verification.
          *
-         * @param hostnameVerificationEnabled
+         * @param hostnameVerificationEnabled parameter
          * @return Builder
          */
         public Builder hostnameVerificationEnabled(boolean hostnameVerificationEnabled) {
@@ -389,7 +390,7 @@ public final class Neo4j {
         /**
          * Neo4j base config helper method.
          *
-         * @return
+         * @return ConfigBuilder
          */
         private static org.neo4j.driver.Config.ConfigBuilder createBaseConfig() {
             org.neo4j.driver.Config.ConfigBuilder configBuilder = org.neo4j.driver.Config.builder();
