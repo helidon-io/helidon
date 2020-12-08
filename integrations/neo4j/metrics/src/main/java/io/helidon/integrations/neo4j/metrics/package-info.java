@@ -15,6 +15,6 @@
  */
 
 /**
- * Created by Dmitry Alexandrov on 24.11.20.
+ * Metrics package.
  */
 package io.helidon.integrations.neo4j.metrics;
