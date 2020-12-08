@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package io.helidon.grpc.examples.security.abac;
 
-import java.util.logging.LogManager;
-
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.grpc.examples.common.StringService;
 import io.helidon.grpc.server.GrpcRouting;
@@ -44,12 +43,9 @@ public class AbacServerFromConfig {
      * Main entry point.
      *
      * @param args  the program arguments
-     *
-     * @throws Exception if an error occurs
      */
-    public static void main(String[] args) throws Exception {
-        LogManager.getLogManager().readConfiguration(
-                AbacServerFromConfig.class.getResourceAsStream("/logging.properties"));
+    public static void main(String[] args) {
+        LogConfig.configureRuntime();
 
         Config config = Config.create();
 

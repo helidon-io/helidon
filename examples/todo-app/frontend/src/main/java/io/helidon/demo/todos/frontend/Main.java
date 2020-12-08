@@ -16,15 +16,14 @@
 
 package io.helidon.demo.todos.frontend;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -66,14 +65,11 @@ public final class Main {
      * Application main entry point.
      *
      * @param args command line arguments
-     * @throws IOException if an error occurred while reading logging
-     * configuration
      */
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
 
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // needed for default connection of Jersey client
         // to allow our headers to be set

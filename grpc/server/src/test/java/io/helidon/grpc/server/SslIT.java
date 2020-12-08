@@ -18,12 +18,12 @@ package io.helidon.grpc.server;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import javax.net.ssl.SSLException;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -87,7 +87,7 @@ public class SslIT {
 
     @BeforeAll
     public static void setup() throws Exception {
-        LogManager.getLogManager().readConfiguration(SslIT.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         AvailablePortIterator ports = LocalPlatform.get().getAvailablePorts();
 

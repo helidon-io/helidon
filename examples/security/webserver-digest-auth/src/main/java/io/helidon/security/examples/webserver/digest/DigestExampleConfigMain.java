@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 package io.helidon.security.examples.webserver.digest;
 
-import java.io.IOException;
 import java.util.Optional;
-import java.util.logging.LogManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.security.SecurityContext;
@@ -41,11 +40,10 @@ public final class DigestExampleConfigMain {
      * Starts this example. Loads configuration from src/main/resources/application.conf. See standard output for instructions.
      *
      * @param args ignored
-     * @throws IOException in case of logging configuration failure
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(DigestExampleConfigMain.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // load configuration
         Config config = Config.create();

@@ -145,7 +145,11 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         addHelidonBeanDefiningAnnotations("javax.ws.rs.Path",
                                           "javax.ws.rs.ext.Provider",
-                                          "javax.websocket.server.ServerEndpoint");
+                                          "javax.websocket.server.ServerEndpoint",
+                                          "org.eclipse.microprofile.graphql.GraphQLApi",
+                                          "org.eclipse.microprofile.graphql.Input",
+                                          "org.eclipse.microprofile.graphql.Interface",
+                                          "org.eclipse.microprofile.graphql.Type");
 
         ResourceLoader resourceLoader = new WeldResourceLoader() {
             @Override
