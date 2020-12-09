@@ -17,6 +17,8 @@ package io.helidon.tests.integration.jpa.appl;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -26,6 +28,8 @@ import javax.inject.Inject;
  */
 @ApplicationScoped
 public class Dispatcher {
+
+    private static final Logger LOGGER = Logger.getLogger(Dispatcher.class.getName());
 
     /**
      * Test invocation handler.
@@ -148,7 +152,12 @@ public class Dispatcher {
     public TestResult runTest(final String name) {
         Handle handle = getHandle(name);
         if (handle == null) {
-            return handle.result().fail("Missing method handle.");
+            try {
+                return handle.result().fail("Missing method handle.");
+            } catch (Exception ex) {
+                LOGGER.warning(() -> String.format("Test %s execution throwed an exception: %s", name, ex.getMessage()));
+                throw ex;
+            }
         }
         return handle.invoke();
     }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.jpa.appl.start;
+package io.helidon.tests.integration.jpa.appl.test;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -27,31 +27,74 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
+import io.helidon.common.LogConfig;
 import io.helidon.tests.integration.jpa.appl.Utils;
-import io.helidon.tests.integration.jpa.appl.test.ClientUtils;
-import io.helidon.tests.integration.jpa.appl.test.Validate;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+
+import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
 
 /**
- * Initialize tests.
+ * Test Life Cycle.
+ * Contains setup and cleanup methods for the tests.
  */
-public class CheckIT {
+public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
 
-    private static final Logger LOGGER = Logger.getLogger(CheckIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(LifeCycleExtension.class.getName());
 
-    /* Startup timeout in seconds. */
+    private static final String STORE_KEY = LifeCycleExtension.class.getName();
+
+    /* Startup timeout in seconds for both database and web server. */
     private static final int TIMEOUT = 60;
 
     /* Thread sleep time in miliseconds while waiting for database or appserver to come up. */
     private static final int SLEEP_MILIS = 250;
 
     private static final Client CLIENT = ClientBuilder.newClient();
-    // FIXME: Use random port.
+
     private static final WebTarget TARGET = CLIENT.target("http://localhost:7001/test");
+
+    /**
+     * Test setup.
+     *
+     * @param ec current extension context
+     * @throws Exception when test setup fails
+     */
+    @Override
+    public void beforeAll(ExtensionContext ec) throws Exception {
+        final Object resource = ec.getRoot().getStore(GLOBAL).get(STORE_KEY);
+        if (resource == null) {
+            LogConfig.configureRuntime();
+            LOGGER.finest("Running beforeAll lifecycle method for the first time, invoking setup()");
+            ec.getRoot().getStore(GLOBAL).put(STORE_KEY, this);
+            setup();
+        } else {
+            LOGGER.finest("Running beforeAll lifecycle method next time, skipping setup()");
+        }
+    }
+
+    /**
+     * Setup JPA application tests.
+     */
+    private void setup() {
+        LOGGER.fine("Running JPA application test setup()");
+        waitForDatabase();
+        waitForServer();
+        ClientUtils.callJdbcTest("/setup");
+        ClientUtils.callJdbcTest("/test/JdbcApiIT.ping");
+        init();
+        testBeans();
+    }
+
+    /**
+     * Cleanup JPA application tests.
+     */
+    @Override
+    public void close() throws Throwable {
+        LOGGER.fine("Running JPA application test close()");
+        shutdown();
+    }
 
     @SuppressWarnings("SleepWhileInLoop")
     public static void waitForDatabase() {
@@ -89,7 +132,7 @@ public class CheckIT {
         }
     }
 
-    @SuppressWarnings("SleepWhileInLoop")
+   @SuppressWarnings("SleepWhileInLoop")
     public static void waitForServer() {
         WebTarget status = TARGET.path("/status");
 
@@ -113,27 +156,7 @@ public class CheckIT {
         }
     }
 
-    @BeforeAll
-    public static void init() {
-        waitForDatabase();
-        waitForServer();
-        ClientUtils.callJdbcTest("/setup");
-    }
-
-    @AfterAll
-    public static void destroy() {
-        ClientUtils.callJdbcTest("/destroy");
-    }
-
-    @Test
-    @Order(1)
-    public void testJdbcPing() {
-        ClientUtils.callJdbcTest("/test/JdbcApiIT.ping");
-    }
-
-    @Test
-    @Order(2)
-    public void testInit() {
+    public void init() {
         WebTarget status = TARGET.path("/init");
         Response response = status.request().get();
         String responseStr = response.readEntity(String.class);
@@ -144,8 +167,6 @@ public class CheckIT {
         }
     }
 
-    @Test
-    @Order(3)
     public void testBeans() {
         WebTarget status = TARGET.path("/beans");
         Response response = status.request().get();
@@ -155,6 +176,12 @@ public class CheckIT {
         } catch (JsonParsingException t) {
             LOGGER.log(Level.SEVERE, t, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr));
         }
+    }
+
+    public void shutdown() {
+        WebTarget exit = TARGET.path("/exit");
+        Response response = exit.request().get();
+        LOGGER.info(() -> String.format("Status: %s", response.readEntity(String.class)));
     }
 
 }

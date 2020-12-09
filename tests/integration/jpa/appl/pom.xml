@@ -230,20 +230,11 @@ limitations under the License.
                 <configuration>
                     <parallel>methods</parallel>
                     <threadCount>10</threadCount>
+                    <systemPropertyVariables>
+                        <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                    </systemPropertyVariables>
                 </configuration>
                 <executions>
-                   <execution>
-                        <id>start</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>integration-test</goal>
-                        </goals>
-                        <configuration>
-                            <includes>
-                                <include>io.helidon.tests.integration.jpa.appl.start.*IT</include>
-                            </includes>
-                        </configuration>
-                    </execution>
                     <execution>
                         <id>test</id>
                         <phase>integration-test</phase>
@@ -253,18 +244,6 @@ limitations under the License.
                         <configuration>
                             <includes>
                                 <include>io.helidon.tests.integration.jpa.appl.test.*IT</include>
-                            </includes>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>stop</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>integration-test</goal>
-                        </goals>
-                        <configuration>
-                            <includes>
-                                <include>io.helidon.tests.integration.jpa.appl.stop.*IT</include>
                             </includes>
                         </configuration>
                     </execution>
