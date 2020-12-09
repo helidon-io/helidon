@@ -67,7 +67,7 @@ abstract class Se1IT {
         runner = HelidonProcessRunner
                 .create(type,
                         "helidon.tests.integration.nativeimage.se1",
-                        Se1Main.class,
+                        Se1Main.class.getName(),
                         "helidon-tests-native-image-se-1",
                         Se1Main::startServer,
                         Se1Main::stopServer);

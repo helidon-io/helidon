@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -31,11 +33,11 @@ import java.util.logging.Logger;
 public class HelidonProcessRunner {
     private static final Logger LOGGER = Logger.getLogger(HelidonProcessRunner.class.getName());
 
+    private final AtomicReference<Process> process;
     private final ExecType execType;
     private final Runnable startCommand;
     private final Runnable stopCommand;
     private final int port;
-    private AtomicReference<Process> process;
 
     private HelidonProcessRunner(AtomicReference<Process> process,
                                  ExecType execType,
@@ -64,13 +66,31 @@ public class HelidonProcessRunner {
         }
     }
 
+    /**
+     * Create process runner with full configuration of modules.
+     *
+     * @param execType type of execution
+     * @param moduleName name of the application module (JPMS), used for {@link HelidonProcessRunner.ExecType#MODULE_PATH}
+     * @param mainClassModuleName name of the module of the main class (JPMS) - if the same, you can use
+     *          {@link #create(HelidonProcessRunner.ExecType, String, String, String, Runnable, Runnable)},
+     *                            used for {@link HelidonProcessRunner.ExecType#MODULE_PATH}
+     * @param mainClass name of the main class to run - if this is MP and you want to use the default
+     *                  {@code io.helidon.microprofile.cdi.Main}, you can use
+     *                  {@link #createMp(HelidonProcessRunner.ExecType, String, String, Runnable, Runnable)},
+     *                  used for {@link HelidonProcessRunner.ExecType#MODULE_PATH}
+     * @param finalName final name of the artifact - this is the expected name of the native image and jar file
+     * @param inMemoryStartCommand command to start the server in memory, used for {@link HelidonProcessRunner.ExecType#IN_MEMORY}
+     * @param inMemoryStopCommand command to start the server in memory, used for {@link HelidonProcessRunner.ExecType#IN_MEMORY}
+     *
+     * @return a process runner that will start Helidon with the expected exec type when {@link #startApplication()} is called
+     */
     public static HelidonProcessRunner create(ExecType execType,
+                                              String moduleName,
                                               String mainClassModuleName,
-                                              Class<?> mainClass,
+                                              String mainClass,
                                               String finalName,
                                               Runnable inMemoryStartCommand,
                                               Runnable inMemoryStopCommand) {
-
         // ensure we run on a random port
         int port = findFreePort();
         if (execType == ExecType.IN_MEMORY) {
@@ -86,7 +106,7 @@ public class HelidonProcessRunner {
             addClasspathCommand(finalName, processBuilder);
             break;
         case MODULE_PATH:
-            addModulePathCommand(finalName, mainClassModuleName, mainClass, processBuilder);
+            addModulePathCommand(finalName, moduleName, mainClassModuleName, mainClass, processBuilder);
             break;
         case NATIVE:
             addNativeCommand(finalName, processBuilder);
@@ -124,6 +144,36 @@ public class HelidonProcessRunner {
         };
 
         return new HelidonProcessRunner(process, execType, startCommand, stopCommand, port);
+    }
+    public static HelidonProcessRunner createMp(ExecType execType,
+                                              String moduleName,
+                                              String finalName,
+                                              Runnable inMemoryStartCommand,
+                                              Runnable inMemoryStopCommand) {
+        return create(execType,
+                      moduleName,
+                      "io.helidon.microprofile.cdi",
+                      "io.helidon.microprofile.cdi.Main",
+                      finalName,
+                      inMemoryStartCommand,
+                      inMemoryStopCommand);
+    }
+
+
+    public static HelidonProcessRunner create(ExecType execType,
+                                              String mainClassModuleName,
+                                              String mainClass,
+                                              String finalName,
+                                              Runnable inMemoryStartCommand,
+                                              Runnable inMemoryStopCommand) {
+
+        return create(execType,
+                      mainClassModuleName,
+                      mainClassModuleName,
+                      mainClass,
+                      finalName,
+                      inMemoryStartCommand,
+                      inMemoryStopCommand);
     }
 
     private static void waitForSocketOpen(Process process, int port) {
@@ -215,17 +265,23 @@ public class HelidonProcessRunner {
 
     private static void addModulePathCommand(String finalName,
                                              String moduleName,
-                                             Class<?> mainClass,
+                                             String mainClassModuleName,
+                                             String mainClass,
                                              ProcessBuilder processBuilder) {
-        String[] command = new String[] {
-                "java",
-                "--module-path",
-                "target/" + finalName + ".jar:target/libs",
-                "--module",
-                moduleName + "/" + mainClass.getName()
-        };
+        List<String> command = new ArrayList<>(6);
+        command.add("java");
+        command.add("--module-path");
+        command.add("target/" + finalName + ".jar:target/libs");
+        command.add("--module");
+        command.add(mainClassModuleName + "/" + mainClass);
 
-        LOGGER.info("Executing command: " + Arrays.toString(command));
+        if (!Objects.equals(moduleName, mainClassModuleName)) {
+            // we are running main class from another module, need to add current module
+            command.add("--add-modules");
+            command.add(moduleName);
+        }
+
+        LOGGER.info("Command: " + command);
         processBuilder.command(command);
     }
 
