@@ -80,7 +80,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private long actualPayloadSize;
     private boolean ignorePayload;
 
-    private CompletableFuture<?> prev;
+    private CompletableFuture<?> prevRequestFuture;
     private boolean lastContent;
 
     ForwardingHandler(Routing routing,
@@ -195,15 +195,15 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             }
 
             // If prev response is done, the next can start writing right away (HTTP pipelining)
-            if (prev != null && prev.isDone()) {
-                prev = null;
+            if (prevRequestFuture != null && prevRequestFuture.isDone()) {
+                prevRequestFuture = null;
             }
 
             // Create response and handler for its completion
             BareResponseImpl bareResponse =
-                    new BareResponseImpl(ctx, request, publisherRef::isCompleted, prev, requestId);
-            prev = new CompletableFuture<>();
-            CompletableFuture<?> thisResp = prev;
+                    new BareResponseImpl(ctx, request, publisherRef::isCompleted, prevRequestFuture, requestId);
+            prevRequestFuture = new CompletableFuture<>();
+            CompletableFuture<?> thisResp = prevRequestFuture;
             bareResponse.whenCompleted()
                         .thenRun(() -> {
                             if (requestContext != null) {
