@@ -57,18 +57,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 public class HttpPipelineTest {
     private static final Logger LOGGER = Logger.getLogger(HttpPipelineTest.class.getName());
 
-    private static X509TrustManager TRUST_MANAGER = new X509TrustManager() {
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
-        }
-
-        public void checkClientTrusted(X509Certificate[] certs, String authType) {
-        }
-
-        public void checkServerTrusted(X509Certificate[] certs, String authType) {
-        }
-    };
-
     private static WebServer webServer;
     private static AtomicInteger counter = new AtomicInteger(0);
     private static ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1);
