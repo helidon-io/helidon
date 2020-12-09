@@ -132,7 +132,7 @@ public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.S
         }
     }
 
-   @SuppressWarnings("SleepWhileInLoop")
+    @SuppressWarnings("SleepWhileInLoop")
     public static void waitForServer() {
         WebTarget status = TARGET.path("/status");
 
