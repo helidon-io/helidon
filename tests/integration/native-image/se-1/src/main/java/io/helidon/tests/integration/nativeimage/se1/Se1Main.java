@@ -15,10 +15,7 @@
  */
 package io.helidon.tests.integration.nativeimage.se1;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -65,6 +62,14 @@ public final class Se1Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
+        startServer();
+    }
+
+    /**
+     * Start the server.
+     * @return the created {@link io.helidon.webserver.WebServer} instance
+     */
+    static WebServer startServer() {
         if (NativeImageHelper.isRuntime()) {
             LOGGER.info("Running in native image");
         } else {
@@ -78,14 +83,6 @@ public final class Se1Main {
 
         LOGGER.info("Environment variable SERVER_PORT: " + System.getenv("SERVER_PORT"));
 
-        startServer();
-    }
-
-    /**
-     * Start the server.
-     * @return the created {@link io.helidon.webserver.WebServer} instance
-     */
-    static WebServer startServer() {
         // load logging configuration
         LogConfig.configureRuntime();
 
@@ -108,17 +105,12 @@ public final class Se1Main {
         webServer.start()
                 .await(10, TimeUnit.SECONDS);
 
+        webServer.whenShutdown()
+                .thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
+
         System.out.println(
                 "WEB server is up! http://localhost:" + webServer.port() + "/greet");
-        Properties props = new Properties();
-        props.setProperty("port", String.valueOf(webServer.port()));
-        try {
-            props.store(Files.newOutputStream(Paths.get("runtime.properties")), "WebServer");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        webServer.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
         return webServer;
     }
 
@@ -164,12 +156,11 @@ public final class Se1Main {
                 .register("/wc", webClientService)
                 .register("/zipkin", zipkinService)
                 .register("/ws",
-                          TyrusSupport.builder().register(
-                                  ServerEndpointConfig.Builder.create(
-                                          WebSocketEndpoint.class, "/messages")
-                                          .build())
-                                  .build())
-                .get("/shutdown", (req, res) -> System.exit(0))
+                        TyrusSupport.builder().register(
+                                ServerEndpointConfig.Builder.create(
+                                        WebSocketEndpoint.class, "/messages")
+                                        .build())
+                                .build())
                 .build();
     }
 
