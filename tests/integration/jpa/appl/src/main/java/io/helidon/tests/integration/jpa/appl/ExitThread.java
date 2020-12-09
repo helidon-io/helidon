@@ -15,10 +15,15 @@
  */
 package io.helidon.tests.integration.jpa.appl;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * Exits JPA MP application after short delay.
  */
 public class ExitThread implements Runnable {
+
+    private static final Logger LOGGER = Logger.getLogger(ExitThread.class.getName());
 
     /**
      * Starts application exit thread.
@@ -34,8 +39,8 @@ public class ExitThread implements Runnable {
     public void run() {
         try {
             Thread.sleep(3000);
-        } catch (InterruptedException ex) {
-            System.out.println(ex.getMessage());
+        } catch (InterruptedException ie) {
+            LOGGER.log(Level.WARNING, ie, () -> String.format("Thread was interrupted: %s", ie.getMessage()));
         } finally {
             System.exit(0);
         }

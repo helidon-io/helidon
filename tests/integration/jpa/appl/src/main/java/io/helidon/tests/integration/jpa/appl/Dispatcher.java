@@ -17,6 +17,8 @@ package io.helidon.tests.integration.jpa.appl;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -27,10 +29,12 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class Dispatcher {
 
+    private static final Logger LOGGER = Logger.getLogger(Dispatcher.class.getName());
+
     /**
      * Test invocation handler.
      */
-    private static final class Handle {
+    static final class Handle {
 
         private final Object instance;
         private final Method method;
@@ -43,10 +47,14 @@ public class Dispatcher {
          * @param method method handler to invoke
          * @param result test execution result
          */
-        private Handle(final Object instance, final Method method, final TestResult result) {
+        Handle(final Object instance, final Method method, final TestResult result) {
+            if (result == null) {
+                this.result = new TestResult();
+            } else {
+                this.result = result;
+            }
             this.instance = instance;
             this.method = method;
-            this.result = result;
         }
 
         /**
@@ -54,7 +62,7 @@ public class Dispatcher {
          *
          * @return test execution result
          */
-        private TestResult invoke() {
+        TestResult invoke() {
             try {
                 if (method.getAnnotation(MPTest.class) != null) {
                     try {
@@ -77,7 +85,7 @@ public class Dispatcher {
          *
          * @return result of test execution
          */
-        private TestResult result() {
+        TestResult result() {
             return result;
         }
 
@@ -95,6 +103,18 @@ public class Dispatcher {
     @Inject
     private QueryIT queryIt;
 
+    private static Handle createHandle(final Class<?> testClass, final Object instance, final String methodName, final TestResult result) {
+        try {
+            return new Handle(
+                    instance,
+                    testClass.getDeclaredMethod(methodName, TestResult.class),
+                    result);
+        } catch (NoSuchMethodException ex) {
+            result.throwed(ex);
+        }
+        return null;
+    }
+
     private Handle getHandle(final String name) {
         final int nameLen = name.length();
         final int serpPos = name.indexOf('.');
@@ -106,44 +126,19 @@ public class Dispatcher {
         }
         final String className = name.substring(0, serpPos);
         final String methodName = name.substring(serpPos + 1, nameLen);
-        if ("InsertIT".equals(className)) {
-            try {
-                return new Handle(
-                        insertIt,
-                        InsertIT.class.getDeclaredMethod(methodName, TestResult.class),
-                        result);
-            } catch (NoSuchMethodException ex) {
-                result.throwed(ex);
-            }
-        } else if ("UpdateIT".equals(className)) {
-            try {
-                return new Handle(
-                        updateIt,
-                        UpdateIT.class.getDeclaredMethod(methodName, TestResult.class),
-                        result);
-            } catch (NoSuchMethodException ex) {
-                result.throwed(ex);
-            }
-        } else if ("DeleteIT".equals(className)) {
-            try {
-                return new Handle(
-                        deleteIt,
-                        DeleteIT.class.getDeclaredMethod(methodName, TestResult.class),
-                        result);
-            } catch (NoSuchMethodException ex) {
-                result.throwed(ex);
-            }
-        } else if ("QueryIT".equals(className)) {
-            try {
-                return new Handle(
-                        queryIt,
-                        QueryIT.class.getDeclaredMethod(methodName, TestResult.class),
-                        result);
-            } catch (NoSuchMethodException ex) {
-                result.throwed(ex);
-            }
-        } else {
+        if (null == className) {
             result.fail("Unknown test class: " + className);
+        } else switch (className) {
+            case "InsertIT":
+                return createHandle(InsertIT.class, insertIt, methodName, result);
+            case "UpdateIT":
+                return createHandle(UpdateIT.class, updateIt, methodName, result);
+            case "DeleteIT":
+                return createHandle(DeleteIT.class, deleteIt, methodName, result);
+            case "QueryIT":
+                return createHandle(QueryIT.class, queryIt, methodName, result);
+            default:
+                result.fail("Unknown test class: " + className);
         }
         return null;
     }
@@ -157,7 +152,12 @@ public class Dispatcher {
     public TestResult runTest(final String name) {
         Handle handle = getHandle(name);
         if (handle == null) {
-            return handle.result().fail("Missing method handle.");
+            try {
+                return handle.result().fail("Missing method handle.");
+            } catch (Exception ex) {
+                LOGGER.warning(() -> String.format("Test %s execution throwed an exception: %s", name, ex.getMessage()));
+                throw ex;
+            }
         }
         return handle.invoke();
     }
