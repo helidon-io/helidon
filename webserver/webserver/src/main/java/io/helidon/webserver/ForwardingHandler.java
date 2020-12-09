@@ -156,7 +156,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             // Queue, context and publisher creation
             ReferenceHoldingQueue<DataChunk> queue = new ReferenceHoldingQueue<>();
             queues.add(queue);
-            final RequestContext requestContext = new RequestContext(new HttpRequestScopedPublisher(ctx, queue), request);
+            RequestContext requestContext = new RequestContext(new HttpRequestScopedPublisher(ctx, queue), request);
             this.requestContext = requestContext;
 
             // the only reason we have the 'ref' here is that the field might get assigned with null
@@ -194,6 +194,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 }
             }
 
+            // If prev response is done, the next can start writing right away (HTTP pipelining)
             if (prev != null && prev.isDone()) {
                 prev = null;
             }
@@ -202,9 +203,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             BareResponseImpl bareResponse =
                     new BareResponseImpl(ctx, request, publisherRef::isCompleted, prev, requestId);
             prev = new CompletableFuture<>();
-
-            final CompletableFuture<?> thisResp = prev;
-
+            CompletableFuture<?> thisResp = prev;
             bareResponse.whenCompleted()
                         .thenRun(() -> {
                             if (requestContext != null) {
@@ -219,6 +218,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                             }
                             publisherRef.clearBuffer(DataChunk::release);
 
+                            // Enables next response to proceed (HTTP pipelining)
                             thisResp.complete(null);
                         });
             if (HttpUtil.is100ContinueExpected(request)) {
