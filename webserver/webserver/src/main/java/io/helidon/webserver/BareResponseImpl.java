@@ -78,19 +78,19 @@ class BareResponseImpl implements BareResponse {
     private volatile DefaultHttpResponse response;
     private volatile boolean lengthOptimization;
     private volatile boolean isWebSocketUpgrade = false;
-    private CompletableFuture<?> prev;
+    private CompletableFuture<?> previousRequestFuture;
 
     /**
      * @param ctx the channel handler context
      * @param request the request
      * @param requestContentConsumed whether the request content is consumed
-     * @param prev Future that represents previous request completion for HTTP pipelining
+     * @param previousRequestFuture Future that represents previous request completion for HTTP pipelining
      * @param requestId the correlation ID that is added to the log statements
      */
     BareResponseImpl(ChannelHandlerContext ctx,
                      HttpRequest request,
                      BooleanSupplier requestContentConsumed,
-                     CompletableFuture<?> prev,
+                     CompletableFuture<?> previousRequestFuture,
                      long requestId) {
         this.requestContentConsumed = requestContentConsumed;
         this.responseFuture = new CompletableFuture<>();
@@ -99,7 +99,7 @@ class BareResponseImpl implements BareResponse {
         this.requestId = requestId;
         this.keepAlive = HttpUtil.isKeepAlive(request);
         this.requestHeaders = request.headers();
-        this.prev = prev;
+        this.previousRequestFuture = previousRequestFuture;
 
         // We need to keep this listener so we can remove it when this response completes. If we don't, we leak
         // while the channel remains open since each response adds a new listener that references 'this'.
@@ -114,6 +114,12 @@ class BareResponseImpl implements BareResponse {
         responseFuture.whenComplete(this::responseComplete);
     }
 
+    /**
+     * Steps required for the completion of this response.
+     *
+     * @param self this instance
+     * @param throwable a throwable indicating unsuccessful completion
+     */
     private void responseComplete(BareResponse self, Throwable throwable) {
         if (throwable == null) {
             headersFuture.complete(this);
@@ -123,6 +129,11 @@ class BareResponseImpl implements BareResponse {
         channelClosedFuture.removeListener(channelClosedListener);
     }
 
+    /**
+     * Called when a channel is closed programmatically.
+     *
+     * @param future a future
+     */
     private void channelClosed(Future<? super Void> future) {
         responseFuture.completeExceptionally(CLOSED);
     }
@@ -204,17 +215,18 @@ class BareResponseImpl implements BareResponse {
     }
 
     /**
-     * Completes this response. No other data are send to the client when response is completed. All caches are flushed.
+     * Completes this response. No other data are send to the client when response is completed.
+     * All caches are flushed.
      *
      * @param throwable if {@code not-null} then this response is completed exceptionally.
      */
     private void completeInternal(Throwable throwable) {
         boolean wasClosed = !internallyClosed.compareAndSet(false, true);
 
-        if (prev == null) {
+        if (previousRequestFuture == null) {
             completeInternalPipe(wasClosed, throwable);
         } else {
-            prev = prev.thenRun(() -> completeInternalPipe(wasClosed, throwable));
+            previousRequestFuture = previousRequestFuture.thenRun(() -> completeInternalPipe(wasClosed, throwable));
         }
     }
 
@@ -240,7 +252,6 @@ class BareResponseImpl implements BareResponse {
             }
 
         } else {
-
             LOGGER.finest(() -> log("Closing with an empty buffer; keep-alive: " + keepAlive));
 
             writeLastContent(throwable, ChannelFutureListener.CLOSE);
@@ -321,10 +332,10 @@ class BareResponseImpl implements BareResponse {
         }
         if (data != null) {
             if (data.isFlushChunk()) {
-                if (prev == null) {
+                if (previousRequestFuture == null) {
                    ctx.flush();
                 } else {
-                   prev = prev.thenRun(ctx::flush);
+                   previousRequestFuture = previousRequestFuture.thenRun(ctx::flush);
                 }
                 return;
             }
@@ -334,10 +345,10 @@ class BareResponseImpl implements BareResponse {
                 return;
             }
 
-            if (prev == null) {
+            if (previousRequestFuture == null) {
                 onNextPipe(data);
             } else {
-                prev = prev.thenRun(() -> onNextPipe(data));
+                previousRequestFuture = previousRequestFuture.thenRun(() -> onNextPipe(data));
             }
         }
     }

@@ -91,7 +91,7 @@ public class HttpPipelineTest {
         if (webServer != null) {
             webServer.shutdown()
                     .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .get(1, TimeUnit.SECONDS);
         }
     }
 
@@ -174,8 +174,12 @@ public class HttpPipelineTest {
                     LOGGER.info("Expected r0 before r1");
                     cf0.completeExceptionally(new RuntimeException("Expected r0 before r1"));
                 } else {
-                    assertThat(r0.body().string(), containsString("Response 0"));
-                    cf0.complete(null);
+                    try {
+                        assertThat(r0.body().string(), containsString("Response 0"));
+                        cf0.complete(null);
+                    } catch (AssertionError e) {
+                        cf0.completeExceptionally(e);
+                    }
                 }
             }
         });
@@ -193,7 +197,7 @@ public class HttpPipelineTest {
                     cf0.get(100L, TimeUnit.MILLISECONDS);   // give r0 callback a chance
                     assertThat(r1.body().string(), containsString("Response 1"));
                     cf1.complete(null);
-                } catch (InterruptedException | ExecutionException | TimeoutException  e) {
+                } catch (InterruptedException | ExecutionException | TimeoutException | AssertionError e) {
                     LOGGER.info("Expected r0 before r1");
                     cf1.completeExceptionally(e);
                 }
