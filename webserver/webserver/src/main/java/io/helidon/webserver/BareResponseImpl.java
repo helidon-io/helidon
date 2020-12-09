@@ -78,19 +78,19 @@ class BareResponseImpl implements BareResponse {
     private volatile DefaultHttpResponse response;
     private volatile boolean lengthOptimization;
     private volatile boolean isWebSocketUpgrade = false;
-    private CompletableFuture<?> previousRequestFuture;
+    private CompletableFuture<?> prevRequestFuture;
 
     /**
      * @param ctx the channel handler context
      * @param request the request
      * @param requestContentConsumed whether the request content is consumed
-     * @param previousRequestFuture Future that represents previous request completion for HTTP pipelining
+     * @param prevRequestFuture Future that represents previous request completion for HTTP pipelining
      * @param requestId the correlation ID that is added to the log statements
      */
     BareResponseImpl(ChannelHandlerContext ctx,
                      HttpRequest request,
                      BooleanSupplier requestContentConsumed,
-                     CompletableFuture<?> previousRequestFuture,
+                     CompletableFuture<?> prevRequestFuture,
                      long requestId) {
         this.requestContentConsumed = requestContentConsumed;
         this.responseFuture = new CompletableFuture<>();
@@ -99,7 +99,7 @@ class BareResponseImpl implements BareResponse {
         this.requestId = requestId;
         this.keepAlive = HttpUtil.isKeepAlive(request);
         this.requestHeaders = request.headers();
-        this.previousRequestFuture = previousRequestFuture;
+        this.prevRequestFuture = prevRequestFuture;
 
         // We need to keep this listener so we can remove it when this response completes. If we don't, we leak
         // while the channel remains open since each response adds a new listener that references 'this'.
@@ -223,10 +223,10 @@ class BareResponseImpl implements BareResponse {
     private void completeInternal(Throwable throwable) {
         boolean wasClosed = !internallyClosed.compareAndSet(false, true);
 
-        if (previousRequestFuture == null) {
+        if (prevRequestFuture == null) {
             completeInternalPipe(wasClosed, throwable);
         } else {
-            previousRequestFuture = previousRequestFuture.thenRun(() -> completeInternalPipe(wasClosed, throwable));
+            prevRequestFuture = prevRequestFuture.thenRun(() -> completeInternalPipe(wasClosed, throwable));
         }
     }
 
@@ -332,10 +332,10 @@ class BareResponseImpl implements BareResponse {
         }
         if (data != null) {
             if (data.isFlushChunk()) {
-                if (previousRequestFuture == null) {
+                if (prevRequestFuture == null) {
                    ctx.flush();
                 } else {
-                   previousRequestFuture = previousRequestFuture.thenRun(ctx::flush);
+                   prevRequestFuture = prevRequestFuture.thenRun(ctx::flush);
                 }
                 return;
             }
@@ -345,10 +345,10 @@ class BareResponseImpl implements BareResponse {
                 return;
             }
 
-            if (previousRequestFuture == null) {
+            if (prevRequestFuture == null) {
                 onNextPipe(data);
             } else {
-                previousRequestFuture = previousRequestFuture.thenRun(() -> onNextPipe(data));
+                prevRequestFuture = prevRequestFuture.thenRun(() -> onNextPipe(data));
             }
         }
     }
