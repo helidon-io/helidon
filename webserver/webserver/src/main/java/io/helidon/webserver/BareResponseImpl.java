@@ -78,7 +78,7 @@ class BareResponseImpl implements BareResponse {
     private volatile DefaultHttpResponse response;
     private volatile boolean lengthOptimization;
     private volatile boolean isWebSocketUpgrade = false;
-    private CompletableFuture<?> prevRequestFuture;
+    private volatile CompletableFuture<?> prevRequestFuture;
 
     /**
      * @param ctx the channel handler context
