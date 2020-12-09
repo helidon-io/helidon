@@ -18,6 +18,7 @@
 package io.helidon.tests.integration.nativeimage.se1;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
@@ -271,7 +272,7 @@ public class HelidonProcessRunner {
         List<String> command = new ArrayList<>(6);
         command.add("java");
         command.add("--module-path");
-        command.add("target/" + finalName + ".jar:target/libs");
+        command.add("target/" + finalName + ".jar" + File.pathSeparator + "target/libs");
         command.add("--module");
         command.add(mainClassModuleName + "/" + mainClass);
 
