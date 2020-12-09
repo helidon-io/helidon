@@ -58,4 +58,5 @@ echo '*******************************'
 cd "${WS_DIR}"/tests/integration/native-image/se-1
 
 mvn ${MAVEN_ARGS} clean verify \
-    -e -Pnative-image
+    -e -Pnative-image -Pjlink-image -Djlink.image.addClassDataSharingArchive=false -Djlink.image.testImage=false
+

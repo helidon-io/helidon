@@ -112,6 +112,12 @@ public class HelidonProcessRunner {
         case NATIVE:
             addNativeCommand(finalName, processBuilder);
             break;
+        case JLINK_CLASS_PATH:
+            addJlinkCommand(finalName, processBuilder);
+            break;
+        case JLINK_MODULE_PATH:
+            addJlinkModuleCommand(finalName, moduleName, mainClassModuleName, mainClass, processBuilder);
+            break;
         default:
             throw new IllegalArgumentException("Unsupported exec type: " + execType);
         }
@@ -146,11 +152,12 @@ public class HelidonProcessRunner {
 
         return new HelidonProcessRunner(process, execType, startCommand, stopCommand, port);
     }
+
     public static HelidonProcessRunner createMp(ExecType execType,
-                                              String moduleName,
-                                              String finalName,
-                                              Runnable inMemoryStartCommand,
-                                              Runnable inMemoryStopCommand) {
+                                                String moduleName,
+                                                String finalName,
+                                                Runnable inMemoryStartCommand,
+                                                Runnable inMemoryStopCommand) {
         return create(execType,
                       moduleName,
                       "io.helidon.microprofile.cdi",
@@ -159,7 +166,6 @@ public class HelidonProcessRunner {
                       inMemoryStartCommand,
                       inMemoryStopCommand);
     }
-
 
     public static HelidonProcessRunner create(ExecType execType,
                                               String mainClassModuleName,
@@ -269,10 +275,45 @@ public class HelidonProcessRunner {
                                              String mainClassModuleName,
                                              String mainClass,
                                              ProcessBuilder processBuilder) {
+        addModuleCommand("java",
+                         "target",
+                         finalName,
+                         moduleName,
+                         mainClassModuleName,
+                         mainClass,
+                         processBuilder);
+    }
+
+    private static void addJlinkModuleCommand(String finalName,
+                                              String moduleName,
+                                              String mainClassModuleName,
+                                              String mainClass,
+                                              ProcessBuilder processBuilder) {
+        String jriDir = "target/" + finalName + "-jri";
+
+        // TODO
+        // this should work - instead of java, we should use the jriDir + "/bin/start" command
+        // with a switch such as "--modules"
+        addModuleCommand(jriDir + "/bin/java",
+                         jriDir + "/app",
+                         finalName,
+                         moduleName,
+                         mainClassModuleName,
+                         mainClass,
+                         processBuilder);
+    }
+
+    private static void addModuleCommand(String java,
+                                         String location,
+                                         String finalName,
+                                         String moduleName,
+                                         String mainClassModuleName,
+                                         String mainClass,
+                                         ProcessBuilder processBuilder) {
         List<String> command = new ArrayList<>(6);
-        command.add("java");
+        command.add(java);
         command.add("--module-path");
-        command.add("target/" + finalName + ".jar" + File.pathSeparator + "target/libs");
+        command.add(location + "/" + finalName + ".jar" + File.pathSeparator + "target/libs");
         command.add("--module");
         command.add(mainClassModuleName + "/" + mainClass);
 
@@ -284,6 +325,16 @@ public class HelidonProcessRunner {
 
         LOGGER.info("Command: " + command);
         processBuilder.command(command);
+    }
+
+    private static void addJlinkCommand(String finalName, ProcessBuilder processBuilder) {
+        String jriDir = "target/" + finalName + "-jri";
+
+        // TODO
+        // this should work - instead of java -jar, we should use the jriDir + "/bin/start" command
+        processBuilder.command(jriDir + "/bin/java",
+                               "-jar",
+                               jriDir + "/app/" + finalName + ".jar");
     }
 
     private static void addClasspathCommand(String finalName, ProcessBuilder processBuilder) {
@@ -302,7 +353,9 @@ public class HelidonProcessRunner {
         CLASS_PATH("classpath"),
         MODULE_PATH("module"),
         NATIVE("native"),
-        IN_MEMORY("memory");
+        IN_MEMORY("memory"),
+        JLINK_CLASS_PATH("jlink-cp"),
+        JLINK_MODULE_PATH("jlink-module");
 
         private final String name;
 
