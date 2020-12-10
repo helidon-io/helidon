@@ -100,7 +100,7 @@ service-2: "${uri}/service2"
 * *Encryption* +
 You can encrypt secrets using a master password and store them in a configuration file.
 The config encryption filter in MicroProfile Config is enabled by default.
-For more information, see <<about/02_configuration-secrets.adoc,Configuration Secrets>>.
+
 
 [source,properties]
 .Example of encrypted secrets
@@ -171,7 +171,7 @@ The following configuration sources can be used to retrieve the configuration:
 
 [cols="3,5"]
 |===
-|Source |Description
+|*Source* |*Description*
 
 |System properties   |A mutable source that uses `System.getProperties()` to obtain configuration values.
 
@@ -218,6 +218,6 @@ For more information on using Helidon Config APIs, see the Helidon SE Configurat
 
 == Additional Information
 
-- https://helidon.io/docs/latest/apidocs/io/helidon/config/spi/package-summary.html[Helidon Config SPI]
-- https://helidon.io/docs/latest/apidocs/io/helidon/config/package-summary.html[Helidon Config API]
+- https://helidon.io/docs/latest/apidocs/io.helidon.config/io/helidon/config/spi/package-summary.html[Helidon Config SPI]
+- https://helidon.io/docs/latest/apidocs/io.helidon.config/io/helidon/config/package-summary.html[Helidon Config API]
 - https://download.eclipse.org/microprofile/microprofile-config-1.3/apidocs/[Eclispe MicroProfile API]

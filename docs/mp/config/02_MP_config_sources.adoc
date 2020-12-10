@@ -144,11 +144,13 @@ resolver.registerConfig(config, null); <5>
 To use the Helidon SE features in Helidon MP, create MicroProfile Config Source from Helidon SE Config Source. The Config Source is immutable regardless of configured polling strategy or change watchers.
 
 ----
+
 Config config = ConfigProviderResolver.instance()
                 .getBuilder()
                 .withSources(MpConfigSources.create(helidonConfigSource) <1>
                 .build();
 ----
+
 <1> Creates a MicroProfile config instance using Helidon Config Source.
 
 == Creating MicroProfile Config Source from Helidon SE Config Instance
