@@ -496,6 +496,11 @@
                 <artifactId>helidon-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics-micrometer</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- health checks -->
             <dependency>
