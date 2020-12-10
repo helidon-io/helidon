@@ -17,7 +17,7 @@
 /**
  * Simple Micrometer support for Helidon SE applications.
  */
-module Helidon.Micrometer.Support {
+module io.helidon.metrics.micrometer {
     requires io.helidon.webserver;
     requires io.helidon.webserver.cors;
     requires micrometer.core;
