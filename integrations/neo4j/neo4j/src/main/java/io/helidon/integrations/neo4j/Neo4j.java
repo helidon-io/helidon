@@ -48,7 +48,7 @@ public final class Neo4j {
     /**
      * Create the Neo4j support using builder.
      *
-     * @param config from the extenal configuration
+     * @param config from the external configuration
      * @return Neo4j support
      */
     public static Neo4j create(Config config) {

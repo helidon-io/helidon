@@ -79,10 +79,10 @@ public class Neo4jMetricsSupport {
         reinit();
 
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "neo4j-metrics-init"));
-        reinitFuture.set(executor.scheduleAtFixedRate(() -> maybeRefreshMetrics(executor), 10, 10, TimeUnit.SECONDS));
+        reinitFuture.set(executor.scheduleAtFixedRate(() -> refreshMetrics(executor), 10, 10, TimeUnit.SECONDS));
     }
 
-    private void maybeRefreshMetrics(ScheduledExecutorService executor) {
+    private void refreshMetrics(ScheduledExecutorService executor) {
         Collection<ConnectionPoolMetrics> currentPoolMetrics = driver.metrics().connectionPoolMetrics();
 
         if (!metricsInitialized.get() && currentPoolMetrics.size() >= 1) {
