@@ -23,4 +23,6 @@ module io.helidon.metrics.micrometer {
     requires micrometer.core;
     requires micrometer.registry.prometheus;
     requires java.logging;
+
+    exports io.helidon.metrics.micrometer;
 }
