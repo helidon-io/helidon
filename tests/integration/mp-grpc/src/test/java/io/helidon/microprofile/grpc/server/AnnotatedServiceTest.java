@@ -21,13 +21,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.grpc.core.ResponseHelper;
 import io.helidon.grpc.server.CollectingObserver;
 import io.helidon.grpc.server.GrpcRouting;
@@ -50,7 +50,6 @@ import io.helidon.microprofile.grpc.server.test.UnaryServiceGrpc;
 import io.grpc.Channel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.stub.StreamObserver;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -59,8 +58,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Functional tests to verify the various server side call handlers.
@@ -73,8 +72,7 @@ public class AnnotatedServiceTest {
 
     @BeforeAll
     public static void startServer() throws Exception {
-        LogManager.getLogManager().readConfiguration(
-                AnnotatedServiceTest.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         GrpcRouting routing = GrpcRouting.builder()
                                          // register the service class

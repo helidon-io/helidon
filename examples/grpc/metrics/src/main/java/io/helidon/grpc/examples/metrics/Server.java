@@ -16,8 +16,7 @@
 
 package io.helidon.grpc.examples.metrics;
 
-import java.util.logging.LogManager;
-
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.grpc.examples.common.GreetService;
 import io.helidon.grpc.examples.common.StringService;
@@ -49,8 +48,7 @@ public class Server {
         Config config = Config.create();
 
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Server.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // Get gRPC server config from the "grpc" section of application.yaml
         GrpcServerConfiguration serverConfig =

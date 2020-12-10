@@ -22,40 +22,20 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
-import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.apache.activemq.ActiveMQConnectionFactory;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 
-public class AbstractMPTest {
+public abstract class AbstractMPTest extends AbstractJmsTest {
 
-    static Session session;
-
-    @BeforeAll
-    static void beforeAll() throws Exception {
-        ActiveMQConnectionFactory connectionFactory =
-                new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false");
-        Connection connection = connectionFactory.createConnection();
-        session = connection.createSession(false, AcknowledgeMode.AUTO_ACKNOWLEDGE.getAckMode());
-    }
-
-
-    @AfterAll
-    static void tearDown() throws Exception {
-        session.close();
-    }
 
     protected void produceAndCheck(final AbstractSampleBean consumingBean,
                                    final List<String> testData,

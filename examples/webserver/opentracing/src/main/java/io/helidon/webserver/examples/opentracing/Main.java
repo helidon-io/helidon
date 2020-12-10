@@ -16,9 +16,7 @@
 
 package io.helidon.webserver.examples.opentracing;
 
-import java.io.IOException;
-import java.util.logging.LogManager;
-
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.tracing.TracerBuilder;
@@ -41,12 +39,11 @@ public final class Main {
      * Run the OpenTracing application.
      *
      * @param args not used
-     * @throws IOException in case of an error
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
 
         // configure logging in order to not have the standard JVM defaults
-        LogManager.getLogManager().readConfiguration(Main.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         Config config = Config.builder()
                 .sources(ConfigSources.environmentVariables())

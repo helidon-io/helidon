@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package io.helidon.security.integration.grpc;
 
 import java.util.concurrent.TimeUnit;
-import java.util.logging.LogManager;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.GrpcHelper;
@@ -73,8 +73,7 @@ public class OutboundSecurityIT {
 
     @BeforeAll
     public static void startServers() throws Exception {
-        LogManager.getLogManager().readConfiguration(
-                ServiceAndMethodLevelSecurityIT.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         Config config = Config.create();
 

@@ -16,14 +16,12 @@
 
 package io.helidon.tests.functional.context.hello;
 
-import java.io.IOException;
-import java.util.logging.LogManager;
-
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
+import io.helidon.common.LogConfig;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterAll;
@@ -41,8 +39,8 @@ class HelloTest {
     private static WebTarget baseTarget;
 
     @BeforeAll
-    static void initClass() throws IOException {
-        LogManager.getLogManager().readConfiguration(HelloTest.class.getResourceAsStream("/logging.properties"));
+    static void initClass() {
+        LogConfig.configureRuntime();
         Main.main(new String[0]);
         server = Main.server();
         Client client = ClientBuilder.newClient();
