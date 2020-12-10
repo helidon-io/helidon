@@ -73,24 +73,27 @@ class BareResponseImpl implements BareResponse {
     private final ChannelFuture channelClosedFuture;
     private final GenericFutureListener<? extends Future<? super Void>> channelClosedListener;
 
-    private volatile Flow.Subscription subscription;
-    private volatile DataChunk firstChunk;
-    private volatile DefaultHttpResponse response;
+    // Accessed by Subscriber method threads
+    private Flow.Subscription subscription;
+    private DataChunk firstChunk;
+    private CompletableFuture<?> prevRequestChunk;
+
+    // Accessed by writeStatusHeaders(status, headers) method
     private volatile boolean lengthOptimization;
     private volatile boolean isWebSocketUpgrade = false;
-    private volatile CompletableFuture<?> prevRequestFuture;
+    private volatile DefaultHttpResponse response;
 
     /**
      * @param ctx the channel handler context
      * @param request the request
      * @param requestContentConsumed whether the request content is consumed
-     * @param prevRequestFuture Future that represents previous request completion for HTTP pipelining
+     * @param prevRequestChunk Future that represents previous request completion for HTTP pipelining
      * @param requestId the correlation ID that is added to the log statements
      */
     BareResponseImpl(ChannelHandlerContext ctx,
                      HttpRequest request,
                      BooleanSupplier requestContentConsumed,
-                     CompletableFuture<?> prevRequestFuture,
+                     CompletableFuture<?> prevRequestChunk,
                      long requestId) {
         this.requestContentConsumed = requestContentConsumed;
         this.responseFuture = new CompletableFuture<>();
@@ -99,7 +102,7 @@ class BareResponseImpl implements BareResponse {
         this.requestId = requestId;
         this.keepAlive = HttpUtil.isKeepAlive(request);
         this.requestHeaders = request.headers();
-        this.prevRequestFuture = prevRequestFuture;
+        this.prevRequestChunk = prevRequestChunk;
 
         // We need to keep this listener so we can remove it when this response completes. If we don't, we leak
         // while the channel remains open since each response adds a new listener that references 'this'.
@@ -223,10 +226,10 @@ class BareResponseImpl implements BareResponse {
     private void completeInternal(Throwable throwable) {
         boolean wasClosed = !internallyClosed.compareAndSet(false, true);
 
-        if (prevRequestFuture == null) {
+        if (prevRequestChunk == null) {
             completeInternalPipe(wasClosed, throwable);
         } else {
-            prevRequestFuture = prevRequestFuture.thenRun(() -> completeInternalPipe(wasClosed, throwable));
+            prevRequestChunk = prevRequestChunk.thenRun(() -> completeInternalPipe(wasClosed, throwable));
         }
     }
 
@@ -332,10 +335,10 @@ class BareResponseImpl implements BareResponse {
         }
         if (data != null) {
             if (data.isFlushChunk()) {
-                if (prevRequestFuture == null) {
+                if (prevRequestChunk == null) {
                    ctx.flush();
                 } else {
-                   prevRequestFuture = prevRequestFuture.thenRun(ctx::flush);
+                   prevRequestChunk = prevRequestChunk.thenRun(ctx::flush);
                 }
                 return;
             }
@@ -345,10 +348,10 @@ class BareResponseImpl implements BareResponse {
                 return;
             }
 
-            if (prevRequestFuture == null) {
+            if (prevRequestChunk == null) {
                 onNextPipe(data);
             } else {
-                prevRequestFuture = prevRequestFuture.thenRun(() -> onNextPipe(data));
+                prevRequestChunk = prevRequestChunk.thenRun(() -> onNextPipe(data));
             }
         }
     }
