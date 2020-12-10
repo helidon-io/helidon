@@ -18,21 +18,19 @@ package io.helidon.metrics.micrometer;
 
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.webserver.Handler;
@@ -45,26 +43,83 @@ import io.helidon.webserver.cors.CrossOriginConfig;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.prometheus.PrometheusConfig;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.core.instrument.config.MeterRegistryConfig;
 
 import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
 
 /**
  * Implements simple Micrometer support.
  * <p>
- * Developers create {@code MeterRegistry} objects and enroll them with
- * {@code }MicrometerSupport}, and also provide a {@code Handler} for expressing the registry's data in an HTTP response.
+ * Developers create Micrometer {@code MeterRegistry} objects and enroll them with
+ * {@link Builder}, providing with each enrollment a Helidon {@code Handler} for expressing the registry's
+ * data in an HTTP response.
  * </p>
- * <p>Alternatively, developers can register any of the built-in registries exposed by the builder as
- * the {@link Builder.BuiltInRegistry} enum.</p>
+ * <p>Alternatively, developers can enroll any of the built-in registries represented by
+ * the {@link BuiltInRegistryType} enum.</p>
+ * <p>
+ * Having enrolled Micrometer meter registries with {@code MicrometerSupport.Builder} and built the
+ * {@code MicrometerSupport} object, developers can invoke the {@link #registry()} method and use the returned {@code
+ * MeterRegistry} to create or locate meters.
+ * </p>
  */
 public class MicrometerSupport implements Service {
 
     /**
-     * Config key for specifying built-in registry names to enroll.
+     * Config key for specifying built-in registry types to enroll.
      */
     public static final String BUILTIN_REGISTRIES_CONFIG_KEY = "builtin-registries";
+
+    /**
+     * Available built-in registry types.
+     */
+    public enum BuiltInRegistryType {
+
+        /**
+         * Prometheus built-in registry type.
+         */
+        PROMETHEUS;
+
+        /**
+         * Describes an unrecognized built-in registry type.
+         */
+        public static class UnrecognizedBuiltInRegistryTypeException extends Exception {
+
+            private final String unrecognizedType;
+
+            /**
+             * Creates a new instance of the exception.
+             *
+             * @param unrecognizedType the unrecognized type
+             */
+            public UnrecognizedBuiltInRegistryTypeException(String unrecognizedType) {
+                super();
+                this.unrecognizedType = unrecognizedType;
+            }
+
+            /**
+             * Returns the unrecognized type.
+             *
+             * @return the unrecognized type
+             */
+            public String unrecognizedType() {
+                return unrecognizedType;
+            }
+
+            @Override
+            public String getMessage() {
+                return "Unrecognized built-in Micrometer registry type: " + unrecognizedType;
+            }
+        }
+
+        static BuiltInRegistryType valueByName(String name) throws UnrecognizedBuiltInRegistryTypeException {
+            try {
+                return valueOf(name.trim()
+                        .toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                throw new UnrecognizedBuiltInRegistryTypeException(name);
+            }
+        }
+    }
 
     private static final String DEFAULT_CONTEXT = "/micrometer";
     private static final String SERVICE_NAME = "Micrometer";
@@ -77,12 +132,18 @@ public class MicrometerSupport implements Service {
     private final String context;
 
     private final Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> enrolledRegistries;
+    private final Map<BuiltInRegistryType, MeterRegistry> enrolledBuiltInRegistries = new HashMap<>();
 
     private MicrometerSupport(Builder builder) {
         context = builder.context;
         corsEnabledServiceHelper = CorsEnabledServiceHelper.create(SERVICE_NAME, builder.crossOriginConfig);
         compositeMeterRegistry = new CompositeMeterRegistry();
         enrolledRegistries = builder.enrolledRegistries();
+        builder.builtInRegistriesRequested.forEach((builtInRegistryType, builtInRegistrySupport) -> {
+            MeterRegistry meterRegistry = builtInRegistrySupport.registry();
+            enrolledBuiltInRegistries.put(builtInRegistryType, meterRegistry);
+            enrolledRegistries.put(builtInRegistrySupport.requestToHandlerFn(meterRegistry), meterRegistry);
+        });
         enrolledRegistries.values().forEach(compositeMeterRegistry::add);
     }
 
@@ -133,6 +194,11 @@ public class MicrometerSupport implements Service {
         return enrolledRegistries;
     }
 
+    // for testing
+    Map<BuiltInRegistryType, MeterRegistry> enrolledBuiltInRegistries() {
+        return enrolledBuiltInRegistries;
+    }
+
     private void configureEndpoint(Routing.Rules rules) {
         // CORS first
         rules
@@ -144,9 +210,11 @@ public class MicrometerSupport implements Service {
     }
 
     private void getOrOptions(ServerRequest serverRequest, ServerResponse serverResponse) {
-        // Each meter registry is paired with a function. For each, invoke the function
-        // looking for the first non-empty Optional<Handler> and invoke that handler. If
-        // none matches then return an error response.
+        /*
+          Each meter registry is paired with a function. For each, invoke the function
+          looking for the first non-empty Optional<Handler> and invoke that handler. If
+          none matches then return an error response.
+         */
         enrolledRegistries.keySet().stream()
                 .map(k -> k.apply(serverRequest))
                 .findFirst()
@@ -168,68 +236,13 @@ public class MicrometerSupport implements Service {
         private final Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> enrolledRegistries =
                 new LinkedHashMap<>();
 
-        private final Set<BuiltInRegistry> builtInRegistries = new HashSet<>();
+        private final Map<BuiltInRegistryType, BuiltInRegistrySupport> builtInRegistriesRequested = new HashMap<>();
 
         private final List<LogRecord> logRecords = new ArrayList<>();
 
         /**
-         * Available built-in Micrometer meter registries.
+         * Available built-in Micrometer meter registry types.
          */
-        public enum BuiltInRegistry {
-
-            /**
-             * Built-in Prometheus Micrometer registry.
-             */
-            PROMETHEUS(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT)) {
-
-                private final Function<ServerRequest, Optional<Handler>> fn =
-                        req -> req.headers().isAccepted(MediaType.TEXT_PLAIN)
-                            ? Optional.of((rq, rs) -> rs.send(myRegistry().scrape()))
-                            : Optional.empty();
-
-                @Override
-                Function<ServerRequest, Optional<Handler>> requestToHandlerFn() {
-                    return fn;
-                }
-
-                private PrometheusMeterRegistry myRegistry() {
-                    return PrometheusMeterRegistry.class.cast(registry());
-                }
-            },
-            /**
-             * Build-in JSON Micrometer registry.
-             */
-            // TODO
-            JSON(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT)) {
-
-                private final Function<ServerRequest, Optional<Handler>> fn =
-                        req -> req.headers().isAccepted(MediaType.APPLICATION_JSON)
-                            // TODO
-                            ? Optional.of((rq, rs) -> rs.send(registry().toString()))
-                            : Optional.empty();
-
-                @Override
-                Function<ServerRequest, Optional<Handler>> requestToHandlerFn() {
-                    return fn;
-                }
-            };
-
-            private final MeterRegistry registry;
-
-            BuiltInRegistry(MeterRegistry registry) {
-                this.registry = registry;
-            }
-
-            abstract Function<ServerRequest, Optional<Handler>> requestToHandlerFn();
-
-            MeterRegistry registry() {
-                return registry;
-            }
-
-            static BuiltInRegistry valueByName(String name) {
-                return BuiltInRegistry.valueOf(name.trim().toUpperCase(Locale.ROOT));
-            }
-        }
 
         @Override
         public MicrometerSupport build() {
@@ -238,13 +251,15 @@ public class MicrometerSupport implements Service {
 
         /**
          * Override default configuration.
+         * <p>
+         * The config items supported vary from one built-in type to the next. See the documentation for the
+         * corresponding {@code MicrometerRegistryConfig} for details.
+         * </p>
          *
          * @param config configuration instance
          * @return updated builder instance
-         * @see MicrometerSupport for details about configuration keys
          */
         public Builder config(Config config) {
-            // align with health checks
             DeprecatedConfig.get(config, "web-context", "context")
                     .asString()
                     .ifPresent(this::webContext);
@@ -254,20 +269,22 @@ public class MicrometerSupport implements Service {
                     .ifPresent(this::crossOriginConfig);
 
             config.get(BUILTIN_REGISTRIES_CONFIG_KEY)
-                    .as(String.class)
-                    .ifPresent(this::enrollBuiltInRegistries);
+                    .ifExists(this::enrollBuiltInRegistries);
 
             return this;
         }
 
         /**
-         * Add a built-in registry to those for which support is requested.
+         * Add a built-in registry instance to support during this execution.
          *
-         * @param builtInRegistry built-in registry to support
+         * @param builtInRegistryType built-in meter registry type to support
+         * @param meterRegistryConfig appropriate {@code MeterRegistryConfig} instance setting up the meter registry
          * @return updated builder instance
          */
-        public Builder enrollBuiltInRegistry(BuiltInRegistry builtInRegistry) {
-            builtInRegistries.add(builtInRegistry);
+        public Builder enrollBuiltInRegistry(BuiltInRegistryType builtInRegistryType, MeterRegistryConfig meterRegistryConfig) {
+            BuiltInRegistrySupport builtInRegistrySupport = BuiltInRegistrySupport.create(builtInRegistryType,
+                    meterRegistryConfig);
+            builtInRegistriesRequested.put(builtInRegistryType, builtInRegistrySupport);
             return this;
         }
 
@@ -318,35 +335,63 @@ public class MicrometerSupport implements Service {
 
         private Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> enrolledRegistries() {
             Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> result = new LinkedHashMap<>(enrolledRegistries);
-            builtInRegistries.forEach(builtInRegistry ->
-                    result.put(builtInRegistry.requestToHandlerFn(), builtInRegistry.registry()));
+            builtInRegistriesRequested.forEach((builtInRegistrySupportType, builtInRegistrySupport) -> {
+                        MeterRegistry meterRegistry = builtInRegistrySupport.registry();
+                        result.put(builtInRegistrySupport.requestToHandlerFn(meterRegistry), meterRegistry);
+                    });
             return result;
         }
 
         /**
-         * Processes a comma-separated list of built-in Micrometer registry names, using the valid ones among them to
-         * set the built-in registries in the builder.
+         * Enrolls built-in registries specified in a {@code Config} object which is expected to be a @{code LIST} with each
+         * element an {@code OBJECT} with at least a {@code type} item.
+         * <p>
+         * Any additional config items can vary from one built-in registry type to the next.
+         * </p>
+         * <p>
+         * If the config specifies one or more unrecognized {@code type}s, the builder ignores them, logs a {@code WARNING}
+         * message reporting them, and continues.
+         * </p>
          *
-         * @param registries comma-separated list of built-in Micrometer registry names
+         * @param registriesConfig {@code Config} object for the 1 or more {@code builtin-registries} entries
          */
-        private void enrollBuiltInRegistries(String registries) {
-            List<BuiltInRegistry> result = new ArrayList<>();
-            for (String registryName : registries.trim().split(",")) {
+        private void enrollBuiltInRegistries(Config registriesConfig) {
+
+            if (registriesConfig.type() != Config.Type.LIST) {
+                throw new IllegalArgumentException("Expected Micrometer config " + BUILTIN_REGISTRIES_CONFIG_KEY + " as a LIST "
+                        + "but found " + registriesConfig.type().name());
+            }
+
+            Map<BuiltInRegistryType, BuiltInRegistrySupport> candidateBuiltInRegistryTypes = new HashMap<>();
+            List<String> unrecognizedTypes = new ArrayList<>();
+
+            for (Config registryConfig : registriesConfig.asNodeList().get()) {
+                String registryType = registryConfig.get("type").asString().get();
                 try {
-                    BuiltInRegistry builtInRegistry = BuiltInRegistry.valueByName(registryName);
-                    result.add(builtInRegistry);
-                } catch (IllegalArgumentException e) {
-                    LogRecord logRecord = new LogRecord(Level.WARNING,
-                            "Attempt to select unrecognized built-in Micrometer registry " + registryName + " ignored");
-                    logRecords.add(logRecord);
-                    LOGGER.log(logRecord);
+                    BuiltInRegistryType type = BuiltInRegistryType.valueByName(registryType);
+
+                    BuiltInRegistrySupport builtInRegistrySupport = BuiltInRegistrySupport.create(type, registryConfig.asNode());
+                    if (builtInRegistrySupport != null) {
+                        candidateBuiltInRegistryTypes.put(type, builtInRegistrySupport);
+                    }
+                } catch (BuiltInRegistryType.UnrecognizedBuiltInRegistryTypeException e) {
+                    unrecognizedTypes.add(e.unrecognizedType());
+                    logRecords.add(new LogRecord(Level.WARNING,
+                            String.format("Ignoring unrecognized built-in registry type %s", e.unrecognizedType())));
                 }
             }
+
+            if (!unrecognizedTypes.isEmpty()) {
+                LOGGER.log(Level.WARNING, String.format("Ignoring unrecognized Micrometer built-in registries: %s",
+                        unrecognizedTypes.toString()));
+            }
+
             // Do not change previous settings if we did not find any valid new built-in registries selected.
-            if (!result.isEmpty()) {
-                builtInRegistries.clear();
-                builtInRegistries.addAll(result);
-                LOGGER.log(Level.FINE, () -> "Selecting built-in Micrometer registries " + result.toString());
+            if (!candidateBuiltInRegistryTypes.isEmpty()) {
+                builtInRegistriesRequested.clear();
+                builtInRegistriesRequested.putAll(candidateBuiltInRegistryTypes);
+                LOGGER.log(Level.FINE,
+                        () -> "Selecting built-in Micrometer registries " + candidateBuiltInRegistryTypes.toString());
             }
         }
     }

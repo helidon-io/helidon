@@ -1,0 +1,64 @@
+
+{
+  "listOfValues" :  {
+    "metrics": {
+      "micrometer": {
+        "builtin-registries": [
+          {"type": "prometheus"},
+          {"type": "prometheus"}
+        ]
+      }
+    }
+   },
+
+  "structure": {
+    "metrics": {
+      "micrometer": {
+        "builtin-registries": [
+          {
+            "type": "prometheus",
+            "prefix": "myPrefix"
+          }
+        ]
+      }
+    }
+  },
+
+  "listOfStructures": {
+    "metrics": {
+      "micrometer": {
+        "builtin-registries": [
+          {
+            "type": "prometheus",
+            "prefix": "prefixOne"
+          },
+          {
+            "type": "prometheus",
+            "prefix": "prefixTwo"
+          }
+        ]
+      }
+    }
+  },
+
+  "singleValue" : {
+    "metrics":  {
+      "micrometer": {
+        "builtin-registries": [
+          {"type": "prometheus"}
+        ]
+      }
+    }
+  },
+
+ "singleBadValueWithGoodOne": {
+  "metrics": {
+    "micrometer": {
+      "builtin-registries": [
+        {"type":  "badReg"},
+        {"type":  "prometheus"}
+      ]
+    }
+  }
+ }
+}

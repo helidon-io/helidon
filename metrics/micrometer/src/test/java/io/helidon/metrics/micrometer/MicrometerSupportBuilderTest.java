@@ -16,21 +16,17 @@
  */
 package io.helidon.metrics.micrometer;
 
+import java.util.Optional;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.not;
 
 import org.junit.jupiter.api.Test;
-
-
-import java.util.Optional;
-import java.util.Properties;
-import java.util.logging.Level;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -41,16 +37,14 @@ public class MicrometerSupportBuilderTest {
     @Test
     public void testValidBuiltInRegistries() {
         MicrometerSupport support = MicrometerSupport.builder()
-                .enrollBuiltInRegistry(MicrometerSupport.Builder.BuiltInRegistry.PROMETHEUS)
+                .enrollBuiltInRegistry(MicrometerSupport.BuiltInRegistryType.PROMETHEUS, PrometheusConfig.DEFAULT)
                 .build();
 
         assertThat("Did not find expected instance of PrometheusMeterRegistry",
                 support.enrolledRegistries()
-                .values()
-                .stream()
-                .filter(PrometheusMeterRegistry.class::isInstance)
-                .findFirst()
-                .isPresent(), is(true));
+                    .values()
+                    .stream()
+                    .anyMatch(PrometheusMeterRegistry.class::isInstance));
     }
 
     @Test
@@ -61,18 +55,16 @@ public class MicrometerSupportBuilderTest {
 
         assertThat("Did not find expected instance of PrometheusMeterRegistry",
                 support.enrolledRegistries()
-                .values()
-                .stream()
-                .filter(PrometheusMeterRegistry.class::isInstance)
-                .findFirst()
-                .isPresent());
+                    .values()
+                    .stream()
+                    .anyMatch(PrometheusMeterRegistry.class::isInstance));
     }
 
     @Test
     public void testBuiltInWithExplicitlyAddedPrometheusRegistries() {
         MicrometerSupport support = MicrometerSupport.builder()
                 .enrollRegistry(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT), req -> Optional.empty())
-                .enrollBuiltInRegistry(MicrometerSupport.Builder.BuiltInRegistry.PROMETHEUS)
+                .enrollBuiltInRegistry(MicrometerSupport.BuiltInRegistryType.PROMETHEUS, PrometheusConfig.DEFAULT)
                 .build();
 
         assertThat("Unexpected count of PrometheusMeterRegistries",
@@ -85,10 +77,8 @@ public class MicrometerSupportBuilderTest {
     }
 
     @Test
-    public void testBuiltInWithNames() {
-        Properties props = new Properties();
-        props.setProperty("metrics.micrometer." + MicrometerSupport.BUILTIN_REGISTRIES_CONFIG_KEY, "prometheus");
-        Config config = Config.create(ConfigSources.create(props));
+    public void testBuiltInWithSingleGoodType() {
+        Config config = Config.create(ConfigSources.classpath("/testData.json")).get("singleValue");
         MicrometerSupport.Builder builder = MicrometerSupport.builder()
                 .config(config.get("metrics.micrometer"));
 
@@ -99,17 +89,59 @@ public class MicrometerSupportBuilderTest {
                 support.enrolledRegistries()
                         .values()
                         .stream()
-                        .filter(PrometheusMeterRegistry.class::isInstance)
-                        .findFirst()
-                        .isPresent());
+                        .anyMatch(PrometheusMeterRegistry.class::isInstance));
+        assertThat(builder.logRecords(), is(empty()));
+    }
 
-        builder = MicrometerSupport.builder();
-        props.setProperty("metrics.micrometer." + MicrometerSupport.BUILTIN_REGISTRIES_CONFIG_KEY, "badReg");
-        config = Config.create(ConfigSources.create(props));
-        builder.config(config.get("metrics.micrometer"));
+    @Test
+    public void testBuiltInWithOneBadType() {
+        Config config = Config.create(ConfigSources.classpath("/testData.json")).get("singleBadValueWithGoodOne");
+        MicrometerSupport.Builder builder = MicrometerSupport.builder()
+                .config(config.get("metrics.micrometer"));
+
+        MicrometerSupport support = builder.build();
+
+        assertThat("Did not find expected instance of PrometheusMeterRegistry",
+                support.enrolledRegistries()
+                        .values()
+                        .stream()
+                        .anyMatch(PrometheusMeterRegistry.class::isInstance));
 
         assertThat(builder.logRecords(), is(not(empty())));
-        assertThat(builder.logRecords().get(0).getLevel(), is(Level.WARNING));
-        assertThat(builder.logRecords().get(0).getMessage(), containsString("badReg"));
+    }
+
+    @Test
+    public void testBuiltInWithConfig() {
+        Config config = Config.create(ConfigSources.classpath("/testData.json")).get("structure");
+
+        MicrometerSupport.Builder builder = MicrometerSupport.builder()
+                .config(config.get("metrics.micrometer"));
+
+        assertThat(builder.logRecords(), is(empty()));
+        MicrometerSupport support = builder.build();
+
+        assertThat("Did not find expected instance of PrometheusMeterRegistry",
+                support.enrolledRegistries()
+                        .values()
+                        .stream()
+                        .anyMatch(PrometheusMeterRegistry.class::isInstance));
+
+    }
+
+    @Test
+    public void testMultipleNamesOnly() {
+        Config config = Config.create(ConfigSources.classpath("/testData.json")).get("listOfValues");
+        MicrometerSupport.Builder builder = MicrometerSupport.builder()
+                .config(config.get("metrics.micrometer"));
+
+        assertThat(builder.logRecords(), is(empty()));
+        MicrometerSupport support = builder.build();
+
+        assertThat("Did not find expected instance of PrometheusMeterRegistry",
+                support.enrolledRegistries()
+                        .values()
+                        .stream()
+                        .anyMatch(PrometheusMeterRegistry.class::isInstance));
+
     }
 }

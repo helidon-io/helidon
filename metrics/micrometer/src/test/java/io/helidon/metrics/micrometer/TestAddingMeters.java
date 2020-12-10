@@ -17,6 +17,7 @@
 package io.helidon.metrics.micrometer;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +30,7 @@ public class TestAddingMeters {
     @Test
     public void addCounter() {
         MicrometerSupport support = MicrometerSupport.builder()
-                .enrollBuiltInRegistry(MicrometerSupport.Builder.BuiltInRegistry.PROMETHEUS)
+                .enrollBuiltInRegistry(MicrometerSupport.BuiltInRegistryType.PROMETHEUS, PrometheusConfig.DEFAULT)
                 .build();
 
         Counter counter1 = support.registry().counter("testCounter", "number", "one");
@@ -42,7 +43,9 @@ public class TestAddingMeters {
         assertThat("testCounter/number=two", support.registry().counter("testCounter", "number", "two").count(), is(2.0));
 
         String output =
-                PrometheusMeterRegistry.class.cast(MicrometerSupport.Builder.BuiltInRegistry.PROMETHEUS.registry()).scrape();
+                PrometheusMeterRegistry.class.cast(
+                        support.enrolledBuiltInRegistries().get(MicrometerSupport.BuiltInRegistryType.PROMETHEUS))
+                        .scrape();
 
         assertThat(output, containsString("testCounter_total{number=\"one\",} 1.0"));
         assertThat(output, containsString("testCounter_total{number=\"two\",} 2.0"));
