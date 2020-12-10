@@ -257,6 +257,13 @@
                 <groupId>jakarta.interceptor</groupId>
                 <artifactId>jakarta.interceptor-api</artifactId>
                 <version>${version.lib.interceptor-api}</version>
+                <exclusions>
+                  <!-- Exclude EJB. See https://github.com/eclipse-ee4j/interceptor-api/issues/31 -->
+                  <exclusion>
+                      <groupId>jakarta.ejb</groupId>
+                      <artifactId>jakarta.ejb-api</artifactId>
+                  </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>jakarta.inject</groupId>
