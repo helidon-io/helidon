@@ -16,10 +16,9 @@
 
 package io.helidon.examples.translator.backend;
 
-import java.io.IOException;
 import java.util.concurrent.CompletionStage;
-import java.util.logging.LogManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.tracing.TracerBuilder;
@@ -37,11 +36,10 @@ public class Main {
     /**
      * Start the server.
      * @return the created {@link WebServer} instance
-     * @throws IOException if there are problems reading logging properties
      */
-    public static CompletionStage<WebServer> startBackendServer() throws IOException {
+    public static CompletionStage<WebServer> startBackendServer() {
         // configure logging in order to not have the standard JVM defaults
-        LogManager.getLogManager().readConfiguration(Main.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         Config config = Config.builder()
                 .sources(ConfigSources.environmentVariables())

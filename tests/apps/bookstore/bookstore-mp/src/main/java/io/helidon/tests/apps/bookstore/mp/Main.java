@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 
 package io.helidon.tests.apps.bookstore.mp;
 
-import java.io.IOException;
-import java.util.logging.LogManager;
-
+import io.helidon.common.LogConfig;
 import io.helidon.microprofile.server.Server;
 
 /**
@@ -34,10 +32,9 @@ public final class Main {
     /**
      * Application main entry point.
      * @param args command line arguments
-     * @throws IOException if there are problems reading logging properties
      */
-    public static void main(final String[] args) throws IOException {
-        setupLogging();
+    public static void main(final String[] args) {
+        LogConfig.configureRuntime();
 
         Server server = startServer();
 
@@ -53,14 +50,5 @@ public final class Main {
         // microprofile-config.properties
         // and Application classes annotated as @ApplicationScoped
         return Server.create().start();
-    }
-
-    /**
-     * Configure logging from logging.properties file.
-     */
-    private static void setupLogging() throws IOException {
-        // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
     }
 }

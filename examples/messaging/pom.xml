@@ -38,6 +38,7 @@
         <module>kafka-websocket-mp</module>
         <module>kafka-websocket-se</module>
         <module>jms-websocket-mp</module>
+        <module>jms-websocket-se</module>
         <module>oracle-aq-websocket-mp</module>
     </modules>
 </project>

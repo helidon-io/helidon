@@ -85,7 +85,7 @@
                     <artifactId>hibernate-enhance-maven-plugin</artifactId>
                     <version>${version.plugin.hibernate.enhance}</version>
                 </plugin>
-           </plugins>
+            </plugins>
         </pluginManagement>
     </build>
 

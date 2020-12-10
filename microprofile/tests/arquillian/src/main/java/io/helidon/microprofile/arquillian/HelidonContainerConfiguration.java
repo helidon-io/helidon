@@ -35,9 +35,11 @@ import org.jboss.arquillian.container.spi.client.container.ContainerConfiguratio
  */
 public class HelidonContainerConfiguration implements ContainerConfiguration {
     private String appClassName = null;
+    private String excludeArchivePattern = null;
     private int port = 8080;
     private boolean deleteTmp = true;
     private boolean useRelativePath = false;
+    private boolean useParentClassloader = true;
 
     public String getApp() {
         return appClassName;
@@ -69,6 +71,22 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
 
     public void setUseRelativePath(boolean b) {
         this.useRelativePath = b;
+    }
+
+    public String getExcludeArchivePattern() {
+        return excludeArchivePattern;
+    }
+
+    public void setExcludeArchivePattern(String excludeArchivePattern) {
+        this.excludeArchivePattern = excludeArchivePattern;
+    }
+
+    public boolean getUserParentClassloader() {
+        return useParentClassloader;
+    }
+
+    public void setUseParentClassloader(boolean useParentClassloader) {
+        this.useParentClassloader = useParentClassloader;
     }
 
     @Override

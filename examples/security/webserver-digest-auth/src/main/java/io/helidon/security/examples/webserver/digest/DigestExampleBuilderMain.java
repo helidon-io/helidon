@@ -16,7 +16,6 @@
 
 package io.helidon.security.examples.webserver.digest;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -25,8 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.LogManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.http.MediaType;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -61,11 +60,10 @@ public final class DigestExampleBuilderMain {
      * Starts this example. Programmatical configuration. See standard output for instructions.
      *
      * @param args ignored
-     * @throws IOException in case of logging configuration failure
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(DigestExampleConfigMain.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // build routing (same as done in application.conf)
         Routing routing = Routing.builder()

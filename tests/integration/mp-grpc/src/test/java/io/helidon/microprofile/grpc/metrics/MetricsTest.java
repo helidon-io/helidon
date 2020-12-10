@@ -19,7 +19,6 @@ package io.helidon.microprofile.grpc.metrics;
 import java.io.StringReader;
 import java.util.Iterator;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import javax.enterprise.inject.Instance;
@@ -32,6 +31,7 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
 
+import io.helidon.common.LogConfig;
 import io.helidon.grpc.examples.common.StringServiceGrpc;
 import io.helidon.grpc.examples.common.Strings.StringMessage;
 import io.helidon.grpc.server.GrpcServer;
@@ -79,7 +79,7 @@ public class MetricsTest {
 
     @BeforeAll
     public static void startServer() throws Exception {
-        LogManager.getLogManager().readConfiguration(MetricsTest.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         server = Server.create().start();
         beanManager = CDI.current().getBeanManager();
