@@ -18,9 +18,9 @@ package io.helidon.grpc.server;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.grpc.core.ContextKeys;
@@ -58,7 +58,7 @@ public class ContextIT {
 
     @BeforeAll
     public static void setup() throws Exception {
-        LogManager.getLogManager().readConfiguration(TracingIT.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         startGrpcServer();
 

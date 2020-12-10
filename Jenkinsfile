@@ -49,6 +49,18 @@ pipeline {
             sh './etc/scripts/checkstyle.sh'
           }
         }
+        stage('test-mysql') {
+          agent {
+            kubernetes {
+              inheritFrom 'k8s-slave'
+              yamlFile 'etc/pods/mysql.yaml'
+              yamlMergeStrategy merge()
+            }
+          }
+          steps {
+            sh './etc/scripts/test-integ-mysql.sh'
+          }
+        }
       }
     }
     stage('release') {

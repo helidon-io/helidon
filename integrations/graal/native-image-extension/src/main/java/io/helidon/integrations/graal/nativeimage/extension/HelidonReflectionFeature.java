@@ -195,7 +195,7 @@ public class HelidonReflectionFeature implements Feature {
                     Class<?> clazz = null;
                     try {
                         clazz = classInfo.loadClass();
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         traceParsing(() -> "Class " + classInfo.getName() + " annotated by " + annotation + " cannot be loaded");
                         traceParsing(() -> "\tException class: " + e.getClass().getName() + ", message: " + e.getMessage());
                     }

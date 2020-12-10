@@ -123,4 +123,29 @@
    <vulnerabilityName>CVE-2020-15250</vulnerabilityName>
 </suppress>
 
+<!-- grpc -->
+<!-- This was applying the version of opentracing-grpc to grpc
+     which triggered CVEs for older versions of grpc and grpc-js
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: opentracing-grpc-0.2.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentracing\.contrib/opentracing\-grpc@.*$</packageUrl>
+   <cpe>cpe:/a:grpc:grpc</cpe>
+</suppress>
+
+<!-- Apache HttpClient / Google HTTP Client -->
+<!-- This was associating the Google HTTP client version number to Apache HttpClient generating a false positive for
+     an Apache HttpClient CVE for versions 4.5.12 and earlier (we use 4.5.13 in Helidon).
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: google-http-client-1.37.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client@.*$</packageUrl>
+   <cpe>cpe:/a:apache:httpclient</cpe>
+</suppress>
+
+
 </suppressions>

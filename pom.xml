@@ -64,7 +64,7 @@
         <version.lib.netty.tcnative>2.0.26.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
-        <version.lib.rxjava>2.0.8</version.lib.rxjava>
+        <version.lib.rxjava>2.2.10</version.lib.rxjava>
         <version.lib.scala>2.12.10</version.lib.scala>
         <!-- This is to force upgrade of transitive dep from arquillian -->
         <!-- 2.x versions used http (not https) to access maven central -->
@@ -182,6 +182,7 @@
         <module>dbclient</module>
         <module>messaging</module>
         <module>fault-tolerance</module>
+        <module>graphql</module>
         <module>logging</module>
     </modules>
 

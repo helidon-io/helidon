@@ -1,0 +1,7 @@
+{
+  "resources":[
+    {"pattern":"com/mysql/cj/util/TimeZoneMapping.properties"}
+  ],
+  "bundles": [
+  ]
+}

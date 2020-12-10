@@ -106,6 +106,9 @@ public class SecurityCdiExtension implements Extension {
         // we need an effectively final instance to use in lambda
         Security security = tmpSecurity;
 
+        // security is available in global
+        Contexts.globalContext().register(security);
+
         JaxRsCdiExtension jaxrs = bm.getExtension(JaxRsCdiExtension.class);
         ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
 

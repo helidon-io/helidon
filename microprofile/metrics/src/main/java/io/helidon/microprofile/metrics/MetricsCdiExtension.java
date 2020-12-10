@@ -70,9 +70,11 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 
 import io.helidon.common.Errors;
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.metrics.MetricsSupport;
+import io.helidon.metrics.RegistryFactory;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.Routing;
@@ -719,6 +721,9 @@ public class MetricsCdiExtension implements Extension {
                         vendorMetricsAdded.add(routeName);
                     }
                 });
+
+        // registry factory is available in global
+        Contexts.globalContext().register(RegistryFactory.getInstance());
     }
 
     private static boolean chooseRestEndpointsSetting(Config metricsConfig) {

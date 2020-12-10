@@ -51,4 +51,19 @@ class TenantTest {
             assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
         }
     }
+
+    @Test
+    public void test3() {
+        Response r;
+        for (int i = 0; i < 3; i++) {
+            String paramValue = Integer.toString(i);
+            r = baseTarget.path("test3")
+                    .queryParam("param1", paramValue)
+                    .request()
+                    .get();
+            assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
+            String entityValue = r.readEntity(String.class);
+            assertThat(entityValue, is(paramValue));
+        }
+    }
 }

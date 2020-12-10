@@ -1,0 +1,14 @@
+{
+    "annotated":[
+        "org.eclipse.microprofile.graphql.GraphQLApi",
+        "org.eclipse.microprofile.graphql.Input",
+        "org.eclipse.microprofile.graphql.Interface",
+        "org.eclipse.microprofile.graphql.Type"
+    ],
+    "class-hierarchy": [
+    ],
+    "classes": [
+    ],
+    "exclude": [
+    ]
+}

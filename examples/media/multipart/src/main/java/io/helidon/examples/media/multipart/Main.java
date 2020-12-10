@@ -19,7 +19,6 @@ import io.helidon.common.http.Http;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.media.multipart.MultiPartSupport;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 
@@ -56,12 +55,9 @@ public final class Main {
      * @param args command line arguments.
      */
     public static void main(String[] args) {
-        ServerConfiguration config = ServerConfiguration.builder()
-                .port(8080)
-                .build();
 
         WebServer server = WebServer.builder(createRouting())
-                .config(config)
+                .port(8080)
                 .addMediaSupport(MultiPartSupport.create())
                 .addMediaSupport(JsonpSupport.create())
                 .build();

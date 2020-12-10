@@ -40,7 +40,7 @@ Helidon libraries interoperate with popular tools from the cloud-native space, s
 * https://opentracing.io/[OpenTracing]
 * https://coreos.com/etcd/[Etcd]
 
-TIP: The <<se/guides/01_overview.adoc,Helidon Quickstart Examples>>
+TIP: The <<about/03_prerequisites.adoc,Helidon Quickstart Examples>>
  contain support for Docker and Kubernetes.
 
 
@@ -105,12 +105,5 @@ View the https://github.com/oracle/helidon/blob/2.0.0-M1/CHANGELOG.md#backward-i
 
 == Next Steps
 
-
-<<se/guides/02_quickstart.adoc,Helidon SE Quickstart Examples>>
-
-<<mp/guides/02_quickstart.adoc, Helidon MP Quickstart Examples>>
-
-
-
-
+Try the <<about/03_prerequisites.adoc,Helidon Quickstart Examples>>.
 
