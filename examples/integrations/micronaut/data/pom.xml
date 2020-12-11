@@ -50,17 +50,13 @@
         </dependency>
         <dependency>
             <groupId>io.micronaut.sql</groupId>
-            <artifactId>micronaut-jdbc-hikari</artifactId>
+            <artifactId>micronaut-jdbc-ucp</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>com.h2database</groupId>
-            <!--
-            Use the following group id if native image is desired
-            Also make sure a remote database is used
-            -->
-            <!-- <groupId>io.helidon.integrations.db</groupId> -->
-            <artifactId>h2</artifactId>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc8-production</artifactId>
+            <type>pom</type>
             <scope>runtime</scope>
         </dependency>
         <dependency>

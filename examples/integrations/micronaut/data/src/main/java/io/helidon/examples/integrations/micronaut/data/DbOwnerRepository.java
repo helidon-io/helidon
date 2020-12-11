@@ -28,7 +28,7 @@ import io.micronaut.data.repository.CrudRepository;
 /**
  * Micronaut Data repository for pet owners.
  */
-@JdbcRepository(dialect = Dialect.H2)
+@JdbcRepository(dialect = Dialect.ORACLE)
 public interface DbOwnerRepository extends CrudRepository<Owner, Long> {
     /**
      * Get all owners from the database.

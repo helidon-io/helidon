@@ -27,14 +27,12 @@ import io.helidon.examples.integrations.micronaut.data.model.Owner;
 import io.helidon.examples.integrations.micronaut.data.model.Pet;
 
 import io.micronaut.context.event.StartupEvent;
-import io.micronaut.core.annotation.TypeHint;
 import io.micronaut.runtime.event.annotation.EventListener;
 
 /**
  * A Micronaut bean that listens on startup event and populates database with data.
  */
 @Singleton
-@TypeHint(typeNames = {"org.h2.Driver", "org.h2.mvstore.db.MVTableEngine"})
 public class DbPopulateData {
     private final DbOwnerRepository ownerRepository;
     private final DbPetRepository petRepository;

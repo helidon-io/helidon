@@ -32,7 +32,7 @@ import io.micronaut.data.repository.PageableRepository;
 /**
  * Micronaut data repository for pets.
  */
-@JdbcRepository(dialect = Dialect.H2)
+@JdbcRepository(dialect = Dialect.ORACLE)
 public abstract class DbPetRepository implements PageableRepository<Pet, UUID> {
 
     /**
