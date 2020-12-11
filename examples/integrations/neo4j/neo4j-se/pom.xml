@@ -35,6 +35,7 @@
     <properties>
         <mainClass>io.helidon.examples.integrations.neo4j.se.Main</mainClass>
         <neo4j.version>1.15.0</neo4j.version>
+        <neo4j-harness.version>4.2.1</neo4j-harness.version>
     </properties>
 
     <dependencies>
@@ -92,12 +93,18 @@
             <artifactId>helidon-webclient</artifactId>
             <scope>test</scope>
         </dependency>
-        <!--testing-->
+        <!--Neo4j harness -->
         <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>neo4j</artifactId>
-            <version>${neo4j.version}</version>
+            <groupId>org.neo4j.test</groupId>
+            <artifactId>neo4j-harness</artifactId>
+            <version>${neo4j-harness.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-nop</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

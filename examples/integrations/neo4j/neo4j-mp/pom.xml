@@ -21,9 +21,6 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <properties>
-        <neo4j.version>1.15.0</neo4j.version>
-    </properties>
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
@@ -33,6 +30,10 @@
     <groupId>io.helidon.examples.integrations.neo4j</groupId>
     <artifactId>helidon-examples-integration-neo4j-mp</artifactId>
     <name>Helidon Neo4j MP integration Example</name>
+
+    <properties>
+        <neo4j-harness.version>4.2.1</neo4j-harness.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -64,11 +65,18 @@
         </dependency>
 
         <!--testing-->
+        <!--Neo4j harness -->
         <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>neo4j</artifactId>
-            <version>${neo4j.version}</version>
+            <groupId>org.neo4j.test</groupId>
+            <artifactId>neo4j-harness</artifactId>
+            <version>${neo4j-harness.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-nop</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
