@@ -64,11 +64,20 @@ class HttpRequestScopedPublisher extends BufferedEmittingPublisher<DataChunk> {
     }
 
     public int emit(ByteBuf data) {
+        if(isCompleted()){
+            data.release();
+            return 0;
+        }
         try {
             return super.emit(new ByteBufRequestChunk(data, referenceQueue));
         } finally {
             referenceQueue.release();
         }
+    }
+
+    public void clearAndRelease() {
+        this.completeNow();
+        super.clearBuffer(DataChunk::release);
     }
 
     @Override

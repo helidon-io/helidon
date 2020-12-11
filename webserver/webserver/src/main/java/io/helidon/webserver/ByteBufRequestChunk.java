@@ -40,7 +40,6 @@ class ByteBufRequestChunk implements DataChunk {
     private final ReferenceHoldingQueue.ReleasableReference<DataChunk> ref;
 
     ByteBufRequestChunk(ByteBuf byteBuf, ReferenceHoldingQueue<DataChunk> referenceHoldingQueue) {
-
         Objects.requireNonNull(byteBuf, "The ByteBuf must not be null!");
         byteBuffers = new ByteBuffer[] {byteBuf.nioBuffer().asReadOnlyBuffer()};
         ref = new ReferenceHoldingQueue.ReleasableReference<>(this, referenceHoldingQueue, byteBuf::release);
@@ -86,7 +85,7 @@ class ByteBufRequestChunk implements DataChunk {
         }
     }
 
-    private static void logLeak() {
+    static void logLeak() {
         // TODO add a link to a website that explains the problem
         LOGGER.warning("LEAK: RequestChunk.release() was not called before it was garbage collected. "
                                + "While the Reactive WebServer is "

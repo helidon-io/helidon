@@ -130,7 +130,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
         LOGGER.fine(() -> String.format("[Handler: %s, Channel: %s] Received object: %s",
                 System.identityHashCode(this), System.identityHashCode(ctx.channel()), msg.getClass()));
-
         if (msg instanceof HttpRequest) {
             lastContent = false;
             // Turns off auto read
@@ -216,7 +215,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                             if (queue.release()) {
                                 queues.remove(queue);
                             }
-                            publisherRef.clearBuffer(DataChunk::release);
+                            publisherRef.clearAndRelease();
 
                             // Enables next response to proceed (HTTP pipelining)
                             thisResp.complete(null);
