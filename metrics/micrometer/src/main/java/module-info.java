@@ -22,6 +22,7 @@ module io.helidon.metrics.micrometer {
     requires io.helidon.webserver.cors;
     requires micrometer.core;
     requires micrometer.registry.prometheus;
+    requires simpleclient;
     requires java.logging;
 
     exports io.helidon.metrics.micrometer;

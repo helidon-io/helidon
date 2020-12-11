@@ -132,17 +132,18 @@ public class MicrometerSupport implements Service {
     private final String context;
 
     private final Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> enrolledRegistries;
+
+    // for testing
     private final Map<BuiltInRegistryType, MeterRegistry> enrolledBuiltInRegistries = new HashMap<>();
 
     private MicrometerSupport(Builder builder) {
         context = builder.context;
         corsEnabledServiceHelper = CorsEnabledServiceHelper.create(SERVICE_NAME, builder.crossOriginConfig);
         compositeMeterRegistry = new CompositeMeterRegistry();
-        enrolledRegistries = builder.enrolledRegistries();
+        enrolledRegistries = builder.registriesToEnroll();
         builder.builtInRegistriesRequested.forEach((builtInRegistryType, builtInRegistrySupport) -> {
             MeterRegistry meterRegistry = builtInRegistrySupport.registry();
             enrolledBuiltInRegistries.put(builtInRegistryType, meterRegistry);
-            enrolledRegistries.put(builtInRegistrySupport.requestToHandlerFn(meterRegistry), meterRegistry);
         });
         enrolledRegistries.values().forEach(compositeMeterRegistry::add);
     }
@@ -233,7 +234,7 @@ public class MicrometerSupport implements Service {
 
         private CrossOriginConfig crossOriginConfig = null;
         private String context = DEFAULT_CONTEXT;
-        private final Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> enrolledRegistries =
+        private final Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> explicitlyEnrolledRegistries =
                 new LinkedHashMap<>();
 
         private final Map<BuiltInRegistryType, BuiltInRegistrySupport> builtInRegistriesRequested = new HashMap<>();
@@ -324,7 +325,7 @@ public class MicrometerSupport implements Service {
          * @return updated builder instance
          */
         public Builder enrollRegistry(MeterRegistry meterRegistry, Function<ServerRequest, Optional<Handler>> handlerFunction) {
-            enrolledRegistries.put(handlerFunction, meterRegistry);
+            explicitlyEnrolledRegistries.put(handlerFunction, meterRegistry);
             return this;
         }
 
@@ -333,8 +334,12 @@ public class MicrometerSupport implements Service {
             return logRecords;
         }
 
-        private Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> enrolledRegistries() {
-            Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> result = new LinkedHashMap<>(enrolledRegistries);
+        private Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> registriesToEnroll() {
+            /*
+             * Combine the explicitly enrolled registries with the selected built-in ones.
+             */
+            Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> result =
+                    new LinkedHashMap<>(explicitlyEnrolledRegistries);
             builtInRegistriesRequested.forEach((builtInRegistrySupportType, builtInRegistrySupport) -> {
                         MeterRegistry meterRegistry = builtInRegistrySupport.registry();
                         result.put(builtInRegistrySupport.requestToHandlerFn(meterRegistry), meterRegistry);

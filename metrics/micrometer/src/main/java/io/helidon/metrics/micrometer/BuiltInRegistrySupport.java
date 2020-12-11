@@ -28,56 +28,16 @@ import io.helidon.webserver.ServerRequest;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterRegistryConfig;
-import io.micrometer.prometheus.PrometheusConfig;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
 
 /**
- * Support for some Micrometer registry types.
+ * Framework for supporting Micrometer registry types.
  */
 abstract class BuiltInRegistrySupport {
 
-    static BuiltInRegistrySupport create(MicrometerSupport.BuiltInRegistryType type,
-            ConfigValue<Config> node) {
-        switch (type) {
-            case PROMETHEUS:
-                return create(type, Prometheus.PrometheusConfigImpl.registryConfig(node));
-
-            default:
-                throw new IllegalArgumentException(
-                        String.format("Built-in registry type %s recognized but no support found", type.name()));
-        }
-    }
-
-    static BuiltInRegistrySupport create(MicrometerSupport.BuiltInRegistryType type,
-            MeterRegistryConfig meterRegistryConfig) {
-        switch (type) {
-            case PROMETHEUS:
-                return new Prometheus(meterRegistryConfig);
-
-            default:
-                throw new IllegalArgumentException(
-                        String.format("Built-in registry type %s recognized but no support found", type.name()));
-        }
-    }
-
-    private final MeterRegistry registry;
-
-    private BuiltInRegistrySupport(MeterRegistryConfig meterRegistryConfig) {
-        registry = createRegistry(meterRegistryConfig);
-    }
-
-    abstract MeterRegistry createRegistry(MeterRegistryConfig meterRegistryConfig);
-
-    MeterRegistry registry() {
-        return registry;
-    }
-
-    abstract Function<ServerRequest, Optional<Handler>> requestToHandlerFn(MeterRegistry registry);
-
-    private abstract static class AbstractMeterRegistryConfig implements MeterRegistryConfig {
+    abstract static class AbstractMeterRegistryConfig implements MeterRegistryConfig {
         private final Map<String, String> settings;
 
-        private AbstractMeterRegistryConfig(Config config) {
+        AbstractMeterRegistryConfig(Config config) {
             settings = config
                     .detach()
                     .asMap()
@@ -90,38 +50,43 @@ abstract class BuiltInRegistrySupport {
         }
     }
 
-    static class Prometheus extends BuiltInRegistrySupport {
+    static BuiltInRegistrySupport create(MicrometerSupport.BuiltInRegistryType type,
+            ConfigValue<Config> node) {
+        switch (type) {
+            case PROMETHEUS:
+                return create(type, PrometheusRegistrySupport.PrometheusConfigImpl.registryConfig(node));
 
-        private static class PrometheusConfigImpl extends AbstractMeterRegistryConfig implements PrometheusConfig {
-
-            static PrometheusConfig registryConfig(ConfigValue<Config> node) {
-                return node
-                        .filter(Config::exists)
-                        .map(PrometheusConfigImpl::registryConfig)
-                        .orElse(PrometheusConfig.DEFAULT);
-            }
-
-            private static PrometheusConfig registryConfig(Config config) {
-                return new PrometheusConfigImpl(config);
-            }
-
-            PrometheusConfigImpl(Config config) {
-                super(config);
-            }
+            default:
+                throw new IllegalArgumentException(unrecognizedMessage(type));
         }
+    }
 
-        Prometheus(MeterRegistryConfig meterRegistryConfig) {
-            super(meterRegistryConfig);
-        }
+    static BuiltInRegistrySupport create(MicrometerSupport.BuiltInRegistryType type,
+            MeterRegistryConfig meterRegistryConfig) {
+        switch (type) {
+            case PROMETHEUS:
+                return new PrometheusRegistrySupport(meterRegistryConfig);
 
-        @Override
-        PrometheusMeterRegistry createRegistry(MeterRegistryConfig meterRegistryConfig) {
-            return new PrometheusMeterRegistry(PrometheusConfig.class.cast(meterRegistryConfig));
+            default:
+                throw new IllegalArgumentException(unrecognizedMessage(type));
         }
+    }
 
-        @Override
-        public Function<ServerRequest, Optional<Handler>> requestToHandlerFn(MeterRegistry registry) {
-            return null;
-        }
+    private final MeterRegistry registry;
+
+    BuiltInRegistrySupport(MeterRegistryConfig meterRegistryConfig) {
+        registry = createRegistry(meterRegistryConfig);
+    }
+
+    abstract MeterRegistry createRegistry(MeterRegistryConfig meterRegistryConfig);
+
+    abstract Function<ServerRequest, Optional<Handler>> requestToHandlerFn(MeterRegistry registry);
+
+    MeterRegistry registry() {
+        return registry;
+    }
+
+    private static String unrecognizedMessage(MicrometerSupport.BuiltInRegistryType type) {
+        return String.format("Built-in registry type %s recognized but no support found", type.name());
     }
 }
