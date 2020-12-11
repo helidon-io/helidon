@@ -28,6 +28,7 @@ import io.helidon.webserver.ServerRequest;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterRegistryConfig;
+import io.micrometer.prometheus.PrometheusConfig;
 
 /**
  * Framework for supporting Micrometer registry types.
@@ -70,6 +71,19 @@ abstract class BuiltInRegistrySupport {
             default:
                 throw new IllegalArgumentException(unrecognizedMessage(type));
         }
+    }
+
+    static BuiltInRegistrySupport create(MicrometerSupport.BuiltInRegistryType type) {
+        MeterRegistryConfig meterRegistryConfig;
+        switch (type) {
+            case PROMETHEUS:
+                meterRegistryConfig = PrometheusConfig.DEFAULT;
+                break;
+
+            default:
+                throw new IllegalArgumentException(unrecognizedMessage(type));
+        }
+        return create(type, meterRegistryConfig);
     }
 
     private final MeterRegistry registry;

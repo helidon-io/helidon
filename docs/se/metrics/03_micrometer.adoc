@@ -26,7 +26,7 @@ Helidon SE simplifies how you can use Micrometer for application-specific metric
 1. The endpoint `/micrometer`: A configurable endpoint that exposes metrics according to which Micrometer meter registry
 responds to the HTTP request.
 2. The link:{javadoc-base-url-api}/MicrometerSupport.html[`MicrometerSupport`] class: A convenience class for enrolling Micrometer meter registries your application
-creates explicitly or for selecting what built-in Micrometer meter registries to
+creates explicitly or for selecting which built-in Micrometer meter registries to
 to use.
 
 Micrometer support is separate from the Helidon SE metrics API and the built-in Helidon metrics.
@@ -43,12 +43,11 @@ Declare the following dependency in your project:
     </dependency>
 ----
 
-== Using Micrometer in Your Application
-
-=== Using a Built-in Micrometer Registry
 Micrometer supports different meter registries for different output styles and formats.
 Helidon provides built-in support for the Prometheus meter registry.
+To use other meter registry types, you will need to add dependencies for them to your `pom.xml`.
 
+== Using Micrometer in Your Application
 To enable Micrometer metrics, register an instance of `MicrometerSupport` with the WebServer.
 
 [source,java]
@@ -98,18 +97,22 @@ public class MyService implements Service {
 ----
 <1> Use the Micrometer meter registry to create the request counter.
 <2> Add routing for any request to invoke the request counter method.
-<3> Update the counter.
+<3> Update the counter and delegate the rest of the request processing to the next handler in the chain.
 
-=== Overriding Defaults
-Helidon uses defaults for any built-in Micrometer meter registry. For example, Helidon configures the built-in
+The example above enrolls the built-in Prometheus meter registry with the default Prometheus registry configuration.
+You can change the default set-up for built-in registries, and you can enroll other meter registries your application
+creates itself.
+
+=== Overriding Defaults for Built-in Meter Registry Types
+Unless otherwise instructed, Helidon uses defaults for any built-in Micrometer meter registry. For example, Helidon configures the built-in
 Prometheus registry using `PrometheusConfig.DEFAULT`.
 
 You can override these defaults in two ways:
 
-* using a `Builder` class, or
+* using the `MicrometerSupport.Builder` class, or
 * using configuration.
 
-==== Overriding Defaults Using `MicrometerSupport.Builder`
+==== Using `MicrometerSupport.Builder`
 The `MicrometerSupport` class exposes a link:{javadoc-base-url-api}/MicrometerSupport$Builder.html[`Builder`] class
 your application can use to set up Micrometer support however your application needs.
 
@@ -126,41 +129,14 @@ object's collection of meter registries.
 ----
 PrometheusConfig myPrometheusConfig = ...; // 1
 MicrometerSupport support = MicrometerSupport.builder()
-                .enrollBuiltInRegistry(MicrometerSupport.BuiltInRegistryType.PROMETHEUS, myPrometheusConfig) // 2
+                .enrollBuiltInRegistry( // 2
+                        MicrometerSupport.BuiltInRegistryType.PROMETHEUS,
+                        myPrometheusConfig)
                 .build();
 ----
 <1> Create the meter registry configuration however you need.
 <2> Enroll the `PROMETHEUS` built-in registry type with your custom configuration.
 
-[source,java]
-.Creating and enrolling your own Micrometer meter registry
-----
-MeterRegistry myRegistry = new PrometheusMeterRegistry(myPrometheusConfig); // 1
-MicrometerSupport support = MicrometerSupport.builder()
-                .enrollRegistry(myRegistry,
-                               (req, resp) -> resp.send(myRegistry.scrape())) // 2
-                .build();
-----
-<1> Create the meter registry. This example uses a Prometheus registry but it can be any extension of `MeterRegistry`.
-<2> Enroll your registry, specifying a function that accepts a
-link:{javadoc-base-url-webserver}/ServerRequest.html[`ServerRequest`] and returns an
-`Optional<link:{:javadoc-base-url-webserver}/Handler.html[``Handler``]>`.
-
-See <<x>> to learn more about writing the
-Your function must examine the request (`Content-Type`, query parameters, etc.) to decide whether your registry should
-be used to respond to the request. If so, your function returns an `Optional` of a `Handler` that uses your
-meter registry to format the output, place it in the response, and send the response. If not, your functions returns
-`Optional.empty()` to indicate that meter registry should not be used in responding to the request.
-
-Different meter registries have different Java methods to produce their output.
-The Prometheus meter registry, used in the example, exposes a `scrape` method which returns a `String`.
-The example above uses the `scrape` method's return value to set the response payload.
-
-Because the Micrometer `MeterRegistry` class exposes no common method for producing the formatted output from
-a meter registry,
-the Micrometer support in Helidon has no way to generate output from arbitrary meter registries.
-For this reason, your application needs to provide a `Handler` that knows both how to retrieve formatted
-output from the meter registry and how to load that output into the response.
 
 ==== Using Configuration
 You can also control the selection and behavior of Helidon's built-in Micrometer meter registries using configuration.
@@ -193,14 +169,44 @@ type.
 Helidon does not validate the configuration keys you specify against the items defined by the corresponding
 meter registry configuration class.
 
-== Enrolling other Micrometer meter registries
+=== Enrolling other Micrometer meter registries
 In addition to using the built-in meter registries, you can create your own registries and enroll them with
-`MicrometerSupport`. Because each meter registry has its own way of producing output, when you explicitly enroll a
-meter registry you also provide a `Function` that accepts a request.
+`MicrometerSupport`.
 
-Your function returns an `Optional<Handler>`
+Because each meter registry has its own way of producing output, when you explicitly enroll a
+meter registry you provide a Helidon webserver `Handler` that accepts a `ServerRequest` and a `ServerResponse`.
+Write your handler so that it has a reference to the meter registry it should use.
+The handler's `accept` method sets the payload in the HTTP response using the registry's mechanism for creating output.
+
+When you enroll a meter registry you also provide a `Function` which accepts a `ServerRequest` and returns an
+`Optional<Handler>`.
+In general, your function looks at the request--the `Content-Type`, query parameters, etc.--to
+decide whether your handler should respond to the request.
+If so, your function should return an `Optional.of(myHandler)`; otherwise, return `Optional.empty()`.
+When `MicrometerSupport` receives a request, it invokes the functions of all the enrolled registries,
+stopping as soon as one function provides a handler.
+`MicrometerSupport` then delegates to that handler to create and send the response.
 
 
+[source,java]
+.Creating and enrolling your own Micrometer meter registry
+----
+MeterRegistry myRegistry = new PrometheusMeterRegistry(myPrometheusConfig); // 1
+MicrometerSupport support = MicrometerSupport.builder()
+                .enrollRegistry(myRegistry,
+                               request -> request // 2
+                                    .headers()
+                                    .bestAccepted(MediaType.TEXT_PLAIN).isPresent()
+                                    ? Optional.of((req, resp) ->
+                                            resp.send(myRegistry.scrape())) // 3
+                                    : Optional.empty())
+                .build();
+----
+<1> Create the meter registry. This example uses a Prometheus registry but it can be any extension of `MeterRegistry`.
+<2> Provide the function that checks if the link:{javadoc-base-url-webserver}/ServerRequest.html[`ServerRequest`]
+accepts `text/plain` (or unspecified) content (either is normally an indication for Prometheus-style output)
+and returns the appropriate `Optional<link:{:javadoc-base-url-webserver}/Handler.html[``Handler``]>`.
+<3> A very simple in-line `Handler` that sets the response entity from the Prometheus registry's `scrape()` method.
 
 == Accessing the Helidon Micrometer Endpoint
 By default, Helidon Micrometer support exposes the `/micrometer` endpoint. You can override this

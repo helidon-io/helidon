@@ -19,12 +19,12 @@ package io.helidon.metrics.micrometer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -131,21 +131,22 @@ public class MicrometerSupport implements Service {
     private final CompositeMeterRegistry compositeMeterRegistry;
     private final String context;
 
-    private final Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> enrolledRegistries;
+    private final List<Enrollment> registryEnrollments;
 
     // for testing
-    private final Map<BuiltInRegistryType, MeterRegistry> enrolledBuiltInRegistries = new HashMap<>();
+    private final Map<BuiltInRegistryType, MeterRegistry> builtInRegistryEnrollments = new HashMap<>();
 
     private MicrometerSupport(Builder builder) {
         context = builder.context;
         corsEnabledServiceHelper = CorsEnabledServiceHelper.create(SERVICE_NAME, builder.crossOriginConfig);
         compositeMeterRegistry = new CompositeMeterRegistry();
-        enrolledRegistries = builder.registriesToEnroll();
+
+        registryEnrollments = builder.explicitAndBuiltInEnrollments();
         builder.builtInRegistriesRequested.forEach((builtInRegistryType, builtInRegistrySupport) -> {
             MeterRegistry meterRegistry = builtInRegistrySupport.registry();
-            enrolledBuiltInRegistries.put(builtInRegistryType, meterRegistry);
+            builtInRegistryEnrollments.put(builtInRegistryType, meterRegistry);
         });
-        enrolledRegistries.values().forEach(compositeMeterRegistry::add);
+        registryEnrollments.forEach(e -> compositeMeterRegistry.add(e.meterRegistry()));
     }
 
     /**
@@ -191,13 +192,13 @@ public class MicrometerSupport implements Service {
     }
 
     // for testing
-    Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> enrolledRegistries(){
-        return enrolledRegistries;
+    Set<MeterRegistry> registries() {
+        return compositeMeterRegistry.getRegistries();
     }
 
     // for testing
     Map<BuiltInRegistryType, MeterRegistry> enrolledBuiltInRegistries() {
-        return enrolledBuiltInRegistries;
+        return builtInRegistryEnrollments;
     }
 
     private void configureEndpoint(Routing.Rules rules) {
@@ -216,8 +217,8 @@ public class MicrometerSupport implements Service {
           looking for the first non-empty Optional<Handler> and invoke that handler. If
           none matches then return an error response.
          */
-        enrolledRegistries.keySet().stream()
-                .map(k -> k.apply(serverRequest))
+        registryEnrollments.stream()
+                .map(e -> e.handlerFn().apply(serverRequest))
                 .findFirst()
                 .filter(Optional::isPresent)
                 .map(Optional::get)
@@ -234,8 +235,7 @@ public class MicrometerSupport implements Service {
 
         private CrossOriginConfig crossOriginConfig = null;
         private String context = DEFAULT_CONTEXT;
-        private final Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> explicitlyEnrolledRegistries =
-                new LinkedHashMap<>();
+        private final List<Enrollment> explicitRegistryEnrollments = new ArrayList<>();
 
         private final Map<BuiltInRegistryType, BuiltInRegistrySupport> builtInRegistriesRequested = new HashMap<>();
 
@@ -276,7 +276,7 @@ public class MicrometerSupport implements Service {
         }
 
         /**
-         * Add a built-in registry instance to support during this execution.
+         * Enrolls a built-in registry type to support.
          *
          * @param builtInRegistryType built-in meter registry type to support
          * @param meterRegistryConfig appropriate {@code MeterRegistryConfig} instance setting up the meter registry
@@ -285,6 +285,18 @@ public class MicrometerSupport implements Service {
         public Builder enrollBuiltInRegistry(BuiltInRegistryType builtInRegistryType, MeterRegistryConfig meterRegistryConfig) {
             BuiltInRegistrySupport builtInRegistrySupport = BuiltInRegistrySupport.create(builtInRegistryType,
                     meterRegistryConfig);
+            builtInRegistriesRequested.put(builtInRegistryType, builtInRegistrySupport);
+            return this;
+        }
+
+        /**
+         * Enrolls a built-in registry type using the default configuration for that type.
+         *
+         * @param builtInRegistryType  built-in meter registry type to support
+         * @return updated builder instance
+         */
+        public Builder enrollBuiltInRegistry(BuiltInRegistryType builtInRegistryType) {
+            BuiltInRegistrySupport builtInRegistrySupport = BuiltInRegistrySupport.create(builtInRegistryType);
             builtInRegistriesRequested.put(builtInRegistryType, builtInRegistrySupport);
             return this;
         }
@@ -320,12 +332,12 @@ public class MicrometerSupport implements Service {
          * Records a {@code MetricRegistry} to be managed by {@code MicrometerSupport}, along with the function that returns an
          * {@code Optional} of a {@code Handler} for processing a given request to the Micrometer endpoint.
          *
-         * @param meterRegistry registry to be enrolled
+         * @param meterRegistry the registry to enroll
          * @param handlerFunction returns {@code Optional<Handler>}; if present, capable of responding to the specified request
          * @return updated builder instance
          */
         public Builder enrollRegistry(MeterRegistry meterRegistry, Function<ServerRequest, Optional<Handler>> handlerFunction) {
-            explicitlyEnrolledRegistries.put(handlerFunction, meterRegistry);
+            explicitRegistryEnrollments.add(new Enrollment(meterRegistry, handlerFunction));
             return this;
         }
 
@@ -334,15 +346,11 @@ public class MicrometerSupport implements Service {
             return logRecords;
         }
 
-        private Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> registriesToEnroll() {
-            /*
-             * Combine the explicitly enrolled registries with the selected built-in ones.
-             */
-            Map<Function<ServerRequest, Optional<Handler>>, MeterRegistry> result =
-                    new LinkedHashMap<>(explicitlyEnrolledRegistries);
+        private List<Enrollment> explicitAndBuiltInEnrollments() {
+            List<Enrollment> result = new ArrayList<>(explicitRegistryEnrollments);
             builtInRegistriesRequested.forEach((builtInRegistrySupportType, builtInRegistrySupport) -> {
                         MeterRegistry meterRegistry = builtInRegistrySupport.registry();
-                        result.put(builtInRegistrySupport.requestToHandlerFn(meterRegistry), meterRegistry);
+                        result.add(new Enrollment(meterRegistry, builtInRegistrySupport.requestToHandlerFn(meterRegistry)));
                     });
             return result;
         }
@@ -382,7 +390,7 @@ public class MicrometerSupport implements Service {
                 } catch (BuiltInRegistryType.UnrecognizedBuiltInRegistryTypeException e) {
                     unrecognizedTypes.add(e.unrecognizedType());
                     logRecords.add(new LogRecord(Level.WARNING,
-                            String.format("Ignoring unrecognized built-in registry type %s", e.unrecognizedType())));
+                            String.format("Ignoring unrecognized Micrometer built-in registry type %s", e.unrecognizedType())));
                 }
             }
 
@@ -398,6 +406,25 @@ public class MicrometerSupport implements Service {
                 LOGGER.log(Level.FINE,
                         () -> "Selecting built-in Micrometer registries " + candidateBuiltInRegistryTypes.toString());
             }
+        }
+    }
+
+    private static class Enrollment {
+
+        private final MeterRegistry meterRegistry;
+        private final Function<ServerRequest, Optional<Handler>> handlerFn;
+
+        private Enrollment(MeterRegistry meterRegistry, Function<ServerRequest, Optional<Handler>> handlerFn) {
+            this.meterRegistry = meterRegistry;
+            this.handlerFn = handlerFn;
+        }
+
+        private MeterRegistry meterRegistry() {
+            return meterRegistry;
+        }
+
+        private Function<ServerRequest, Optional<Handler>> handlerFn() {
+            return handlerFn;
         }
     }
 

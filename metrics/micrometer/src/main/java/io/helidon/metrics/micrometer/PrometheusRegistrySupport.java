@@ -25,6 +25,7 @@ import java.util.function.Function;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.webserver.Handler;
@@ -76,8 +77,7 @@ class PrometheusRegistrySupport extends BuiltInRegistrySupport {
          */
         return (ServerRequest req) -> {
             if (req.headers()
-                    .acceptedTypes()
-                    .contains(MediaType.TEXT_PLAIN)
+                    .bestAccepted(MediaType.TEXT_PLAIN).isPresent()
                     || req.queryParams()
                     .first("type")
                     .orElse("")
