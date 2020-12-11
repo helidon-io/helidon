@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,9 +120,11 @@ public final class OidcSupport implements Service {
     private static final String DEFAULT_REDIRECT = "/index.html";
 
     private final OidcConfig oidcConfig;
+    private final boolean enabled;
 
-    private OidcSupport(OidcConfig oidcConfig) {
-        this.oidcConfig = oidcConfig;
+    private OidcSupport(Builder builder) {
+        this.oidcConfig = builder.oidcConfig;
+        this.enabled = builder.enabled;
     }
 
     /**
@@ -135,13 +137,55 @@ public final class OidcSupport implements Service {
      * @return OIDC webserver integration based on the config
      */
     public static OidcSupport create(Config config, String providerName) {
-        return create(OidcConfig.create(findMyKey(config, providerName)));
+        return builder()
+                .config(config, providerName)
+                .build();
+    }
+
+    /**
+     * Load OIDC support for webserver from config. This works from two places in config tree -
+     * either from root (expecting security.providers.{@value OidcProviderService#PROVIDER_CONFIG_KEY}
+     * under current key) or from the provider's configuration.
+     * (expecting OIDC keys directly under current key).
+     *
+     * @param config Config instance on expected node
+     * @return OIDC webserver integration based on the config
+     */
+    public static OidcSupport create(Config config) {
+        return builder()
+                .config(config, OidcProviderService.PROVIDER_CONFIG_KEY)
+                .build();
+    }
+
+    /**
+     * Load OIDC support for webserver from {@link OidcConfig} instance.
+     * When programmatically configuring your environment, this is the best approach, to share configuration
+     * between this class and {@link OidcProvider}.
+     *
+     * @param oidcConfig configuration of OIDC integration
+     * @return OIDC webserver integration based on the configuration
+     */
+    public static OidcSupport create(OidcConfig oidcConfig) {
+        return builder()
+                .config(oidcConfig)
+                .build();
+    }
+
+    /**
+     * A new builder instance to configure OIDC support.
+     *
+     * @return a new builder
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
     public void update(Routing.Rules rules) {
-        rules.get(oidcConfig.redirectUri(), this::processOidcRedirect)
-             .any(this::addRequestAsHeader);
+        if (enabled) {
+            rules.get(oidcConfig.redirectUri(), this::processOidcRedirect)
+                    .any(this::addRequestAsHeader);
+        }
     }
 
     private void addRequestAsHeader(ServerRequest req, ServerResponse res) {
@@ -237,18 +281,7 @@ public final class OidcSupport implements Service {
         }
     }
 
-    /**
-     * Load OIDC support for webserver from config. This works from two places in config tree -
-     * either from root (expecting security.providers.{@value OidcProviderService#PROVIDER_CONFIG_KEY}
-     * under current key) or from the provider's configuration.
-     * (expecting OIDC keys directly under current key).
-     *
-     * @param config Config instance on expected node
-     * @return OIDC webserver integration based on the config
-     */
-    public static OidcSupport create(Config config) {
-        return create(config, OidcProviderService.PROVIDER_CONFIG_KEY);
-    }
+
 
     private void processError(ServerRequest req, ServerResponse res) {
         String error = req.queryParams().first("error").orElse("invalid_request");
@@ -266,30 +299,92 @@ public final class OidcSupport implements Service {
     }
 
     /**
-     * Load OIDC support for webserver from {@link OidcConfig} instance.
-     * When programmatically configuring your environment, this is the best approach, to share configuration
-     * between this class and {@link OidcProvider}.
-     *
-     * @param oidcConfig configuration of OIDC integration
-     * @return OIDC webserver integration based on the configuration
+     * A fluent API builder for {@link io.helidon.security.providers.oidc.OidcSupport}.
      */
-    public static OidcSupport create(OidcConfig oidcConfig) {
-        return new OidcSupport(oidcConfig);
-    }
+    public static class Builder implements io.helidon.common.Builder<OidcSupport> {
+        private boolean enabled = true;
+        private OidcConfig oidcConfig;
 
-    private static Config findMyKey(Config rootConfig, String providerName) {
-        if (rootConfig.key().name().equals(providerName)) {
-            return rootConfig;
+        private Builder() {
         }
 
-        return rootConfig.get("security.providers")
-                .asNodeList()
-                .get()
-                .stream()
-                .filter(it -> it.get(providerName).exists())
-                .findFirst()
-                .map(it -> it.get(providerName))
-                .orElseThrow(() -> new SecurityException("No configuration found for provider named: " + providerName));
-    }
+        @Override
+        public OidcSupport build() {
+            if (enabled && (oidcConfig == null)) {
+                throw new IllegalStateException("When OIDC and security is enabled, OIDC configuration must be provided");
+            }
+            return new OidcSupport(this);
+        }
 
+        /**
+         * Config located at the provider's key to read {@link io.helidon.security.providers.oidc.common.OidcConfig}.
+         *
+         * @param config configuration at the node of the provider
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            // also add support for `enabled` key in the `oidc` specific config
+            config.get("enabled").asBoolean().ifPresent(this::enabled);
+
+            if (enabled) {
+                this.oidcConfig = OidcConfig.create(config);
+            }
+            return this;
+        }
+
+        /**
+         * Use the provided {@link io.helidon.security.providers.oidc.common.OidcConfig} for this builder.
+         *
+         * @param config OIDC configuration to use
+         * @return updated builder instance
+         */
+        public Builder config(OidcConfig config) {
+            this.oidcConfig = config;
+            return this;
+        }
+
+        /**
+         * Config located either at the configuration root, or at the provider node.
+         *
+         * @param config configuration to use
+         * @param providerName name of the security provider used for the {@link io.helidon.security.providers.oidc.OidcSupport}
+         *                     configuration
+         * @return updated builder instance
+         */
+        public Builder config(Config config, String providerName) {
+            // if this is root config, we need to honor `security.enabled`
+            config.get("security.enabled").asBoolean().ifPresent(this::enabled);
+
+            config(findMyKey(config, providerName));
+            return this;
+        }
+
+        /**
+         * You can disable the OIDC support in case it should not be used.
+         * This can also be achieved through configuration, by setting {@code security.enabled} to {@code false}
+         * when using root configuration, or by setting {@code enabled} to {@code false} when using provider configuration node.
+         *
+         * @param enabled whether the support should be enabled or not
+         * @return updated builder instance
+         */
+        public Builder enabled(boolean enabled) {
+            this.enabled = enabled;
+            return this;
+        }
+
+        private static Config findMyKey(Config rootConfig, String providerName) {
+            if (rootConfig.key().name().equals(providerName)) {
+                return rootConfig;
+            }
+
+            return rootConfig.get("security.providers")
+                    .asNodeList()
+                    .get()
+                    .stream()
+                    .filter(it -> it.get(providerName).exists())
+                    .findFirst()
+                    .map(it -> it.get(providerName))
+                    .orElseThrow(() -> new SecurityException("No configuration found for provider named: " + providerName));
+        }
+    }
 }
