@@ -49,6 +49,20 @@ pipeline {
             sh './etc/scripts/checkstyle.sh'
           }
         }
+        stage('test-mssql') {
+          agent {
+            kubernetes {
+              inheritFrom 'k8s-slave'
+              yamlFile 'etc/pods/mssql.yaml'
+              yamlMergeStrategy merge()
+            }
+          }
+          steps {
+            sh './etc/scripts/test-integ-mssql.sh'
+            archiveArtifacts artifacts: "tests/integration/**/target/failsafe-reports/*.txt"
+            junit testResults: 'tests/integration/**/target/failsafe-reports/*.xml'
+          }
+        }
       }
     }
     stage('release') {

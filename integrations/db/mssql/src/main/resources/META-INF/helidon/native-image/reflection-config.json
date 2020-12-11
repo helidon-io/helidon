@@ -1,0 +1,6 @@
+{
+    "classes": [
+        "org.hibernate.dialect.SQLServerDialect",
+        "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    ]
+}

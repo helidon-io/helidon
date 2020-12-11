@@ -18,6 +18,7 @@ package io.helidon.tests.integration.jpa.appl.test;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,6 +42,29 @@ import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
  */
 public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
 
+   private static enum DbType {
+
+        DEFAULT,
+        MSSQL;
+
+        /**
+         * Get database type based on provided URL.
+         *
+         * @param dbUrl database URL to check
+         * @return database type retrieved from URL
+         */
+        private static DbType get(final String dbUrl) {
+            if (dbUrl == null) {
+                throw new IllegalStateException("Database URL is null!");
+            }
+            if (dbUrl.startsWith("jdbc:sqlserver")) {
+                return MSSQL;
+            }
+            return DEFAULT;
+        }
+
+    }
+
     private static final Logger LOGGER = Logger.getLogger(LifeCycleExtension.class.getName());
 
     private static final String STORE_KEY = LifeCycleExtension.class.getName();
@@ -54,6 +78,8 @@ public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.S
     private static final Client CLIENT = ClientBuilder.newClient();
 
     private static final WebTarget TARGET = CLIENT.target("http://localhost:7001/test");
+
+    private static DbType DB_TYPE = DbType.DEFAULT;
 
     /**
      * Test setup.
@@ -79,8 +105,30 @@ public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.S
      */
     private void setup() {
         LOGGER.fine("Running JPA application test setup()");
-        waitForDatabase();
+       final String dbUrl = System.getProperty("db.url");
+        String dbUser;
+        String dbPassword;
+        DB_TYPE = DbType.get(dbUrl);
+        switch (DB_TYPE) {
+            case MSSQL:
+                dbPassword = System.getProperty("db.sa.password");
+                dbUser = "sa";
+                waitForDatabase(saUrlOfMsSQL(dbUrl), dbUser, dbPassword);
+                break;
+            default:
+                dbUser = System.getProperty("db.user");
+                dbPassword = System.getProperty("db.password");
+                waitForDatabase(dbUrl, dbUser, dbPassword);
+        }
         waitForServer();
+        switch (DB_TYPE) {
+            case MSSQL:
+                final String dbSaPassword = dbPassword;
+                dbUser = System.getProperty("db.user");
+                dbPassword = System.getProperty("db.password");
+                initMsSQL(dbUrl, dbUser, dbPassword, dbSaPassword);
+                break;
+        }
         ClientUtils.callJdbcTest("/setup");
         ClientUtils.callJdbcTest("/test/JdbcApiIT.ping");
         init();
@@ -97,29 +145,24 @@ public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.S
     }
 
     @SuppressWarnings("SleepWhileInLoop")
-    public static void waitForDatabase() {
-        final String dbUser = System.getProperty("db.user");
-        final String dbPassword = System.getProperty("db.password");
-        final String dbUrl = System.getProperty("db.url");
-        boolean connected = false;
+    public static void waitForDatabase(final String dbUrl, final String dbUser, final String dbPassword) {
+        if (dbUrl == null) {
+            throw new IllegalStateException("Database URL was not set!");
+        }
         if (dbUser == null) {
             throw new IllegalStateException("Database user name was not set!");
         }
         if (dbPassword == null) {
             throw new IllegalStateException("Database user password was not set!");
         }
-        if (dbUrl == null) {
-            throw new IllegalStateException("Database URL was not set!");
-        }
         long endTm = 1000 * TIMEOUT + System.currentTimeMillis();
         while (true) {
             try {
                 Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
-                connected = true;
                 Utils.closeConnection(conn);
                 return;
             } catch (SQLException ex) {
-                LOGGER.fine(() -> String.format("Connection check: %s", ex.getMessage()));
+                LOGGER.info(() -> String.format("Connection check: %s", ex.getMessage()));
                 if (System.currentTimeMillis() > endTm) {
                     throw new IllegalStateException(String.format("Database is not ready within %d seconds", TIMEOUT));
                 }
@@ -182,6 +225,90 @@ public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.S
         WebTarget exit = TARGET.path("/exit");
         Response response = exit.request().get();
         LOGGER.info(() -> String.format("Status: %s", response.readEntity(String.class)));
+    }
+
+    // Specific database initialization code
+
+    /**
+     * Strip query parameters from MsSQL URL to get SA connection URL.
+     *
+     * @param dbUrl database URL
+     * @return database URL without query parameters
+     */
+    private static String saUrlOfMsSQL(final String dbUrl) {
+        final int semiColonPos = dbUrl.indexOf(';');
+        return semiColonPos > 0 ? dbUrl.substring(0, semiColonPos) : dbUrl;
+    }
+
+
+    /**
+     * Execute SQL statement.
+     *
+     * @param conn database connection
+     * @param sql SQL statement
+     * @param errMsg error message to log when statement execution failed
+     */
+    private static void executeStatement(final Connection conn, final String sql, final String errMsg) {
+        try {
+            Statement stmt = conn.createStatement();
+            final int dbCount = stmt.executeUpdate(sql);
+            LOGGER.log(Level.INFO, () -> String.format("Executed EXEC statement. %d records modified.", dbCount));
+        } catch (SQLException ex) {
+            LOGGER.log(Level.WARNING, errMsg, ex);
+        }
+    }
+
+    /**
+     * Initialize MsSQL database.
+     * Database name is retrieved from connection URL.
+     *
+     * @param dbUrl MsSQL database connection URL with database name
+     * @param dbUser MsSQL database connection user name
+     * @param dbPassword MsSQL database connection user password
+     */
+    private static void initMsSQL(final String dbUrl, final String dbUser, final String dbPassword, final String dbSaPassword) {
+        String database = null;
+        final int semiColonPos = dbUrl.indexOf(';');
+        if (semiColonPos < 0) {
+            throw new IllegalArgumentException("MsSQL URL Query does not contain query parameters");
+        }
+        final String urlQuery = dbUrl.substring(semiColonPos + 1);
+        LOGGER.fine(() -> String.format("URL %s has query part %s", dbUrl, urlQuery));
+        final int pos = urlQuery.indexOf("databaseName=");
+        if (pos < 0) {
+            throw new IllegalArgumentException("MsSQL URL Query does not contain databaseName parameter");
+        }
+        if (urlQuery.length() < (pos + 14)) {
+            throw new IllegalArgumentException("MsSQL URL Query dose not contain databaseName parameter value");
+        }
+        final int end = urlQuery.indexOf(dbUser, pos + 13);
+        database = end > 0 ? urlQuery.substring(pos + 13, end) : urlQuery.substring(pos + 13);
+        if (database == null) {
+            throw new IllegalStateException("Missing database name!");
+        }
+        try (Connection conn = DriverManager.getConnection(saUrlOfMsSQL(dbUrl), "sa", dbSaPassword)) {
+            executeStatement(conn,
+                    String.format("EXEC sp_configure 'CONTAINED DATABASE AUTHENTICATION', 1", database),
+                    "Could not configure database:");
+            executeStatement(conn,
+                    "RECONFIGURE", "Could not reconfigure database:");
+            executeStatement(conn,
+                    String.format("CREATE DATABASE %s CONTAINMENT = PARTIAL", database),
+                    "Could not create database:");
+            executeStatement(conn,
+                    String.format("USE %s", database), "Could not use database:");
+            executeStatement(conn,
+                    String.format("CREATE USER %s WITH PASSWORD = '%s'", dbUser, dbPassword),
+                    "Could not create database user:");
+            executeStatement(conn,
+                    String.format("GRANT ALL TO %s", dbUser),
+                    "Could not grant database privilegs to user:");
+            executeStatement(conn,
+                    String.format("GRANT CONTROL ON SCHEMA::dbo TO %s", dbUser),
+                    "Could not grant database privilegs to user:");
+        } catch (SQLException ex) {
+                LOGGER.log(Level.WARNING, "Could not open database connection:", ex);
+        }
     }
 
 }
