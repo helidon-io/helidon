@@ -25,7 +25,6 @@ import java.util.function.Function;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.webserver.Handler;
