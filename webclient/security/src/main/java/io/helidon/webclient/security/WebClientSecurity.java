@@ -22,6 +22,7 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.reactive.Single;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
@@ -47,9 +48,14 @@ public class WebClientSecurity implements WebClientService {
 
     private static final String PROVIDER_NAME = "io.helidon.security.rest.client.security.providerName";
 
-    private Security security;
+    private final Security security;
 
     private WebClientSecurity() {
+        this(null);
+    }
+
+    private WebClientSecurity(Security security) {
+        this.security = security;
     }
 
     /**
@@ -58,7 +64,11 @@ public class WebClientSecurity implements WebClientService {
      * @return client security service
      */
     public static WebClientSecurity create() {
-        return new WebClientSecurity();
+        Context context = Contexts.context().orElseGet(Contexts::globalContext);
+
+        return context.get(Security.class)
+                .map(WebClientSecurity::new) // if available, use constructor with Security parameter
+                .orElseGet(WebClientSecurity::new); // else use constructor without Security parameter
     }
 
     /**
@@ -68,9 +78,8 @@ public class WebClientSecurity implements WebClientService {
      * @return client security service
      */
     public static WebClientSecurity create(Security security) {
-        WebClientSecurity clientSecurity = create();
-        clientSecurity.security = security;
-        return clientSecurity;
+        // if we have one more configuration parameter, we need to switch to builder based pattern
+        return new WebClientSecurity(security);
     }
 
     @Override

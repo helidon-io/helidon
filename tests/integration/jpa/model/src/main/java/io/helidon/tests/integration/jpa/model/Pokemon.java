@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -34,6 +35,8 @@ import javax.persistence.UniqueConstraint;
  */
 @Entity
 public class Pokemon implements Serializable {
+
+    private static final Logger LOGGER = Logger.getLogger(Pokemon.class.getName());
 
     @Id
     @GeneratedValue
@@ -141,7 +144,7 @@ public class Pokemon implements Serializable {
                     && Objects.equals(trainer, ((Pokemon)oth).trainer)
                     && listEquals(((Pokemon)oth).types);
         }
-        System.out.println("Pokemon instanceof failed: " + oth.getClass().getName());
+        LOGGER.warning(() -> String.format("Pokemon instanceof failed: %s", oth.getClass().getName()));
         return false;
     }
 

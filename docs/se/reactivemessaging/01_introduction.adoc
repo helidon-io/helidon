@@ -115,9 +115,10 @@ like <<mp/reactivemessaging/01_introduction.adoc,MicroProfile Reactive Messaging
 This allows connectors to be usable in both flavors of Helidon with one limitation which is
 that connector has to be able to work without CDI.
 
-Example of such a versatile connector is Helidon's own:
+Example of such a versatile connectors in Helidon:
 
  * <<se/reactivemessaging/04_kafka.adoc,Kafka connector>>
+ * <<se/reactivemessaging/05_jms.adoc,JMS connector>>
 
 
 === Dependency

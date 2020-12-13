@@ -15,6 +15,10 @@
  */
 package io.helidon.tests.integration.jpa.appl.test;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.json.stream.JsonParsingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -25,12 +29,16 @@ import javax.ws.rs.core.Response;
  */
 public class ClientUtils {
     
+    private static final Logger LOGGER = Logger.getLogger(ClientUtils.class.getName());
+
     private ClientUtils() {
         throw new UnsupportedOperationException("Instances of ClientUtils class are not allowed");
     }
 
     private static final Client CLIENT = ClientBuilder.newClient();
+    // FIXME: Use random port.
     private static final WebTarget TARGET = CLIENT.target("http://localhost:7001/test");
+    private static final WebTarget TARGET_JDBC = CLIENT.target("http://localhost:7001/testJdbc");
 
     /**
      * Call remote test on MP server using REST interface.
@@ -40,7 +48,28 @@ public class ClientUtils {
     public static void callTest(final String path) {
         WebTarget status = TARGET.path(path);
         Response response = status.request().get();
-        Validate.check(response.readEntity(String.class));
+        String responseStr = response.readEntity(String.class);
+        try {
+            Validate.check(responseStr);
+        } catch (JsonParsingException t) {
+            LOGGER.log(Level.SEVERE, t, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr));
+        }
+    }
+
+    /**
+     * Call remote test on MP server using REST interface.
+     *
+     * @param path test path (URL suffix {@code <class>.<method>})
+     */
+    public static void callJdbcTest(final String path) {
+        WebTarget status = TARGET_JDBC.path(path);
+        Response response = status.request().get();
+        String responseStr = response.readEntity(String.class);
+        try {
+            Validate.check(responseStr);
+        } catch (JsonParsingException t) {
+            LOGGER.log(Level.SEVERE, t, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr));
+        }
     }
 
 }

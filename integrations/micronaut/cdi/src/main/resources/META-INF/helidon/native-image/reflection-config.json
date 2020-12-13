@@ -1,0 +1,14 @@
+{
+    "annotated":[
+    ],
+    "class-hierarchy": [
+    ],
+    "classes": [
+    ],
+    "exclude": [
+        "io.micronaut.transaction.test.DefaultTestTransactionInterceptor",
+        "io.micronaut.http.server.exceptions.ExceptionHandler",
+        "io.micronaut.validation.exceptions.ConstraintExceptionHandler",
+        "io.micronaut.validation.exceptions.ValidationExceptionHandler"
+    ]
+}

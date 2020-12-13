@@ -20,7 +20,7 @@ small, pocket size and pre-configured testing Kafka server Docker image is avail
 ### Test JMS server
 * Start ActiveMQ server locally: 
 ```bash
-docker run --name='activemq' -p 61616:61616 -p 8161:8161 rmohr/activemq
+docker run --name='activemq' --rm -p 61616:61616 -p 8161:8161 rmohr/activemq
 ```
 
 ### Test Oracle database

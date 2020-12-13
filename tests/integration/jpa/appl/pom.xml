@@ -34,8 +34,7 @@ limitations under the License.
     <properties>
         <mainClass>io.helidon.microprofile.cdi.Main</mainClass>
         <mainClassH2>org.h2.tools.Server</mainClassH2>
-        <h2.db.password>p4ssw0rd</h2.db.password>
-        <h2.db.port>9092</h2.db.port>
+        <version.plugin.docker-maven-plugin>0.34.1</version.plugin.docker-maven-plugin>
     </properties>
 
     <dependencies>
@@ -57,27 +56,6 @@ limitations under the License.
             <artifactId>helidon-microprofile-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss</groupId>
-            <artifactId>jandex</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.transaction</groupId>
-            <artifactId>jakarta.transaction-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.cdi</groupId>
-            <artifactId>helidon-integrations-cdi-delegates</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
             <artifactId>helidon-integrations-cdi-hibernate</artifactId>
             <scope>compile</scope>
@@ -88,13 +66,14 @@ limitations under the License.
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss</groupId>
-            <artifactId>jboss-transaction-spi</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
             <artifactId>helidon-integrations-cdi-jta</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.cdi</groupId>
+            <artifactId>helidon-integrations-cdi-delegates</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
@@ -107,8 +86,29 @@ limitations under the License.
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.db</groupId>
-            <artifactId>h2</artifactId>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss</groupId>
+            <artifactId>jandex</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss</groupId>
+            <artifactId>jboss-transaction-spi</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -124,6 +124,33 @@ limitations under the License.
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+                <excludes>
+                    <exclude>META-INF/microprofile-config.properties</exclude>
+                    <exclude>META-INF/persistence.xml</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/resources/META-INF</directory>
+                <targetPath>META-INF</targetPath>
+                <includes>
+                    <include>microprofile-config.properties</include>
+                    <include>persistence.xml</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>${version.plugin.docker-maven-plugin}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -198,60 +225,14 @@ limitations under the License.
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>start-db</id>
-                        <phase>pre-integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>java</executable>
-                            <arguments>
-                                <argument>-classpath</argument>
-                                <argument>${project.build.directory}/libs/h2-${version.lib.h2}.jar</argument>
-                                <argument>${mainClassH2}</argument>
-                                <argument>-tcp</argument>
-                                <argument>-tcpPassword</argument>
-                                <argument>${h2.db.password}</argument>
-                                <argument>-tcpPort</argument>
-                                <argument>${h2.db.port}</argument>
-                                <argument>-baseDir</argument>
-                                <argument>${project.build.directory}/h2</argument>
-                                <argument>-ifNotExists</argument>
-                            </arguments>
-                            <async>true</async>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>stop-db</id>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>java</executable>
-                            <arguments>
-                                <argument>-classpath</argument>
-                                <argument>${project.build.directory}/libs/h2-${version.lib.h2}.jar</argument>
-                                <argument>${mainClassH2}</argument>
-                                <argument>-tcpShutdown</argument>
-                                <argument>tcp://localhost:${h2.db.port}</argument>
-                                <argument>-tcpPassword</argument>
-                                <argument>${h2.db.password}</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <parallel>methods</parallel>
                     <threadCount>10</threadCount>
+                    <systemPropertyVariables>
+                        <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                    </systemPropertyVariables>
                 </configuration>
                 <executions>
                     <execution>
@@ -259,22 +240,11 @@ limitations under the License.
                         <phase>integration-test</phase>
                         <goals>
                             <goal>integration-test</goal>
+                            <goal>verify</goal>
                         </goals>
                         <configuration>
                             <includes>
                                 <include>io.helidon.tests.integration.jpa.appl.test.*IT</include>
-                            </includes>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>stop</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>integration-test</goal>
-                        </goals>
-                        <configuration>
-                            <includes>
-                                <include>io.helidon.tests.integration.jpa.appl.stop.*IT</include>
                             </includes>
                         </configuration>
                     </execution>
@@ -344,6 +314,205 @@ limitations under the License.
                             </execution>
                         </executions>
                     </plugin>                   
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>docker</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>start</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>stop</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>h2</id>
+            <activation>
+                <property>
+                    <name>h2</name>
+                </property>
+            </activation>
+            <properties>
+                <db.port>9092</db.port>
+                <db.host>localhost</db.host>
+                <db.database>pokemon</db.database>
+                <db.user>sa</db.user>
+                <db.password></db.password>
+                <db.roootpw>root</db.roootpw>
+                <db.url>jdbc:h2:tcp://${db.host}:${db.port}/test</db.url>
+                <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
+                <db.datasource>org.h2.jdbcx.JdbcDataSource</db.datasource>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>io.helidon.integrations.db</groupId>
+                    <artifactId>h2</artifactId>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <db.user>${db.user}</db.user>
+                                <db.password>${db.password}</db.password>
+                                <db.url>${db.url}</db.url>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>start-db</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>java</executable>
+                                    <arguments>
+                                        <argument>-classpath</argument>
+                                        <argument>${project.build.directory}/libs/h2-${version.lib.h2}.jar</argument>
+                                        <argument>${mainClassH2}</argument>
+                                        <argument>-tcp</argument>
+                                        <argument>-tcpPassword</argument>
+                                        <argument>${h2.db.password}</argument>
+                                        <argument>-tcpPort</argument>
+                                        <argument>${h2.db.port}</argument>
+                                        <argument>-baseDir</argument>
+                                        <argument>${project.build.directory}/h2</argument>
+                                        <argument>-ifNotExists</argument>
+                                    </arguments>
+                                    <async>true</async>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>stop-db</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>java</executable>
+                                    <arguments>
+                                        <argument>-classpath</argument>
+                                        <argument>${project.build.directory}/libs/h2-${version.lib.h2}.jar</argument>
+                                        <argument>${mainClassH2}</argument>
+                                        <argument>-tcpShutdown</argument>
+                                        <argument>tcp://localhost:${h2.db.port}</argument>
+                                        <argument>-tcpPassword</argument>
+                                        <argument>${h2.db.password}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>mysql</id>
+            <activation>
+                <property>
+                    <name>mysql</name>
+                </property>
+            </activation>
+            <properties>
+                <db.port>3306</db.port>
+                <db.host>127.0.0.1</db.host>
+                <db.database>pokemon</db.database>
+                <db.args>useSSL=false&amp;allowPublicKeyRetrieval=true</db.args>
+                <db.user>user</db.user>
+                <db.password>password</db.password>
+                <db.roootpw>root</db.roootpw>
+                <db.url>jdbc:mysql://${db.host}:${db.port}/${db.database}?${db.args}</db.url>
+                <hibernate.dialect>org.hibernate.dialect.MySQL5Dialect</hibernate.dialect>
+                <db.datasource>com.mysql.cj.jdbc.MysqlDataSource</db.datasource>
+                <db.driver>com.mysql.cj.jdbc.Driver</db.driver>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>io.helidon.integrations.db</groupId>
+                    <artifactId>helidon-integrations-db-mysql</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>mysql</groupId>
+                    <artifactId>mysql-connector-java</artifactId>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <db.user>${db.user}</db.user>
+                                <db.password>${db.password}</db.password>
+                                <db.url>${db.url}</db.url>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>mysql:8</name>
+                                    <alias>mysql</alias>
+                                    <run>
+                                        <env>
+                                            <MYSQL_USER>${db.user}</MYSQL_USER>
+                                            <MYSQL_PASSWORD>${db.password}</MYSQL_PASSWORD>
+                                            <MYSQL_ROOT_PASSWORD>${db.roootpw}</MYSQL_ROOT_PASSWORD>
+                                            <MYSQL_DATABASE>${db.database}</MYSQL_DATABASE>
+                                        </env>
+                                        <hostname>${db.host}</hostname>
+                                        <ports>
+                                            <port>${db.host}:${db.port}:3306</port>
+                                        </ports>
+                                        <wait>
+                                            <tcp>
+                                                <host>127.0.0.1</host>
+                                                <ports>
+                                                    <port>${db.port}</port>
+                                                </ports>
+                                            </tcp>
+                                            <time>120000</time>
+                                        </wait>
+                                    </run>
+                                </image>
+                            </images>
+                            <showLogs>true</showLogs>
+                            <startParallel>false</startParallel>
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
         </profile>

@@ -32,9 +32,10 @@ import org.eclipse.microprofile.health.Liveness;
 
 /**
  * A health check that looks for thread deadlocks. Automatically created and registered via CDI.
- *
- * This health check can be referred to in properties as "deadlock". So for example, to exclude this
- * health check from being exposed, use "helidon.health.exclude: deadlock".
+ * <p>
+ * This health check can be referred to in properties as {@code deadlock}. So for example, to exclude this
+ * health check from being exposed, use {@code helidon.health.exclude: deadlock}.
+ * </p>
  */
 @Liveness
 @ApplicationScoped // this will be ignored if not within CDI

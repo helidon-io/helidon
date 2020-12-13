@@ -16,10 +16,9 @@
 
 package io.helidon.security.examples.idcs;
 
-import java.io.IOException;
 import java.util.Optional;
-import java.util.logging.LogManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
@@ -50,11 +49,10 @@ public final class IdcsMain {
      * Start the example.
      *
      * @param args ignored
-     * @throws IOException if logging configuration fails
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(IdcsMain.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         Config config = buildConfig();
 

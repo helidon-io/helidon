@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package io.helidon.security.integration.grpc;
 
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.LogManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
@@ -67,8 +67,7 @@ public class ServiceAndMethodLevelSecurityIT {
 
     @BeforeAll
     public static void startServer() throws Exception {
-        LogManager.getLogManager().readConfiguration(
-                ServiceAndMethodLevelSecurityIT.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         Config config = Config.create();
 

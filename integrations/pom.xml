@@ -43,6 +43,7 @@
         <module>cdi</module>
         <module>graal</module>
         <module>db</module>
+        <module>micronaut</module>
     </modules>
 
     <build>

@@ -35,6 +35,7 @@
         <module>tck-health</module>
         <module>tck-metrics</module>
         <module>tck-messaging</module>
+        <module>tck-graphql</module>
         <module>tck-jwt-auth</module>
         <module>tck-openapi</module>
         <module>tck-opentracing</module>

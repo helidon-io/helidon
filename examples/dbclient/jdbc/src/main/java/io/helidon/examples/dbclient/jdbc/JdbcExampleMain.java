@@ -16,9 +16,7 @@
 
 package io.helidon.examples.dbclient.jdbc;
 
-import java.io.IOException;
-import java.util.logging.LogManager;
-
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
@@ -45,9 +43,8 @@ public final class JdbcExampleMain {
      * Application main entry point.
      *
      * @param args command line arguments.
-     * @throws java.io.IOException if there are problems reading logging properties
      */
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
         startServer();
     }
 
@@ -55,13 +52,11 @@ public final class JdbcExampleMain {
      * Start the server.
      *
      * @return the created {@link io.helidon.webserver.WebServer} instance
-     * @throws java.io.IOException if there are problems reading logging properties
      */
-    static WebServer startServer() throws IOException {
+    static WebServer startServer() {
 
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                JdbcExampleMain.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();

@@ -152,6 +152,14 @@ final class FeatureCatalog {
                     .path("WebServer", "Websocket")
                     .nativeSupported(true)
                     .nativeDescription("Server only"));
+        add("io.helidon.graphql.server",
+            FeatureDescriptor.builder()
+                    .name("GraphQL")
+                    .description("GraphQL support")
+                    .path("GraphQL")
+                    .nativeDescription("Experimental support, tested on limited use cases")
+                    .flavor(HelidonFlavor.SE)
+                    .experimental(true));
 
         /*
          * MP Modules
@@ -203,6 +211,14 @@ final class FeatureCatalog {
               "Fault Tolerance",
               "MicroProfile Fault Tolerance spec implementation",
               "FT");
+        add("io.helidon.microprofile.graphql.server",
+            FeatureDescriptor.builder()
+                    .name("GraphQL")
+                    .description("MicroProfile GraphQL spec implementation")
+                    .path("GraphQL")
+                    .nativeDescription("Experimental support, tested on limited use cases")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true));
         add("io.helidon.microprofile.grpc.server",
             FeatureDescriptor.builder()
                     .name("gRPC Server")
@@ -290,6 +306,24 @@ final class FeatureCatalog {
                     .flavor(HelidonFlavor.MP)
                     .nativeDescription("Does not support execution of default methods on interfaces."));
 
+        add("io.helidon.integrations.micronaut.cdi",
+            FeatureDescriptor.builder()
+                    .name("Micronaut")
+                    .description("Micronaut integration")
+                    .path("CDI", "Micronaut")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true)
+        );
+
+        add("io.helidon.integrations.micronaut.cdi.data",
+            FeatureDescriptor.builder()
+                    .name("Micronaut Data")
+                    .description("Micronaut Data integration")
+                    .path("CDI", "Micronaut", "Data")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true)
+        );
+
         /*
          * Common modules
          */
@@ -361,7 +395,7 @@ final class FeatureCatalog {
                     .description("Reactive messaging connector for Kafka")
                     .path("Messaging", "Kafka")
                     .experimental(true)
-                    .nativeSupported(false));
+                    .nativeSupported(true));
         add("io.helidon.messaging.connectors.jms",
             FeatureDescriptor.builder()
                     .name("JMS Connector")

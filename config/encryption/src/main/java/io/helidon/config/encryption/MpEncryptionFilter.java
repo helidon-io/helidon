@@ -38,7 +38,7 @@ import org.eclipse.microprofile.config.Config;
  * property or environment variable)</li>
  * <li>${RSA=base64} - encrypted password using a public key (private key must be available to Prime instance,
  * its location must be provided to prime through configuration, system property or environment variable)</li>
- * <li>${ALIAS=alias_name} - reference to another property, that is encrypted</li>
+ * <li>${ALIAS=alias_name} - no longer needed, please use {@code ${alias_name}}</li>
  * <li>${CLEAR=text} - clear-text password. Intentionally denoting this value as a protectable one, so we can enforce encryption
  * (e.g. in prod)</li>
  * </ul>
@@ -46,7 +46,7 @@ import org.eclipse.microprofile.config.Config;
  * <pre>
  * google_client_secret=${AES=mYRkg+4Q4hua1kvpCCI2hg==}
  * service_password=${RSA=mYRkg+4Q4hua1kvpCCI2hg==}
- * another_password=${ALIAS=service_password}
+ * another_password=${service_password}
  * cleartext_password=${CLEAR=known_password}
  * </pre>
  *

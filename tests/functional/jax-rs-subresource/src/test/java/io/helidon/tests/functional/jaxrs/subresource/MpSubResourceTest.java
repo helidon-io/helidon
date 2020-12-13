@@ -16,29 +16,25 @@
 
 package io.helidon.tests.functional.jaxrs.subresource;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.logging.LogManager;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import io.helidon.microprofile.server.Server;
+import io.helidon.common.LogConfig;
 import io.helidon.jersey.connector.HelidonConnectorProvider;
+import io.helidon.microprofile.server.Server;
 
 import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.spi.ConnectorProvider;
-
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -51,8 +47,9 @@ class MpSubResourceTest {
     private static WebTarget baseTarget;
 
     @BeforeAll
-    static void initClass() throws IOException {
-        LogManager.getLogManager().readConfiguration(MpSubResourceTest.class.getResourceAsStream("/logging.properties"));
+    static void initClass() {
+        LogConfig.configureRuntime();
+
         Main.main(new String[0]);
         server = Main.server();
         client = ClientBuilder.newClient();

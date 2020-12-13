@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -179,6 +179,9 @@ class ContextsTest {
 
     @Test
     void testMultipleContexts() {
+        Context global = Contexts.globalContext();
+        global.register("global", TEST_STRING);
+
         Context topLevel = Context.create();
         topLevel.register("topLevel", TEST_STRING);
         topLevel.register("first", TEST_STRING);
@@ -189,16 +192,19 @@ class ContextsTest {
 
         Contexts.runInContext(topLevel, () -> {
             Context myContext = Contexts.context().get();
+            assertThat(myContext.get("global", String.class), is(TEST_STRING_OPTIONAL));
             assertThat(myContext.get("topLevel", String.class), is(TEST_STRING_OPTIONAL));
             assertThat(myContext.get("first", String.class), is(TEST_STRING_OPTIONAL));
 
             Contexts.runInContext(firstLevel, () -> {
                 Context firstLevelContext = Contexts.context().get();
+                assertThat(myContext.get("global", String.class), is(TEST_STRING_OPTIONAL));
                 assertThat(firstLevelContext.get("topLevel", String.class), is(TEST_STRING_OPTIONAL));
                 assertThat(firstLevelContext.get("first", String.class), is(Optional.of(TEST_STRING + "_1")));
                 assertThat(firstLevelContext.get("second", String.class), is(TEST_STRING_OPTIONAL));
             });
 
+            assertThat(myContext.get("global", String.class), is(TEST_STRING_OPTIONAL));
             assertThat(myContext.get("topLevel", String.class), is(TEST_STRING_OPTIONAL));
             assertThat(myContext.get("first", String.class), is(TEST_STRING_OPTIONAL));
         });

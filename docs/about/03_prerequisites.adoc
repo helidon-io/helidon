@@ -16,11 +16,11 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Prerequisites
-:description: Helidon pre-requisites
+= Get Started
+:description: Helidon pre-requisites and getting started
 :keywords: helidon
 
-Everything you need to use Helidon is listed here.
+Everything you need to get started with Helidon is listed here.
 
 == Prerequisites
 
@@ -67,3 +67,5 @@ Now you are ready to try the Quickstart Examples:
 1. <<mp/guides/02_quickstart.adoc,Helidon MP Quickstart Example>>
 2. <<se/guides/02_quickstart.adoc,Helidon SE Quickstart Example>>
 
+TIP: See <<about/02_introduction.adoc,About Helidon>>
+for more information on the differences between Helidon MP and SE.

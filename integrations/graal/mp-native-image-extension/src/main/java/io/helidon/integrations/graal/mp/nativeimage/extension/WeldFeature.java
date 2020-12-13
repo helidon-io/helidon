@@ -188,7 +188,7 @@ public class WeldFeature implements Feature {
                         + beanTypes
                         + ", proxy class: "
                         + proxy.getClass().getName());
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 // try interfaces
                 warn(() -> "Failed to create a proxy for bean "
                         + bean.getBeanClass() + ", "
