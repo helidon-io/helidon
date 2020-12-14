@@ -60,5 +60,24 @@
       ]
     }
   }
- }
+ },
+
+  "explicitContext": {
+    "metrics": {
+      "micrometer": {
+        "web-context": "/cc"
+      }
+    }
+  },
+
+  "explicitContextWithExplicitBuiltIn": {
+    "metrics": {
+      "micrometer": {
+        "web-context": "/dd",
+        "builtin-registries": [
+          {"type":  "prometheus"}
+        ]
+      }
+    }
+  }
 }

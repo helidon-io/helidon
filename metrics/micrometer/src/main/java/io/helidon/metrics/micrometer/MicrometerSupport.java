@@ -121,7 +121,7 @@ public class MicrometerSupport implements Service {
         }
     }
 
-    private static final String DEFAULT_CONTEXT = "/micrometer";
+    static final String DEFAULT_CONTEXT = "/micrometer";
     private static final String SERVICE_NAME = "Micrometer";
     private static final String NO_MATCHING_REGISTRY_ERROR_MESSAGE = "No registered MeterRegistry matches the request";
 
@@ -141,6 +141,9 @@ public class MicrometerSupport implements Service {
         corsEnabledServiceHelper = CorsEnabledServiceHelper.create(SERVICE_NAME, builder.crossOriginConfig);
         compositeMeterRegistry = new CompositeMeterRegistry();
 
+        if (builder.explicitAndBuiltInEnrollments().isEmpty()) {
+            builder.enrollBuiltInRegistry(BuiltInRegistryType.PROMETHEUS);
+        }
         registryEnrollments = builder.explicitAndBuiltInEnrollments();
         builder.builtInRegistriesRequested.forEach((builtInRegistryType, builtInRegistrySupport) -> {
             MeterRegistry meterRegistry = builtInRegistrySupport.registry();
