@@ -32,7 +32,6 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.config.DeprecatedConfig;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -264,7 +263,8 @@ public class MicrometerSupport implements Service {
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            DeprecatedConfig.get(config, "web-context", "context")
+
+            config.get("web-context")
                     .asString()
                     .ifPresent(this::webContext);
 
