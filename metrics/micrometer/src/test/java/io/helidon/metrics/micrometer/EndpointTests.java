@@ -45,8 +45,16 @@ public class EndpointTests {
     }
 
     @Test
+    public void testExplicitEndpointWithDefaultBuiltInRegistryViaConfig() throws ExecutionException, InterruptedException {
+        String context = "/aa";
+        runTest(context, () -> MicrometerSupport.builder()
+                .config(overallTestConfig.get("explicitContext").get("metrics.micrometer"))
+                .build());
+    }
+
+    @Test
     public void testExplicitEndpointWithExplicitBuiltInRegistryViaBuilder() throws ExecutionException, InterruptedException {
-        String context = "/mm";
+        String context = "/bb";
         runTest(context, () -> MicrometerSupport.builder()
                     .webContext(context)
                     .enrollBuiltInRegistry(MicrometerSupport.BuiltInRegistryType.PROMETHEUS)
@@ -54,18 +62,10 @@ public class EndpointTests {
     }
 
     @Test
-    private void testExplicitEndpointWithDefaultBuiltInRegistryViaConfig() throws ExecutionException, InterruptedException {
+    public void testExplicitEndpointWithExplicitBuiltInRegistryViaConfig() throws ExecutionException, InterruptedException {
         String context = "/cc";
         runTest(context, () -> MicrometerSupport.builder()
-                    .config(overallTestConfig.get("explicitContext"))
-                    .build());
-    }
-
-    @Test
-    private void testExplicitEndpointWithExplicitBuiltInRegistryViaConfig() throws ExecutionException, InterruptedException {
-        String context = "/dd";
-        runTest(context, () -> MicrometerSupport.builder()
-                .config(overallTestConfig.get("explicitContext"))
+                .config(overallTestConfig.get("explicitContextWithExplicitBuiltIn").get("metrics.micrometer"))
                 .build());
     }
 

@@ -65,7 +65,7 @@
   "explicitContext": {
     "metrics": {
       "micrometer": {
-        "web-context": "/cc"
+        "web-context": "/aa"
       }
     }
   },
@@ -73,7 +73,7 @@
   "explicitContextWithExplicitBuiltIn": {
     "metrics": {
       "micrometer": {
-        "web-context": "/dd",
+        "web-context": "/cc",
         "builtin-registries": [
           {"type":  "prometheus"}
         ]
