@@ -64,7 +64,7 @@ class HttpRequestScopedPublisher extends BufferedEmittingPublisher<DataChunk> {
     }
 
     public int emit(ByteBuf data) {
-        if(isCompleted()){
+        if (isCompleted()) {
             data.release();
             return 0;
         }
