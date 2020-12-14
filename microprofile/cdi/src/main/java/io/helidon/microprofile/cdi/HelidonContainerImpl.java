@@ -38,6 +38,7 @@ import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.Extension;
+import javax.inject.Singleton;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
@@ -143,7 +144,8 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     private HelidonContainerImpl init() {
         LOGGER.fine(() -> "Initializing CDI container " + id);
 
-        addHelidonBeanDefiningAnnotations("javax.ws.rs.Path",
+        addHelidonBeanDefiningAnnotations(Singleton.class.getName(),
+                                          "javax.ws.rs.Path",
                                           "javax.ws.rs.ext.Provider",
                                           "javax.websocket.server.ServerEndpoint",
                                           "org.eclipse.microprofile.graphql.GraphQLApi",
