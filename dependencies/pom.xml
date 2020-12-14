@@ -1167,6 +1167,21 @@
             </dependency>
             <dependency>
                 <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-core</artifactId>
+                <version>${version.lib.micronaut}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.annotation</groupId>
+                        <artifactId>javax.annotation-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.inject</groupId>
+                        <artifactId>javax.inject</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-validation</artifactId>
                 <version>${version.lib.micronaut}</version>
             </dependency>
@@ -1179,6 +1194,12 @@
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-runtime</artifactId>
                 <version>${version.lib.micronaut}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.validation</groupId>
+                        <artifactId>validation-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.micronaut</groupId>
@@ -1225,6 +1246,10 @@
                     <exclusion>
                         <groupId>com.google.code.findbugs</groupId>
                         <artifactId>jsr305</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.validation</groupId>
+                        <artifactId>validation-api</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

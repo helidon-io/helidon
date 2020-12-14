@@ -21,8 +21,6 @@ module io.helidon.integrations.micronaut.data {
     requires java.annotation;
     requires java.sql;
 
-    requires io.helidon.integrations.micronaut.cdi;
-
     requires jakarta.enterprise.cdi.api;
     requires jakarta.interceptor.api;
 

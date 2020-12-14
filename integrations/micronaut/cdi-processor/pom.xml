@@ -40,6 +40,10 @@
             <artifactId>micronaut-inject</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
         </dependency>

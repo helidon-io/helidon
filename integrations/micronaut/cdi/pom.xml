@@ -44,6 +44,14 @@
             <artifactId>micronaut-inject</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-aop</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
         </dependency>
