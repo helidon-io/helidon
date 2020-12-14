@@ -49,6 +49,7 @@ import io.helidon.common.Prioritized;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.config.DeprecatedConfig;
 import io.helidon.microprofile.cdi.BuildTimeStart;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.webserver.Routing;
@@ -111,7 +112,8 @@ public class ServerCdiExtension implements Extension {
         if (null == jaxRsExecutorService) {
             Config serverConfig = config.get("server");
             final java.lang.reflect.Method m;
-            if (serverConfig.get("virtual-threads").asBoolean().orElse(false)) {
+            if (DeprecatedConfig.get(serverConfig, "executor-service.virtual-threads", "virtual-threads")
+                    .asBoolean().orElse(false)) {
                 java.lang.reflect.Method temp = null;
                 try {
                     temp = Executors.class.getDeclaredMethod("newVirtualThreadExecutor");
@@ -134,7 +136,7 @@ public class ServerCdiExtension implements Extension {
             } else {
                 jaxRsExecutorService = ServerThreadPoolSupplier.builder()
                     .name("server")
-                    .config(serverConfig.get("server.executor-service"))
+                    .config(serverConfig.get("executor-service"))
                     .build();
             }
         }

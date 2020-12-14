@@ -20,9 +20,9 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 
+import io.helidon.tests.integration.jpa.model.City;
 import io.helidon.tests.integration.jpa.model.Pokemon;
 import io.helidon.tests.integration.jpa.model.Stadium;
-import io.helidon.tests.integration.jpa.model.City;
 import io.helidon.tests.integration.jpa.model.Trainer;
 import io.helidon.tests.integration.jpa.model.Type;
 

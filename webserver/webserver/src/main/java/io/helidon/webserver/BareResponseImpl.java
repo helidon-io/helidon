@@ -68,38 +68,41 @@ class BareResponseImpl implements BareResponse {
     private final CompletableFuture<BareResponse> responseFuture;
     private final CompletableFuture<BareResponse> headersFuture;
     private final BooleanSupplier requestContentConsumed;
-    private final Thread thread;
     private final long requestId;
     private final HttpHeaders requestHeaders;
     private final ChannelFuture channelClosedFuture;
     private final GenericFutureListener<? extends Future<? super Void>> channelClosedListener;
 
-    private volatile Flow.Subscription subscription;
-    private volatile DataChunk firstChunk;
-    private volatile DefaultHttpResponse response;
+    // Accessed by Subscriber method threads
+    private Flow.Subscription subscription;
+    private DataChunk firstChunk;
+    private CompletableFuture<?> prevRequestChunk;
+
+    // Accessed by writeStatusHeaders(status, headers) method
     private volatile boolean lengthOptimization;
     private volatile boolean isWebSocketUpgrade = false;
+    private volatile DefaultHttpResponse response;
 
     /**
      * @param ctx the channel handler context
      * @param request the request
      * @param requestContentConsumed whether the request content is consumed
-     * @param thread the outbound event loop thread which will be used to write the response
+     * @param prevRequestChunk Future that represents previous request completion for HTTP pipelining
      * @param requestId the correlation ID that is added to the log statements
      */
     BareResponseImpl(ChannelHandlerContext ctx,
                      HttpRequest request,
                      BooleanSupplier requestContentConsumed,
-                     Thread thread,
+                     CompletableFuture<?> prevRequestChunk,
                      long requestId) {
         this.requestContentConsumed = requestContentConsumed;
-        this.thread = thread;
         this.responseFuture = new CompletableFuture<>();
         this.headersFuture = new CompletableFuture<>();
         this.ctx = ctx;
         this.requestId = requestId;
         this.keepAlive = HttpUtil.isKeepAlive(request);
         this.requestHeaders = request.headers();
+        this.prevRequestChunk = prevRequestChunk;
 
         // We need to keep this listener so we can remove it when this response completes. If we don't, we leak
         // while the channel remains open since each response adds a new listener that references 'this'.
@@ -114,6 +117,12 @@ class BareResponseImpl implements BareResponse {
         responseFuture.whenComplete(this::responseComplete);
     }
 
+    /**
+     * Steps required for the completion of this response.
+     *
+     * @param self this instance
+     * @param throwable a throwable indicating unsuccessful completion
+     */
     private void responseComplete(BareResponse self, Throwable throwable) {
         if (throwable == null) {
             headersFuture.complete(this);
@@ -123,6 +132,11 @@ class BareResponseImpl implements BareResponse {
         channelClosedFuture.removeListener(channelClosedListener);
     }
 
+    /**
+     * Called when a channel is closed programmatically.
+     *
+     * @param future a future
+     */
     private void channelClosed(Future<? super Void> future) {
         responseFuture.completeExceptionally(CLOSED);
     }
@@ -204,12 +218,23 @@ class BareResponseImpl implements BareResponse {
     }
 
     /**
-     * Completes this response. No other data are send to the client when response is completed. All caches are flushed.
+     * Completes this response. No other data are send to the client when response is completed.
+     * All caches are flushed.
      *
      * @param throwable if {@code not-null} then this response is completed exceptionally.
      */
     private void completeInternal(Throwable throwable) {
-        if (!internallyClosed.compareAndSet(false, true)) {
+        boolean wasClosed = !internallyClosed.compareAndSet(false, true);
+
+        if (prevRequestChunk == null) {
+            completeInternalPipe(wasClosed, throwable);
+        } else {
+            prevRequestChunk = prevRequestChunk.thenRun(() -> completeInternalPipe(wasClosed, throwable));
+        }
+    }
+
+    private void completeInternalPipe(boolean wasClosed, Throwable throwable) {
+        if (wasClosed) {
             // if already closed, as the contract specifies, don't fail
             completeResponseFuture(throwable);
             return;
@@ -230,7 +255,6 @@ class BareResponseImpl implements BareResponse {
             }
 
         } else {
-
             LOGGER.finest(() -> log("Closing with an empty buffer; keep-alive: " + keepAlive));
 
             writeLastContent(throwable, ChannelFutureListener.CLOSE);
@@ -311,18 +335,32 @@ class BareResponseImpl implements BareResponse {
         }
         if (data != null) {
             if (data.isFlushChunk()) {
-                ctx.flush();
+                if (prevRequestChunk == null) {
+                   ctx.flush();
+                } else {
+                   prevRequestChunk = prevRequestChunk.thenRun(ctx::flush);
+                }
                 return;
             }
+
+            if (lengthOptimization && firstChunk == null) {
+                firstChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
+                return;
+            }
+
+            if (prevRequestChunk == null) {
+                onNextPipe(data);
+            } else {
+                prevRequestChunk = prevRequestChunk.thenRun(() -> onNextPipe(data));
+            }
+        }
+    }
+
+    private void onNextPipe(DataChunk data) {
             if (lengthOptimization) {
-                if (firstChunk == null) {
-                    firstChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
-                    return;
-                }
                 initWriteResponse();
             }
             sendData(data);
-        }
     }
 
     /**
