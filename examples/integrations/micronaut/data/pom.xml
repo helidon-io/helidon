@@ -32,16 +32,31 @@
 
     <dependencies>
         <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.micronaut</groupId>
-            <artifactId>helidon-integrations-micronaut-data</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.micronaut.data</groupId>
             <artifactId>micronaut-data-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-runtime</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.micronaut</groupId>
+            <artifactId>helidon-integrations-micronaut-cdi</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.micronaut</groupId>
+            <artifactId>helidon-integrations-micronaut-data</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.micronaut.data</groupId>
@@ -58,10 +73,6 @@
             <artifactId>ojdbc8-production</artifactId>
             <type>pom</type>
             <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.micronaut</groupId>
-            <artifactId>micronaut-runtime</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
