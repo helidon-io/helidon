@@ -36,20 +36,37 @@
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-inject</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.integrations.micronaut</groupId>
             <artifactId>helidon-integrations-micronaut-cdi</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.micronaut.data</groupId>
-            <artifactId>micronaut-data-model</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.micronaut</groupId>
             <artifactId>micronaut-runtime</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut.data</groupId>
+            <artifactId>micronaut-data-model</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.cdi</groupId>
