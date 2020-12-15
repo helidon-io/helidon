@@ -31,6 +31,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @HelidonTest
 class MicronautExampleTest {
+    static {
+        System.setProperty("oracle.jdbc.fanEnabled", "false");
+    }
+
     @Inject
     private WebTarget webTarget;
 
