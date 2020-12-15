@@ -144,28 +144,15 @@ tracing:
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add a new import, 2) Change the code that initializes `serverConfig` to use the new `buildServerConfig` method., and 3) Add the `buildServerConfig` method:
+.Update the `Main` class; Add Tracer to the WebServer builder
 ----
-import io.helidon.tracing.TracerBuilder; // <1>
-...
-    // Replace the existing line of code
-    // ServerConfiguration serverConfig = ServerConfiguration.create(config.get("server"));
-    // with ` ServerConfiguration serverConfig = buildServerConfig(config);`
-    ServerConfiguration serverConfig = buildServerConfig(config); // <2>
-...
-
-  private static ServerConfiguration buildServerConfig(Config config) {  // <3>
-    return ServerConfiguration.builder()
-        .config(config.get("server"))
-        .tracer(TracerBuilder.create(config.get("tracing")).buildAndRegister()) // <4>
-        .build();
-  }
-
+WebServer server = WebServer.builder(createRouting(config))
+                .config(config.get("server"))
+                .tracer(TracerBuilder.create(config.get("tracing")).build()) // <1>
+                .addMediaSupport(JsonpSupport.create())
+                .build();
 ----
-<1> Add a new import statement.
-<2> Call the new `buildServerConfig` method to build a `ServerConfiguration` object.
-<3> Build the `ServerConfiguration` object.
-<4> Build and register a `Tracer` object using the tracing configuration.
+<1> Build and register a `Tracer` object using the tracing configuration.
 
 [source,java]
 .Update the `GreetService` class; 1) Add a new import and 2) Replace the `getDefaultMessageHandler` method:
@@ -177,7 +164,7 @@ import io.opentracing.Span; // <1>
 
         Span span = request.tracer()  // <2>
             .buildSpan("getDefaultMessageHandler")  // <3>
-            .asChildOf(request.spanContext())  // <4>
+            .asChildOf(request.spanContext().get())  // <4>
             .start(); // <5>
 
         try {
@@ -378,19 +365,13 @@ server:
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add a new import, 2) call the `buildServerConfig()` method, and 3) Add the `buildServerConfig` method:
+.Update the `Main` class; Add Tracer to the WebServer builder
 ----
-import io.helidon.tracing.TracerBuilder;
-...
-    ServerConfiguration serverConfig = buildServerConfig(config);
-...
-
-  private static ServerConfiguration buildServerConfig(Config config) {
-    return ServerConfiguration.builder()
-        .config(config.get("server"))
-        .tracer(TracerBuilder.create(config.get("tracing")).buildAndRegister())
-        .build();
-  }
+WebServer server = WebServer.builder(createRouting(config))
+                .config(config.get("server"))
+                .tracer(TracerBuilder.create(config.get("tracing")).build())
+                .addMediaSupport(JsonpSupport.create())
+                .build();
 ----
 
 [source,java]
@@ -403,7 +384,7 @@ import io.opentracing.Span;
 
         Span span = request.tracer()
             .buildSpan("getDefaultMessageHandler")
-            .asChildOf(request.spanContext())
+            .asChildOf(request.spanContext().get())
             .start();
 
         try {
@@ -509,7 +490,7 @@ public class GreetService implements Service {
         request
             .tracer()
             .buildSpan("getDefaultMessageHandler")
-            .asChildOf(request.spanContext())
+            .asChildOf(request.spanContext().get())
             .start();
 
     try {
@@ -547,7 +528,7 @@ public class GreetService implements Service {
         request
             .tracer()
             .buildSpan("outboundMessageHandler")
-            .asChildOf(request.spanContext())
+            .asChildOf(request.spanContext().get())
             .start();
 
     try {
