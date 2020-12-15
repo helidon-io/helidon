@@ -54,11 +54,13 @@ public class DataChunkReleaseTest {
     private static final Handler testHandler = new Handler() {
         @Override
         public void publish(final LogRecord record) {
+            // look for ByteBufRequestChunk's leak detection records
             if (record.getLevel() == Level.WARNING &&
                     record.getMessage()
                             .startsWith("LEAK: RequestChunk.release() was not called before it was garbage collected.")) {
                 leakIntercepted = true;
             }
+            // look for Netty ResourceLeakDetector's records
             if (record.getLevel() == Level.SEVERE &&
                     record.getMessage()
                             .startsWith("LEAK: ByteBuf.release() was not called before it's garbage-collected.")) {
@@ -82,6 +84,7 @@ public class DataChunkReleaseTest {
         originalLeakDetectionLevel = System.getProperty("io.netty.leakDetectionLevel");
         originalLeakDetectionSamplingInterval = System.getProperty("io.netty.leakDetection.samplingInterval");
 
+        // force ResourceLeakDetector to sample every ByteBuf
         System.setProperty("io.netty.leakDetectionLevel", "advanced");
         System.setProperty("io.netty.leakDetection.samplingInterval", "1");
 
@@ -102,12 +105,18 @@ public class DataChunkReleaseTest {
         leakIntercepted = false;
     }
 
+    /**
+     * Make sure {@link io.helidon.webserver.ByteBufRequestChunk#logLeak()} leak log message didn't change.
+     */
     @Test
     void leakMessageChunkConsistencyTest() {
         ByteBufRequestChunk.logLeak();
         assertTrue(leakIntercepted, "Leak message not aligned with test");
     }
 
+    /**
+     * Make sure {@link io.netty.util.ResourceLeakDetector#reportTracedLeak(String, String)} leak log message didn't change.
+     */
     @Test
     void leakMessageNettyDetectorConsistencyTest() {
         TestLeakDetector.logLeak();
