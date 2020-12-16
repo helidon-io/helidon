@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing.jersey.client;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,6 +48,7 @@ import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
+import jdk.jfr.FlightRecorder;
 
 /**
  * This filter adds tracing information the the associated JAX-RS client call based on the provided properties.
@@ -159,8 +161,32 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         }
     }
 
+
+
+
+    public void filterForJfr(ClientRequestContext requestContext)
+             {
+
+        JaxRsInvocationEvent event = new JaxRsInvocationEvent();
+        System.out.println("ClientTracingFilter.filterForJfr event.isEnabled():" + event.isEnabled());
+        if (!event.isEnabled()) {
+            return;
+        }
+        System.out.println("ClientTracingFilter.filterForJfr event.begin()...");
+        event.begin();
+
+        requestContext.setProperty(JaxRsInvocationEvent.NAME, event);
+    }
+
+    static {
+        System.out.println("ClientTracingFilter... JaxRsInvocationEvent registered with FlightRecorder");
+        FlightRecorder.getFlightRecorder().register(JaxRsInvocationEvent.class);
+    }
+
+
     @Override
     public void filter(ClientRequestContext requestContext) {
+        filterForJfr(requestContext);
         // if we run within Jersey server, the tracing context will be filled in by TracingHelperFilter
         // if not, it will be empty
         Optional<TracingContext> tracingContext = Contexts.context().flatMap(ctx -> ctx.get(TracingContext.class));
@@ -242,8 +268,39 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         return result;
     }
 
+    public void filterForJfr(ClientRequestContext requestContext,
+                             ClientResponseContext responseContext){
+        JaxRsInvocationEvent event = (JaxRsInvocationEvent) requestContext
+                .getProperty(JaxRsInvocationEvent.NAME);
+        System.out.println("FlightRecorderFilter.filter");
+        if (event == null || !event.isEnabled()) {
+            return;
+        }
+        System.out.println("FlightRecorderFilter.filter event.end()...");
+        event.end();
+        event.path = String.valueOf(requestContext.getUri());
+//        event.path = String.valueOf(requestContext.getUriInfo().getPath());
+
+        System.out.println("FlightRecorderFilter.filter event.shouldCommit():" + event.shouldCommit());
+        if (event.shouldCommit()) {
+            event.method = requestContext.getMethod();
+            event.mediaType = String.valueOf(requestContext.getMediaType());
+            event.length = 1;//requestContext.getLength();
+            event.queryParameters = "query params"; //requestContext.getUriInfo()
+//                    .getQueryParameters().toString();
+            event.headers = requestContext.getHeaders().toString();
+            event.javaMethod = "getJavaMethod(requestContext)"; //todo
+            event.responseLength = responseContext.getLength();
+            event.responseHeaders = responseContext.getHeaders().toString();
+            event.status = responseContext.getStatus();
+
+            event.commit();
+        }
+    }
+
     @Override
     public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) {
+        filterForJfr(requestContext, responseContext);
         Object property = requestContext.getProperty(SPAN_PROPERTY_NAME);
 
         if (property instanceof Span) {
@@ -327,13 +384,19 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
                             Tracer tracer,
                             Optional<SpanContext> parentSpan,
                             String spanName) {
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName)
-                      .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
-                      .withTag(Tags.HTTP_METHOD.getKey(), requestContext.getMethod())
-                      .withTag(Tags.HTTP_URL.getKey(), url(requestContext.getUri()))
-                      .withTag(Tags.COMPONENT.getKey(), "jaxrs");
+
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName);
+
         parentSpan.ifPresent(spanBuilder::asChildOf);
-        return spanBuilder.start();
+
+        Span span = spanBuilder.start();
+
+        Tags.COMPONENT.set(span, "jaxrs");
+        Tags.HTTP_METHOD.set(span, requestContext.getMethod());
+        Tags.HTTP_URL.set(span, url(requestContext.getUri()));
+        Tags.SPAN_KIND.set(span, Tags.SPAN_KIND_CLIENT);
+
+        return span;
     }
 
     private String url(URI uri) {
