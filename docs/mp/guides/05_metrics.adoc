@@ -311,17 +311,6 @@ The default behavior is to decrement when exiting the method.  Here is an exampl
 `@Counted(name = "any-card", monotonic = true)`.
 
 
-[source,java]
-.Update the `GreetApplication` class as follows:
-----
-@Override
-public Set<Class<?>> getClasses() {
-    return Set.of(GreetResource.class, GreetingCards.class); // <1>
-}
-----
-<1> Add the `GreetingCards` class to the set of classes managed by Helidon for this application.
-
-
 [source,bash]
 .Build and run the application, then invoke the application endpoints below:
 ----
