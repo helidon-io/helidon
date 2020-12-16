@@ -162,10 +162,10 @@ import io.opentracing.Span; // <1>
     private void getDefaultMessageHandler(ServerRequest request,
                                    ServerResponse response) {
 
-        Span span = request.tracer()  // <2>
-            .buildSpan("getDefaultMessageHandler")  // <3>
-            .asChildOf(request.spanContext().get())  // <4>
-            .start(); // <5>
+        var spanBuilder = request.tracer()  // <2>
+                .buildSpan("getDefaultMessageHandler");  // <3>
+        request.spanContext().ifPresent(spanBuilder::asChildOf);  // <4>
+        Span span = spanBuilder.start();  // <5>
 
         try {
             sendResponse(response, "World");
@@ -177,7 +177,7 @@ import io.opentracing.Span; // <1>
 <1> Add new import statement.
 <2> Get the `Tracer` object from the request.
 <3> Build a new span named `getDefaultMessageHandler`.
-<4> Make the a new span a child of the current span.
+<4> Make the new span a child of the current span.
 <5> Start the span.  The current timestamp is used as the starting time for the span.
 <6> Finish the span.  The current timestamp is used as the ending time for the span.
 
@@ -382,10 +382,10 @@ import io.opentracing.Span;
     private void getDefaultMessageHandler(ServerRequest request,
                                    ServerResponse response) {
 
-        Span span = request.tracer()
-            .buildSpan("getDefaultMessageHandler")
-            .asChildOf(request.spanContext().get())
-            .start();
+        var spanBuilder = request.tracer()
+                .buildSpan("getDefaultMessageHandler");
+        request.spanContext().ifPresent(spanBuilder::asChildOf);
+        Span span = spanBuilder.start();
 
         try {
             sendResponse(response, "World");
@@ -486,12 +486,10 @@ public class GreetService implements Service {
 
   private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
 
-    Span span =
-        request
-            .tracer()
-            .buildSpan("getDefaultMessageHandler")
-            .asChildOf(request.spanContext().get())
-            .start();
+    var spanBuilder = request.tracer()
+                .buildSpan("getDefaultMessageHandler");
+    request.spanContext().ifPresent(spanBuilder::asChildOf);
+    Span span = spanBuilder.start();
 
     try {
       sendResponse(response, "World");
@@ -524,12 +522,10 @@ public class GreetService implements Service {
     Invocation.Builder requestBuilder = webTarget.request();
 
     // <2>
-    Span span =
-        request
-            .tracer()
-            .buildSpan("outboundMessageHandler")
-            .asChildOf(request.spanContext().get())
-            .start();
+    var spanBuilder = request.tracer()
+                .buildSpan("outboundMessageHandler");
+    request.spanContext().ifPresent(spanBuilder::asChildOf);
+    Span span = spanBuilder.start();
 
     try {
       requestBuilder.property(
