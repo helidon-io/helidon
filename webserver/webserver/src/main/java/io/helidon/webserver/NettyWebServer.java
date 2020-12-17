@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -71,6 +72,7 @@ class NettyWebServer implements WebServer {
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
     private static final boolean EXIT_ON_STARTED = "!".equals(System.getProperty(EXIT_ON_STARTED_KEY));
 
+    private final Transport transport;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
     private final Map<String, ServerBootstrap> bootstraps = new HashMap<>();
@@ -110,6 +112,7 @@ class NettyWebServer implements WebServer {
                               config.printFeatureDetails());
         this.contextualRegistry = config.context();
         this.configuration = config;
+        this.transport = installTransport();
         this.bossGroup = bossGroup();
         this.workerGroup = workerGroup();
         this.readerContext = MessageBodyReaderContext.create(readerContext);
@@ -417,24 +420,41 @@ class NettyWebServer implements WebServer {
         return address instanceof InetSocketAddress ? ((InetSocketAddress) address).getPort() : -1;
     }
 
-    private Transport transport() {
+    private Transport installTransport() {
         Transport transport = configuration.transport().orElse(new NioTransport());
         return transport.isAvailableFor(this) ? transport : new NioTransport();
     }
 
+    private Transport transport() {
+        return transport;
+    }
+
     @SuppressWarnings("unchecked")
     private EventLoopGroup bossGroup() {
-        return transport().createTransportArtifact(EventLoopGroup.class, "bossGroup", configuration).get();
+        return transport()
+            .createTransportArtifact(EventLoopGroup.class, "bossGroup", configuration)
+            .orElseThrow(() -> noSuchTransportArtifact("bossGroup"));
     }
 
     @SuppressWarnings("unchecked")
     private EventLoopGroup workerGroup() {
-        return transport().createTransportArtifact(EventLoopGroup.class, "workerGroup", configuration).get();
+        return transport()
+            .createTransportArtifact(EventLoopGroup.class, "workerGroup", configuration)
+            .orElseThrow(() -> noSuchTransportArtifact("workerGroup"));
     }
 
     @SuppressWarnings("unchecked")
     private <T extends ServerChannel> ChannelFactory<T> serverChannelFactory() {
-        return transport().createTransportArtifact(ChannelFactory.class, "serverChannelFactory", configuration).get();
+        return transport()
+            .createTransportArtifact(ChannelFactory.class, "serverChannelFactory", configuration)
+            .orElseThrow(() -> noSuchTransportArtifact("serverChannelFactory"));
+    }
+
+    private NoSuchElementException noSuchTransportArtifact(String name) {
+        return new NoSuchElementException("The current webserver transport, "
+                                          + transport() + ", could not supply "
+                                          + "a transport artifact named \""
+                                          + name + "\"");
     }
 
     private static final class NioTransport implements Transport {
