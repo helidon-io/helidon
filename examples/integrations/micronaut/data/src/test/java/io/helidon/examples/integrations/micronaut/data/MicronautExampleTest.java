@@ -31,15 +31,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @HelidonTest
 class MicronautExampleTest {
-    static {
-        System.setProperty("oracle.jdbc.fanEnabled", "false");
-    }
-
     @Inject
     private WebTarget webTarget;
 
     @Test
     void testAllPets() {
+        System.out.println ("testAllPets");
         JsonArray jsonValues = webTarget.path("/pets")
                 .request()
                 .get(JsonArray.class);
@@ -49,6 +46,7 @@ class MicronautExampleTest {
 
     @Test
     void testGetPet() {
+        System.out.println ("testGetPet");
         JsonObject pet = webTarget.path("/pets/Dino")
                 .request()
                 .get(JsonObject.class);
@@ -59,6 +57,7 @@ class MicronautExampleTest {
 
     @Test
     void testNotFound() {
+        System.out.println ("testNotFound");
         Response response = webTarget.path("/pets/Fino")
                 .request()
                 .get();
@@ -68,6 +67,7 @@ class MicronautExampleTest {
 
     @Test
     void testValidationError() {
+        System.out.println ("testValidationError");
         Response response = webTarget.path("/pets/a")
                 .request()
                 .get();
