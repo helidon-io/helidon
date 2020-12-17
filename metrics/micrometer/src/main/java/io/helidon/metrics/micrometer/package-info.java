@@ -15,6 +15,6 @@
  */
 
 /**
- * Basic Micrometer support for Helidon SE apps.
+ * Basic Micrometer support for Helidon SE applications.
  */
 package io.helidon.metrics.micrometer;

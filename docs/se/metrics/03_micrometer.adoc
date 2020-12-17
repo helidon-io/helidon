@@ -20,12 +20,13 @@
 :description: Helidon Micrometer metrics
 :keywords: micrometer, helidon, metrics
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.metrics.micrometer/io/helidon/metrics/micrometer
+:h1Prefix: SE
 
-Helidon SE simplifies how you can use Micrometer for application-specific metrics:
+Helidon {h1Prefix} simplifies how you can use Micrometer for application-specific metrics:
 
-1. The endpoint `/micrometer`: A configurable endpoint that exposes metrics according to which Micrometer meter registry
+* The endpoint `/micrometer`: A configurable endpoint that exposes metrics according to which Micrometer meter registry
 responds to the HTTP request.
-2. The `MicrometerSupport` class: A convenience class for enrolling Micrometer meter registries your application
+* The `MicrometerSupport` class: A convenience class for enrolling Micrometer meter registries your application
 creates explicitly or for selecting which built-in Micrometer meter registries to
 to use.
 
@@ -54,7 +55,7 @@ You need to make two types of changes to your application to use Helidon's Micro
 2. Modify your application service code to use the meter registry which `MicrometerSupport` manages to create
 and update meters.
 
-=== Register an Instance of `MicrometerSupport` with the Web Werver
+=== Register an Instance of `MicrometerSupport` with the Web Server
 
 [source,java]
 .Initialize Micrometer support
@@ -106,7 +107,7 @@ public class MyService implements Service {
 <3> Update the counter and delegate the rest of the request processing to the next handler in the chain.
 
 The example above enrolls the built-in Prometheus meter registry with the default Prometheus registry configuration.
-You can change the default set-up for built-in registries, and you can enroll other meter registries your application
+You can change the default setup for built-in registries, and you can enroll other meter registries your application
 creates itself.
 
 === Overriding Defaults for Built-in Meter Registry Types
@@ -143,7 +144,7 @@ MicrometerSupport support = MicrometerSupport.builder()
 
 
 ==== Using Configuration
-To use configuration to control the selection and behavior of Helidon's built-in Micrometer meter registries
+To use configuration to control the selection and behavior of Helidon's built-in Micrometer meter registries,
 include in your configuration a `metrics.micrometer.builtin-registries` section.
 
 [source,yaml]
@@ -165,7 +166,8 @@ metrics:
         prefix: myPrefix
 ----
 
-Which configuration keys are valid in each `builtin-registries` entry depends on the type of Micrometer meter registry.
+The configuration keys that are valid for the 'builtin-registries' entry depend on the type of Micrometer meter
+registry.
 Refer to the documentation for the meter registry you want to configure to find out what items apply to that registry
 type.
 
@@ -175,18 +177,18 @@ meter registry configuration class.
 === Enrolling other Micrometer meter registries
 To create your own registries and enroll them with `MicrometerSupport`, you need to:
 
-* Write a `Handler` +
+1. Write a `Handler` +
 +
 Each meter registry has its own way of producing output.
 Write your handler so that it has a reference to the meter registry it should use and so
 its `accept` method sets the payload in the HTTP response using the registry's mechanism for creating output.
 
-* Write a `Function` which accepts a `ServerRequest` and returns an `Optional<Handler>` +
+1. Write a `Function` which accepts a `ServerRequest` and returns an `Optional<Handler>` +
 +
 In general, your function looks at the request--the `Content-Type`, query parameters, etc.--to
 decide whether your handler should respond to the request.
 If so, your function should instantiate your `Handler` and return an `Optional.of(theInstance)`;
-otherwise, return your function should return `Optional.empty()`. +
+otherwise, your function should return `Optional.empty()`. +
 +
 When `MicrometerSupport` receives a request, it invokes the functions of all the enrolled registries,
 stopping as soon as one function provides a handler.
