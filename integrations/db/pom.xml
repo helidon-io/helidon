@@ -36,5 +36,6 @@
         <module>h2</module>
         <module>mysql</module>
         <module>ojdbc</module>
+        <module>pgsql</module>
     </modules>
 </project>
