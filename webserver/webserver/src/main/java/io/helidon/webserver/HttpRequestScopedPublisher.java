@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
+import io.helidon.common.reactive.Multi;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -69,6 +70,19 @@ class HttpRequestScopedPublisher extends BufferedEmittingPublisher<DataChunk> {
         } finally {
             referenceQueue.release();
         }
+    }
+
+    /**
+     * Clear and release any {@link io.helidon.common.http.DataChunk DataChunk} hanging in
+     * the buffer. Try self subscribe in case no one subscribed and unreleased {@link io.netty.buffer.ByteBuf ByteBufs}
+     * are hanging in the netty pool.
+     */
+    public void clearAndRelease() {
+        Multi.create(this)
+                // release any chunks coming if subscription succeed
+                .forEach(DataChunk::release)
+                // in any case clear the buffer and release its content
+                .onTerminate(() -> super.clearBuffer(DataChunk::release));
     }
 
     @Override

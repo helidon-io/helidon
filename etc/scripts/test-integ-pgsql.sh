@@ -53,11 +53,11 @@ mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
 # Run tests in Java VM application
 (cd tests/integration/jpa && \
   mvn ${MAVEN_ARGS} clean verify \
-      -Dmaven.test.failure.ignore=true -Dmysql \
+      -Dmaven.test.failure.ignore=true -Dpgsql \
       -pl model,appl)
 
 # Run tests in native image application
 (cd tests/integration/jpa && \
   mvn ${MAVEN_ARGS} clean verify \
-      -Dmaven.test.failure.ignore=true -Dmysql \
+      -Dmaven.test.failure.ignore=true -Dpgsql \
       -Pnative-image -Dnative-image -pl model,appl)
