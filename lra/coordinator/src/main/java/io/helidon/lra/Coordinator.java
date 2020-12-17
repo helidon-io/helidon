@@ -2,25 +2,25 @@
 
 package io.helidon.lra;
 
-//import io.helidon.lra.messaging.MessageProcessing;
+import io.helidon.lra.messaging.MessageProcessing;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
-//import org.eclipse.microprofile.openapi.annotations.Operation;
-//import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-//import org.eclipse.microprofile.openapi.annotations.headers.Header;
-//import org.eclipse.microprofile.openapi.annotations.media.Content;
-//import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
-//import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-//import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import javax.enterprise.context.ApplicationScoped;
-//import javax.inject.Inject;
+import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+import java.io.UnsupportedEncodingException;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static javax.ws.rs.core.Response.Status.*;
@@ -46,14 +46,44 @@ public class Coordinator {
     public static final String CLIENT_ID_PARAM_NAME = "ClientID";
     public static final String TIMELIMIT_PARAM_NAME = "TimeLimit";
     public static final String PARENT_LRA_PARAM_NAME = "ParentLRA";
-    public static final String RECOVERY_PARAM = "recoveryCount";
-    public static final String HTTP_METHOD_NAME = "method";
+
+
+    private final MessageProcessing msgBean;
+
+    @Path("/send/{msg}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public void getSend(@PathParam("msg") String msg) {
+        msgBean.process(msg);
+    }
+
+    @Inject
+    public Coordinator(MessageProcessing msgBean) {
+        this.msgBean = msgBean;
+    }
+
 
 
     @Context
     private UriInfo context;
 
     Map<String, LRA> lraRecordMap = new HashMap();
+
+    @GET
+    @Path("/")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Returns all LRAs",
+            description = "Gets both active and recovering LRAs")
+    @APIResponse(description = "The LRA",
+            content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = String.class))
+    )
+    public List<String> getAllLRAs(
+            @Parameter(name = STATUS_PARAM_NAME, description = "Filter the returned LRAs to only those in the give state (see CompensatorStatus)")
+            @QueryParam(STATUS_PARAM_NAME) @DefaultValue("") String state) {
+        ArrayList<String> lraStrings = new ArrayList<>();
+        lraStrings.add("testlraid");
+        return lraStrings;
+    }
 
     @GET
     @Path("{LraId}/status")
@@ -84,13 +114,13 @@ public class Coordinator {
     public Boolean isActiveLRA(
             @Parameter(name = "LraId", description = "The unique identifier of the LRA", required = true)
             @PathParam("LraId") String lraId) throws NotFoundException {
-        return true;
+        return true; //todo
     }
 
     @POST
-    @Path("start")
+    @Path("start0")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response startLRA(
+    public Response startLRA0(
             @Parameter(name = CLIENT_ID_PARAM_NAME,
                     description = "Each client is expected to have a unique identity (which can be a URL).",
                     required = true)
@@ -103,6 +133,44 @@ public class Coordinator {
             @QueryParam(TIMELIMIT_PARAM_NAME) @DefaultValue("0") Long timelimit,
             @Parameter(name = PARENT_LRA_PARAM_NAME,
                     description = "The enclosing LRA if this new LRA is nested")
+            @QueryParam(PARENT_LRA_PARAM_NAME) @DefaultValue("") String parentLRA,
+            @HeaderParam(LRA_HTTP_CONTEXT_HEADER) String parentId) throws WebApplicationException {
+        System.out.println("Coordinator.startLRA " +
+                "clientId = " + clientId + ", timelimit = " + timelimit + ", parentLRA = " + parentLRA + ", parentId = " + parentId);
+        URI parentLRAUrl = null;
+
+        if (parentLRA != null && !parentLRA.isEmpty()) {
+            parentLRAUrl = toDecodedURI(parentLRA);
+        }
+        String coordinatorUrl = String.format("%s%s", context.getBaseUri(), COORDINATOR_PATH_NAME);
+        URI lraId = null;
+        try {
+            String lraUUID = "LRAID" + UUID.randomUUID().toString();
+            lraId = new URI(String.format("%s/%s", coordinatorUrl, lraUUID));
+            lraRecordMap.put(lraUUID, new LRA(lraUUID));
+            System.out.println("Coordinator.startLRA lraUUID:" + lraUUID + " lraId:" + lraId);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+
+
+        return Response.created(lraId)
+                .entity(lraId.toString())
+                .build();
+
+    }
+
+
+
+    @POST
+    @Path("start")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response startLRA(
+            @Parameter(name = CLIENT_ID_PARAM_NAME,  required = true)
+            @QueryParam(CLIENT_ID_PARAM_NAME) @DefaultValue("") String clientId,
+            @Parameter(name = TIMELIMIT_PARAM_NAME)
+            @QueryParam(TIMELIMIT_PARAM_NAME) @DefaultValue("0") Long timelimit,
+            @Parameter(name = PARENT_LRA_PARAM_NAME)
             @QueryParam(PARENT_LRA_PARAM_NAME) @DefaultValue("") String parentLRA,
             @HeaderParam(LRA_HTTP_CONTEXT_HEADER) String parentId) throws WebApplicationException {
         System.out.println("Coordinator.startLRA " +
@@ -185,6 +253,7 @@ public class Coordinator {
     }
 
     @PUT
+//    @Path("close")
     @Path("{LraId}/close")
     @Produces(MediaType.TEXT_PLAIN)
     public Response closeLRA(
@@ -194,7 +263,7 @@ public class Coordinator {
         System.out.println("closeLRA txId:" + txId + " lraRecord:" + lra);
         if (lra == null) {
             System.out.println("Coordinator.closeLRA lraRecord == null lraRecordMap.size():" + lraRecordMap.size());
-            for (String lraid : lraRecordMap.keySet()) {
+            for (String lraid: lraRecordMap.keySet()) {
                 System.out.println(
                         "Coordinator.closeLRA uri:" + lraid + " lraRecordMap.get(lraid):" + lraRecordMap.get(lraid));
             }
@@ -202,11 +271,11 @@ public class Coordinator {
         }
         lra.tryDoEnd(false, false);
         return Response.ok().build();
+//        return Response.ok(endLRA(toURI(txId), false, false).name()).build();
     }
 
     @PUT
     @Path("closeMessaging")
-//    @Path("{LraId}/close")
     @Produces(MediaType.TEXT_PLAIN)
     public Response closeMessaging(
             @Parameter(name = "LraId", description = "The unique identifier of the LRA", required = true)
@@ -214,45 +283,44 @@ public class Coordinator {
         System.out.println("closeMessagingLRA");
         LRA lra = lraRecordMap.get(txId);
         System.out.println("closeMessaging txId = " + txId + " lraRecord:" + lra);
-        if (lra == null) return Response.ok().build(); //this is currently true if no participants joined
+        if(lra ==null)  return Response.ok().build(); //this is currently true if no participants joined
         lra.tryDoEnd(false, true);
         return Response.ok().build();
+//        return Response.ok(endLRA(toURI(txId), false, false).name()).build();
     }
 
     @PUT
+//    @Path("cancel")
     @Path("{LraId}/cancel")
-    @Produces(MediaType.APPLICATION_JSON)
     public Response cancelLRA(
             @Parameter(name = "LraId", description = "The unique identifier of the LRA", required = true)
             @PathParam("LraId") String lraId) throws NotFoundException {
         System.out.println("cancelLRA");
-        System.out.println("cancelLRA lraId:" + lraId);
+        System.out.println("cancelLRA lraId:"+lraId);
         LRA lra = lraRecordMap.get(lraId);
-        if (lra == null) return Response.ok().build();
+        if(lra ==null)  return Response.ok().build();
         lra.tryDoEnd(true, false);
         return Response.ok().build();
     }
 
     @PUT
     @Path("cancelMessaging")
-//    @Path("{LraId}/cancel")
-    @Produces(MediaType.APPLICATION_JSON)
     public Response cancelMessaging(
             @Parameter(name = "LraId", description = "The unique identifier of the LRA", required = true)
             @PathParam("LraId") String lraId) throws NotFoundException {
         System.out.println("cancelMessagingLRA");
         LRA lra = lraRecordMap.get(lraId);
-        if (lra == null) return Response.ok().build();
+        if(lra ==null)  return Response.ok().build();
         lra.tryDoEnd(true, true);
         return Response.ok().build();
     }
 
 
     private LRAStatus endLRA(URI lraId, boolean compensate, boolean fromHierarchy) throws NotFoundException {
-        String lraString = lraId.toString().substring(lraId.toString().indexOf("LRAID"), lraId.toString().length() - 1);
-        LRA lra = lraRecordMap.get(lraString);
+        String lraString = lraId.toString().substring(lraId.toString().indexOf("LRAID"), lraId.toString().length() -1);
+        LRA lra = lraRecordMap.get(lraString  );
         System.out.println("Coordinator.endLRA lraRecord:" + " lraRecord for lraId:" + lraString);
-        if (lra == null) throw new NotFoundException("LRA not found:" + lraString);
+        if(lra ==null)  throw new NotFoundException("LRA not found:" + lraString);
         lra.tryDoEnd(compensate, false);  //todo nested has hardcoded isMessaging false
         return Closed;
     }
@@ -261,24 +329,13 @@ public class Coordinator {
     @Path("{LraId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response joinLRAViaBody(
-            @Parameter(name = "LraId", description = "The unique identifier of the LRA", required = true)
+            @Parameter(name = "LraId", required = true)
             @PathParam("LraId") String lraId,
-            @Parameter(name = TIMELIMIT_PARAM_NAME,
-                    description = "The time limit (in seconds) that the Compensator can guarantee that it can compensate "
-                            + "the work performed by the service. After this time period has elapsed, it may no longer be "
-                            + "possible to undo the work within the scope of this (or any enclosing) LRA. It may therefore "
-                            + "be necessary for the application or service to start other activities to explicitly try to "
-                            + "compensate this work. The application or coordinator may use this information to control the "
-                            + "lifecycle of a LRA.")
+            @Parameter(name = TIMELIMIT_PARAM_NAME)
             @QueryParam(TIMELIMIT_PARAM_NAME) @DefaultValue("0") long timeLimit,
-            @Parameter(name = "Link",
-                    description = "The resource paths that the coordinator will use to complete or compensate and to request"
-                            + " the status of the participant. The link rel names are"
-                            + " complete, compensate and status.")
+            @Parameter(name = "Link")
             @HeaderParam("Link") @DefaultValue("") String compensatorLink,
-            @RequestBody(name = "Compensator data",
-                    description = "opaque data that will be stored with the coordinator and passed back to\n"
-                            + "the participant when the LRA is closed or cancelled.\n")
+            @RequestBody(name = "Compensator data")
                     String compensatorData) throws NotFoundException {
         System.out.println("Coordinator.joinLRA lraId = " + lraId + ", compensatorLink = " + compensatorLink);
         System.out.println("Coordinator.joinLRA lraId = " + lraId + ", compensatorData = " + compensatorData);
@@ -289,32 +346,39 @@ public class Coordinator {
         if (compensatorLink != null && !compensatorLink.isEmpty()) {
             return joinLRA(toURI(lraId), timeLimit, null, compensatorLink, compensatorData);
         }
-        if (!isLink) {
+        if (!isLink) { // interpret the content as a standard participant url
             compensatorData += "/";
             Map<String, String> terminateURIs = new HashMap<>();
             try {
                 terminateURIs.put(COMPENSATE, new URL(compensatorData + "compensate").toExternalForm());
                 terminateURIs.put(COMPLETE, new URL(compensatorData + "complete").toExternalForm());
                 terminateURIs.put(STATUS, new URL(compensatorData + "status").toExternalForm());
+                terminateURIs.put(LEAVE, new URL(compensatorData + "leave").toExternalForm());
+                terminateURIs.put(AFTER, new URL(compensatorData + "after").toExternalForm());
+                terminateURIs.put(FORGET, new URL(compensatorData + "forget").toExternalForm());
             } catch (MalformedURLException e) {
                 System.out.println("Coordinator.joinLRAViaBody MalformedURLException:" + e);
                 e.printStackTrace();
                 return Response.status(PRECONDITION_FAILED).build();
             }
+            // register with the coordinator put the lra id in an http header
             StringBuilder linkHeaderValue = new StringBuilder();
             compensatorData = linkHeaderValue.toString();
         }
         return joinLRA(toURI(lraId), timeLimit, null, compensatorData, null);
     }
 
+
     private boolean isLink(String linkString) {
         try {
             Link.valueOf(linkString);
+
             return true;
         } catch (IllegalArgumentException e) {
             return false;
         }
     }
+
 
     private Response joinLRA(URI lraId, long timeLimit, String compensatorUrl, String compensatorLink, String compensatorData)
             throws NotFoundException {
@@ -330,21 +394,22 @@ public class Coordinator {
         if (lra == null) {
             System.out.println("Coordinator.joinLRA lraRecord == null for lraIdString:" + lraIdString +
                     "lraRecordMap.size():" + lraRecordMap.size());
-            for (String uri : lraRecordMap.keySet()) {
+            for (String uri: lraRecordMap.keySet()) {
                 System.out.println(
                         "Coordinator.joinLRA uri:" + uri + " lraRecordMap.get(uri):" + lraRecordMap.get(uri));
             }
             return Response.serverError().build();
         } else {
-            if (lra.timeout == 0)
-                lra.timeout = System.currentTimeMillis() + timeLimit; //todo convert to whatever measurement
-            if (timeoutRunnable == null) {
+            // todo if this ended already and this is afterLRA then call this - tck test testAfterLRAEnlistmentDuringClosingPhase
+            if(lra.isEndComplete()) lra.sendAfterLRA();
+            if( lra.timeout == 0 ) lra.timeout = System.currentTimeMillis() + timeLimit; //todo convert to whatever measurement
+            if (timeoutRunnable == null ) {
                 timeoutRunnable = new TimeoutRunnable();
                 new Thread(timeoutRunnable).start();
             }
             long currentTime = System.currentTimeMillis();
             System.out.println("Coordinator.joinLRA currentTime:" + currentTime + " lra.timeout:" + lra.timeout);
-            if (currentTime > lra.timeout) {
+            if(currentTime > lra.timeout ) {
                 //todo remove etc it
 //                return Response.status(412).build(); // or 410
             }
@@ -354,8 +419,8 @@ public class Coordinator {
             System.out.println("Coordinator.initParticipantURIs no compensatorLink information");
         }
         lra.addParticipant(compensatorLink, true, true);
-        lra.addParticipant(compensatorLink, false, true);
-
+        lra.addParticipant(compensatorLink, false,true );
+        if(lra.isEndComplete()) lra.sendAfterLRA();
         try {
             return Response.status(status)
                     .entity(recoveryUrl.toString())
@@ -363,38 +428,37 @@ public class Coordinator {
                     .header(LRA_HTTP_RECOVERY_HEADER, recoveryUrl)
                     .build();
         } catch (URISyntaxException e) {
-            throw new RuntimeException("todo  runtime exception from joinLRA");
+            throw new RuntimeException("todo paul runtime exception from joinLRA");
         }
     }
 
 
-    private TimeoutRunnable timeoutRunnable;
 
+     private TimeoutRunnable timeoutRunnable;
     class TimeoutRunnable implements Runnable {
 
-        @Override
-        public void run() {
-            while (true) {
-                if (lraRecordMap != null) {
-                    for (String uri : lraRecordMap.keySet()) {
-                        LRA lra = lraRecordMap.get(uri);
-                        long currentTime = System.currentTimeMillis();
-                        System.out.println(
-                                "Timeout thread uri:" + uri + " lraRecordMap.get(uri):" + lra);
-                        System.out.println(
-                                "Timeout thread lra.timeout:" + lra.timeout + " currentTime:" + currentTime);
-                        if (lra.timeout > currentTime) lra.tryDoEnd(true, false);
-                    }
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+    @Override
+    public void run() {
+        while (true) {
+            if (lraRecordMap != null) {
+                for (String uri: lraRecordMap.keySet()) {
+                    LRA lra = lraRecordMap.get(uri);
+                    long currentTime = System.currentTimeMillis();
+                    System.out.println(
+                            "Timeout thread uri:" + uri + " lraRecordMap.get(uri):" + lra);
+                    System.out.println(
+                            "Timeout thread lra.timeout:" + lra.timeout + " currentTime:" + currentTime);
+                    if (lra.timeout > currentTime) lra.tryDoEnd(true, false);
+                }
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         }
     }
-
+}
     @PUT
     @Path("{LraId}/remove")
     @Produces(MediaType.APPLICATION_JSON)
@@ -403,16 +467,13 @@ public class Coordinator {
             @PathParam("LraId") String lraId,
             String compensatorUrl) throws NotFoundException, URISyntaxException {
         String reqUri = context.getRequestUri().toString();
-
         reqUri = reqUri.substring(0, reqUri.lastIndexOf('/'));
-
         String lraIdString = lraId.toString().substring(lraId.toString().indexOf("LRAID"));
         LRA lra = lraRecordMap.get(lraIdString);
         if (lra != null) {
             lra.removeParticipant(compensatorUrl, false, true);
         }
         int status = 200; //lraService.leave(new URI(reqUri), compensatorUrl);
-
         return Response.status(status).build();
     }
 
@@ -420,10 +481,19 @@ public class Coordinator {
         return toURI(lraId, "Invalid LRA id format");
     }
 
+    private URI toDecodedURI(String lraId) {
+        try {
+            return toURI(URLDecoder.decode(lraId, StandardCharsets.UTF_8.toString()));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Invalid LRA id format" + e);
+        }
+    }
 
     private URI toURI(String lraId, String message) {
         URL url;
+
         try {
+            // see if it already in the correct format
             url = new URL(lraId);
             url.toURI();
         } catch (Exception e) {
@@ -433,10 +503,13 @@ public class Coordinator {
                 throw new RuntimeException("todo paul runtime exception badrequest in toURI " + e1);
             }
         }
+
         try {
             return url.toURI();
         } catch (URISyntaxException e) {
             throw new RuntimeException("todo paul runtime exception URISyntaxException in toURI " + e);
         }
     }
+
+
 }
