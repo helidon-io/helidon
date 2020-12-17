@@ -79,14 +79,14 @@ curl -i http://localhost:8080/pets/s
 - Install Oracle XE
   Instructions for running XE in a docker container can be found here: https://github.com/oracle/docker-images/tree/master/OracleDatabase/SingleInstance
   
-- Update ./src/main/resources/META-INF/microprofile-config.properties to comment out h2 related datasource.* properties and add following ones related to oracle.
+- Update ./src/main/resources/META-INF/microprofile-config.properties to comment out h2 related datasource.* properties and uncomment+update following ones related to XE.
 ```
-datasources.default.url=jdbc:oracle:thin:@localhost:1521/XE
-datasources.default.driverClassName=oracle.jdbc.OracleDriver
-datasources.default.username=system
-datasources.default.password=<password for system user>
-datasources.default.schema-generate=CREATE_DROP
-datasources.default.dialect=oracle
+#datasources.default.url=jdbc:oracle:thin:@localhost:<port for db>/<sid of db>
+#datasources.default.driverClassName=oracle.jdbc.OracleDriver
+#datasources.default.username=system
+#datasources.default.password=<your system user password>
+#datasources.default.schema-generate=CREATE_DROP
+#datasources.default.dialect=oracle
 ```
 
 # To use Oracle ATP cloud service instead of H2
@@ -127,12 +127,12 @@ CREATE SEQUENCE "OWNER_SEQ" MINVALUE 1 START WITH 1 NOCACHE NOCYCLE;
 CREATE TABLE "OWNER" ("ID" NUMBER(19) PRIMARY KEY NOT NULL,"AGE" NUMBER(10) NOT NULL,"NAME" VARCHAR(255) NOT NULL);
 ```
 
-- Update ./src/main/resources/META-INF/microprofile-config.properties to comment out h2 related datasource.* properties and add following ones related to oracle.
+- Update ./src/main/resources/META-INF/microprofile-config.properties to comment out h2 related datasource.* properties and add uncomment+update following ones related to ATP.
 ```
-datasources.default.url=jdbc:oracle:thin:@<your_atp>>?TNS_ADMIN=<Path to expanded wallet directory>
-datasources.default.driverClassName=oracle.jdbc.OracleDriver
-datasources.default.username=admin
-datasources.default.password=<password for admin user>
-datasources.default.schema-generate=NONE
-datasources.default.dialect=oracle
+#datasources.default.url=jdbc:oracle:thin:@<your atp instance>?TNS_ADMIN=<path to your wallet file>
+#datasources.default.driverClassName=oracle.jdbc.OracleDriver
+#datasources.default.username=<your atp user>
+#datasources.default.password=<your atp password>
+#datasources.default.schema-generate=NONE
+#datasources.default.dialect=oracle
 ```
