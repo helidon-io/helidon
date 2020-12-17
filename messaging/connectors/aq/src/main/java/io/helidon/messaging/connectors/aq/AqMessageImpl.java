@@ -18,6 +18,7 @@ package io.helidon.messaging.connectors.aq;
 
 import java.sql.Connection;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
@@ -82,6 +83,11 @@ class AqMessageImpl<T> implements AqMessage<T> {
     @Override
     public ConnectionFactory getJmsConnectionFactory() {
         return jmsMessage.getJmsConnectionFactory();
+    }
+
+    @Override
+    public CompletionStage<Void> ack() {
+        return jmsMessage.ack();
     }
 
     @Override
