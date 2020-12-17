@@ -82,7 +82,6 @@ already configured for both metrics and health-checks, but the following example
       GreetService greetService = new GreetService(config);
 
       return Routing.builder()
-          .register(JsonSupport.create())
           .register(MetricsSupport.create()) // <1>
           .register("/greet", greetService)
           .build();
@@ -172,26 +171,26 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics
 You can get a single metric by specifying the name in the URL path.
 
 [source,bash]
-.Get the Helidon `grpc.requests.meter` metric:
+.Get the Helidon `requests.meter` metric:
 ----
-curl -H "Accept: application/json"  http://localhost:8080/metrics/vendor/grpc.requests.meter
+curl -H "Accept: application/json"  http://localhost:8080/metrics/vendor/requests.meter
 ----
 
 [source,json]
 .JSON response:
 ----
 {
-  "grpc.requests.meter": {
-    "count": 0,
-    "meanRate": 0.0,
-    "oneMinRate": 0.0,
-    "fiveMinRate": 0.0,
-    "fifteenMinRate": 0.0
+  "requests.meter": {
+    "count": 6,
+    "meanRate": 0.008275992296704147,
+    "oneMinRate": 0.01576418632772332,
+    "fiveMinRate": 0.006695060022357365,
+    "fifteenMinRate": 0.0036382699664488415
   }
 }
 ----
 
-NOTE: You cannot get the individual fields of a metric. For example, you cannot target http://localhost:8080/metrics/vendor/grpc.requests.meter.count.
+NOTE: You cannot get the individual fields of a metric. For example, you cannot target http://localhost:8080/metrics/vendor/requests.meter.count.
 
 === Metrics metadata
 

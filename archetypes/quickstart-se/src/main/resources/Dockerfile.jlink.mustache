@@ -20,6 +20,6 @@ RUN echo "done!"
 
 FROM debian:stretch-slim
 WORKDIR /helidon
-COPY --from=build /helidon/target/{{artifactId}} ./
+COPY --from=build /helidon/target/{{artifactId}}-jri ./
 ENTRYPOINT ["/bin/bash", "/helidon/bin/start"]
 EXPOSE 8080
