@@ -30,18 +30,18 @@ In this guide you will learn how to build a native image locally on your machine
 |===
 |About 10 minutes
 | <<about/03_prerequisites.adoc,Helidon Prerequisites>>
-| GraalVM CE https://www.graalvm.org/downloads[20.0.0+]
+| GraalVM CE https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-20.2.0[20.2.0]
 |===
 
 == Install GraalVM and the Native Image Command
 
-After https://github.com/oracle/graal/releases[downloading and installing] GraalVM,
+After https://github.com/graalvm/graalvm-ce-builds/releases[downloading and installing] GraalVM,
 set the `GRAALVM_HOME` environment variable to point at your GraalVM installation.
 
 [source,bash]
 ----
 # Your path might be different
-export GRAALVM_HOME=/usr/local/graalvm-ce-20.0.0/Contents/Home/
+export GRAALVM_HOME=/usr/local/graalvm-ce-20.2.0/Contents/Home/
 ----
 
 Then install the optional `native-image` command:

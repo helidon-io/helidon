@@ -16,8 +16,7 @@
 
 package io.helidon.grpc.examples.basics;
 
-import java.util.logging.LogManager;
-
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.grpc.examples.common.GreetService;
 import io.helidon.grpc.examples.common.GreetServiceJava;
@@ -42,16 +41,13 @@ public class Server {
      * The main program entry point.
      *
      * @param args  the program arguments
-     *
-     * @throws Exception  if an error occurs
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Server.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // Get gRPC server config from the "grpc" section of application.yaml
         GrpcServerConfiguration serverConfig =

@@ -16,11 +16,9 @@
 
 package io.helidon.webserver.examples.tls;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.concurrent.CompletionStage;
-import java.util.logging.LogManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
@@ -43,8 +41,9 @@ public final class Main {
      *
      * @param args start arguments are ignored
      */
-    public static void main(String[] args) throws IOException {
-        setupLogging();
+    public static void main(String[] args) {
+        LogConfig.configureRuntime();
+
         Config config = Config.create();
         startConfigBasedServer(config.get("config-based"))
                 .thenAccept(ws -> {
@@ -81,14 +80,5 @@ public final class Main {
         return Routing.builder()
                 .get("/", (req, res) -> res.send("Hello!"))
                 .build();
-    }
-
-    /**
-     * Configure logging from logging.properties file.
-     */
-    private static void setupLogging() throws IOException {
-        try (InputStream is = Main.class.getResourceAsStream("/logging.properties")) {
-            LogManager.getLogManager().readConfiguration(is);
-        }
     }
 }

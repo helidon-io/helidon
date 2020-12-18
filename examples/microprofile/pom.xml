@@ -32,6 +32,7 @@
     <name>Helidon Microprofile Examples</name>
 
     <modules>
+        <module>graphql</module>
         <module>hello-world-implicit</module>
         <module>hello-world-explicit</module>
         <module>static-content</module>

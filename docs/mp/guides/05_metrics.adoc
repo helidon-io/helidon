@@ -140,14 +140,6 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics
     "thread.max.count": 44
   },
   "vendor": {
-    "grpc.requests.count": 0,
-    "grpc.requests.meter": {
-      "count": 0,
-      "meanRate": 0.0,
-      "oneMinRate": 0.0,
-      "fiveMinRate": 0.0,
-      "fifteenMinRate": 0.0
-    },
     "requests.count": 6,
     "requests.meter": {
       "count": 6,
@@ -163,26 +155,26 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics
 You can get a single metric by specifying the name in the URL path.
 
 [source,bash]
-.Get the Helidon `grpc.requests.meter` metric:
+.Get the Helidon `requests.meter` metric:
 ----
-curl -H "Accept: application/json"  http://localhost:8080/metrics/vendor/grpc.requests.meter
+curl -H "Accept: application/json"  http://localhost:8080/metrics/vendor/requests.meter
 ----
 
 [source,json]
 .JSON response:
 ----
 {
-  "grpc.requests.meter": {
-    "count": 0,
-    "meanRate": 0.0,
-    "oneMinRate": 0.0,
-    "fiveMinRate": 0.0,
-    "fifteenMinRate": 0.0
+  "requests.meter": {
+    "count": 6,
+    "meanRate": 0.008275992296704147,
+    "oneMinRate": 0.01576418632772332,
+    "fiveMinRate": 0.006695060022357365,
+    "fifteenMinRate": 0.0036382699664488415
   }
 }
 ----
 
-NOTE: You cannot get the individual fields of a metric. For example, you cannot target http://localhost:8080/metrics/vendor/grpc.requests.meter.count.
+NOTE: You cannot get the individual fields of a metric. For example, you cannot target http://localhost:8080/metrics/vendor/requests.meter.count.
 
 ==== Controlling `REST.request` metrics
 Helidon implements the optional family of metrics, all with the name `REST.request`, as described in the
@@ -309,17 +301,6 @@ The counter is incremented each time the anyCards method is called.  The `name` 
 NOTE: For Metrics 1.1, you must set `monotonic` field to `true` to force the count to increment when entering the method.
 The default behavior is to decrement when exiting the method.  Here is an example:
 `@Counted(name = "any-card", monotonic = true)`.
-
-
-[source,java]
-.Update the `GreetApplication` class as follows:
-----
-@Override
-public Set<Class<?>> getClasses() {
-    return Set.of(GreetResource.class, GreetingCards.class); // <1>
-}
-----
-<1> Add the `GreetingCards` class to the set of classes managed by Helidon for this application.
 
 
 [source,bash]

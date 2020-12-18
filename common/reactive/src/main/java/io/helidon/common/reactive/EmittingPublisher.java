@@ -79,7 +79,15 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
             subscriber.onError(new IllegalStateException("Only single subscriber is allowed!"));
             return;
         }
+        unsafeSubscribe(subscriber);
+    }
 
+    /**
+     * Subscribe without subscriber validation.
+     *
+     * @param subscriber the subscriber
+     */
+    void unsafeSubscribe(final Flow.Subscriber<? super T> subscriber) {
         this.subscriber = subscriber;
 
         subscriber.onSubscribe(new Flow.Subscription() {

@@ -20,6 +20,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
@@ -48,6 +49,9 @@ public class CheckIT {
     /** Timeout in seconds to wait for database to come up. */
     private static final int TIMEOUT = 60;
 
+    /* Thread sleep time in miliseconds while waiting for database or appserver to come up. */
+    private static final int SLEEP_MILIS = 250;
+
     /**
      * Wait until database starts up when its configuration node is available.
      */
@@ -60,6 +64,7 @@ public class CheckIT {
         }
 
         @Override
+        @SuppressWarnings("SleepWhileInLoop")
         public void accept(Config config) {
             String url = config.get("url").asString().get();
             String username = config.get("username").asString().get();
@@ -71,9 +76,14 @@ public class CheckIT {
                     connected = true;
                     return;
                 } catch (SQLException ex) {
-                    LOGGER.info(() -> String.format("Connection check: %s", ex.getMessage()));
+                    LOGGER.log(Level.FINE, ex, () -> String.format("Connection check: %s", ex.getMessage()));
                     if (System.currentTimeMillis() > endTm) {
                         return;
+                    }
+                    try {
+                        Thread.sleep(SLEEP_MILIS);
+                    } catch (InterruptedException ie) {
+                        LOGGER.log(Level.WARNING, ie, () -> String.format("Thread was interrupted: %s", ie.getMessage()));
                     }
                 }
             }

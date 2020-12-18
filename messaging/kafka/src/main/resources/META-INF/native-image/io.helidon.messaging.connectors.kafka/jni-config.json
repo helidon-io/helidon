@@ -1,0 +1,45 @@
+[
+  {
+    "name": "com.github.luben.zstd.ZstdInputStream",
+    "fields": [
+      {
+        "name": "dstPos"
+      },
+      {
+        "name": "srcPos"
+      }
+    ]
+  },
+  {
+    "name": "com.github.luben.zstd.ZstdOutputStream",
+    "fields": [
+      {
+        "name": "dstPos"
+      },
+      {
+        "name": "srcPos"
+      }
+    ]
+  },
+  {
+    "name": "java.lang.ClassLoader",
+    "methods": [
+      {
+        "name": "getPlatformClassLoader",
+        "parameterTypes": []
+      },
+      {
+        "name": "loadClass",
+        "parameterTypes": [
+          "java.lang.String"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "java.lang.ClassNotFoundException"
+  },
+  {
+    "name": "java.lang.NoSuchMethodError"
+  }
+]

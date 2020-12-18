@@ -17,8 +17,8 @@
 package io.helidon.grpc.examples.security.outbound;
 
 import java.util.Optional;
-import java.util.logging.LogManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
@@ -71,11 +71,9 @@ public class SecureServer {
      * Program entry point.
      *
      * @param args the program command line arguments
-     * @throws Exception if there is a program error
      */
-    public static void main(String[] args) throws Exception {
-        LogManager.getLogManager().readConfiguration(
-                SecureServer.class.getResourceAsStream("/logging.properties"));
+    public static void main(String[] args) {
+        LogConfig.configureRuntime();
 
         Config config = Config.create();
 
