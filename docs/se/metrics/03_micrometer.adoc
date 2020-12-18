@@ -19,7 +19,7 @@
 = Micrometer Metrics
 :description: Helidon Micrometer metrics
 :keywords: micrometer, helidon, metrics
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.metrics.micrometer/io/helidon/metrics/micrometer
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.metrics/io/helidon/metrics
 :h1Prefix: SE
 
 Helidon {h1Prefix} simplifies how you can use Micrometer for application-specific metrics:
@@ -38,13 +38,13 @@ Declare the following dependency in your project:
 
 [source,xml,subs="verbatim,attributes"]
 ----
-    <dependency>
-        <groupId>io.helidon.metrics</groupId>
-        <artifactId>helidon-metrics-micrometer</artifactId>
-    </dependency>
+<dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-registry-prometheus</artifactId>
+</dependency>
 ----
 
-Micrometer supports different meter registries for different output styles and formats.
+Micrometer supports different types of meter registries which have different output styles and formats.
 Helidon provides built-in support for the Prometheus meter registry.
 To use other meter registry types, you will need to add dependencies for them to your `pom.xml`.
 
@@ -111,8 +111,8 @@ You can change the default setup for built-in registries, and you can enroll oth
 creates itself.
 
 === Overriding Defaults for Built-in Meter Registry Types
-Unless otherwise instructed, Helidon uses defaults for any built-in Micrometer meter registry. For example, Helidon configures the built-in
-Prometheus registry using `PrometheusConfig.DEFAULT`.
+Unless you specify otherwise, Helidon uses defaults for any built-in Micrometer meter registry.
+For example, Helidon configures the built-in Prometheus registry using `PrometheusConfig.DEFAULT`.
 
 You can override these defaults in either of two ways:
 

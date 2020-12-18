@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.metrics.micrometer;
+package io.helidon.metrics;
 
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
@@ -25,9 +25,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class TestUtil {
+public class MicrometerTestUtil {
 
-    private static final Logger LOGGER = Logger.getLogger(TestUtil.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(MicrometerTestUtil.class.getName());
 
     /**
      * Starts the web server at an available port and sets up OpenAPI using the

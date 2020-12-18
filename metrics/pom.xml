@@ -32,6 +32,5 @@
     <modules>
         <module>metrics</module>
         <module>prometheus</module>
-        <module>micrometer</module>
     </modules>
 </project>

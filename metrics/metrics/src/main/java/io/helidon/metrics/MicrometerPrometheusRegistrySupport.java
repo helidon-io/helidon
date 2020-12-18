@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.metrics.micrometer;
+package io.helidon.metrics;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -40,7 +40,7 @@ import io.prometheus.client.Collector;
 /**
  * Support for built-in Prometheus meter registry type.
  */
-class PrometheusRegistrySupport extends BuiltInRegistrySupport {
+class MicrometerPrometheusRegistrySupport extends MicrometerBuiltInRegistrySupport {
 
     static class PrometheusConfigImpl extends AbstractMeterRegistryConfig implements PrometheusConfig {
 
@@ -60,7 +60,7 @@ class PrometheusRegistrySupport extends BuiltInRegistrySupport {
         }
     }
 
-    PrometheusRegistrySupport(MeterRegistryConfig meterRegistryConfig) {
+    MicrometerPrometheusRegistrySupport(MeterRegistryConfig meterRegistryConfig) {
         super(meterRegistryConfig);
     }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.metrics.micrometer;
+package io.helidon.metrics;
 
 import java.util.Optional;
 import java.util.Set;
@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.not;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -63,7 +64,7 @@ public class MicrometerSupportBuilderTest {
                 .enrollRegistry(registry, r -> Optional.of((req, resp) -> resp.send(registry.scrape())))
                 .build();
 
-        assertThat("Did not find expected explicitly enrolled registry", support.registries(), contains(registry));
+        assertThat("Did not find expected explicitly enrolled registry", support.registries(), Matchers.contains(registry));
 
         support.registry().counter("testCounter4").increment(inc);
         Counter counter = support.registry().find("testCounter4").counter();
@@ -94,7 +95,7 @@ public class MicrometerSupportBuilderTest {
     @Test
     public void testBuiltInWithSingleGoodType() {
         double inc = 6.0;
-        Config config = Config.create(ConfigSources.classpath("/testData.json")).get("singleValue");
+        Config config = Config.create(ConfigSources.classpath("/micrometerTestData.json")).get("singleValue");
         MicrometerSupport.Builder builder = MicrometerSupport.builder()
                 .config(config.get("metrics.micrometer"));
 
@@ -118,7 +119,7 @@ public class MicrometerSupportBuilderTest {
 
     @Test
     public void testBuiltInWithOneBadType() {
-        Config config = Config.create(ConfigSources.classpath("/testData.json")).get("singleBadValueWithGoodOne");
+        Config config = Config.create(ConfigSources.classpath("/micrometerTestData.json")).get("singleBadValueWithGoodOne");
         MicrometerSupport.Builder builder = MicrometerSupport.builder()
                 .config(config.get("metrics.micrometer"));
 
@@ -131,7 +132,7 @@ public class MicrometerSupportBuilderTest {
 
     @Test
     public void testBuiltInWithConfig() {
-        Config config = Config.create(ConfigSources.classpath("/testData.json")).get("structure");
+        Config config = Config.create(ConfigSources.classpath("/micrometerTestData.json")).get("structure");
 
         MicrometerSupport.Builder builder = MicrometerSupport.builder()
                 .config(config.get("metrics.micrometer"));
@@ -151,7 +152,7 @@ public class MicrometerSupportBuilderTest {
 
     @Test
     public void testMultipleNamesOnly() {
-        Config config = Config.create(ConfigSources.classpath("/testData.json")).get("listOfValues");
+        Config config = Config.create(ConfigSources.classpath("/micrometerTestData.json")).get("listOfValues");
         MicrometerSupport.Builder builder = MicrometerSupport.builder()
                 .config(config.get("metrics.micrometer"));
 

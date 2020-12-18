@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.metrics.micrometer;
+package io.helidon.metrics;
 
 import java.util.Collections;
 import java.util.Map;
@@ -33,7 +33,7 @@ import io.micrometer.prometheus.PrometheusConfig;
 /**
  * Framework for supporting Micrometer registry types.
  */
-abstract class BuiltInRegistrySupport {
+abstract class MicrometerBuiltInRegistrySupport {
 
     abstract static class AbstractMeterRegistryConfig implements MeterRegistryConfig {
         private final Map<String, String> settings;
@@ -51,29 +51,29 @@ abstract class BuiltInRegistrySupport {
         }
     }
 
-    static BuiltInRegistrySupport create(MicrometerSupport.BuiltInRegistryType type,
+    static MicrometerBuiltInRegistrySupport create(MicrometerSupport.BuiltInRegistryType type,
             ConfigValue<Config> node) {
         switch (type) {
             case PROMETHEUS:
-                return create(type, PrometheusRegistrySupport.PrometheusConfigImpl.registryConfig(node));
+                return create(type, MicrometerPrometheusRegistrySupport.PrometheusConfigImpl.registryConfig(node));
 
             default:
                 throw new IllegalArgumentException(unrecognizedMessage(type));
         }
     }
 
-    static BuiltInRegistrySupport create(MicrometerSupport.BuiltInRegistryType type,
+    static MicrometerBuiltInRegistrySupport create(MicrometerSupport.BuiltInRegistryType type,
             MeterRegistryConfig meterRegistryConfig) {
         switch (type) {
             case PROMETHEUS:
-                return new PrometheusRegistrySupport(meterRegistryConfig);
+                return new MicrometerPrometheusRegistrySupport(meterRegistryConfig);
 
             default:
                 throw new IllegalArgumentException(unrecognizedMessage(type));
         }
     }
 
-    static BuiltInRegistrySupport create(MicrometerSupport.BuiltInRegistryType type) {
+    static MicrometerBuiltInRegistrySupport create(MicrometerSupport.BuiltInRegistryType type) {
         MeterRegistryConfig meterRegistryConfig;
         switch (type) {
             case PROMETHEUS:
@@ -88,7 +88,7 @@ abstract class BuiltInRegistrySupport {
 
     private final MeterRegistry registry;
 
-    BuiltInRegistrySupport(MeterRegistryConfig meterRegistryConfig) {
+    MicrometerBuiltInRegistrySupport(MeterRegistryConfig meterRegistryConfig) {
         registry = createRegistry(meterRegistryConfig);
     }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.metrics.micrometer;
+package io.helidon.metrics;
 
 
 import java.util.ArrayList;
@@ -239,7 +239,7 @@ public class MicrometerSupport implements Service {
         private String context = DEFAULT_CONTEXT;
         private final List<Enrollment> explicitRegistryEnrollments = new ArrayList<>();
 
-        private final Map<BuiltInRegistryType, BuiltInRegistrySupport> builtInRegistriesRequested = new HashMap<>();
+        private final Map<BuiltInRegistryType, MicrometerBuiltInRegistrySupport> builtInRegistriesRequested = new HashMap<>();
 
         private final List<LogRecord> logRecords = new ArrayList<>();
 
@@ -286,7 +286,7 @@ public class MicrometerSupport implements Service {
          * @return updated builder instance
          */
         public Builder enrollBuiltInRegistry(BuiltInRegistryType builtInRegistryType, MeterRegistryConfig meterRegistryConfig) {
-            BuiltInRegistrySupport builtInRegistrySupport = BuiltInRegistrySupport.create(builtInRegistryType,
+            MicrometerBuiltInRegistrySupport builtInRegistrySupport = MicrometerBuiltInRegistrySupport.create(builtInRegistryType,
                     meterRegistryConfig);
             builtInRegistriesRequested.put(builtInRegistryType, builtInRegistrySupport);
             return this;
@@ -299,7 +299,7 @@ public class MicrometerSupport implements Service {
          * @return updated builder instance
          */
         public Builder enrollBuiltInRegistry(BuiltInRegistryType builtInRegistryType) {
-            BuiltInRegistrySupport builtInRegistrySupport = BuiltInRegistrySupport.create(builtInRegistryType);
+            MicrometerBuiltInRegistrySupport builtInRegistrySupport = MicrometerBuiltInRegistrySupport.create(builtInRegistryType);
             builtInRegistriesRequested.put(builtInRegistryType, builtInRegistrySupport);
             return this;
         }
@@ -378,7 +378,7 @@ public class MicrometerSupport implements Service {
                         + "but found " + registriesConfig.type().name());
             }
 
-            Map<BuiltInRegistryType, BuiltInRegistrySupport> candidateBuiltInRegistryTypes = new HashMap<>();
+            Map<BuiltInRegistryType, MicrometerBuiltInRegistrySupport> candidateBuiltInRegistryTypes = new HashMap<>();
             List<String> unrecognizedTypes = new ArrayList<>();
 
             for (Config registryConfig : registriesConfig.asNodeList().get()) {
@@ -386,7 +386,7 @@ public class MicrometerSupport implements Service {
                 try {
                     BuiltInRegistryType type = BuiltInRegistryType.valueByName(registryType);
 
-                    BuiltInRegistrySupport builtInRegistrySupport = BuiltInRegistrySupport.create(type, registryConfig.asNode());
+                    MicrometerBuiltInRegistrySupport builtInRegistrySupport = MicrometerBuiltInRegistrySupport.create(type, registryConfig.asNode());
                     if (builtInRegistrySupport != null) {
                         candidateBuiltInRegistryTypes.put(type, builtInRegistrySupport);
                     }

@@ -14,7 +14,12 @@
  * limitations under the License.
  *
  */
-package io.helidon.metrics.micrometer;
+package io.helidon.metrics;
+
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -30,15 +35,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class SimpleMicrometerPrometheusTest {
+public class MicrometerSimplePrometheusTest {
 
     private static PrometheusMeterRegistry registry;
     private MicrometerSupport micrometerSupport;
@@ -59,13 +59,13 @@ public class SimpleMicrometerPrometheusTest {
                     // If there is no media type, assume text/plain which means, for us, Prometheus.
                     if (req.headers().acceptedTypes().contains(MediaType.TEXT_PLAIN)
                             || req.queryParams().first("type").orElse("").equals("prometheus")) {
-                        return Optional.of(PrometheusRegistrySupport.PrometheusHandler.create(registry));
+                        return Optional.of(MicrometerPrometheusRegistrySupport.PrometheusHandler.create(registry));
                     } else {
                         return Optional.empty();
                     }
                 });
 
-        webServer = TestUtil.startServer(builder);
+        webServer = MicrometerTestUtil.startServer(builder);
     }
 
     @BeforeEach

@@ -14,18 +14,18 @@
  * limitations under the License.
  *
  */
-package io.helidon.metrics.micrometer;
+package io.helidon.metrics;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.media.common.MediaSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ExecutionException;
@@ -34,9 +34,9 @@ import java.util.function.Supplier;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class EndpointTests {
+public class MicrometerEndpointTests {
 
-    private static Config overallTestConfig = Config.create(ConfigSources.classpath("/testData.json"));
+    private static Config overallTestConfig = Config.create(ConfigSources.classpath("/micrometerTestData.json"));
 
 
     @Test
@@ -90,7 +90,7 @@ public class EndpointTests {
                     .request()
                     .get();
 
-            assertThat(webClientResponse.status(), is(Http.Status.OK_200));
+            MatcherAssert.assertThat(webClientResponse.status(), is(Http.Status.OK_200));
         } finally {
             if (webServer != null) {
                 webServer.shutdown()
