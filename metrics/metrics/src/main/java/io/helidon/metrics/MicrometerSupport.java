@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -36,15 +35,10 @@ import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
-import io.helidon.webserver.cors.CorsEnabledServiceHelper;
-import io.helidon.webserver.cors.CrossOriginConfig;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.config.MeterRegistryConfig;
-
-import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
 
 /**
  * Implements simple Micrometer support.
@@ -61,7 +55,7 @@ import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY
  * MeterRegistry} to create or locate meters.
  * </p>
  */
-public class MicrometerSupport implements Service {
+public class MicrometerSupport extends MetricsSupportBase<MicrometerSupport, MicrometerSupport.Builder> {
 
     /**
      * Config key for specifying built-in registry types to enroll.
@@ -126,9 +120,7 @@ public class MicrometerSupport implements Service {
 
     private static final Logger LOGGER = Logger.getLogger(MicrometerSupport.class.getName());
 
-    private final CorsEnabledServiceHelper corsEnabledServiceHelper;
     private final CompositeMeterRegistry compositeMeterRegistry;
-    private final String context;
 
     private final List<Enrollment> registryEnrollments;
 
@@ -136,8 +128,7 @@ public class MicrometerSupport implements Service {
     private final Map<BuiltInRegistryType, MeterRegistry> builtInRegistryEnrollments = new HashMap<>();
 
     private MicrometerSupport(Builder builder) {
-        context = builder.context;
-        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(SERVICE_NAME, builder.crossOriginConfig);
+        super(builder, SERVICE_NAME);
         compositeMeterRegistry = new CompositeMeterRegistry();
 
         if (builder.explicitAndBuiltInEnrollments().isEmpty()) {
@@ -203,14 +194,11 @@ public class MicrometerSupport implements Service {
         return builtInRegistryEnrollments;
     }
 
-    private void configureEndpoint(Routing.Rules rules) {
-        // CORS first
+    void postConfigureEndpoint(Routing.Rules rules) {
         rules
-                .any(context, corsEnabledServiceHelper.processor())
                 .any(new MetricsContextHandler(compositeMeterRegistry))
-                .get(context, this::getOrOptions)
-                .options(context, this::getOrOptions);
-
+                .get(context(), this::getOrOptions)
+                .options(context(), this::getOrOptions);
     }
 
     private void getOrOptions(ServerRequest serverRequest, ServerResponse serverResponse) {
@@ -233,15 +221,23 @@ public class MicrometerSupport implements Service {
     /**
      * Fluid builder for {@code MicrometerSupport} objects.
      */
-    public static class Builder implements io.helidon.common.Builder<MicrometerSupport> {
+    public static class Builder extends MetricsSupportBase.Builder<MicrometerSupport, Builder>
+            implements io.helidon.common.Builder<MicrometerSupport> {
 
-        private CrossOriginConfig crossOriginConfig = null;
-        private String context = DEFAULT_CONTEXT;
         private final List<Enrollment> explicitRegistryEnrollments = new ArrayList<>();
 
         private final Map<BuiltInRegistryType, MicrometerBuiltInRegistrySupport> builtInRegistriesRequested = new HashMap<>();
 
         private final List<LogRecord> logRecords = new ArrayList<>();
+
+        private Builder() {
+            super(DEFAULT_CONTEXT);
+        }
+
+        @Override
+        protected Builder me() {
+            return this;
+        }
 
         /**
          * Available built-in Micrometer meter registry types.
@@ -264,14 +260,7 @@ public class MicrometerSupport implements Service {
          */
         public Builder config(Config config) {
 
-            config.get("web-context")
-                    .asString()
-                    .ifPresent(this::webContext);
-
-            config.get(CORS_CONFIG_KEY)
-                    .as(CrossOriginConfig::create)
-                    .ifPresent(this::crossOriginConfig);
-
+            super.config(config);
             config.get(BUILTIN_REGISTRIES_CONFIG_KEY)
                     .ifExists(this::enrollBuiltInRegistries);
 
@@ -299,35 +288,9 @@ public class MicrometerSupport implements Service {
          * @return updated builder instance
          */
         public Builder enrollBuiltInRegistry(BuiltInRegistryType builtInRegistryType) {
-            MicrometerBuiltInRegistrySupport builtInRegistrySupport = MicrometerBuiltInRegistrySupport.create(builtInRegistryType);
+            MicrometerBuiltInRegistrySupport builtInRegistrySupport =
+                    MicrometerBuiltInRegistrySupport.create(builtInRegistryType);
             builtInRegistriesRequested.put(builtInRegistryType, builtInRegistrySupport);
-            return this;
-        }
-
-        /**
-         * Set a new root context for REST API of metrics.
-         *
-         * @param path context to use
-         * @return updated builder instance
-         */
-        public Builder webContext(String path) {
-            if (path.startsWith("/")) {
-                this.context = path;
-            } else {
-                this.context = "/" + path;
-            }
-            return this;
-        }
-
-        /**
-         * Set the CORS config from the specified {@code CrossOriginConfig} object.
-         *
-         * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
-         * @return updated builder instance
-         */
-        public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
-            Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
-            this.crossOriginConfig = crossOriginConfig;
             return this;
         }
 
@@ -386,7 +349,8 @@ public class MicrometerSupport implements Service {
                 try {
                     BuiltInRegistryType type = BuiltInRegistryType.valueByName(registryType);
 
-                    MicrometerBuiltInRegistrySupport builtInRegistrySupport = MicrometerBuiltInRegistrySupport.create(type, registryConfig.asNode());
+                    MicrometerBuiltInRegistrySupport builtInRegistrySupport =
+                            MicrometerBuiltInRegistrySupport.create(type, registryConfig.asNode());
                     if (builtInRegistrySupport != null) {
                         candidateBuiltInRegistryTypes.put(type, builtInRegistrySupport);
                     }
