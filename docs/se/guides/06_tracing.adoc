@@ -144,28 +144,18 @@ tracing:
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add a new import, 2) Change the code that initializes `serverConfig` to use the new `buildServerConfig` method., and 3) Add the `buildServerConfig` method:
+.Update the `Main` class; Add Tracer to the WebServer builder
 ----
 import io.helidon.tracing.TracerBuilder; // <1>
 ...
-    // Replace the existing line of code
-    // ServerConfiguration serverConfig = ServerConfiguration.create(config.get("server"));
-    // with ` ServerConfiguration serverConfig = buildServerConfig(config);`
-    ServerConfiguration serverConfig = buildServerConfig(config); // <2>
-...
-
-  private static ServerConfiguration buildServerConfig(Config config) {  // <3>
-    return ServerConfiguration.builder()
-        .config(config.get("server"))
-        .tracer(TracerBuilder.create(config.get("tracing")).buildAndRegister()) // <4>
-        .build();
-  }
-
+WebServer server = WebServer.builder(createRouting(config))
+                .config(config.get("server"))
+                .tracer(TracerBuilder.create(config.get("tracing")).build()) // <2>
+                .addMediaSupport(JsonpSupport.create())
+                .build();
 ----
 <1> Add a new import statement.
-<2> Call the new `buildServerConfig` method to build a `ServerConfiguration` object.
-<3> Build the `ServerConfiguration` object.
-<4> Build and register a `Tracer` object using the tracing configuration.
+<2> Build and register a `Tracer` object using the tracing configuration.
 
 [source,java]
 .Update the `GreetService` class; 1) Add a new import and 2) Replace the `getDefaultMessageHandler` method:
@@ -175,10 +165,10 @@ import io.opentracing.Span; // <1>
     private void getDefaultMessageHandler(ServerRequest request,
                                    ServerResponse response) {
 
-        Span span = request.tracer()  // <2>
-            .buildSpan("getDefaultMessageHandler")  // <3>
-            .asChildOf(request.spanContext())  // <4>
-            .start(); // <5>
+        var spanBuilder = request.tracer()  // <2>
+                .buildSpan("getDefaultMessageHandler");  // <3>
+        request.spanContext().ifPresent(spanBuilder::asChildOf);  // <4>
+        Span span = spanBuilder.start();  // <5>
 
         try {
             sendResponse(response, "World");
@@ -190,7 +180,7 @@ import io.opentracing.Span; // <1>
 <1> Add new import statement.
 <2> Get the `Tracer` object from the request.
 <3> Build a new span named `getDefaultMessageHandler`.
-<4> Make the a new span a child of the current span.
+<4> Make the new span a child of the current span.
 <5> Start the span.  The current timestamp is used as the starting time for the span.
 <6> Finish the span.  The current timestamp is used as the ending time for the span.
 
@@ -378,19 +368,15 @@ server:
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add a new import, 2) call the `buildServerConfig()` method, and 3) Add the `buildServerConfig` method:
+.Update the `Main` class; Add Tracer to the WebServer builder
 ----
 import io.helidon.tracing.TracerBuilder;
 ...
-    ServerConfiguration serverConfig = buildServerConfig(config);
-...
-
-  private static ServerConfiguration buildServerConfig(Config config) {
-    return ServerConfiguration.builder()
-        .config(config.get("server"))
-        .tracer(TracerBuilder.create(config.get("tracing")).buildAndRegister())
-        .build();
-  }
+WebServer server = WebServer.builder(createRouting(config))
+                .config(config.get("server"))
+                .tracer(TracerBuilder.create(config.get("tracing")).build())
+                .addMediaSupport(JsonpSupport.create())
+                .build();
 ----
 
 [source,java]
@@ -401,10 +387,10 @@ import io.opentracing.Span;
     private void getDefaultMessageHandler(ServerRequest request,
                                    ServerResponse response) {
 
-        Span span = request.tracer()
-            .buildSpan("getDefaultMessageHandler")
-            .asChildOf(request.spanContext())
-            .start();
+        var spanBuilder = request.tracer()
+                .buildSpan("getDefaultMessageHandler");
+        request.spanContext().ifPresent(spanBuilder::asChildOf);
+        Span span = spanBuilder.start();
 
         try {
             sendResponse(response, "World");
@@ -505,12 +491,10 @@ public class GreetService implements Service {
 
   private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
 
-    Span span =
-        request
-            .tracer()
-            .buildSpan("getDefaultMessageHandler")
-            .asChildOf(request.spanContext())
-            .start();
+    var spanBuilder = request.tracer()
+                .buildSpan("getDefaultMessageHandler");
+    request.spanContext().ifPresent(spanBuilder::asChildOf);
+    Span span = spanBuilder.start();
 
     try {
       sendResponse(response, "World");
@@ -543,12 +527,10 @@ public class GreetService implements Service {
     Invocation.Builder requestBuilder = webTarget.request();
 
     // <2>
-    Span span =
-        request
-            .tracer()
-            .buildSpan("outboundMessageHandler")
-            .asChildOf(request.spanContext())
-            .start();
+    var spanBuilder = request.tracer()
+                .buildSpan("outboundMessageHandler");
+    request.spanContext().ifPresent(spanBuilder::asChildOf);
+    Span span = spanBuilder.start();
 
     try {
       requestBuilder.property(
