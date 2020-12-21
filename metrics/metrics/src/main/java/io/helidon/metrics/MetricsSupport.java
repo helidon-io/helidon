@@ -47,6 +47,7 @@ import javax.json.JsonValue;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
+import io.helidon.config.DeprecatedConfig;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webserver.Handler;
@@ -509,6 +510,13 @@ public final class MetricsSupport extends MetricsSupportBase<MetricsSupport, Met
         @Override
         protected Builder me() {
             return this;
+        }
+
+        @Override
+        protected Config getWebContextConfig(Config config) {
+            // align with health checks
+            return DeprecatedConfig.get(config, "web-context", "context");
+
         }
 
         @Override

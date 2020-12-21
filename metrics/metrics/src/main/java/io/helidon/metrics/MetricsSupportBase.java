@@ -19,7 +19,6 @@ package io.helidon.metrics;
 import java.util.Objects;
 
 import io.helidon.config.Config;
-import io.helidon.config.DeprecatedConfig;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.cors.CorsEnabledServiceHelper;
@@ -46,9 +45,8 @@ public abstract class MetricsSupportBase<T extends MetricsSupportBase<T, B>, B e
 
     /**
      * Configure metrics endpoint on the provided routing rules. This method
-     * just adds the endpoint {@code /metrics} (or appropriate one as
-     * configured). For simple routings, just register {@code MetricsSupport}
-     * instance. This method is exclusive to
+     * just adds the endpoint path (as defaulted or configured).
+     * This method is exclusive to
      * {@link #update(io.helidon.webserver.Routing.Rules)} (e.g. you should not
      * use both, as otherwise you would register the endpoint twice)
      *
@@ -80,8 +78,7 @@ public abstract class MetricsSupportBase<T extends MetricsSupportBase<T, B>, B e
         public B config(Config config) {
             this.config = config;
 
-            // align with health checks
-            DeprecatedConfig.get(config, "web-context", "context")
+            getWebContextConfig(config)
                     .asString()
                     .ifPresent(this::webContext);
 
@@ -124,5 +121,9 @@ public abstract class MetricsSupportBase<T extends MetricsSupportBase<T, B>, B e
         }
 
         protected abstract B me();
+
+        protected Config getWebContextConfig(Config config) {
+            return config.get("web-context");
+        }
     }
 }
