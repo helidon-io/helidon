@@ -17,21 +17,16 @@ import java.util.Map;
 
 @Path("/")
 @ApplicationScoped
-public class RecoveryManager {
+public class RecoveryManager implements Runnable {
 
     @Inject
     @Named("coordinatordb")
     PoolDataSource coordinatordb;
 
-    private static Connection connection = null;
-
-    //using separate map approach for recovery and runtime txs
+    private  Connection connection = null;
     Map<String, LRA> lraRecoveryRecordMap = new HashMap();
-
     private static RecoveryManager singleton;
-    static {
-        System.setProperty("oracle.jdbc.fanEnabled", "false");
-    }
+    boolean isRecovered = false;
 
     static RecoveryManager getInstance() {
         return singleton;
@@ -41,6 +36,7 @@ public class RecoveryManager {
         System.out.println("LRARecordPersistence.init " + init + " recovery disabled");
 //        recover();
         singleton = this;
+        new Thread(this).start();
     }
 
     public void recover() {
@@ -94,7 +90,7 @@ public class RecoveryManager {
         }
     }
 
-    static void log(LRA lra, String compensatorLink){
+    void log(LRA lra, String compensatorLink){
         if(true) return;
         System.out.println("LRARecordPersistence.log... lraRecord.lraId = " + lra.lraId + ", compensatorLink = " + compensatorLink);
         try {
@@ -106,7 +102,7 @@ public class RecoveryManager {
         }
     }
 
-    static void delete(LRA lra){
+    void delete(LRA lra){
         String sqlString = "delete lrarecords  where lraid ='"+ lra.lraId + "'";
         System.out.println("LRARecordPersistence.delete... " + sqlString);
         try {
@@ -116,5 +112,31 @@ public class RecoveryManager {
         }
     }
 
+    void add(String lraId, LRA lra){
+        this.lraRecoveryRecordMap.put(lraId, lra);
+    }
 
+
+    @Override
+    public void run() {
+        while (true) {
+            if (lraRecoveryRecordMap != null) {
+                for (String lraId: lraRecoveryRecordMap.keySet()) {
+                    LRA lra = lraRecoveryRecordMap.get(lraId);
+                        System.out.println(
+                                "RecoveryManager thread, will status and forget lraId:" + lraId );
+                        lra.sendStatus();
+                        lra.sendCompletion();
+                        lra.sendForget();
+                    lraRecoveryRecordMap.remove(lraId);
+                    isRecovered = true;
+                    }
+                }
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 }

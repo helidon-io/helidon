@@ -444,11 +444,11 @@ public class Coordinator {
                 for (String uri: lraRecordMap.keySet()) {
                     LRA lra = lraRecordMap.get(uri);
                     long currentTime = System.currentTimeMillis();
-//                    System.out.println(
-//                            "Timeout thread uri:" + uri + " lraRecordMap.get(uri):" + lra);
-//                    System.out.println(
-//                            "Timeout thread lra.timeout:" + lra.timeout + " currentTime:" + currentTime);
-                    if (lra.timeout > currentTime) lra.tryDoEnd(true, false);
+                    if (lra.timeout > currentTime) {
+                    System.out.println(
+                            "Timeout thread, will end uri:" + uri + "  timeout:" + lra.timeout + " currentTime:" + currentTime);
+                        lra.tryDoEnd(true, false);
+                    }
                 }
                 try {
                     Thread.sleep(500);
