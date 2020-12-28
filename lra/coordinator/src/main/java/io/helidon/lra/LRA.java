@@ -25,6 +25,7 @@ public class LRA {
     private URI parentId;
     private URI recoveryURI;
     private String participantPath;
+    List<String> compensatorLinks = new ArrayList<>();
 
     List<URI> completeURIs = new ArrayList<>();
     List<URI> compensateURIs = new ArrayList<>();
@@ -51,6 +52,8 @@ public class LRA {
     }
 
     void addParticipant(String compensatorLink, boolean isMessaging, boolean isToBeLogged) {
+        if (compensatorLinks.contains(compensatorLink)) return;
+        else compensatorLinks.add(compensatorLink);
         String uriPrefix = isMessaging ? "<messaging://" : "<http://";
         // <messaging://completeinventorylra>; rel="complete"; title="complete URI"; type="text/plain",
         // <messaging://compensate>; rel="compensate"; title="compensate URI"; type="text/plain"
@@ -106,7 +109,7 @@ public class LRA {
                 }
             }
         }
-        if (isToBeLogged) LRARecoveryManager.getInstance().log(this, compensatorLink);
+        if (isToBeLogged) RecoveryManager.getInstance().log(this, compensatorLink);
 
     }
 
@@ -130,7 +133,72 @@ public class LRA {
     }
 
     void sendAfterLRA() {
-        send(afterURIs);
+        for (URI endpointURI : afterURIs) {
+            System.out.println("LRARecord REST.sendAfterLRA:" + endpointURI + " lraId:" + lraId);
+            try {
+                Client client = ClientBuilder.newBuilder()
+                        .build();
+                String path = "http://127.0.0.1:8080/lra-coordinator/";
+                Response response = client.target(endpointURI)
+                        .request()
+                        .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
+                        .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
+                        .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
+                        .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
+                        .buildPut(Entity.text(LRAStatus.Closed.name())).invoke();
+                int responsestatus = response.getStatus();
+                System.out.println("LRARecord REST.sendAfterLRA:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
+            } catch (Exception e) {
+                System.out.println("LRARecord REST.sendAfterLRA Exception:" + e);
+                e.printStackTrace();
+            }
+        }
+    }
+
+    void sendStatus() {
+        for (URI endpointURI : statusURIs) {
+            System.out.println("LRARecord REST.sendStatus:" + endpointURI + " lraId:" + lraId);
+            try {
+                Client client = ClientBuilder.newBuilder()
+                        .build();
+                String path = "http://127.0.0.1:8080/lra-coordinator/";
+                Response response = client.target(endpointURI)
+                        .request() //http://localhost:8080/deployment/lra-coordinator/0_ffff0a28054b_9133_5f855916_a7
+                        .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
+                        .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
+                        .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId) // make the context available to participants
+                        .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
+                        .buildGet().invoke();
+                int responsestatus = response.getStatus();
+                System.out.println("LRARecord REST.sendStatus:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
+            } catch (Exception e) {
+                System.out.println("LRARecord REST.sendStatus Exception:" + e);
+                e.printStackTrace();
+            }
+        }
+    }
+
+    void sendForget() {
+        for (URI endpointURI : afterURIs) {
+            System.out.println("LRARecord REST.sendForget:" + endpointURI + " lraId:" + lraId);
+            try {
+                Client client = ClientBuilder.newBuilder()
+                        .build();
+                String path = "http://127.0.0.1:8080/lra-coordinator/";
+                Response response = client.target(endpointURI)
+                        .request()
+                        .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
+                        .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
+                        .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
+                        .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
+                        .buildDelete().invoke();
+                int responsestatus = response.getStatus();
+                System.out.println("LRARecord REST.sendForget:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
+            } catch (Exception e) {
+                System.out.println("LRARecord REST.sendForget Exception:" + e);
+                e.printStackTrace();
+            }
+        }
     }
 
     private void send(List<URI> endpointURIs) {
@@ -139,29 +207,32 @@ public class LRA {
             try {
                 Client client = ClientBuilder.newBuilder()
                         .build();
-//                String path = "http://localhost:8080/lra-coordinator/";
-                String path = "http://127.0.0.1:8080/lra-coordinator/"; //todo
-//                Future<Response> response = client.target(endpointURI)
+                String path = "http://127.0.0.1:8080/lra-coordinator/";
                 Response response = client.target(endpointURI)
-                        .request() //http://localhost:8080/deployment/lra-coordinator/0_ffff0a28054b_9133_5f855916_a7
+                        .request()
                         .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
                         .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
-                        .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId) // make the context available to participants
+                        .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
                         .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
                         .buildPut(Entity.text(LRAStatus.Closed.name())).invoke();
 //                        .buildPut(Entity.json("")).invoke();
 //                        .async().put(Entity.json("entity"));
-                System.out.println("LRARecord REST.send:" + endpointURI + " finished");
-                System.out.println("LRARecord REST.send response:" + response);
-                System.out.println("LRARecord REST.send response.isDone():" + response.getStatus());
-//                Future<Response> responseFuture =  client.target.equals(forgetURI) ? builder.async().delete()
-//                        : builder.async().put(Entity.text(payload));
-//                Response response = responseFuture.get(PARTICIPANT_TIMEOUT, TimeUnit.SECONDS);
-//
+                int responsestatus = response.getStatus();
+                System.out.println("LRARecord REST.send:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
+                if(false && responsestatus == 202) {
+                    client.target(endpointURI)
+                        .request()
+                        .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
+                        .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
+                        .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
+                        .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
+                        .buildPut(Entity.text(LRAStatus.Closed.name())).invoke();
+                } else if (responsestatus != 200) {
+                    sendStatus();
+                }
             } catch (Exception e) {
                 System.out.println("LRARecord REST.send Exception:" + e);
                 e.printStackTrace();
-                send(statusURIs);
             }
             isEndComplete = true;
         }
