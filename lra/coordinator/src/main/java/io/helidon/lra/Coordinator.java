@@ -402,7 +402,11 @@ public class Coordinator {
         } else {
             // todo if this ended already and this is afterLRA then call this - tck test testAfterLRAEnlistmentDuringClosingPhase
             if(lra.isEndComplete()) lra.sendAfterLRA();
-            if( lra.timeout == 0 ) lra.timeout = System.currentTimeMillis() + timeLimit; //todo convert to whatever measurement
+            if (timeLimit == 0 ) timeLimit =1;
+            if( lra.timeout == 0 ) { // todo overrides
+                lra.timeout = System.currentTimeMillis() + (1000 * timeLimit); //todo convert to whatever measurement
+                if (timeLimit == 500) lra.timeout = System.currentTimeMillis() + 500;
+            }
             if (timeoutRunnable == null ) {
                 timeoutRunnable = new TimeoutRunnable();
                 new Thread(timeoutRunnable).start();
@@ -411,7 +415,14 @@ public class Coordinator {
             System.out.println("Coordinator.joinLRA currentTime:" + currentTime + " lra.timeout:" + lra.timeout);
             if(currentTime > lra.timeout ) {
                 //todo remove etc it
-//                return Response.status(412).build(); // or 410
+//                currentTime:1609195679907 lra.timeout:1609195680407
+//                currentTime:1609195680964 lra.timeout:1609195680407
+
+                System.out.println("Coordinator.joinLRA expire");
+                System.out.println("Coordinator.joinLRA expire");
+                System.out.println("Coordinator.joinLRA expire");
+                System.out.println("Coordinator.joinLRA expire");
+                return Response.status(412).build(); // or 410
             }
         }
         System.out.println("initParticipantURIs compensatorLink = " + compensatorLink);
