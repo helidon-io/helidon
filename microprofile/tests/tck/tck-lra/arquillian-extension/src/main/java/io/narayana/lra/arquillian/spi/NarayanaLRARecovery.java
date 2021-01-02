@@ -56,17 +56,28 @@ public class NarayanaLRARecovery implements LRARecoveryService {
 
     @Override
     public void waitForCallbacks(URI lraId) {
+//        new Throwable("LRARecovery.waitForCallbacks").printStackTrace();
         // no action needed
     }
 
     @Override
     public boolean waitForEndPhaseReplay(URI lraId) {
+//        new Throwable("LRARecovery.waitForEndPhaseReplay just sleeping").printStackTrace();
+        sleep();
         if (!recoverLRAs(lraId)) {
             // first recovery scan probably collided with periodic recovery which started
             // before the test execution so try once more
             return recoverLRAs(lraId);
         }
         return true;
+    }
+
+    private void sleep() {
+        try {
+            Thread.sleep(5 * 1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -76,6 +87,8 @@ public class NarayanaLRARecovery implements LRARecoveryService {
      * @return true the intended LRA recovered, false otherwise
      */
     private boolean recoverLRAs(URI lraId) {
+//        new Throwable("LRARecovery.recoverLRAs").printStackTrace();
+        sleep();
         // trigger a recovery scan
         Client recoveryCoordinatorClient = ClientBuilder.newClient();
 
