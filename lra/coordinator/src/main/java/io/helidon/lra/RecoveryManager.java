@@ -9,6 +9,7 @@ import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.ws.rs.Path;
+import javax.ws.rs.core.Response;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,7 +34,7 @@ public class RecoveryManager implements Runnable {
     }
 
     public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
-        System.out.println("LRARecordPersistence.init " + init + " recovery disabled");
+        System.out.println("RecoveryManager.init " + init + " recovery disabled");
 //        recover();
         singleton = this;
         new Thread(this).start();
@@ -120,19 +121,29 @@ public class RecoveryManager implements Runnable {
     @Override
     public void run() {
         while (true) {
+            if (lraRecoveryRecordMap.size() >0 ) {
+                System.out.println("-------->RECOVERY MANAGER lraRecoveryRecordMap size" + lraRecoveryRecordMap.size());
+            }
             if (lraRecoveryRecordMap != null) {
                 for (String lraId: lraRecoveryRecordMap.keySet()) {
                     LRA lra = lraRecoveryRecordMap.get(lraId);
                         System.out.println(
                                 "RecoveryManager thread, will status and forget lraId:" + lraId );
-                        lra.sendStatus();
-                        lra.sendCompletion();
-                        lra.sendForget();
-                    lraRecoveryRecordMap.remove(lraId);
+                        Response statusResponse = lra.sendStatus();
+                        if (statusResponse != null) {
+                            int status = statusResponse.getStatus();
+                            System.out.println("RecoveryManager.run status is " + status);
+                            if(status < 500) {
+                                lra.sendCompletion();
+                                lra.sendForget();
+                                lraRecoveryRecordMap.remove(lraId);
+                            }
+                        } else System.out.println("RecoveryManager.run status is null");
                     isRecovered = true;
                     }
                 }
-                try {
+
+            try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();

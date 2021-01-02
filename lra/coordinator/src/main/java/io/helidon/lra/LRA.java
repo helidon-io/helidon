@@ -38,7 +38,6 @@ public class LRA {
     List<String> afterMessagingURIs = new ArrayList<>();
     List<String> forgetMessagingURIs = new ArrayList<>();
     List<String> statusMessagingURIs = new ArrayList<>();
-    private boolean isInit = false;
     private boolean isEndComplete = false;
     private boolean isCompensate;
 
@@ -116,8 +115,7 @@ public class LRA {
 
     void tryDoEnd(boolean compensate, boolean isMessaging) {
         isCompensate = compensate;
-        System.out.println("LRA End compensate:" + compensate);
-        System.out.println("LRA End isMessaging:" + isMessaging);
+        System.out.println("LRA End compensate:" + compensate + "+ isMessaging:" + isMessaging);
         if (isMessaging) SendMessage.send(compensate ? compensateMessagingURIs : completeMessagingURIs );
         else   send(compensate);
         //cleanup...
@@ -136,13 +134,13 @@ public class LRA {
 
     void sendAfterLRA() {
         for (URI endpointURI : afterURIs) {
-            System.out.println("LRARecord REST.sendAfterLRA:" + endpointURI + " lraId:" + lraId);
+            System.out.println("LRA REST.sendAfterLRA:" + endpointURI + " lraId:" + lraId);
             try {
                 Response response = sendCompletion(endpointURI);
                 int responsestatus = response.getStatus();
-                System.out.println("LRARecord REST.sendAfterLRA:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
+                System.out.println("LRA REST.sendAfterLRA:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
             } catch (Exception e) {
-                System.out.println("LRARecord REST.sendAfterLRA Exception:" + e);
+                System.out.println("LRA REST.sendAfterLRA Exception:" + e);
                 e.printStackTrace();
             }
         }
@@ -151,7 +149,7 @@ public class LRA {
     Response sendStatus() {
         Response response = null;
         for (URI endpointURI : statusURIs) {
-            System.out.println("LRARecord REST.sendStatus:" + endpointURI + " lraId:" + lraId);
+            System.out.println("LRA REST.sendStatus:" + endpointURI + " lraId:" + lraId);
             try {
                 Client client = ClientBuilder.newBuilder()
                         .build();
@@ -164,9 +162,9 @@ public class LRA {
                         .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
                         .buildGet().invoke();
                 int responsestatus = response.getStatus();
-                System.out.println("LRARecord REST.sendStatus:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
+                System.out.println("LRA REST.sendStatus:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
             } catch (Exception e) {
-                System.out.println("LRARecord REST.sendStatus Exception:" + e);
+                System.out.println("LRA REST.sendStatus Exception:" + e);
                 e.printStackTrace();
             }
         }
@@ -175,7 +173,7 @@ public class LRA {
 
     void sendForget() {
         for (URI endpointURI : forgetURIs) {
-            System.out.println("LRARecord REST.sendForget:" + endpointURI + " lraId:" + lraId);
+            System.out.println("LRA REST.sendForget:" + endpointURI + " lraId:" + lraId);
             try {
                 Client client = ClientBuilder.newBuilder()
                         .build();
@@ -188,9 +186,9 @@ public class LRA {
                         .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
                         .buildDelete().invoke();
                 int responsestatus = response.getStatus();
-                System.out.println("LRARecord REST.sendForget:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
+                System.out.println("LRA REST.sendForget:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
             } catch (Exception e) {
-                System.out.println("LRARecord REST.sendForget Exception:" + e);
+                System.out.println("LRA REST.sendForget Exception:" + e);
                 e.printStackTrace();
             }
         }
@@ -198,20 +196,32 @@ public class LRA {
 
     private void send(List<URI> endpointURIs) {
         for (URI endpointURI : endpointURIs) {
-            System.out.println("LRARecord REST.send:" + endpointURI + " lraId:" + lraId);
+            System.out.println("LRA REST.send:" + endpointURI + " lraId:" + lraId);
             try {
                 Response response = sendCompletion(endpointURI);
 //                        .buildPut(Entity.json("")).invoke();
 //                        .async().put(Entity.json("entity"));
                 int responsestatus = response.getStatus();
-                System.out.println("LRARecord REST.send:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
-                if (responsestatus != 200) {
+                System.out.println("LRA REST.send:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
+                if (responsestatus == 503) {
+                    System.out.println("LRA R03");
+                    sendStatus();
+                    System.out.println("LRA R03 status done now add to recoverymanager....");
+                    RecoveryManager.getInstance().add(lraId, this);
+//                    sendCompletion(endpointURI);
+//                    System.out.println("LRA R03 replay done now forget....");
+//                    sendForget();
+                } else  if (responsestatus != 200) {
 //                    Response retryresponse = sendCompletion(endpointURI);
 //                    System.out.println("LRA.send retryresponse:" + retryresponse);
                     int status;
 //                    do {
-                    status = sendStatus().getStatus();
-                    System.out.println("LRA.send status:" + status);
+                    Response statusResponse = sendStatus();
+                    if (statusResponse == null) {
+                        System.out.println("LRA.send status:" + null);
+                    } else {
+                        System.out.println("LRA.send status:" + statusResponse.getStatus());
+                    }
 //                    retryresponse = sendCompletion(endpointURI);
 //                    System.out.println("LRA.send retryresponse2:" + retryresponse);
 //                    status = sendStatus().getStatus();
@@ -224,23 +234,14 @@ public class LRA {
 //                    while (status ==503);
 //                    while (status != 200 && status !=202 && status !=503);
                     sendForget();  // handles TckParticipantTests.validSignaturesChainTest  but not TckContextTests.testForget
-//                    RecoveryManager.getInstance().add(lraId, this);
+                    RecoveryManager.getInstance().add(lraId, this);
 //                    while (!RecoveryManager.getInstance().isRecovered) {
 //                        System.out.println("LRA.send waiting gor recoverymanager forget to complete");
 //                        Thread.sleep(500);
 //                    }
                 }
-                if(false && responsestatus == 202) { //inplace retry
-//                    client.target(endpointURI)
-//                        .request()
-//                        .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
-//                        .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
-//                        .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
-//                        .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
-//                        .buildPut(Entity.text(LRAStatus.Closed.name())).invoke();
-                }
             } catch (Exception e) {
-                System.out.println("LRARecord REST.send Exception:" + e);
+                System.out.println("LRA REST.send Exception:" + e);
                 e.printStackTrace();
             }
             isEndComplete = true;
@@ -267,10 +268,6 @@ public class LRA {
                 .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
                 .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
                 .buildPut(Entity.text(LRAStatus.Closed.name())).invoke();
-    }
-
-    public void setInit(boolean b) {
-        isInit = b;
     }
 
     public boolean isEndComplete() {

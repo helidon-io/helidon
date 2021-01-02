@@ -15,6 +15,8 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Initialized;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -22,6 +24,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static javax.ws.rs.core.Response.Status.*;
 import static org.eclipse.microprofile.lra.annotation.LRAStatus.Closed;
@@ -31,7 +34,7 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVER
 @ApplicationScoped
 @Path("lra-coordinator")
 @Tag(name = "LRA Coordinator")
-public class Coordinator {
+public class Coordinator implements Runnable  {
     public static final String COORDINATOR_PATH_NAME = "lra-coordinator";
     public static final String RECOVERY_COORDINATOR_PATH_NAME = "lra-recovery-coordinator";
 
@@ -49,6 +52,12 @@ public class Coordinator {
 
 
     private final MessageProcessing msgBean;
+    private boolean isTimeoutThreadRunning;
+
+    @Context
+    private UriInfo context;
+
+    Map<String, LRA> lraRecordMap = new ConcurrentHashMap(); //todo proper sync
 
     @Path("/send/{msg}")
     @GET
@@ -63,11 +72,10 @@ public class Coordinator {
     }
 
 
-
-    @Context
-    private UriInfo context;
-
-    Map<String, LRA> lraRecordMap = new HashMap();
+//    public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
+//        System.out.println("Coordinator.init " + init );
+////        new Thread(this).start();
+//    }
 
     @GET
     @Path("/")
@@ -267,7 +275,7 @@ public class Coordinator {
                 System.out.println(
                         "Coordinator.closeLRA uri:" + lraid + " lraRecordMap.get(lraid):" + lraRecordMap.get(lraid));
             }
-            return Response.serverError().build();
+            return Response.ok().build();
         }
         lra.tryDoEnd(false, false);
         return Response.ok().build();
@@ -398,29 +406,26 @@ public class Coordinator {
                 System.out.println(
                         "Coordinator.joinLRA uri:" + uri + " lraRecordMap.get(uri):" + lraRecordMap.get(uri));
             }
-            return Response.serverError().build();
+            return Response.ok().build();
         } else {
             // todo if this ended already and this is afterLRA then call this - tck test testAfterLRAEnlistmentDuringClosingPhase
             if(lra.isEndComplete()) lra.sendAfterLRA();
-            if (timeLimit == 0 ) timeLimit =1;
+            if (timeLimit == 0 ) timeLimit = 60;
             if( lra.timeout == 0 ) { // todo overrides
                 lra.timeout = System.currentTimeMillis() + (1000 * timeLimit); //todo convert to whatever measurement
                 if (timeLimit == 500) lra.timeout = System.currentTimeMillis() + 500;
             }
-            if (timeoutRunnable == null ) {
-                timeoutRunnable = new TimeoutRunnable();
-                new Thread(timeoutRunnable).start();
+            if (!isTimeoutThreadRunning) {
+                new Thread(this).start();
+                isTimeoutThreadRunning = true;
             }
+//            if (timeoutRunnable == null ) {
+//                timeoutRunnable = new TimeoutRunnable();
+//                new Thread(timeoutRunnable).start();
+//            }
             long currentTime = System.currentTimeMillis();
             System.out.println("Coordinator.joinLRA currentTime:" + currentTime + " lra.timeout:" + lra.timeout);
             if(currentTime > lra.timeout ) {
-                //todo remove etc it
-//                currentTime:1609195679907 lra.timeout:1609195680407
-//                currentTime:1609195680964 lra.timeout:1609195680407
-
-                System.out.println("Coordinator.joinLRA expire");
-                System.out.println("Coordinator.joinLRA expire");
-                System.out.println("Coordinator.joinLRA expire");
                 System.out.println("Coordinator.joinLRA expire");
                 return Response.status(412).build(); // or 410
             }
@@ -445,8 +450,8 @@ public class Coordinator {
 
 
 
-     private TimeoutRunnable timeoutRunnable;
-    class TimeoutRunnable implements Runnable {
+//     private TimeoutRunnable timeoutRunnable;
+//    class TimeoutRunnable implements Runnable {
 
     @Override
     public void run() {
@@ -455,10 +460,11 @@ public class Coordinator {
                 for (String uri: lraRecordMap.keySet()) {
                     LRA lra = lraRecordMap.get(uri);
                     long currentTime = System.currentTimeMillis();
-                    if (lra.timeout > currentTime) {
+                    if (lra.timeout < currentTime) {
                     System.out.println(
                             "Timeout thread, will end uri:" + uri + "  timeout:" + lra.timeout + " currentTime:" + currentTime);
                         lra.tryDoEnd(true, false);
+//                        lraRecordMap.remove(uri);
                     }
                 }
                 try {
@@ -469,7 +475,7 @@ public class Coordinator {
             }
         }
     }
-}
+//}
     @PUT
     @Path("{LraId}/remove")
     @Produces(MediaType.APPLICATION_JSON)
