@@ -14,8 +14,8 @@
     <name>LRA tests: MicroProfile TCK</name>
 
     <properties>
-        <lra.coordinator.jar.path>/Users/pparkins/go/src/github.com/danielkec/helidon/lra/coordinator/target/lra-coordinator-helidon-0.0.1-SNAPSHOT.jar</lra.coordinator.jar.path>
-
+<lra.coordinator.jar.path>/Users/pparkins/go/src/github.com/paulparkinson/helidon/lra/coordinator/target/lra-coordinator-helidon-0.0.1-SNAPSHOT.jar</lra.coordinator.jar.path>
+<!--        <lra.coordinator.jar.path>/Users/pparkins/Downloads/helidon-master-4/lra/coordinator/target/lra-coordinator-helidon-0.0.1-SNAPSHOT.jar</lra.coordinator.jar.path>-->
         <lra.tck.suite.host>localhost</lra.tck.suite.host>
         <lra.tck.suite.port>8180</lra.tck.suite.port>
         <lra.tck.suite.debug.params></lra.tck.suite.debug.params> <!-- has content when -Ddebug.tck is specified -->
@@ -44,9 +44,17 @@
                         <dependency>org.eclipse.microprofile.lra:microprofile-lra-tck</dependency>
                     </dependenciesToScan>
                     <includes>
-<!--                        Tests run: 133, Failures: 16-->
+<!--                        Tests run: 133, Failures: 10-->
                         <include>**/*.java</include>
+<!-- <include>**/*TckCancelOnTests*.java</include>-->
+<!-- <include>**/*TckContextTests*.java</include>-->
+<!-- <include>**/*TckInvalidSignaturesTests*.java</include>-->
+<!-- <include>**/*TckLRATypeTests*.java</include>-->
+<!-- <include>**/*TckParticipantTests*.java</include>-->
 <!-- <include>**/*TckTests*.java</include>-->
+<!-- <include>**/*TckRecoveryTests*.java</include>-->
+<!-- <include>**/*TckUnknownStatusTests*.java</include>-->
+<!--<include>**/*TckUnknownTests*.java</include>-->
                     </includes>
                     <systemPropertyVariables combine.children="append">
                         <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
