@@ -14,7 +14,6 @@ import java.util.regex.Pattern;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.*;
 
-
 public class LRA {
 
     public long timeout;
@@ -77,9 +76,7 @@ public class LRA {
                     try {
                         if (rel.equals("complete")) {
                             if (isMessaging) completeMessagingURIs.add(endpoint);
-                            else {
-                                completeURIs.add(new URI(endpoint));
-                            }
+                            else completeURIs.add(new URI(endpoint));
                         }
                         if (rel.equals("compensate")) {
                             if (isMessaging) compensateMessagingURIs.add(endpoint);
@@ -108,7 +105,6 @@ public class LRA {
             }
         }
         if (isToBeLogged) RecoveryManager.getInstance().log(this, compensatorLink);
-
     }
 
     void tryDoEnd(boolean compensate, boolean isMessaging) {
@@ -116,8 +112,10 @@ public class LRA {
         log("LRA End compensate:" + compensate + "+ isMessaging:" + isMessaging);
         if (isMessaging) SendMessage.send(compensate ? compensateMessagingURIs : completeMessagingURIs );
         else   send(compensate);
-        //cleanup...
-//        new Throwable("LRA.tryDoEnd isRecoveringFromConnectionException:" + isRecoveringFromConnectionException).printStackTrace();
+        cleanup();
+    }
+
+    private void cleanup() {
         if(!isRecoveringFromConnectionException) {
             completeURIs = new ArrayList<>();
             compensateURIs = new ArrayList<>();
@@ -130,7 +128,18 @@ public class LRA {
     private void send(boolean compensate) {
         List<URI> endpointURIs = compensate ? compensateURIs : completeURIs;
         sendCompletion(endpointURIs, compensate);
-        sendAfterLRA(afterURIs); //use sendAfterLRA() instead
+//        sendAfterLRA(afterURIs, compensate); //use sendAfterLRA() instead
+        for (URI endpointURI : afterURIs) {
+            log("LRA REST.send:" + endpointURI + " lraId:" + lraId);
+            try {
+                Response response = sendCompletion(endpointURI, isCompensate);
+                int responsestatus = response.getStatus();
+                log("LRA REST.send:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
+            } catch (Exception e) {
+                log("LRA REST.send Exception:" + e);
+            }
+            isEndComplete = true;
+        }
     }
 
     void callAfterLRAForEnlistmentDuringClosingPhase() {
@@ -142,7 +151,6 @@ public class LRA {
                 log("LRA REST.callAfterLRAForEnlistmentDuringClosingPhase:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
             } catch (Exception e) {
                 log("LRA REST.callAfterLRAForEnlistmentDuringClosingPhase Exception:" + e);
-//                e.printStackTrace();
             }
         }
     }
@@ -166,7 +174,6 @@ public class LRA {
                 log("LRA REST.sendStatus:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
             } catch (Exception e) {
                 log("LRA REST.sendStatus Exception:" + e);
-//                e.printStackTrace();
             }
         }
         return response;
@@ -190,7 +197,6 @@ public class LRA {
                 log("LRA REST.sendForget:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
             } catch (Exception e) {
                 log("LRA REST.sendForget Exception:" + e);
-//                e.printStackTrace();
             }
         }
     }
@@ -207,17 +213,16 @@ public class LRA {
                     sendStatus();
                     log("LRA 503 status done now add to recoverymanager....");
                     RecoveryManager.getInstance().add(lraId, this);
-//                    isRecoveringFromConnectionException = true;
                 } else if (responsestatus == 202) {
+                    System.out.println("LRA.sendCompletion 202 endpointURI:" + endpointURI);
                     Response statusResponse = sendStatus();
                     if (statusResponse == null) {
                         log("LRA.send status:" + null);
                     } else {
                         log("LRA.send status:" + statusResponse.getStatus());
                     }
-                    sendForget();  // handles TckParticipantTests.validSignaturesChainTest  but not TckContextTests.testForget
                     RecoveryManager.getInstance().add(lraId, this);
-//                    isRecoveringFromConnectionException = true; //this causes hang in tck
+//                    isRecoveringFromConnectionException = true; //this allows TckUnknownTests.complete_retry but causes hang in tck
                 } else  if (responsestatus != 200) {
                     Response statusResponse = sendStatus();
                     if (statusResponse == null) {
@@ -227,41 +232,15 @@ public class LRA {
                     }
                     sendForget();  // handles TckParticipantTests.validSignaturesChainTest  but not TckContextTests.testForget
                     RecoveryManager.getInstance().add(lraId, this);
+                } else  if (responsestatus == 200) {
+//                    endpointURIs.remove(endpointURI);
+//                    isRecoveringFromConnectionException = false;
+                } else {
+                    isRecoveringFromConnectionException = false;  //todo verify if necessary as recovery method would reset this if true (false is default)
                 }
             } catch (Exception e) { // Exception:javax.ws.rs.ProcessingException: java.net.ConnectException: Connection refused (Connection refused)
                 log("LRA REST.send Exception:" + e); //todo afterLRA is currently called regardless
-//                e.printStackTrace();
                 isRecoveringFromConnectionException = true;
-            }
-            isEndComplete = true;
-        }
-    }
-
-    private void sendAfterLRA(List<URI> endpointURIs) {
-        for (URI endpointURI : endpointURIs) {
-            log("LRA REST.send:" + endpointURI + " lraId:" + lraId);
-            try {
-                Response response = sendCompletion(endpointURI, false);
-                int responsestatus = response.getStatus();
-                log("LRA REST.send:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
-//                if (responsestatus == 503) {
-//                    log("LRA 503");
-//                    sendStatus();
-//                    log("LRA 503 status done now add to recoverymanager....");
-//                    RecoveryManager.getInstance().add(lraId, this);
-//                } else  if (responsestatus != 200) {
-//                    Response statusResponse = sendStatus();
-//                    if (statusResponse == null) {
-//                        log("LRA.send status:" + null);
-//                    } else {
-//                        log("LRA.send status:" + statusResponse.getStatus());
-//                    }
-//                    sendForget();  // handles TckParticipantTests.validSignaturesChainTest  but not TckContextTests.testForget
-//                    RecoveryManager.getInstance().add(lraId, this);
-//                }
-            } catch (Exception e) {
-                log("LRA REST.send Exception:" + e);
-//                e.printStackTrace();
             }
             isEndComplete = true;
         }
@@ -272,6 +251,10 @@ public class LRA {
         Response response = null; //the last response
         for (URI endpointURI : isCompensate?compensateURIs:completeURIs) {
             response = sendCompletion(endpointURI, true);
+            if (response != null && response.getStatus() == 200) {
+                isRecoveringFromConnectionException = false;
+                cleanup();
+            }
         }
         return response;
     }
@@ -296,7 +279,6 @@ public class LRA {
     }
 
     void log(String message) {
-        System.out.println(message);
+//        System.out.println(message);
     }
 }
-

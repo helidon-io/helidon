@@ -34,7 +34,7 @@ public class RecoveryManager implements Runnable {
     }
 
     public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
-        System.out.println("RecoveryManager.init " + init + " recovery disabled");
+        log("RecoveryManager.init " + init + " recovery disabled");
 //        recover();
         singleton = this;
         new Thread(this).start();
@@ -43,28 +43,28 @@ public class RecoveryManager implements Runnable {
     public void recover() {
         try {
             connection = coordinatordb.getConnection();
-            System.out.println("LRARecordPersistence  coordinatordb.getConnection():" + connection);
+            log("LRARecordPersistence  coordinatordb.getConnection():" + connection);
         } catch (SQLException sqlException) {
-            System.out.println("LRARecordPersistence.init sqlException (expected if table exists)" + sqlException);
+            log("LRARecordPersistence.init sqlException (expected if table exists)" + sqlException);
         }
 //        try {
-//            System.out.println("LRARecordPersistence drop table ...");
+//            log("LRARecordPersistence drop table ...");
 //            connection.createStatement().execute(
 //                    "drop table lrarecords");
 //        } catch (SQLException sqlException) {
-//            System.out.println("LRARecordPersistence.init sqlException (expected if table exists)" + sqlException);
+//            log("LRARecordPersistence.init sqlException (expected if table exists)" + sqlException);
 //        }
 //        try {
-//            System.out.println("LRARecordPersistence create table...");
+//            log("LRARecordPersistence create table...");
 //            connection.createStatement().execute(
 //                    "create table lrarecords (lraid varchar(64) PRIMARY KEY NOT NULL, " +
 //                            "completeurl varchar(64), compensateurl varchar(64), " +
 //                            "statusurl varchar(64), additionaldata varchar(1024) )");
 //        } catch (SQLException sqlException) {
-//            System.out.println("LRARecordPersistence.init sqlException (expected if table exists)" + sqlException);
+//            log("LRARecordPersistence.init sqlException (expected if table exists)" + sqlException);
 //        }
         try {
-            System.out.println("LRARecordPersistence create table...");
+            log("LRARecordPersistence create table...");
             try (OraclePreparedStatement st = (OraclePreparedStatement) connection.prepareStatement("select * from lrarecords")) {
 //                st.setString(1, id);
                 ResultSet res = st.executeQuery();
@@ -74,11 +74,11 @@ public class RecoveryManager implements Runnable {
                     String compensateurl = res.getString(3);
                     String statusurl = res.getString(4);
                     String additionaldata = res.getString(5);
-                    System.out.println("LRARecord for : " + lraid);
-                    System.out.println("   completeurl: " + completeurl);
-                    System.out.println(" compensateurl: " + compensateurl);
-                    System.out.println("     statusurl: " + statusurl);
-                    System.out.println("additionaldata: " + additionaldata);
+                    log("LRARecord for : " + lraid);
+                    log("   completeurl: " + completeurl);
+                    log(" compensateurl: " + compensateurl);
+                    log("     statusurl: " + statusurl);
+                    log("additionaldata: " + additionaldata);
                     LRA lra = new LRA(lraid);
                     lra.addParticipant(additionaldata, false, false); //currently assumes rest for all
                     lraRecoveryRecordMap.put(lraid, lra);
@@ -87,13 +87,13 @@ public class RecoveryManager implements Runnable {
 
             }
         } catch (SQLException sqlException) {
-            System.out.println("LRARecordPersistence.init sqlException (expected if table exists)" + sqlException);
+            log("LRARecordPersistence.init sqlException (expected if table exists)" + sqlException);
         }
     }
 
     void log(LRA lra, String compensatorLink){
         if(true) return;
-        System.out.println("LRARecordPersistence.log... lraRecord.lraId = " + lra.lraId + ", compensatorLink = " + compensatorLink);
+        log("LRARecordPersistence.log... lraRecord.lraId = " + lra.lraId + ", compensatorLink = " + compensatorLink);
         try {
             connection.createStatement().execute(
                     "insert into lrarecords values ('"+ lra.lraId + "', " +
@@ -105,7 +105,7 @@ public class RecoveryManager implements Runnable {
 
     void delete(LRA lra){
         String sqlString = "delete lrarecords  where lraid ='"+ lra.lraId + "'";
-        System.out.println("LRARecordPersistence.delete... " + sqlString);
+        log("LRARecordPersistence.delete... " + sqlString);
         try {
             connection.createStatement().execute(sqlString);
         } catch (SQLException throwables) {
@@ -113,34 +113,31 @@ public class RecoveryManager implements Runnable {
         }
     }
 
-    void add(String lraId, LRA lra){
-//        new Throwable("RecoveryManager.add lraId = " + lraId + ", lra = " + lra).printStackTrace();
+    void add(String lraId, LRA lra) {
+//        Coordinator.getInstance().remove(lraId); //7, 8, or 9 intermittent tests
         this.lraRecoveryRecordMap.put(lraId, lra);
     }
-
 
     @Override
     public void run() {
         while (true) {
             if (lraRecoveryRecordMap.size() >0 ) {
-                System.out.println("-------->RECOVERY MANAGER lraRecoveryRecordMap size" + lraRecoveryRecordMap.size());
-            }
-            if (lraRecoveryRecordMap != null) {
+                log("-------->RECOVERY MANAGER lraRecoveryRecordMap size" + lraRecoveryRecordMap.size());
                 for (String lraId: lraRecoveryRecordMap.keySet()) {
                     LRA lra = lraRecoveryRecordMap.get(lraId);
-                        System.out.println(
+                        log(
                                 "RecoveryManager thread, will status and forget lraId:" + lraId );
                         Response statusResponse = lra.sendStatus();
                         if (statusResponse != null) {
                             int status = statusResponse.getStatus();
-                            System.out.println("RecoveryManager.run status is " + status);
+                            log("RecoveryManager.run status is " + status);
                             if(status < 500) {
                                 lra.sendCompletion();
                                 lra.sendForget();
                                 lraRecoveryRecordMap.remove(lraId);
                             }
                         } else {
-                            System.out.println("RecoveryManager.run status is null");
+                            log("RecoveryManager.run status is null");
                             lra.sendCompletion();
                             lraRecoveryRecordMap.remove(lraId);
                         }
@@ -155,4 +152,8 @@ public class RecoveryManager implements Runnable {
                 }
             }
         }
+
+    void log(String message) {
+//        System.out.println(message);
+    }
 }
