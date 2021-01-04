@@ -15,8 +15,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -59,6 +57,13 @@ public class Coordinator implements Runnable  {
 
     Map<String, LRA> lraRecordMap = new ConcurrentHashMap(); //todo proper sync
 
+    private static Coordinator singleton;
+
+    public static Coordinator getInstance()  {
+        return singleton;
+    }
+
+
     @Path("/send/{msg}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -69,8 +74,13 @@ public class Coordinator implements Runnable  {
     @Inject
     public Coordinator(MessageProcessing msgBean) {
         this.msgBean = msgBean;
+        singleton = this;
     }
 
+
+    public void remove(String lraId) {
+        lraRecordMap.remove(lraId);
+    }
 
 //    public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
 //        System.out.println("Coordinator.init " + init );
@@ -143,10 +153,7 @@ public class Coordinator implements Runnable  {
                     description = "The enclosing LRA if this new LRA is nested")
             @QueryParam(PARENT_LRA_PARAM_NAME) @DefaultValue("") String parentLRA,
             @HeaderParam(LRA_HTTP_CONTEXT_HEADER) String parentId) throws WebApplicationException {
-        System.out.println("Coordinator.startLRA " +
-                "clientId = " + clientId + ", timelimit = " + timelimit + ", parentLRA = " + parentLRA + ", parentId = " + parentId);
         URI parentLRAUrl = null;
-
         if (parentLRA != null && !parentLRA.isEmpty()) {
             parentLRAUrl = toDecodedURI(parentLRA);
         }
@@ -156,16 +163,13 @@ public class Coordinator implements Runnable  {
             String lraUUID = "LRAID" + UUID.randomUUID().toString();
             lraId = new URI(String.format("%s/%s", coordinatorUrl, lraUUID));
             lraRecordMap.put(lraUUID, new LRA(lraUUID));
-            System.out.println("Coordinator.startLRA lraUUID:" + lraUUID + " lraId:" + lraId);
+            System.out.println("Coordinator.startLRA " +
+                    "clientId = " + clientId + ", timelimit = " + timelimit + ", parentLRA = " + parentLRA + ", parentId = " + parentId +
+                    "lraUUID:" + lraUUID + " lraId:" + lraId);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
-
-
-        return Response.created(lraId)
-                .entity(lraId.toString())
-                .build();
-
+        return Response.created(lraId).entity(lraId.toString()).build();
     }
 
 
@@ -409,7 +413,8 @@ public class Coordinator implements Runnable  {
             return Response.ok().build();
         } else {
             // todo if this ended already and this is afterLRA then call this - tck test testAfterLRAEnlistmentDuringClosingPhase
-            if(lra.isEndComplete()) lra.sendAfterLRA();
+//            if(lra.isEndComplete()) lra.callAfterLRAForEnlistmentDuringClosingPhase();
+            if(lra.isEndComplete()) lra.callAfterLRAForEnlistmentDuringClosingPhase();
             if (timeLimit == 0 ) timeLimit = 60;
             if( lra.timeout == 0 ) { // todo overrides
                 lra.timeout = System.currentTimeMillis() + (1000 * timeLimit); //todo convert to whatever measurement
@@ -436,7 +441,7 @@ public class Coordinator implements Runnable  {
         }
 //        lra.addParticipant(compensatorLink, true, true);
         lra.addParticipant(compensatorLink, false,true );
-        if(lra.isEndComplete()) lra.sendAfterLRA();
+        if(lra.isEndComplete()) lra.callAfterLRAForEnlistmentDuringClosingPhase(); //the call here is necssary (todo see if above call is actually executed by tck)
         try {
             return Response.status(status)
                     .entity(recoveryUrl.toString())
@@ -462,7 +467,9 @@ public class Coordinator implements Runnable  {
                     long currentTime = System.currentTimeMillis();
                     if (lra.timeout < currentTime) {
                     System.out.println(
-                            "Timeout thread, will end uri:" + uri + "  timeout:" + lra.timeout + " currentTime:" + currentTime);
+                            "Timeout thread, will end uri:" + uri +
+                                    " timeout:" + lra.timeout + " currentTime:" + currentTime +
+                                    " ms over:" + (currentTime - lra.timeout));
                         lra.tryDoEnd(true, false);
 //                        lraRecordMap.remove(uri);
                     }
@@ -527,6 +534,5 @@ public class Coordinator implements Runnable  {
             throw new RuntimeException("todo paul runtime exception URISyntaxException in toURI " + e);
         }
     }
-
 
 }

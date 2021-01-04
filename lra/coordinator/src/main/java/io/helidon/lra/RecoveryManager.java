@@ -114,6 +114,7 @@ public class RecoveryManager implements Runnable {
     }
 
     void add(String lraId, LRA lra){
+//        new Throwable("RecoveryManager.add lraId = " + lraId + ", lra = " + lra).printStackTrace();
         this.lraRecoveryRecordMap.put(lraId, lra);
     }
 
@@ -138,7 +139,11 @@ public class RecoveryManager implements Runnable {
                                 lra.sendForget();
                                 lraRecoveryRecordMap.remove(lraId);
                             }
-                        } else System.out.println("RecoveryManager.run status is null");
+                        } else {
+                            System.out.println("RecoveryManager.run status is null");
+                            lra.sendCompletion();
+                            lraRecoveryRecordMap.remove(lraId);
+                        }
                     isRecovered = true;
                     }
                 }
