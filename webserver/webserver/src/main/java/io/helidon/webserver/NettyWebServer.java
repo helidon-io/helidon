@@ -112,7 +112,7 @@ class NettyWebServer implements WebServer {
                               config.printFeatureDetails());
         this.contextualRegistry = config.context();
         this.configuration = config;
-        this.transport = installTransport();
+        this.transport = acquireTransport();
         this.bossGroup = bossGroup();
         this.workerGroup = workerGroup();
         this.readerContext = MessageBodyReaderContext.create(readerContext);
@@ -420,7 +420,7 @@ class NettyWebServer implements WebServer {
         return address instanceof InetSocketAddress ? ((InetSocketAddress) address).getPort() : -1;
     }
 
-    private Transport installTransport() {
+    private Transport acquireTransport() {
         Transport transport = configuration.transport().orElse(new NioTransport());
         // (Note that an NioTransport's isAvailableFor() method will
         // always return true when passed this.)
