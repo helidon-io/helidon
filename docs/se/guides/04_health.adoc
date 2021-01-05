@@ -71,30 +71,22 @@ from the root directory of your project (helidon-quickstart-se).
 ----
 
 [source,java]
-.Modify `Main.java`, import `HealthCheckReponse`, and replace the `createRouting` method:
+.Have a look at `Main.java`, and the `createRouting` method:
 ----
-
-import org.eclipse.microprofile.health.HealthCheckResponse;  // <1>
-
-...
-
 private static Routing createRouting(Config config) {
 
     HealthSupport health = HealthSupport.builder()
-      .addLiveness(HealthChecks.healthChecks())  // <2>
+      .addLiveness(HealthChecks.healthChecks())  // <1>
       .build();
 
     return Routing.builder()
-      .register(JsonSupport.create()) // <3>
-      .register(health)  // <4>
+      .register(health)  // <2>
       .build();
 }
 ----
-<1> Import `HealthCheckResponse`.
-<2> Add built-in health-checks (requires the `helidon-health-checks`
+<1> Add built-in health-checks (requires the `helidon-health-checks`
  dependency).
-<3> Register the `JSON-P` support in the WebServer routing.
-<4> Register the created health support with web server routing (adds the
+<2> Register the created health support with web server routing (adds the
 `/health` endpoint).
 
 
