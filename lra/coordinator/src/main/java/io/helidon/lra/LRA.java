@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.lra;
 
 import io.helidon.lra.messaging.SendMessage;
@@ -22,6 +38,7 @@ public class LRA {
     private URI recoveryURI;
     private String participantPath;
     List<String> compensatorLinks = new ArrayList<>();
+    List<LRA> children = new ArrayList<>();
 
     List<URI> completeURIs = new ArrayList<>();
     List<URI> compensateURIs = new ArrayList<>();
@@ -37,6 +54,8 @@ public class LRA {
     private boolean isEndComplete = false;
     private boolean isRecoveringFromConnectionException = false;
     private boolean isCompensate;
+    private boolean isChild;
+    private boolean isParent;
 
     public LRA(String lraUUID) {
         lraId = lraUUID;
@@ -61,18 +80,18 @@ public class LRA {
             Matcher relMatcher = linkRelPattern.matcher(compensatorLink);
             while (relMatcher.find()) {
                 String group0 = relMatcher.group(0);
-//                log("Coordinator.initParticipantURIs isMessaging = " + isMessaging + " group0:" + group0);
+//                log("LRA.initParticipantURIs isMessaging = " + isMessaging + " group0:" + group0);
                 if (group0.indexOf(uriPrefix) > -1) { // <messaging://complete>;
 //                    endpoint = isMessaging ? group0.substring(uriPrefix.length(), group0.indexOf(";") - 1) :
 //                            group0.substring(1, group0.indexOf(";") - 1);
                     endpoint = isMessaging ? group0.substring(group0.indexOf(uriPrefix) + uriPrefix.length(), group0.indexOf(";") - 1) :
                             group0.substring(group0.indexOf(uriPrefix) + 1, group0.indexOf(";") - 1);
-//                    log("Coordinator.initParticipantURIs isMessaging = " + isMessaging + " endpoint:" + endpoint);
+//                    log("LRA.initParticipantURIs isMessaging = " + isMessaging + " endpoint:" + endpoint);
                 }
                 String key = relMatcher.group(1);
                 if (key != null && key.equals("rel")) {
                     String rel = relMatcher.group(2) == null ? relMatcher.group(3) : relMatcher.group(2);
-                    log("Coordinator.initParticipantURIs " + rel + " is " + endpoint);
+//                    log("LRA.initParticipantURIs " + rel + " is " + endpoint);
                     try {
                         if (rel.equals("complete")) {
                             if (isMessaging) completeMessagingURIs.add(endpoint);
@@ -107,16 +126,32 @@ public class LRA {
         if (isToBeLogged) RecoveryManager.getInstance().log(this, compensatorLink);
     }
 
+    public void addChild(String lraUUID, LRA lra) {
+        children.add(lra);
+        lra.isChild = true;
+        isParent = true;
+    }
+
+
     void tryDoEnd(boolean compensate, boolean isMessaging) {
         isCompensate = compensate;
         log("LRA End compensate:" + compensate + "+ isMessaging:" + isMessaging);
-        if (isMessaging) SendMessage.send(compensate ? compensateMessagingURIs : completeMessagingURIs );
-        else   send(compensate);
+        if (isMessaging) SendMessage.send(compensate ? compensateMessagingURIs : completeMessagingURIs);
+        else {
+            System.out.println("LRA.endChildren");
+            if (isParent) sendCompletion(compensateURIs, compensate);
+            for (LRA nestedLRA : children) {
+                System.out.println("LRA.endChildren nestedLRA.compensateURIs.size():" + nestedLRA.compensateURIs.size());
+                nestedLRA.sendCompletion(nestedLRA.compensateURIs, compensate);
+//                nestedLRA.tryDoEnd(compensate, false);
+            }
+            send(compensate);
+        }
         cleanup();
     }
 
     private void cleanup() {
-        if(!isRecoveringFromConnectionException) {
+        if (!isRecoveringFromConnectionException) {
             completeURIs = new ArrayList<>();
             compensateURIs = new ArrayList<>();
             afterURIs = new ArrayList<>();
@@ -223,7 +258,7 @@ public class LRA {
                     }
                     RecoveryManager.getInstance().add(lraId, this);
 //                    isRecoveringFromConnectionException = true; //this allows TckUnknownTests.complete_retry but causes hang in tck
-                } else  if (responsestatus != 200) {
+                } else if (responsestatus != 200) {
                     Response statusResponse = sendStatus();
                     if (statusResponse == null) {
                         log("LRA.send status:" + null);
@@ -232,7 +267,7 @@ public class LRA {
                     }
                     sendForget();  // handles TckParticipantTests.validSignaturesChainTest  but not TckContextTests.testForget
                     RecoveryManager.getInstance().add(lraId, this);
-                } else  if (responsestatus == 200) {
+                } else if (responsestatus == 200) {
 //                    endpointURIs.remove(endpointURI);
 //                    isRecoveringFromConnectionException = false;
                 } else {
@@ -249,7 +284,7 @@ public class LRA {
     //called by recoverymanager
     Response sendCompletion() {
         Response response = null; //the last response
-        for (URI endpointURI : isCompensate?compensateURIs:completeURIs) {
+        for (URI endpointURI : isCompensate ? compensateURIs : completeURIs) {
             response = sendCompletion(endpointURI, true);
             if (response != null && response.getStatus() == 200) {
                 isRecoveringFromConnectionException = false;
@@ -269,16 +304,17 @@ public class LRA {
                 .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
                 .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
                 .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
-                .buildPut(Entity.text(isCompensate?LRAStatus.Cancelled.name():LRAStatus.Closed.name())).invoke();
+                .buildPut(Entity.text(isCompensate ? LRAStatus.Cancelled.name() : LRAStatus.Closed.name())).invoke();
         //                       .buildPut(Entity.json("")).invoke();
- //                       .async().put(Entity.json("entity"));
+        //                       .async().put(Entity.json("entity"));
     }
 
     public boolean isEndComplete() {
         return isEndComplete;
     }
 
+
     void log(String message) {
-//        System.out.println(message);
+        System.out.println("ischild:" + isChild + " isParent:" + isParent + " " + message);
     }
 }
