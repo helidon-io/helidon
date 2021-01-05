@@ -107,7 +107,7 @@ public class Main {
      * @param routing the routing to drive by WebServer instance
      */
     protected void startServer(Routing routing) {
-        startServer(routing, null);
+        startServer(routing, MediaContext.create());
     }
 
     /**
@@ -328,7 +328,7 @@ public class Main {
         hlp.append("Example method names:\n");
         Method[] methods = Main.class.getDeclaredMethods();
         for (Method method : methods) {
-            if (!Modifier.isPrivate(method.getModifiers()) && !Modifier.isStatic(method.getModifiers())) {
+            if (Modifier.isPublic(method.getModifiers()) && !Modifier.isStatic(method.getModifiers())) {
                 hlp.append("    ").append(method.getName()).append('\n');
             }
         }
