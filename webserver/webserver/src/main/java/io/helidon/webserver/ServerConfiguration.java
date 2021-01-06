@@ -201,6 +201,15 @@ public interface ServerConfiguration extends SocketConfiguration {
     ExperimentalConfiguration experimental();
 
     /**
+     * Returns an optional {@link Transport}.
+     *
+     * @return an optional {@link Transport}
+     */
+    default Optional<Transport> transport() {
+        return Optional.ofNullable(null);
+    }
+
+    /**
      * Whether to print details of {@link io.helidon.common.HelidonFeatures}.
      *
      * @return whether to print details
@@ -268,10 +277,12 @@ public interface ServerConfiguration extends SocketConfiguration {
         private int workers;
         private Tracer tracer;
         private ExperimentalConfiguration experimental;
+        private Optional<Transport> transport;
         private Context context;
         private boolean printFeatureDetails;
 
         private Builder() {
+            transport = Optional.ofNullable(null);
         }
 
         /**
@@ -510,6 +521,16 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         /**
+         * Configure transport.
+         * @param transport a {@link Transport}
+         * @return an updated builder
+         */
+        public Builder transport(Transport transport) {
+            this.transport = Optional.of(transport);
+            return this;
+        }
+
+        /**
          * Set to {@code true} to print detailed feature information on startup.
          *
          * @param print whether to print details or not
@@ -672,6 +693,10 @@ public interface ServerConfiguration extends SocketConfiguration {
 
         ExperimentalConfiguration experimental() {
             return experimental;
+        }
+
+        Optional<Transport> transport() {
+            return transport;
         }
 
         Context context() {
