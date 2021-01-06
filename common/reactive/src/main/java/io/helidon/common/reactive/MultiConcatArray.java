@@ -40,7 +40,7 @@ final class MultiConcatArray<T> implements Multi<T> {
     }
 
     protected static final class ConcatArraySubscriber<T>
-    implements Flow.Subscriber<T>, Flow.Subscription {
+            implements Flow.Subscriber<T>, Flow.Subscription {
 
         private final Flow.Subscriber<? super T> downstream;
 
@@ -53,14 +53,15 @@ final class MultiConcatArray<T> implements Multi<T> {
         private long produced = INIT;
 
         private volatile long requested = SEE_OTHER;
-        private volatile long pending = INIT;
+        private volatile long pending = 0;
+        private volatile long oldRequested = 0;
         private volatile Thread lastThreadCompleting;
         private boolean redo;
 
-        static final long BAD = Long.MIN_VALUE;
-        static final long CANCEL = Long.MIN_VALUE + 1;
+        static final long BAD       = Long.MIN_VALUE;
+        static final long CANCEL    = Long.MIN_VALUE + 1;
         static final long SEE_OTHER = Long.MIN_VALUE + 2;
-        static final long INIT = Long.MIN_VALUE + 3;
+        static final long INIT      = Long.MIN_VALUE + 3;
 
         static final VarHandle REQUESTED;
         static final VarHandle PENDING;
@@ -85,40 +86,51 @@ final class MultiConcatArray<T> implements Multi<T> {
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
-            long p0 = pending;
-            if (p0 == CANCEL) {
-               subscription.cancel();
-               return;
-            }
-
             produced++; // assert: matching request(1) has been done by nextSource()
             this.subscription = subscription;
+            long oldProduced = produced;
+            long oldR = oldRequested;
+
+            long p0 = pending;
+            if (p0 < 0 && oldR != CANCEL) {
+                // not entirely necessary, since BAD and CANCEL must be observed only eventually, but
+                // the least surprising behaviour is:
+                // if pending is known to be BAD or CANCEL, make sure requested does not
+                // appear good even temporarily
+                oldR = p0;
+            }
+
             // assert: requested == SEE_OTHER
-            REQUESTED.setOpaque(this, p0); // assert: p0 is guaranteed to be a value of requested never seen before
-                                   //    or is a terminal value (when concurrent good requests do not matter)
-            long p = (long) PENDING.getAndSet(this, SEE_OTHER);
+            requested = oldR; // assume non-conforming upstream Publisher may start delivering onNext or
+            // onComplete concurrently upon observing a concurrent request: only use
+            // values read before this assignment, or
+            // method-locals, or atomic updates competing with request() or cancel()
 
-            if (p == CANCEL) {
-               cancel();
-               return;
+            if (oldR == CANCEL) {
+                subscription.cancel();
+                return;
             }
 
-            if (p == produced) {
-               return;
+            if (oldR != oldProduced) {
+                long req = unconsumed(oldR, oldProduced);
+                // assert: req != CANCEL
+                subscription.request(req); // assert: requesting necessarily from this subscription;
+                //    if a concurrent onComplete is fired by a non-conforming
+                //    Publisher before this request, the request is no-op, and onComplete
+                //    will carry over req to the next Publisher - no double accounting
+                //    occurs;
+                //    but if there is no concurrent onComplete, need to request
+                //    from this subscription
+                //    (plus trivial arithmetical proof based on commutativity of
+                //    addition - produced may change concurrently, too, but only by
+                //    no more than concurrent requests, and the req can be seen to be
+                //    preserved)
             }
 
-            // assert: p > produced, unless p == BAD - there were request() between nextSource()
-            //   and this onSubscribe(); invoke request() on their behalf
-            long req = unconsumed(p, produced);
-            if (req < 0) {
-                updateRequest(req);
-            } else if (p != p0) {
-                // assert: p != BAD, because req > 0 (because p > produced)
-                // assert: p0 != BAD, because pending cannot be updated to p > produced after p0 = BAD
-                // assert: requested is at least p0; add the remainder that got added to pending
-                updateRequest(p - p0);
+            long p = claimPending();
+            if (p != 0) { // all concurrent onSubscribe and requests that observe requested >= INIT attempt this
+                updateRequest(p);
             }
-            subscription.request(req);
         }
 
         @Override
@@ -146,20 +158,18 @@ final class MultiConcatArray<T> implements Multi<T> {
             boolean sameThread;
             boolean again;
             do {
-               redo = false;
-               // assert: pending == SEE_OTHER
-               PENDING.setOpaque(this, produced);
-               long r = (long) REQUESTED.getAndSet(this, SEE_OTHER);
-               subscription = null;
+                redo = false;
+                long r = (long) REQUESTED.getAndSet(this, SEE_OTHER);
+                subscription = null;
 
-               nextSource(r);
-               again = redo;
-               VarHandle.loadLoadFence();
-               sameThread = LASTTHREADCOMPLETING.getOpaque(this) == current;
+                nextSource(r);
+                again = redo;
+                VarHandle.loadLoadFence();
+                sameThread = LASTTHREADCOMPLETING.getOpaque(this) == current;
             } while (again && sameThread);
 
             if (sameThread) {
-               LASTTHREADCOMPLETING.compareAndSet(this, current, null);
+                LASTTHREADCOMPLETING.compareAndSet(this, current, null);
             }
         }
 
@@ -170,24 +180,14 @@ final class MultiConcatArray<T> implements Multi<T> {
             }
 
             if (index == sources.length) {
+                // assert: no onSubscribe in the future, so no need to preserve oldRequested
                 downstream.onComplete();
                 return;
             }
 
             Flow.Publisher<T> nextPub = sources[index++];
 
-            // assert: r >= produced, unless r == BAD - because produced
-            //    gets incremented only in response to a preceding request
-            r = unconsumed(r, produced - 1); // assert: same as unconsumed(r+1, produced) for
-                // r representing a request count (not a terminal state); one request for the future onSubscribe;
-                // for other values of r the value of produced is ignored;
-
-            // assert: this will update pending
-            updateRequest(r);
-            // assert: requested is guaranteed to change between the subscriptions
-            //         so request() concurrent with onSubscribe cannot
-            //         miss the update of subscription - they will
-            //         always see requested change
+            oldRequested = r < INIT || r == Long.MAX_VALUE ? r : r + 1;
 
             nextPub.subscribe(this);
         }
@@ -198,13 +198,15 @@ final class MultiConcatArray<T> implements Multi<T> {
             //   MAX_VALUE, BAD, CANCEL
 
             if (req >= INIT && req < Long.MAX_VALUE) {
-               if (produced < 0 && Long.MAX_VALUE + produced < req) {
-                  req = Long.MAX_VALUE;
-               } else {
-                  req -= produced;
-               }
+                if (produced < 0 && Long.MAX_VALUE + produced < req) {
+                    // assert: if produced < 0, then MAX_VALUE + produced does not overflow
+                    req = Long.MAX_VALUE;
+                } else {
+                    // assert: if produced >= 0, then req-produced does not overflow (req > produced)
+                    req -= produced;
+                }
 
-               // assert: req > 0
+                // assert: req > 0
             }
 
             return req;
@@ -212,52 +214,91 @@ final class MultiConcatArray<T> implements Multi<T> {
 
         @Override
         public void request(long n) {
-            Flow.Subscription sub = updateRequest(n <= 0 ? BAD : n);
-            if (sub != null) {
-                sub.request(n);
-            }
+            updateRequest(n <= 0 ? BAD : n);
         }
 
-        private boolean updatePending(long n) {
+        /*
+         * If requested is in a state where update is possible, and there is anything accumulated in
+         * the pending counter, try to claim it. If the caller observes a non-zero return value, they
+         * must updateRequest with that value.
+         */
+        private long claimPending() {
+            long p;
+            do {
+                p = pending;
+                if (p == 0) {
+                    return 0;
+
+                }
+
+                long r = requested;
+                if (r < INIT && !(r == BAD && p == CANCEL)) {
+                    // assert: updating requested is needed:
+                    //
+                    // BAD       |  if p == CANCEL
+                    // CANCEL    |  no
+                    // SEE_OTHER |  no
+                    // >= INIT   |  if p != 0
+                    return 0;
+                }
+            } while (!PENDING.compareAndSet(this, p, p < 0 ? p : 0));
+
+            return p;
+        }
+
+        private long updatePending(long n) {
             long req;
             long nextReq;
             do {
                 req = pending;
-                if (req == CANCEL) {
-                    return true;
+                if (req < 0 && !(req == BAD && n == CANCEL)) {
+                    // assert: updating pending is needed:
+                    //
+                    // BAD       |  if n == CANCEL
+                    // CANCEL    |  no
+                    // >= 0      |  yes
+                    break;
                 }
 
-                if (req == SEE_OTHER) {
-                    return false;
-                }
-                nextReq = n < INIT ? n
+                nextReq = n < 0 ? n
                         // assert: n >= 0
-                        : Long.MAX_VALUE - n <= req ? Long.MAX_VALUE
-                        : req + n;
+                        : Long.MAX_VALUE - n <= req ? Long.MAX_VALUE : req + n;
             } while (!PENDING.compareAndSet(this, req, nextReq));
 
-            return true;
+            return claimPending();
         }
 
-        private Flow.Subscription updateRequest(long n) {
+        private void updateRequest(long n) {
             Flow.Subscription sub;
             long req;
             long nextReq;
             do {
-               req = requested;
-               while (req < INIT) {
-                  if (req != SEE_OTHER || updatePending(n)) {
-                     return null;
-                  }
-                  req = requested;
-               }
+                req = requested;
+                while (req < INIT && !(req == BAD && n == CANCEL)) {
+                    // assert: updating requested is needed:
+                    //
+                    // BAD       |  if n == CANCEL
+                    // CANCEL    |  no - terminal state
+                    // SEE_OTHER |  no - keep track of n in pending
+                    // >= INIT   |  yes
 
-               sub = subscription;
+                    if (req != SEE_OTHER) {
+                        return;
+                    }
+                    n = updatePending(n);
+                    if (n == 0) { // assert: requested is in a terminal state, or there is a claimPending()
+                        //    now or in the future that will propagate pending to requested and
+                        //    the actual Publisher
+                        return;
+                    }
+
+                    req = requested;
+                }
+
+                sub = subscription;
                 nextReq = n < INIT ? n
                         // assert: n >= 0
-                        : Long.MAX_VALUE - n <= req ? Long.MAX_VALUE
-                        : req + n;
-
+                        : Long.MAX_VALUE - n <= req ? Long.MAX_VALUE : req + n;
             } while (!REQUESTED.compareAndSet(this, req, nextReq));
 
             if (nextReq < INIT) {
@@ -265,11 +306,12 @@ final class MultiConcatArray<T> implements Multi<T> {
                 //    no double-accounting happens - so we only
                 //    attempt delivering to subscription seen before updating requested, and
                 //    mutual exclusion between accesses to subscription.request() from
-                // request(), nextSource() and onSubscribe() is enforced.
+                // request() and onSubscribe() is enforced.
                 // When MAX_VALUE is reached, good requests do not need delivering: concurrent
-                // request() may attempt to deliver to an old subscription, as it will not be
+                // request() may miss an update to subscription, and attempt to deliver to an
+                // old subscription, as it will not be
                 // able to observe new subscriptions (new values of requested), but good requests
-                // do not need delivering
+                // do not need delivering in this case
 
                 // assert: cancellations and bad requests can be delivered more than once - no
                 //    double accounting
@@ -281,17 +323,33 @@ final class MultiConcatArray<T> implements Multi<T> {
                 // subscription, the update of which concurrent request() cannot detect after
                 // requested reaches MAX_VALUE - so, should read subscription after updating
                 // requested
-                return subscription;
+                sub = subscription;
+
+                // assert: subscription may be null, if requested was updated before it was set
+                //    to SEE_OTHER by onComplete, but before subscription is set again by
+                //    onSubscribe; consequently, if it is null, then there is onSubscribe in the
+                //    future that will observe the update of requested and signal appropriately
+                if (sub != null) {
+                    if (nextReq == CANCEL) {
+                        sub.cancel();
+                    } else {
+                        sub.request(BAD);
+                    }
+                }
+                return;
             }
-            return sub;
+
+            // assert: nextReq == req, if req == MAX_VALUE - nothing needs doing
+            if (nextReq != req) {
+                // assert: sub is not null, because when req != MAX_VALUE the change of subscription
+                //    cannot be missed
+                sub.request(nextReq - req);
+            }
         }
 
         @Override
         public void cancel() {
-            Flow.Subscription sub = updateRequest(CANCEL);
-            if (sub != null) {
-                sub.cancel();
-            }
+            updateRequest(CANCEL);
         }
     }
 }
