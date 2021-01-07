@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,7 +107,7 @@ public class Main {
      * @param routing the routing to drive by WebServer instance
      */
     protected void startServer(Routing routing) {
-        startServer(routing, null);
+        startServer(routing, MediaContext.create());
     }
 
     /**
@@ -328,7 +328,7 @@ public class Main {
         hlp.append("Example method names:\n");
         Method[] methods = Main.class.getDeclaredMethods();
         for (Method method : methods) {
-            if (!Modifier.isPrivate(method.getModifiers()) && !Modifier.isStatic(method.getModifiers())) {
+            if (Modifier.isPublic(method.getModifiers()) && !Modifier.isStatic(method.getModifiers())) {
                 hlp.append("    ").append(method.getName()).append('\n');
             }
         }
