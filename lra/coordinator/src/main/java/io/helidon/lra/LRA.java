@@ -35,8 +35,6 @@ public class LRA {
     public long timeout;
     String lraId;
     private URI parentId;
-    private URI recoveryURI;
-    private String participantPath;
     List<String> compensatorLinks = new ArrayList<>();
     List<LRA> children = new ArrayList<>();
 
@@ -51,14 +49,21 @@ public class LRA {
     List<String> afterMessagingURIs = new ArrayList<>();
     List<String> forgetMessagingURIs = new ArrayList<>();
     List<String> statusMessagingURIs = new ArrayList<>();
-    private boolean isEndComplete = false;
-    private boolean isRecoveringFromConnectionException = false;
+    private boolean isEndCompleteForAfterLRAEnlistmentDuringClosingPhase = false;
+    boolean isRecovering = false;
+    private boolean isRecoveringFromConnectionExceptionOr202 = false;
     private boolean isCompensate;
     private boolean isChild;
     private boolean isParent;
+    private boolean isProcessing;
 
     public LRA(String lraUUID) {
         lraId = lraUUID;
+    }
+
+    public LRA(String lraUUID, URI parentId) {
+        lraId = lraUUID;
+        this.parentId = parentId;
     }
 
     void removeParticipant(String compensatorLink, boolean isMessaging, boolean isToBeLogged) {
@@ -134,24 +139,25 @@ public class LRA {
 
 
     void tryDoEnd(boolean compensate, boolean isMessaging) {
+        setProcessing(true);
         isCompensate = compensate;
         log("LRA End compensate:" + compensate + "+ isMessaging:" + isMessaging);
         if (isMessaging) SendMessage.send(compensate ? compensateMessagingURIs : completeMessagingURIs);
         else {
-            System.out.println("LRA.endChildren");
             if (isParent) sendCompletion(compensateURIs, compensate);
             for (LRA nestedLRA : children) {
-                System.out.println("LRA.endChildren nestedLRA.compensateURIs.size():" + nestedLRA.compensateURIs.size());
+                log("LRA.endChildren nestedLRA.compensateURIs.size():" + nestedLRA.compensateURIs.size());
                 nestedLRA.sendCompletion(nestedLRA.compensateURIs, compensate);
 //                nestedLRA.tryDoEnd(compensate, false);
             }
             send(compensate);
         }
         cleanup();
+        setProcessing(false);
     }
 
-    private void cleanup() {
-        if (!isRecoveringFromConnectionException) {
+    void cleanup() {
+        if (!isRecoveringFromConnectionExceptionOr202) {
             completeURIs = new ArrayList<>();
             compensateURIs = new ArrayList<>();
             afterURIs = new ArrayList<>();
@@ -163,17 +169,16 @@ public class LRA {
     private void send(boolean compensate) {
         List<URI> endpointURIs = compensate ? compensateURIs : completeURIs;
         sendCompletion(endpointURIs, compensate);
-//        sendAfterLRA(afterURIs, compensate); //use sendAfterLRA() instead
         for (URI endpointURI : afterURIs) {
-            log("LRA REST.send:" + endpointURI + " lraId:" + lraId);
             try {
                 Response response = sendCompletion(endpointURI, isCompensate);
                 int responsestatus = response.getStatus();
                 log("LRA REST.send:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
+                isEndCompleteForAfterLRAEnlistmentDuringClosingPhase = true;
             } catch (Exception e) {
                 log("LRA REST.send Exception:" + e);
+                isRecoveringFromConnectionExceptionOr202 = true;
             }
-            isEndComplete = true;
         }
     }
 
@@ -232,6 +237,7 @@ public class LRA {
                 log("LRA REST.sendForget:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
             } catch (Exception e) {
                 log("LRA REST.sendForget Exception:" + e);
+                isRecoveringFromConnectionExceptionOr202 = true;
             }
         }
     }
@@ -244,20 +250,33 @@ public class LRA {
                 int responsestatus = response.getStatus();
                 log("LRA REST.send:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
                 if (responsestatus == 503) {
-                    log("LRA 503");
                     sendStatus();
-                    log("LRA 503 status done now add to recoverymanager....");
-                    RecoveryManager.getInstance().add(lraId, this);
+//                    RecoveryManager.getInstance().add(lraId, this);
+                    isRecovering=true;
                 } else if (responsestatus == 202) {
-                    System.out.println("LRA.sendCompletion 202 endpointURI:" + endpointURI);
                     Response statusResponse = sendStatus();
-                    if (statusResponse == null) {
-                        log("LRA.send status:" + null);
-                    } else {
-                        log("LRA.send status:" + statusResponse.getStatus());
-                    }
-                    RecoveryManager.getInstance().add(lraId, this);
+// isRecoveringFromConnectionExceptionOr202 equal to true fixes TckUnknownTests.compensate_retry and TckUnknownTests.complete_retry but introduces these ...
+/**
+ [ERROR] Failures:
+ [ERROR]   TckContextTests.testAfterLRAEnlistmentDuringClosingPhase:313 Resource '/required-lra' is not completed expected:<1> but was:<2>
+
+ [ERROR]   TckParticipantTests.validSignaturesChainTest:126 Non JAX-RS @Forget method should have been called
+ Expected: a value equal to or greater than <1>
+ but: <0> was less than <1>
+
+ [ERROR]   TckRecoveryTests.testCancelWhenParticipantIsUnavailable:199->assertMetricCallbackCalled:214 Expecting the metric Compensated callback was called
+ Expected: a value equal to or greater than <1>
+ but: <0> was less than <1>
+
+ [ERROR]   TckTests.timeLimit:334 The LRA should have timed out but complete was called instead of compensate.
+ Expecting the number of complete call before test matches the ones after LRA timed out. The test call went to http://localhost:8180/lraresource/timeLimit expected:<0> but was:<1>
+ [ERROR] Tests run: 133, Failures: 7, Errors: 0, Skipped: 0
+ */
+                    isRecoveringFromConnectionExceptionOr202 = true;
+//                    RecoveryManager.getInstance().add(lraId, this);
+                    isRecovering=true;
 //                    isRecoveringFromConnectionException = true; //this allows TckUnknownTests.complete_retry but causes hang in tck
+                } else if (responsestatus == 404) {
                 } else if (responsestatus != 200) {
                     Response statusResponse = sendStatus();
                     if (statusResponse == null) {
@@ -266,18 +285,20 @@ public class LRA {
                         log("LRA.send status:" + statusResponse.getStatus());
                     }
                     sendForget();  // handles TckParticipantTests.validSignaturesChainTest  but not TckContextTests.testForget
-                    RecoveryManager.getInstance().add(lraId, this);
+//                    RecoveryManager.getInstance().add(lraId, this);
+                    isRecovering=true;
                 } else if (responsestatus == 200) {
 //                    endpointURIs.remove(endpointURI);
-//                    isRecoveringFromConnectionException = false;
+                    isRecoveringFromConnectionExceptionOr202 = false;
+                    isEndCompleteForAfterLRAEnlistmentDuringClosingPhase = true; //not accurate
                 } else {
-                    isRecoveringFromConnectionException = false;  //todo verify if necessary as recovery method would reset this if true (false is default)
+                    isRecoveringFromConnectionExceptionOr202 = false;  //todo verify if necessary as recovery method would reset this if true (false is default)
                 }
+                isEndCompleteForAfterLRAEnlistmentDuringClosingPhase = true; //not accurate
             } catch (Exception e) { // Exception:javax.ws.rs.ProcessingException: java.net.ConnectException: Connection refused (Connection refused)
-                log("LRA REST.send Exception:" + e); //todo afterLRA is currently called regardless
-                isRecoveringFromConnectionException = true;
+                log("LRA REST.sendCompletion Exception:" + e); //todo afterLRA is currently called regardless
+                isRecoveringFromConnectionExceptionOr202 = true;
             }
-            isEndComplete = true;
         }
     }
 
@@ -287,7 +308,7 @@ public class LRA {
         for (URI endpointURI : isCompensate ? compensateURIs : completeURIs) {
             response = sendCompletion(endpointURI, true);
             if (response != null && response.getStatus() == 200) {
-                isRecoveringFromConnectionException = false;
+                isRecoveringFromConnectionExceptionOr202 = false;
                 cleanup();
             }
         }
@@ -309,12 +330,21 @@ public class LRA {
         //                       .async().put(Entity.json("entity"));
     }
 
-    public boolean isEndComplete() {
-        return isEndComplete;
+    //used to determine/gate callAfterLRAForEnlistmentDuringClosingPhase
+    public boolean isEndCompleteForAfterLRAEnlistmentDuringClosingPhase() {
+        return isEndCompleteForAfterLRAEnlistmentDuringClosingPhase;
     }
 
 
     void log(String message) {
         System.out.println("ischild:" + isChild + " isParent:" + isParent + " " + message);
+    }
+
+    public void setProcessing(boolean isProcessing) {
+        this.isProcessing = isProcessing;
+    }
+
+    public boolean isProcessing() {
+        return isProcessing;
     }
 }

@@ -59,6 +59,7 @@ public class Coordinator implements Runnable  {
     private UriInfo context;
 
     Map<String, LRA> lraRecordMap = new ConcurrentHashMap(); //todo proper sync
+    final Object lraRecordMapLock = new Object();
 
     private static Coordinator singleton;
 
@@ -152,7 +153,7 @@ public class Coordinator implements Runnable  {
             if (parentLRA != null && !parentLRA.isEmpty()) {
                 LRA parent = lraRecordMap.get(parentLRA.replace("http://127.0.0.1:8080/lra-coordinator/", ""));
                 log("Coordinator.startLRA parent:" + parent);
-                if (parent != null) parent.addChild(lraUUID, new LRA(lraUUID));
+                if (parent != null) parent.addChild(lraUUID, new LRA(lraUUID, new URI(String.format("%s/%s", coordinatorUrl, parentLRA))));
             }
             log("Coordinator.startLRA lraId:" + lraId);
         } catch (URISyntaxException e) {
@@ -342,7 +343,7 @@ public class Coordinator implements Runnable  {
             return Response.ok().build();
         } else {
             // todo if this ended already and this is afterLRA then call this - tck test testAfterLRAEnlistmentDuringClosingPhase
-            if(lra.isEndComplete()) lra.callAfterLRAForEnlistmentDuringClosingPhase();
+            if(lra.isEndCompleteForAfterLRAEnlistmentDuringClosingPhase()) lra.callAfterLRAForEnlistmentDuringClosingPhase();
             if (timeLimit == 0 ) timeLimit = 60;
             if( lra.timeout == 0 ) { // todo overrides
                 lra.timeout = System.currentTimeMillis() + (1000 * timeLimit); //todo convert to whatever measurement
@@ -363,7 +364,7 @@ public class Coordinator implements Runnable  {
         }
 //        lra.addParticipant(compensatorData, true, true);
         lra.addParticipant(compensatorData, false,true );
-        if(lra.isEndComplete()) lra.callAfterLRAForEnlistmentDuringClosingPhase(); //the call here is necssary (todo see if above call is actually executed by tck)
+        if(lra.isEndCompleteForAfterLRAEnlistmentDuringClosingPhase()) lra.callAfterLRAForEnlistmentDuringClosingPhase(); //the call here is necssary (todo see if above call is actually executed by tck)
         try {
             return Response.status(status)
                     .entity(recoveryUrl.toString())
@@ -381,14 +382,32 @@ public class Coordinator implements Runnable  {
             if (lraRecordMap != null) {
                 for (String uri: lraRecordMap.keySet()) {
                     LRA lra = lraRecordMap.get(uri);
-                    long currentTime = System.currentTimeMillis();
-                    if (lra.timeout < currentTime) {
-                    log(
-                            "Timeout thread, will end uri:" + uri +
-                                    " timeout:" + lra.timeout + " currentTime:" + currentTime +
-                                    " ms over:" + (currentTime - lra.timeout));
-                        lra.tryDoEnd(true, false);
+                    if (lra.isProcessing()) continue;
+                    if(lra.isRecovering) {
+                        Response statusResponse = null;
+                        if (lra.isRecovering) statusResponse = lra.sendStatus();
+                        if (statusResponse != null ) {
+                            int status = statusResponse.getStatus();
+//                            log("Recovery status is " + status);
+                            if(status < 500) {
+                                lra.sendCompletion();
+                                lra.sendForget();
+                                lra.cleanup();
+                            }
+                        } else {
+//                            log("Recovery status is null");
+                            lra.sendCompletion();
+                            lra.cleanup();
+                        }
+                    } else {
+                        long currentTime = System.currentTimeMillis();
+                        if (lra.timeout < currentTime) {
+                            log("Timeout thread, will end uri:" + uri +
+                                            " timeout:" + lra.timeout + " currentTime:" + currentTime +
+                                            " ms over:" + (currentTime - lra.timeout));
+                            lra.tryDoEnd(true, false);
 //                        lraRecordMap.remove(uri);
+                        }
                     }
                 }
                 try {

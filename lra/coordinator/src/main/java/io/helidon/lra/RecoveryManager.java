@@ -53,7 +53,7 @@ public class RecoveryManager implements Runnable {
         log("RecoveryManager.init " + init + " recovery disabled");
 //        recover();
         singleton = this;
-        new Thread(this).start();
+//        new Thread(this).start();
     }
 
     public void recover() {
@@ -130,7 +130,7 @@ public class RecoveryManager implements Runnable {
     }
 
     void add(String lraId, LRA lra) {
-//        Coordinator.getInstance().remove(lraId); //7, 8, or 9 intermittent tests
+        Coordinator.getInstance().remove(lraId); //7, 8, or 9 intermittent tests
         this.lraRecoveryRecordMap.put(lraId, lra);
     }
 
@@ -138,11 +138,9 @@ public class RecoveryManager implements Runnable {
     public void run() {
         while (true) {
             if (lraRecoveryRecordMap.size() >0 ) {
-                log("-------->RECOVERY MANAGER lraRecoveryRecordMap size" + lraRecoveryRecordMap.size());
                 for (String lraId: lraRecoveryRecordMap.keySet()) {
                     LRA lra = lraRecoveryRecordMap.get(lraId);
-                        log(
-                                "RecoveryManager thread, will status and forget lraId:" + lraId );
+                        log("RecoveryManager thread, will status and forget lraId:" + lraId );
                         Response statusResponse = lra.sendStatus();
                         if (statusResponse != null) {
                             int status = statusResponse.getStatus();
