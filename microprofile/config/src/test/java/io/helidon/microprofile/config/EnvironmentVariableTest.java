@@ -29,7 +29,7 @@ import static org.hamcrest.Matchers.notNullValue;
 final class EnvironmentVariableTest {
 
     private Config config;
-    
+
     private EnvironmentVariableTest() {
         super();
     }
@@ -37,7 +37,7 @@ final class EnvironmentVariableTest {
     @BeforeEach
     final void installConfig() {
         this.config = ConfigProvider.getConfig();
-        assertThat(this.config, notNullValue());        
+        assertThat(this.config, notNullValue());
     }
 
     @Test
@@ -48,6 +48,11 @@ final class EnvironmentVariableTest {
     @Test
     final void testEnvironmentVariableOverridesYamlProperty() {
         assertThat(this.config.getValue("yamlProperty", String.class), is("overridden"));
+    }
+
+    @Test
+    final void testEnvironmentVariableOverridesNestedYamlProperty() {
+        assertThat(this.config.getValue("nested.yamlProperty", String.class), is("overridden"));
     }
 
 }
