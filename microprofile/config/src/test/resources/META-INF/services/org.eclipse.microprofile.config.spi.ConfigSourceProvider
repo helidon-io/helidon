@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +14,4 @@
 # limitations under the License.
 #
 
-# needed to run unit tests independently based on explicit beans using SeContainerInitializer
-mp.initializer.allow=true
-mp.initializer.warn=false
-
-camelCase=yes
-yamlProperty=no
+io.helidon.config.yaml.YamlMpConfigSourceProvider
