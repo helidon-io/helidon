@@ -152,6 +152,9 @@
                     Nothing in Helidon depends on these APIs directly.
          Section 4: Dependencies used for testing only. It's preferable that these are
                     in the Helidon root project pom, but sometimes they need to be here.
+
+         Importing of BOMs should always be at the end since we want more specific
+         dependencies to override them.
         -->
 
         <dependencies>
@@ -1011,28 +1014,6 @@
                 <artifactId>micronaut-aop</artifactId>
                 <version>${version.lib.micronaut}</version>
             </dependency>
-            <!-- imported boms -->
-            <dependency>
-                <groupId>com.oracle.database.jdbc</groupId>
-                <artifactId>ojdbc-bom</artifactId>
-                <version>${version.lib.ojdbc8}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey</groupId>
-                <artifactId>jersey-bom</artifactId>
-                <version>${version.lib.jersey}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson</groupId>
-                <artifactId>jackson-bom</artifactId>
-                <version>${version.lib.jackson}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
             <!-- END OF Section 1: direct third party dependencies -->
 
             <!-- Section 2: third party dependencies used by examples -->
@@ -1331,6 +1312,29 @@
                 <version>${version.lib.mssql-jdbc}</version>
             </dependency>
             <!-- END OF Section 4: Testing -->
+
+            <!-- imported boms -->
+            <dependency>
+                <groupId>com.oracle.database.jdbc</groupId>
+                <artifactId>ojdbc-bom</artifactId>
+                <version>${version.lib.ojdbc8}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey</groupId>
+                <artifactId>jersey-bom</artifactId>
+                <version>${version.lib.jersey}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${version.lib.jackson}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>
