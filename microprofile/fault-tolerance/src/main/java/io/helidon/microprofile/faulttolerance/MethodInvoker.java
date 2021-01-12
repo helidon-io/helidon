@@ -48,9 +48,6 @@ import io.helidon.faulttolerance.FtHandlerTyped;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.Timeout;
 
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.*;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.EXCEPTION_THROWN;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.VALUE_RETURNED;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.metrics.Counter;
@@ -58,9 +55,11 @@ import org.glassfish.jersey.process.internal.RequestContext;
 import org.glassfish.jersey.process.internal.RequestScope;
 
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RETRY_RETRIES_TOTAL;
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.mapTypes;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.*;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.EXCEPTION_THROWN;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.VALUE_RETURNED;
 
 /**
  * Invokes a FT method applying semantics based on method annotations. An instance
@@ -311,33 +310,29 @@ class MethodInvoker implements FtSupplier<Object> {
         // Gauges and other metrics for bulkhead and circuit breakers
         if (isFaultToleranceMetricsEnabled()) {
             if (introspector.hasCircuitBreaker()) {
-                CircuitBreakerStateTotal.register(() -> methodState.breakerTimerOpen,
+                CircuitBreakerStateTotal.register(
+                        () -> methodState.breakerTimerOpen,
                         introspector.getMethodNameTag(),
                         CircuitBreakerState.OPEN.get());
-                CircuitBreakerStateTotal.register(() -> methodState.breakerTimerHalfOpen,
+                CircuitBreakerStateTotal.register(
+                        () -> methodState.breakerTimerHalfOpen,
                         introspector.getMethodNameTag(),
                         CircuitBreakerState.HALF_OPEN.get());
-                CircuitBreakerStateTotal.register(() -> methodState.breakerTimerClosed,
+                CircuitBreakerStateTotal.register(
+                        () -> methodState.breakerTimerClosed,
                         introspector.getMethodNameTag(),
                         CircuitBreakerState.CLOSED.get());
             }
-            /*
             if (introspector.hasBulkhead()) {
-                registerGauge(method, BULKHEAD_CONCURRENT_EXECUTIONS,
-                        "Number of currently running executions",
-                        () -> methodState.bulkhead.stats().concurrentExecutions());
+                BulkheadExecutionsRunning.register(
+                        () -> methodState.bulkhead.stats().concurrentExecutions(),
+                        introspector.getMethodNameTag());
                 if (introspector.isAsynchronous()) {
-                    registerGauge(method, BULKHEAD_WAITING_QUEUE_POPULATION,
-                            "Number of executions currently waiting in the queue",
-                            () -> methodState.bulkhead.stats().waitingQueueSize());
-                    registerHistogram(
-                            String.format(METRIC_NAME_TEMPLATE,
-                                    method.getDeclaringClass().getName(),
-                                    method.getName(),
-                                    BULKHEAD_WAITING_DURATION),
-                            "Histogram of the time executions spend waiting in the queue.");
+                    BulkheadExecutionsWaiting.register(
+                            () -> methodState.bulkhead.stats().waitingQueueSize(),
+                            introspector.getMethodNameTag());
                 }
-            } */
+            }
         }
     }
 
@@ -753,17 +748,14 @@ class MethodInvoker implements FtSupplier<Object> {
                 if (methodState.lastBreakerState == State.OPEN) {
                     CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
                             CircuitBreakerResult.CIRCUIT_BREAKER_OPEN.get()).inc();
-                    // getCounter(method, BREAKER_CALLS_PREVENTED_TOTAL).inc();
                 } else if (methodState.breaker.state() == State.OPEN) {     // closed -> open
                     CircuitBreakerOpenedTotal.get(introspector.getMethodNameTag()).inc();
-                    // getCounter(method, BREAKER_OPENED_TOTAL).inc();
                 }
 
                 // Update succeeded and failed
                 if (cause == null) {
                     CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
                             CircuitBreakerResult.SUCCESS.get()).inc();
-                    // getCounter(method, BREAKER_CALLS_SUCCEEDED_TOTAL).inc();
                 } else if (!(cause instanceof CircuitBreakerOpenException)) {
                     boolean failure = false;
                     Class<? extends Throwable>[] failOn = introspector.getCircuitBreaker().failOn();
@@ -773,9 +765,7 @@ class MethodInvoker implements FtSupplier<Object> {
                             break;
                         }
                     }
-
-                    // getCounter(method, failure ? BREAKER_CALLS_FAILED_TOTAL
-                       //     : BREAKER_CALLS_SUCCEEDED_TOTAL).inc();
+                    ;
                     if (failure) {
                         CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
                                 CircuitBreakerResult.FAILURE.get()).inc();
@@ -809,15 +799,24 @@ class MethodInvoker implements FtSupplier<Object> {
             if (introspector.hasBulkhead()) {
                 Objects.requireNonNull(methodState.bulkhead);
                 Bulkhead.Stats stats = methodState.bulkhead.stats();
-                // updateCounter(method, BULKHEAD_CALLS_ACCEPTED_TOTAL, stats.callsAccepted());
-                // updateCounter(method, BULKHEAD_CALLS_REJECTED_TOTAL, stats.callsRejected());
+                Counter bulkheadAccepted = BulkheadCallsTotal.get(introspector.getMethodNameTag(),
+                        BulkheadResult.ACCEPTED.get());
+                if (stats.callsAccepted() > bulkheadAccepted.getCount()) {
+                    bulkheadAccepted.inc(stats.callsAccepted() - bulkheadAccepted.getCount());
+                }
+                Counter bulkheadRejected = BulkheadCallsTotal.get(introspector.getMethodNameTag(),
+                        BulkheadResult.REJECTED.get());
+                if (stats.callsRejected() > bulkheadRejected.getCount()) {
+                    bulkheadRejected.inc(stats.callsRejected() - bulkheadRejected.getCount());
+                }
 
                 // Update histograms if task accepted
                 if (!(cause instanceof BulkheadException)) {
                     long waitingTime = invocationStartNanos - handlerStartNanos;
-                    // getHistogram(method, BULKHEAD_EXECUTION_DURATION).update(executionTime - waitingTime);
+                    BulkheadRunningDuration.get(introspector.getMethodNameTag())
+                            .update(executionTime - waitingTime);
                     if (introspector.isAsynchronous()) {
-                        // getHistogram(method, BULKHEAD_WAITING_DURATION).update(waitingTime);
+                        BulkheadWaitingDuration.get(introspector.getMethodNameTag()).update(waitingTime);
                     }
                 }
             }
@@ -832,26 +831,5 @@ class MethodInvoker implements FtSupplier<Object> {
                         introspector.getFallbackTag(fallbackCalled.get())).inc();
             }
         }
-    }
-
-    /**
-     * Sets the value of a monotonically increasing counter using {@code inc()}.
-     *
-     * @param method The method.
-     * @param name The counter's name.
-     * @param newValue The new value.
-     * @return A value of {@code true} if counter updated, {@code false} otherwise.
-     */
-    private static boolean updateCounter(Method method, String name, long newValue) {
-        return false;
-        /*
-        Counter counter = getCounter(method, name);
-        long oldValue = counter.getCount();
-        if (newValue > oldValue) {
-            counter.inc(newValue - oldValue);
-            return true;
-        }
-        return false;
-         */
     }
 }
