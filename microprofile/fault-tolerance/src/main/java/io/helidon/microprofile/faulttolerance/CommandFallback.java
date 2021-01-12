@@ -122,6 +122,6 @@ class CommandFallback {
      */
     private void updateMetrics() {
         Method method = context.getMethod();
-        FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.FALLBACK_CALLS_TOTAL).inc();
+        // FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.FALLBACK_CALLS_TOTAL).inc();
     }
 }

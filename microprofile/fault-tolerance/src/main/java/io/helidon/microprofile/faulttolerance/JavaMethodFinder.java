@@ -45,7 +45,7 @@ class JavaMethodFinder {
      * @return The method found.
      * @throws NoSuchMethodException If not found.
      */
-    static Method findMethod(Class<?> clazz, String methodName, Type[] paramTypes)
+    static Method findMethod(Class<?> clazz, String methodName, Type... paramTypes)
             throws NoSuchMethodException {
         // Initialize queue with first class
         Queue<Class<?>> queue = new LinkedBlockingQueue<>();

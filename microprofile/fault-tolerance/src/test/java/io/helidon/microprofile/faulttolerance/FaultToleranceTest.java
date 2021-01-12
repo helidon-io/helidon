@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import javax.enterprise.inject.literal.NamedLiteral;
+import javax.enterprise.inject.spi.CDI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -27,18 +29,14 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.enterprise.inject.spi.CDI;
-
+import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.getRealClass;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-
-import org.junit.jupiter.api.BeforeEach;
-
+import org.eclipse.microprofile.metrics.Tag;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Class FaultToleranceTest.
@@ -130,5 +128,9 @@ abstract class FaultToleranceTest {
         } catch (Exception e) {
             fail("Unexpected exception" + e);
         }
+    }
+
+    static Tag getMethodTag(Object bean, String methodName) {
+        return new Tag("method", getRealClass(bean).getName() + "." + methodName);
     }
 }

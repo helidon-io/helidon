@@ -19,6 +19,10 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.APPLIED;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.NOT_APPLIED;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.NOT_DEFINED;
+
 import io.helidon.microprofile.faulttolerance.MethodAntn.LookupResult;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
@@ -30,6 +34,7 @@ import org.eclipse.microprofile.faulttolerance.Timeout;
 
 import static io.helidon.microprofile.faulttolerance.FaultToleranceParameter.getParameter;
 import static io.helidon.microprofile.faulttolerance.MethodAntn.lookupAnnotation;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Class MethodIntrospector.
@@ -49,6 +54,8 @@ class MethodIntrospector {
     private final Timeout timeout;
 
     private final Bulkhead bulkhead;
+
+    private Tag methodNameTag;
 
     /**
      * Constructor.
@@ -148,6 +155,30 @@ class MethodIntrospector {
 
     Bulkhead getBulkhead() {
         return bulkhead;
+    }
+
+    /**
+     * Returns a metric's tag with the fully qualified method name.
+     *
+     * @return the tag
+     */
+    Tag getMethodNameTag() {
+        if (methodNameTag == null) {
+            String name = method.getDeclaringClass().getName() + "." + method.getName();
+            methodNameTag = new Tag("method", name);
+        }
+        return methodNameTag;
+    }
+
+    /**
+     * Returns a fallback tag based on the {@code fallbackCalled} parameter.
+     *
+     * @param fallbackCalled indicates if fallback logic was called or not
+     * @return the tag
+     */
+    Tag getFallbackTag(boolean fallbackCalled) {
+        return !hasFallback() ? NOT_DEFINED.get()
+                : fallbackCalled ? APPLIED.get() : NOT_APPLIED.get();
     }
 
     /**
