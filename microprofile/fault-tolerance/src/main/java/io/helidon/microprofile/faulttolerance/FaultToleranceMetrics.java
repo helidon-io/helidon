@@ -564,6 +564,10 @@ class FaultToleranceMetrics {
         static Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
             return INSTANCE.registerGauge(gauge, tags);
         }
+
+        static Gauge<Long> get(Tag... tags) {
+            return INSTANCE.metric(tags);
+        }
     }
 
     /**
@@ -706,6 +710,10 @@ class FaultToleranceMetrics {
         static Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
             return INSTANCE.registerGauge(gauge, tags);
         }
+
+        static Gauge<Long> get(Tag... tags) {
+            return INSTANCE.metric(tags);
+        }
     }
 
     /**
@@ -747,6 +755,10 @@ class FaultToleranceMetrics {
 
         static Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
             return INSTANCE.registerGauge(gauge, tags);
+        }
+
+        static Gauge<Long> get(Tag... tags) {
+            return INSTANCE.metric(tags);
         }
     }
 

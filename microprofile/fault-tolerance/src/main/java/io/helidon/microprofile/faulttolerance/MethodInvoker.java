@@ -574,7 +574,7 @@ class MethodInvoker implements FtSupplier<Object> {
 
                             // Execute callback logic
                             fallbackCalled.set(true);
-                            CommandFallback cfb = new CommandFallback(context, introspector, throwable);
+                            FallbackHelper cfb = new FallbackHelper(context, introspector, throwable);
                             return toCompletionStageSupplier(cfb::execute).get();
                         } finally {
                             // Release request context if referenced
@@ -698,10 +698,10 @@ class MethodInvoker implements FtSupplier<Object> {
             // Calculate execution time
             long executionTime = System.nanoTime() - handlerStartNanos;
 
-            // Metrics for retries
+            // Retries
             if (introspector.hasRetry()) {
                 long retryCounter = methodState.retry.retryCounter();
-                Counter retryRetriesTotal = RetryRetriesTotal.get();
+                Counter retryRetriesTotal = RetryRetriesTotal.get(introspector.getMethodNameTag());
 
                 // Any new retries in this invocation?
                 if (retryCounter > retryRetriesTotal.getCount()) {
@@ -710,16 +710,18 @@ class MethodInvoker implements FtSupplier<Object> {
                         RetryCallsTotal.get(introspector.getMethodNameTag(),
                                 RetryRetried.TRUE.get(),
                                 RetryResult.VALUE_RETURNED.get()).inc();
+                    } else if (cause instanceof TimeoutException) {
+                        RetryCallsTotal.get(introspector.getMethodNameTag(),
+                                RetryRetried.TRUE.get(),
+                                RetryResult.MAX_DURATION_REACHED.get()).inc();
+                    } else if (retryCounter == introspector.getRetry().maxRetries()) {
+                        RetryCallsTotal.get(introspector.getMethodNameTag(),
+                                RetryRetried.TRUE.get(),
+                                RetryResult.MAX_RETRIES_REACHED.get()).inc();
                     } else {
-                        if (cause instanceof TimeoutException) {
-                            RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                    RetryRetried.TRUE.get(),
-                                    RetryResult.MAX_DURATION_REACHED.get()).inc();
-                        } else {
-                            RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                    RetryRetried.TRUE.get(),
-                                    RetryResult.EXCEPTION_NOT_RETRYABLE.get()).inc();
-                        }
+                        RetryCallsTotal.get(introspector.getMethodNameTag(),
+                                RetryRetried.TRUE.get(),
+                                RetryResult.EXCEPTION_NOT_RETRYABLE.get()).inc();
                     }
                 } else {
                     RetryCallsTotal.get(introspector.getMethodNameTag(),
@@ -730,7 +732,7 @@ class MethodInvoker implements FtSupplier<Object> {
 
             // Timeout
             if (introspector.hasTimeout()) {
-                if (cause instanceof TimeoutException) {
+                if (cause instanceof org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException) {
                     TimeoutCallsTotal.get(introspector.getMethodNameTag(),
                             TimeoutTimedOut.TRUE.get()).inc();
                 } else {
@@ -740,11 +742,10 @@ class MethodInvoker implements FtSupplier<Object> {
                 TimeoutExecutionDuration.get(introspector.getMethodNameTag()).update(executionTime);
             }
 
-            // Circuit breaker
+            // CircuitBreaker
             if (introspector.hasCircuitBreaker()) {
                 Objects.requireNonNull(methodState.breaker);
 
-                // Update counters based on state changes
                 if (methodState.lastBreakerState == State.OPEN) {
                     CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
                             CircuitBreakerResult.CIRCUIT_BREAKER_OPEN.get()).inc();
@@ -752,7 +753,6 @@ class MethodInvoker implements FtSupplier<Object> {
                     CircuitBreakerOpenedTotal.get(introspector.getMethodNameTag()).inc();
                 }
 
-                // Update succeeded and failed
                 if (cause == null) {
                     CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
                             CircuitBreakerResult.SUCCESS.get()).inc();
@@ -765,7 +765,6 @@ class MethodInvoker implements FtSupplier<Object> {
                             break;
                         }
                     }
-                    ;
                     if (failure) {
                         CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
                                 CircuitBreakerResult.FAILURE.get()).inc();
