@@ -21,6 +21,9 @@ db:
   services:
     metrics:
       - type: METER
+  health-check:
+    type: "dml"
+    statementName: "ping"
   statements:
     # Ping statement
     ping: "SET @HELIDON_PING=0"
