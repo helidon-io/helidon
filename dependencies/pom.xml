@@ -49,7 +49,7 @@
         <version.lib.google-api-client>1.30.11</version.lib.google-api-client>
         <version.lib.graalvm>19.2.0</version.lib.graalvm>
         <version.lib.grpc>1.27.1</version.lib.grpc>
-        <version.lib.guava>28.1-jre</version.lib.guava>
+        <version.lib.guava>30.0-jre</version.lib.guava>
         <version.lib.h2>1.4.199</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.hibernate>5.4.25.Final</version.lib.hibernate>
