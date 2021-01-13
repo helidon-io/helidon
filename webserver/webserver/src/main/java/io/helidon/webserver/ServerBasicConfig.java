@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.net.ssl.SSLContext;
@@ -38,6 +39,7 @@ class ServerBasicConfig implements ServerConfiguration {
     private final Tracer tracer;
     private final Map<String, SocketConfiguration> socketConfigs;
     private final ExperimentalConfiguration experimental;
+    private final Optional<Transport> transport;
     private final Context context;
     private final boolean printFeatureDetails;
 
@@ -51,6 +53,7 @@ class ServerBasicConfig implements ServerConfiguration {
         this.workers = builder.workers();
         this.tracer = builder.tracer();
         this.experimental = builder.experimental();
+        this.transport = builder.transport();
         this.context = builder.context();
         this.printFeatureDetails = builder.printFeatureDetails();
 
@@ -142,6 +145,11 @@ class ServerBasicConfig implements ServerConfiguration {
     @Override
     public ExperimentalConfiguration experimental() {
         return experimental;
+    }
+
+    @Override
+    public Optional<Transport> transport() {
+        return transport;
     }
 
     @Override
