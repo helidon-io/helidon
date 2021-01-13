@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@
         <!-- plugin versions -->
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.0.0</version.plugin.dependency>
-        <version.plugin.eclipselink>2.7.1.1</version.plugin.eclipselink>
+        <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
