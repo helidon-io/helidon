@@ -38,7 +38,7 @@
         -->
         <version.lib.activation-api>1.2.0</version.lib.activation-api>
         <version.lib.annotation-api>1.3.1</version.lib.annotation-api>
-        <version.lib.apache-httpclient>4.5.10</version.lib.apache-httpclient>
+        <version.lib.apache-httpclient>4.5.13</version.lib.apache-httpclient>
         <version.lib.apache-thrift>0.13.0</version.lib.apache-thrift>
         <version.lib.brave-opentracing>0.35.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0</version.lib.cdi-api>
@@ -46,7 +46,7 @@
         <version.lib.el-api>3.0.0</version.lib.el-api>
         <version.lib.el-impl>3.0.0</version.lib.el-impl>
         <version.lib.etcd4j>2.17.0</version.lib.etcd4j>
-        <version.lib.google-api-client>1.30.5</version.lib.google-api-client>
+        <version.lib.google-api-client>1.30.11</version.lib.google-api-client>
         <version.lib.graalvm>19.2.0</version.lib.graalvm>
         <version.lib.grpc>1.27.1</version.lib.grpc>
         <version.lib.guava>28.1-jre</version.lib.guava>
@@ -95,7 +95,7 @@
         <version.lib.reactor>3.3.1.RELEASE</version.lib.reactor>
         <version.lib.slf4j>1.7.26</version.lib.slf4j>
         <version.lib.smallrye-openapi>1.2.0</version.lib.smallrye-openapi>
-        <version.lib.snakeyaml>1.24</version.lib.snakeyaml>
+        <version.lib.snakeyaml>1.27</version.lib.snakeyaml>
         <version.lib.transaction-api>1.2</version.lib.transaction-api>
         <version.lib.typesafe-config>1.4.0</version.lib.typesafe-config>
         <version.lib.ucp>19.3.0.0</version.lib.ucp>
