@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,8 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.*;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.NOT_DEFINED;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.EXCEPTION_THROWN;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.VALUE_RETURNED;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.enabled;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getMetricRegistry;
+import java.util.concurrent.CompletableFuture;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -29,15 +25,21 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.*;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.NOT_DEFINED;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.EXCEPTION_THROWN;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.VALUE_RETURNED;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.enabled;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getMetricRegistry;
 
 /**
  * Tests for bean metrics.
@@ -203,8 +205,8 @@ class MetricsTest extends FaultToleranceTest {
         bean.noTimeout();
 
         Counter timeoutCallsTotal = TimeoutCallsTotal.get(
-            getMethodTag(bean, "noTimeout"),
-            TimeoutTimedOut.TRUE.get());
+                getMethodTag(bean, "noTimeout"),
+                TimeoutTimedOut.TRUE.get());
         assertThat(timeoutCallsTotal.getCount(), is(0L));
 
         timeoutCallsTotal = TimeoutCallsTotal.get(
@@ -245,7 +247,7 @@ class MetricsTest extends FaultToleranceTest {
     void testBreakerTrip() {
         MetricsBean bean = newBean(MetricsBean.class);
 
-        for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD ; i++) {
+        for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD; i++) {
             assertThrows(RuntimeException.class, () -> bean.exerciseBreaker(false));
         }
 
@@ -392,42 +394,77 @@ class MetricsTest extends FaultToleranceTest {
         assertThat(fallbackNotDefined.getCount(), is(0L));
     }
 
-/*
     @Test
-    void testBulkheadMetrics() throws Exception {
+    void testBulkheadMetrics() {
         MetricsBean bean = newBean(MetricsBean.class);
         CompletableFuture<String>[] calls = getAsyncConcurrentCalls(
-            () -> bean.concurrent(200), BulkheadBean.TOTAL_CALLS);
+                () -> bean.concurrent(200), BulkheadBean.TOTAL_CALLS);
         waitFor(calls);
-        assertThat(getGauge(bean, "concurrent",
-                              BULKHEAD_CONCURRENT_EXECUTIONS, long.class).getValue(),
-                   is(0L));
-        assertThat(getCounter(bean, "concurrent",
-                                BULKHEAD_CALLS_ACCEPTED_TOTAL, long.class),
-                   is((long) BulkheadBean.TOTAL_CALLS));
-        assertThat(getCounter(bean, "concurrent",
-                                BULKHEAD_CALLS_REJECTED_TOTAL, long.class),
-                   is(0L));
-        assertThat(getHistogram(bean, "concurrent",
-                                  BULKHEAD_EXECUTION_DURATION, long.class).getCount(),
-                   is(greaterThan(0L)));
+
+        Gauge<Long> executionsRunning = BulkheadExecutionsRunning.get(
+                getMethodTag(bean, "concurrent"));
+        assertThat(executionsRunning.getValue(), is(0L));
+
+        Gauge<Long> executionsWaiting = BulkheadExecutionsWaiting.get(
+                getMethodTag(bean, "concurrent"));
+        assertThat(executionsWaiting.getValue(), is(0L));
+
+        Counter acceptedCallsTotal = BulkheadCallsTotal.get(
+                getMethodTag(bean, "concurrent"),
+                BulkheadResult.ACCEPTED.get());
+        assertThat(acceptedCallsTotal.getCount(), is((long) BulkheadBean.TOTAL_CALLS));
+
+        Counter rejectedCallsTotal = BulkheadCallsTotal.get(
+                getMethodTag(bean, "concurrent"),
+                BulkheadResult.REJECTED.get());
+        assertThat(rejectedCallsTotal.getCount(), is(0L));
+
+        Histogram runningDuration = BulkheadRunningDuration.get(
+                getMethodTag(bean, "concurrent"));
+        assertThat(runningDuration.getCount(), is(greaterThan(0L)));
+
+        Histogram awaitingDuration = BulkheadWaitingDuration.get(
+                getMethodTag(bean, "concurrent"));
+        assertThat(awaitingDuration.getCount(), is(greaterThan(0L)));
     }
 
     @Test
     void testBulkheadMetricsAsync() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         CompletableFuture<String>[] calls = getConcurrentCalls(
-            () -> {
-                try {
-                    return bean.concurrentAsync(200).get();
-                } catch (Exception e) {
-                    return "failure";
-                }
-            }, BulkheadBean.TOTAL_CALLS);
+                () -> {
+                    try {
+                        return bean.concurrentAsync(200).get();
+                    } catch (Exception e) {
+                        return "failure";
+                    }
+                }, BulkheadBean.TOTAL_CALLS);
         CompletableFuture.allOf(calls).get();
-        assertThat(getHistogram(bean, "concurrentAsync",
-                                  BULKHEAD_EXECUTION_DURATION, long.class).getCount(),
-                   is(greaterThan(0L)));
+
+        Gauge<Long> executionsRunning = BulkheadExecutionsRunning.get(
+                getMethodTag(bean, "concurrentAsync"));
+        assertThat(executionsRunning.getValue(), is(0L));
+
+        Gauge<Long> executionsWaiting = BulkheadExecutionsWaiting.get(
+                getMethodTag(bean, "concurrentAsync"));
+        assertThat(executionsWaiting.getValue(), is(0L));
+
+        Counter acceptedCallsTotal = BulkheadCallsTotal.get(
+                getMethodTag(bean, "concurrentAsync"),
+                BulkheadResult.ACCEPTED.get());
+        assertThat(acceptedCallsTotal.getCount(), is((long) BulkheadBean.TOTAL_CALLS));
+
+        Counter rejectedCallsTotal = BulkheadCallsTotal.get(
+                getMethodTag(bean, "concurrentAsync"),
+                BulkheadResult.REJECTED.get());
+        assertThat(rejectedCallsTotal.getCount(), is(0L));
+
+        Histogram runningDuration = BulkheadRunningDuration.get(
+                getMethodTag(bean, "concurrentAsync"));
+        assertThat(runningDuration.getCount(), is(greaterThan(0L)));
+
+        Histogram awaitingDuration = BulkheadWaitingDuration.get(
+                getMethodTag(bean, "concurrentAsync"));
+        assertThat(awaitingDuration.getCount(), is(greaterThan(0L)));
     }
-     */
 }
