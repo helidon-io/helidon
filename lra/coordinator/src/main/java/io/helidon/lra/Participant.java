@@ -7,7 +7,6 @@ import java.net.URI;
 import static org.eclipse.microprofile.lra.annotation.ParticipantStatus.*;
 import static org.eclipse.microprofile.lra.annotation.ParticipantStatus.Compensated;
 
-//A listener is considered a participant that may only have an afterUI (ie no complete or compensate)
 public class Participant {
 
     /**
@@ -89,6 +88,7 @@ public class Participant {
         return isAfterLRASuccessfullyCalledIfEnlisted || afterURI == null;
     }
 
+    //A listener is a participant with afterURI endpoint. It may not have a complete or compensate endpoint.
     boolean isListenerOnly() {
         return completeURI == null && compensateURI == null;
     }

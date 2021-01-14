@@ -285,10 +285,7 @@ public class Coordinator implements Runnable {
         if (lra == null) {
             log("Coordinator.joinLRA lraRecord == null for lraIdString:" + lraIdString +
                     "lraRecordMap.size():" + lraMap.size());
-//            for (String uri: lraMap.keySet()) {
-//                log("Coordinator.joinLRA uri:" + uri + " lraRecordMap.get(uri):" + lraMap.get(uri));
-//            }
-            return Response.ok().build(); // todo
+            return Response.ok().build();
         } else {
             if (timeLimit == 0) timeLimit = 60;
             if (lra.timeout == 0) { // todo overrides
@@ -343,7 +340,7 @@ public class Coordinator implements Runnable {
         }
         else if (lra.isRecovering) {
             if (lra.hasStatusEndpoints()) lra.sendStatus();
-            if (!lra.areAllInEndState()) lra.terminate(lra.isCompensate); // this should purge if areAllAfterLRASuccessfullyCalled
+            if (!lra.areAllInEndState()) lra.terminate(lra.isCancel); // this should purge if areAllAfterLRASuccessfullyCalled
             lra.sendAfterLRA(); //this method gates so no need to do check here
             if(lra.areAllInEndState() && lra.areAnyInFailedState()) {
                 lra.sendForget();
@@ -414,3 +411,10 @@ public class Coordinator implements Runnable {
         new Throwable(message).printStackTrace();
     }
 }
+/**
+
+ [ERROR]   TckTests.compensateMultiLevelNestedActivity:172->multiLevelNestedActivity:677 multiLevelNestedActivity: step 8 (called test path http://localhost:8180/lraresource/multiLevelNestedActivity) expected:<2> but was:<1>
+ [ERROR]   TckTests.mixedMultiLevelNestedActivity:177->multiLevelNestedActivity:693 multiLevelNestedActivity: step 9 (called test path http://localhost:8180/lraresource/multiLevelNestedActivity) expected:<1> but was:<0>
+ [INFO]
+ [ERROR] Tests run: 23, Failures: 2, Errors: 0, Skipped: 0
+ */

@@ -48,11 +48,13 @@ public class LRA {
     boolean hasStatusEndpoints;
 
     boolean isRecovering = false;
-    boolean isCompensate;
+    boolean isCancel;
     private boolean isChild;
     private boolean isParent;
     private boolean isProcessing;
     private boolean isReadyToDelete;
+
+    private Client client = ClientBuilder.newBuilder().build();
 
     public LRA(String lraUUID) {
         lraId = lraUUID;
@@ -128,7 +130,7 @@ public class LRA {
 
     void terminate(boolean isCancel) {
         setProcessing(true);
-        isCompensate = isCancel;
+        this.isCancel = isCancel;
         log("LRA terminate isCancel:" + isCancel + " participants.size():" + participants.size());
 //            if (isParent) sendCompletion(compensateURIs, isCancel);
 //            for (LRA nestedLRA : children) {
@@ -161,7 +163,7 @@ public class LRA {
                     isRecovering = true;
                 } else if (responsestatus == 404) {
                     isRecovering = true;
-                } else if (responsestatus == 200 || responsestatus == 410) { // successful or gone (where assumption is complete)
+                } else if (responsestatus == 200 || responsestatus == 410) { // successful or gone (where assumption is complete or compensated)
                     participant.setParticipantStatus(isCancel?Compensated:Completed);
 //                    lraStatus = isCancel ? Cancelled : Closed; //this may be unnecessary/redundant
                 } else {
@@ -175,7 +177,6 @@ public class LRA {
     }
 
     private Response sendCompleteOrCompensate(URI endpointURI, boolean isCompensate) {
-        Client client = ClientBuilder.newBuilder().build();
         String path = "http://127.0.0.1:8080/lra-coordinator/";
         return client.target(endpointURI)
                 .request()
@@ -188,6 +189,7 @@ public class LRA {
         //                       .async().put(Entity.json("entity"));
     }
 
+
     void sendAfterLRA() {
         if (areAllInEndState()) {
             for (Participant participant : participants) {
@@ -195,7 +197,6 @@ public class LRA {
                     URI afterURI = participant.getAfterURI();
                     if (afterURI != null) {
                         if (participant.isAfterLRASuccessfullyCalledIfEnlisted()) continue;
-                        Client client = ClientBuilder.newBuilder().build();
                         String path = "http://127.0.0.1:8080/lra-coordinator/";
                         Response response = client.target(afterURI)
                                 .request()
@@ -203,7 +204,7 @@ public class LRA {
                                 .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
                                 .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
                                 .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
-                                .buildPut(Entity.text(isCompensate ? LRAStatus.Cancelled.name() : LRAStatus.Closed.name())).invoke();
+                                .buildPut(Entity.text(isCancel ? LRAStatus.Cancelled.name() : LRAStatus.Closed.name())).invoke();
                         int responsestatus = response.getStatus();
                         if (responsestatus == 200) participant.setAfterLRASuccessfullyCalledIfEnlisted();
                         log("LRA sendAfterLRA:" + afterURI + " finished  response:" + response + ":" + responsestatus);
@@ -216,30 +217,37 @@ public class LRA {
     }
 
     void sendStatus() {
-        Response response;
         for (Participant participant : participants) {
             URI statusURI = participant.getStatusURI();
-            if (statusURI == null) continue;
+            if (statusURI == null || participant.isInEndStateOrListenerOnly()) continue;
+            Response response = null;
+            int responsestatus = -1;
+            String readEntity = null;
+            ParticipantStatus participantStatus = null;
             try {
-                Client client = ClientBuilder.newBuilder()
-                        .build();
                 String path = "http://127.0.0.1:8080/lra-coordinator/";
                 response = client.target(statusURI)
                         .request()
                         .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
                         .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
-                        .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId) // make the context available to participants
+                        .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
                         .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
                         .buildGet().invoke();
-                int responsestatus = response.getStatus();
-                String readEntity = response.readEntity(String.class);
-                ParticipantStatus participantStatus =  ParticipantStatus.valueOf(readEntity);
-                participant.setParticipantStatus(participantStatus);
+                responsestatus = response.getStatus();
+                if (responsestatus != 410) {
+                    readEntity = response.readEntity(String.class);
+                    participantStatus = ParticipantStatus.valueOf(readEntity);
+                    participant.setParticipantStatus(participantStatus);
+                } else {
+                    participant.setParticipantStatus(isCancel?Compensated:Completed); // not exactly accurate as it's GONE not explicitly completed or compensated
+                }
                 log("LRA REST.sendStatus:" + statusURI + " finished  response:" +
                         response + ":" + responsestatus + " participantStatus:" + participantStatus +
                         " readEntity:" + readEntity);
-            } catch (Exception e) {
-                log("LRA.sendStatus:" + statusURI + " Exception:" + e);
+            } catch (Exception e) { // IllegalArgumentException: No enum constant org.eclipse.microprofile.lra.annotation.ParticipantStatus.
+                log("LRA REST.sendStatus:" + statusURI + " finished  response:" +
+                        response + ":" + responsestatus + " participantStatus:" + participantStatus +
+                        " readEntity:" + readEntity + " Exception:" + e);
             }
         }
     }
