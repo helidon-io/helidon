@@ -10,6 +10,7 @@ https://github.com/eclipse/microprofile-lra/blob/master/spec/src/main/asciidoc/m
 Additional features beyond what is mentioned in the spec include...
     - Support for messaging
     - DB tx logging
+    - HA and k8s considerations
 
 # Messaging
 
@@ -19,7 +20,21 @@ The requirement is simply that the connectors and channel names must match.
 No additional config necessary.
 The user may choose the granularity of the channel as far as queue, selector, etc.
 
+todo provide example...
+
+# Other config
+
+mp.lra.propagation.active=true defined it spec to determine if context is propagated (this is orthogonal to actual tx type annotations)
+
 # DB tx logging
 
 If a datasource named "lraloggingdatasource" (or some such) exists, log to db.
 No additional config necessary.
+
+# HA and k8s considerations
+
+todo 
+
+# Design aspects
+
+The Narayana implementation is used for REST client/participant support while the messaging client/participant support and coordinator are Helidon implementations

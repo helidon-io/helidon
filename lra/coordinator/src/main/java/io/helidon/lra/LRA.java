@@ -16,8 +16,8 @@
 
 package io.helidon.lra;
 
-import io.helidon.lra.messaging.SendMessage;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
+import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.Response;
@@ -28,34 +28,31 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.eclipse.microprofile.lra.annotation.ParticipantStatus.*;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.*;
 
 public class LRA {
 
+    /**
+     * LRA state model....
+     * Active -----------------------------------------------------------------> Cancelling --> FailedToCancel
+     * --> Closing --> FailedToClose                                     /                  --> Cancelled
+     * --> Closed --> (only if nested can go to cancelling) /
+     */
     public long timeout;
     String lraId;
     private URI parentId;
     List<String> compensatorLinks = new ArrayList<>();
     List<LRA> children = new ArrayList<>();
+    List<Participant> participants = new ArrayList<>();
+    boolean hasStatusEndpoints;
 
-    List<URI> completeURIs = new ArrayList<>();
-    List<URI> compensateURIs = new ArrayList<>();
-    List<URI> afterURIs = new ArrayList<>();
-    List<URI> forgetURIs = new ArrayList<>();
-    List<URI> statusURIs = new ArrayList<>();
-
-    List<String> completeMessagingURIs = new ArrayList<>();
-    List<String> compensateMessagingURIs = new ArrayList<>();
-    List<String> afterMessagingURIs = new ArrayList<>();
-    List<String> forgetMessagingURIs = new ArrayList<>();
-    List<String> statusMessagingURIs = new ArrayList<>();
-    private boolean isEndCompleteForAfterLRAEnlistmentDuringClosingPhase = false;
     boolean isRecovering = false;
-    private boolean isRecoveringFromConnectionExceptionOr202 = false;
-    private boolean isCompensate;
+    boolean isCompensate;
     private boolean isChild;
     private boolean isParent;
     private boolean isProcessing;
+    private boolean isReadyToDelete;
 
     public LRA(String lraUUID) {
         lraId = lraUUID;
@@ -66,12 +63,6 @@ public class LRA {
         this.parentId = parentId;
     }
 
-    void removeParticipant(String compensatorLink, boolean isMessaging, boolean isToBeLogged) {
-        //todo remove only the provided participant
-        completeURIs = new ArrayList<>();
-        compensateURIs = new ArrayList<>();
-    }
-
     void addParticipant(String compensatorLink, boolean isMessaging, boolean isToBeLogged) {
         if (compensatorLinks.contains(compensatorLink)) return;
         else compensatorLinks.add(compensatorLink);
@@ -79,7 +70,10 @@ public class LRA {
         // <messaging://completeinventorylra>; rel="complete"; title="complete URI"; type="text/plain",
         // <messaging://compensate>; rel="compensate"; title="compensate URI"; type="text/plain"
         // <http://127.0.0.1:8091/inventory/completeInventory?method=javax.ws.rs.PUT>; rel="complete"; title="complete URI"; type="text/plain",
+//        Participant existingparticipant = participants.contains(compensatorLink)
         if (compensatorLink.indexOf(uriPrefix) > -1) {
+            Participant participant = new Participant();
+            participants.add(participant);
             String endpoint = "";
             Pattern linkRelPattern = Pattern.compile("(\\w+)=\"([^\"]+)\"|([^\\s]+)");
             Matcher relMatcher = linkRelPattern.matcher(compensatorLink);
@@ -91,7 +85,6 @@ public class LRA {
 //                            group0.substring(1, group0.indexOf(";") - 1);
                     endpoint = isMessaging ? group0.substring(group0.indexOf(uriPrefix) + uriPrefix.length(), group0.indexOf(";") - 1) :
                             group0.substring(group0.indexOf(uriPrefix) + 1, group0.indexOf(";") - 1);
-//                    log("LRA.initParticipantURIs isMessaging = " + isMessaging + " endpoint:" + endpoint);
                 }
                 String key = relMatcher.group(1);
                 if (key != null && key.equals("rel")) {
@@ -99,36 +92,31 @@ public class LRA {
 //                    log("LRA.initParticipantURIs " + rel + " is " + endpoint);
                     try {
                         if (rel.equals("complete")) {
-                            if (isMessaging) completeMessagingURIs.add(endpoint);
-                            else completeURIs.add(new URI(endpoint));
+                            participant.setCompleteURI(new URI(endpoint));
                         }
                         if (rel.equals("compensate")) {
-                            if (isMessaging) compensateMessagingURIs.add(endpoint);
-                            else compensateURIs.add(new URI(endpoint));
+                            participant.setCompensateURI(new URI(endpoint));
                         }
                         if (rel.equals("after")) {
-                            if (isMessaging) afterMessagingURIs.add(endpoint);
-                            else afterURIs.add(new URI(endpoint));
+                            participant.setAfterURI(new URI(endpoint));
                         }
                         if (rel.equals("status")) {
-                            if (isMessaging) statusMessagingURIs.add(endpoint);
-                            else statusURIs.add(new URI(endpoint));
-                        }
-                        if (rel.equals("after")) {
-                            if (isMessaging) afterMessagingURIs.add(endpoint);
-                            else afterURIs.add(new URI(endpoint));
+                            participant.setStatusURI(new URI(endpoint));
+                            hasStatusEndpoints = true;
                         }
                         if (rel.equals("forget")) {
-                            if (isMessaging) forgetMessagingURIs.add(endpoint);
-                            else forgetURIs.add(new URI(endpoint));
+                            participant.setForgetURI(new URI(endpoint));
                         }
                     } catch (URISyntaxException e) {
                         e.printStackTrace();
                     }
                 }
             }
+            log("participant joined/added:" + participant);
+        } else {
+            log("no address found in compensatorLink:" + compensatorLink);
         }
-        if (isToBeLogged) RecoveryManager.getInstance().log(this, compensatorLink);
+//        if (isToBeLogged) RecoveryManager.getInstance().log(this, compensatorLink);
     }
 
     public void addChild(String lraUUID, LRA lra) {
@@ -138,186 +126,56 @@ public class LRA {
     }
 
 
-    void tryDoEnd(boolean compensate, boolean isMessaging) {
+    void terminate(boolean isCancel) {
         setProcessing(true);
-        isCompensate = compensate;
-        log("LRA End compensate:" + compensate + "+ isMessaging:" + isMessaging);
-        if (isMessaging) SendMessage.send(compensate ? compensateMessagingURIs : completeMessagingURIs);
-        else {
-            if (isParent) sendCompletion(compensateURIs, compensate);
-            for (LRA nestedLRA : children) {
-                log("LRA.endChildren nestedLRA.compensateURIs.size():" + nestedLRA.compensateURIs.size());
-                nestedLRA.sendCompletion(nestedLRA.compensateURIs, compensate);
-//                nestedLRA.tryDoEnd(compensate, false);
-            }
-            send(compensate);
-        }
-        cleanup();
+        isCompensate = isCancel;
+        log("LRA terminate isCancel:" + isCancel + " participants.size():" + participants.size());
+//            if (isParent) sendCompletion(compensateURIs, isCancel);
+//            for (LRA nestedLRA : children) {
+//                log("LRA.endChildren nestedLRA.compensateURIs.size():" + nestedLRA.compensateURIs.size());
+//                nestedLRA.sendCompletion(nestedLRA.compensateURIs, isCancel);
+//            }
+        sendCompleteOrCancel(isCancel);
+        sendAfterLRA();
+        if(areAllInEndState() && areAllAfterLRASuccessfullyCalledOrForgotten()) isReadyToDelete = true;
         setProcessing(false);
     }
 
-    void cleanup() {
-        if (!isRecoveringFromConnectionExceptionOr202) {
-            completeURIs = new ArrayList<>();
-            compensateURIs = new ArrayList<>();
-            afterURIs = new ArrayList<>();
-            completeMessagingURIs = new ArrayList<>();
-            compensateMessagingURIs = new ArrayList<>();
-        }
-    }
-
-    private void send(boolean compensate) {
-        List<URI> endpointURIs = compensate ? compensateURIs : completeURIs;
-        sendCompletion(endpointURIs, compensate);
-        for (URI endpointURI : afterURIs) {
-            try {
-                Response response = sendCompletion(endpointURI, isCompensate);
-                int responsestatus = response.getStatus();
-                log("LRA REST.send:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
-                isEndCompleteForAfterLRAEnlistmentDuringClosingPhase = true;
-            } catch (Exception e) {
-                log("LRA REST.send Exception:" + e);
-                isRecoveringFromConnectionExceptionOr202 = true;
+    private void sendCompleteOrCancel(boolean isCancel) {
+        for (Participant participant : participants) {
+            if (participant.isInEndStateOrListenerOnly()) {
+                continue;
             }
-        }
-    }
-
-    void callAfterLRAForEnlistmentDuringClosingPhase() {
-        for (URI endpointURI : afterURIs) {
-            log("LRA REST.callAfterLRAForEnlistmentDuringClosingPhase:" + endpointURI + " lraId:" + lraId);
+            URI endpointURI = isCancel ? participant.getCompensateURI() : participant.getCompleteURI();
             try {
-                Response response = sendCompletion(endpointURI, false);
-                int responsestatus = response.getStatus();
-                log("LRA REST.callAfterLRAForEnlistmentDuringClosingPhase:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
-            } catch (Exception e) {
-                log("LRA REST.callAfterLRAForEnlistmentDuringClosingPhase Exception:" + e);
-            }
-        }
-    }
-
-    Response sendStatus() {
-        Response response = null;
-        for (URI endpointURI : statusURIs) {
-            log("LRA REST.sendStatus:" + endpointURI + " lraId:" + lraId);
-            try {
-                Client client = ClientBuilder.newBuilder()
-                        .build();
-                String path = "http://127.0.0.1:8080/lra-coordinator/";
-                response = client.target(endpointURI)
-                        .request() //http://localhost:8080/deployment/lra-coordinator/0_ffff0a28054b_9133_5f855916_a7
-                        .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
-                        .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
-                        .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId) // make the context available to participants
-                        .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
-                        .buildGet().invoke();
-                int responsestatus = response.getStatus();
-                log("LRA REST.sendStatus:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
-            } catch (Exception e) {
-                log("LRA REST.sendStatus Exception:" + e);
-            }
-        }
-        return response;
-    }
-
-    void sendForget() {
-        for (URI endpointURI : forgetURIs) {
-            log("LRA REST.sendForget:" + endpointURI + " lraId:" + lraId);
-            try {
-                Client client = ClientBuilder.newBuilder()
-                        .build();
-                String path = "http://127.0.0.1:8080/lra-coordinator/";
-                Response response = client.target(endpointURI)
-                        .request()
-                        .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
-                        .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
-                        .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
-                        .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
-                        .buildDelete().invoke();
-                int responsestatus = response.getStatus();
-                log("LRA REST.sendForget:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
-            } catch (Exception e) {
-                log("LRA REST.sendForget Exception:" + e);
-                isRecoveringFromConnectionExceptionOr202 = true;
-            }
-        }
-    }
-
-    private void sendCompletion(List<URI> endpointURIs, boolean isCompensate) {
-        for (URI endpointURI : endpointURIs) {
-            log("LRA REST.send:" + endpointURI + " lraId:" + lraId);
-            try {
-                Response response = sendCompletion(endpointURI, isCompensate);
-                int responsestatus = response.getStatus();
-                log("LRA REST.send:" + endpointURI + " finished  response:" + response + ":" + responsestatus);
-                if (responsestatus == 503) {
-                    sendStatus();
-//                    RecoveryManager.getInstance().add(lraId, this);
-                    isRecovering=true;
-                } else if (responsestatus == 202) {
-                    Response statusResponse = sendStatus();
-// isRecoveringFromConnectionExceptionOr202 equal to true fixes TckUnknownTests.compensate_retry and TckUnknownTests.complete_retry but introduces these ...
-/**
- [ERROR] Failures:
- [ERROR]   TckContextTests.testAfterLRAEnlistmentDuringClosingPhase:313 Resource '/required-lra' is not completed expected:<1> but was:<2>
-
- [ERROR]   TckParticipantTests.validSignaturesChainTest:126 Non JAX-RS @Forget method should have been called
- Expected: a value equal to or greater than <1>
- but: <0> was less than <1>
-
- [ERROR]   TckRecoveryTests.testCancelWhenParticipantIsUnavailable:199->assertMetricCallbackCalled:214 Expecting the metric Compensated callback was called
- Expected: a value equal to or greater than <1>
- but: <0> was less than <1>
-
- [ERROR]   TckTests.timeLimit:334 The LRA should have timed out but complete was called instead of compensate.
- Expecting the number of complete call before test matches the ones after LRA timed out. The test call went to http://localhost:8180/lraresource/timeLimit expected:<0> but was:<1>
- [ERROR] Tests run: 133, Failures: 7, Errors: 0, Skipped: 0
- */
-                    isRecoveringFromConnectionExceptionOr202 = true;
-//                    RecoveryManager.getInstance().add(lraId, this);
-                    isRecovering=true;
-//                    isRecoveringFromConnectionException = true; //this allows TckUnknownTests.complete_retry but causes hang in tck
+                Response response = sendCompleteOrCompensate(endpointURI, isCancel);
+                int responsestatus = response.getStatus(); // expected codes 200, 202, 409, 410
+                String readEntity = response.readEntity(String.class);
+                log("LRA REST.sendCompleteOrCancel:" + endpointURI +
+                        " finished  response:" + response + ":" + responsestatus + " readEntity:" + readEntity);
+                if (responsestatus == 503) { //  Service Unavailable, retriable
+                    isRecovering = true;
+                } else if (responsestatus == 409) { //  Conflict, retriable
+                    isRecovering = true;
+                } else if (responsestatus == 202) { //accepted
+                    isRecovering = true;
                 } else if (responsestatus == 404) {
-                } else if (responsestatus != 200) {
-                    Response statusResponse = sendStatus();
-                    if (statusResponse == null) {
-                        log("LRA.send status:" + null);
-                    } else {
-                        log("LRA.send status:" + statusResponse.getStatus());
-                    }
-                    sendForget();  // handles TckParticipantTests.validSignaturesChainTest  but not TckContextTests.testForget
-//                    RecoveryManager.getInstance().add(lraId, this);
-                    isRecovering=true;
-                } else if (responsestatus == 200) {
-//                    endpointURIs.remove(endpointURI);
-                    isRecoveringFromConnectionExceptionOr202 = false;
-                    isEndCompleteForAfterLRAEnlistmentDuringClosingPhase = true; //not accurate
+                    isRecovering = true;
+                } else if (responsestatus == 200 || responsestatus == 410) { // successful or gone (where assumption is complete)
+                    participant.setParticipantStatus(isCancel?Compensated:Completed);
+//                    lraStatus = isCancel ? Cancelled : Closed; //this may be unnecessary/redundant
                 } else {
-                    isRecoveringFromConnectionExceptionOr202 = false;  //todo verify if necessary as recovery method would reset this if true (false is default)
+                    isRecovering = true;
                 }
-                isEndCompleteForAfterLRAEnlistmentDuringClosingPhase = true; //not accurate
             } catch (Exception e) { // Exception:javax.ws.rs.ProcessingException: java.net.ConnectException: Connection refused (Connection refused)
-                log("LRA REST.sendCompletion Exception:" + e); //todo afterLRA is currently called regardless
-                isRecoveringFromConnectionExceptionOr202 = true;
+                log("LRA.sendCompleteOrCancel Exception:" + e);
+                isRecovering = true;
             }
         }
     }
 
-    //called by recoverymanager
-    Response sendCompletion() {
-        Response response = null; //the last response
-        for (URI endpointURI : isCompensate ? compensateURIs : completeURIs) {
-            response = sendCompletion(endpointURI, true);
-            if (response != null && response.getStatus() == 200) {
-                isRecoveringFromConnectionExceptionOr202 = false;
-                cleanup();
-            }
-        }
-        return response;
-    }
-
-    private Response sendCompletion(URI endpointURI, boolean isCompensate) {
-        Client client = ClientBuilder.newBuilder()
-                .build();
+    private Response sendCompleteOrCompensate(URI endpointURI, boolean isCompensate) {
+        Client client = ClientBuilder.newBuilder().build();
         String path = "http://127.0.0.1:8080/lra-coordinator/";
         return client.target(endpointURI)
                 .request()
@@ -330,14 +188,83 @@ public class LRA {
         //                       .async().put(Entity.json("entity"));
     }
 
-    //used to determine/gate callAfterLRAForEnlistmentDuringClosingPhase
-    public boolean isEndCompleteForAfterLRAEnlistmentDuringClosingPhase() {
-        return isEndCompleteForAfterLRAEnlistmentDuringClosingPhase;
+    void sendAfterLRA() {
+        if (areAllInEndState()) {
+            for (Participant participant : participants) {
+                try {
+                    URI afterURI = participant.getAfterURI();
+                    if (afterURI != null) {
+                        if (participant.isAfterLRASuccessfullyCalledIfEnlisted()) continue;
+                        Client client = ClientBuilder.newBuilder().build();
+                        String path = "http://127.0.0.1:8080/lra-coordinator/";
+                        Response response = client.target(afterURI)
+                                .request()
+                                .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
+                                .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
+                                .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
+                                .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
+                                .buildPut(Entity.text(isCompensate ? LRAStatus.Cancelled.name() : LRAStatus.Closed.name())).invoke();
+                        int responsestatus = response.getStatus();
+                        if (responsestatus == 200) participant.setAfterLRASuccessfullyCalledIfEnlisted();
+                        log("LRA sendAfterLRA:" + afterURI + " finished  response:" + response + ":" + responsestatus);
+                    }
+                } catch (Exception e) {
+                    log("LRA sendAfterLRA Exception:" + e);
+                }
+            }
+        }
     }
 
+    void sendStatus() {
+        Response response;
+        for (Participant participant : participants) {
+            URI statusURI = participant.getStatusURI();
+            if (statusURI == null) continue;
+            try {
+                Client client = ClientBuilder.newBuilder()
+                        .build();
+                String path = "http://127.0.0.1:8080/lra-coordinator/";
+                response = client.target(statusURI)
+                        .request()
+                        .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
+                        .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
+                        .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId) // make the context available to participants
+                        .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
+                        .buildGet().invoke();
+                int responsestatus = response.getStatus();
+                String readEntity = response.readEntity(String.class);
+                ParticipantStatus participantStatus =  ParticipantStatus.valueOf(readEntity);
+                participant.setParticipantStatus(participantStatus);
+                log("LRA REST.sendStatus:" + statusURI + " finished  response:" +
+                        response + ":" + responsestatus + " participantStatus:" + participantStatus +
+                        " readEntity:" + readEntity);
+            } catch (Exception e) {
+                log("LRA.sendStatus:" + statusURI + " Exception:" + e);
+            }
+        }
+    }
 
-    void log(String message) {
-        System.out.println("ischild:" + isChild + " isParent:" + isParent + " " + message);
+    void sendForget() { //todo could gate with isprocessing here as well
+        for (Participant participant : participants) {
+            if (participant.getForgetURI() == null || participant.isForgotten()) continue;
+            try {
+                Client client = ClientBuilder.newBuilder()
+                        .build();
+                String path = "http://127.0.0.1:8080/lra-coordinator/";
+                Response response = client.target(participant.getForgetURI())
+                        .request()
+                        .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
+                        .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
+                        .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
+                        .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
+                        .buildDelete().invoke();
+                int responsestatus = response.getStatus();
+                log("LRA sendForget:" + participant.getForgetURI() + " finished  response:" + response + ":" + responsestatus);
+                if (responsestatus == 200 || responsestatus == 410) participant.setForgotten();
+            } catch (Exception e) {
+                log("LRA sendForget Exception:" + e);
+            }
+        }
     }
 
     public void setProcessing(boolean isProcessing) {
@@ -346,5 +273,69 @@ public class LRA {
 
     public boolean isProcessing() {
         return isProcessing;
+    }
+
+    public boolean isReadyToDelete() {
+        return isReadyToDelete;
+    }
+
+    public boolean hasStatusEndpoints() {
+        return hasStatusEndpoints;
+    }
+
+    public String toString() {
+        String participantsString = "";
+        for (Participant participant : participants) participantsString += participant;
+        return "lraId:" + lraId + " participants' status:" + participantsString;
+    }
+
+    public boolean areAllClosedAndCancelledSuccessfully() {
+        for (Participant participant : participants) {
+            if(participant.getParticipantStatus() != ParticipantStatus.Completed &&
+                    participant.getParticipantStatus() != Compensated) return false;
+        }
+        return true;
+    }
+
+    public boolean areAnyInFailedState() {
+        for (Participant participant : participants) {
+            if(participant.getParticipantStatus() == ParticipantStatus.FailedToComplete ||
+                    participant.getParticipantStatus() == FailedToCompensate) return true;
+        }
+        return false;
+    }
+
+    public boolean areAllAfterLRASuccessfullyCalledOrForgotten() {
+        for (Participant participant : participants) {
+            if(!participant.isAfterLRASuccessfullyCalledIfEnlisted() && !participant.isForgotten()) return false;
+        }
+        return true;
+    }
+
+    public boolean areAllInEndState() {
+        for (Participant participant : participants) {
+            if(!participant.isInEndStateOrListenerOnly()) return false;
+        }
+        return true;
+    }
+
+    public boolean areAllAfterLRASuccessfullyCalled() {
+        for (Participant participant : participants) {
+            if(!participant.isAfterLRASuccessfullyCalledIfEnlisted()) return false;
+        }
+        return true;
+    }
+
+    void log(String message) {
+        System.out.println(message);
+//        System.out.println("ischild:" + isChild + " isParent:" + isParent + " " + message);
+    }
+
+    void printStack(String message) {
+        new Throwable(message).printStackTrace();
+    }
+
+    public void removeParticipant(String compensatorUrl, boolean b, boolean b1) {
+        participants = new ArrayList<>(); //todo remove just the participant specified
     }
 }
