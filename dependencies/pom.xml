@@ -421,6 +421,10 @@
                         <groupId>org.codehaus.groovy</groupId>
                         <artifactId>groovy-all</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.jboss.weld.probe</groupId>
+                        <artifactId>weld-probe-core</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
