@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import org.neo4j.driver.Driver;
  */
 public class Neo4jCdiExtension implements Extension {
 
-    private static final String NEO4J_METRIC_NAME_PREFIX = "neo4j";
+    private static final String NEO4J_CONFIG_NAME_PREFIX = "neo4j";
 
     void afterBeanDiscovery(@Observes AfterBeanDiscovery addEvent) {
         addEvent.addBean()
@@ -49,7 +49,7 @@ public class Neo4jCdiExtension implements Extension {
                 .beanClass(Driver.class)
                 .createWith(creationContext -> {
                     org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
-                    Config helidonConfig = MpConfig.toHelidonConfig(config).get(NEO4J_METRIC_NAME_PREFIX);
+                    Config helidonConfig = MpConfig.toHelidonConfig(config).get(NEO4J_CONFIG_NAME_PREFIX);
 
                     ConfigValue<Neo4j> configValue = helidonConfig.as(Neo4j::create);
                     if (configValue.isPresent()) {
