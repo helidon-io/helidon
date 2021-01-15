@@ -100,7 +100,7 @@
         <version.lib.typesafe-config>1.4.0</version.lib.typesafe-config>
         <version.lib.ucp>19.3.0.0</version.lib.ucp>
         <version.lib.validation-api>2.0.1.Final</version.lib.validation-api>
-        <version.lib.weld>3.1.1.Final</version.lib.weld>
+        <version.lib.weld>3.1.6.Final</version.lib.weld>
         <version.lib.zipkin>2.11.1</version.lib.zipkin>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
