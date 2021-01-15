@@ -48,6 +48,9 @@ class ThrowableMapper {
         if (t instanceof io.helidon.faulttolerance.BulkheadException) {
             return new BulkheadException(t.getMessage(), t.getCause());
         }
+        if (t instanceof io.helidon.faulttolerance.RetryTimeoutException) {
+            return t;       // the cause if handled elsewhere
+        }
         if (t instanceof java.util.concurrent.TimeoutException) {
             return new TimeoutException(t.getMessage(), t.getCause());
         }

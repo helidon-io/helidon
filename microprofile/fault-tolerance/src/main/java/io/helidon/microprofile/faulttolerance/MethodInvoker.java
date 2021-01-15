@@ -46,6 +46,7 @@ import io.helidon.faulttolerance.Fallback;
 import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandlerTyped;
 import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.RetryTimeoutException;
 import io.helidon.faulttolerance.Timeout;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
@@ -307,33 +308,41 @@ class MethodInvoker implements FtSupplier<Object> {
                     + " on thread " + Thread.currentThread().getName());
         }
 
-        // Gauges and other metrics for bulkhead and circuit breakers
-        if (isFaultToleranceMetricsEnabled()) {
-            if (introspector.hasCircuitBreaker()) {
-                CircuitBreakerStateTotal.register(
-                        () -> methodState.breakerTimerOpen,
-                        introspector.getMethodNameTag(),
-                        CircuitBreakerState.OPEN.get());
-                CircuitBreakerStateTotal.register(
-                        () -> methodState.breakerTimerHalfOpen,
-                        introspector.getMethodNameTag(),
-                        CircuitBreakerState.HALF_OPEN.get());
-                CircuitBreakerStateTotal.register(
-                        () -> methodState.breakerTimerClosed,
-                        introspector.getMethodNameTag(),
-                        CircuitBreakerState.CLOSED.get());
-            }
-            if (introspector.hasBulkhead()) {
-                BulkheadExecutionsRunning.register(
-                        () -> methodState.bulkhead.stats().concurrentExecutions(),
+        registerMetrics();
+    }
+
+    private void registerMetrics() {
+        if (!isFaultToleranceMetricsEnabled()) {
+            return;
+        }
+
+        if (introspector.hasCircuitBreaker()) {
+            CircuitBreakerStateTotal.register(
+                    () -> methodState.breakerTimerOpen,
+                    introspector.getMethodNameTag(),
+                    CircuitBreakerState.OPEN.get());
+            CircuitBreakerStateTotal.register(
+                    () -> methodState.breakerTimerHalfOpen,
+                    introspector.getMethodNameTag(),
+                    CircuitBreakerState.HALF_OPEN.get());
+            CircuitBreakerStateTotal.register(
+                    () -> methodState.breakerTimerClosed,
+                    introspector.getMethodNameTag(),
+                    CircuitBreakerState.CLOSED.get());
+
+            CircuitBreakerOpenedTotal.register(introspector.getMethodNameTag());
+        }
+        if (introspector.hasBulkhead()) {
+            BulkheadExecutionsRunning.register(
+                    () -> methodState.bulkhead.stats().concurrentExecutions(),
+                    introspector.getMethodNameTag());
+            if (introspector.isAsynchronous()) {
+                BulkheadExecutionsWaiting.register(
+                        () -> methodState.bulkhead.stats().waitingQueueSize(),
                         introspector.getMethodNameTag());
-                if (introspector.isAsynchronous()) {
-                    BulkheadExecutionsWaiting.register(
-                            () -> methodState.bulkhead.stats().waitingQueueSize(),
-                            introspector.getMethodNameTag());
-                }
             }
         }
+
     }
 
     @Override
@@ -405,7 +414,8 @@ class MethodInvoker implements FtSupplier<Object> {
                         cause = map(throwable);
                     }
                     updateMetricsAfter(cause);
-                    resultFuture.completeExceptionally(cause);
+                    resultFuture.completeExceptionally(cause instanceof RetryTimeoutException
+                            ? ((RetryTimeoutException) cause).lastRetryException() : cause);
                 } else {
                     updateMetricsAfter(null);
                     resultFuture.complete(result);
@@ -440,6 +450,9 @@ class MethodInvoker implements FtSupplier<Object> {
                 }
             }
             updateMetricsAfter(cause);
+            if (cause instanceof RetryTimeoutException) {
+                throw ((RetryTimeoutException) cause).lastRetryException();
+            }
             if (cause != null) {
                 throw cause;
             }
@@ -515,22 +528,6 @@ class MethodInvoker implements FtSupplier<Object> {
                     .skipOn(mapTypes(introspector.getCircuitBreaker().skipOn()))
                     .build();
         }
-
-        if (introspector.hasRetry()) {
-            methodState.retry = Retry.builder()
-                    .retryPolicy(Retry.JitterRetryPolicy.builder()
-                            .calls(introspector.getRetry().maxRetries() + 1)
-                            .delay(Duration.of(introspector.getRetry().delay(),
-                                    introspector.getRetry().delayUnit()))
-                            .jitter(Duration.of(introspector.getRetry().jitter(),
-                                    introspector.getRetry().jitterDelayUnit()))
-                            .build())
-                    .overallTimeout(Duration.of(introspector.getRetry().maxDuration(),
-                            introspector.getRetry().durationUnit()))
-                    .applyOn(mapTypes(introspector.getRetry().retryOn()))
-                    .skipOn(mapTypes(introspector.getRetry().abortOn()))
-                    .build();
-        }
     }
 
     /**
@@ -558,7 +555,27 @@ class MethodInvoker implements FtSupplier<Object> {
             builder.addBreaker(methodState.breaker);
         }
 
-        if (methodState.retry != null) {
+        // Create a retry for this invocation only
+        if (introspector.hasRetry()) {
+            int maxRetries = introspector.getRetry().maxRetries();
+            if (maxRetries == -1) {
+                maxRetries = Integer.MAX_VALUE;
+            } else {
+                maxRetries++;       // add 1 for initial call
+            }
+            methodState.retry = Retry.builder()
+                    .retryPolicy(Retry.JitterRetryPolicy.builder()
+                            .calls(maxRetries)
+                            .delay(Duration.of(introspector.getRetry().delay(),
+                                    introspector.getRetry().delayUnit()))
+                            .jitter(Duration.of(introspector.getRetry().jitter(),
+                                    introspector.getRetry().jitterDelayUnit()))
+                            .build())
+                    .overallTimeout(Duration.of(introspector.getRetry().maxDuration(),
+                            introspector.getRetry().durationUnit()))
+                    .applyOn(mapTypes(introspector.getRetry().retryOn()))
+                    .skipOn(mapTypes(introspector.getRetry().abortOn()))
+                    .build();
             builder.addRetry(methodState.retry);
         }
 
@@ -687,7 +704,7 @@ class MethodInvoker implements FtSupplier<Object> {
     /**
      * Update metrics after method is called and depending on outcome.
      *
-     * @param cause Exception cause or {@code null} if execution successful.
+     * @param cause Mapped cause or {@code null} if successful.
      */
     private void updateMetricsAfter(Throwable cause) {
         if (!isFaultToleranceMetricsEnabled()) {
@@ -701,32 +718,38 @@ class MethodInvoker implements FtSupplier<Object> {
             // Retries
             if (introspector.hasRetry()) {
                 long retryCounter = methodState.retry.retryCounter();
+                boolean wasRetried = retryCounter > 0;
                 Counter retryRetriesTotal = RetryRetriesTotal.get(introspector.getMethodNameTag());
 
-                // Any new retries in this invocation?
-                if (retryCounter > retryRetriesTotal.getCount()) {
-                    retryRetriesTotal.inc(retryCounter - retryRetriesTotal.getCount());
-                    if (cause == null) {
+                // Update retry counter
+                if (wasRetried) {
+                    retryRetriesTotal.inc(retryCounter);
+                }
+
+                // Update retry metrics based on outcome
+                if (cause == null) {
+                    RetryCallsTotal.get(introspector.getMethodNameTag(),
+                            wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                            RetryResult.VALUE_RETURNED.get()).inc();
+                } else if (cause instanceof RetryTimeoutException) {
+                    RetryCallsTotal.get(introspector.getMethodNameTag(),
+                            wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                            RetryResult.MAX_DURATION_REACHED.get()).inc();
+                } else {
+                    // Exception thrown but not RetryTimeoutException
+                    int maxRetries = introspector.getRetry().maxRetries();
+                    if (maxRetries == -1) {
+                        maxRetries = Integer.MAX_VALUE;
+                    }
+                    if (retryCounter == maxRetries) {
                         RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                RetryRetried.TRUE.get(),
-                                RetryResult.VALUE_RETURNED.get()).inc();
-                    } else if (cause instanceof TimeoutException) {
-                        RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                RetryRetried.TRUE.get(),
-                                RetryResult.MAX_DURATION_REACHED.get()).inc();
-                    } else if (retryCounter == introspector.getRetry().maxRetries()) {
-                        RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                RetryRetried.TRUE.get(),
+                                wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
                                 RetryResult.MAX_RETRIES_REACHED.get()).inc();
-                    } else {
+                    } else if (retryCounter < maxRetries) {
                         RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                RetryRetried.TRUE.get(),
+                                wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
                                 RetryResult.EXCEPTION_NOT_RETRYABLE.get()).inc();
                     }
-                } else {
-                    RetryCallsTotal.get(introspector.getMethodNameTag(),
-                            RetryRetried.FALSE.get(),
-                            RetryResult.VALUE_RETURNED.get()).inc();
                 }
             }
 
@@ -821,10 +844,11 @@ class MethodInvoker implements FtSupplier<Object> {
             }
 
             // Global method counters
-            InvocationsTotal.get(introspector.getMethodNameTag(),
-                    VALUE_RETURNED.get(),
-                    introspector.getFallbackTag(fallbackCalled.get())).inc();
-            if (cause != null) {
+            if (cause == null) {
+                InvocationsTotal.get(introspector.getMethodNameTag(),
+                        VALUE_RETURNED.get(),
+                        introspector.getFallbackTag(fallbackCalled.get())).inc();
+            } else {
                 InvocationsTotal.get(introspector.getMethodNameTag(),
                         EXCEPTION_THROWN.get(),
                         introspector.getFallbackTag(fallbackCalled.get())).inc();

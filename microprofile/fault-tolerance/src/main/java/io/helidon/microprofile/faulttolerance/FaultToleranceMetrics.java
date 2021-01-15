@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -29,7 +26,6 @@ import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -39,7 +35,7 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
 /**
- * Utility class for register and fetch FT metrics.
+ * Utility class to register and fetch FT metrics.
  */
 class FaultToleranceMetrics {
 
@@ -84,11 +80,13 @@ class FaultToleranceMetrics {
 
         abstract String unit();
 
-        abstract Metric metric(Tag... tags);
-
-        protected Counter getOrRegisterCounter(Tag... tags) {
+        protected Counter getCounter(Tag... tags) {
             MetricID metricID = new MetricID(name(), tags);
-            Counter counter = (Counter) getMetricRegistry().getMetrics().get(metricID);
+            return (Counter) getMetricRegistry().getMetrics().get(metricID);
+        }
+
+        protected Counter registerCounter(Tag... tags) {
+            Counter counter = getCounter(tags);
             if (counter == null) {
                 Metadata metadata = Metadata.builder()
                         .withName(name())
@@ -102,16 +100,20 @@ class FaultToleranceMetrics {
                     counter = getMetricRegistry().counter(metadata, tags);
                 } catch (IllegalArgumentException e) {
                     // Looks like we lost registration race
-                    counter = (Counter) getMetricRegistry().getMetrics().get(metricID);
+                    counter = getCounter(tags);
                     Objects.requireNonNull(counter);
                 }
             }
             return counter;
         }
 
-        protected Histogram getOrRegisterHistogram(Tag... tags) {
+        protected Histogram getHistogram(Tag... tags) {
             MetricID metricID = new MetricID(name(), tags);
-            Histogram histogram = (Histogram) getMetricRegistry().getMetrics().get(metricID);
+            return (Histogram) getMetricRegistry().getMetrics().get(metricID);
+        }
+
+        protected Histogram registerHistogram(Tag... tags) {
+            Histogram histogram = getHistogram(tags);
             if (histogram == null) {
                 Metadata metadata = Metadata.builder()
                         .withName(name())
@@ -124,8 +126,8 @@ class FaultToleranceMetrics {
                 try {
                     histogram = getMetricRegistry().histogram(metadata, tags);
                 } catch (IllegalArgumentException e) {
-                    // Looks like we lost registration race
-                    histogram = (Histogram) getMetricRegistry().getMetrics().get(metricID);
+                    // Looks like we lost the registration race
+                    histogram = getHistogram(tags);
                     Objects.requireNonNull(histogram);
                 }
             }
@@ -133,9 +135,14 @@ class FaultToleranceMetrics {
         }
 
         @SuppressWarnings("unchecked")
-        protected <T> Gauge<T> registerGauge(Gauge<T> newGauge, Tag... tags) {
+        protected <T> Gauge<T> getGauge(Tag... tags) {
             MetricID metricID = new MetricID(name(), tags);
-            Gauge<T> gauge = (Gauge<T>) getMetricRegistry().getMetrics().get(metricID);
+            return (Gauge<T>) getMetricRegistry().getMetrics().get(metricID);
+        }
+
+        @SuppressWarnings("unchecked")
+        protected <T> Gauge<T> registerGauge(Gauge<T> newGauge, Tag... tags) {
+            Gauge<T> gauge = getGauge(tags);
             if (gauge == null) {
                 Metadata metadata = Metadata.builder()
                         .withName(name())
@@ -148,8 +155,8 @@ class FaultToleranceMetrics {
                 try {
                     gauge = getMetricRegistry().register(metadata, newGauge, tags);
                 } catch (IllegalArgumentException e) {
-                    // Looks like we lost registration race
-                    gauge = (Gauge<T>) getMetricRegistry().getMetrics().get(metricID);
+                    // Looks like we lost the registration race
+                    gauge = getGauge(tags);
                     Objects.requireNonNull(gauge);
                 }
             }
@@ -222,13 +229,12 @@ class FaultToleranceMetrics {
             return MetricUnits.NONE;
         }
 
-        @Override
-        Counter metric(Tag... tags) {
-            return getOrRegisterCounter(tags);
+        static Counter get(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
         }
 
-        static Counter get(Tag... tags) {
-            return INSTANCE.metric(tags);
+        static Counter register(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
         }
     }
 
@@ -298,13 +304,12 @@ class FaultToleranceMetrics {
             return MetricUnits.NONE;
         }
 
-        @Override
-        Counter metric(Tag... tags) {
-            return getOrRegisterCounter(tags);
+        static Counter get(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
         }
 
-        static Counter get(Tag... tags) {
-            return INSTANCE.metric(tags);
+        static Counter register(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
         }
     }
 
@@ -338,13 +343,12 @@ class FaultToleranceMetrics {
             return MetricUnits.NONE;
         }
 
-        @Override
-        Counter metric(Tag... tags) {
-            return getOrRegisterCounter(tags);
+        static Counter get(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
         }
 
-        static Counter get(Tag... tags) {
-            return INSTANCE.metric(tags);
+        static Counter register(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
         }
     }
 
@@ -397,13 +401,12 @@ class FaultToleranceMetrics {
             return MetricUnits.NONE;
         }
 
-        @Override
-        Counter metric(Tag... tags) {
-            return getOrRegisterCounter(tags);
+        static Counter get(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
         }
 
-        static Counter get(Tag... tags) {
-            return INSTANCE.metric(tags);
+        static Counter register(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
         }
     }
 
@@ -437,13 +440,12 @@ class FaultToleranceMetrics {
             return MetricUnits.NANOSECONDS;
         }
 
-        @Override
-        Histogram metric(Tag... tags) {
-            return getOrRegisterHistogram(tags);
+        static Histogram get(Tag... tags) {
+            return INSTANCE.registerHistogram(tags);
         }
 
-        static Histogram get(Tag... tags) {
-            return INSTANCE.metric(tags);
+        static Histogram register(Tag... tags) {
+            return INSTANCE.registerHistogram(tags);
         }
     }
 
@@ -514,13 +516,12 @@ class FaultToleranceMetrics {
             return MetricUnits.NONE;
         }
 
-        @Override
-        Counter metric(Tag... tags) {
-            return getOrRegisterCounter(tags);
+        static Counter get(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
         }
 
-        static Counter get(Tag... tags) {
-            return INSTANCE.metric(tags);
+        static Counter register(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
         }
     }
 
@@ -554,19 +555,13 @@ class FaultToleranceMetrics {
             return MetricUnits.NANOSECONDS;
         }
 
-        @Override
-        @SuppressWarnings("unchecked")
-        Gauge<Long> metric(Tag... tags) {
-            MetricID metricID = new MetricID(name(), tags);
-            return getMetricRegistry().getGauges().get(metricID);
+
+        static Gauge<Long> get(Tag... tags) {
+            return INSTANCE.getGauge(tags);
         }
 
         static Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
             return INSTANCE.registerGauge(gauge, tags);
-        }
-
-        static Gauge<Long> get(Tag... tags) {
-            return INSTANCE.metric(tags);
         }
     }
 
@@ -600,13 +595,12 @@ class FaultToleranceMetrics {
             return MetricUnits.NONE;
         }
 
-        @Override
-        Counter metric(Tag... tags) {
-            return getOrRegisterCounter(tags);
+        static Counter get(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
         }
 
-        static Counter get(Tag... tags) {
-            return INSTANCE.metric(tags);
+        static Counter register(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
         }
     }
 
@@ -660,13 +654,12 @@ class FaultToleranceMetrics {
             return MetricUnits.NONE;
         }
 
-        @Override
-        Counter metric(Tag... tags) {
-            return getOrRegisterCounter(tags);
+        static Counter get(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
         }
 
-        static Counter get(Tag... tags) {
-            return INSTANCE.metric(tags);
+        static Counter register(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
         }
     }
 
@@ -700,19 +693,12 @@ class FaultToleranceMetrics {
             return MetricUnits.NONE;
         }
 
-        @Override
-        @SuppressWarnings("unchecked")
-        Gauge<Long> metric(Tag... tags) {
-            MetricID metricID = new MetricID(name(), tags);
-            return getMetricRegistry().getGauges().get(metricID);
+        static Gauge<Long> get(Tag... tags) {
+            return INSTANCE.getGauge(tags);
         }
 
         static Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
             return INSTANCE.registerGauge(gauge, tags);
-        }
-
-        static Gauge<Long> get(Tag... tags) {
-            return INSTANCE.metric(tags);
         }
     }
 
@@ -746,19 +732,12 @@ class FaultToleranceMetrics {
             return MetricUnits.NONE;
         }
 
-        @Override
-        @SuppressWarnings("unchecked")
-        Gauge<Long> metric(Tag... tags) {
-            MetricID metricID = new MetricID(name(), tags);
-            return getMetricRegistry().getGauges().get(metricID);
+        static Gauge<Long> get(Tag... tags) {
+            return INSTANCE.getGauge(tags);
         }
 
         static Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
             return INSTANCE.registerGauge(gauge, tags);
-        }
-
-        static Gauge<Long> get(Tag... tags) {
-            return INSTANCE.metric(tags);
         }
     }
 
@@ -792,13 +771,12 @@ class FaultToleranceMetrics {
             return MetricUnits.NANOSECONDS;
         }
 
-        @Override
-        Histogram metric(Tag... tags) {
-            return getOrRegisterHistogram(tags);
+        static Histogram get(Tag... tags) {
+            return INSTANCE.registerHistogram(tags);
         }
 
-        static Histogram get(Tag... tags) {
-            return INSTANCE.metric(tags);
+        static Histogram register(Tag... tags) {
+            return INSTANCE.registerHistogram(tags);
         }
     }
 
@@ -832,13 +810,12 @@ class FaultToleranceMetrics {
             return MetricUnits.NANOSECONDS;
         }
 
-        @Override
-        Histogram metric(Tag... tags) {
-            return getOrRegisterHistogram(tags);
+        static Histogram get(Tag... tags) {
+            return INSTANCE.registerHistogram(tags);
         }
 
-        static Histogram get(Tag... tags) {
-            return INSTANCE.metric(tags);
+        static Histogram register(Tag... tags) {
+            return INSTANCE.registerHistogram(tags);
         }
     }
 }
