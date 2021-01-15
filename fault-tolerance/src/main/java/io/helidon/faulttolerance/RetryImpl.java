@@ -78,9 +78,10 @@ class RetryImpl implements Retry {
 
         long nanos = System.nanoTime() - context.startedNanos;
         if (nanos > maxTimeNanos) {
-            return Single.error(new TimeoutException("Execution took too long. Already executing: "
-                                                             + TimeUnit.NANOSECONDS.toMillis(nanos) + " ms, must timeout after: "
-                                                             + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos) + " ms."));
+            return Single.error(new RetryTimeoutException(context.throwable(),
+                    "Execution took too long. Already executing: "
+                    + TimeUnit.NANOSECONDS.toMillis(nanos) + " ms, must timeout after: "
+                    + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos) + " ms."));
         }
 
         if (currentCallIndex > 0) {
@@ -120,9 +121,10 @@ class RetryImpl implements Retry {
 
         long nanos = System.nanoTime() - context.startedNanos;
         if (nanos > maxTimeNanos) {
-            return Multi.error(new TimeoutException("Execution took too long. Already executing: "
-                                                             + TimeUnit.NANOSECONDS.toMillis(nanos) + " ms, must timeout after: "
-                                                             + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos) + " ms."));
+            return Multi.error(new RetryTimeoutException(context.throwable(),
+                    "Execution took too long. Already executing: "
+                    + TimeUnit.NANOSECONDS.toMillis(nanos) + " ms, must timeout after: "
+                    + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos) + " ms."));
         }
 
         if (currentCallIndex > 0) {
