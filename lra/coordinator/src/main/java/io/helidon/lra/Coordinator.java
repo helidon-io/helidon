@@ -141,21 +141,25 @@ public class Coordinator implements Runnable {
         String coordinatorUrl = String.format("%s%s", context.getBaseUri(), COORDINATOR_PATH_NAME);
         URI lraId = null;
         try {
-            String lraUUID = "LRAID" + UUID.randomUUID().toString();
+            String lraUUID = "LRAID" + UUID.randomUUID().toString(); //todo better UUID
             lraId = new URI(String.format("%s/%s", coordinatorUrl, lraUUID));
-            lraMap.put(lraUUID, new LRA(lraUUID));
+            String rootParentOrChild = "parent(root)";
             if (parentLRA != null && !parentLRA.isEmpty()) {
                 LRA parent = lraMap.get(parentLRA.replace("http://127.0.0.1:8080/lra-coordinator/", ""));
-                log("Coordinator.startLRA parent:" + parent);
-                if (parent != null)
-                    parent.addChild(lraUUID, new LRA(lraUUID, new URI(String.format("%s/%s", coordinatorUrl, parentLRA))));
+                if (parent != null) { // todo null would be unexpected and cause to compensate or exit entirely
+                    LRA childLRA = new LRA(lraUUID, new URI(String.format("%s/%s", coordinatorUrl, parentLRA)));
+                    lraMap.put(lraUUID, childLRA);
+                    parent.addChild(lraUUID, childLRA);
+                    rootParentOrChild = "nested(" + childLRA.nestingDetail() + ")";
+                }
+            } else {
+                lraMap.put(lraUUID, new LRA(lraUUID));
             }
-            log("Coordinator.startLRA " + "clientId = " + clientId + ", timelimit = " + timelimit +
+            log("Coordinator.startLRA " + rootParentOrChild + " clientId = " + clientId + ", timelimit = " + timelimit +
                     ", parentLRA = " + parentLRA + ", parentId = " + parentId + " lraId:" + lraId);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
-        assert lraId != null;
         return Response.created(lraId)
                 .entity(lraId.toString())
                 .header(LRA_HTTP_CONTEXT_HEADER,
@@ -183,12 +187,32 @@ public class Coordinator implements Runnable {
     @Path("nested/{NestedLraId}/complete")
     public Response completeNestedLRA(@PathParam("NestedLraId") String nestedLraId) {
         log("Coordinator.completeNestedLRA");
+        log("Coordinator.completeNestedLRA");
+        log("Coordinator.completeNestedLRA");
+        log("Coordinator.completeNestedLRA");
+        log("Coordinator.completeNestedLRA");
+        log("Coordinator.completeNestedLRA");
+        log("Coordinator.completeNestedLRA");
+        log("Coordinator.completeNestedLRA");
+        log("Coordinator.completeNestedLRA");
+        log("Coordinator.completeNestedLRA");
+        log("Coordinator.completeNestedLRA");
         return Response.ok(Objects.requireNonNull(mapToParticipantStatus(endLRA(toURI(nestedLraId), false, true))).name()).build();
     }
 
     @PUT
     @Path("nested/{NestedLraId}/compensate")
     public Response compensateNestedLRA(@PathParam("NestedLraId") String nestedLraId) {
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
         log(" compensateNestedLRA nestedLraId = " + nestedLraId);
         return Response.ok(mapToParticipantStatus(endLRA(toURI(nestedLraId), true, true)).name()).build();
     }
@@ -228,14 +252,13 @@ public class Coordinator implements Runnable {
             @Parameter(name = "LraId", description = "The unique identifier of the LRA", required = true)
             @PathParam("LraId") String lraId) throws NotFoundException {
         LRA lra = lraMap.get(lraId);
-        log("closeLRA lraId:" + lraId + " lra:" + lra);
+        log("closeLRA " + getParentChildDebugString(lra) + " lraId:" + lraId );
         if (lra == null) {
             log("Coordinator.closeLRA lraRecord == null lraRecordMap.size():" + lraMap.size());
             for (String lraid : lraMap.keySet()) {
-                log(
-                        "Coordinator.closeLRA uri:" + lraid + " lraRecordMap.get(lraid):" + lraMap.get(lraid));
+                log("Coordinator.closeLRA uri:" + lraid + " lraRecordMap.get(lraid):" + lraMap.get(lraid));
             }
-            return Response.ok().build();
+            return Response.serverError().build();
         }
         lra.terminate(false);
         return Response.ok().build();
@@ -247,9 +270,15 @@ public class Coordinator implements Runnable {
     public Response cancelLRA(
             @Parameter(name = "LraId", description = "The unique identifier of the LRA", required = true)
             @PathParam("LraId") String lraId) throws NotFoundException {
-        log("cancelLRA lraId:" + lraId);
         LRA lra = lraMap.get(lraId);
-        if (lra == null) return Response.ok().build();
+        log("cancelLRA " + getParentChildDebugString(lra) + " lraId:" + lraId );
+        if (lra == null) {
+            log("Coordinator.cancelLRA lraRecord == null lraRecordMap.size():" + lraMap.size());
+            for (String lraid : lraMap.keySet()) {
+                log("Coordinator.closeLRA uri:" + lraid + " lraRecordMap.get(lraid):" + lraMap.get(lraid));
+            }
+            return Response.serverError().build();
+        }
         lra.terminate(true);
         return Response.ok().build();
     }
@@ -278,14 +307,12 @@ public class Coordinator implements Runnable {
                     String compensatorData) throws NotFoundException {
         URI lraId = toURI(lraIdParam);
         int status = Response.Status.OK.getStatusCode();
-        log("Coordinator.joinLRA lraIdParam = " + lraIdParam + ", timeLimit = " + timeLimit); // +
-//                ", compensatorLink = " + compensatorLink + ", compensatorData = " + compensatorData);
         String lraIdString = lraId.toString().substring(lraId.toString().indexOf("LRAID"));
         LRA lra = lraMap.get(lraIdString);
         if (lra == null) {
             log("Coordinator.joinLRA lraRecord == null for lraIdString:" + lraIdString +
                     "lraRecordMap.size():" + lraMap.size());
-            return Response.ok().build();
+            return Response.ok().build(); //todo this is actually error
         } else {
             if (timeLimit == 0) timeLimit = 60;
             if (lra.timeout == 0) { // todo overrides
@@ -298,15 +325,18 @@ public class Coordinator implements Runnable {
             }
             long currentTime = System.currentTimeMillis();
             if (currentTime > lra.timeout) {
-                log("Coordinator.joinLRA expire");
-                return Response.status(412).build(); // or 410
+                log("Coordinator.joinLRA expired");
+                return Response.status(412).build(); // 410 also acceptable/equivalent behavior
             }
         }
         if (compensatorData == null || compensatorData.trim().equals("")) {
             log("Coordinator.initParticipantURIs no compensatorLink information");
         }
-        lra.addParticipant(compensatorLink, false, true);
-        StringBuilder recoveryUrl = new StringBuilder();
+        String debugString = lra.addParticipant(compensatorLink, false);
+        log("Coordinator.joinLRA to " + " " + debugString + " to " + getParentChildDebugString(lra) +
+                " lraIdParam = " + lraIdParam + ", timeLimit = " + timeLimit ); // +
+//                ", compensatorLink = " + compensatorLink + ", compensatorData = " + compensatorData);
+        StringBuilder recoveryUrl = new StringBuilder(); //todo
         try {
             return Response.status(status)
                     .entity(recoveryUrl.toString())
@@ -316,6 +346,11 @@ public class Coordinator implements Runnable {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String getParentChildDebugString(LRA lra) {
+        return (lra.isParent ? "parent" : "") + (lra.isParent && lra.isChild ? " and " : "") +
+                (lra.isChild ? "child" : "") + (!lra.isParent && !lra.isChild ? "currently flat LRA" : "");
     }
 
     @Override

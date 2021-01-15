@@ -43,14 +43,15 @@ public class LRA {
     String lraId;
     private URI parentId;
     List<String> compensatorLinks = new ArrayList<>();
+    LRA parent;
     List<LRA> children = new ArrayList<>();
     List<Participant> participants = new ArrayList<>();
     boolean hasStatusEndpoints;
 
     boolean isRecovering = false;
     boolean isCancel;
-    private boolean isChild;
-    private boolean isParent;
+    boolean isChild;
+    boolean isParent;
     private boolean isProcessing;
     private boolean isReadyToDelete;
 
@@ -65,8 +66,30 @@ public class LRA {
         this.parentId = parentId;
     }
 
-    void addParticipant(String compensatorLink, boolean isMessaging, boolean isToBeLogged) {
-        if (compensatorLinks.contains(compensatorLink)) return;
+    // debug path to root
+    // root(0 - lraID) --> child(1 - lraID) --> child(2 - lraID) N...
+    public String nestingDetail() {
+        int depth = 0;
+        LRA lra = this;
+        while (lra.isChild) {
+            depth++;
+            lra = lra.parent;
+        }
+        String nestingDetail = "";
+        lra = this;
+        depth = 0;
+        while (lra.isChild) {
+            depth++;
+            nestingDetail = " level(" + depth +") = " + lra.lraId + nestingDetail;
+            depth--;
+            lra = lra.parent;
+        }
+        return nestingDetail;
+    }
+
+    //return debug string
+    String addParticipant(String compensatorLink, boolean isMessaging) {
+        if (compensatorLinks.contains(compensatorLink)) return "participant already enlisted";
         else compensatorLinks.add(compensatorLink);
         String uriPrefix = isMessaging ? "<messaging://" : "<http://";
         // <messaging://completeinventorylra>; rel="complete"; title="complete URI"; type="text/plain",
@@ -114,9 +137,9 @@ public class LRA {
                     }
                 }
             }
-            log("participant joined/added:" + participant);
+            return "LRA joined/added:" + (participant.isListenerOnly()?"listener":"participant");
         } else {
-            log("no address found in compensatorLink:" + compensatorLink);
+            return "no address found in compensatorLink:" + compensatorLink;
         }
 //        if (isToBeLogged) RecoveryManager.getInstance().log(this, compensatorLink);
     }
@@ -124,6 +147,7 @@ public class LRA {
     public void addChild(String lraUUID, LRA lra) {
         children.add(lra);
         lra.isChild = true;
+        lra.parent = this;
         isParent = true;
     }
 
@@ -132,11 +156,11 @@ public class LRA {
         setProcessing(true);
         this.isCancel = isCancel;
         log("LRA terminate isCancel:" + isCancel + " participants.size():" + participants.size());
-//            if (isParent) sendCompletion(compensateURIs, isCancel);
-//            for (LRA nestedLRA : children) {
-//                log("LRA.endChildren nestedLRA.compensateURIs.size():" + nestedLRA.compensateURIs.size());
-//                nestedLRA.sendCompletion(nestedLRA.compensateURIs, isCancel);
-//            }
+            if (isParent)
+            for (LRA nestedLRA : children) {
+                log("LRA.endChildren nestedLRA.participants.size():" + nestedLRA.participants.size());
+                nestedLRA.terminate(isCancel); //todo this is the classic afterLRA/tx sync scenario - need to check if we traverse the tree twice or couple end and listener calls
+            }
         sendCompleteOrCancel(isCancel);
         sendAfterLRA();
         if(areAllInEndState() && areAllAfterLRASuccessfullyCalledOrForgotten()) isReadyToDelete = true;
@@ -145,7 +169,7 @@ public class LRA {
 
     private void sendCompleteOrCancel(boolean isCancel) {
         for (Participant participant : participants) {
-            if (participant.isInEndStateOrListenerOnly()) {
+            if (participant.isInEndStateOrListenerOnly() && !isChild) { //todo check ramifications of !isChild re timeouts
                 continue;
             }
             URI endpointURI = isCancel ? participant.getCompensateURI() : participant.getCompleteURI();
@@ -153,9 +177,9 @@ public class LRA {
                 Response response = sendCompleteOrCompensate(endpointURI, isCancel);
                 int responsestatus = response.getStatus(); // expected codes 200, 202, 409, 410
                 String readEntity = response.readEntity(String.class);
-                log("LRA REST.sendCompleteOrCancel:" + endpointURI +
+                log("LRA.sendCompleteOrCancel:" + endpointURI +
                         " finished  response:" + response + ":" + responsestatus + " readEntity:" + readEntity);
-                if (responsestatus == 503) { //  Service Unavailable, retriable
+                if (responsestatus == 503) { //  Service Unavailable, retriable - todo this should be the full range of invalid values
                     isRecovering = true;
                 } else if (responsestatus == 409) { //  Conflict, retriable
                     isRecovering = true;
@@ -234,18 +258,19 @@ public class LRA {
                         .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
                         .buildGet().invoke();
                 responsestatus = response.getStatus();
-                if (responsestatus != 410) {
+                if (responsestatus == 503 || responsestatus == 202) { //todo include other retriables
+                } else if (responsestatus != 410) {
                     readEntity = response.readEntity(String.class);
                     participantStatus = ParticipantStatus.valueOf(readEntity);
                     participant.setParticipantStatus(participantStatus);
                 } else {
                     participant.setParticipantStatus(isCancel?Compensated:Completed); // not exactly accurate as it's GONE not explicitly completed or compensated
                 }
-                log("LRA REST.sendStatus:" + statusURI + " finished  response:" +
+                log("LRA sendStatus:" + statusURI + " finished  response:" +
                         response + ":" + responsestatus + " participantStatus:" + participantStatus +
                         " readEntity:" + readEntity);
             } catch (Exception e) { // IllegalArgumentException: No enum constant org.eclipse.microprofile.lra.annotation.ParticipantStatus.
-                log("LRA REST.sendStatus:" + statusURI + " finished  response:" +
+                log("LRA sendStatus:" + statusURI + " finished  response:" +
                         response + ":" + responsestatus + " participantStatus:" + participantStatus +
                         " readEntity:" + readEntity + " Exception:" + e);
             }
