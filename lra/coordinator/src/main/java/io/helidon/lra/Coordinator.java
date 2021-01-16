@@ -252,7 +252,7 @@ public class Coordinator implements Runnable {
             @Parameter(name = "LraId", description = "The unique identifier of the LRA", required = true)
             @PathParam("LraId") String lraId) throws NotFoundException {
         LRA lra = lraMap.get(lraId);
-        log("closeLRA " + getParentChildDebugString(lra) + " lraId:" + lraId );
+        log("Coordinator.closeLRA " + getParentChildDebugString(lra) + " lraId:" + lraId );
         if (lra == null) {
             log("Coordinator.closeLRA lraRecord == null lraRecordMap.size():" + lraMap.size());
             for (String lraid : lraMap.keySet()) {
@@ -333,7 +333,7 @@ public class Coordinator implements Runnable {
             log("Coordinator.initParticipantURIs no compensatorLink information");
         }
         String debugString = lra.addParticipant(compensatorLink, false);
-        log("Coordinator.joinLRA to " + " " + debugString + " to " + getParentChildDebugString(lra) +
+        log("Coordinator.joinLRA " + debugString + " to " + getParentChildDebugString(lra) +
                 " lraIdParam = " + lraIdParam + ", timeLimit = " + timeLimit ); // +
 //                ", compensatorLink = " + compensatorLink + ", compensatorData = " + compensatorData);
         StringBuilder recoveryUrl = new StringBuilder(); //todo
@@ -405,7 +405,7 @@ public class Coordinator implements Runnable {
         String lraIdString = lraId.substring(lraId.indexOf("LRAID"));
         LRA lra = lraMap.get(lraIdString);
         if (lra != null) {
-            lra.removeParticipant(compensatorUrl, false, true); //mark removed rather than actual remove
+            lra.removeParticipant(compensatorUrl, false, true);
         }
         int status = 200;
         return Response.status(status).build();

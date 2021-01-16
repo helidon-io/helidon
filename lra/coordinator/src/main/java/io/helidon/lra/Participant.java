@@ -109,4 +109,40 @@ public class Participant {
                 participantStatus == Compensated ||
                 isListenerOnly();
     }
+
+    public boolean isInEndStateOrListenerOnlyForTerminationType(boolean isCompensate) {
+        if (isCompensate) {
+            return participantStatus == FailedToCompensate ||
+                    participantStatus == Compensated ||
+                    isListenerOnly();
+        } else {
+            return participantStatus == FailedToComplete ||
+                    participantStatus == Completed ||
+                    isListenerOnly();
+        }
+    }
 }
+
+/**
+ [ERROR] Failures:
+ [ERROR]   TckTests.completeMultiLevelNestedActivity:167->multiLevelNestedActivity:659 multiLevelNestedActivity: step 5 (called test path http://localhost:8180/lraresource/multiLevelNestedActivity) expected:<2> but was:<3>
+ [ERROR]   TckTests.mixedMultiLevelNestedActivity:177->multiLevelNestedActivity:685 multiLevelNestedActivity: step 10 (called test path http://localhost:8180/lraresource/multiLevelNestedActivity) expected:<3> but was:<5>
+
+
+ [ERROR] Failures:
+ [ERROR]   TckContextTests.testForgetCalledForNestedParticipantsWhenParentIsClosed:237 resource should have called forget for the nested LRA expected:<1> but was:<0>
+ [ERROR]   TckContextTests.testParentContextAvailable:205 when the resource was asked to complete a nested LRA the parent context header was missing expected:<1> but was:<0>
+ [ERROR]   TckParticipantTests.testNonJaxRsCompletionStageResponseAndParticipantStatus:175 Non JAX-RS @Status method with CompletionStage<ParticipantStatus> should have been called
+ Expected: a value equal to or greater than <1>
+ but: <0> was less than <1>
+ [ERROR]   TckTests.compensateMultiLevelNestedActivity:172->multiLevelNestedActivity:677 multiLevelNestedActivity: step 8 (called test path http://localhost:8180/lraresource/multiLevelNestedActivity) expected:<2> but was:<1>
+ [INFO]
+ [ERROR] Tests run: 133, Failures: 4, Errors: 0, Skipped: 0
+
+
+ [ERROR]   TckTests.compensateMultiLevelNestedActivity:172->multiLevelNestedActivity:677 multiLevelNestedActivity: step 8 (called test path http://localhost:8180/lraresource/multiLevelNestedActivity) expected:<2> but was:<1>
+ [ERROR]   TckTests.mixedMultiLevelNestedActivity:177->multiLevelNestedActivity:693 multiLevelNestedActivity: step 9 (called test path http://localhost:8180/lraresource/multiLevelNestedActivity) expected:<1> but was:<0>
+ [INFO]
+ [ERROR] Tests run: 23, Failures: 2, Errors: 0, Skipped: 0
+ */
+

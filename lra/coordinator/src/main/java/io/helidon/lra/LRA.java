@@ -50,8 +50,10 @@ public class LRA {
 
     boolean isRecovering = false;
     boolean isCancel;
-    boolean isChild;
     boolean isParent;
+    int nestedTerminate = 0;
+    boolean isChild;
+    private int nestedDepth;
     private boolean isProcessing;
     private boolean isReadyToDelete;
 
@@ -67,7 +69,7 @@ public class LRA {
     }
 
     // debug path to root
-    // root(0 - lraID) --> child(1 - lraID) --> child(2 - lraID) N...
+    // level = root(0 - lraID) --> child(1 - lraID) --> child(2 - lraID) ...
     public String nestingDetail() {
         int depth = 0;
         LRA lra = this;
@@ -75,12 +77,13 @@ public class LRA {
             depth++;
             lra = lra.parent;
         }
+        nestedDepth = depth;
         String nestingDetail = "";
         lra = this;
-        depth = 0;
+//        depth = 0;
         while (lra.isChild) {
-            depth++;
-            nestingDetail = " level(" + depth +") = " + lra.lraId + nestingDetail;
+//            depth++;
+            nestingDetail = " depth[" + depth + "] = " + lra.lraId + nestingDetail;
             depth--;
             lra = lra.parent;
         }
@@ -91,7 +94,7 @@ public class LRA {
     String addParticipant(String compensatorLink, boolean isMessaging) {
         if (compensatorLinks.contains(compensatorLink)) return "participant already enlisted";
         else compensatorLinks.add(compensatorLink);
-        String uriPrefix = isMessaging ? "<messaging://" : "<http://";
+        String uriPrefix = getConditionalDebugString(isMessaging, "<messaging://", "<http://");
         // <messaging://completeinventorylra>; rel="complete"; title="complete URI"; type="text/plain",
         // <messaging://compensate>; rel="compensate"; title="compensate URI"; type="text/plain"
         // <http://127.0.0.1:8091/inventory/completeInventory?method=javax.ws.rs.PUT>; rel="complete"; title="complete URI"; type="text/plain",
@@ -113,7 +116,7 @@ public class LRA {
                 }
                 String key = relMatcher.group(1);
                 if (key != null && key.equals("rel")) {
-                    String rel = relMatcher.group(2) == null ? relMatcher.group(3) : relMatcher.group(2);
+                    String rel = getConditionalDebugString(relMatcher.group(2) == null, relMatcher.group(3), relMatcher.group(2));
 //                    log("LRA.initParticipantURIs " + rel + " is " + endpoint);
                     try {
                         if (rel.equals("complete")) {
@@ -137,11 +140,15 @@ public class LRA {
                     }
                 }
             }
-            return "LRA joined/added:" + (participant.isListenerOnly()?"listener":"participant");
+            return "LRA joined/added:" + (getConditionalDebugString(participant.isListenerOnly(), "listener", "participant"));
         } else {
             return "no address found in compensatorLink:" + compensatorLink;
         }
 //        if (isToBeLogged) RecoveryManager.getInstance().log(this, compensatorLink);
+    }
+
+    public void removeParticipant(String compensatorUrl, boolean b, boolean b1) {
+        participants = new ArrayList<>(); //todo remove just the participant specified
     }
 
     public void addChild(String lraUUID, LRA lra) {
@@ -152,14 +159,35 @@ public class LRA {
     }
 
 
+    /**
+     //  && nestedTerminate++ == 1 causes....
+     ==
+     // [ERROR]   TckTests.compensateMultiLevelNestedActivity:172->multiLevelNestedActivity:677 multiLevelNestedActivity: step 8 (called test path http://localhost:8180/lraresource/multiLevelNestedActivity) expected:<2> but was:<1>
+     // [ERROR]   TckTests.mixedMultiLevelNestedActivity:177->multiLevelNestedActivity:693 multiLevelNestedActivity: step 9 (called test path http://localhost:8180/lraresource/multiLevelNestedActivity) expected:<1> but was:<0>
+
+   without it...
+
+     [ERROR] Failures:
+     [ERROR]   TckTests.mixedMultiLevelNestedActivity:177->multiLevelNestedActivity:693 multiLevelNestedActivity: step 9 (called test path http://localhost:8180/lraresource/multiLevelNestedActivity) expected:<1> but was:<0>
+     [INFO]
+     [ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0
+
+     or/ intermittent
+
+     [ERROR]   TckTests.mixedMultiLevelNestedActivity:177->multiLevelNestedActivity:685 multiLevelNestedActivity: step 10 (called test path http://localhost:8180/lraresource/multiLevelNestedActivity) expected:<3> but was:<4>
+     [INFO]
+
+
+     */
+
     void terminate(boolean isCancel) {
         setProcessing(true);
         this.isCancel = isCancel;
-        log("LRA terminate isCancel:" + isCancel + " participants.size():" + participants.size());
-            if (isParent)
-            for (LRA nestedLRA : children) {
+            if (isParent )  for (LRA nestedLRA : children) {   //  && nestedTerminate++ == 1
                 log("LRA.endChildren nestedLRA.participants.size():" + nestedLRA.participants.size());
-                nestedLRA.terminate(isCancel); //todo this is the classic afterLRA/tx sync scenario - need to check if we traverse the tree twice or couple end and listener calls
+                if (!nestedLRA.areAllInEndStateOrListenerOnlyForTerminationType(isCancel)) {
+                    nestedLRA.terminate(isCancel); //todo this is the classic afterLRA/tx sync scenario - need to check if we traverse the tree twice or couple end and listener calls
+                }
             }
         sendCompleteOrCancel(isCancel);
         sendAfterLRA();
@@ -169,7 +197,7 @@ public class LRA {
 
     private void sendCompleteOrCancel(boolean isCancel) {
         for (Participant participant : participants) {
-            if (participant.isInEndStateOrListenerOnly() && !isChild) { //todo check ramifications of !isChild re timeouts
+            if (participant.isInEndStateOrListenerOnly() && !isChild) { //todo check ramifications of !isChild re timeout processing
                 continue;
             }
             URI endpointURI = isCancel ? participant.getCompensateURI() : participant.getCompleteURI();
@@ -177,8 +205,7 @@ public class LRA {
                 Response response = sendCompleteOrCompensate(endpointURI, isCancel);
                 int responsestatus = response.getStatus(); // expected codes 200, 202, 409, 410
                 String readEntity = response.readEntity(String.class);
-                log("LRA.sendCompleteOrCancel:" + endpointURI +
-                        " finished  response:" + response + ":" + responsestatus + " readEntity:" + readEntity);
+                log("LRA " + getConditionalDebugString(isCancel, "compensate", "complete") + " finished,  response:" + response + ":" + responsestatus + " readEntity:" + readEntity);
                 if (responsestatus == 503) { //  Service Unavailable, retriable - todo this should be the full range of invalid values
                     isRecovering = true;
                 } else if (responsestatus == 409) { //  Conflict, retriable
@@ -208,7 +235,7 @@ public class LRA {
                 .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
                 .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
                 .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
-                .buildPut(Entity.text(isCompensate ? LRAStatus.Cancelled.name() : LRAStatus.Closed.name())).invoke();
+                .buildPut(Entity.text(getConditionalDebugString(isCompensate, LRAStatus.Cancelled.name(), LRAStatus.Closed.name()))).invoke();
         //                       .buildPut(Entity.json("")).invoke();
         //                       .async().put(Entity.json("entity"));
     }
@@ -228,13 +255,13 @@ public class LRA {
                                 .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
                                 .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
                                 .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
-                                .buildPut(Entity.text(isCancel ? LRAStatus.Cancelled.name() : LRAStatus.Closed.name())).invoke();
+                                .buildPut(Entity.text(getConditionalDebugString(isCancel, LRAStatus.Cancelled.name(), LRAStatus.Closed.name()))).invoke();
                         int responsestatus = response.getStatus();
                         if (responsestatus == 200) participant.setAfterLRASuccessfullyCalledIfEnlisted();
-                        log("LRA sendAfterLRA:" + afterURI + " finished  response:" + response + ":" + responsestatus);
+                        log("LRA afterLRA finished, response:" + response);
                     }
                 } catch (Exception e) {
-                    log("LRA sendAfterLRA Exception:" + e);
+                    log("LRA afterLRA Exception:" + e);
                 }
             }
         }
@@ -322,7 +349,7 @@ public class LRA {
         return "lraId:" + lraId + " participants' status:" + participantsString;
     }
 
-    public boolean areAllClosedAndCancelledSuccessfully() {
+    public boolean areAllCompletedOrCompensatedSuccessfully() {
         for (Participant participant : participants) {
             if(participant.getParticipantStatus() != ParticipantStatus.Completed &&
                     participant.getParticipantStatus() != Compensated) return false;
@@ -352,6 +379,13 @@ public class LRA {
         return true;
     }
 
+    public boolean areAllInEndStateOrListenerOnlyForTerminationType(boolean isCompensate) {
+        for (Participant participant : participants) {
+            if(!participant.isInEndStateOrListenerOnlyForTerminationType(isCompensate)) return false;
+        }
+        return true;
+    }
+
     public boolean areAllAfterLRASuccessfullyCalled() {
         for (Participant participant : participants) {
             if(!participant.isAfterLRASuccessfullyCalledIfEnlisted()) return false;
@@ -360,15 +394,15 @@ public class LRA {
     }
 
     void log(String message) {
-        System.out.println(message);
+        System.out.println("[depth:" + nestedDepth + "] " + message);
 //        System.out.println("ischild:" + isChild + " isParent:" + isParent + " " + message);
+    }
+
+    private String getConditionalDebugString(boolean isTrue, String first, String second) {
+        return isTrue ? first : second;
     }
 
     void printStack(String message) {
         new Throwable(message).printStackTrace();
-    }
-
-    public void removeParticipant(String compensatorUrl, boolean b, boolean b1) {
-        participants = new ArrayList<>(); //todo remove just the participant specified
     }
 }
