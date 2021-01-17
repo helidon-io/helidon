@@ -17,6 +17,8 @@
 package io.helidon.lra;
 
 import io.helidon.lra.messaging.MessageProcessing;
+import org.eclipse.microprofile.lra.annotation.LRAStatus;
+import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -139,13 +141,12 @@ public class Coordinator implements Runnable {
         URI lraId = null;
         try {
             String lraUUID = "LRAID" + UUID.randomUUID().toString(); //todo better UUID
-            lraId = new URI(String.format("%s/%s", coordinatorUrl, lraUUID));
+            lraId = new URI(String.format("%s/%s", coordinatorUrl, lraUUID)); //todo verify
             String rootParentOrChild = "parent(root)";
             if (parentLRA != null && !parentLRA.isEmpty()) {
                 LRA parent = lraMap.get(parentLRA.replace("http://127.0.0.1:8080/lra-coordinator/", ""));
                 if (parent != null) { // todo null would be unexpected and cause to compensate or exit entirely
                     LRA childLRA = new LRA(lraUUID, new URI(parentLRA));
-//                    LRA childLRA = new LRA(lraUUID, new URI(String.format("%s/%s", coordinatorUrl, parentLRA)));
                     lraMap.put(lraUUID, childLRA);
                     parent.addChild(lraUUID, childLRA);
                     rootParentOrChild = "nested(" + childLRA.nestingDetail() + ")";
@@ -174,74 +175,77 @@ public class Coordinator implements Runnable {
 
         return Response.status(400).build();
     }
-//
-//    @GET
-//    @Path("nested/{NestedLraId}/status")
-//    public Response getNestedLRAStatus(@PathParam("NestedLraId") String nestedLraId) {
-//        return Response.ok("testnestedstatus").build();
-//    }
-//
-//    @PUT
-//    @Path("nested/{NestedLraId}/complete")
-//    public Response completeNestedLRA(@PathParam("NestedLraId") String nestedLraId) {
-//        log("completeNestedLRA");
-//        log("completeNestedLRA");
-//        log("completeNestedLRA");
-//        log("completeNestedLRA");
-//        log("completeNestedLRA");
-//        log("completeNestedLRA");
-//        log("completeNestedLRA");
-//        log("completeNestedLRA");
-//        log("completeNestedLRA");
-//        log("completeNestedLRA");
-//        log("completeNestedLRA");
+
+    @GET
+    @Path("nested/{NestedLraId}/status")
+    public Response getNestedLRAStatus(@PathParam("NestedLraId") String nestedLraId) {
+        return Response.ok("testnestedstatus").build();
+    }
+
+    @PUT
+    @Path("nested/{NestedLraId}/complete")
+    public Response completeNestedLRA(@PathParam("NestedLraId") String nestedLraId) {
+        log("completeNestedLRA");
+        log("completeNestedLRA");
+        log("completeNestedLRA");
+        log("completeNestedLRA");
+        log("completeNestedLRA");
+        log("completeNestedLRA");
+        log("completeNestedLRA");
+        log("completeNestedLRA");
+        log("completeNestedLRA");
+        log("completeNestedLRA");
+        log("completeNestedLRA");
 //        return Response.ok(Objects.requireNonNull(mapToParticipantStatus(endLRA(toURI(nestedLraId), false, true))).name()).build();
-//    }
-//
-//    @PUT
-//    @Path("nested/{NestedLraId}/compensate")
-//    public Response compensateNestedLRA(@PathParam("NestedLraId") String nestedLraId) {
-//        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-//        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-//        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-//        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-//        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-//        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-//        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-//        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-//        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-//        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-//        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        return Response.ok(ParticipantStatus.Completed.name()).build();
+    }
+
+    @PUT
+    @Path("nested/{NestedLraId}/compensate")
+    public Response compensateNestedLRA(@PathParam("NestedLraId") String nestedLraId) {
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
+        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
 //        return Response.ok(mapToParticipantStatus(endLRA(toURI(nestedLraId), true, true)).name()).build();
-//    }
-//
-//    private ParticipantStatus mapToParticipantStatus(LRAStatus lraStatus) {
-//        switch (lraStatus) {
-//            case Active:
-//                return ParticipantStatus.Active;
-//            case Closed:
-//                return ParticipantStatus.Completed;
-//            case Cancelled:
-//                return ParticipantStatus.Compensated;
-//            case Closing:
-//                return ParticipantStatus.Completing;
-//            case Cancelling:
-//                return ParticipantStatus.Compensating;
-//            case FailedToClose:
-//                return ParticipantStatus.FailedToComplete;
-//            case FailedToCancel:
-//                return ParticipantStatus.FailedToCompensate;
-//            default:
-//                return null;
-//        }
-//    }
-//
-//    @PUT
-//    @Path("nested/{NestedLraId}/forget")
-//    public Response forgetNestedLRA(@PathParam("NestedLraId") String nestedLraId) {
-//        log(" forgetNestedLRA nestedLraId = " + nestedLraId);
-//        return Response.ok().build();
-//    }
+        LRA lra = lraMap.get(nestedLraId);
+        return Response.ok(ParticipantStatus.Compensated.name()).build();
+    }
+
+    private ParticipantStatus mapToParticipantStatus(LRAStatus lraStatus) {
+        switch (lraStatus) {
+            case Active:
+                return ParticipantStatus.Active;
+            case Closed:
+                return ParticipantStatus.Completed;
+            case Cancelled:
+                return ParticipantStatus.Compensated;
+            case Closing:
+                return ParticipantStatus.Completing;
+            case Cancelling:
+                return ParticipantStatus.Compensating;
+            case FailedToClose:
+                return ParticipantStatus.FailedToComplete;
+            case FailedToCancel:
+                return ParticipantStatus.FailedToCompensate;
+            default:
+                return null;
+        }
+    }
+
+    @PUT
+    @Path("nested/{NestedLraId}/forget")
+    public Response forgetNestedLRA(@PathParam("NestedLraId") String nestedLraId) {
+        log(" forgetNestedLRA nestedLraId = " + nestedLraId);
+        return Response.ok().build();
+    }
 
     @PUT
     @Path("{LraId}/close")
@@ -357,7 +361,7 @@ public class Coordinator implements Runnable {
             for (String uri : lraMap.keySet()) {
                 LRA lra = lraMap.get(uri);
                 if (lra.isProcessing()) continue;
-                doRun(lra, uri);
+                doRun(lra, uri); //todo add exponential backoff
             }
             try {
                 Thread.sleep(500);
@@ -374,8 +378,9 @@ public class Coordinator implements Runnable {
         else if (lra.isRecovering) {
             if (lra.hasStatusEndpoints()) lra.sendStatus();
             if (!lra.areAllInEndState()) lra.terminate(lra.isCancel, false); // this should purge if areAllAfterLRASuccessfullyCalled
+            //todo push all of the following into LRA terminate...
             lra.sendAfterLRA(); //this method gates so no need to do check here
-            if(lra.areAllInEndState() && lra.areAnyInFailedState()) {
+            if(lra.areAllInEndState() && (lra.areAnyInFailedState() ) ) { // || (lra.isChild && lra.isUnilateralCallIfNested && lra.isCancel == false)
                 lra.sendForget();
                 if(lra.areAllAfterLRASuccessfullyCalledOrForgotten()) {
                     if(lra.areAllAfterLRASuccessfullyCalledOrForgotten()) lraMap.remove(uri);
@@ -387,7 +392,7 @@ public class Coordinator implements Runnable {
                 log("[timeout], will end uri:" + uri +
                         " timeout:" + lra.timeout + " currentTime:" + currentTime +
                         " ms over:" + (currentTime - lra.timeout));
-                lra.terminate(true, true);
+                lra.terminate(true, false);
             }
         }
     }
@@ -444,10 +449,3 @@ public class Coordinator implements Runnable {
         new Throwable(message).printStackTrace();
     }
 }
-/**
-
- [ERROR]   TckTests.compensateMultiLevelNestedActivity:172->multiLevelNestedActivity:677 multiLevelNestedActivity: step 8 (called test path http://localhost:8180/lraresource/multiLevelNestedActivity) expected:<2> but was:<1>
- [ERROR]   TckTests.mixedMultiLevelNestedActivity:177->multiLevelNestedActivity:693 multiLevelNestedActivity: step 9 (called test path http://localhost:8180/lraresource/multiLevelNestedActivity) expected:<1> but was:<0>
- [INFO]
- [ERROR] Tests run: 23, Failures: 2, Errors: 0, Skipped: 0
- */

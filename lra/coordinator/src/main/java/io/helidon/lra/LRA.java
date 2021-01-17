@@ -50,9 +50,11 @@ public class LRA {
 
     boolean isRecovering = false;
     boolean isCancel;
+    boolean isRoot = false;
     boolean isParent;
-    int nestedTerminate = 0;
     boolean isChild;
+    boolean isUnilateralCallIfNested = false;
+    boolean isNestedThatShouldBeForgottenAfterParentEnds = false;
     private int nestedDepth;
     private boolean isProcessing;
     private boolean isReadyToDelete;
@@ -61,6 +63,7 @@ public class LRA {
 
     public LRA(String lraUUID) {
         lraId = lraUUID;
+        isRoot = true;
     }
 
     public LRA(String lraUUID, URI parentId) {
@@ -80,9 +83,7 @@ public class LRA {
         nestedDepth = depth;
         String nestingDetail = "";
         lra = this;
-//        depth = 0;
         while (lra.isChild) {
-//            depth++;
             nestingDetail = " depth[" + depth + "] = " + lra.lraId + nestingDetail;
             depth--;
             lra = lra.parent;
@@ -158,10 +159,32 @@ public class LRA {
         isParent = true;
     }
 
+    void terminate1(boolean isCancel, boolean isUnilateralCallIfNested) {
+        setProcessing(true);
+        this.isCancel = isCancel;
+        if (isChild) this.isUnilateralCallIfNested = isUnilateralCallIfNested;
+        if (isChild && !isCancel && areAllInEndStateCompensatedOrFailedToCompensate()) return;
+        if (isUnilateralCallIfNested && isChild && !isCancel)  isNestedThatShouldBeForgottenAfterParentEnds = true;
+        if (isParent) for (LRA nestedLRA : children) {
+            log("LRA.endChildren nestedLRA.participants.size():" + nestedLRA.participants.size());
+            if (!nestedLRA.areAllInEndStateOrListenerOnlyForTerminationType(isCancel)) {
+                nestedLRA.terminate(isCancel, false);  //todo should be false if this is root only
+            } //todo this is the classic afterLRA/tx sync scenario ...need to check if we traverse the tree twice or couple end and listener calls as we are doing now and did in JTA
+        }
+        sendCompleteOrCancel(isCancel);
+        sendAfterLRA();
+        if (areAllInEndState() && areAllAfterLRASuccessfullyCalledOrForgotten()) { // todo areAllInEndState() does not consider/traverse nested
+            if (true ||  isRoot && forgetAnyUnilaterallyCompleted()) isReadyToDelete = true; // todo !isRoot is not enough if multilevel
+        } // TckContextTests.testForgetCalledForNestedParticipantsWhenParentIsClosed:237 resource should have called forget for the nested LRA expected:<1> but was:<0>
+        setProcessing(false);
+    }
+
+
     void terminate(boolean isCancel, boolean isUnilateralCallIfNested) {
         setProcessing(true);
         this.isCancel = isCancel;
-        if (isChild && !isCancel && areAllInEndStateCompensated()) return;
+        if (isUnilateralCallIfNested && isChild && !isCancel)  isNestedThatShouldBeForgottenAfterParentEnds = true;
+        if (isChild && !isCancel && areAllInEndStateCompensatedOrFailedToCompensate()) return; //todo this only check this child, not children of this child
         if (isParent) for (LRA nestedLRA : children) {   //  && nestedTerminate++ == 1
             log("LRA.endChildren nestedLRA.participants.size():" + nestedLRA.participants.size());
             if (!nestedLRA.areAllInEndStateOrListenerOnlyForTerminationType(isCancel)) {
@@ -169,14 +192,26 @@ public class LRA {
             }
         }
         sendCompleteOrCancel(isCancel);
-        sendAfterLRA();
+        sendAfterLRA(); log("areAllInEndState():" + areAllInEndState() + " areAllAfterLRASuccessfullyCalledOrForgotten():" + areAllAfterLRASuccessfullyCalledOrForgotten() +
+                " !areAllForgotten():" + !areAllForgotten() + " isUnilateralCallIfNested:" + isUnilateralCallIfNested);
         if (areAllInEndState() && areAllAfterLRASuccessfullyCalledOrForgotten()) {
-            if (isChild && !areAllForgotten() && isUnilateralCallIfNested) sendForget(); //only do forget if child autonomously completed, todo this isUnilateralCallIfNested may not be specific enough for all cases
-            else isReadyToDelete = true;
-        }
+            if (forgetAnyUnilaterallyCompleted()) isReadyToDelete = true;
+//            if (false && isChild && !areAllForgotten() && isUnilateralCallIfNested) sendForget(); //only do forget if child autonomously completed, todo this isUnilateralCallIfNested may not be specific enough for all cases
+//            else  isReadyToDelete = true;
+        } // TckContextTests.testForgetCalledForNestedParticipantsWhenParentIsClosed:237 resource should have called forget for the nested LRA expected:<1> but was:<0>
         setProcessing(false);
     }
 
+    public boolean forgetAnyUnilaterallyCompleted() {
+        boolean isAllThatNeedsToBeForgottenForgotten = true;
+        for (LRA nestedLRA : children) {
+            log("LRA.forgetAnyUnilaterallyCompleted");
+            if (nestedLRA.isNestedThatShouldBeForgottenAfterParentEnds) {
+                if (!nestedLRA.sendForget()) return false;
+            }
+        }
+        return isAllThatNeedsToBeForgottenForgotten;
+    }
 
     private void sendCompleteOrCancel(boolean isCancel) {
         for (Participant participant : participants) {
@@ -191,15 +226,14 @@ public class LRA {
                 log("LRA " + getConditionalStringValue(isCancel, "compensate", "complete") + " finished,  response:" + response + ":" + responsestatus + " readEntity:" + readEntity);
                 if (responsestatus == 503) { //  Service Unavailable, retriable - todo this should be the full range of invalid values
                     isRecovering = true;
-                } else if (responsestatus == 409) { //  Conflict, retriable
+                } else if (responsestatus == 409) { //conflict, retriable
                     isRecovering = true;
                 } else if (responsestatus == 202) { //accepted
                     isRecovering = true;
                 } else if (responsestatus == 404) {
                     isRecovering = true;
-                } else if (responsestatus == 200 || responsestatus == 410) { // successful or gone (where assumption is complete or compensated)
+                } else if (responsestatus == 200 || responsestatus == 410) { // successful or gone (where presumption is complete or compensated)
                     participant.setParticipantStatus(isCancel ? Compensated : Completed);
-//                    lraStatus = isCancel ? Cancelled : Closed; //this may be unnecessary/redundant
                 } else {
                     isRecovering = true;
                 }
@@ -225,7 +259,7 @@ public class LRA {
     }
 
 
-    void sendAfterLRA() {
+    void sendAfterLRA() { // todo should set isRecovering or needsAfterLRA calls if this fails
         if (areAllInEndState()) {
             for (Participant participant : participants) {
                 try {
@@ -288,7 +322,8 @@ public class LRA {
         }
     }
 
-    void sendForget() { //todo could gate with isprocessing here as well
+    boolean sendForget() { //todo could gate with isprocessing here as well
+        boolean areAllThatNeedToBeForgottenForgotten = true;
         for (Participant participant : participants) {
             if (participant.getForgetURI() == null || participant.isForgotten()) continue;
             try {
@@ -305,10 +340,13 @@ public class LRA {
                 int responsestatus = response.getStatus();
                 log("LRA sendForget:" + participant.getForgetURI() + " finished  response:" + response + ":" + responsestatus);
                 if (responsestatus == 200 || responsestatus == 410) participant.setForgotten();
+                else areAllThatNeedToBeForgottenForgotten = false;
             } catch (Exception e) {
                 log("LRA sendForget Exception:" + e);
+                areAllThatNeedToBeForgottenForgotten = false;
             }
         }
+        return areAllThatNeedToBeForgottenForgotten;
     }
 
     public void setProcessing(boolean isProcessing) {
@@ -363,7 +401,14 @@ public class LRA {
         return true;
     }
 
-    public boolean areAllInEndStateCompensated() {
+    public boolean areAllInEndStateCompletedOrFailedToComplete() {
+        for (Participant participant : participants) {
+            if (participant.getParticipantStatus() != Completed && participant.getParticipantStatus() != FailedToComplete) return false;
+        }
+        return true;
+    }
+
+    public boolean areAllInEndStateCompensatedOrFailedToCompensate() {
         for (Participant participant : participants) {
             if (participant.getParticipantStatus() != Compensated && participant.getParticipantStatus() != FailedToCompensate) return false;
         }
@@ -377,7 +422,7 @@ public class LRA {
         return true;
     }
 
-    private boolean areAllForgotten() {
+    private boolean areAllForgotten() { //todo should be isForgottenOrNoForgetMethodExists
         for (Participant participant : participants) {
             if (!participant.isForgotten()) return false;
         }
