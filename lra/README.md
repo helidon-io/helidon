@@ -26,6 +26,10 @@ todo provide example...
 
 mp.lra.propagation.active=true defined it spec to determine if context is propagated (this is orthogonal to actual tx type annotations)
 
+A config property for both coordinator and participant side that allows hostnames used to be overridden to use service names.
+As we are only implementing the coordinator side, that may be our only option for now.
+This would apply to REST only and not messaging (at least at this time since this would actually logically be part of the messaging layer).
+
 # DB tx logging
 
 If a datasource named "lraloggingdatasource" (or some such) exists, log to db.
