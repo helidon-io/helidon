@@ -63,7 +63,7 @@ public class NarayanaLRARecovery implements LRARecoveryService {
     @Override
     public boolean waitForEndPhaseReplay(URI lraId) {
 //        new Throwable("LRARecovery.waitForEndPhaseReplay just sleeping").printStackTrace();
-        sleep();
+//        sleep();
         if (!recoverLRAs(lraId)) {
             // first recovery scan probably collided with periodic recovery which started
             // before the test execution so try once more
@@ -74,7 +74,7 @@ public class NarayanaLRARecovery implements LRARecoveryService {
 
     private void sleep() {
         try {
-            Thread.sleep(5 * 1000);
+            Thread.sleep(10 * 1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -88,7 +88,7 @@ public class NarayanaLRARecovery implements LRARecoveryService {
      */
     private boolean recoverLRAs(URI lraId) {
 //        new Throwable("LRARecovery.recoverLRAs").printStackTrace();
-        sleep();
+//        sleep();
         // trigger a recovery scan
         Client recoveryCoordinatorClient = ClientBuilder.newClient();
 
