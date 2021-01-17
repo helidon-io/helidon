@@ -216,7 +216,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                             if (queue.release()) {
                                 queues.remove(queue);
                             }
-                            publisherRef.clearBuffer(DataChunk::release);
+                            publisherRef.clearAndRelease();
 
                             // Enables next response to proceed (HTTP pipelining)
                             thisResp.complete(null);

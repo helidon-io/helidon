@@ -16,6 +16,7 @@
 
 package io.helidon.common.reactive;
 
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,6 +41,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     private final EmittingPublisher<T> emitter = new EmittingPublisher<>();
     private final AtomicLong deferredDrains = new AtomicLong(0);
     private final AtomicBoolean draining = new AtomicBoolean(false);
+    private final AtomicBoolean subscribed = new AtomicBoolean(false);
     private final AtomicReference<Throwable> error = new AtomicReference<>();
     private BiConsumer<Long, Long> requestCallback = null;
     private Consumer<? super T> onEmitCallback = null;
@@ -60,6 +62,14 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
 
     @Override
     public void subscribe(final Flow.Subscriber<? super T> subscriber) {
+        Objects.requireNonNull(subscriber, "subscriber is null");
+
+        if (!subscribed.compareAndSet(false, true)) {
+            subscriber.onSubscribe(SubscriptionHelper.CANCELED);
+            subscriber.onError(new IllegalStateException("Only single subscriber is allowed!"));
+            return;
+        }
+
         emitter.onSubscribe(() -> state.get().drain(this));
         emitter.onRequest((n, cnt) -> {
             if (requestCallback != null) {
@@ -68,7 +78,9 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
             state.get().drain(this);
         });
         emitter.onCancel(() -> state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED));
-        emitter.subscribe(subscriber);
+
+        // subscriber is already validated
+        emitter.unsafeSubscribe(subscriber);
     }
 
     /**

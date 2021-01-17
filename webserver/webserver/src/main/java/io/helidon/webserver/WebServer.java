@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -334,6 +334,7 @@ public interface WebServer {
         // for backward compatibility
         @SuppressWarnings("deprecation")
         private ServerConfiguration explicitConfig;
+        private Transport transport;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
 
@@ -378,6 +379,11 @@ public interface WebServer {
                 ((RequestRouting) defaultRouting).fireNewWebServer(result);
             }
             return result;
+        }
+
+        public Builder transport(Transport transport) {
+            configurationBuilder.transport(transport);
+            return this;
         }
 
         /**
