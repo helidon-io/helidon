@@ -175,7 +175,7 @@ public class LRA {
         sendAfterLRA();
         if (areAllInEndState() && areAllAfterLRASuccessfullyCalledOrForgotten()) { // todo areAllInEndState() does not consider/traverse nested
             if (true ||  isRoot && forgetAnyUnilaterallyCompleted()) isReadyToDelete = true; // todo !isRoot is not enough if multilevel
-        } // TckContextTests.testForgetCalledForNestedParticipantsWhenParentIsClosed:237 resource should have called forget for the nested LRA expected:<1> but was:<0>
+        }
         setProcessing(false);
     }
 
@@ -196,9 +196,7 @@ public class LRA {
                 " !areAllForgotten():" + !areAllForgotten() + " isUnilateralCallIfNested:" + isUnilateralCallIfNested);
         if (areAllInEndState() && areAllAfterLRASuccessfullyCalledOrForgotten()) {
             if (forgetAnyUnilaterallyCompleted()) isReadyToDelete = true;
-//            if (false && isChild && !areAllForgotten() && isUnilateralCallIfNested) sendForget(); //only do forget if child autonomously completed, todo this isUnilateralCallIfNested may not be specific enough for all cases
-//            else  isReadyToDelete = true;
-        } // TckContextTests.testForgetCalledForNestedParticipantsWhenParentIsClosed:237 resource should have called forget for the nested LRA expected:<1> but was:<0>
+        }
         setProcessing(false);
     }
 
@@ -438,7 +436,6 @@ public class LRA {
 
     void log(String message) {
         System.out.println("[lra][depth:" + nestedDepth + "] " + message);
-//        System.out.println("ischild:" + isChild + " isParent:" + isParent + " " + message);
     }
 
     private String getConditionalStringValue(boolean isTrue, String first, String second) {

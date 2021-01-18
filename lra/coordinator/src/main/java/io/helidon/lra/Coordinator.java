@@ -17,8 +17,6 @@
 package io.helidon.lra;
 
 import io.helidon.lra.messaging.MessageProcessing;
-import org.eclipse.microprofile.lra.annotation.LRAStatus;
-import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -44,7 +42,6 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVER
 @Tag(name = "LRA Coordinator")
 public class Coordinator implements Runnable {
     public static final String COORDINATOR_PATH_NAME = "lra-coordinator";
-    public static final String RECOVERY_COORDINATOR_PATH_NAME = "lra-recovery-coordinator";
 
     public static final String STATUS_PARAM_NAME = "Status";
     public static final String CLIENT_ID_PARAM_NAME = "ClientID";
@@ -58,13 +55,6 @@ public class Coordinator implements Runnable {
     private UriInfo context;
 
     Map<String, LRA> lraMap = new ConcurrentHashMap();
-    final Object lraRecordMapLock = new Object();
-
-    private static Coordinator singleton;
-
-    public static Coordinator getInstance() {
-        return singleton;
-    }
 
     @Path("/send/{msg}")
     @GET
@@ -76,7 +66,6 @@ public class Coordinator implements Runnable {
     @Inject
     public Coordinator(MessageProcessing msgBean) {
         this.msgBean = msgBean;
-        singleton = this;
     }
 
     @GET
@@ -176,77 +165,6 @@ public class Coordinator implements Runnable {
         return Response.status(400).build();
     }
 
-    @GET
-    @Path("nested/{NestedLraId}/status")
-    public Response getNestedLRAStatus(@PathParam("NestedLraId") String nestedLraId) {
-        return Response.ok("testnestedstatus").build();
-    }
-
-    @PUT
-    @Path("nested/{NestedLraId}/complete")
-    public Response completeNestedLRA(@PathParam("NestedLraId") String nestedLraId) {
-        log("completeNestedLRA");
-        log("completeNestedLRA");
-        log("completeNestedLRA");
-        log("completeNestedLRA");
-        log("completeNestedLRA");
-        log("completeNestedLRA");
-        log("completeNestedLRA");
-        log("completeNestedLRA");
-        log("completeNestedLRA");
-        log("completeNestedLRA");
-        log("completeNestedLRA");
-//        return Response.ok(Objects.requireNonNull(mapToParticipantStatus(endLRA(toURI(nestedLraId), false, true))).name()).build();
-        return Response.ok(ParticipantStatus.Completed.name()).build();
-    }
-
-    @PUT
-    @Path("nested/{NestedLraId}/compensate")
-    public Response compensateNestedLRA(@PathParam("NestedLraId") String nestedLraId) {
-        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-        log(" compensateNestedLRA nestedLraId = " + nestedLraId);
-//        return Response.ok(mapToParticipantStatus(endLRA(toURI(nestedLraId), true, true)).name()).build();
-        LRA lra = lraMap.get(nestedLraId);
-        return Response.ok(ParticipantStatus.Compensated.name()).build();
-    }
-
-    private ParticipantStatus mapToParticipantStatus(LRAStatus lraStatus) {
-        switch (lraStatus) {
-            case Active:
-                return ParticipantStatus.Active;
-            case Closed:
-                return ParticipantStatus.Completed;
-            case Cancelled:
-                return ParticipantStatus.Compensated;
-            case Closing:
-                return ParticipantStatus.Completing;
-            case Cancelling:
-                return ParticipantStatus.Compensating;
-            case FailedToClose:
-                return ParticipantStatus.FailedToComplete;
-            case FailedToCancel:
-                return ParticipantStatus.FailedToCompensate;
-            default:
-                return null;
-        }
-    }
-
-    @PUT
-    @Path("nested/{NestedLraId}/forget")
-    public Response forgetNestedLRA(@PathParam("NestedLraId") String nestedLraId) {
-        log(" forgetNestedLRA nestedLraId = " + nestedLraId);
-        return Response.ok().build();
-    }
-
     @PUT
     @Path("{LraId}/close")
     @Produces(MediaType.TEXT_PLAIN)
@@ -284,16 +202,6 @@ public class Coordinator implements Runnable {
         lra.terminate(true, true);
         return Response.ok().build();
     }
-
-    //for nested
-//    private LRAStatus endLRA(URI lraId, boolean compensate, boolean fromHierarchy) throws NotFoundException {
-//        String lraString = lraId.toString().substring(lraId.toString().indexOf("LRAID"), lraId.toString().length() - 1);
-//        LRA lra = lraMap.get(lraString);
-//        log("endLRA lraRecord:" + " lraRecord for lraId:" + lraString);
-//        if (lra == null) throw new NotFoundException("LRA not found:" + lraString);
-//        lra.terminate(compensate);
-//        return Closed;
-//    }
 
     @PUT
     @Path("{LraId}")
@@ -336,8 +244,7 @@ public class Coordinator implements Runnable {
         }
         String debugString = lra.addParticipant(compensatorLink, false);
         log("[join] " + debugString + " to " + getParentChildDebugString(lra) +
-                " lraIdParam = " + lraIdParam + ", timeLimit = " + timeLimit ); // +
-//                ", compensatorLink = " + compensatorLink + ", compensatorData = " + compensatorData);
+                " lraIdParam = " + lraIdParam + ", timeLimit = " + timeLimit );
         StringBuilder recoveryUrl = new StringBuilder(); //todo
         try {
             return Response.status(status)
@@ -420,11 +327,9 @@ public class Coordinator implements Runnable {
 
     private URI toURI(String lraId, String message) {
         URL url;
-
         try {
-            // see if it already in the correct format
             url = new URL(lraId);
-            url.toURI();
+            return url.toURI();
         } catch (Exception e) {
             try {
                 url = new URL(String.format("%s%s/%s", context.getBaseUri(), COORDINATOR_PATH_NAME, lraId));
