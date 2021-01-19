@@ -12,27 +12,43 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package io.helidon.microprofile.scheduling;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Scheduled to be invoked periodically according to supplied cron expression.
+ * Scheduled to be invoked periodically at fixed rate.
+ * Value is interpreted as seconds by default, can be overridden by {@link #timeUnit()}.
  */
 @Retention(RUNTIME)
 @Target({METHOD})
-public @interface Scheduled {
+public @interface FixedRate {
 
     /**
-     * Cron expression specifying period for invocation.
-     *
-     * @return cron expression as string
+     * Look for fixed rate value in the scheduling config.
      */
-    String value();
+    Long EXTERNALLY_CONFIGURED = Long.MIN_VALUE;
+
+    /**
+     * Fixed rate for periodical invocation.
+     */
+    long value() default Long.MIN_VALUE;
+
+    /**
+     * Initial delay of the first invocation.
+     */
+    long initialDelay() default 0;
+
+    /**
+     * Time unit for interpreting supplied values.
+     */
+    TimeUnit timeUnit() default TimeUnit.SECONDS;
 }

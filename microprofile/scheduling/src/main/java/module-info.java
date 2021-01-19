@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ module io.helidon.microprofile.scheduling {
     requires jakarta.interceptor.api;
     requires io.helidon.config;
     requires io.helidon.config.mp;
-    //requires com.cronutils.builder;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
     requires cron.utils;

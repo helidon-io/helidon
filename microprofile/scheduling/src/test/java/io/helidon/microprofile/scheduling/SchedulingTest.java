@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.scheduling;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
@@ -24,6 +25,7 @@ import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddBeans;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.AddExtensions;
+import io.helidon.microprofile.tests.junit5.Configuration;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
@@ -41,6 +43,7 @@ import org.junit.jupiter.api.Test;
 @AddExtensions({
         @AddExtension(SchedulingCdiExtension.class),
 })
+@Configuration(configSources = "test.properties")
 public class SchedulingTest {
 
     static final long TWO_SEC_MILLIS = 2 * 1000L;
@@ -48,12 +51,55 @@ public class SchedulingTest {
     @Inject
     ScheduledBean scheduledBean;
 
+
+    final CountDownLatch fixedRateLatch = new CountDownLatch(5);
+    final CountDownLatch fixedRateFromConfigLatch = new CountDownLatch(2);
+    final CountDownLatch exprLatch = new CountDownLatch(1);
+
+    @FixedRate(value = 100, timeUnit = TimeUnit.MILLISECONDS)
+    public void rate() {
+        fixedRateLatch.countDown();
+    }
+
+    @FixedRate
+    public void rateFromConfig() {
+        fixedRateFromConfigLatch.countDown();
+    }
+
+    @Scheduled("${test-cron-expr}")
+    void placeholder() {
+        exprLatch.countDown();
+    }
+
+    @Test
+    void expressionPlaceHolder() throws InterruptedException {
+        assertThat("Scheduled method expected to be invoked at least once",
+                exprLatch.await(5, TimeUnit.SECONDS));
+    }
+
     @Test
     void executedEvery2Sec() throws InterruptedException {
         assertThat("Scheduled method expected to be invoked at least twice",
-                scheduledBean.getCountDownLatch().await(5, TimeUnit.SECONDS));
-        assertDuration(scheduledBean.getDuration(), 200);
+                scheduledBean.getCountDownLatch().await(10, TimeUnit.SECONDS));
+        assertDuration(scheduledBean.getDuration(), 2000);
     }
+
+    @Test
+    void fixedRate() throws InterruptedException {
+        assertThat("Scheduled method expected to be invoked at least 5 times",
+                fixedRateLatch.await(3, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void fixedRateFromConfig() throws InterruptedException {
+        assertThat("Scheduled method expected to be invoked at least twice",
+                fixedRateLatch.await(3, TimeUnit.SECONDS));
+    }
+
+//    @Test
+//    void await() throws InterruptedException {
+//        Single.never().await();
+//    }
 
     private void assertDuration(long duration, long allowedDiscrepancy) {
         String durationString = "Expected duration is 2 sec, but was " + ((float) duration / 1000) + "sec";

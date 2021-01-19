@@ -15,7 +15,13 @@
  *
  */
 
-/**
- * CDI Scheduling implementation.
- */
 package io.helidon.microprofile.scheduling;
+
+interface Task extends Runnable {
+    String description();
+
+    @FunctionalInterface
+    interface InternalTask {
+        void run() throws Throwable;
+    }
+}
