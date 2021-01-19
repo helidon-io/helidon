@@ -18,7 +18,6 @@ package io.helidon.microprofile.scheduling;
 
 import java.time.LocalTime;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;

@@ -23,6 +23,8 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,15 +41,21 @@ class CronTask implements Task {
 
     private static final Logger LOGGER = Logger.getLogger(CronTask.class.getName());
 
+    private final AtomicLong iteration = new AtomicLong(0);
     private final ExecutionTime executionTime;
+    private final boolean concurrentExecution;
     private final Task.InternalTask actualTask;
     private final ScheduledExecutorService executorService;
     private final Cron cron;
+    private final ReentrantLock scheduleNextLock = new ReentrantLock();
+    private ZonedDateTime lastNext = null;
 
     CronTask(ScheduledExecutorService executorService,
              String cronExpression,
+             boolean concurrentExecution,
              Task.InternalTask actualTask) {
         this.executorService = executorService;
+        this.concurrentExecution = concurrentExecution;
         this.actualTask = actualTask;
 
         CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(QUARTZ);
@@ -60,12 +68,38 @@ class CronTask implements Task {
 
     @Override
     public void run() {
+        if (concurrentExecution) {
+            scheduleNext();
+        }
         try {
-            actualTask.run();
+            long it = iteration.incrementAndGet();
+            actualTask.run(new CronInvocation() {
+                @Override
+                public String cron() {
+                    return cron.asString();
+                }
+
+                @Override
+                public boolean concurrent() {
+                    return concurrentExecution;
+                }
+
+                @Override
+                public long iteration() {
+                    return it;
+                }
+
+                @Override
+                public String description() {
+                    return CronTask.this.description();
+                }
+            });
         } catch (Throwable e) {
             LOGGER.log(Level.SEVERE, e, () -> "Error when invoking scheduled method.");
         }
-        scheduleNext();
+        if (!concurrentExecution) {
+            scheduleNext();
+        }
     }
 
     @Override
@@ -74,10 +108,33 @@ class CronTask implements Task {
     }
 
     private void scheduleNext() {
-        ZonedDateTime now = ZonedDateTime.now();
-        Optional<Duration> time = executionTime.timeToNextExecution(now);
-        time.ifPresent(t ->
-                executorService.schedule(this, t.toMillis(), TimeUnit.MILLISECONDS)
-        );
+        try {
+            scheduleNextLock.lock();
+
+            ZonedDateTime now = ZonedDateTime.now();
+            Optional<ZonedDateTime> nextExecution = executionTime.nextExecution(now);
+            if (nextExecution.isEmpty()) {
+                return;
+            }
+
+            ZonedDateTime next = nextExecution.get();
+
+            Optional<Duration> time;
+            if (lastNext != null && lastNext.isEqual(next)) {
+                lastNext = executionTime.nextExecution(now).orElse(null);
+                time = executionTime.timeToNextExecution(next);
+            } else {
+                lastNext = next;
+                time = executionTime.timeToNextExecution(now);
+            }
+
+            time.ifPresent(t -> {
+                        executorService.schedule(this, t.toMillis(), TimeUnit.MILLISECONDS);
+                    }
+            );
+
+        } finally {
+            scheduleNextLock.unlock();
+        }
     }
 }

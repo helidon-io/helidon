@@ -17,13 +17,19 @@
 
 package io.helidon.microprofile.scheduling;
 
+import java.util.Map;
+
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.DeploymentException;
 
+import io.helidon.config.mp.MpConfigSources;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
@@ -48,15 +54,21 @@ public class InvalidStateTest {
         }
     }
 
-    static class UnresolvedFixedDelay {
-        @FixedRate
-        void unresolvedDelay() {
+    static class NegativeDelay {
+        @FixedRate(-1)
+        void negativeDelay() {
         }
     }
 
     static class ZeroRateBean {
         @FixedRate(0)
         void zeroRate() {
+        }
+    }
+
+    static class InvalidTimeUnit {
+        @FixedRate(2)
+        void invalidTimeUnitMethod() {
         }
     }
 
@@ -81,17 +93,35 @@ public class InvalidStateTest {
     }
 
     @Test
-    void unresolvedFixedDelay() {
-        assertDeploymentException(IllegalArgumentException.class, UnresolvedFixedDelay.class);
+    void negativeDelay() {
+        assertDeploymentException(IllegalArgumentException.class, NegativeDelay.class);
+    }
+
+    @Test
+    void invalidTimeUnit() {
+        assertDeploymentException(IllegalArgumentException.class,
+                Map.of("scheduling.invalidTimeUnitMethod.time-unit", "LIGHT_YEAR"),
+                InvalidTimeUnit.class);
+    }
+
+    void assertDeploymentException(Class<? extends Throwable> expected, Class<?>... beans) {
+        assertDeploymentException(expected, Map.of(), beans);
     }
 
     @SuppressWarnings("unchecked")
-    void assertDeploymentException(Class<? extends Throwable> expected, Class<?>... beans) {
-        System.setProperty("mp.initializer.allow", "true");
+    void assertDeploymentException(Class<? extends Throwable> expected, Map<String, String> configMap, Class<?>... beans) {
+        Config config = ConfigProviderResolver.instance().getBuilder()
+                .withSources(MpConfigSources.create(configMap),
+                        MpConfigSources.create(Map.of("mp.initializer.allow", "true")))
+                .build();
+
+        ConfigProviderResolver.instance()
+                .registerConfig(config, Thread.currentThread().getContextClassLoader());
+
         SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         initializer.addExtensions(SchedulingCdiExtension.class);
         initializer.addBeanClasses(beans);
-        try (SeContainer container = initializer.initialize()) {
+        try (SeContainer c = initializer.initialize()) {
             fail("Expected " + expected.getName());
         } catch (AssertionFailedError e) {
             throw e;

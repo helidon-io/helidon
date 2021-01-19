@@ -19,12 +19,15 @@ package io.helidon.microprofile.scheduling;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 class FixedRateTask implements Task {
 
     private static final Logger LOGGER = Logger.getLogger(FixedRateTask.class.getName());
+
+    private final AtomicLong iteration = new AtomicLong(0);
     private final long initialDelay;
     private final long delay;
     private final TimeUnit timeUnit;
@@ -44,17 +47,44 @@ class FixedRateTask implements Task {
 
     @Override
     public String description() {
+        String unit = timeUnit.toString().toLowerCase();
         if (initialDelay == 0) {
-            return String.format("Every %s %s", delay, timeUnit.toString());
+            return String.format("every %s %s", delay, unit);
         }
-        return String.format("Every %s %s with initial delay %s %s",
-                delay, timeUnit.toString(), initialDelay, timeUnit.toString());
+        return String.format("every %s %s with initial delay %s %s",
+                delay, unit, initialDelay, unit);
     }
 
     @Override
     public void run() {
         try {
-            actualTask.run();
+            long it = iteration.incrementAndGet();
+            actualTask.run(new FixedRateInvocation() {
+                @Override
+                public long initialDelay() {
+                    return initialDelay;
+                }
+
+                @Override
+                public long delay() {
+                    return delay;
+                }
+
+                @Override
+                public TimeUnit timeUnit() {
+                    return timeUnit;
+                }
+
+                @Override
+                public long iteration() {
+                    return it;
+                }
+
+                @Override
+                public String description() {
+                    return FixedRateTask.this.description();
+                }
+            });
         } catch (Throwable e) {
             LOGGER.log(Level.SEVERE, e, () -> "Error when invoking scheduled method.");
         }

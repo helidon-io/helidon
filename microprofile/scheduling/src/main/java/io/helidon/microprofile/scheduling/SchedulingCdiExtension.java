@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.scheduling;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -45,7 +47,6 @@ import javax.enterprise.inject.spi.WithAnnotations;
 
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
 
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
@@ -84,7 +85,8 @@ public class SchedulingCdiExtension implements Extension {
 
     void invoke(@Observes @Priority(PLATFORM_AFTER + 4000) @Initialized(ApplicationScoped.class) Object event,
                 BeanManager beanManager) {
-        Config config = ((Config) ConfigProvider.getConfig()).get("scheduling");
+        Config rootConfig = (Config) ConfigProvider.getConfig();
+        Config config = rootConfig.get("scheduling");
 
         ScheduledThreadPoolSupplier scheduledThreadPoolSupplier = ScheduledThreadPoolSupplier.builder()
                 .threadNamePrefix(config.get("thread-name-prefix").asString().orElse("scheduled-"))
@@ -112,13 +114,23 @@ public class SchedulingCdiExtension implements Extension {
                         method.getName()));
             }
 
+            Config methodConfig = config.get(method.getName());
+
             if (am.isAnnotationPresent(FixedRate.class)) {
                 FixedRate annotation = am.getAnnotation(FixedRate.class);
 
-                long delay = resolveFixedRateFromConfig(annotation.value(), method.getName(), config);
+                long initialDelay = methodConfig.get("initial-delay").asLong()
+                        .orElseGet(annotation::initialDelay);
 
-                Task task = new FixedRateTask(executorService, annotation.initialDelay(), delay,
-                        annotation.timeUnit(), () -> method.invoke(beanInstance));
+                long delay = methodConfig.get("delay").asLong()
+                        .orElseGet(annotation::value);
+
+                TimeUnit timeUnit = methodConfig.get("time-unit").asString()
+                        .map(TimeUnit::valueOf)
+                        .orElseGet(annotation::timeUnit);
+
+                Task task = new FixedRateTask(executorService, initialDelay, delay, timeUnit,
+                        inv -> invokeWithOptionalParam(beanInstance, method, inv));
 
                 LOGGER.log(Level.FINE, () -> String.format("Method %s#%s scheduled to be executed %s",
                         aClass.getSimpleName(), method.getName(), task.description()));
@@ -126,8 +138,14 @@ public class SchedulingCdiExtension implements Extension {
             } else if (am.isAnnotationPresent(Scheduled.class)) {
                 Scheduled annotation = am.getAnnotation(Scheduled.class);
 
-                String resolvedValue = resolvePlaceholders(annotation.value(), config);
-                Task task = new CronTask(executorService, resolvedValue, () -> method.invoke(beanInstance));
+                String cron = methodConfig.get("cron").asString()
+                        .orElseGet(() -> resolvePlaceholders(annotation.value(), rootConfig));
+
+                boolean concurrent = methodConfig.get("concurrent").asBoolean()
+                        .orElseGet(annotation::concurrentExecution);
+
+                Task task = new CronTask(executorService, cron, concurrent,
+                        inv -> invokeWithOptionalParam(beanInstance, method, inv));
 
                 LOGGER.log(Level.FINE, () -> String.format("Method %s#%s scheduled to be executed %s",
                         aClass.getSimpleName(), method.getName(), task.description()));
@@ -143,35 +161,46 @@ public class SchedulingCdiExtension implements Extension {
     static <T> T lookup(Bean<?> bean, BeanManager beanManager) {
         javax.enterprise.context.spi.Context context = beanManager.getContext(bean.getScope());
         Object instance = context.get(bean);
+
         if (instance == null) {
             CreationalContext<?> creationalContext = beanManager.createCreationalContext(bean);
             instance = beanManager.getReference(bean, bean.getBeanClass(), creationalContext);
         }
+
         if (instance == null) {
             throw new DeploymentException("Instance of bean " + bean.getName() + " not found");
         }
+
         return (T) instance;
     }
 
-    static long resolveFixedRateFromConfig(long annotatedValue, String methodName, Config config) {
-        if (annotatedValue != FixedRate.EXTERNALLY_CONFIGURED) {
-            return annotatedValue;
-        }
+    static void invokeWithOptionalParam(Object instance, Method method, Invocation invocation)
+            throws InvocationTargetException, IllegalAccessException {
 
-        ConfigValue<Long> configuredDelay = config.get(methodName).get("delay").asLong();
-        if (!configuredDelay.isPresent()) {
-            throw new IllegalArgumentException(
-                    String.format("FixedRate on the method %s doesn't have configured any delay.", methodName)
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        Class<? extends Invocation> invClazz = invocation.getClass();
+
+        if (parameterTypes.length > 1 ||
+                parameterTypes.length > 0 && !parameterTypes[0].isAssignableFrom(invClazz)) {
+
+            throw new DeploymentException(
+                    String.format("Unsupported param types for scheduled method %s, none or %s is supported.",
+                            method.getName(), invClazz.getName())
             );
         }
 
-        return configuredDelay.get();
+        if (parameterTypes.length == 0) {
+            method.invoke(instance);
+        } else {
+            method.invoke(instance, invocation);
+        }
     }
 
     static String resolvePlaceholders(String src, Config config) {
         Matcher m = CRON_PLACEHOLDER_PATTERN.matcher(src);
         StringBuilder result = new StringBuilder();
         int index = 0;
+
         while (m.find()) {
             String key = m.group("key");
             String value = config.get(key)
@@ -179,12 +208,15 @@ public class SchedulingCdiExtension implements Extension {
                     .orElseThrow(() ->
                             new IllegalArgumentException(String.format("Scheduling placeholder %s could not be resolved.", key))
                     );
+
             result.append(src, index, m.start()).append(value);
             index = m.end();
         }
+
         if (index < src.length()) {
             result.append(src, index, src.length());
         }
+
         return result.toString();
     }
 }

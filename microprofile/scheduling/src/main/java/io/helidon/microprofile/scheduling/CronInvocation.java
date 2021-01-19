@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c)  2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,22 @@
 
 package io.helidon.microprofile.scheduling;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
-import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
 /**
- * Scheduled to be invoked periodically according to supplied cron expression.
+ * Specific method invocation metadata for method scheduled with {@link io.helidon.microprofile.scheduling.Scheduled}.
  */
-@Retention(RUNTIME)
-@Target({METHOD})
-public @interface Scheduled {
+public interface CronInvocation extends Invocation {
 
     /**
-     * Cron expression specifying period for invocation.
+     * Cron expression specifying interval invocation is scheduled with.
      *
-     * @return cron expression as string
+     * @return cron expression
      */
-    String value();
+    String cron();
 
     /**
      * When true, next task is started even if previous didn't finish yet.
      *
-     * @return true for allowing concurrent invocation
+     * @return true means allowing concurrent invocation
      */
-    boolean concurrentExecution() default true;
+    boolean concurrent();
 }

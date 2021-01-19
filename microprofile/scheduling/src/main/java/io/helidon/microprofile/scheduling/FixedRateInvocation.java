@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c)  2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,38 +12,35 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.microprofile.scheduling;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
 /**
- * Scheduled to be invoked periodically at fixed rate.
- * Value is interpreted as seconds by default, can be overridden by {@link #timeUnit()}.
+ * Specific method invocation metadata for method scheduled with {@link io.helidon.microprofile.scheduling.FixedRate}.
  */
-@Retention(RUNTIME)
-@Target({METHOD})
-public @interface FixedRate {
+public interface FixedRateInvocation extends Invocation {
 
     /**
-     * Fixed rate for periodical invocation.
+     * Initial delay before the very first invocation.
+     *
+     * @return delay in units specified by {@link #timeUnit()}
      */
-    long value();
+    long initialDelay();
 
     /**
-     * Initial delay of the first invocation.
+     * Delay before next invocation.
+     *
+     * @return delay in units specified by {@link #timeUnit()}
      */
-    long initialDelay() default 0;
+    long delay();
 
     /**
-     * Time unit for interpreting supplied values.
+     * Time unit used for interpreting {@link #initialDelay()} and {@link #delay()}.
+     *
+     * @return used time unit
      */
-    TimeUnit timeUnit() default TimeUnit.SECONDS;
+    TimeUnit timeUnit();
 }
