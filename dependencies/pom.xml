@@ -18,7 +18,7 @@
 -->
 
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon</groupId>
@@ -273,11 +273,11 @@
                 <artifactId>jakarta.interceptor-api</artifactId>
                 <version>${version.lib.interceptor-api}</version>
                 <exclusions>
-                    <!-- Exclude EJB. See https://github.com/eclipse-ee4j/interceptor-api/issues/31 -->
-                    <exclusion>
-                        <groupId>jakarta.ejb</groupId>
-                        <artifactId>jakarta.ejb-api</artifactId>
-                    </exclusion>
+                  <!-- Exclude EJB. See https://github.com/eclipse-ee4j/interceptor-api/issues/31 -->
+                  <exclusion>
+                      <groupId>jakarta.ejb</groupId>
+                      <artifactId>jakarta.ejb-api</artifactId>
+                  </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -434,9 +434,9 @@
                 <version>${version.lib.grpc}</version>
             </dependency>
             <dependency>
-                <groupId>io.opentracing.contrib</groupId>
-                <artifactId>opentracing-grpc</artifactId>
-                <version>${version.lib.opentracing.grpc}</version>
+              <groupId>io.opentracing.contrib</groupId>
+              <artifactId>opentracing-grpc</artifactId>
+              <version>${version.lib.opentracing.grpc}</version>
             </dependency>
 
             <!-- Webserver related -->
@@ -839,10 +839,10 @@
                 <artifactId>jboss-transaction-spi</artifactId>
                 <version>${version.lib.jboss.transaction-spi}</version>
                 <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.spec.javax.resource</groupId>
-                        <artifactId>jboss-connector-api_1.7_spec</artifactId>
-                    </exclusion>
+                  <exclusion>
+                      <groupId>org.jboss.spec.javax.resource</groupId>
+                      <artifactId>jboss-connector-api_1.7_spec</artifactId>
+                  </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
