@@ -26,6 +26,7 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -41,6 +42,7 @@ import javax.enterprise.context.Initialized;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
+import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedConstructor;
 import javax.enterprise.inject.spi.AnnotatedMember;
@@ -107,7 +109,7 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 /**
  * MetricsCdiExtension class.
  */
-public class MetricsCdiExtension implements Extension {
+public class MetricsCdiExtension extends MetricsCdiExtensionBase {
     private static final Logger LOGGER = Logger.getLogger(MetricsCdiExtension.class.getName());
 
     private static final List<Class<? extends Annotation>> METRIC_ANNOTATIONS
@@ -143,9 +145,26 @@ public class MetricsCdiExtension implements Extension {
     private final Set<Class<?>> syntheticSimpleTimerClassesProcessed = new HashSet<>();
     private final Set<Method> syntheticSimpleTimersToRegister = new HashSet<>();
 
+    private final boolean supportsMicrometer;
+
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
         return (T) bm.getReference(bean, type, bm.createCreationalContext(bean));
+    }
+
+    public MetricsCdiExtension() {
+        super(LOGGER);
+        supportsMicrometer = checkMicrometerPresent();
+    }
+
+    private static boolean checkMicrometerPresent() {
+        boolean result = true;
+        try {
+            Class.forName("io.micrometer.core.instrument.MeterRegistry");
+        } catch (ClassNotFoundException ex) {
+            result = false;
+        }
+        return result;
     }
 
     /**
@@ -314,6 +333,26 @@ public class MetricsCdiExtension implements Extension {
         discovery.addAnnotatedType(RestEndpointMetricsInfo.class, RestEndpointMetricsInfo.class.getSimpleName());
     }
 
+//    private void after(@Observes AfterBeanDiscovery abd) {
+//        if (supportsMicrometer) {
+//            initMicrometerSupport(abd);
+//        }
+//    }
+//
+//    private void initMicrometerSupport(AfterBeanDiscovery abd) {
+//        MicrometerMetricsCdiExtension ext = MicrometerMetricsCdiExtension.Lazy.INSTANCE;
+//        Arrays.stream(ext.getClass()
+//                .getMethods())
+//                .filter(MetricsCdiExtension::observes)
+//                .forEach(m -> abd.addObserverMethod().read(m));
+//    }
+
+    private static boolean observes(Method m) {
+        return Arrays.stream(m.getParameters())
+                .filter(param -> param.getAnnotation(Observes.class) != null)
+                .findFirst()
+                .isPresent();
+    }
     private void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
         if (LOGGER.isLoggable(Level.FINE)) {
             Set<Class<?>> metricsAnnotatedClassesIgnored = new HashSet<>(metricsAnnotatedClasses);

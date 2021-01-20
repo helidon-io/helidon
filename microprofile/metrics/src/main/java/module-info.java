@@ -33,6 +33,7 @@ module io.helidon.microprofile.metrics {
     requires transitive microprofile.config.api;
     requires microprofile.metrics.api;
 
+    requires micrometer.core;
 
     exports io.helidon.microprofile.metrics;
 

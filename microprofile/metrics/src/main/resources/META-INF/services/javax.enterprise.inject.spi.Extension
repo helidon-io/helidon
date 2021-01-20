@@ -15,3 +15,4 @@
 #
 
 io.helidon.microprofile.metrics.MetricsCdiExtension
+io.helidon.microprofile.metrics.MicrometerMetricsCdiExtension
