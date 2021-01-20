@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -26,7 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -244,7 +244,7 @@ class MethodInvoker implements FtSupplier<Object> {
         @Override
         public T get(long timeout, TimeUnit unit) throws InterruptedException,
                 ExecutionException, java.util.concurrent.TimeoutException {
-            T value = super.get();
+            T value = super.get(timeout, unit);
             if (method.getReturnType() == Future.class) {
                 return ((Future<T>) value).get(timeout, unit);
             }
@@ -329,8 +329,8 @@ class MethodInvoker implements FtSupplier<Object> {
                     () -> methodState.breakerTimerClosed,
                     introspector.getMethodNameTag(),
                     CircuitBreakerState.CLOSED.get());
-
-            CircuitBreakerOpenedTotal.register(introspector.getMethodNameTag());
+            CircuitBreakerOpenedTotal.register(
+                    introspector.getMethodNameTag());
         }
         if (introspector.hasBulkhead()) {
             BulkheadExecutionsRunning.register(
@@ -780,20 +780,17 @@ class MethodInvoker implements FtSupplier<Object> {
                     CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
                             CircuitBreakerResult.SUCCESS.get()).inc();
                 } else if (!(cause instanceof CircuitBreakerOpenException)) {
-                    boolean failure = false;
-                    Class<? extends Throwable>[] failOn = introspector.getCircuitBreaker().failOn();
-                    for (Class<? extends Throwable> c : failOn) {
-                        if (c.isAssignableFrom(cause.getClass())) {
-                            failure = true;
-                            break;
-                        }
-                    }
-                    if (failure) {
-                        CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
-                                CircuitBreakerResult.FAILURE.get()).inc();
-                    } else {
+                    boolean skipOnThrowable = Arrays.stream(introspector.getCircuitBreaker().skipOn())
+                            .anyMatch(c -> c.isAssignableFrom(cause.getClass()));
+                    boolean failOnThrowable = Arrays.stream(introspector.getCircuitBreaker().failOn())
+                            .anyMatch(c -> c.isAssignableFrom(cause.getClass()));
+
+                    if (skipOnThrowable || !failOnThrowable) {
                         CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
                                 CircuitBreakerResult.SUCCESS.get()).inc();
+                    } else {
+                        CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
+                                CircuitBreakerResult.FAILURE.get()).inc();
                     }
                 }
 

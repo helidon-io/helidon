@@ -102,7 +102,7 @@ class MetricsTest extends FaultToleranceTest {
                 getMethodTag(bean, "retryTwo"),
                 VALUE_RETURNED.get(),
                 NOT_DEFINED.get());
-        assertThat(total.getCount(), is(1L));
+        assertThat(total.getCount(), is(0L));
 
         Counter failedTotal = InvocationsTotal.get(
                 getMethodTag(bean, "retryTwo"),
