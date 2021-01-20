@@ -31,6 +31,7 @@ public class RetryTimeoutException extends TimeoutException {
      * Constructs a {@code RetryTimeoutException} with the specified detail
      * message.
      *
+     * @param throwable last retry exception
      * @param message the detail message
      */
     public RetryTimeoutException(Throwable throwable, String message) {

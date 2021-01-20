@@ -56,12 +56,29 @@ import org.glassfish.jersey.process.internal.RequestContext;
 import org.glassfish.jersey.process.internal.RequestScope;
 
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
-import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
-import static io.helidon.microprofile.faulttolerance.ThrowableMapper.mapTypes;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.*;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadCallsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadExecutionsRunning;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadExecutionsWaiting;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadResult;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadRunningDuration;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadWaitingDuration;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerCallsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerOpenedTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerResult;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerState;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerStateTotal;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.EXCEPTION_THROWN;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.VALUE_RETURNED;
-
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryCallsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryResult;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryRetried;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryRetriesTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutCallsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutExecutionDuration;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutTimedOut;
+import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
+import static io.helidon.microprofile.faulttolerance.ThrowableMapper.mapTypes;
 /**
  * Invokes a FT method applying semantics based on method annotations. An instance
  * of this class is created for each method invocation. Some state is shared across

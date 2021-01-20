@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,6 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.APPLIED;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.NOT_APPLIED;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.NOT_DEFINED;
-
 import io.helidon.microprofile.faulttolerance.MethodAntn.LookupResult;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
@@ -31,10 +27,13 @@ import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.eclipse.microprofile.metrics.Tag;
 
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.APPLIED;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.NOT_APPLIED;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.NOT_DEFINED;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceParameter.getParameter;
 import static io.helidon.microprofile.faulttolerance.MethodAntn.lookupAnnotation;
-import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Class MethodIntrospector.

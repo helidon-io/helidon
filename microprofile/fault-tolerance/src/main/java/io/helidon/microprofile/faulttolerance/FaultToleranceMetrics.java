@@ -30,7 +30,6 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
@@ -70,7 +69,7 @@ class FaultToleranceMetrics {
      * Base class for Fault Tolerance metrics. Shares common logic for registration
      * and lookup of metrics.
      */
-    static abstract class FaultToleranceMetric {
+    abstract static class FaultToleranceMetric {
 
         abstract String name();
 
@@ -204,7 +203,7 @@ class FaultToleranceMetrics {
      */
     static class InvocationsTotal extends FaultToleranceMetric {
 
-        final static InvocationsTotal INSTANCE = new InvocationsTotal();
+        static final InvocationsTotal INSTANCE = new InvocationsTotal();
 
         private InvocationsTotal() {
         }
@@ -279,7 +278,7 @@ class FaultToleranceMetrics {
      */
     static class RetryCallsTotal extends FaultToleranceMetric {
 
-        final static RetryCallsTotal INSTANCE = new RetryCallsTotal();
+        static final RetryCallsTotal INSTANCE = new RetryCallsTotal();
 
         private RetryCallsTotal() {
         }
@@ -318,7 +317,7 @@ class FaultToleranceMetrics {
      */
     static class RetryRetriesTotal extends FaultToleranceMetric {
 
-        final static RetryRetriesTotal INSTANCE = new RetryRetriesTotal();
+        static final RetryRetriesTotal INSTANCE = new RetryRetriesTotal();
 
         private RetryRetriesTotal() {
         }
@@ -374,7 +373,7 @@ class FaultToleranceMetrics {
      */
     static class TimeoutCallsTotal extends FaultToleranceMetric {
 
-        final static TimeoutCallsTotal INSTANCE = new TimeoutCallsTotal();
+        static final TimeoutCallsTotal INSTANCE = new TimeoutCallsTotal();
 
         private TimeoutCallsTotal() {
         }
@@ -386,9 +385,9 @@ class FaultToleranceMetrics {
 
         @Override
         String description() {
-            return "The number of times the timeout logic was run. This will usually be once " +
-                    "per method call, but may be zero times if the circuit breaker prevents " +
-                    "execution or more than once if the method is retried.";
+            return "The number of times the timeout logic was run. This will usually be once "
+                    + "per method call, but may be zero times if the circuit breaker prevents "
+                    + "execution or more than once if the method is retried.";
         }
 
         @Override
@@ -415,7 +414,7 @@ class FaultToleranceMetrics {
      */
     static class TimeoutExecutionDuration extends FaultToleranceMetric {
 
-        final static TimeoutExecutionDuration INSTANCE = new TimeoutExecutionDuration();
+        static final TimeoutExecutionDuration INSTANCE = new TimeoutExecutionDuration();
 
         private TimeoutExecutionDuration() {
         }
@@ -490,7 +489,7 @@ class FaultToleranceMetrics {
      */
     static class CircuitBreakerCallsTotal extends FaultToleranceMetric {
 
-        final static CircuitBreakerCallsTotal INSTANCE = new CircuitBreakerCallsTotal();
+        static final CircuitBreakerCallsTotal INSTANCE = new CircuitBreakerCallsTotal();
 
         private CircuitBreakerCallsTotal() {
         }
@@ -502,8 +501,8 @@ class FaultToleranceMetrics {
 
         @Override
         String description() {
-            return "The number of times the circuit breaker logic was run. This will usually be once " +
-                    "per method call, but may be more than once if the method call is retried.";
+            return "The number of times the circuit breaker logic was run. This will usually be once "
+                    + "per method call, but may be more than once if the method call is retried.";
         }
 
         @Override
@@ -530,7 +529,7 @@ class FaultToleranceMetrics {
      */
     static class CircuitBreakerStateTotal extends FaultToleranceMetric {
 
-        final static CircuitBreakerStateTotal INSTANCE = new CircuitBreakerStateTotal();
+        static final CircuitBreakerStateTotal INSTANCE = new CircuitBreakerStateTotal();
 
         private CircuitBreakerStateTotal() {
         }
@@ -570,7 +569,7 @@ class FaultToleranceMetrics {
      */
     static class CircuitBreakerOpenedTotal extends FaultToleranceMetric {
 
-        final static CircuitBreakerOpenedTotal INSTANCE = new CircuitBreakerOpenedTotal();
+        static final CircuitBreakerOpenedTotal INSTANCE = new CircuitBreakerOpenedTotal();
 
         private CircuitBreakerOpenedTotal() {
         }
@@ -627,7 +626,7 @@ class FaultToleranceMetrics {
      */
     static class BulkheadCallsTotal extends FaultToleranceMetric {
 
-        final static BulkheadCallsTotal INSTANCE = new BulkheadCallsTotal();
+        static final BulkheadCallsTotal INSTANCE = new BulkheadCallsTotal();
 
         private BulkheadCallsTotal() {
         }
@@ -639,9 +638,9 @@ class FaultToleranceMetrics {
 
         @Override
         String description() {
-            return "The number of times the bulkhead logic was run. This will usually be once per " +
-                    "method call, but may be zero times if the circuit breaker prevented execution " +
-                    "or more than once if the method call is retried.";
+            return "The number of times the bulkhead logic was run. This will usually be once per "
+                    + "method call, but may be zero times if the circuit breaker prevented execution "
+                    + "or more than once if the method call is retried.";
         }
 
         @Override
@@ -668,7 +667,7 @@ class FaultToleranceMetrics {
      */
     static class BulkheadExecutionsRunning extends FaultToleranceMetric {
 
-        final static BulkheadExecutionsRunning INSTANCE = new BulkheadExecutionsRunning();
+        static final BulkheadExecutionsRunning INSTANCE = new BulkheadExecutionsRunning();
 
         private BulkheadExecutionsRunning() {
         }
@@ -707,7 +706,7 @@ class FaultToleranceMetrics {
      */
     static class BulkheadExecutionsWaiting extends FaultToleranceMetric {
 
-        final static BulkheadExecutionsWaiting INSTANCE = new BulkheadExecutionsWaiting();
+        static final BulkheadExecutionsWaiting INSTANCE = new BulkheadExecutionsWaiting();
 
         private BulkheadExecutionsWaiting() {
         }
@@ -746,7 +745,7 @@ class FaultToleranceMetrics {
      */
     static class BulkheadRunningDuration extends FaultToleranceMetric {
 
-        final static BulkheadRunningDuration INSTANCE = new BulkheadRunningDuration();
+        static final BulkheadRunningDuration INSTANCE = new BulkheadRunningDuration();
 
         private BulkheadRunningDuration() {
         }
@@ -785,7 +784,7 @@ class FaultToleranceMetrics {
      */
     static class BulkheadWaitingDuration extends FaultToleranceMetric {
 
-        final static BulkheadWaitingDuration INSTANCE = new BulkheadWaitingDuration();
+        static final BulkheadWaitingDuration INSTANCE = new BulkheadWaitingDuration();
 
         private BulkheadWaitingDuration() {
         }
