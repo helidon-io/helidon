@@ -32,11 +32,6 @@ import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-
 /**
  * A bean with methods that update metrics.
  */
@@ -169,12 +164,6 @@ class MetricsBean {
     CompletableFuture<String> concurrent(long sleepMillis) {
         FaultToleranceTest.printStatus("MetricsBean::concurrent()", "success");
         try {
-            /*
-            assertThat(getGauge(this,
-                    "concurrent",
-                    BULKHEAD_CONCURRENT_EXECUTIONS, long.class).getValue(), is(not(0)));
-
-             */
             Thread.sleep(sleepMillis);
         } catch (Exception e) {
             // falls through
@@ -187,11 +176,6 @@ class MetricsBean {
     CompletableFuture<String> concurrentAsync(long sleepMillis) {
         FaultToleranceTest.printStatus("MetricsBean::concurrentAsync()", "success");
         try {
-            /*
-            assertThat((long) getGauge(this, "concurrentAsync",
-                                                             BULKHEAD_WAITING_QUEUE_POPULATION, long.class).getValue(),
-                       is(greaterThanOrEqualTo(0L)));
-             */
             Thread.sleep(sleepMillis);
         } catch (Exception e) {
             // falls through

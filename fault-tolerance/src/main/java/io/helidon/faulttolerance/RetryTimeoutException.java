@@ -20,7 +20,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Subclass of {@link TimeoutException} to discern exceptions thrown by a {@link Retry}
- * versus a {@link Timeout}.
+ * when its overall timeout is reached versus those thrown by a {@link Timeout}.
  */
 public class RetryTimeoutException extends TimeoutException {
     private static final long serialVersionUID = 1900926677490550714L;

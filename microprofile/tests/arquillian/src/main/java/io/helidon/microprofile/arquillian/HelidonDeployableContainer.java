@@ -401,7 +401,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
     /**
      * Injects the base metric registry and cleans up all metrics in preparation to run another
-     * Arquillian test in the same VM. Without this cleanup metrics, added by a previous test
+     * Arquillian test in the same VM. Without this cleanup, metrics added by a previous test
      * would be available and may cause failures.
      */
     private void cleanupBaseMetrics() {
