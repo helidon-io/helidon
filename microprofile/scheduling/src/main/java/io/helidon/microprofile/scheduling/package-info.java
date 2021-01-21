@@ -17,5 +17,9 @@
 
 /**
  * CDI Scheduling implementation.
+ *
+ * Methods annotated with {@link io.helidon.microprofile.scheduling.Scheduled}
+ * or {@link io.helidon.microprofile.scheduling.FixedRate} are scheduled for automatic invocation.
+ *
  */
 package io.helidon.microprofile.scheduling;

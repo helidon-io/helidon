@@ -47,6 +47,7 @@ import javax.enterprise.inject.spi.WithAnnotations;
 
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.config.Config;
+import io.helidon.microprofile.cdi.RuntimeStart;
 
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
@@ -61,6 +62,8 @@ public class SchedulingCdiExtension implements Extension {
     private final Queue<AnnotatedMethod<?>> methods = new LinkedList<>();
     private final Map<AnnotatedMethod<?>, Bean<?>> beans = new HashMap<>();
     private final Queue<ScheduledExecutorService> executors = new LinkedList<>();
+    private Config config;
+    private Config schedulingConfig;
 
     void registerMethods(
             @Observes
@@ -83,14 +86,17 @@ public class SchedulingCdiExtension implements Extension {
         }
     }
 
+    private void prepareRuntime(@Observes @RuntimeStart Config config) {
+        this.config = config;
+        this.schedulingConfig = config.get("schedule");
+    }
+
     void invoke(@Observes @Priority(PLATFORM_AFTER + 4000) @Initialized(ApplicationScoped.class) Object event,
                 BeanManager beanManager) {
-        Config rootConfig = (Config) ConfigProvider.getConfig();
-        Config config = rootConfig.get("scheduling");
 
         ScheduledThreadPoolSupplier scheduledThreadPoolSupplier = ScheduledThreadPoolSupplier.builder()
-                .threadNamePrefix(config.get("thread-name-prefix").asString().orElse("scheduled-"))
-                .config(config)
+                .threadNamePrefix(schedulingConfig.get("thread-name-prefix").asString().orElse("scheduled-"))
+                .config(schedulingConfig)
                 .build();
 
         for (AnnotatedMethod<?> am : methods) {
@@ -114,7 +120,7 @@ public class SchedulingCdiExtension implements Extension {
                         method.getName()));
             }
 
-            Config methodConfig = config.get(method.getName());
+            Config methodConfig = config.get(aClass.getName() + "." + method.getName() + ".schedule");
 
             if (am.isAnnotationPresent(FixedRate.class)) {
                 FixedRate annotation = am.getAnnotation(FixedRate.class);
@@ -139,7 +145,7 @@ public class SchedulingCdiExtension implements Extension {
                 Scheduled annotation = am.getAnnotation(Scheduled.class);
 
                 String cron = methodConfig.get("cron").asString()
-                        .orElseGet(() -> resolvePlaceholders(annotation.value(), rootConfig));
+                        .orElseGet(() -> resolvePlaceholders(annotation.value(), config));
 
                 boolean concurrent = methodConfig.get("concurrent").asBoolean()
                         .orElseGet(annotation::concurrentExecution);
