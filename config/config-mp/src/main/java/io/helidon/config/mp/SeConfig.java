@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,7 +169,7 @@ class SeConfig implements Config {
     @Override
     public <T> T convert(Class<T> type, String value) throws ConfigMappingException {
         try {
-            return impl().findConverter(type)
+            return impl().obtainConverter(type)
                     .convert(value);
         } catch (Exception e) {
             try {

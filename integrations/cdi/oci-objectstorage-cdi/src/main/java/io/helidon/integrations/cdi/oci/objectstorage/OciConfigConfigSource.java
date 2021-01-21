@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import org.eclipse.microprofile.config.Config;
@@ -179,6 +180,11 @@ public final class OciConfigConfigSource implements ConfigSource {
   public Map<String, String> getProperties() {
     final Map<String, String> properties = this.properties;
     return properties == null || properties.isEmpty() ? Collections.emptyMap() : properties;
+  }
+
+  @Override
+  public Set<String> getPropertyNames() {
+    return getProperties().keySet();
   }
 
   private static Map<String, String> createProperties(final ConfigFileAuthenticationDetailsProvider provider) {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -100,6 +100,9 @@
                         <dependency>org.eclipse.microprofile.metrics:microprofile-metrics-rest-tck</dependency>
                         <dependency>org.eclipse.microprofile.metrics:microprofile-metrics-optional-tck</dependency>
                     </dependenciesToScan>
+                    <excludes>
+                        <exclude>org.eclipse.microprofile.metrics.tck.tags.GlobalTagsTest</exclude>
+                    </excludes>
                     <environmentVariables>
                         <MP_METRICS_TAGS>tier=integration</MP_METRICS_TAGS>
                     </environmentVariables>

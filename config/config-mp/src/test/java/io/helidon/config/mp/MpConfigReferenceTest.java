@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.config.mp;
 
+import java.util.NoSuchElementException;
+
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.BeforeAll;
@@ -24,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class MpConfigReferenceTest {
     private static final String VALUE_1 = "value";
@@ -58,13 +61,11 @@ public class MpConfigReferenceTest {
 
     @Test
     void testMissingRefs() {
-        String key = "referencing4-1";
-        String actual = config.getValue(key, String.class);
-        assertThat(actual, is("${missing}"));
+        String key1 = "referencing4-1";
+        assertThrows(NoSuchElementException.class, () -> config.getValue(key1, String.class));
 
-        key = "referencing4-2";
-        actual = config.getValue(key, String.class);
-        assertThat(actual, is("${missing}-value"));
+        String key2 = "referencing4-2";
+        assertThrows(NoSuchElementException.class, () -> config.getValue(key2, String.class));
     }
 
     private void test(String prefix, String value) {

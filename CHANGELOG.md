@@ -7,6 +7,29 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.0.0-SNAPSHOT]
+Helidon 3.0.0 is a major release that includes significant new features and fixes.
+As a major release it also includes some backward incompatible API changes.
+One of the major changes is support for MicroProfile 4.0, which includes several 
+backward incompatible changes in specifications.
+See sections below.
+
+### MP Config 2.0
+The following backward compatible changes were added:
+1. `ConfigValue` and corresponding method `Config.getConfigValue` were added
+2. Configuration profiles were added. You can now define a configuration profile (such as `dev`) using configuration property `mp.config.profile`. If such is defined, config will load default properties `microprofile-config-${profile}.properties`, and it will look for properties prefixed with `%${profile}` first.
+3. `OptionalInt`, `OptionalLong` and `OptionalDouble` were added as supported types
+4. Method `Config.getConverter`  is now part of specification (we used to have it as Helidon specific)
+
+
+The following backward incompatible changes were added:
+1. Method `getPropertyNames` no longer has a default implementation in `ConfigSource` SPI
+2. Empty string properties are no longer supported. Configuring empty value is equivalent to deleting the property. Helidon adds a custom feature - you can use `${EMPTY}` to resolve into an empty string
+3. Expressions were added to config. You can now use an expression containing a reference to another configuration key (such as ‘http://${server.host}:${server.port}`. Also supports default values (such as `${server.host:localhost}`). This changes behaviour of Helidon’s implementation of configuration, as in previous versions when a reference was missing, we would return the expression itself. Since 3.0.0 if a reference is missing, we treat it as an error (according to the spec). This can be disabled through `mp.config.property.expressions.enabled=false` config property.
+4. Recursive expression now throws an `IlegalArgumentException`, used to throw `IllegalStateException` (required by spec)
+5. Arrays can no longer contain empty strings (see above). Sequence of commas in values is ignored when mapped to an array
+ 
+
 ## [2.2.1-SNAPSHOT]
 
 2.2.1 is a bugfix release of Helidon. 

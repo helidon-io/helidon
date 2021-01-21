@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import io.helidon.config.spi.ConfigMapper;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.eclipse.microprofile.config.spi.Converter;
 
 /**
  * Integration with microprofile config.
@@ -321,6 +322,24 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
         @Override
         public Iterable<ConfigSource> getConfigSources() {
             return delegate.get().getConfigSources();
+        }
+
+        @Override
+        public org.eclipse.microprofile.config.ConfigValue getConfigValue(String propertyName) {
+            return delegate.get().getConfigValue(propertyName);
+        }
+
+        @Override
+        public <T> Optional<Converter<T>> getConverter(Class<T> aClass) {
+            return delegate.get().getConverter(aClass);
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> aClass) {
+            if (getClass().equals(aClass)) {
+                return aClass.cast(this);
+            }
+            return delegate.get().unwrap(aClass);
         }
 
         /**

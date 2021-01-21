@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -227,25 +227,24 @@ public abstract class AbstractDataSourceExtension implements Extension {
      */
     protected final void initializeMasterProperties() {
         this.masterProperties.clear();
-        final Set<? extends String> allPropertyNames = this.getPropertyNames();
-        if (allPropertyNames != null && !allPropertyNames.isEmpty()) {
-            for (final String propertyName : allPropertyNames) {
-                final Optional<String> propertyValue = this.config.getOptionalValue(propertyName, String.class);
-                if (propertyValue != null && propertyValue.isPresent()) {
-                    final Matcher matcher = this.getDataSourcePropertyPatternMatcher(propertyName);
-                    if (matcher != null && matcher.matches()) {
-                        final String dataSourceName = this.getDataSourceName(matcher);
-                        Properties properties = this.masterProperties.get(dataSourceName);
-                        if (properties == null) {
-                            properties = new Properties();
-                            this.masterProperties.put(dataSourceName, properties);
-                        }
-                        final String dataSourcePropertyName = this.getDataSourcePropertyName(matcher);
-                        properties.setProperty(dataSourcePropertyName, propertyValue.get());
-                    }
+
+        for (final String propertyName : getPropertyNames()) {
+            // assumption is that allPropertyNames contains only valid keys, so let's filter the ones we need
+            // before obtaining a value
+            Matcher matcher = this.getDataSourcePropertyPatternMatcher(propertyName);
+
+            if (matcher.matches()) {
+                // only get value if property matches (values may be from remote sources)
+                Optional<String> propertyValue = this.config.getOptionalValue(propertyName, String.class);
+                if (propertyValue.isPresent()) {
+                    String dataSourceName = getDataSourceName(matcher);
+                    Properties properties = this.masterProperties.computeIfAbsent(dataSourceName, it -> new Properties());
+                    String dataSourcePropertyName = getDataSourcePropertyName(matcher);
+                    properties.setProperty(dataSourcePropertyName, propertyValue.get());
                 }
             }
         }
+
         this.masterProperties.putAll(this.explicitlySetProperties);
     }
 
@@ -278,13 +277,13 @@ public abstract class AbstractDataSourceExtension implements Extension {
         final Set<String> returnValue;
         final Iterable<String> propertyNames = this.config.getPropertyNames();
         if (propertyNames == null) {
-            returnValue = Collections.emptySet();
+            return Collections.emptySet();
         } else {
             final Set<String> set = new HashSet<>();
-            propertyNames.iterator().forEachRemaining(n -> set.add(n));
-            returnValue = Set.copyOf(set);
+            propertyNames.iterator().forEachRemaining(set::add);
+            // no need for defensive copy, as we own the instance
+            return set;
         }
-        return returnValue;
     }
 
     private void afterBeanDiscovery(@Observes final AfterBeanDiscovery event) {

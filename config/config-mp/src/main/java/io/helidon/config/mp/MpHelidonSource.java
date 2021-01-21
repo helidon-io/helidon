@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
@@ -115,6 +116,11 @@ final class MpHelidonSource {
         @Override
         public Map<String, String> getProperties() {
             return Collections.unmodifiableMap(loadedProperties);
+        }
+
+        @Override
+        public Set<String> getPropertyNames() {
+            return loadedProperties.keySet();
         }
 
         @Override

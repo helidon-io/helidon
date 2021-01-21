@@ -45,6 +45,19 @@ instance programmatically.
 {spec-name} provides typed access to configuration values, using built-in converters, and `Converter` implementations located
 by Java Service Loader.
 
+{spec-name} supports a concept of configuration profiles. You can define a profile using the configuration property `mp.config.profile` (when using default configuration, this can be defined as a system property, environment variable or as a property in `microprofile-config.properties`). When a profile is defined, additional config source is loaded (`microprofile-config-profile.properties) and properties from profile have precedence over default properties. Profile properties can be defined using `%profile` prefix, such as `%dev.server.port`.
+
+You can use `${reference}` to reference another configuration key in a key value. This allows to configure a single key to be reused in multiple other keys.
+[source,properties]
+.Example
+----
+uri="http://localhost:8080"
+service-1="${uri}/service1"
+service-2="${uri}/service2"
+----
+You can also define defaults in such expressions, such as:
+`service-host=${host:localhost}`
+
 ==== Using {spec-name} API
 
 You can use MicroProfile Config API to get configuration properties by using `ConfigProvider.getConfig()`
@@ -84,18 +97,9 @@ server.host=0.0.0.0
 
 Helidon MicroProfile Config offers the following features on top of the specification:
 
-* *References* +
-You can use `${reference}` to reference another configuration key in a key value. This
-allows to configure a single key to be reused in multiple other keys.
-
-[source,yaml]
-.Example
-----
-uri: "http://localhost:8080"
-service-1: "${uri}/service1"
-service-2: "${uri}/service2"
-----
-
+* *Empty value support*
+MicroProfile config treats empty values the same way as if the value does not exist.
+If you need to configure an empty string as a value, you can use the expression `$\{EMPTY}`. This is only supported if it is the full value of a property, such as `password=$\{EMPTY}`.
 
 * *Encryption* +
 You can encrypt secrets using a master password and store them in a configuration file.
@@ -116,8 +120,7 @@ client_secret=${CLEAR=known_password}
 
 * *Meta Configuration* +
 You can configure the Config using Helidon SE Config meta configuration feature.
-When used, the {spec-name} uses a single configuration source - Helidon SE Config configured
-from meta configuration.
+When used, the {spec-name} uses a single configuration source - Helidon SE Config configured from meta configuration, and it will follow the rules of Helidon SE configuration.
 
 The meta-config allows configuration of config sources and other configuration options,
 including retry policies and polling strategies.

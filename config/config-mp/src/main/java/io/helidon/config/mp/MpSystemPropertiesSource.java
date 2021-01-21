@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,11 @@ class MpSystemPropertiesSource implements ConfigSource {
     }
 
     @Override
+    public Set<String> getPropertyNames() {
+        return props.stringPropertyNames();
+    }
+
+    @Override
     public Map<String, String> getProperties() {
         Set<String> strings = props.stringPropertyNames();
 
@@ -50,5 +55,10 @@ class MpSystemPropertiesSource implements ConfigSource {
     @Override
     public String getName() {
         return "System Properties";
+    }
+
+    @Override
+    public String toString() {
+        return getName() + " (" + getOrdinal() + ")";
     }
 }

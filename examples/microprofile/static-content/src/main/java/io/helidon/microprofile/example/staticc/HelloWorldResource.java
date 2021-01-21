@@ -32,7 +32,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @RequestScoped
 public class HelloWorldResource {
     @Inject
-    @ConfigProperty(name = "server.static.classpath.context", defaultValue = "")
+    @ConfigProperty(name = "server.static.classpath.context", defaultValue = "${EMPTY}")
     private String context;
 
     @GET

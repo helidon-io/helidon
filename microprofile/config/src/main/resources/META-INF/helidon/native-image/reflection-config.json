@@ -1,0 +1,11 @@
+{
+    "annotated":[
+        "org.eclipse.microprofile.config.inject.ConfigProperties"
+    ],
+    "class-hierarchy": [
+    ],
+    "classes": [
+    ],
+    "exclude": [
+    ]
+}
