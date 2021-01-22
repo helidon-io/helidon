@@ -33,6 +33,10 @@
         Microprofile fault tolerance implementation
     </description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
