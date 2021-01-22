@@ -34,16 +34,22 @@ public @interface FixedRate {
 
     /**
      * Fixed rate for periodical invocation.
+     *
+     * @return fixed rate interval
      */
     long value();
 
     /**
      * Initial delay of the first invocation.
+     *
+     * @return initial delay
      */
     long initialDelay() default 0;
 
     /**
      * Time unit for interpreting supplied values.
+     *
+     * @return time unit for evaluating supplied values
      */
     TimeUnit timeUnit() default TimeUnit.SECONDS;
 }

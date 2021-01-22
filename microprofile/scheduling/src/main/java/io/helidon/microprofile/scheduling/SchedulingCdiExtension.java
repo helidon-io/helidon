@@ -51,8 +51,6 @@ import io.helidon.microprofile.cdi.RuntimeStart;
 
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-
 /**
  * Scheduling CDI Extension.
  */
@@ -186,8 +184,8 @@ public class SchedulingCdiExtension implements Extension {
         Class<?>[] parameterTypes = method.getParameterTypes();
         Class<? extends Invocation> invClazz = invocation.getClass();
 
-        if (parameterTypes.length > 1 ||
-                parameterTypes.length > 0 && !parameterTypes[0].isAssignableFrom(invClazz)) {
+        if (parameterTypes.length > 1
+                || parameterTypes.length > 0 && !parameterTypes[0].isAssignableFrom(invClazz)) {
 
             throw new DeploymentException(
                     String.format("Unsupported param types for scheduled method %s, none or %s is supported.",

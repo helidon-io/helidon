@@ -100,7 +100,7 @@ public class InvalidStateTest {
     @Test
     void invalidTimeUnit() {
         assertDeploymentException(IllegalArgumentException.class,
-                Map.of("scheduling.invalidTimeUnitMethod.time-unit", "LIGHT_YEAR"),
+                Map.of(InvalidTimeUnit.class.getName() + ".invalidTimeUnitMethod.schedule.time-unit", "LIGHT_YEAR"),
                 InvalidTimeUnit.class);
     }
 

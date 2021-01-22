@@ -326,6 +326,15 @@ final class FeatureCatalog {
                     .experimental(true)
         );
 
+        add("io.helidon.microprofile.scheduling",
+            FeatureDescriptor.builder()
+                    .name("Scheduling")
+                    .description("Task scheduling")
+                    .path("Scheduling")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true)
+        );
+
         /*
          * Common modules
          */

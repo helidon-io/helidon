@@ -44,6 +44,7 @@
         <version.lib.brave-opentracing>0.35.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0.2</version.lib.cdi-api>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
+        <version.lib.cron-utils>9.1.0</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>2.7.5</version.lib.eclipselink>
         <version.lib.el-api>3.0.3</version.lib.el-api>
@@ -1013,6 +1014,11 @@
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-aop</artifactId>
                 <version>${version.lib.micronaut}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.cronutils</groupId>
+                <artifactId>cron-utils</artifactId>
+                <version>${version.lib.cron-utils}</version>
             </dependency>
             <!-- END OF Section 1: direct third party dependencies -->
 

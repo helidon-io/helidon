@@ -374,6 +374,14 @@ backend:
               items:
                 - includes:
                     - "mp/security/*.adoc"
+            - title: "Scheduling"
+              pathprefix: "/mp/scheduling"
+              glyph:
+                type: "icon"
+                value: "access_alarm"
+              items:
+                - includes:
+                    - "mp/scheduling/*.adoc"
             - title: "Tracing"
               pathprefix: "/mp/tracing"
               glyph:
