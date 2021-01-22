@@ -133,4 +133,6 @@ public abstract class Participant {
     public abstract void sendAfterLRA(LRA lra);
 
     public abstract void sendCompleteOrCancel(LRA lra, boolean isCancel);
+
+    public abstract void sendStatus(LRA lra, URI statusURI);
 }

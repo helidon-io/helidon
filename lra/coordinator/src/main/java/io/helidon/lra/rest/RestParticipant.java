@@ -3,6 +3,7 @@ package io.helidon.lra.rest;
 import io.helidon.lra.LRA;
 import io.helidon.lra.Participant;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
+import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -20,8 +21,6 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVER
 public class RestParticipant extends Participant {
 
     private Client client = ClientBuilder.newBuilder().build();
-
-
 
     public void sendCompleteOrCancel(LRA lra, boolean isCancel) {
         URI endpointURI = isCancel ? getCompensateURI() : getCompleteURI();
@@ -83,6 +82,41 @@ public class RestParticipant extends Participant {
             }
         } catch (Exception e) {
             log("RestParticipant afterLRA Exception:" + e, lra.nestedDepth);
+        }
+    }
+
+
+
+    public void sendStatus(LRA lra, URI statusURI) {
+        Response response = null;
+        int responsestatus = -1;
+        String readEntity = null;
+        ParticipantStatus participantStatus = null;
+        try {
+            String path = "http://127.0.0.1:8080/lra-coordinator/";
+            response = client.target(statusURI)
+                    .request()
+                    .header(LRA_HTTP_CONTEXT_HEADER, path + lra.lraId)
+                    .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lra.lraId)
+                    .header(LRA_HTTP_PARENT_CONTEXT_HEADER, lra.parentId)
+                    .header(LRA_HTTP_RECOVERY_HEADER, path + lra.lraId)
+                    .buildGet().invoke();
+            responsestatus = response.getStatus();
+            if (responsestatus == 503 || responsestatus == 202) { //todo include other retriables
+            } else if (responsestatus != 410) {
+                readEntity = response.readEntity(String.class);
+                participantStatus = ParticipantStatus.valueOf(readEntity);
+                setParticipantStatus(participantStatus);
+            } else {
+                setParticipantStatus(lra.isCancel ? Compensated : Completed); // not exactly accurate as it's GONE not explicitly completed or compensated
+            }
+            log("LRA sendStatus:" + statusURI + " finished  response:" +
+                    response + ":" + responsestatus + " participantStatus:" + participantStatus +
+                    " readEntity:" + readEntity, lra.nestedDepth);
+        } catch (Exception e) { // IllegalArgumentException: No enum constant org.eclipse.microprofile.lra.annotation.ParticipantStatus.
+            log("LRA sendStatus:" + statusURI + " finished  response:" +
+                    response + ":" + responsestatus + " participantStatus:" + participantStatus +
+                    " readEntity:" + readEntity + " Exception:" + e, lra.nestedDepth);
         }
     }
 
