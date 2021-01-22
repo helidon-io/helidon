@@ -2,6 +2,7 @@ package io.helidon.lra;
 
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 
+import javax.ws.rs.core.Response;
 import java.net.URI;
 
 import static org.eclipse.microprofile.lra.annotation.ParticipantStatus.*;
@@ -28,11 +29,11 @@ public abstract class Participant {
         return participantStatus;
     }
 
-    void setParticipantStatus(ParticipantStatus participantStatus) {
+    public void setParticipantStatus(ParticipantStatus participantStatus) {
         this.participantStatus = participantStatus;
     }
 
-    URI getCompleteURI() {
+    public URI getCompleteURI() {
         return completeURI;
     }
 
@@ -40,7 +41,7 @@ public abstract class Participant {
         this.completeURI = completeURI;
     }
 
-    URI getCompensateURI() {
+    public URI getCompensateURI() {
         return compensateURI;
     }
 
@@ -48,7 +49,7 @@ public abstract class Participant {
         this.compensateURI = compensateURI;
     }
 
-    URI getAfterURI() {
+    public URI getAfterURI() {
         return afterURI;
     }
 
@@ -80,7 +81,7 @@ public abstract class Participant {
         return isForgotten;
     }
 
-    void setAfterLRASuccessfullyCalledIfEnlisted() {
+    public void setAfterLRASuccessfullyCalledIfEnlisted() {
         isAfterLRASuccessfullyCalledIfEnlisted = true;
     }
 
@@ -128,4 +129,8 @@ public abstract class Participant {
     }
 
     public abstract boolean sendForget(LRA lra, boolean areAllThatNeedToBeForgottenForgotten);
+
+    public abstract void sendAfterLRA(LRA lra);
+
+    public abstract void sendCompleteOrCancel(LRA lra, boolean isCancel);
 }

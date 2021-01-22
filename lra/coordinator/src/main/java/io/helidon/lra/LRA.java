@@ -49,8 +49,8 @@ public class LRA {
     List<Participant> participants = new ArrayList<>();
     boolean hasStatusEndpoints;
 
-    boolean isRecovering = false;
-    boolean isCancel;
+    public boolean isRecovering = false;
+    public boolean isCancel;
     boolean isRoot = false;
     boolean isParent;
     boolean isChild;
@@ -158,27 +158,6 @@ public class LRA {
         isParent = true;
     }
 
-    void terminate1(boolean isCancel, boolean isUnilateralCallIfNested) {
-        setProcessing(true);
-        this.isCancel = isCancel;
-        if (isChild) this.isUnilateralCallIfNested = isUnilateralCallIfNested;
-        if (isChild && !isCancel && areAllInEndStateCompensatedOrFailedToCompensate()) return;
-        if (isUnilateralCallIfNested && isChild && !isCancel)  isNestedThatShouldBeForgottenAfterParentEnds = true;
-        if (isParent) for (LRA nestedLRA : children) {
-            log("LRA.endChildren nestedLRA.participants.size():" + nestedLRA.participants.size());
-            if (!nestedLRA.areAllInEndStateOrListenerOnlyForTerminationType(isCancel)) {
-                nestedLRA.terminate(isCancel, false);  //todo should be false if this is root only
-            } //todo this is the classic afterLRA/tx sync scenario ...need to check if we traverse the tree twice or couple end and listener calls as we are doing now and did in JTA
-        }
-        sendCompleteOrCancel(isCancel);
-        sendAfterLRA();
-        if (areAllInEndState() && areAllAfterLRASuccessfullyCalledOrForgotten()) { // todo areAllInEndState() does not consider/traverse nested
-            if (true ||  isRoot && forgetAnyUnilaterallyCompleted()) isReadyToDelete = true; // todo !isRoot is not enough if multilevel
-        }
-        setProcessing(false);
-    }
-
-
     void terminate(boolean isCancel, boolean isUnilateralCallIfNested) {
         setProcessing(true);
         this.isCancel = isCancel;
@@ -215,69 +194,15 @@ public class LRA {
             if (participant.isInEndStateOrListenerOnly() && !isChild) { //todo check ramifications of !isChild re timeout processing
                 continue;
             }
-            URI endpointURI = isCancel ? participant.getCompensateURI() : participant.getCompleteURI();
-            try {
-                Response response = sendCompleteOrCompensate(endpointURI, isCancel);
-                int responsestatus = response.getStatus(); // expected codes 200, 202, 409, 410
-                String readEntity = response.readEntity(String.class);
-                log("LRA " + getConditionalStringValue(isCancel, "compensate", "complete") + " finished,  response:" + response + ":" + responsestatus + " readEntity:" + readEntity);
-                if (responsestatus == 503) { //  Service Unavailable, retriable - todo this should be the full range of invalid values
-                    isRecovering = true;
-                } else if (responsestatus == 409) { //conflict, retriable
-                    isRecovering = true;
-                } else if (responsestatus == 202) { //accepted
-                    isRecovering = true;
-                } else if (responsestatus == 404) {
-                    isRecovering = true;
-                } else if (responsestatus == 200 || responsestatus == 410) { // successful or gone (where presumption is complete or compensated)
-                    participant.setParticipantStatus(isCancel ? Compensated : Completed);
-                } else {
-                    isRecovering = true;
-                }
-            } catch (Exception e) { // Exception:javax.ws.rs.ProcessingException: java.net.ConnectException: Connection refused (Connection refused)
-                log("LRA.sendCompleteOrCancel Exception:" + e);
-                isRecovering = true;
-            }
+            participant.sendCompleteOrCancel(this, isCancel);
         }
-    }
-
-    private Response sendCompleteOrCompensate(URI endpointURI, boolean isCompensate) {
-        String path = "http://127.0.0.1:8080/lra-coordinator/";
-        log("parentId:" + parentId);
-        return client.target(endpointURI)
-                .request()
-                .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
-                .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
-                .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
-                .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
-                .buildPut(Entity.text(getConditionalStringValue(isCompensate, LRAStatus.Cancelled.name(), LRAStatus.Closed.name()))).invoke();
-        //                       .buildPut(Entity.json("")).invoke();
-        //                       .async().put(Entity.json("entity"));
     }
 
 
     void sendAfterLRA() { // todo should set isRecovering or needsAfterLRA calls if this fails
         if (areAllInEndState()) {
             for (Participant participant : participants) {
-                try {
-                    URI afterURI = participant.getAfterURI();
-                    if (afterURI != null) {
-                        if (participant.isAfterLRASuccessfullyCalledIfEnlisted()) continue;
-                        String path = "http://127.0.0.1:8080/lra-coordinator/";
-                        Response response = client.target(afterURI)
-                                .request()
-                                .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
-                                .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
-                                .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
-                                .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
-                                .buildPut(Entity.text(getConditionalStringValue(isCancel, LRAStatus.Cancelled.name(), LRAStatus.Closed.name()))).invoke();
-                        int responsestatus = response.getStatus();
-                        if (responsestatus == 200) participant.setAfterLRASuccessfullyCalledIfEnlisted();
-                        log("LRA afterLRA finished, response:" + response);
-                    }
-                } catch (Exception e) {
-                    log("LRA afterLRA Exception:" + e);
-                }
+                participant.sendAfterLRA(this);
             }
         }
     }
@@ -419,7 +344,7 @@ public class LRA {
         System.out.println("[lra][depth:" + nestedDepth + "] " + message);
     }
 
-    private String getConditionalStringValue(boolean isTrue, String first, String second) {
+    public String getConditionalStringValue(boolean isTrue, String first, String second) {
         return isTrue ? first : second;
     }
 
