@@ -258,26 +258,22 @@ WebServer server = WebServer.builder(createRouting(config, dbClient))   // <1>
 ...
 
 private static Routing createRouting(Config config, DbClient dbClient) {
-        MetricsSupport metrics = MetricsSupport.create();
-        GreetService greetService = new GreetService(config);
-        LibraryService libraryService = new LibraryService(dbClient); // <2>
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
-                .addLiveness(DbClientHealthCheck.create(dbClient))  // <3>
+                .addLiveness(DbClientHealthCheck.create(dbClient))  // <2>
                 .build();
 
         return Routing.builder()
                 .register(health)                   // Health at "/health"
-                .register(metrics)                  // Metrics at "/metrics"
-                .register("/greet", greetService)
-                .register("/library", libraryService)  // <4>
+                .register(MetricsSupport.create())                  // Metrics at "/metrics"
+                .register("/greet", new GreetService(config))
+                .register("/library", new LibraryService(dbClient))  // <3>
                 .build();
     }
 ----
 <1> Add dbClient as a parameter of createRouting method.
-<2> Instantiate our LibraryService with the dbClient.
-<3> Add Health check to control the application behavior.
-<4> Register the LibraryService to the Routing.
+<2> Add Health check to control the application behavior.
+<3> Register the LibraryService to the Routing.
 
 The library service does not exist yet but that is the next step of the guide. It has a default constructor with the
 DB Client as a parameter because it will manage the library. The DB Client health check uses the ping statement
