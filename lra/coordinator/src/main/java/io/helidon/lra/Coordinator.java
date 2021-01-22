@@ -16,7 +16,6 @@
 
 package io.helidon.lra;
 
-import io.helidon.lra.messaging.MessageProcessing;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -27,7 +26,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.net.*;
@@ -48,25 +46,12 @@ public class Coordinator implements Runnable {
     public static final String TIMELIMIT_PARAM_NAME = "TimeLimit";
     public static final String PARENT_LRA_PARAM_NAME = "ParentLRA";
 
-    private final MessageProcessing msgBean;
     private boolean isTimeoutThreadRunning;
 
     @Context
     private UriInfo context;
 
     Map<String, LRA> lraMap = new ConcurrentHashMap();
-
-    @Path("/send/{msg}")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public void getSend(@PathParam("msg") String msg) {
-        msgBean.process(msg);
-    }
-
-    @Inject
-    public Coordinator(MessageProcessing msgBean) {
-        this.msgBean = msgBean;
-    }
 
     @GET
     @Path("/")
@@ -250,7 +235,7 @@ public class Coordinator implements Runnable {
             return Response.status(status)
                     .entity(recoveryUrl.toString())
                     .location(new URI(recoveryUrl.toString()))
-                    .header(LRA_HTTP_RECOVERY_HEADER, recoveryUrl)
+                    .header(LRA_HTTP_RECOVERY_HEADER, "http://127.0.0.1:8080/lra-coordinator/" + lraIdString)
                     .build();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);

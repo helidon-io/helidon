@@ -7,7 +7,7 @@ import java.net.URI;
 import static org.eclipse.microprofile.lra.annotation.ParticipantStatus.*;
 import static org.eclipse.microprofile.lra.annotation.ParticipantStatus.Compensated;
 
-public class Participant {
+public abstract class Participant {
 
     /**
      *   Participant state model....
@@ -56,7 +56,7 @@ public class Participant {
         this.afterURI = afterURI;
     }
 
-    URI getForgetURI() {
+    public URI getForgetURI() {
         return forgetURI;
     }
 
@@ -72,7 +72,7 @@ public class Participant {
         this.statusURI = statusURI;
     }
 
-    void setForgotten() {
+    protected void setForgotten() {
         this.isForgotten = true;
     }
 
@@ -121,4 +121,11 @@ public class Participant {
                     isListenerOnly();
         }
     }
+
+
+    public void log(String message, int nestedDepth) {
+        System.out.println("[lra][depth:" + nestedDepth + "] " + message);
+    }
+
+    public abstract boolean sendForget(LRA lra, boolean areAllThatNeedToBeForgottenForgotten);
 }

@@ -16,6 +16,7 @@
 
 package io.helidon.lra;
 
+import io.helidon.lra.rest.RestParticipant;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 
@@ -40,8 +41,8 @@ public class LRA {
      * --> Closed --> (only if nested can go to cancelling) /
      */
     public long timeout;
-    String lraId;
-    private URI parentId;
+    public String lraId;
+    public URI parentId;
     List<String> compensatorLinks = new ArrayList<>();
     LRA parent;
     List<LRA> children = new ArrayList<>();
@@ -55,7 +56,7 @@ public class LRA {
     boolean isChild;
     boolean isUnilateralCallIfNested = false;
     boolean isNestedThatShouldBeForgottenAfterParentEnds = false;
-    private int nestedDepth;
+    public int nestedDepth;
     private boolean isProcessing;
     private boolean isReadyToDelete;
 
@@ -101,14 +102,13 @@ public class LRA {
         // <http://127.0.0.1:8091/inventory/completeInventory?method=javax.ws.rs.PUT>; rel="complete"; title="complete URI"; type="text/plain",
 //        Participant existingparticipant = participants.contains(compensatorLink)
         if (compensatorLink.indexOf(uriPrefix) > -1) {
-            Participant participant = new Participant();
+            Participant participant = new RestParticipant();
             participants.add(participant);
             String endpoint = "";
             Pattern linkRelPattern = Pattern.compile("(\\w+)=\"([^\"]+)\"|([^\\s]+)");
             Matcher relMatcher = linkRelPattern.matcher(compensatorLink);
             while (relMatcher.find()) {
                 String group0 = relMatcher.group(0);
-//                log("LRA.initParticipantURIs isMessaging = " + isMessaging + " group0:" + group0);
                 if (group0.indexOf(uriPrefix) > -1) { // <messaging://complete>;
 //                    endpoint = isMessaging ? group0.substring(uriPrefix.length(), group0.indexOf(";") - 1) :
 //                            group0.substring(1, group0.indexOf(";") - 1);
@@ -118,7 +118,6 @@ public class LRA {
                 String key = relMatcher.group(1);
                 if (key != null && key.equals("rel")) {
                     String rel = getConditionalStringValue(relMatcher.group(2) == null, relMatcher.group(3), relMatcher.group(2));
-//                    log("LRA.initParticipantURIs " + rel + " is " + endpoint);
                     try {
                         if (rel.equals("complete")) {
                             participant.setCompleteURI(new URI(endpoint));
@@ -324,25 +323,7 @@ public class LRA {
         boolean areAllThatNeedToBeForgottenForgotten = true;
         for (Participant participant : participants) {
             if (participant.getForgetURI() == null || participant.isForgotten()) continue;
-            try {
-                Client client = ClientBuilder.newBuilder()
-                        .build();
-                String path = "http://127.0.0.1:8080/lra-coordinator/";
-                Response response = client.target(participant.getForgetURI())
-                        .request()
-                        .header(LRA_HTTP_CONTEXT_HEADER, path + lraId)
-                        .header(LRA_HTTP_ENDED_CONTEXT_HEADER, path + lraId)
-                        .header(LRA_HTTP_PARENT_CONTEXT_HEADER, parentId)
-                        .header(LRA_HTTP_RECOVERY_HEADER, path + lraId)
-                        .buildDelete().invoke();
-                int responsestatus = response.getStatus();
-                log("LRA sendForget:" + participant.getForgetURI() + " finished  response:" + response + ":" + responsestatus);
-                if (responsestatus == 200 || responsestatus == 410) participant.setForgotten();
-                else areAllThatNeedToBeForgottenForgotten = false;
-            } catch (Exception e) {
-                log("LRA sendForget Exception:" + e);
-                areAllThatNeedToBeForgottenForgotten = false;
-            }
+            areAllThatNeedToBeForgottenForgotten = participant.sendForget(this, areAllThatNeedToBeForgottenForgotten);
         }
         return areAllThatNeedToBeForgottenForgotten;
     }
