@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -78,9 +77,10 @@ class RetryImpl implements Retry {
 
         long nanos = System.nanoTime() - context.startedNanos;
         if (nanos > maxTimeNanos) {
-            return Single.error(new TimeoutException("Execution took too long. Already executing: "
-                                                             + TimeUnit.NANOSECONDS.toMillis(nanos) + " ms, must timeout after: "
-                                                             + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos) + " ms."));
+            return Single.error(new RetryTimeoutException(context.throwable(),
+                    "Execution took too long. Already executing: "
+                    + TimeUnit.NANOSECONDS.toMillis(nanos) + " ms, must timeout after: "
+                    + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos) + " ms."));
         }
 
         if (currentCallIndex > 0) {
@@ -120,9 +120,10 @@ class RetryImpl implements Retry {
 
         long nanos = System.nanoTime() - context.startedNanos;
         if (nanos > maxTimeNanos) {
-            return Multi.error(new TimeoutException("Execution took too long. Already executing: "
-                                                             + TimeUnit.NANOSECONDS.toMillis(nanos) + " ms, must timeout after: "
-                                                             + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos) + " ms."));
+            return Multi.error(new RetryTimeoutException(context.throwable(),
+                    "Execution took too long. Already executing: "
+                    + TimeUnit.NANOSECONDS.toMillis(nanos) + " ms, must timeout after: "
+                    + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos) + " ms."));
         }
 
         if (currentCallIndex > 0) {

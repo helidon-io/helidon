@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.FallbackHandler;
 
 /**
- * Class CommandFallback.
+ * Implements invocation callback logic.
  */
-class CommandFallback {
+class FallbackHelper {
 
     private final InvocationContext context;
 
@@ -46,7 +46,7 @@ class CommandFallback {
      * @param introspector Method introspector.
      * @param throwable Throwable that caused execution of fallback
      */
-    CommandFallback(InvocationContext context, MethodIntrospector introspector, Throwable throwable) {
+    FallbackHelper(InvocationContext context, MethodIntrospector introspector, Throwable throwable) {
         this.context = context;
         this.throwable = throwable;
 
@@ -104,8 +104,6 @@ class CommandFallback {
                 result = fallbackMethod.invoke(context.getTarget(), context.getParameters());
             }
         } catch (Throwable t) {
-            updateMetrics();
-
             // If InvocationTargetException, then unwrap underlying cause
             if (t instanceof InvocationTargetException) {
                 t = t.getCause();
@@ -113,15 +111,6 @@ class CommandFallback {
             throw t instanceof Exception ? (Exception) t : new RuntimeException(t);
         }
 
-        updateMetrics();
         return result;
-    }
-
-    /**
-     * Updates fallback metrics.
-     */
-    private void updateMetrics() {
-        Method method = context.getMethod();
-        FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.FALLBACK_CALLS_TOTAL).inc();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import javax.enterprise.inject.literal.NamedLiteral;
+import javax.enterprise.inject.spi.CDI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -27,21 +29,18 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.enterprise.inject.spi.CDI;
-
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-
+import org.eclipse.microprofile.metrics.Tag;
 import org.junit.jupiter.api.BeforeEach;
 
+import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.getRealClass;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Class FaultToleranceTest.
+ * Base class for FT tests. Mostly utility methods used by subclasses.
  */
 @HelidonTest
 abstract class FaultToleranceTest {
@@ -130,5 +129,9 @@ abstract class FaultToleranceTest {
         } catch (Exception e) {
             fail("Unexpected exception" + e);
         }
+    }
+
+    static Tag getMethodTag(Object bean, String methodName) {
+        return new Tag("method", getRealClass(bean).getName() + "." + methodName);
     }
 }

@@ -92,7 +92,7 @@
         <version.lib.micronaut.data>2.2.0</version.lib.micronaut.data>
         <version.lib.micronaut.sql>3.3.1</version.lib.micronaut.sql>
         <version.lib.microprofile-config>1.4</version.lib.microprofile-config>
-        <version.lib.microprofile-fault-tolerance-api>2.1.1</version.lib.microprofile-fault-tolerance-api>
+        <version.lib.microprofile-fault-tolerance-api>3.0</version.lib.microprofile-fault-tolerance-api>
         <version.lib.microprofile-graphql>1.0.3</version.lib.microprofile-graphql>
         <version.lib.microprofile-health>2.2</version.lib.microprofile-health>
         <version.lib.microprofile-jwt>1.1.1</version.lib.microprofile-jwt>

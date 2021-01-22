@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,9 @@ class ThrowableMapper {
         }
         if (t instanceof io.helidon.faulttolerance.BulkheadException) {
             return new BulkheadException(t.getMessage(), t.getCause());
+        }
+        if (t instanceof io.helidon.faulttolerance.RetryTimeoutException) {
+            return t;       // the cause is handled elsewhere
         }
         if (t instanceof java.util.concurrent.TimeoutException) {
             return new TimeoutException(t.getMessage(), t.getCause());
