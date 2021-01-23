@@ -50,7 +50,7 @@ FROM debian:stretch-slim as final
 
 RUN set -x \
     && apt-get -y update \
-    && apt-get -y install gcc zlib1g-dev libstdc++ libstdc++-6-dev curl unzip make \
+    && apt-get -y install gcc zlib1g-dev libstdc++-6-dev curl unzip make \
     && apt-get clean autoclean \
     && apt-get autoremove --yes \
     && rm -rf /var/lib/apt /var/lib/dpkg /var/lib/cache /var/lib/log
