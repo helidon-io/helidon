@@ -36,15 +36,15 @@ class FileSystemContentHandler extends StaticContentHandler {
 
     private final Path root;
 
-    FileSystemContentHandler(String welcomeFilename, ContentTypeSelector contentTypeSelector, Path root) {
-        super(welcomeFilename, contentTypeSelector);
+    FileSystemContentHandler(String welcomeFilename, String fallbackPath, ContentTypeSelector contentTypeSelector, Path root) {
+        super(welcomeFilename, fallbackPath, contentTypeSelector);
 
         this.root = root.toAbsolutePath().normalize();
     }
 
-    public static StaticContentHandler create(String welcomeFileName, ContentTypeSelector selector, Path fsRoot) {
+    public static StaticContentHandler create(String welcomeFileName, String fallbackPath, ContentTypeSelector selector, Path fsRoot) {
         if (Files.exists(fsRoot) && Files.isDirectory(fsRoot)) {
-            return new FileSystemContentHandler(welcomeFileName, selector, fsRoot);
+            return new FileSystemContentHandler(welcomeFileName, fallbackPath, selector, fsRoot);
         } else {
             throw new IllegalArgumentException("Cannot create file system static content, path "
                                                        + fsRoot.toAbsolutePath()

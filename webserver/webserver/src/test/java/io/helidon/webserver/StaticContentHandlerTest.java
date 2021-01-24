@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import java.util.Arrays;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -154,7 +156,6 @@ public class StaticContentHandlerTest {
     public void processContentType() throws Exception {
         ContentTypeSelector selector = mock(ContentTypeSelector.class);
         when(selector.determine(any(), any())).thenReturn(MediaType.TEXT_HTML);
-        TestContentHandler handler = new TestContentHandler(null, selector, Paths.get("/root"), false);
         RequestHeaders req = mock(RequestHeaders.class);
         ResponseHeaders res = mock(ResponseHeaders.class);
         StaticContentHandler.processContentType(StaticContentHandler.fileName(Paths.get("/root/index.html")), req, res, selector);
@@ -228,7 +229,38 @@ public class StaticContentHandlerTest {
         verify(request, never()).next();
         assertThat(handler.counter.get(), is(1));
     }
-
+    
+    @Test
+    public void fallbackPath_Found() throws Exception {
+        ServerRequest request = mockRequestWithPath("foos/1");
+        ServerResponse response = mock(ServerResponse.class);
+        TestClassPathContentHandler handler = new TestClassPathContentHandler(
+                "index.html",
+                "/",
+                "/root",
+                Arrays.asList(false, true));
+        handler.handle(Http.Method.GET, request, response);
+        verify(request, never()).next();
+        assertThat(handler.counter.get(), is(2));
+        assertThat(handler.requestedPaths.get(0), is("foos/1"));
+        assertThat(handler.requestedPaths.get(1), is("/"));
+    }
+    
+    @Test
+    public void fallbackPath_NotFound() throws Exception {
+        ServerRequest request = mockRequestWithPath("foos/1");
+        ServerResponse response = mock(ServerResponse.class);
+        TestClassPathContentHandler handler = new TestClassPathContentHandler(
+                "index.html",
+                "/missing",
+                "/root",
+                Arrays.asList(false, false));
+        handler.handle(Http.Method.GET, request, response);
+        verify(request).next();
+        assertThat(handler.counter.get(), is(2));
+        assertThat(handler.requestedPaths.get(0), is("foos/1"));
+        assertThat(handler.requestedPaths.get(1), is("/missing"));
+    }
 
     static class TestContentHandler extends FileSystemContentHandler {
 
@@ -236,13 +268,13 @@ public class StaticContentHandlerTest {
         final boolean returnValue;
         Path path;
 
-        TestContentHandler(String welcomeFilename, ContentTypeSelector contentTypeSelector, Path root, boolean returnValue) {
-            super(welcomeFilename, contentTypeSelector, root);
+        TestContentHandler(String welcomeFilename, String fallbackPath, ContentTypeSelector contentTypeSelector, Path root, boolean returnValue) {
+            super(welcomeFilename, fallbackPath, contentTypeSelector, root);
             this.returnValue = returnValue;
         }
 
         TestContentHandler(String path, boolean returnValue) {
-            this(null, mock(ContentTypeSelector.class), Paths.get(path), returnValue);
+            this(null, null, mock(ContentTypeSelector.class), Paths.get(path), returnValue);
         }
 
         @Override
@@ -258,23 +290,28 @@ public class StaticContentHandlerTest {
     static class TestClassPathContentHandler extends ClassPathContentHandler {
 
         final AtomicInteger counter = new AtomicInteger(0);
-        final boolean returnValue;
+        final List<Boolean> returnValues;
+        final List<String> requestedPaths = new CopyOnWriteArrayList<>();
 
-        TestClassPathContentHandler(String welcomeFilename, ContentTypeSelector contentTypeSelector, Path root, boolean returnValue) {
-            super(welcomeFilename, contentTypeSelector, root.toString(), null, null);
-            this.returnValue = returnValue;
+        TestClassPathContentHandler(String welcomeFilename, String fallbackPath, String root, List<Boolean> returnValues) {
+            super(welcomeFilename, fallbackPath, mock(ContentTypeSelector.class), root, null, null);
+            this.returnValues = returnValues;
         }
 
         TestClassPathContentHandler(String path, boolean returnValue) {
-            this(null, mock(ContentTypeSelector.class), Paths.get(path), returnValue);
+            this(path, Collections.singletonList(returnValue));
+        }
+        
+        TestClassPathContentHandler(String path, List<Boolean> returnValues) {
+            this(null, null, path, returnValues);
         }
 
         @Override
         boolean doHandle(Http.RequestMethod method, String path, ServerRequest request, ServerResponse response)
                 throws IOException, URISyntaxException {
             super.doHandle(method, path, request, response);
-            this.counter.incrementAndGet();
-            return returnValue;
+            this.requestedPaths.add(path);
+            return this.returnValues.get(this.counter.getAndIncrement());
         }
 
     }

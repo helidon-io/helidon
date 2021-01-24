@@ -20,7 +20,6 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-import java.util.function.Consumer;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -54,15 +53,14 @@ public class StaticContentSupport implements Service {
 
     @Override
     public void update(Routing.Rules routing) {
-        routing.onNewWebServer(new Consumer<WebServer>() {
-            @Override
-            public void accept(WebServer ws) {
-                webServerStarted();
-                ws.whenShutdown().thenRun(() -> webServerStopped());
-            }
-        });
+        routing.onNewWebServer(this::onNewWebServer);
         routing.get((req, res) -> handler.handle(Http.Method.GET, req, res));
         routing.head((req, res) -> handler.handle(Http.Method.HEAD, req, res));
+    }
+    
+    private void onNewWebServer(WebServer ws) {
+        webServerStarted();
+        ws.whenShutdown().thenRun(this::webServerStopped);
     }
 
     private synchronized void webServerStarted() {
@@ -166,6 +164,7 @@ public class StaticContentSupport implements Service {
 
         private final Map<String, MediaType> specificContentTypes = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         private String welcomeFileName;
+        private String fallbackPath;
         private Path tmpDir;
 
         Builder(Path fsRoot) {
@@ -193,6 +192,22 @@ public class StaticContentSupport implements Service {
          */
         public Builder welcomeFileName(String welcomeFileName) {
             this.welcomeFileName = welcomeFileName;
+            return this;
+        }
+        
+        /**
+         * Sets a fallback request path which will be resolved if the requested file does not exist.
+         * The given fallback may be a directory, in which case the {@link #welcomeFileName(java.lang.String) welcome file}
+         * will be resolved against it. If that does not exist either, the request will be {@link ServerRequest#next() nexted}.
+         *
+         * @param fallbackPath the fallback request path
+         * @return updated builder
+         */
+        public Builder fallbackPath(String fallbackPath) {
+            if (fallbackPath != null && fallbackPath.startsWith("/")) {
+                fallbackPath = fallbackPath.substring(1);
+            }
+            this.fallbackPath = fallbackPath;
             return this;
         }
 
@@ -240,9 +255,9 @@ public class StaticContentSupport implements Service {
             ContentTypeSelector selector = new ContentTypeSelector(specificContentTypes);
             StaticContentHandler handler;
             if (fsRoot != null) {
-                handler = FileSystemContentHandler.create(welcomeFileName, selector, fsRoot);
+                handler = FileSystemContentHandler.create(welcomeFileName, fallbackPath, selector, fsRoot);
             } else if (clRoot != null) {
-                handler = ClassPathContentHandler.create(welcomeFileName, selector, clRoot, tmpDir, classLoader);
+                handler = ClassPathContentHandler.create(welcomeFileName, fallbackPath, selector, clRoot, tmpDir, classLoader);
             } else {
                 throw new IllegalArgumentException("Builder was created without specified static content root!");
             }

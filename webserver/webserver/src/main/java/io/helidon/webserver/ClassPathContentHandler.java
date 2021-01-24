@@ -52,11 +52,12 @@ class ClassPathContentHandler extends StaticContentHandler {
     private final Path tempDir;
 
     ClassPathContentHandler(String welcomeFilename,
+                            String fallbackPath,
                             ContentTypeSelector contentTypeSelector,
                             String root,
                             Path tempDir,
                             ClassLoader classLoader) {
-        super(welcomeFilename, contentTypeSelector);
+        super(welcomeFilename, fallbackPath, contentTypeSelector);
 
         this.classLoader = (classLoader == null) ? this.getClass().getClassLoader() : classLoader;
         this.tempDir = tempDir;
@@ -65,6 +66,7 @@ class ClassPathContentHandler extends StaticContentHandler {
     }
 
     public static StaticContentHandler create(String welcomeFileName,
+                                              String fallbackPath,
                                               ContentTypeSelector selector,
                                               String clRoot,
                                               Path tempDir,
@@ -83,7 +85,7 @@ class ClassPathContentHandler extends StaticContentHandler {
             throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
         }
 
-        return new ClassPathContentHandler(welcomeFileName, selector, clRoot, tempDir, contentClassloader);
+        return new ClassPathContentHandler(welcomeFileName, fallbackPath, selector, clRoot, tempDir, contentClassloader);
     }
 
     @SuppressWarnings("checkstyle:RegexpSinglelineJava")

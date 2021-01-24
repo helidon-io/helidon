@@ -77,6 +77,7 @@ public class UnstableTempTest {
         LOGGER.fine(() -> "Generated test jar url: " + jarUrl.toString());
         ClassPathContentHandler classPathContentHandler =
                 new ClassPathContentHandler(null,
+                        null,
                         new ContentTypeSelector(null),
                         "/",
                         tmpDir,

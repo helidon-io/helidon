@@ -36,16 +36,19 @@ abstract class StaticContentHandler {
     private static final Logger LOGGER = Logger.getLogger(StaticContentHandler.class.getName());
 
     private final String welcomeFilename;
+    private final String fallbackPath;
     private final ContentTypeSelector contentTypeSelector;
 
     /**
      * Creates new instance.
      *
      * @param welcomeFilename     a welcome filename
+     * @param fallbackPath        a fallback path
      * @param contentTypeSelector a selector for content type
      */
-    StaticContentHandler(String welcomeFilename, ContentTypeSelector contentTypeSelector) {
+    StaticContentHandler(String welcomeFilename, String fallbackPath, ContentTypeSelector contentTypeSelector) {
         this.welcomeFilename = welcomeFilename;
+        this.fallbackPath = fallbackPath;
         this.contentTypeSelector = contentTypeSelector;
     }
 
@@ -56,7 +59,7 @@ abstract class StaticContentHandler {
     }
 
     /**
-     * Do handle for GET and HEAD HTTP methods. It is filtering implementation, prefers {@code response.next()} before NOT_FOUND.
+     * Do handle for GET and HEAD HTTP methods. It is filtering implementation, prefers fallback path or {@code response.next()} before NOT_FOUND.
      *
      * @param method   an HTTP method
      * @param request  an HTTP request
@@ -74,15 +77,26 @@ abstract class StaticContentHandler {
             requestPath = requestPath.substring(1);
         }
 
+        boolean found = handle(method, requestPath, request, response);
+        if (!found && fallbackPath != null) {
+            found = handle(method, fallbackPath, request, response);
+        }
+        if (!found) {
+            // Prefer to next() before NOT_FOUND
+            request.next();
+        }
+    }
+
+    boolean handle(Http.RequestMethod method, String requestPath, ServerRequest request, ServerResponse response) {
         // Call doHandle
         try {
             if (!doHandle(method, requestPath, request, response)) {
-                request.next();
+                return false;
             }
         } catch (HttpException httpException) {
             if (httpException.status().code() == Http.Status.NOT_FOUND_404.code()) {
                 // Prefer to next() before NOT_FOUND
-                request.next();
+                return false;
             } else {
                 throw httpException;
             }
@@ -90,6 +104,7 @@ abstract class StaticContentHandler {
             LOGGER.log(Level.FINE, "Failed to access static resource", e);
             throw new HttpException("Cannot access static resource!", Http.Status.INTERNAL_SERVER_ERROR_500, e);
         }
+        return true;
     }
 
     ContentTypeSelector contentTypeSelector() {
