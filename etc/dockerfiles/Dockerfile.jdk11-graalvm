@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ RUN set -x \
     && apt-get autoremove --yes \
     && rm -rf /var/lib/apt /var/lib/dpkg /var/lib/cache /var/lib/log
 
-# BEGIN PRE-REQUISITES FOR STATIC NATIVE IMAGES FOR GRAAL 20.2.0
+# BEGIN PRE-REQUISITES FOR STATIC NATIVE IMAGES FOR GRAAL
 # SEE: https://www.graalvm.org/reference-manual/native-image/StaticImages/
 ARG RESULT_LIB="/staticlibs"
 
@@ -85,7 +85,7 @@ RUN curl -L -o zlib.tar.gz https://zlib.net/zlib-1.2.11.tar.gz && \
     cd / && \
     rm -rf /zlib && \
     rm -f /zlib.tar.gz
-#END PRE-REQUISITES FOR STATIC NATIVE IMAGES FOR GRAAL 20.2.0
+#END PRE-REQUISITES FOR STATIC NATIVE IMAGES FOR GRAAL
 
 WORKDIR /graal
 COPY --from=build /build/graalvm /graal/graalvm
