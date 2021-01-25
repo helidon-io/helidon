@@ -21,15 +21,14 @@ import io.helidon.microprofile.scheduling.SchedulingCdiExtension;
  */
 module io.helidon.microprofile.scheduling {
     requires java.logging;
-
     requires static jakarta.enterprise.cdi.api;
     requires static jakarta.inject.api;
-    requires static jakarta.activation;
     requires jakarta.interceptor.api;
+    requires io.helidon.common.configurable;
     requires io.helidon.config;
     requires io.helidon.config.mp;
+    requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.config;
-    requires io.helidon.microprofile.server;
     requires cron.utils;
 
     exports io.helidon.microprofile.scheduling;
