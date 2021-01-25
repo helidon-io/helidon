@@ -27,12 +27,6 @@
     <artifactId>tck-opentracing</artifactId>
     <name>Helidon Microprofile Tests TCK Opentracing</name>
 
-    <properties>
-        <!-- We force the version of jackson to 2.9.0 since that's -->
-        <!-- what the TCK test forces us to use (via shrinkwrap)   -->
-        <version.lib.jackson>2.9.0</version.lib.jackson>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
@@ -41,22 +35,11 @@
             <scope>test</scope>
             <exclusions>
                 <exclusion>
-                    <!-- TCK requires Jackson, not JSON-B -->
-                    <groupId>org.glassfish.jersey.media</groupId>
-                    <artifactId>jersey-media-json-binding</artifactId>
-                </exclusion>
-                <exclusion>
                     <!-- we must remove security tracing -->
                     <groupId>io.helidon.security.integration</groupId>
                     <artifactId>helidon-security-integration-jersey-client</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <!-- The TCK depends on unmarshalling using Jackson -->
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-json-jackson</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
@@ -90,35 +73,6 @@
             <artifactId>opentracing-mock</artifactId>
             <scope>test</scope>
         </dependency>
-        <!--
-            Override dependency versions for jackson-jaxrs-provider to
-            workaround proxy issues with shrinkwrap maven.
-        -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.jaxrs</groupId>
-            <artifactId>jackson-jaxrs-json-provider</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.jaxrs</groupId>
-            <artifactId>jackson-jaxrs-base</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-jaxb-annotations</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -131,19 +85,6 @@
                         <suiteXmlFile>tck-suite.xml</suiteXmlFile>
                     </suiteXmlFiles>
                 </configuration>
-                <dependencies>
-                    <!--
-                        Forcing resolution of opentracing-api:0.31.0
-                        to workaround proxy issues with shrinkwrap maven.
-                        Cannot override managed version of opentracing-api since
-                        0.31.0 is not compatible with Helidon
-                    -->
-                    <dependency>
-                        <groupId>io.opentracing</groupId>
-                        <artifactId>opentracing-api</artifactId>
-                        <version>0.31.0</version>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>
