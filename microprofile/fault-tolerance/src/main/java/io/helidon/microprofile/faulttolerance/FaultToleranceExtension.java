@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -229,38 +229,29 @@ public class FaultToleranceExtension implements Extension {
     }
 
     /**
-     * Registers metrics for all FT methods and init executors.
+     * Validates annotations.
      *
      * @param validation Event information.
      */
-    void registerMetricsAndInitExecutors(@Observes AfterDeploymentValidation validation) {
+    void validateAnnotations(@Observes AfterDeploymentValidation validation) {
         if (FaultToleranceMetrics.enabled()) {
             getRegisteredMethods().stream().forEach(beanMethod -> {
                 final Method method = beanMethod.method();
                 final Class<?> beanClass = beanMethod.beanClass();
 
-                // Counters for all methods
-                FaultToleranceMetrics.registerMetrics(method);
-
-                // Metrics depending on the annotationSet present
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Retry.class)) {
-                    FaultToleranceMetrics.registerRetryMetrics(method);
                     new RetryAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, CircuitBreaker.class)) {
-                    FaultToleranceMetrics.registerCircuitBreakerMetrics(method);
                     new CircuitBreakerAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Timeout.class)) {
-                    FaultToleranceMetrics.registerTimeoutMetrics(method);
                     new TimeoutAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Bulkhead.class)) {
-                    FaultToleranceMetrics.registerBulkheadMetrics(method);
                     new BulkheadAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Fallback.class)) {
-                    FaultToleranceMetrics.registerFallbackMetrics(method);
                     new FallbackAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Asynchronous.class)) {
@@ -269,17 +260,17 @@ public class FaultToleranceExtension implements Extension {
             });
         }
 
-        // Initialize executors for MP FT - default size of 16
+        // Initialize executors for MP FT - default size of 20
         io.helidon.config.Config config = io.helidon.config.Config.create();
         scheduledThreadPoolSupplier = ScheduledThreadPoolSupplier.builder()
                 .threadNamePrefix("ft-mp-schedule-")
-                .corePoolSize(16)
+                .corePoolSize(20)
                 .config(config.get("scheduled-executor"))
                 .build();
         FaultTolerance.scheduledExecutor(scheduledThreadPoolSupplier);
         threadPoolSupplier = ThreadPoolSupplier.builder()
                 .threadNamePrefix("ft-mp-")
-                .corePoolSize(16)
+                .corePoolSize(20)
                 .config(config.get("executor"))
                 .build();
         FaultTolerance.executor(threadPoolSupplier);

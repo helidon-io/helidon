@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,27 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.lang.reflect.Method;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 import javax.enterprise.inject.spi.CDI;
+import javax.enterprise.util.AnnotationLiteral;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-
-import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.getRealClass;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
+import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
 /**
- * Class FaultToleranceMetrics.
+ * Utility class to register and fetch FT metrics.
  */
 class FaultToleranceMetrics {
-
-    static final String METRIC_NAME_TEMPLATE = "ft.%s.%s.%s";
 
     private static MetricRegistry metricRegistry;
 
@@ -51,331 +49,772 @@ class FaultToleranceMetrics {
 
     static synchronized MetricRegistry getMetricRegistry() {
         if (metricRegistry == null) {
-            metricRegistry = CDI.current().select(MetricRegistry.class).get();
+            metricRegistry = CDI.current().select(MetricRegistry.class, new BaseRegistryTypeLiteral()).get();
         }
         return metricRegistry;
     }
 
-    @SuppressWarnings("unchecked")
-    static <T extends Metric> T getMetric(Method method, String name) {
-        MetricID metricID = newMetricID(String.format(METRIC_NAME_TEMPLATE,
-                method.getDeclaringClass().getName(),
-                method.getName(), name));
-        return (T) getMetricRegistry().getMetrics().get(metricID);
-    }
+    /**
+     * Annotation literal to inject base registry.
+     */
+    static class BaseRegistryTypeLiteral extends AnnotationLiteral<RegistryType> implements RegistryType {
 
-    static Counter getCounter(Method method, String name) {
-        return (Counter) getMetric(method, name);
-    }
-
-    static Histogram getHistogram(Method method, String name) {
-        return (Histogram) getMetric(method, name);
-    }
-
-    @SuppressWarnings("unchecked")
-    static <T> Gauge<T> getGauge(Method method, String name) {
-        return (Gauge<T>) getMetric(method, name);
-    }
-
-    static long getCounter(Object bean, String methodName, String name,
-                           Class<?>... params) throws Exception {
-        Method method = findMethod(getRealClass(bean), methodName, params);
-        return getCounter(method, name).getCount();
-    }
-
-    static Histogram getHistogram(Object bean, String methodName, String name,
-                                  Class<?>... params) throws Exception {
-        Method method = findMethod(getRealClass(bean), methodName, params);
-        return getHistogram(method, name);
-    }
-
-    static <T> Gauge<T> getGauge(Object bean, String methodName, String name,
-                                 Class<?>... params) throws Exception {
-        Method method = findMethod(getRealClass(bean), methodName, params);
-        return getGauge(method, name);
+        @Override
+        public MetricRegistry.Type type() {
+            return MetricRegistry.Type.BASE;
+        }
     }
 
     /**
-     * Attempts to find a method even if not accessible.
-     *
-     * @param beanClass bean class.
-     * @param methodName name of method.
-     * @param params param types.
-     * @return method found.
-     * @throws NoSuchMethodException if not found.
+     * Base class for Fault Tolerance metrics. Shares common logic for registration
+     * and lookup of metrics.
      */
-    private static Method findMethod(Class<?> beanClass, String methodName,
-                                     Class<?>... params) throws NoSuchMethodException {
-        try {
-            Method method = beanClass.getDeclaredMethod(methodName, params);
-            method.setAccessible(true);
-            return method;
-        } catch (Exception e) {
-            return beanClass.getMethod(methodName, params);
+    abstract static class FaultToleranceMetric {
+
+        abstract String name();
+
+        abstract String description();
+
+        abstract MetricType metricType();
+
+        abstract String unit();
+
+        protected Counter getCounter(Tag... tags) {
+            MetricID metricID = new MetricID(name(), tags);
+            return (Counter) getMetricRegistry().getMetrics().get(metricID);
+        }
+
+        protected Counter registerCounter(Tag... tags) {
+            Counter counter = getCounter(tags);
+            if (counter == null) {
+                Metadata metadata = Metadata.builder()
+                        .withName(name())
+                        .withDisplayName(name())
+                        .withDescription(description())
+                        .withType(metricType())
+                        .withUnit(unit())
+                        .reusable(true)
+                        .build();
+                try {
+                    counter = getMetricRegistry().counter(metadata, tags);
+                } catch (IllegalArgumentException e) {
+                    // Looks like we lost registration race
+                    counter = getCounter(tags);
+                    Objects.requireNonNull(counter);
+                }
+            }
+            return counter;
+        }
+
+        protected Histogram getHistogram(Tag... tags) {
+            MetricID metricID = new MetricID(name(), tags);
+            return (Histogram) getMetricRegistry().getMetrics().get(metricID);
+        }
+
+        protected Histogram registerHistogram(Tag... tags) {
+            Histogram histogram = getHistogram(tags);
+            if (histogram == null) {
+                Metadata metadata = Metadata.builder()
+                        .withName(name())
+                        .withDisplayName(name())
+                        .withDescription(description())
+                        .withType(metricType())
+                        .withUnit(unit())
+                        .reusable(true)
+                        .build();
+                try {
+                    histogram = getMetricRegistry().histogram(metadata, tags);
+                } catch (IllegalArgumentException e) {
+                    // Looks like we lost the registration race
+                    histogram = getHistogram(tags);
+                    Objects.requireNonNull(histogram);
+                }
+            }
+            return histogram;
+        }
+
+        @SuppressWarnings("unchecked")
+        protected <T> Gauge<T> getGauge(Tag... tags) {
+            MetricID metricID = new MetricID(name(), tags);
+            return (Gauge<T>) getMetricRegistry().getMetrics().get(metricID);
+        }
+
+        @SuppressWarnings("unchecked")
+        protected <T> Gauge<T> registerGauge(Gauge<T> newGauge, Tag... tags) {
+            Gauge<T> gauge = getGauge(tags);
+            if (gauge == null) {
+                Metadata metadata = Metadata.builder()
+                        .withName(name())
+                        .withDisplayName(name())
+                        .withDescription(description())
+                        .withType(metricType())
+                        .withUnit(unit())
+                        .reusable(true)
+                        .build();
+                try {
+                    gauge = getMetricRegistry().register(metadata, newGauge, tags);
+                } catch (IllegalArgumentException e) {
+                    // Looks like we lost the registration race
+                    gauge = getGauge(tags);
+                    Objects.requireNonNull(gauge);
+                }
+            }
+            return gauge;
         }
     }
 
-    // -- Global --------------------------------------------------------------
+    // -- Invocations ---------------------------------------------------------
 
-    static final String INVOCATIONS_TOTAL = "invocations.total";
-    static final String INVOCATIONS_FAILED_TOTAL = "invocations.failed.total";
+    enum InvocationResult implements Supplier<Tag> {
+        VALUE_RETURNED("valueReturned"),
+        EXCEPTION_THROWN("exceptionThrown");
 
-    /**
-     * Register global method counters for a method.
-     *
-     * @param method The method.
-     */
-    static void registerMetrics(Method method) {
-        if (!isFaultToleranceMetricsEnabled()) {
-            return;
+        private final Tag metricTag;
+
+        InvocationResult(String value) {
+            metricTag = new Tag("result", value);
         }
 
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          INVOCATIONS_TOTAL),
-            "The number of times the method was called");
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          INVOCATIONS_FAILED_TOTAL),
-            "The number of times the method was called and, "
-            + "after all Fault Tolerance actions had been processed, "
-            + "threw a Throwable");
+        @Override
+        public Tag get() {
+            return metricTag;
+        }
     }
 
-    // -- Retry ---------------------------------------------------------------
+    enum InvocationFallback implements Supplier<Tag> {
+        APPLIED("applied"),
+        NOT_APPLIED("notApplied"),
+        NOT_DEFINED("notDefined");
 
-    static final String RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL = "retry.callsSucceededNotRetried.total";
-    static final String RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL = "retry.callsSucceededRetried.total";
-    static final String RETRY_CALLS_FAILED_TOTAL = "retry.callsFailed.total";
-    static final String RETRY_RETRIES_TOTAL = "retry.retries.total";
+        private final Tag metricTag;
 
-    static void registerRetryMetrics(Method method) {
-        if (!isFaultToleranceMetricsEnabled()) {
-            return;
+        InvocationFallback(String value) {
+            metricTag = new Tag("fallback", value);
         }
 
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL),
-            "The number of times the method was called and succeeded without retrying");
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL),
-            "The number of times the method was called and succeeded after retrying at least once");
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          RETRY_CALLS_FAILED_TOTAL),
-            "The number of times the method was called and ultimately failed after retrying");
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          RETRY_RETRIES_TOTAL),
-            "The total number of times the method was retried");
-    }
-
-
-    // -- Timeout ---------------------------------------------------------------
-
-    static final String TIMEOUT_EXECUTION_DURATION = "timeout.executionDuration";
-    static final String TIMEOUT_CALLS_TIMED_OUT_TOTAL = "timeout.callsTimedOut.total";
-    static final String TIMEOUT_CALLS_NOT_TIMED_OUT_TOTAL = "timeout.callsNotTimedOut.total";
-
-    static void registerTimeoutMetrics(Method method) {
-        if (!isFaultToleranceMetricsEnabled()) {
-            return;
+        @Override
+        public Tag get() {
+            return metricTag;
         }
-
-        registerHistogram(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          TIMEOUT_EXECUTION_DURATION),
-            "Histogram of execution times for the method");
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          TIMEOUT_CALLS_TIMED_OUT_TOTAL),
-            "The number of times the method timed out");
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          TIMEOUT_CALLS_NOT_TIMED_OUT_TOTAL),
-            "The number of times the method completed without timing out");
-    }
-
-    // -- CircuitBreaker -----------------------------------------------------
-
-    static final String BREAKER_CALLS_SUCCEEDED_TOTAL = "circuitbreaker.callsSucceeded.total";
-    static final String BREAKER_CALLS_FAILED_TOTAL = "circuitbreaker.callsFailed.total";
-    static final String BREAKER_CALLS_PREVENTED_TOTAL = "circuitbreaker.callsPrevented.total";
-    static final String BREAKER_OPENED_TOTAL = "circuitbreaker.opened.total";
-
-    static final String BREAKER_OPEN_TOTAL = "circuitbreaker.open.total";
-    static final String BREAKER_CLOSED_TOTAL = "circuitbreaker.closed.total";
-    static final String BREAKER_HALF_OPEN_TOTAL = "circuitbreaker.halfOpen.total";
-
-    static void registerCircuitBreakerMetrics(Method method) {
-        if (!isFaultToleranceMetricsEnabled()) {
-            return;
-        }
-
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          BREAKER_CALLS_SUCCEEDED_TOTAL),
-            "Number of calls allowed to run by the circuit breaker that "
-            + "returned successfully");
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          BREAKER_CALLS_FAILED_TOTAL),
-            "Number of calls allowed to run by the circuit breaker that then failed");
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          BREAKER_CALLS_PREVENTED_TOTAL),
-            "Number of calls prevented from running by an open circuit breaker");
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          BREAKER_OPENED_TOTAL),
-            "Number of times the circuit breaker has moved from closed state to open state");
-    }
-
-    // -- Fallback -----------------------------------------------------------
-
-    static final String FALLBACK_CALLS_TOTAL = "fallback.calls.total";
-
-    static void registerFallbackMetrics(Method method) {
-        if (!isFaultToleranceMetricsEnabled()) {
-            return;
-        }
-
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          FALLBACK_CALLS_TOTAL),
-            "Number of times the fallback handler or method was called");
-    }
-
-    // -- Bulkhead -----------------------------------------------------------
-
-    static final String BULKHEAD_CONCURRENT_EXECUTIONS = "bulkhead.concurrentExecutions";
-    static final String BULKHEAD_CALLS_ACCEPTED_TOTAL = "bulkhead.callsAccepted.total";
-    static final String BULKHEAD_CALLS_REJECTED_TOTAL = "bulkhead.callsRejected.total";
-    static final String BULKHEAD_EXECUTION_DURATION = "bulkhead.executionDuration";
-    static final String BULKHEAD_WAITING_QUEUE_POPULATION = "bulkhead.waitingQueue.population";
-    static final String BULKHEAD_WAITING_DURATION = "bulkhead.waiting.duration";
-
-    static void registerBulkheadMetrics(Method method) {
-        if (!isFaultToleranceMetricsEnabled()) {
-            return;
-        }
-
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          BULKHEAD_CALLS_ACCEPTED_TOTAL),
-            "Number of calls accepted by the bulkhead");
-        registerCounter(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          BULKHEAD_CALLS_REJECTED_TOTAL),
-            "Number of calls rejected by the bulkhead");
-        registerHistogram(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          BULKHEAD_EXECUTION_DURATION),
-            "Histogram of method execution times. This does not include any "
-            + "time spent waiting in the bulkhead queue.");
-    }
-
-    // -- Utility methods ----------------------------------------------------
-
-    /**
-     * Register a single counter.
-     *
-     * @param name Name of counter.
-     * @param description Description of counter.
-     * @return The counter created.
-     */
-    private static Counter registerCounter(String name, String description) {
-        return getMetricRegistry().counter(
-                newMetadata(name, name, description, MetricType.COUNTER, MetricUnits.NONE,
-                        true));
     }
 
     /**
-     * Register a histogram with nanos as unit.
-     *
-     * @param name Name of histogram.
-     * @param description Description of histogram.
-     * @return The histogram created.
+     * Class for "ft.invocations.total" counters.
      */
-    static Histogram registerHistogram(String name, String description) {
-        return getMetricRegistry().histogram(
-                newMetadata(name, name, description, MetricType.HISTOGRAM, MetricUnits.NANOSECONDS,
-                        true));
+    static class InvocationsTotal extends FaultToleranceMetric {
+
+        static final InvocationsTotal INSTANCE = new InvocationsTotal();
+
+        private InvocationsTotal() {
+        }
+
+        @Override
+        String name() {
+            return "ft.invocations.total";
+        }
+
+        @Override
+        String description() {
+            return "The number of times the method was called";
+        }
+
+        @Override
+        MetricType metricType() {
+            return MetricType.COUNTER;
+        }
+
+        @Override
+        String unit() {
+            return MetricUnits.NONE;
+        }
+
+        static Counter get(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
+        }
+
+        static Counter register(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
+        }
+    }
+
+    // -- Retries -------------------------------------------------------------
+
+    enum RetryResult implements Supplier<Tag> {
+        VALUE_RETURNED("valueReturned"),
+        EXCEPTION_NOT_RETRYABLE("exceptionNotRetryable"),
+        MAX_RETRIES_REACHED("maxRetriesReached"),
+        MAX_DURATION_REACHED("maxDurationReached");
+
+        private final Tag metricTag;
+
+        RetryResult(String value) {
+            metricTag = new Tag("retryResult", value);
+        }
+
+        @Override
+        public Tag get() {
+            return metricTag;
+        }
+    }
+
+    enum RetryRetried implements Supplier<Tag> {
+        TRUE("true"),
+        FALSE("false");
+
+        private final Tag metricTag;
+
+        RetryRetried(String value) {
+            metricTag = new Tag("retried", value);
+        }
+
+        @Override
+        public Tag get() {
+            return metricTag;
+        }
     }
 
     /**
-     * Register a gauge with nanos as unit. Checks if gauge is already registered
-     * using synchronization.
-     *
-     * @param metricName Name of metric.
-     * @param description Description of gauge.
-     * @return The gauge created or existing if already created.
+     * Class for "ft.retry.calls.total" counters.
      */
-    @SuppressWarnings("unchecked")
-    static synchronized <T> Gauge<T> registerGauge(Method method, String metricName, String description, Gauge<T> gauge) {
-        MetricID metricID = newMetricID(String.format(METRIC_NAME_TEMPLATE,
-                method.getDeclaringClass().getName(),
-                method.getName(),
-                metricName));
-        Gauge<T> existing = getMetricRegistry().getGauges().get(metricID);
-        if (existing == null) {
-            getMetricRegistry().register(
-                    newMetadata(metricID.getName(), metricID.getName(), description, MetricType.GAUGE, MetricUnits.NANOSECONDS,
-                            true),
-                    gauge);
+    static class RetryCallsTotal extends FaultToleranceMetric {
+
+        static final RetryCallsTotal INSTANCE = new RetryCallsTotal();
+
+        private RetryCallsTotal() {
         }
-        return existing;
+
+        @Override
+        String name() {
+            return "ft.retry.calls.total";
+        }
+
+        @Override
+        String description() {
+            return "The number of times the retry logic was run. This will always be once per method call.";
+        }
+
+        @Override
+        MetricType metricType() {
+            return MetricType.COUNTER;
+        }
+
+        @Override
+        String unit() {
+            return MetricUnits.NONE;
+        }
+
+        static Counter get(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
+        }
+
+        static Counter register(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
+        }
     }
 
-    private static MetricID newMetricID(String name) {
-        return new MetricID(name);
+    /**
+     * Class for "ft.retry.retries.total" counters.
+     */
+    static class RetryRetriesTotal extends FaultToleranceMetric {
+
+        static final RetryRetriesTotal INSTANCE = new RetryRetriesTotal();
+
+        private RetryRetriesTotal() {
+        }
+
+        @Override
+        String name() {
+            return "ft.retry.retries.total";
+        }
+
+        @Override
+        String description() {
+            return "The number of times the method was retried";
+        }
+
+        @Override
+        MetricType metricType() {
+            return MetricType.COUNTER;
+        }
+
+        @Override
+        String unit() {
+            return MetricUnits.NONE;
+        }
+
+        static Counter get(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
+        }
+
+        static Counter register(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
+        }
     }
 
-    private static Metadata newMetadata(String name, String displayName, String description, MetricType metricType,
-                                        String metricUnits, boolean isReusable) {
-        return Metadata.builder()
-                .withName(name)
-                .withDisplayName(displayName)
-                .withDescription(description)
-                .withType(metricType)
-                .withUnit(metricUnits)
-                .reusable(isReusable)
-                .build();
+    // -- Timeouts ------------------------------------------------------------
+
+    enum TimeoutTimedOut implements Supplier<Tag> {
+        TRUE("true"),
+        FALSE("false");
+
+        private final Tag metricTag;
+
+        TimeoutTimedOut(String value) {
+            this.metricTag = new Tag("timedOut", value);
+        }
+
+        public Tag get() {
+            return metricTag;
+        }
+    }
+
+    /**
+     * Class for "ft.timeout.calls.total" counters.
+     */
+    static class TimeoutCallsTotal extends FaultToleranceMetric {
+
+        static final TimeoutCallsTotal INSTANCE = new TimeoutCallsTotal();
+
+        private TimeoutCallsTotal() {
+        }
+
+        @Override
+        String name() {
+            return "ft.timeout.calls.total";
+        }
+
+        @Override
+        String description() {
+            return "The number of times the timeout logic was run. This will usually be once "
+                    + "per method call, but may be zero times if the circuit breaker prevents "
+                    + "execution or more than once if the method is retried.";
+        }
+
+        @Override
+        MetricType metricType() {
+            return MetricType.COUNTER;
+        }
+
+        @Override
+        String unit() {
+            return MetricUnits.NONE;
+        }
+
+        static Counter get(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
+        }
+
+        static Counter register(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
+        }
+    }
+
+    /**
+     * Class for "ft.timeout.executionDuration" histograms.
+     */
+    static class TimeoutExecutionDuration extends FaultToleranceMetric {
+
+        static final TimeoutExecutionDuration INSTANCE = new TimeoutExecutionDuration();
+
+        private TimeoutExecutionDuration() {
+        }
+
+        @Override
+        String name() {
+            return "ft.timeout.executionDuration";
+        }
+
+        @Override
+        String description() {
+            return "Histogram of execution times for the method";
+        }
+
+        @Override
+        MetricType metricType() {
+            return MetricType.HISTOGRAM;
+        }
+
+        @Override
+        String unit() {
+            return MetricUnits.NANOSECONDS;
+        }
+
+        static Histogram get(Tag... tags) {
+            return INSTANCE.registerHistogram(tags);
+        }
+
+        static Histogram register(Tag... tags) {
+            return INSTANCE.registerHistogram(tags);
+        }
+    }
+
+    // --- CircuitBreakers ----------------------------------------------------
+
+    enum CircuitBreakerResult implements Supplier<Tag> {
+        SUCCESS("success"),
+        FAILURE("failure"),
+        CIRCUIT_BREAKER_OPEN("circuitBreakerOpen");
+
+        private final Tag metricTag;
+
+        CircuitBreakerResult(String value) {
+            metricTag = new Tag("circuitBreakerResult", value);
+        }
+
+        @Override
+        public Tag get() {
+            return metricTag;
+        }
+    }
+
+    enum CircuitBreakerState implements Supplier<Tag> {
+        OPEN("open"),
+        CLOSED("closed"),
+        HALF_OPEN("halfOpen");
+
+        private final Tag metricTag;
+
+        CircuitBreakerState(String value) {
+            metricTag = new Tag("state", value);
+        }
+
+        @Override
+        public Tag get() {
+            return metricTag;
+        }
+    }
+
+    /**
+     * Class for "ft.circuitbreaker.calls.total" counters.
+     */
+    static class CircuitBreakerCallsTotal extends FaultToleranceMetric {
+
+        static final CircuitBreakerCallsTotal INSTANCE = new CircuitBreakerCallsTotal();
+
+        private CircuitBreakerCallsTotal() {
+        }
+
+        @Override
+        String name() {
+            return "ft.circuitbreaker.calls.total";
+        }
+
+        @Override
+        String description() {
+            return "The number of times the circuit breaker logic was run. This will usually be once "
+                    + "per method call, but may be more than once if the method call is retried.";
+        }
+
+        @Override
+        MetricType metricType() {
+            return MetricType.COUNTER;
+        }
+
+        @Override
+        String unit() {
+            return MetricUnits.NONE;
+        }
+
+        static Counter get(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
+        }
+
+        static Counter register(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
+        }
+    }
+
+    /**
+     * Class for "ft.circuitbreaker.state.total" gauges.
+     */
+    static class CircuitBreakerStateTotal extends FaultToleranceMetric {
+
+        static final CircuitBreakerStateTotal INSTANCE = new CircuitBreakerStateTotal();
+
+        private CircuitBreakerStateTotal() {
+        }
+
+        @Override
+        String name() {
+            return "ft.circuitbreaker.state.total";
+        }
+
+        @Override
+        String description() {
+            return "Amount of time the circuit breaker has spent in each state";
+        }
+
+        @Override
+        MetricType metricType() {
+            return MetricType.GAUGE;
+        }
+
+        @Override
+        String unit() {
+            return MetricUnits.NANOSECONDS;
+        }
+
+
+        static Gauge<Long> get(Tag... tags) {
+            return INSTANCE.getGauge(tags);
+        }
+
+        static Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
+            return INSTANCE.registerGauge(gauge, tags);
+        }
+    }
+
+    /**
+     * Class for "ft.circuitbreaker.opened.total" counters.
+     */
+    static class CircuitBreakerOpenedTotal extends FaultToleranceMetric {
+
+        static final CircuitBreakerOpenedTotal INSTANCE = new CircuitBreakerOpenedTotal();
+
+        private CircuitBreakerOpenedTotal() {
+        }
+
+        @Override
+        String name() {
+            return "ft.circuitbreaker.opened.total";
+        }
+
+        @Override
+        String description() {
+            return "Number of times the circuit breaker has moved from closed state to open state";
+        }
+
+        @Override
+        MetricType metricType() {
+            return MetricType.COUNTER;
+        }
+
+        @Override
+        String unit() {
+            return MetricUnits.NONE;
+        }
+
+        static Counter get(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
+        }
+
+        static Counter register(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
+        }
+    }
+
+    // --- Bulkheads ----------------------------------------------------------
+
+    enum BulkheadResult implements Supplier<Tag> {
+        ACCEPTED("accepted"),
+        REJECTED("rejected");
+
+        private final Tag metricTag;
+
+        BulkheadResult(String value) {
+            metricTag = new Tag("bulkheadResult", value);
+        }
+
+        @Override
+        public Tag get() {
+            return metricTag;
+        }
+    }
+
+    /**
+     * Class for "ft.bulkhead.calls.total" counters.
+     */
+    static class BulkheadCallsTotal extends FaultToleranceMetric {
+
+        static final BulkheadCallsTotal INSTANCE = new BulkheadCallsTotal();
+
+        private BulkheadCallsTotal() {
+        }
+
+        @Override
+        String name() {
+            return "ft.bulkhead.calls.total";
+        }
+
+        @Override
+        String description() {
+            return "The number of times the bulkhead logic was run. This will usually be once per "
+                    + "method call, but may be zero times if the circuit breaker prevented execution "
+                    + "or more than once if the method call is retried.";
+        }
+
+        @Override
+        MetricType metricType() {
+            return MetricType.COUNTER;
+        }
+
+        @Override
+        String unit() {
+            return MetricUnits.NONE;
+        }
+
+        static Counter get(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
+        }
+
+        static Counter register(Tag... tags) {
+            return INSTANCE.registerCounter(tags);
+        }
+    }
+
+    /**
+     * Class for "ft.bulkhead.executionsRunning" gauges.
+     */
+    static class BulkheadExecutionsRunning extends FaultToleranceMetric {
+
+        static final BulkheadExecutionsRunning INSTANCE = new BulkheadExecutionsRunning();
+
+        private BulkheadExecutionsRunning() {
+        }
+
+        @Override
+        String name() {
+            return "ft.bulkhead.executionsRunning";
+        }
+
+        @Override
+        String description() {
+            return "Number of currently running executions";
+        }
+
+        @Override
+        MetricType metricType() {
+            return MetricType.GAUGE;
+        }
+
+        @Override
+        String unit() {
+            return MetricUnits.NONE;
+        }
+
+        static Gauge<Long> get(Tag... tags) {
+            return INSTANCE.getGauge(tags);
+        }
+
+        static Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
+            return INSTANCE.registerGauge(gauge, tags);
+        }
+    }
+
+    /**
+     * Class for "ft.bulkhead.executionsWaiting" gauges.
+     */
+    static class BulkheadExecutionsWaiting extends FaultToleranceMetric {
+
+        static final BulkheadExecutionsWaiting INSTANCE = new BulkheadExecutionsWaiting();
+
+        private BulkheadExecutionsWaiting() {
+        }
+
+        @Override
+        String name() {
+            return "ft.bulkhead.executionsWaiting";
+        }
+
+        @Override
+        String description() {
+            return "Number of executions currently waiting in the queue";
+        }
+
+        @Override
+        MetricType metricType() {
+            return MetricType.GAUGE;
+        }
+
+        @Override
+        String unit() {
+            return MetricUnits.NONE;
+        }
+
+        static Gauge<Long> get(Tag... tags) {
+            return INSTANCE.getGauge(tags);
+        }
+
+        static Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
+            return INSTANCE.registerGauge(gauge, tags);
+        }
+    }
+
+    /**
+     * Class for "ft.bulkhead.runningDuration" histograms.
+     */
+    static class BulkheadRunningDuration extends FaultToleranceMetric {
+
+        static final BulkheadRunningDuration INSTANCE = new BulkheadRunningDuration();
+
+        private BulkheadRunningDuration() {
+        }
+
+        @Override
+        String name() {
+            return "ft.bulkhead.runningDuration";
+        }
+
+        @Override
+        String description() {
+            return "Histogram of the time that method executions spent running";
+        }
+
+        @Override
+        MetricType metricType() {
+            return MetricType.HISTOGRAM;
+        }
+
+        @Override
+        String unit() {
+            return MetricUnits.NANOSECONDS;
+        }
+
+        static Histogram get(Tag... tags) {
+            return INSTANCE.registerHistogram(tags);
+        }
+
+        static Histogram register(Tag... tags) {
+            return INSTANCE.registerHistogram(tags);
+        }
+    }
+
+    /**
+     * Class for "ft.bulkhead.waitingDuration" histograms.
+     */
+    static class BulkheadWaitingDuration extends FaultToleranceMetric {
+
+        static final BulkheadWaitingDuration INSTANCE = new BulkheadWaitingDuration();
+
+        private BulkheadWaitingDuration() {
+        }
+
+        @Override
+        String name() {
+            return "ft.bulkhead.waitingDuration";
+        }
+
+        @Override
+        String description() {
+            return "Histogram of the time that method executions spent waiting in the queue";
+        }
+
+        @Override
+        MetricType metricType() {
+            return MetricType.HISTOGRAM;
+        }
+
+        @Override
+        String unit() {
+            return MetricUnits.NANOSECONDS;
+        }
+
+        static Histogram get(Tag... tags) {
+            return INSTANCE.registerHistogram(tags);
+        }
+
+        static Histogram register(Tag... tags) {
+            return INSTANCE.registerHistogram(tags);
+        }
     }
 }

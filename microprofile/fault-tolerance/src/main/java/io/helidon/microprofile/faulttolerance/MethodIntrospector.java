@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,11 @@ import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.eclipse.microprofile.metrics.Tag;
 
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.APPLIED;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.NOT_APPLIED;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.NOT_DEFINED;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceParameter.getParameter;
 import static io.helidon.microprofile.faulttolerance.MethodAntn.lookupAnnotation;
 
@@ -49,6 +53,8 @@ class MethodIntrospector {
     private final Timeout timeout;
 
     private final Bulkhead bulkhead;
+
+    private Tag methodNameTag;
 
     /**
      * Constructor.
@@ -148,6 +154,30 @@ class MethodIntrospector {
 
     Bulkhead getBulkhead() {
         return bulkhead;
+    }
+
+    /**
+     * Returns a metric's tag with the fully qualified method name.
+     *
+     * @return the tag
+     */
+    Tag getMethodNameTag() {
+        if (methodNameTag == null) {
+            String name = method.getDeclaringClass().getName() + "." + method.getName();
+            methodNameTag = new Tag("method", name);
+        }
+        return methodNameTag;
+    }
+
+    /**
+     * Returns a fallback tag based on the {@code fallbackCalled} parameter.
+     *
+     * @param fallbackCalled indicates if fallback logic was called or not
+     * @return the tag
+     */
+    Tag getFallbackTag(boolean fallbackCalled) {
+        return !hasFallback() ? NOT_DEFINED.get()
+                : fallbackCalled ? APPLIED.get() : NOT_APPLIED.get();
     }
 
     /**

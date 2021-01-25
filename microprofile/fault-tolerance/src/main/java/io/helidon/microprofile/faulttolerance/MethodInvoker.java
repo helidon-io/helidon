@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -45,46 +46,39 @@ import io.helidon.faulttolerance.Fallback;
 import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandlerTyped;
 import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.RetryTimeoutException;
 import io.helidon.faulttolerance.Timeout;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
-import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 import org.eclipse.microprofile.metrics.Counter;
 import org.glassfish.jersey.process.internal.RequestContext;
 import org.glassfish.jersey.process.internal.RequestScope;
 
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_PREVENTED_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_SUCCEEDED_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CLOSED_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_HALF_OPEN_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_OPENED_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_OPEN_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_CALLS_ACCEPTED_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_CALLS_REJECTED_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_CONCURRENT_EXECUTIONS;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_EXECUTION_DURATION;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_WAITING_DURATION;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_WAITING_QUEUE_POPULATION;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.INVOCATIONS_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.METRIC_NAME_TEMPLATE;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RETRY_CALLS_FAILED_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RETRY_RETRIES_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TIMEOUT_CALLS_NOT_TIMED_OUT_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TIMEOUT_CALLS_TIMED_OUT_TOTAL;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TIMEOUT_EXECUTION_DURATION;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getCounter;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getHistogram;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.registerGauge;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.registerHistogram;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadCallsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadExecutionsRunning;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadExecutionsWaiting;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadResult;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadRunningDuration;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadWaitingDuration;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerCallsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerOpenedTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerResult;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerState;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerStateTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.EXCEPTION_THROWN;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.VALUE_RETURNED;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryCallsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryResult;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryRetried;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryRetriesTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutCallsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutExecutionDuration;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutTimedOut;
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.mapTypes;
-
 /**
  * Invokes a FT method applying semantics based on method annotations. An instance
  * of this class is created for each method invocation. Some state is shared across
@@ -155,6 +149,12 @@ class MethodInvoker implements FtSupplier<Object> {
      * reference for thread interruptions.
      */
     private Thread asyncInterruptThread;
+
+    /**
+     * A boolean value indicates whether the fallback logic was called or not
+     * on this invocation.
+     */
+    private AtomicBoolean fallbackCalled = new AtomicBoolean(false);
 
     /**
      * State associated with a method in {@code METHOD_STATES}. This include the
@@ -261,7 +261,7 @@ class MethodInvoker implements FtSupplier<Object> {
         @Override
         public T get(long timeout, TimeUnit unit) throws InterruptedException,
                 ExecutionException, java.util.concurrent.TimeoutException {
-            T value = super.get();
+            T value = super.get(timeout, unit);
             if (method.getReturnType() == Future.class) {
                 return ((Future<T>) value).get(timeout, unit);
             }
@@ -325,36 +325,41 @@ class MethodInvoker implements FtSupplier<Object> {
                     + " on thread " + Thread.currentThread().getName());
         }
 
-        // Gauges and other metrics for bulkhead and circuit breakers
-        if (isFaultToleranceMetricsEnabled()) {
-            if (introspector.hasCircuitBreaker()) {
-                registerGauge(method, BREAKER_OPEN_TOTAL,
-                        "Amount of time the circuit breaker has spent in open state",
-                        () -> methodState.breakerTimerOpen);
-                registerGauge(method, BREAKER_HALF_OPEN_TOTAL,
-                        "Amount of time the circuit breaker has spent in half-open state",
-                        () -> methodState.breakerTimerHalfOpen);
-                registerGauge(method, BREAKER_CLOSED_TOTAL,
-                        "Amount of time the circuit breaker has spent in closed state",
-                        () -> methodState.breakerTimerClosed);
-            }
-            if (introspector.hasBulkhead()) {
-                registerGauge(method, BULKHEAD_CONCURRENT_EXECUTIONS,
-                        "Number of currently running executions",
-                        () -> methodState.bulkhead.stats().concurrentExecutions());
-                if (introspector.isAsynchronous()) {
-                    registerGauge(method, BULKHEAD_WAITING_QUEUE_POPULATION,
-                            "Number of executions currently waiting in the queue",
-                            () -> methodState.bulkhead.stats().waitingQueueSize());
-                    registerHistogram(
-                            String.format(METRIC_NAME_TEMPLATE,
-                                    method.getDeclaringClass().getName(),
-                                    method.getName(),
-                                    BULKHEAD_WAITING_DURATION),
-                            "Histogram of the time executions spend waiting in the queue.");
-                }
+        registerMetrics();
+    }
+
+    private void registerMetrics() {
+        if (!isFaultToleranceMetricsEnabled()) {
+            return;
+        }
+
+        if (introspector.hasCircuitBreaker()) {
+            CircuitBreakerStateTotal.register(
+                    () -> methodState.breakerTimerOpen,
+                    introspector.getMethodNameTag(),
+                    CircuitBreakerState.OPEN.get());
+            CircuitBreakerStateTotal.register(
+                    () -> methodState.breakerTimerHalfOpen,
+                    introspector.getMethodNameTag(),
+                    CircuitBreakerState.HALF_OPEN.get());
+            CircuitBreakerStateTotal.register(
+                    () -> methodState.breakerTimerClosed,
+                    introspector.getMethodNameTag(),
+                    CircuitBreakerState.CLOSED.get());
+            CircuitBreakerOpenedTotal.register(
+                    introspector.getMethodNameTag());
+        }
+        if (introspector.hasBulkhead()) {
+            BulkheadExecutionsRunning.register(
+                    () -> methodState.bulkhead.stats().concurrentExecutions(),
+                    introspector.getMethodNameTag());
+            if (introspector.isAsynchronous()) {
+                BulkheadExecutionsWaiting.register(
+                        () -> methodState.bulkhead.stats().waitingQueueSize(),
+                        introspector.getMethodNameTag());
             }
         }
+
     }
 
     @Override
@@ -426,7 +431,8 @@ class MethodInvoker implements FtSupplier<Object> {
                         cause = map(throwable);
                     }
                     updateMetricsAfter(cause);
-                    resultFuture.completeExceptionally(cause);
+                    resultFuture.completeExceptionally(cause instanceof RetryTimeoutException
+                            ? ((RetryTimeoutException) cause).lastRetryException() : cause);
                 } else {
                     updateMetricsAfter(null);
                     resultFuture.complete(result);
@@ -461,6 +467,9 @@ class MethodInvoker implements FtSupplier<Object> {
                 }
             }
             updateMetricsAfter(cause);
+            if (cause instanceof RetryTimeoutException) {
+                throw ((RetryTimeoutException) cause).lastRetryException();
+            }
             if (cause != null) {
                 throw cause;
             }
@@ -536,22 +545,6 @@ class MethodInvoker implements FtSupplier<Object> {
                     .skipOn(mapTypes(introspector.getCircuitBreaker().skipOn()))
                     .build();
         }
-
-        if (introspector.hasRetry()) {
-            methodState.retry = Retry.builder()
-                    .retryPolicy(Retry.JitterRetryPolicy.builder()
-                            .calls(introspector.getRetry().maxRetries() + 1)
-                            .delay(Duration.of(introspector.getRetry().delay(),
-                                    introspector.getRetry().delayUnit()))
-                            .jitter(Duration.of(introspector.getRetry().jitter(),
-                                    introspector.getRetry().jitterDelayUnit()))
-                            .build())
-                    .overallTimeout(Duration.of(introspector.getRetry().maxDuration(),
-                            introspector.getRetry().durationUnit()))
-                    .applyOn(mapTypes(introspector.getRetry().retryOn()))
-                    .skipOn(mapTypes(introspector.getRetry().abortOn()))
-                    .build();
-        }
     }
 
     /**
@@ -579,7 +572,27 @@ class MethodInvoker implements FtSupplier<Object> {
             builder.addBreaker(methodState.breaker);
         }
 
-        if (methodState.retry != null) {
+        // Create a retry for this invocation only
+        if (introspector.hasRetry()) {
+            int maxRetries = introspector.getRetry().maxRetries();
+            if (maxRetries == -1) {
+                maxRetries = Integer.MAX_VALUE;
+            } else {
+                maxRetries++;       // add 1 for initial call
+            }
+            methodState.retry = Retry.builder()
+                    .retryPolicy(Retry.JitterRetryPolicy.builder()
+                            .calls(maxRetries)
+                            .delay(Duration.of(introspector.getRetry().delay(),
+                                    introspector.getRetry().delayUnit()))
+                            .jitter(Duration.of(introspector.getRetry().jitter(),
+                                    introspector.getRetry().jitterDelayUnit()))
+                            .build())
+                    .overallTimeout(Duration.of(introspector.getRetry().maxDuration(),
+                            introspector.getRetry().durationUnit()))
+                    .applyOn(mapTypes(introspector.getRetry().retryOn()))
+                    .skipOn(mapTypes(introspector.getRetry().abortOn()))
+                    .build();
             builder.addRetry(methodState.retry);
         }
 
@@ -594,7 +607,8 @@ class MethodInvoker implements FtSupplier<Object> {
                             }
 
                             // Execute callback logic
-                            CommandFallback cfb = new CommandFallback(context, introspector, throwable);
+                            fallbackCalled.set(true);
+                            FallbackHelper cfb = new FallbackHelper(context, introspector, throwable);
                             return toCompletionStageSupplier(cfb::execute).get();
                         } finally {
                             // Release request context if referenced
@@ -707,7 +721,7 @@ class MethodInvoker implements FtSupplier<Object> {
     /**
      * Update metrics after method is called and depending on outcome.
      *
-     * @param cause Exception cause or {@code null} if execution successful.
+     * @param cause Mapped cause or {@code null} if successful.
      */
     private void updateMetricsAfter(Throwable cause) {
         if (!isFaultToleranceMetricsEnabled()) {
@@ -718,58 +732,83 @@ class MethodInvoker implements FtSupplier<Object> {
             // Calculate execution time
             long executionTime = System.nanoTime() - handlerStartNanos;
 
-            // Metrics for retries
+            // Retries
             if (introspector.hasRetry()) {
-                // Have retried the last call?
-                long newValue = methodState.retry.retryCounter();
-                if (updateCounter(method, RETRY_RETRIES_TOTAL, newValue)) {
-                    if (cause == null) {
-                        getCounter(method, RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL).inc();
-                    }
-                } else {
-                    getCounter(method, RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL).inc();
+                long retryCounter = methodState.retry.retryCounter();
+                boolean wasRetried = retryCounter > 0;
+                Counter retryRetriesTotal = RetryRetriesTotal.get(introspector.getMethodNameTag());
+
+                // Update retry counter
+                if (wasRetried) {
+                    retryRetriesTotal.inc(retryCounter);
                 }
 
-                // Update failed calls
-                if (cause != null) {
-                    getCounter(method, RETRY_CALLS_FAILED_TOTAL).inc();
+                // Update retry metrics based on outcome
+                if (cause == null) {
+                    RetryCallsTotal.get(introspector.getMethodNameTag(),
+                            wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                            RetryResult.VALUE_RETURNED.get()).inc();
+                } else if (cause instanceof RetryTimeoutException) {
+                    RetryCallsTotal.get(introspector.getMethodNameTag(),
+                            wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                            RetryResult.MAX_DURATION_REACHED.get()).inc();
+                } else {
+                    // Exception thrown but not RetryTimeoutException
+                    int maxRetries = introspector.getRetry().maxRetries();
+                    if (maxRetries == -1) {
+                        maxRetries = Integer.MAX_VALUE;
+                    }
+                    if (retryCounter == maxRetries) {
+                        RetryCallsTotal.get(introspector.getMethodNameTag(),
+                                wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                                RetryResult.MAX_RETRIES_REACHED.get()).inc();
+                    } else if (retryCounter < maxRetries) {
+                        RetryCallsTotal.get(introspector.getMethodNameTag(),
+                                wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                                RetryResult.EXCEPTION_NOT_RETRYABLE.get()).inc();
+                    }
                 }
             }
 
             // Timeout
             if (introspector.hasTimeout()) {
-                getHistogram(method, TIMEOUT_EXECUTION_DURATION).update(executionTime);
-                getCounter(method, cause instanceof TimeoutException
-                        ? TIMEOUT_CALLS_TIMED_OUT_TOTAL
-                        : TIMEOUT_CALLS_NOT_TIMED_OUT_TOTAL).inc();
+                if (cause instanceof org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException) {
+                    TimeoutCallsTotal.get(introspector.getMethodNameTag(),
+                            TimeoutTimedOut.TRUE.get()).inc();
+                } else {
+                    TimeoutCallsTotal.get(introspector.getMethodNameTag(),
+                            TimeoutTimedOut.FALSE.get()).inc();
+                }
+                TimeoutExecutionDuration.get(introspector.getMethodNameTag()).update(executionTime);
             }
 
-            // Circuit breaker
+            // CircuitBreaker
             if (introspector.hasCircuitBreaker()) {
                 Objects.requireNonNull(methodState.breaker);
 
-                // Update counters based on state changes
                 if (methodState.lastBreakerState == State.OPEN) {
-                    getCounter(method, BREAKER_CALLS_PREVENTED_TOTAL).inc();
+                    CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
+                            CircuitBreakerResult.CIRCUIT_BREAKER_OPEN.get()).inc();
                 } else if (methodState.breaker.state() == State.OPEN) {     // closed -> open
-                    getCounter(method, BREAKER_OPENED_TOTAL).inc();
+                    CircuitBreakerOpenedTotal.get(introspector.getMethodNameTag()).inc();
                 }
 
-                // Update succeeded and failed
                 if (cause == null) {
-                    getCounter(method, BREAKER_CALLS_SUCCEEDED_TOTAL).inc();
+                    CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
+                            CircuitBreakerResult.SUCCESS.get()).inc();
                 } else if (!(cause instanceof CircuitBreakerOpenException)) {
-                    boolean failure = false;
-                    Class<? extends Throwable>[] failOn = introspector.getCircuitBreaker().failOn();
-                    for (Class<? extends Throwable> c : failOn) {
-                        if (c.isAssignableFrom(cause.getClass())) {
-                            failure = true;
-                            break;
-                        }
-                    }
+                    boolean skipOnThrowable = Arrays.stream(introspector.getCircuitBreaker().skipOn())
+                            .anyMatch(c -> c.isAssignableFrom(cause.getClass()));
+                    boolean failOnThrowable = Arrays.stream(introspector.getCircuitBreaker().failOn())
+                            .anyMatch(c -> c.isAssignableFrom(cause.getClass()));
 
-                    getCounter(method, failure ? BREAKER_CALLS_FAILED_TOTAL
-                            : BREAKER_CALLS_SUCCEEDED_TOTAL).inc();
+                    if (skipOnThrowable || !failOnThrowable) {
+                        CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
+                                CircuitBreakerResult.SUCCESS.get()).inc();
+                    } else {
+                        CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
+                                CircuitBreakerResult.FAILURE.get()).inc();
+                    }
                 }
 
                 // Update times for gauges
@@ -796,42 +835,38 @@ class MethodInvoker implements FtSupplier<Object> {
             if (introspector.hasBulkhead()) {
                 Objects.requireNonNull(methodState.bulkhead);
                 Bulkhead.Stats stats = methodState.bulkhead.stats();
-                updateCounter(method, BULKHEAD_CALLS_ACCEPTED_TOTAL, stats.callsAccepted());
-                updateCounter(method, BULKHEAD_CALLS_REJECTED_TOTAL, stats.callsRejected());
+                Counter bulkheadAccepted = BulkheadCallsTotal.get(introspector.getMethodNameTag(),
+                        BulkheadResult.ACCEPTED.get());
+                if (stats.callsAccepted() > bulkheadAccepted.getCount()) {
+                    bulkheadAccepted.inc(stats.callsAccepted() - bulkheadAccepted.getCount());
+                }
+                Counter bulkheadRejected = BulkheadCallsTotal.get(introspector.getMethodNameTag(),
+                        BulkheadResult.REJECTED.get());
+                if (stats.callsRejected() > bulkheadRejected.getCount()) {
+                    bulkheadRejected.inc(stats.callsRejected() - bulkheadRejected.getCount());
+                }
 
                 // Update histograms if task accepted
                 if (!(cause instanceof BulkheadException)) {
                     long waitingTime = invocationStartNanos - handlerStartNanos;
-                    getHistogram(method, BULKHEAD_EXECUTION_DURATION).update(executionTime - waitingTime);
+                    BulkheadRunningDuration.get(introspector.getMethodNameTag())
+                            .update(executionTime - waitingTime);
                     if (introspector.isAsynchronous()) {
-                        getHistogram(method, BULKHEAD_WAITING_DURATION).update(waitingTime);
+                        BulkheadWaitingDuration.get(introspector.getMethodNameTag()).update(waitingTime);
                     }
                 }
             }
 
             // Global method counters
-            getCounter(method, INVOCATIONS_TOTAL).inc();
-            if (cause != null) {
-                getCounter(method, INVOCATIONS_FAILED_TOTAL).inc();
+            if (cause == null) {
+                InvocationsTotal.get(introspector.getMethodNameTag(),
+                        VALUE_RETURNED.get(),
+                        introspector.getFallbackTag(fallbackCalled.get())).inc();
+            } else {
+                InvocationsTotal.get(introspector.getMethodNameTag(),
+                        EXCEPTION_THROWN.get(),
+                        introspector.getFallbackTag(fallbackCalled.get())).inc();
             }
         }
-    }
-
-    /**
-     * Sets the value of a monotonically increasing counter using {@code inc()}.
-     *
-     * @param method The method.
-     * @param name The counter's name.
-     * @param newValue The new value.
-     * @return A value of {@code true} if counter updated, {@code false} otherwise.
-     */
-    private static boolean updateCounter(Method method, String name, long newValue) {
-        Counter counter = getCounter(method, name);
-        long oldValue = counter.getCount();
-        if (newValue > oldValue) {
-            counter.inc(newValue - oldValue);
-            return true;
-        }
-        return false;
     }
 }

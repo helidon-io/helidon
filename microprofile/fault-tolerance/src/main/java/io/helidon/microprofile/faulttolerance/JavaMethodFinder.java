@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ class JavaMethodFinder {
      * @return The method found.
      * @throws NoSuchMethodException If not found.
      */
-    static Method findMethod(Class<?> clazz, String methodName, Type[] paramTypes)
+    static Method findMethod(Class<?> clazz, String methodName, Type... paramTypes)
             throws NoSuchMethodException {
         // Initialize queue with first class
         Queue<Class<?>> queue = new LinkedBlockingQueue<>();
