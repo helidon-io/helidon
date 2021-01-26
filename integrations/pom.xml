@@ -44,6 +44,7 @@
         <module>graal</module>
         <module>db</module>
         <module>micronaut</module>
+        <module>neo4j</module>
     </modules>
 
     <build>
