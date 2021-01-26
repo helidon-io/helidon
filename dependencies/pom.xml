@@ -91,6 +91,7 @@
         <version.lib.micronaut>2.2.0</version.lib.micronaut>
         <version.lib.micronaut.data>2.2.0</version.lib.micronaut.data>
         <version.lib.micronaut.sql>3.3.1</version.lib.micronaut.sql>
+        <version.lib.neo4j>4.2.0</version.lib.neo4j>
         <version.lib.microprofile-config>1.4</version.lib.microprofile-config>
         <version.lib.microprofile-fault-tolerance-api>2.1.1</version.lib.microprofile-fault-tolerance-api>
         <version.lib.microprofile-graphql>1.0.3</version.lib.microprofile-graphql>
@@ -1099,6 +1100,11 @@
                 <groupId>io.micronaut.data</groupId>
                 <artifactId>micronaut-data-processor</artifactId>
                 <version>${version.lib.micronaut.data}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.neo4j.driver</groupId>
+                <artifactId>neo4j-java-driver</artifactId>
+                <version>${version.lib.neo4j}</version>
             </dependency>
             <!-- END OF Section 2: third party dependencies used by examples -->
 
