@@ -38,6 +38,7 @@
         <module>metrics</module>
         <module>security</module>
         <module>tracing</module>
+        <module>blocking</module>
     </modules>
 
 </project>
