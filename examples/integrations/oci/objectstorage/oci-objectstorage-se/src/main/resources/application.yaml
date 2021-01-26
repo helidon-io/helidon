@@ -1,0 +1,11 @@
+
+oci:
+  config:
+    profile: "DEFAULT"
+  objectstorage:
+    namespace: "${oci.objectstorage.namespaceName}"
+
+
+server:
+  port: 8080
+  host: 0.0.0.0
