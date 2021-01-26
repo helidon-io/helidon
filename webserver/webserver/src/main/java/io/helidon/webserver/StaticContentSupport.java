@@ -57,7 +57,7 @@ public class StaticContentSupport implements Service {
         routing.get((req, res) -> handler.handle(Http.Method.GET, req, res));
         routing.head((req, res) -> handler.handle(Http.Method.HEAD, req, res));
     }
-    
+
     private void onNewWebServer(WebServer ws) {
         webServerStarted();
         ws.whenShutdown().thenRun(this::webServerStopped);
@@ -194,7 +194,7 @@ public class StaticContentSupport implements Service {
             this.welcomeFileName = welcomeFileName;
             return this;
         }
-        
+
         /**
          * Sets a fallback request path which will be resolved if the requested file does not exist.
          * The given fallback may be a directory, in which case the {@link #welcomeFileName(java.lang.String) welcome file}

@@ -42,7 +42,10 @@ class FileSystemContentHandler extends StaticContentHandler {
         this.root = root.toAbsolutePath().normalize();
     }
 
-    public static StaticContentHandler create(String welcomeFileName, String fallbackPath, ContentTypeSelector selector, Path fsRoot) {
+    public static StaticContentHandler create(String welcomeFileName,
+                                              String fallbackPath,
+                                              ContentTypeSelector selector,
+                                              Path fsRoot) {
         if (Files.exists(fsRoot) && Files.isDirectory(fsRoot)) {
             return new FileSystemContentHandler(welcomeFileName, fallbackPath, selector, fsRoot);
         } else {
