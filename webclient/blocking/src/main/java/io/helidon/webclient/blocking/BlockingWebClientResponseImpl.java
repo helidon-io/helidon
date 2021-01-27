@@ -22,12 +22,15 @@ import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.WebClientResponseHeaders;
 
 
+class BlockingWebClientResponseImpl implements BlockingWebClientResponse {
 
-public class BlockingWebClientResponseImpl implements BlockingWebClientResponse {
     private final WebClientResponse res;
+
+    private final BlockingMessageBodyReadableContent content;
 
     BlockingWebClientResponseImpl(WebClientResponse res) {
         this.res = res;
+        content = BlockingMessageBodyReadableContent.create(res.content());
     }
 
     static BlockingWebClientResponse create(WebClientResponse res) {
@@ -41,7 +44,7 @@ public class BlockingWebClientResponseImpl implements BlockingWebClientResponse 
 
     @Override
     public BlockingMessageBodyReadableContent content() {
-        return BlockingMessageBodyReadableContent.create(res.content());
+        return content;
     }
 
     @Override
@@ -61,6 +64,6 @@ public class BlockingWebClientResponseImpl implements BlockingWebClientResponse 
 
     @Override
     public void close() {
-        res.close().await(); //with timer or forever??
+        res.close().await();
     }
 }

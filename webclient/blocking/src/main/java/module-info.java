@@ -15,7 +15,7 @@
  */
 
 /**
- * Helidon WebClient blocking APis.
+ * Helidon WebClient blocking APIs.
  */
 module io.helidon.webclient.blocking {
 

@@ -27,6 +27,6 @@ Then run the client, passing the port number. It will connect
 to the server:
 
 ```
-java -cp "target/classes:target/libs/*" io.helidon.examples.webclient.blocking.ClientMain PORT
+java -cp "target/classes:target/libs/*" io.helidon.examples.webclient.blocking.BlockingClientMain PORT
 ```
 

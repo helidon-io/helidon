@@ -36,42 +36,6 @@
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-context</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-http</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-key-util</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.media</groupId>
-            <artifactId>helidon-media-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-buffer</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-handler</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-handler-proxy</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-codec-http</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>io.helidon.config</groupId>

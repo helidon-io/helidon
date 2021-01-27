@@ -37,7 +37,7 @@ import io.helidon.webclient.WebClientRequestHeaders;
 
 
 
-public class BlockingWebClientRequestBuilderImpl implements BlockingWebClientRequestBuilder {
+class BlockingWebClientRequestBuilderImpl implements BlockingWebClientRequestBuilder {
     private final WebClientRequestBuilder builder;
 
     BlockingWebClientRequestBuilderImpl(WebClientRequestBuilder builder) {

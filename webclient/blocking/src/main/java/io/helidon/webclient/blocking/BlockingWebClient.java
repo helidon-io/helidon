@@ -31,12 +31,23 @@ public class BlockingWebClient {
     }
 
     /**
-     * Create a new WebClient.
+     * Create a new BlockingWebClient.
      *
-     * @return client
+     * @param webClient web client instance
+     * @return BlockingWebClient
      */
     public static BlockingWebClient create(WebClient webClient) {
         return new BlockingWebClient(webClient);
+    }
+
+
+    /**
+     * Create a new Blocking WebClient.
+     *
+     * @return BlockingWebClient
+     */
+    public static BlockingWebClient create(){
+        return new BlockingWebClient(WebClient.create());
     }
 
 

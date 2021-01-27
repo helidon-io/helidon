@@ -32,7 +32,7 @@ import io.helidon.media.common.MessageBodyStreamReader;
 
 
 /**
- * Readable {@link MessageBodyContent}.
+ * Blocking Readable {@link MessageBodyContent}.
  */
 @SuppressWarnings("deprecation")
 public final class BlockingMessageBodyReadableContent {
@@ -206,7 +206,7 @@ public final class BlockingMessageBodyReadableContent {
     /**
      * Create a new readable content backed by the given Message Body Readable content.
      *
-     * @param content
+     * @param content readable content
      * @return BlockingMessageBodyReadableContent
      */
     public static BlockingMessageBodyReadableContent create(MessageBodyReadableContent content) {

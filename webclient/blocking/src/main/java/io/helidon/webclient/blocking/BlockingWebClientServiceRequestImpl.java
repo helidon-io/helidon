@@ -27,7 +27,7 @@ import io.helidon.webclient.WebClientServiceResponse;
 
 
 
-public class BlockingWebClientServiceRequestImpl implements BlockingWebClientServiceRequest {
+class BlockingWebClientServiceRequestImpl implements BlockingWebClientServiceRequest {
     private final WebClientServiceRequest req;
 
     BlockingWebClientServiceRequestImpl(WebClientServiceRequest req) {
