@@ -156,12 +156,17 @@ First thing to do is to open the pom.xml file and add helidon dependencies to us
     <groupId>io.helidon.dbclient</groupId>      <5>
     <artifactId>helidon-dbclient-metrics</artifactId>
 </dependency>
+<dependency>
+    <groupId>io.helidon.dbclient</groupId>      <6>
+    <artifactId>helidon-dbclient-jsonp</artifactId>
+</dependency>
 ----
 <1> DB Client API dependency.
 <2> Using JDBC driver for this example.
 <3> H2 driver dependency.
 <4> Support for health check.
 <5> Support for metrics.
+<6> Support for Jsonp.
 
 === Configure the DB Client
 
@@ -320,12 +325,14 @@ public void update(Routing.Rules rules) {
     rules
         .get("/{name}", this::getBook)      // <1>
         .put("/{name}", this::addBook)      // <2>
-        .delete("/{name}", this::deleteBook);   // <3>
+        .delete("/{name}", this::deleteBook)   // <3>
+        .get("/json/{name}", this::getJsonBook); // <4>
 }
 ----
 <1> Return information about the required book from the database.
 <2> Add a book to the library.
 <3> Remove a book from the library.
+<4> Return the book information in Json format.
 
 To summarise, there is one endpoint which can manipulate books. The number of endpoints and application
 features can be changed from these rules by creating or modifying methods. `{name}` is a path parameter for the book
@@ -362,6 +369,28 @@ Nevertheless, it is possible to execute a set of tasks into a single execution u
 (Function<DbTransaction, T> executor)` method. DbExecute class provides many builders to create a statement. There are
 two builders categories. Builder methods with `Named` keyword uses a statement defined in the configuration file.
 Whether builder methods without `Named` keyword uses a statement passed as an argument.
+
+[source,java]
+.Add getJsonBook to the LibraryService:
+----
+private void getJsonBook(ServerRequest serverRequest, ServerResponse serverResponse) {
+        String bookName = serverRequest.path().param("name");
+
+        dbClient.execute(exec -> exec.namedGet("select-book", bookName))
+                .thenAccept(row -> {
+                    if (row.isPresent()) {
+                        serverResponse.send(row.get().as(JsonObject.class));
+                    } else {
+                        serverResponse.status(Http.Status.NOT_FOUND_404)
+                                .send();
+                    }
+                })
+                .exceptionally(serverResponse::send);
+    }
+----
+
+Instead of sending the `INFO` content of the targeted book, the `getJsonBook` method send the whole row of the
+database as a `JsonObject`.
 
 [source,java]
 .Add addBook to the LibraryService:
@@ -476,6 +505,22 @@ Fantasy
 ----
 
 The application accepted the request and return an HTTP 200 OK with the book gender which was added earlier.
+
+[source,bash]
+.Get Harry Potter from the library in Json
+----
+curl -i http://localhost:8080/library/json/HarryPotter
+
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Date: Tue, 12 Jan 2021 14:01:14 +0100
+connection: keep-alive
+content-length: 6
+
+{"INFO":"Fantasy"}
+----
+
+It returns the database row in a Json format for Harry Potter book.
 Harry Potter can be removed from the library with the following:
 
 [source,bash]
