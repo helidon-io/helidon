@@ -37,6 +37,7 @@
         <module>micrometer</module>
         <module>oci</module>
         <module>vault</module>
+        <module>microstream</module>
     </modules>
 
 </project>
