@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,15 @@ import java.security.cert.X509Certificate;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 
-import io.helidon.common.http.DataChunk;
 import io.helidon.webserver.HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder;
 
+import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -60,7 +62,8 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     private final NettyWebServer webServer;
     private final SocketConfiguration soConfig;
     private final Routing routing;
-    private final Queue<ReferenceHoldingQueue<DataChunk>> queues = new ConcurrentLinkedQueue<>();
+    private final ReferenceQueue<Object> refQ = new ReferenceQueue<>();
+    private final Queue<ReferenceHoldingQueue<?>> queues = new ConcurrentLinkedQueue<>();
 
     HttpInitializer(SocketConfiguration soConfig,
                     SslContext sslContext,
@@ -73,10 +76,23 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     }
 
     private void clearQueues() {
+        for(Reference<?> r = refQ.poll(); r != null; r = refQ.poll()) {
+           if (!(r instanceof IndirectReference<?>)) {
+              continue;
+           }
+           ReferenceHoldingQueue<?> q = ((IndirectReference<ReferenceHoldingQueue<?>>) r).acquire();
+           if (q == null) {
+              continue;
+           }
+           if (!q.release()) {
+              queues.add(q);
+           }
+        }
         queues.removeIf(ReferenceHoldingQueue::release);
     }
 
     void queuesShutdown() {
+        clearQueues();
         queues.removeIf(queue -> {
             queue.shutdown();
             return true;
@@ -132,7 +148,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         }
 
         // Helidon's forwarding handler
-        p.addLast(new ForwardingHandler(routing, webServer, sslEngine, queues,
+        p.addLast(new ForwardingHandler(routing, webServer, sslEngine, refQ,
                                         requestDecoder, soConfig.maxPayloadSize()));
 
         // Cleanup queues as part of event loop

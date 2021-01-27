@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,53 +15,24 @@
  */
 package io.helidon.webserver;
 
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Logger;
-
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
 
 /**
- * This publisher is always associated with a single http request. Additionally,
- * it is associated with the connection context handler and it maintains a fine
- * control of the associated context handler to perform Netty push-backing.
+ * This publisher is always associated with a single http request. All data
+ * chunks emitted by this publisher are linked to a reference queue for
+ * proper cleanup.
  */
 class HttpRequestScopedPublisher extends BufferedEmittingPublisher<DataChunk> {
 
-    private static final Logger LOGGER = Logger.getLogger(HttpRequestScopedPublisher.class.getName());
-
-    private final ReentrantReadWriteLock.WriteLock lock = new ReentrantReadWriteLock().writeLock();
     private final ReferenceHoldingQueue<DataChunk> referenceQueue;
 
-    HttpRequestScopedPublisher(ChannelHandlerContext ctx, ReferenceHoldingQueue<DataChunk> referenceQueue) {
+    HttpRequestScopedPublisher(ReferenceHoldingQueue<DataChunk> referenceQueue) {
         super();
         this.referenceQueue = referenceQueue;
-        super.onRequest((n, demand) -> {
-            if (super.isUnbounded()) {
-                LOGGER.finest("Netty autoread: true");
-                ctx.channel().config().setAutoRead(true);
-            } else {
-                LOGGER.finest("Netty autoread: false");
-                ctx.channel().config().setAutoRead(false);
-            }
-
-            try {
-                lock.lock();
-
-                if (super.hasRequests()) {
-                    LOGGER.finest("Requesting next chunks from Netty.");
-                    ctx.channel().read();
-                } else {
-                    LOGGER.finest("No hook action required.");
-                }
-            } finally {
-                lock.unlock();
-            }
-        });
     }
 
     public int emit(ByteBuf data) {

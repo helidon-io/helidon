@@ -16,11 +16,11 @@
 
 package io.helidon.webserver;
 
+import java.lang.ref.ReferenceQueue;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
@@ -30,6 +30,7 @@ import javax.net.ssl.SSLEngine;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 
+import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
@@ -68,7 +69,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private final Routing routing;
     private final NettyWebServer webServer;
     private final SSLEngine sslEngine;
-    private final Queue<ReferenceHoldingQueue<DataChunk>> queues;
+    private final ReferenceQueue<Object> queues;
     private final HttpRequestDecoder httpRequestDecoder;
     private final long maxPayloadSize;
 
@@ -86,7 +87,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     ForwardingHandler(Routing routing,
                       NettyWebServer webServer,
                       SSLEngine sslEngine,
-                      Queue<ReferenceHoldingQueue<DataChunk>> queues,
+                      ReferenceQueue<Object> queues,
                       HttpRequestDecoder httpRequestDecoder,
                       long maxPayloadSize) {
         this.routing = routing;
@@ -155,12 +156,50 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
             // Queue, context and publisher creation
             ReferenceHoldingQueue<DataChunk> queue = new ReferenceHoldingQueue<>();
-            queues.add(queue);
-            RequestContext requestContext = new RequestContext(new HttpRequestScopedPublisher(ctx, queue), request);
+            RequestContext requestContext = new RequestContext(new HttpRequestScopedPublisher(queue), request);
             this.requestContext = requestContext;
 
             // the only reason we have the 'ref' here is that the field might get assigned with null
             final HttpRequestScopedPublisher publisherRef = requestContext.publisher();
+
+            // we want to retain R, even if legitimate references to it are lost by T
+            // so we reference T phantomly, and if T is ready to be GCed, we return R to the pool
+            //
+            // ReleasableReference ...> T --*--> R
+            //    `-------------------------'
+            //
+            // At the moment the only R maintained this way is Netty's ByteBufs.
+            //
+            // We don't want to contend on enqueuing/dequeuing of references to ByteBufs, so we maintain a reference queue
+            // per request, then only if the reference queue still references ByteBufs that have not been released back
+            // to Netty, we let one reference queue handle those.
+            //
+            // Here we track the reference to ReferenceHoldingQueue, which normally is processed by the request/response,
+            // we want to make sure that even if the processing is broken in some way, and the normal processing
+            // routine is no longer reachable, we still are able to process the ReferenceHoldingQueues. We assume this to
+            // be the case, when publisherRef is lost - there is no other entity that may invoke queue.release() at some
+            // point.
+            //
+            // when publisherRef is lost, make sure non-empty queue is enqueued with queues
+            final IndirectReference<ReferenceHoldingQueue<DataChunk>> publisherPh =
+                    new IndirectReference<>(publisherRef, queues, queue);
+
+            publisherRef.onRequest((n, demand) -> {
+                if (publisherRef.isUnbounded()) {
+                    LOGGER.finest("Netty autoread: true");
+                    ctx.channel().config().setAutoRead(true);
+                } else {
+                    LOGGER.finest("Netty autoread: false");
+                    ctx.channel().config().setAutoRead(false);
+                }
+
+                if (publisherRef.hasRequests()) {
+                    LOGGER.finest("Requesting next chunks from Netty.");
+                    ctx.channel().read();
+                } else {
+                    LOGGER.finest("No hook action required.");
+                }
+            });
             long requestId = REQUEST_ID_GENERATOR.incrementAndGet();
 
             // If a problem with the request URI, return 400 response
@@ -210,13 +249,14 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                                 requestContext.responseCompleted(true);
                             }
 
+                            publisherRef.clearAndRelease();
+
                             // Cleanup for these queues is done in HttpInitializer, but
                             // we try to do it here if possible to reduce memory usage,
                             // especially for keep-alive connections
                             if (queue.release()) {
-                                queues.remove(queue);
+                                publisherPh.acquire();
                             }
-                            publisherRef.clearAndRelease();
 
                             // Enables next response to proceed (HTTP pipelining)
                             thisResp.complete(null);

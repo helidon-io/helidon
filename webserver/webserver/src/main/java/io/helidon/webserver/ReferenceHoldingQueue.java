@@ -21,7 +21,7 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
@@ -33,10 +33,6 @@ import java.util.logging.Logger;
  * @see ReferenceHoldingQueue.ReleasableReference
  */
 class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
-
-    /**
-     * Logger.
-     */
     private static final Logger LOGGER = Logger.getLogger(ReferenceHoldingQueue.class.getName());
 
     /**
@@ -58,7 +54,7 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
      */
     boolean release() {
         while (true) {
-            Reference poll = poll();
+            Reference<?> poll = poll();
             if (poll == null) {
                 break;
             }
@@ -66,7 +62,7 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
             hookOnAutoRelease();
 
             if (poll instanceof ReleasableReference) {
-                ((ReleasableReference) poll).release();
+                ((ReleasableReference<?>) poll).release();
             } else {
                 LOGGER.warning(() -> "Unexpected type detected: " + poll.getClass());
             }
@@ -131,11 +127,9 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
      *
      * @param <T> the referent type
      */
-    static final class ReleasableReference<T> extends PhantomReference<T> {
+    static final class ReleasableReference<T> extends IndirectReference<Runnable> {
 
-        private final AtomicBoolean released = new AtomicBoolean(false);
         private final ReferenceHoldingQueue<T> queue;
-        private final Runnable r;
 
         /**
          * Create a new {@code ReleasableReference}.
@@ -144,12 +138,9 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
          * @param q the reference holding queue
          * @param r the release callback
          */
-        ReleasableReference(T referent, ReferenceHoldingQueue<T> q,
-                Runnable r) {
-
-            super(referent, q);
+        ReleasableReference(T referent, ReferenceHoldingQueue<T> q, Runnable r) {
+            super(referent, (ReferenceQueue<Object>) q, r);
             this.queue = q;
-            this.r = r;
             queue.link(this);
         }
 
@@ -159,17 +150,31 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
          * @return {@code true} if released was invoked, {@code false} otherwise
          */
         boolean isReleased() {
-            return released.get();
+            return otherRef.get() == null;
         }
 
         /**
          * Unlink this reference from the queue and invoke the associated release callback.
          */
         void release() {
-            if (!released.getAndSet(true)) {
+            Runnable r = acquire();
+            if (r != null) {
                 queue.unlink(this);
                 r.run();
             }
         }
+    }
+
+    static class IndirectReference<T> extends PhantomReference<Object> {
+       protected final AtomicReference<T> otherRef = new AtomicReference<>();
+
+       public IndirectReference(Object referent, ReferenceQueue<Object> q, T otherRef) {
+          super(referent, q);
+          this.otherRef.lazySet(otherRef);
+       }
+
+       public T acquire() {
+          return otherRef.get() == null ? null : otherRef.getAndSet(null);
+       }
     }
 }
