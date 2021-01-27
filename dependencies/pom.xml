@@ -1116,6 +1116,12 @@
                 <version>${version.lib.jackson}</version>
             </dependency>
             <dependency>
+                <!-- Jackson BOM manages Junit version. It shouldn't. So we are forced to manage it -->
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${version.lib.junit4}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-dns</artifactId>
                 <version>${version.lib.netty}</version>
