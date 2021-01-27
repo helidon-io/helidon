@@ -81,9 +81,7 @@ public class BlockingClientMainTest {
             client.addService(service);
         }
 
-        BlockingWebClient.Builder builder = BlockingWebClient.builder()
-                .webClient(client.build());
-        webClient = builder.build();
+        webClient = BlockingWebClient.create(client.build());
     }
 
     @Test

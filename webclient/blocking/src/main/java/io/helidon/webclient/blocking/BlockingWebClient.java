@@ -31,21 +31,12 @@ public class BlockingWebClient {
     }
 
     /**
-     * Builder for Blocking WebClient.
-     *
-     * @return builder
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    /**
      * Create a new WebClient.
      *
      * @return client
      */
-    public static BlockingWebClient create() {
-        return new BlockingWebClient(WebClient.create());
+    public static BlockingWebClient create(WebClient webClient) {
+        return new BlockingWebClient(webClient);
     }
 
 
@@ -133,36 +124,4 @@ public class BlockingWebClient {
         return new BlockingWebClientRequestBuilderImpl(webClient.method(method));
     }
 
-
-    /**
-     * Builder for BlockingWebClient.
-     */
-    public static final class Builder implements io.helidon.common.Builder<BlockingWebClient> {
-
-        private WebClient webClient;
-
-        /**
-         * Constructor for Builder.
-         */
-        public Builder() {
-            this.webClient = WebClient.create();
-        }
-
-        @Override
-        public BlockingWebClient build() {
-            return new BlockingWebClient(webClient);
-        }
-
-        /**
-         * Setter for WebClient.
-         *
-         * @param webClient to be wrapped
-         * @return builder
-         */
-        public Builder webClient(WebClient webClient) {
-            this.webClient = webClient;
-            return this;
-        }
-
-    }
 }

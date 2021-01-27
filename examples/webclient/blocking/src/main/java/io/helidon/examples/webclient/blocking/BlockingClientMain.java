@@ -98,10 +98,7 @@ public class BlockingClientMain {
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 
-        BlockingWebClient blockingWebClient = BlockingWebClient
-                .builder()
-                .webClient(webClient)
-                .build();
+        BlockingWebClient blockingWebClient = BlockingWebClient.create(webClient);
 
         String result = blockingWebClient.get()
                 .request(String.class);
@@ -206,9 +203,7 @@ public class BlockingClientMain {
                 .addService(clientService)
                 .build();
 
-        BlockingWebClient blockingWebClient = BlockingWebClient.builder()
-                .webClient(webClient)
-                .build();
+        BlockingWebClient blockingWebClient = BlockingWebClient.create(webClient);
 
         //Perform any GET request using this newly created WebClient instance.
         performGetMethod(blockingWebClient);
