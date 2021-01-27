@@ -15,12 +15,13 @@
  */
 package io.helidon.webclient.blocking;
 
+import java.net.URI;
+
 import io.helidon.common.http.Http;
-import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.WebClientResponseHeaders;
 
-import java.net.URI;
+
 
 public class BlockingWebClientResponseImpl implements BlockingWebClientResponse {
     private final WebClientResponse res;

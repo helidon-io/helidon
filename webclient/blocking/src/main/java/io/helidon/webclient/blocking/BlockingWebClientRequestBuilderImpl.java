@@ -15,6 +15,12 @@
  */
 package io.helidon.webclient.blocking;
 
+import java.net.URI;
+import java.net.URL;
+import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+
 import io.helidon.common.GenericType;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.DataChunk;
@@ -29,11 +35,7 @@ import io.helidon.webclient.Proxy;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientRequestHeaders;
 
-import java.net.URI;
-import java.net.URL;
-import java.util.concurrent.Flow;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
+
 
 public class BlockingWebClientRequestBuilderImpl implements BlockingWebClientRequestBuilder {
     private final WebClientRequestBuilder builder;

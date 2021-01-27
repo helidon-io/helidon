@@ -15,6 +15,9 @@
  */
 package io.helidon.webclient.blocking;
 
+import java.net.URI;
+import java.util.Map;
+
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Parameters;
@@ -22,10 +25,9 @@ import io.helidon.webclient.WebClientRequestHeaders;
 import io.helidon.webclient.WebClientServiceRequest;
 import io.helidon.webclient.WebClientServiceResponse;
 
-import java.net.URI;
-import java.util.Map;
 
-public class BlockingWebClientServiceRequestImpl implements BlockingWebClientServiceRequest{
+
+public class BlockingWebClientServiceRequestImpl implements BlockingWebClientServiceRequest {
     private final WebClientServiceRequest req;
 
     BlockingWebClientServiceRequestImpl(WebClientServiceRequest req) {

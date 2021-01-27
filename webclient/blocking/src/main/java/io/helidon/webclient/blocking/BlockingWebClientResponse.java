@@ -16,12 +16,12 @@
 
 package io.helidon.webclient.blocking;
 
+import java.net.URI;
+
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Single;
-import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.webclient.WebClientResponseHeaders;
 
-import java.net.URI;
+
 
 /**
  * Response from a server that was created for our request.
@@ -69,8 +69,6 @@ public interface BlockingWebClientResponse {
 
     /**
      * Blocking close of the response.
-     *
-     * @return void
      */
     void close();
 }

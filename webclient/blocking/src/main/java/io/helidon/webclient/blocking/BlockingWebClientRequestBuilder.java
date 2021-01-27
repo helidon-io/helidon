@@ -15,21 +15,6 @@
  */
 package io.helidon.webclient.blocking;
 
-import io.helidon.common.GenericType;
-import io.helidon.common.context.Context;
-import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.Headers;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpRequest;
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
-import io.helidon.common.reactive.Single;
-import io.helidon.media.common.MessageBodyReaderContext;
-import io.helidon.media.common.MessageBodyWriterContext;
-import io.helidon.webclient.Proxy;
-import io.helidon.webclient.WebClientRequestHeaders;
-import io.helidon.webclient.spi.WebClientService;
-
 import java.net.URI;
 import java.net.URL;
 import java.util.Map;
@@ -38,6 +23,21 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.context.Context;
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Headers;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpRequest;
+import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Parameters;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.webclient.Proxy;
+import io.helidon.webclient.WebClientRequestHeaders;
+import io.helidon.webclient.spi.WebClientService;
+
+
 /**
  * Fluent API builder that is used by WebClient to create an outgoing request.
  */
@@ -45,7 +45,7 @@ public interface BlockingWebClientRequestBuilder {
 
     /**
      * String representation of request uri.
-     *
+     * <p>
      * Replaces baseUri defined in client builder.
      *
      * @param uri request uri
@@ -55,7 +55,7 @@ public interface BlockingWebClientRequestBuilder {
 
     /**
      * Request {@link URL}.
-     *
+     * <p>
      * Replaces baseUri defined in client builder.
      *
      * @param url request url
@@ -65,7 +65,7 @@ public interface BlockingWebClientRequestBuilder {
 
     /**
      * Request {@link URI}.
-     *
+     * <p>
      * Replaces baseUri defined in client builder.
      *
      * @param uri request uri
@@ -75,7 +75,7 @@ public interface BlockingWebClientRequestBuilder {
 
     /**
      * Disables final uri encoding.
-     *
+     * <p>
      * This setting skips all parts of {@link URI} from encoding.
      *
      * @return updated builder instance
@@ -118,7 +118,7 @@ public interface BlockingWebClientRequestBuilder {
 
     /**
      * Add a query parameter.
-     *
+     * <p>
      * Appends these query parameters to the query parameters defined in the request uri.
      *
      * @param name   query name
@@ -145,7 +145,7 @@ public interface BlockingWebClientRequestBuilder {
 
     /**
      * Function from parameter is executed on top of stored headers.
-     *
+     * <p>
      * This approach is here to allow as to add any header via specialized method while using builder pattern.
      *
      * @param headers function which adds headers
@@ -155,9 +155,9 @@ public interface BlockingWebClientRequestBuilder {
 
     /**
      * Configure query parameters.
-     *
+     * <p>
      * Appends these query parameters to the query parameters defined in the request uri.
-     *
+     * <p>
      * Copy all query parameters from supplied {@link Parameters} instance.
      *
      * @param queryParams to copy
@@ -207,7 +207,7 @@ public interface BlockingWebClientRequestBuilder {
 
     /**
      * Fragment of the request.
-     *
+     * <p>
      * Replaces fragment defined in the request uri.
      *
      * @param fragment request fragment
@@ -217,7 +217,7 @@ public interface BlockingWebClientRequestBuilder {
 
     /**
      * Path of the request.
-     *
+     * <p>
      * Appends this path to the path defined in the request uri.
      *
      * @param path path
@@ -227,7 +227,7 @@ public interface BlockingWebClientRequestBuilder {
 
     /**
      * Path of the request.
-     *
+     * <p>
      * Appends this path to the path defined in the request uri.
      *
      * @param path path
@@ -278,7 +278,7 @@ public interface BlockingWebClientRequestBuilder {
 
     /**
      * Performs prepared request and transforms response to requested type.
-     *
+     * <p>
      * When transformation is done the returned {@link CompletionStage} is notified.
      *
      * @param responseType requested response type
@@ -290,7 +290,6 @@ public interface BlockingWebClientRequestBuilder {
     /**
      * Performs prepared request without expecting to receive any specific type.
      *
-     *
      * @return request
      */
     BlockingWebClientResponse request();
@@ -298,14 +297,12 @@ public interface BlockingWebClientRequestBuilder {
     /**
      * Performs prepared request.
      *
-     *
      * @return request
      */
     BlockingWebClientResponse submit();
 
     /**
      * Performs prepared request and submitting request entity using {@link Flow.Publisher}.
-     *
      *
      * @param requestEntity request entity
      * @param responseType  requested response type
@@ -317,7 +314,6 @@ public interface BlockingWebClientRequestBuilder {
     /**
      * Performs prepared request and submitting request entity.
      *
-     *
      * @param requestEntity request entity
      * @param responseType  requested response type
      * @param <T>           response type
@@ -328,7 +324,6 @@ public interface BlockingWebClientRequestBuilder {
     /**
      * Performs prepared request and submitting request entity using {@link Flow.Publisher}.
      *
-     *
      * @param requestEntity request entity
      * @return request
      */
@@ -337,7 +332,6 @@ public interface BlockingWebClientRequestBuilder {
     /**
      * Performs prepared request and submitting request entity.
      *
-     *
      * @param requestEntity request entity
      * @return request completion stage
      */
@@ -345,7 +339,6 @@ public interface BlockingWebClientRequestBuilder {
 
     /**
      * Performs prepared request and submitting request entity using a marshalling function.
-     *
      *
      * @param function marshalling function
      * @return request completion stage

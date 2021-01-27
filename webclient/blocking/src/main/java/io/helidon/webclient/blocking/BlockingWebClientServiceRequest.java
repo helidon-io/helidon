@@ -15,16 +15,16 @@
  */
 package io.helidon.webclient.blocking;
 
+import java.util.Map;
+
 import io.helidon.common.context.Context;
 import io.helidon.common.http.HttpRequest;
-import io.helidon.common.reactive.Single;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientRequestHeaders;
 import io.helidon.webclient.WebClientServiceRequest;
 import io.helidon.webclient.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
 
-import java.util.Map;
 
 /**
  * Request to SPI {@link WebClientService} that supports modification of the outgoing request.

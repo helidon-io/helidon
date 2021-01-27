@@ -15,28 +15,33 @@
  */
 package io.helidon.examples.webclient.blocking;
 
-import io.helidon.common.http.Http;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
-import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.metrics.RegistryFactory;
-import io.helidon.webclient.FileSubscriber;
-import io.helidon.webclient.blocking.BlockingWebClient;
-import io.helidon.webclient.blocking.BlockingWebClientResponse;
-import io.helidon.webclient.metrics.WebClientMetrics;
-import io.helidon.webclient.spi.WebClientService;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
+
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
+
+import io.helidon.common.http.Http;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
+import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.metrics.RegistryFactory;
+import io.helidon.webclient.FileSubscriber;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.blocking.BlockingWebClient;
+import io.helidon.webclient.blocking.BlockingWebClientResponse;
+import io.helidon.webclient.metrics.WebClientMetrics;
+import io.helidon.webclient.spi.WebClientService;
+
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+
+
 
 /**
  * A simple WebClient usage class.
@@ -86,11 +91,16 @@ public class BlockingClientMain {
         }
 
 
-        BlockingWebClient blockingWebClient = BlockingWebClient.builder()
+        WebClient webClient = WebClient.builder()
                 .baseUri(url)
                 .config(config.get("client"))
                 //Since JSON processing support is not present by default, we have to add it.
                 .addMediaSupport(JsonpSupport.create())
+                .build();
+
+        BlockingWebClient blockingWebClient = BlockingWebClient
+                .builder()
+                .webClient(webClient)
                 .build();
 
         String result = blockingWebClient.get()
@@ -171,7 +181,7 @@ public class BlockingClientMain {
         String response = webClient.get()
                 .request(String.class);
 
-        Files.write(file,response.getBytes());
+        Files.write(file, response.getBytes());
 
         System.out.println("Download complete! ");
     }
@@ -190,14 +200,18 @@ public class BlockingClientMain {
                 .build();
 
         //This newly created metric now needs to be registered to WebClient.
-        BlockingWebClient webClient = BlockingWebClient.builder()
+        WebClient webClient = WebClient.builder()
                 .baseUri(url)
                 .config(config)
                 .addService(clientService)
                 .build();
 
+        BlockingWebClient blockingWebClient = BlockingWebClient.builder()
+                .webClient(webClient)
+                .build();
+
         //Perform any GET request using this newly created WebClient instance.
-        performGetMethod(webClient);
+        performGetMethod(blockingWebClient);
         //Verification for example purposes that metric has been incremented.
         System.out.println(counterName + ": " + counter.getCount());
     }

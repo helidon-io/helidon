@@ -20,6 +20,7 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.RegistryFactory;
+import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientServiceRequest;
 import io.helidon.webclient.blocking.BlockingWebClient;
 import io.helidon.webclient.spi.WebClientService;
@@ -71,13 +72,17 @@ public class BlockingClientMainTest {
 
     private static void createWebClient(int port, WebClientService... services) {
         Config config = Config.create();
-        BlockingWebClient.Builder builder = BlockingWebClient.builder()
+        WebClient.Builder client = WebClient.builder()
                 .baseUri("http://localhost:" + port + "/greet")
                 .config(config.get("client"))
                 .addMediaSupport(JsonpSupport.create());
+
         for (WebClientService service : services) {
-            builder.addService(service);
+            client.addService(service);
         }
+
+        BlockingWebClient.Builder builder = BlockingWebClient.builder()
+                .webClient(client.build());
         webClient = builder.build();
     }
 

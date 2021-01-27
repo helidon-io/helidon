@@ -15,6 +15,19 @@
  */
 package io.helidon.examples.webclient.blocking;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
@@ -25,20 +38,10 @@ import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.metrics.WebClientMetrics;
 import io.helidon.webclient.spi.WebClientService;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
 
 /**
  * A simple WebClient usage class.
