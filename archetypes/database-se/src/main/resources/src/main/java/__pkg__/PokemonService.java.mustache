@@ -52,25 +52,17 @@ public class PokemonService implements Service {
     }
 
     private void listTypes(ServerRequest request, ServerResponse response) {
-        try {
-            List<PokemonType> pokemonTypes =
-                    dbClient.execute(exec -> exec.namedQuery("select-all-types"))
-                            .map(row -> row.as(PokemonType.class)).collectList().get();
-            response.send(pokemonTypes);
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
-        }
+        dbClient.execute(exec -> exec.namedQuery("select-all-types"))
+                .map(row -> row.as(PokemonType.class))
+                .collectList()
+                .forSingle(response::send);
     }
 
     private void listPokemons(ServerRequest request, ServerResponse response) {
-        try {
-            List<Pokemon> pokemons =
-                    dbClient.execute(exec -> exec.namedQuery("select-all-pokemons"))
-                            .map(it -> it.as(Pokemon.class)).collectList().get();
-            response.send(pokemons);
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
-        }
+        dbClient.execute(exec -> exec.namedQuery("select-all-pokemons"))
+                .map(it -> it.as(Pokemon.class))
+                .collectList()
+                .forSingle(response::send);
     }
 
     private void getPokemonById(ServerRequest request, ServerResponse response) {
