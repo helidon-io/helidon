@@ -66,7 +66,7 @@ class InternalPublisher implements Publisher<Object>, Subscription {
     private void trySubmit() {
         while (!completableQueue.isBackPressureLimitReached() && requestedCounter.tryDecrement() && !closed.get()) {
             method.beforeInvoke(null);
-            Object result = method.invoke();
+            Object result = MessageUtils.wrap(method.invoke());
             method.afterInvoke(null, result);
             if (result instanceof CompletionStage) {
                 CompletionStage<Object> completionStage = (CompletionStage<Object>) result;

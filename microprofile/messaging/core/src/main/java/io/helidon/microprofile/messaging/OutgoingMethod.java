@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,13 @@ import io.helidon.config.Config;
 
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
 
 class OutgoingMethod extends AbstractMessagingMethod {
 
-    private Publisher<?> publisher;
+    private PublisherBuilder<?> publisher;
 
     OutgoingMethod(AnnotatedMethod<?> method, Errors.Collector errors) {
         super(method.getJavaMember(), errors);
@@ -43,16 +44,22 @@ class OutgoingMethod extends AbstractMessagingMethod {
         if (getType().isInvokeAtAssembly()) {
             switch (getType()) {
                 case OUTGOING_PUBLISHER_MSG_2_VOID:
-                    publisher = this.invoke();
+                    publisher = ReactiveStreams.fromPublisher(this.invoke())
+                            .peek(o -> this.afterInvoke(null, o));
                     break;
                 case OUTGOING_PUBLISHER_PAYL_2_VOID:
-                    publisher = new WrappingPublisher(this.invoke());
+                    publisher = ReactiveStreams.fromPublisher(this.invoke())
+                            .map(MessageUtils::wrap)
+                            .peek(o -> this.afterInvoke(null, o));
                     break;
                 case OUTGOING_PUBLISHER_BUILDER_MSG_2_VOID:
-                    publisher = ((PublisherBuilder<?>) this.invoke()).buildRs();
+                    publisher = ((PublisherBuilder<?>) this.invoke())
+                            .peek(o -> this.afterInvoke(null, o));
                     break;
                 case OUTGOING_PUBLISHER_BUILDER_PAYL_2_VOID:
-                    publisher = new WrappingPublisher(((PublisherBuilder<?>) this.invoke()).buildRs());
+                    publisher = ((PublisherBuilder<?>) this.invoke())
+                            .map(MessageUtils::wrap)
+                            .peek(o -> this.afterInvoke(null, o));
                     break;
                 default:
                     throw new UnsupportedOperationException(String
@@ -60,7 +67,8 @@ class OutgoingMethod extends AbstractMessagingMethod {
             }
         } else {
             // Invoke on each request publisher
-            publisher = new InternalPublisher(this);
+            publisher = ReactiveStreams.fromPublisher(new InternalPublisher(this))
+                    .peek(o -> this.afterInvoke(null, o));
         }
     }
 
@@ -78,7 +86,7 @@ class OutgoingMethod extends AbstractMessagingMethod {
     }
 
     Publisher<?> getPublisher() {
-        return publisher;
+        return publisher.buildRs();
     }
 
 }

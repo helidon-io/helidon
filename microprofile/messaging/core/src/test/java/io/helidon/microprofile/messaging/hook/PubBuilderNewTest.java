@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
 
 package io.helidon.microprofile.messaging.hook;
 
-import javax.enterprise.context.ApplicationScoped;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -25,26 +26,27 @@ import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 
-@ApplicationScoped
-public class BasicHookBean {
+public class PubBuilderNewTest extends AbstractHookTest {
 
     @Outgoing("channel1")
+    @MockLRA(MockLRA.Type.NEW)
     public PublisherBuilder<Message<String>> publish() {
-        return ReactiveStreams.of("test1", "test2", "test3")
+        return ReactiveStreams.fromIterable(TEST_DATA)
                 .map(Message::of);
     }
 
     @Incoming("channel1")
     @Outgoing("channel2")
-    @LRA(LRA.Type.NEW)
+    @MockLRA(MockLRA.Type.REQUIRED)
     public String process(String incoming) {
-        System.out.println("processing > "+incoming);
-        return incoming.toUpperCase();
+        return incoming;
     }
 
     @Incoming("channel2")
-    @LRA(LRA.Type.REQUIRED)
-    public void consume(String incoming) {
-        System.out.println("consuming  > "+incoming);
+    @MockLRA(MockLRA.Type.REQUIRED)
+    public CompletionStage<Void> consume(Message<String> msg) {
+        addActual(msg);
+        return CompletableFuture.completedStage(null);
     }
+
 }

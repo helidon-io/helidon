@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,14 @@
  *
  */
 
-package io.helidon.microprofile.messaging.hook;
+package io.helidon.microprofile.messaging;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.Map;
 
-@Inherited
-@Retention(value = RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
-public @interface LRA {
-    Type value() default Type.REQUIRED;
-    enum Type {
-        REQUIRED, NEW;
+import org.eclipse.microprofile.reactive.messaging.Message;
+
+public class MessageContextTestUtils {
+    public static Map<Message<?>, MessageContext> getContextMap() {
+        return MessageContext.CONTEXT_MAP;
     }
 }

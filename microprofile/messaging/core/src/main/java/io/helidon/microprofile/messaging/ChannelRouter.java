@@ -23,7 +23,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
 
 import javax.enterprise.context.spi.CreationalContext;
@@ -61,6 +60,7 @@ class ChannelRouter {
     private BeanManager beanManager;
     private final List<BiConsumer<MessagingMethod, Message<?>>> beforeHooks = new LinkedList<>();
     private final List<BiConsumer<MessagingMethod, Object>> afterHooks = new LinkedList<>();
+    private final List<FailureCallback> failureHooks = new LinkedList<>();
 
     /**
      * Register bean reference with at least one annotated messaging method method.
@@ -163,6 +163,7 @@ class ChannelRouter {
         incomingMethod.validate();
         incomingMethod.beforeInvokeCallback(this::beforeMethod);
         incomingMethod.afterInvokeCallback(this::afterMethod);
+        incomingMethod.failureCallback(this::onMethodFailure);
 
         String channelName = incomingMethod.getIncomingChannelName();
 
@@ -239,8 +240,19 @@ class ChannelRouter {
         this.afterHooks.forEach(h -> h.accept(method, after));
     }
 
-    void addMethodHook(final BiConsumer<MessagingMethod, Message<?>> before, final BiConsumer<MessagingMethod, Object> after) {
+    private void onMethodFailure(MessagingMethod method, Message<?> message, Throwable t) {
+        this.failureHooks.forEach(h -> h.accept(method, message, t));
+    }
+
+    void addBeforeMethodHook(final BiConsumer<MessagingMethod, Message<?>> before) {
         this.beforeHooks.add(before);
+    }
+
+    void addAfterMethodHook(BiConsumer<MessagingMethod, Object> after) {
         this.afterHooks.add(after);
+    }
+
+    void addFailureMethodHook(FailureCallback failureCallback) {
+        this.failureHooks.add(failureCallback);
     }
 }

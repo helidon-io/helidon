@@ -51,8 +51,11 @@ class InternalSubscriber implements Subscriber<Object> {
             Class<?> paramType = method.getMethod().getParameterTypes()[0];
             Object preProcessedMessage = preProcess(message, paramType);
             Object methodResult = method.invoke(preProcessedMessage);
+            //use same value so context gets paired
+            method.afterInvoke(message, methodResult);
             postProcess(message, methodResult);
         } catch (Exception e) {
+            method.onFailure((Message<?>) message, e);
             // Notify publisher to stop sending
             subscription.cancel();
             LOGGER.log(Level.SEVERE, e, () -> "Error when invoking @Incoming method " + method.getName());
@@ -69,8 +72,6 @@ class InternalSubscriber implements Subscriber<Object> {
     }
 
     private void postProcess(final Object incomingValue, final Object outgoingValue) {
-        //use same value so context gets paired
-        method.afterInvoke(incomingValue, incomingValue);
         if (method.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)
                 && incomingValue instanceof Message) {
 

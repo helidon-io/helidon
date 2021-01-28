@@ -45,6 +45,7 @@ abstract class AbstractMessagingMethod implements MessagingMethod {
     private Acknowledgment.Strategy ackStrategy;
     private BiConsumer<MessagingMethod, Object> afterInvokeCallback;
     private BiConsumer<MessagingMethod, Message<?>> beforeInvokeCallback;
+    private FailureCallback onFailureCallback;
 
 
     AbstractMessagingMethod(Method method, Errors.Collector errors) {
@@ -167,11 +168,21 @@ abstract class AbstractMessagingMethod implements MessagingMethod {
         }
     }
 
+    void onFailure(Message<?> incoming, Throwable e) {
+        if (this.onFailureCallback != null) {
+            onFailureCallback.accept(this, incoming, e);
+        }
+    }
+
     void beforeInvokeCallback(BiConsumer<MessagingMethod, Message<?>> callback) {
         this.beforeInvokeCallback = callback;
     }
 
     void afterInvokeCallback(BiConsumer<MessagingMethod, Object> callback) {
         this.afterInvokeCallback = callback;
+    }
+
+    void failureCallback(FailureCallback failureCallback) {
+        this.onFailureCallback = failureCallback;
     }
 }

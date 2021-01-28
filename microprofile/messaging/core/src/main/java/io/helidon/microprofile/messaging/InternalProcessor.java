@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ class InternalProcessor implements Processor<Object, Object> {
     }
 
     private Object preProcess(final Object incomingValue, final Class<?> expectedParamType) {
-        Message<?> incomingMessage = (Message<?>) incomingValue;
+        Message<?> incomingMessage = (Message<?>) MessageUtils.wrap(incomingValue);
         if (method.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)) {
             incomingMessage.ack();
         }

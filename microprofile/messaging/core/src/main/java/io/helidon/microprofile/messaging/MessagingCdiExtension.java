@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,7 @@
 package io.helidon.microprofile.messaging;
 
 import java.util.Map;
-import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -76,9 +74,31 @@ public class MessagingCdiExtension implements Extension {
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().isReady().get()));
     }
 
-    public void registerMessagingMethodInvocationHook(BiConsumer<MessagingMethod, Message<?>> before,
-                                                      BiConsumer<MessagingMethod, Object> after){
-        channelRouter.addMethodHook(before, after);
+    /**
+     * Register before messaging method invocation hook.
+     *
+     * @param before the callback
+     */
+    public void beforeMethodInvocation(BiConsumer<MessagingMethod, Message<?>> before) {
+        channelRouter.addBeforeMethodHook(before);
+    }
+
+    /**
+     * Register after messaging method invocation hook.
+     *
+     * @param after the callback
+     */
+    public void afterMethodInvocation(BiConsumer<MessagingMethod, Object> after) {
+        channelRouter.addAfterMethodHook(after);
+    }
+
+    /**
+     * Register failure messaging method invocation hook.
+     *
+     * @param failureCallback the callback
+     */
+    public void onMethodInvocationFailure(FailureCallback failureCallback) {
+        channelRouter.addFailureMethodHook(failureCallback);
     }
 
     private void registerChannelMethods(
