@@ -15,6 +15,6 @@
  */
 
 /**
- * Basic examples of webclient usage.
+ * Basic examples of blocking webclient usage.
  */
 package io.helidon.examples.webclient.blocking;
