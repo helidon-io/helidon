@@ -181,7 +181,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             // point.
             //
             // when publisherRef is lost, make sure non-empty queue is enqueued with queues
-            final IndirectReference<ReferenceHoldingQueue<DataChunk>> publisherPh =
+            final IndirectReference<HttpRequestScopedPublisher, ReferenceHoldingQueue<DataChunk>> publisherPh =
                     new IndirectReference<>(publisherRef, queues, queue);
 
             publisherRef.onRequest((n, demand) -> {
@@ -200,6 +200,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     LOGGER.finest("No hook action required.");
                 }
             });
+
             long requestId = REQUEST_ID_GENERATOR.incrementAndGet();
 
             // If a problem with the request URI, return 400 response

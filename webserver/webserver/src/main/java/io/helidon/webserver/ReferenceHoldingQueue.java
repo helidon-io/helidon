@@ -25,9 +25,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
- * The ReferenceHoldingQueue is an enhanced reference queue that allows a post
- * mortem execution such as a releasing of memory that would otherwise cause a
- * memory leak.
+ * A ReferenceHoldingQueue is an enhanced reference queue that allows a post
+ * mortem execution in the form of {@code Runnable}. This executable code can
+ * be used to perform any task, such as decrementing a reference count to an
+ * object.
  *
  * @param <T> the referent type
  * @see ReferenceHoldingQueue.ReleasableReference
@@ -119,6 +120,36 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
     }
 
     /**
+     * An indirect reference is a phantom reference that also points to
+     * another object. When this reference is added to a {@code ReferenceQueue}
+     * after its reference becomes unreachable, it provides access to that
+     * other object via its {@code acquire} method. Note that the object can only
+     * be acquired once, its reference is set to null afterwards to ensure
+     * collection.
+     *
+     * @param <T> type of referent object
+     * @param <R> type of the other object
+     */
+    static class IndirectReference<T, R> extends PhantomReference<T> {
+        protected final AtomicReference<R> otherRef = new AtomicReference<>();
+
+        public IndirectReference(T referent, ReferenceQueue<? super T> q, R otherRef) {
+            super(referent, q);
+            this.otherRef.lazySet(otherRef);
+        }
+
+        /**
+         * Provides access to other object. Clears reference after first call
+         * to ensure the other object is eventually collected.
+         *
+         * @return other object the first time called and {@code null} afterwards
+         */
+        public R acquire() {
+            return otherRef.get() == null ? null : otherRef.getAndSet(null);
+        }
+    }
+
+    /**
      * This class holds a reference to a {@link Runnable} that will be executed
      * the latest when its referent (the {@link T} instance) is garbage
      * collected. It is however strongly recommended to call the
@@ -127,7 +158,7 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
      *
      * @param <T> the referent type
      */
-    static final class ReleasableReference<T> extends IndirectReference<Runnable> {
+    static final class ReleasableReference<T> extends IndirectReference<T, Runnable> {
 
         private final ReferenceHoldingQueue<T> queue;
 
@@ -139,7 +170,7 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
          * @param r the release callback
          */
         ReleasableReference(T referent, ReferenceHoldingQueue<T> q, Runnable r) {
-            super(referent, (ReferenceQueue<Object>) q, r);
+            super(referent, q, r);
             this.queue = q;
             queue.link(this);
         }
@@ -163,18 +194,5 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
                 r.run();
             }
         }
-    }
-
-    static class IndirectReference<T> extends PhantomReference<Object> {
-       protected final AtomicReference<T> otherRef = new AtomicReference<>();
-
-       public IndirectReference(Object referent, ReferenceQueue<Object> q, T otherRef) {
-          super(referent, q);
-          this.otherRef.lazySet(otherRef);
-       }
-
-       public T acquire() {
-          return otherRef.get() == null ? null : otherRef.getAndSet(null);
-       }
     }
 }
