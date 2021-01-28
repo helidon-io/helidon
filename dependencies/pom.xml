@@ -109,7 +109,7 @@
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
         <version.lib.netty>4.1.58.Final</version.lib.netty>
-        <version.lib.oci-java-sdk-objectstorage>1.28.0</version.lib.oci-java-sdk-objectstorage>
+        <version.lib.oci-java-sdk-objectstorage>1.30.1</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>19.8.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
