@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import javax.net.ssl.SSLEngine;
 import java.lang.ref.ReferenceQueue;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
@@ -25,11 +26,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
-import javax.net.ssl.SSLEngine;
-
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-
 import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -154,36 +152,22 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             Optional.ofNullable(ctx.channel().attr(CERTIFICATE_NAME).get())
                     .ifPresent(name -> request.headers().set(Http.Header.X_HELIDON_CN, name));
 
-            // Queue, context and publisher creation
+            // Context, publisher and DataChunk queue for this request/response
             ReferenceHoldingQueue<DataChunk> queue = new ReferenceHoldingQueue<>();
-            RequestContext requestContext = new RequestContext(new HttpRequestScopedPublisher(queue), request);
-            this.requestContext = requestContext;
+            requestContext = new RequestContext(new HttpRequestScopedPublisher(queue), request);
 
-            // the only reason we have the 'ref' here is that the field might get assigned with null
-            final HttpRequestScopedPublisher publisherRef = requestContext.publisher();
+            // Closure local variables that cache mutable instance variables
+            RequestContext requestContextRef = requestContext;
+            HttpRequestScopedPublisher publisherRef = requestContextRef.publisher();
 
-            // we want to retain R, even if legitimate references to it are lost by T
-            // so we reference T phantomly, and if T is ready to be GCed, we return R to the pool
-            //
-            // ReleasableReference ...> T --*--> R
-            //    `-------------------------'
-            //
-            // At the moment the only R maintained this way is Netty's ByteBufs.
-            //
-            // We don't want to contend on enqueuing/dequeuing of references to ByteBufs, so we maintain a reference queue
-            // per request, then only if the reference queue still references ByteBufs that have not been released back
-            // to Netty, we let one reference queue handle those.
-            //
-            // Here we track the reference to ReferenceHoldingQueue, which normally is processed by the request/response,
-            // we want to make sure that even if the processing is broken in some way, and the normal processing
-            // routine is no longer reachable, we still are able to process the ReferenceHoldingQueues. We assume this to
-            // be the case, when publisherRef is lost - there is no other entity that may invoke queue.release() at some
-            // point.
-            //
-            // when publisherRef is lost, make sure non-empty queue is enqueued with queues
-            final IndirectReference<HttpRequestScopedPublisher, ReferenceHoldingQueue<DataChunk>> publisherPh =
+            // Creates an indirect reference between publisher and queue so that when
+            // publisher is ready for collection, we have access to queue by calling its
+            // acquire method. We shall also attempt to release queue on completion of
+            // bareResponse below.
+            IndirectReference<HttpRequestScopedPublisher, ReferenceHoldingQueue<DataChunk>> publisherPh =
                     new IndirectReference<>(publisherRef, queues, queue);
 
+            // Set up read strategy for channel based on consumer demand
             publisherRef.onRequest((n, demand) -> {
                 if (publisherRef.isUnbounded()) {
                     LOGGER.finest("Netty autoread: true");
@@ -201,12 +185,13 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 }
             });
 
+            // New request ID
             long requestId = REQUEST_ID_GENERATOR.incrementAndGet();
 
             // If a problem with the request URI, return 400 response
             BareRequestImpl bareRequest;
             try {
-                bareRequest = new BareRequestImpl((HttpRequest) msg, requestContext.publisher(),
+                bareRequest = new BareRequestImpl((HttpRequest) msg, requestContextRef.publisher(),
                         webServer, ctx, sslEngine, requestId);
             } catch (IllegalArgumentException e) {
                 send400BadRequest(ctx, e.getMessage());
@@ -246,17 +231,17 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             CompletableFuture<?> thisResp = prevRequestFuture;
             bareResponse.whenCompleted()
                         .thenRun(() -> {
-                            if (requestContext != null) {
-                                requestContext.responseCompleted(true);
-                            }
+                            // Mark response completed in context
+                            requestContextRef.responseCompleted(true);
 
+                            // Consume and release any buffers in publisher
                             publisherRef.clearAndRelease();
 
                             // Cleanup for these queues is done in HttpInitializer, but
                             // we try to do it here if possible to reduce memory usage,
                             // especially for keep-alive connections
                             if (queue.release()) {
-                                publisherPh.acquire();
+                                publisherPh.acquire();      // clears reference to other
                             }
 
                             // Enables next response to proceed (HTTP pipelining)
@@ -355,6 +340,18 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     /**
+     * Overrides behavior when exception is thrown in pipeline.
+     *
+     * @param ctx channel context.
+     * @param cause the throwable.
+     */
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        failPublisher(cause);
+        ctx.close();
+    }
+
+    /**
      * Check that an HTTP message has been successfully decoded.
      *
      * @param request The HTTP request.
@@ -403,19 +400,18 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
      * @param ctx Channel context.
      * @param message The message.
      */
-    private static void send400BadRequest(ChannelHandlerContext ctx, String message) {
+    private void send400BadRequest(ChannelHandlerContext ctx, String message) {
         byte[] entity = message.getBytes(StandardCharsets.UTF_8);
         FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, BAD_REQUEST, Unpooled.wrappedBuffer(entity));
         response.headers().add(HttpHeaderNames.CONTENT_TYPE, "text/plain");
         response.headers().add(HttpHeaderNames.CONTENT_LENGTH, entity.length);
         response.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
-
         ctx.write(response)
                 .addListener(future -> {
                     ctx.flush();
                     ctx.close();
                 });
-
+        failPublisher(new Error("400: Bad request"));
     }
 
     /**
@@ -425,14 +421,22 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
      */
     private void send413PayloadTooLarge(ChannelHandlerContext ctx) {
         FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, REQUEST_ENTITY_TOO_LARGE);
-        ctx.write(response);
+        ctx.write(response)
+                .addListener(future -> {
+                    ctx.flush();
+                    ctx.close();
+                });
+        failPublisher(new Error("413: Payload is too large"));
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    /**
+     * Informs publisher of failure.
+     *
+     * @param cause the cause.
+     */
+    private void failPublisher(Throwable cause) {
         if (requestContext != null) {
             requestContext.publisher().fail(cause);
         }
-        ctx.close();
     }
 }
