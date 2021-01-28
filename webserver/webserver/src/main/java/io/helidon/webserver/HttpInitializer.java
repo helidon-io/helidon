@@ -91,6 +91,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
      * Those ReferenceHoldingQueue's not fully released are added to {@code unreleasedQueues}
      * for later retries.
      */
+    @SuppressWarnings("unchecked")
     private void clearQueues() {
         for (Reference<?> r = queues.poll(); r != null; r = queues.poll()) {
             if (!(r instanceof IndirectReference<?, ?>)) {
