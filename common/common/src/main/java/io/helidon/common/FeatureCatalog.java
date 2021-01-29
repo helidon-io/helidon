@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -520,6 +520,10 @@ final class FeatureCatalog {
                     .path("Logging", "Log4j")
                     .description("Log4j MDC support")
                     .nativeDescription("Only programmatic configuration supported, does not work with Helidon loggers"));
+        add("io.helidon.webserver.staticcontent",
+            "Static Content",
+            "Static content support for webserver",
+            "WebServer", "Static Content");
 
         /*
          * Packages that are not a feature

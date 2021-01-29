@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +30,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
@@ -37,43 +38,58 @@ import java.util.logging.Logger;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.IoMulti;
+import io.helidon.webserver.HttpException;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
 
 /**
  * Handles static content from the classpath.
  */
-@Deprecated
-class ClassPathContentHandler extends StaticContentHandler {
+class ClassPathContentHandler extends FileBasedContentHandler {
     private static final Logger LOGGER = Logger.getLogger(ClassPathContentHandler.class.getName());
 
     private final ClassLoader classLoader;
-    // URL's hash code and equal are not suitable for map or set
-    private final Map<String, ExtractedJarEntry> extracted = new ConcurrentHashMap<>();
     private final String root;
     private final String rootWithTrailingSlash;
-    private final Path tempDir;
+    private final BiFunction<String, String, Path> tmpFile;
 
-    ClassPathContentHandler(String welcomeFilename,
-                            ContentTypeSelector contentTypeSelector,
-                            String root,
-                            Path tempDir,
-                            ClassLoader classLoader) {
-        super(welcomeFilename, contentTypeSelector);
+    // URL's hash code and equal are not suitable for map or set
+    private final Map<String, ExtractedJarEntry> extracted = new ConcurrentHashMap<>();
 
-        this.classLoader = (classLoader == null) ? this.getClass().getClassLoader() : classLoader;
-        this.tempDir = tempDir;
+    ClassPathContentHandler(StaticContentSupport.Builder builder, ClassLoader classLoader, String root) {
+        super(builder);
+
+        this.classLoader = classLoader;
         this.root = root;
         this.rootWithTrailingSlash = root + '/';
+
+        Path tmpDir = builder.tmpDir();
+        if (tmpDir == null) {
+            this.tmpFile = (prefix, suffix) -> {
+                try {
+                    return Files.createTempFile(prefix, suffix);
+                } catch (IOException e) {
+                    throw new HttpException("Static content processing issue", Http.Status.INTERNAL_SERVER_ERROR_500, e);
+                }
+            };
+        } else {
+            this.tmpFile = (prefix, suffix) -> {
+                try {
+                    return Files.createTempFile(tmpDir, prefix, suffix);
+                } catch (IOException e) {
+                    throw new HttpException("Static content processing issue", Http.Status.INTERNAL_SERVER_ERROR_500, e);
+                }
+            };
+        }
     }
 
-    public static StaticContentHandler create(String welcomeFileName,
-                                              ContentTypeSelector selector,
-                                              String clRoot,
-                                              Path tempDir,
-                                              ClassLoader classLoader) {
-        ClassLoader contentClassloader = (classLoader == null)
-                ? ClassPathContentHandler.class.getClassLoader()
-                : classLoader;
+    static ClassPathContentHandler create(StaticContentSupport.Builder builder) {
+        ClassLoader classLoader = (
+                builder.classLoader() == null
+                        ? ClassPathContentHandler.class.getClassLoader()
+                        : builder.classLoader());
 
+        String clRoot = builder.clRoot();
         String cleanRoot = clRoot;
 
         while (cleanRoot.endsWith("/")) {
@@ -84,7 +100,7 @@ class ClassPathContentHandler extends StaticContentHandler {
             throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
         }
 
-        return new ClassPathContentHandler(welcomeFileName, selector, clRoot, tempDir, contentClassloader);
+        return new ClassPathContentHandler(builder, classLoader, cleanRoot);
     }
 
     @SuppressWarnings("checkstyle:RegexpSinglelineJava")
@@ -133,13 +149,12 @@ class ClassPathContentHandler extends StaticContentHandler {
         }
 
         URL logUrl = url; // need to be effectively final to use in lambda
-        LOGGER.finest(()  -> "Located resource url. Resource: " + resource + ", URL: " + logUrl);
+        LOGGER.finest(() -> "Located resource url. Resource: " + resource + ", URL: " + logUrl);
 
         // now read the URL - we have direct support for files and jar files, others are handled by stream only
         switch (url.getProtocol()) {
         case "file":
-            FileSystemContentHandler
-                    .sendFile(method, Paths.get(url.toURI()), request, response, contentTypeSelector(), welcomePageName());
+            sendFile(method, Paths.get(url.toURI()), request, response, welcomePageName());
             break;
         case "jar":
             return sendJar(method, requestedResource, url, request, response);
@@ -173,22 +188,27 @@ class ClassPathContentHandler extends StaticContentHandler {
 
         processContentType(entryName,
                            request.headers(),
-                           response.headers(),
-                           contentTypeSelector());
+                           response.headers());
 
         if (method == Http.Method.HEAD) {
             response.send();
         } else {
-            FileSystemContentHandler.send(response, extrEntry.tempFile);
+            send(response, extrEntry.tempFile);
         }
 
         return true;
     }
 
     private ExtractedJarEntry existOrCreate(URL url, ExtractedJarEntry entry) {
-        if (entry == null) return extractJarEntry(url);
-        if (entry.tempFile == null) return entry;
-        if (Files.notExists(entry.tempFile)) return extractJarEntry(url);
+        if (entry == null) {
+            return extractJarEntry(url);
+        }
+        if (entry.tempFile == null) {
+            return entry;
+        }
+        if (Files.notExists(entry.tempFile)) {
+            return extractJarEntry(url);
+        }
         return entry;
     }
 
@@ -205,7 +225,7 @@ class ClassPathContentHandler extends StaticContentHandler {
             processModifyHeaders(Instant.ofEpochMilli(lastModified), request.headers(), response.headers());
         }
 
-        processContentType(fileName(url), request.headers(), response.headers(), contentTypeSelector());
+        processContentType(fileName(url), request.headers(), response.headers());
 
         if (method == Http.Method.HEAD) {
             response.send();
@@ -214,9 +234,9 @@ class ClassPathContentHandler extends StaticContentHandler {
 
         InputStream in = url.openStream();
         response.send(IoMulti.multiFromStreamBuilder(in)
-                .byteBufferSize(2048)
-                .build()
-                .map(DataChunk::create));
+                              .byteBufferSize(2048)
+                              .build()
+                              .map(DataChunk::create));
     }
 
     static String fileName(URL url) {
@@ -241,7 +261,7 @@ class ClassPathContentHandler extends StaticContentHandler {
 
             // Extract JAR entry to file
             try (InputStream is = jarFile.getInputStream(jarEntry)) {
-                Path tempFile = createTempFile("ws", ".je");
+                Path tempFile = tmpFile.apply("ws", ".je");
                 Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
                 return new ExtractedJarEntry(tempFile, lastModified, jarEntry.getName());
             } finally {
@@ -251,22 +271,6 @@ class ClassPathContentHandler extends StaticContentHandler {
             }
         } catch (IOException ioe) {
             throw new HttpException("Cannot load JAR file!", Http.Status.INTERNAL_SERVER_ERROR_500, ioe);
-        }
-    }
-
-    /**
-     * Create temp file in provided temp folder, or default one.
-     *
-     * @param prefix string to be used in generating the file's name.
-     * @param suffix string to be used in generating the file's name.
-     * @return the path to the newly created file
-     * @throws IOException
-     */
-    private Path createTempFile(String prefix, String suffix) throws IOException {
-        if (tempDir != null) {
-            return Files.createTempFile(tempDir, prefix, suffix);
-        } else {
-            return Files.createTempFile(prefix, suffix);
         }
     }
 

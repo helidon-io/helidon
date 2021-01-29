@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.time.chrono.ChronoZonedDateTime;
 import java.util.List;
@@ -27,27 +26,22 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.webserver.HttpException;
+import io.helidon.webserver.RequestHeaders;
+import io.helidon.webserver.ResponseHeaders;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
 
 /**
- * Request {@link Handler} processing a static content.
+ * Request {@link io.helidon.webserver.Handler} processing a static content.
  */
-@Deprecated
 abstract class StaticContentHandler {
     private static final Logger LOGGER = Logger.getLogger(StaticContentHandler.class.getName());
 
     private final String welcomeFilename;
-    private final ContentTypeSelector contentTypeSelector;
 
-    /**
-     * Creates new instance.
-     *
-     * @param welcomeFilename     a welcome filename
-     * @param contentTypeSelector a selector for content type
-     */
-    StaticContentHandler(String welcomeFilename, ContentTypeSelector contentTypeSelector) {
-        this.welcomeFilename = welcomeFilename;
-        this.contentTypeSelector = contentTypeSelector;
+    StaticContentHandler(StaticContentSupport.Builder builder) {
+        this.welcomeFilename = builder.welcomeFileName();
     }
 
     /**
@@ -93,10 +87,6 @@ abstract class StaticContentHandler {
         }
     }
 
-    ContentTypeSelector contentTypeSelector() {
-        return contentTypeSelector;
-    }
-
     /**
      * Do handle for GET and HEAD HTTP methods.
      *
@@ -105,8 +95,8 @@ abstract class StaticContentHandler {
      * @param request  an HTTP request
      * @param response an HTTP response
      * @return {@code true} only if static content was found and processed.
-     * @throws IOException   if resource is not acceptable
-     * @throws HttpException if some known WEB error
+     * @throws java.io.IOException   if resource is not acceptable
+     * @throws io.helidon.webserver.HttpException if some known WEB error
      */
     abstract boolean doHandle(Http.RequestMethod method, String requestedPath, ServerRequest request, ServerResponse response)
             throws IOException, URISyntaxException;
@@ -118,7 +108,7 @@ abstract class StaticContentHandler {
      * @param etag the proposed ETag. If {@code null} then method returns false
      * @param requestHeaders an HTTP request headers
      * @param responseHeaders an HTTP response headers
-     * @throws HttpException if ETag is checked
+     * @throws io.helidon.webserver.HttpException if ETag is checked
      */
     static void processEtag(String etag, RequestHeaders requestHeaders, ResponseHeaders responseHeaders) {
         if (etag == null || etag.isEmpty()) {
@@ -172,7 +162,7 @@ abstract class StaticContentHandler {
      * @param modified the last modification instance. If {@code null} then method just returns {@code false}.
      * @param requestHeaders an HTTP request headers
      * @param responseHeaders an HTTP response headers
-     * @throws HttpException if (un)modify since header is checked
+     * @throws io.helidon.webserver.HttpException if (un)modify since header is checked
      */
     static void processModifyHeaders(Instant modified, RequestHeaders requestHeaders, ResponseHeaders responseHeaders) {
         if (modified == null) {
@@ -197,10 +187,10 @@ abstract class StaticContentHandler {
     }
 
     /**
-     * If provided {@code condition} is {@code true} then throws not found {@link HttpException}.
+     * If provided {@code condition} is {@code true} then throws not found {@link io.helidon.webserver.HttpException}.
      *
      * @param condition if condition is true then throws an exception otherwise not
-     * @throws HttpException if {@code condition} parameter is {@code true}.
+     * @throws io.helidon.webserver.HttpException if {@code condition} parameter is {@code true}.
      */
     static void throwNotFoundIf(boolean condition) {
         if (condition) {
@@ -220,36 +210,7 @@ abstract class StaticContentHandler {
         response.send();
     }
 
-    static String fileName(Path path) {
-        Path fileName = path.getFileName();
-
-        if (null == fileName) {
-            return "";
-        }
-
-        return fileName.toString();
-    }
-
     String welcomePageName() {
         return welcomeFilename;
-    }
-
-    /**
-     * Determines and set a Content-Type header based on filename extension.
-     *
-     * @param filename        a filename
-     * @param requestHeaders  an HTTP request headers
-     * @param responseHeaders an HTTP response headers
-     * @param contentTypeSelector selector of content types
-     */
-    static void processContentType(String filename,
-                                   RequestHeaders requestHeaders,
-                                   ResponseHeaders responseHeaders,
-                                   ContentTypeSelector contentTypeSelector) {
-        // Try to get Content-Type
-        MediaType type = contentTypeSelector.determine(filename, requestHeaders);
-        if (type != null) {
-            responseHeaders.contentType(type);
-        }
     }
 }

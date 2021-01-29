@@ -19,8 +19,8 @@ package io.helidon.webserver.examples.staticcontent;
 import io.helidon.common.http.Http;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 /**
  * Application demonstrates combination of the static content with a simple REST API. It counts accesses and display it

@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.webserver.staticcontent;
 
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-import java.util.function.Consumer;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.Service;
 
 /**
- * Serves 'static content' (files) from filesystem or using a classloader to the {@link WebServer WebServer}
- * {@link Routing}. It is possible to {@link Routing.Builder#register(Service...) register} it on the routing.
+ * Serves 'static content' (files) from filesystem or using a classloader to the {@link io.helidon.webserver.WebServer WebServer}
+ * {@link io.helidon.webserver.Routing}. It is possible to {@link io.helidon.webserver.Routing.Builder#register(io.helidon.webserver.Service...) register} it on the routing.
  * <pre>{@code
  * // Serve content of attached '/static/pictures' on '/pics'
  * Routing.builder()
@@ -36,10 +37,7 @@ import io.helidon.common.http.MediaType;
  * }</pre>
  * <p>
  * Content is served ONLY on HTTP {@code GET} method.
- *
- * @deprecated please use module {@code helidon-webserver-static-content}
  */
-@Deprecated(since = "2.3.0", forRemoval = true)
 public class StaticContentSupport implements Service {
 
     private final StaticContentHandler handler;
@@ -57,12 +55,9 @@ public class StaticContentSupport implements Service {
 
     @Override
     public void update(Routing.Rules routing) {
-        routing.onNewWebServer(new Consumer<WebServer>() {
-            @Override
-            public void accept(WebServer ws) {
-                webServerStarted();
-                ws.whenShutdown().thenRun(() -> webServerStopped());
-            }
+        routing.onNewWebServer(ws -> {
+            webServerStarted();
+            ws.whenShutdown().thenRun(this::webServerStopped);
         });
         routing.get((req, res) -> handler.handle(Http.Method.GET, req, res));
         routing.head((req, res) -> handler.handle(Http.Method.HEAD, req, res));
@@ -166,8 +161,8 @@ public class StaticContentSupport implements Service {
         private final Path fsRoot;
         private final String clRoot;
         private final ClassLoader classLoader;
-
         private final Map<String, MediaType> specificContentTypes = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
         private String welcomeFileName;
         private Path tmpDir;
 
@@ -212,6 +207,11 @@ public class StaticContentSupport implements Service {
 
         /**
          * Maps a filename extension to the response content type.
+         * To have a system wide configuration, you can use the service loader SPI
+         * {@link io.helidon.common.media.type.spi.MediaTypeDetector}.
+         *
+         * This method can override {@link io.helidon.common.media.type.MediaTypes} detection
+         * for static content handling only.
          *
          * @param filenameExtension a filename extension. The part after the last {code dot '.'} in the name.
          * @param contentType a mapped content type
@@ -234,23 +234,45 @@ public class StaticContentSupport implements Service {
         }
 
         /**
-         * Builds new {@link StaticContentSupport} instance.
+         * Builds new {@link io.helidon.webserver.staticcontent.StaticContentSupport} instance.
          *
          * @return a new instance
          */
         @Override
         public StaticContentSupport build() {
-            ContentTypeSelector selector = new ContentTypeSelector(specificContentTypes);
             StaticContentHandler handler;
             if (fsRoot != null) {
-                handler = FileSystemContentHandler.create(welcomeFileName, selector, fsRoot);
+                handler = FileSystemContentHandler.create(this);
             } else if (clRoot != null) {
-                handler = ClassPathContentHandler.create(welcomeFileName, selector, clRoot, tmpDir, classLoader);
+                handler = ClassPathContentHandler.create(this);
             } else {
                 throw new IllegalArgumentException("Builder was created without specified static content root!");
             }
             return new StaticContentSupport(handler);
         }
 
+        Path fsRoot() {
+            return fsRoot;
+        }
+
+        String clRoot() {
+            return clRoot;
+        }
+
+        ClassLoader classLoader() {
+            return classLoader;
+        }
+
+        Map<String, MediaType> specificContentTypes() {
+            return specificContentTypes;
+        }
+
+        String welcomeFileName() {
+            return welcomeFileName;
+        }
+
+        Path tmpDir() {
+            return tmpDir;
+        }
     }
 }
