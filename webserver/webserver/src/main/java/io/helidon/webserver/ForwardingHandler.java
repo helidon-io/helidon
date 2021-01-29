@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,11 +81,13 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
     private CompletableFuture<?> prevRequestFuture;
     private boolean lastContent;
+    private final Runnable clearQueues;
 
     ForwardingHandler(Routing routing,
                       NettyWebServer webServer,
                       SSLEngine sslEngine,
                       ReferenceQueue<Object> queues,
+                      Runnable clearQueues,
                       HttpRequestDecoder httpRequestDecoder,
                       long maxPayloadSize) {
         this.routing = routing;
@@ -94,9 +96,11 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         this.queues = queues;
         this.httpRequestDecoder = httpRequestDecoder;
         this.maxPayloadSize = maxPayloadSize;
+        this.clearQueues = clearQueues;
     }
 
     private void reset() {
+        lastContent = false;
         isWebSocketUpgrade = false;
         actualPayloadSize = 0L;
         ignorePayload = false;
@@ -131,7 +135,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 System.identityHashCode(this), System.identityHashCode(ctx.channel()), msg.getClass()));
 
         if (msg instanceof HttpRequest) {
-            lastContent = false;
+            // On new request, use chance to cleanup queues in HttpInitializer
+            clearQueues.run();
+
             // Turns off auto read
             ctx.channel().config().setAutoRead(false);
 

@@ -25,6 +25,7 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import io.helidon.webserver.HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder;
@@ -60,6 +61,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     private final NettyWebServer webServer;
     private final SocketConfiguration soConfig;
     private final Routing routing;
+    private final AtomicBoolean clearLock = new AtomicBoolean();
 
     /**
      * Reference queue that collects ReferenceHoldingQueue's when they become
@@ -87,26 +89,33 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
 
     /**
      * Calls release on every ReferenceHoldingQueue that has been deemed ready for
-     * garbage collection and added to {@code queues}.
-     * Those ReferenceHoldingQueue's not fully released are added to {@code unreleasedQueues}
-     * for later retries.
+     * garbage collection and added to {@code queues}. The ReferenceHoldingQueue's not
+     * fully released are added to {@code unreleasedQueues} for later retries. Uses
+     * a lock to avoid concurrent modifications to {@code queues}.
      */
     @SuppressWarnings("unchecked")
     private void clearQueues() {
-        for (Reference<?> r = queues.poll(); r != null; r = queues.poll()) {
-            if (!(r instanceof IndirectReference<?, ?>)) {
-                LOGGER.finest("Unexpected reference in queues");
-                continue;
-            }
-            ReferenceHoldingQueue<?> q = ((IndirectReference<?, ReferenceHoldingQueue<?>>) r).acquire();
-            if (q == null) {
-                continue;       // no longer referenced
-            }
-            if (!q.release()) {
-                unreleasedQueues.add(q);
-            }
+        if (clearLock.get() || !clearLock.compareAndSet(false, true)) {
+            return;
         }
-        unreleasedQueues.removeIf(ReferenceHoldingQueue::release);
+        try {
+            for (Reference<?> r = queues.poll(); r != null; r = queues.poll()) {
+                if (!(r instanceof IndirectReference<?, ?>)) {
+                    LOGGER.finest("Unexpected reference in queues");
+                    continue;
+                }
+                ReferenceHoldingQueue<?> q = ((IndirectReference<?, ReferenceHoldingQueue<?>>) r).acquire();
+                if (q == null) {
+                    continue;       // no longer referenced
+                }
+                if (!q.release()) {
+                    unreleasedQueues.add(q);
+                }
+            }
+            unreleasedQueues.removeIf(ReferenceHoldingQueue::release);
+        } finally {
+            clearLock.lazySet(false);
+        }
     }
 
     /**
@@ -174,7 +183,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         }
 
         // Helidon's forwarding handler
-        p.addLast(new ForwardingHandler(routing, webServer, sslEngine, queues,
+        p.addLast(new ForwardingHandler(routing, webServer, sslEngine, queues, this::clearQueues,
                                         requestDecoder, soConfig.maxPayloadSize()));
 
         // Cleanup queues as part of event loop
