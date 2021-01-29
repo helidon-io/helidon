@@ -73,9 +73,9 @@ public class PokemonService implements Service {
                     .addParam("id", pokemonId)
                     .execute())
                     .thenAccept(maybeRow -> maybeRow
-                    .ifPresentOrElse(
-                            row -> response.send(row.as(Pokemon.class)),
-                            () -> sendNotFound(response, "Pokemon " + pokemonId + " not found")))
+                            .ifPresentOrElse(
+                                    row -> response.send(row.as(Pokemon.class)),
+                                    () -> sendNotFound(response, "Pokemon " + pokemonId + " not found")))
                     .exceptionally(throwable -> sendError(throwable, response));
         } catch (NumberFormatException ex) {
             sendError(ex, response);
@@ -86,9 +86,9 @@ public class PokemonService implements Service {
         String pokemonName = request.path().param("name");
         dbClient.execute(exec -> exec.namedGet("select-pokemon-by-name", pokemonName))
                 .thenAccept(maybeRow -> maybeRow
-                .ifPresentOrElse(
-                        row -> response.send(row.as(Pokemon.class)),
-                        () -> sendNotFound(response, "Pokemon " + pokemonName + " not found")))
+                        .ifPresentOrElse(
+                                row -> response.send(row.as(Pokemon.class)),
+                                () -> sendNotFound(response, "Pokemon " + pokemonName + " not found")))
                 .exceptionally(throwable -> sendError(throwable, response));
     }
 
