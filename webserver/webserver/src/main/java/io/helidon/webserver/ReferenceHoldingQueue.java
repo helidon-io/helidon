@@ -131,11 +131,15 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
      * @param <R> type of the other object
      */
     static class IndirectReference<T, R> extends PhantomReference<T> {
-        protected final AtomicReference<R> otherRef = new AtomicReference<>();
+        private final AtomicReference<R> otherRef = new AtomicReference<>();
 
-        public IndirectReference(T referent, ReferenceQueue<? super T> q, R otherRef) {
+        IndirectReference(T referent, ReferenceQueue<? super T> q, R otherRef) {
             super(referent, q);
             this.otherRef.lazySet(otherRef);
+        }
+
+        public AtomicReference<R> otherRef() {
+            return otherRef;
         }
 
         /**
@@ -181,7 +185,7 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
          * @return {@code true} if released was invoked, {@code false} otherwise
          */
         boolean isReleased() {
-            return otherRef.get() == null;
+            return otherRef().get() == null;
         }
 
         /**

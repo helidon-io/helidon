@@ -16,7 +16,6 @@
 
 package io.helidon.webserver;
 
-import javax.net.ssl.SSLEngine;
 import java.lang.ref.ReferenceQueue;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
@@ -26,9 +25,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
+import javax.net.ssl.SSLEngine;
+
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;

@@ -16,8 +16,6 @@
 
 package io.helidon.webserver;
 
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLPeerUnverifiedException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.security.Principal;
@@ -28,8 +26,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLPeerUnverifiedException;
+
 import io.helidon.webserver.HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder;
 import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
