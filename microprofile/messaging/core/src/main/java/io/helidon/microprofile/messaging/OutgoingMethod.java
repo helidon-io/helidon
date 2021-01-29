@@ -17,12 +17,16 @@
 
 package io.helidon.microprofile.messaging;
 
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
+
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.BeanManager;
 
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
 
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
@@ -67,8 +71,36 @@ class OutgoingMethod extends AbstractMessagingMethod {
             }
         } else {
             // Invoke on each request publisher
-            publisher = ReactiveStreams.fromPublisher(new InternalPublisher(this))
-                    .peek(o -> this.afterInvoke(null, o));
+            switch (getType()) {
+                case OUTGOING_COMPLETION_STAGE_MSG_2_VOID:
+                    publisher = ReactiveStreams
+                            .generate(() -> (CompletionStage<?>) this.invoke())
+                            .flatMapCompletionStage(Function.identity())
+                            .peek(m -> this.afterInvoke(null, m));
+                    break;
+                case OUTGOING_COMPLETION_STAGE_PAYL_2_VOID:
+                    publisher = ReactiveStreams
+                            .generate(() -> (CompletionStage<?>) this.invoke())
+                            .flatMapCompletionStage(Function.identity())
+                            .map(MessageUtils::wrap)
+                            .peek(m -> this.afterInvoke(null, m));
+                    break;
+                case OUTGOING_MSG_2_VOID:
+                    publisher = ReactiveStreams
+                            .generate(() -> (Message<?>) this.invoke())
+                            .peek(m -> this.afterInvoke(null, m));
+                    break;
+                case OUTGOING_PAYL_2_VOID:
+                    publisher = ReactiveStreams
+                            .generate(this::invoke)
+                            .map(MessageUtils::wrap)
+                            .peek(m -> this.afterInvoke(null, m));
+                    break;
+                default:
+                    throw new UnsupportedOperationException(String
+                            .format("Not implemented signature %s", getType()));
+            }
+
         }
     }
 

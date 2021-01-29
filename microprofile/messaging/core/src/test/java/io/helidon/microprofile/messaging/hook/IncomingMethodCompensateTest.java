@@ -34,24 +34,18 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
-public class ProcessorMethodCompensateTest extends AbstractHookTest {
+public class IncomingMethodCompensateTest extends AbstractHookTest {
 
     CompletableFuture<String> compensated = new CompletableFuture<>();
 
     @Outgoing("channel1")
+    @MockLRA(MockLRA.Type.NEW)
     public PublisherBuilder<Message<String>> publish() {
         return ReactiveStreams.fromIterable(TEST_DATA)
                 .map(Message::of);
     }
 
     @Incoming("channel1")
-    @Outgoing("channel2")
-    @MockLRA(MockLRA.Type.NEW)
-    public Message<String> process(Message<String> msg) {
-        return msg;
-    }
-
-    @Incoming("channel2")
     @MockLRA(MockLRA.Type.REQUIRED)
     public CompletionStage<Void> consume(Message<String> msg) {
         if (TEST_DATA.get(1).equals(msg.getPayload())) {
