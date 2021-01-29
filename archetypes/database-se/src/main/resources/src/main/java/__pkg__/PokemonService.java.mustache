@@ -73,9 +73,9 @@ public class PokemonService implements Service {
                     .addParam("id", pokemonId)
                     .execute())
                     .thenAccept(maybeRow -> maybeRow
-                            .ifPresentOrElse(
-                                    row -> sendRow(row, response),
-                                    () -> sendNotFound(response, "Pokemon " + pokemonId + " not found")))
+                    .ifPresentOrElse(
+                            row -> response.send(row.as(Pokemon.class)),
+                            () -> sendNotFound(response, "Pokemon " + pokemonId + " not found")))
                     .exceptionally(throwable -> sendError(throwable, response));
         } catch (NumberFormatException ex) {
             sendError(ex, response);
@@ -85,13 +85,10 @@ public class PokemonService implements Service {
     private void getPokemonByName(ServerRequest request, ServerResponse response) {
         String pokemonName = request.path().param("name");
         dbClient.execute(exec -> exec.namedGet("select-pokemon-by-name", pokemonName))
-                .thenAccept(it -> {
-                    if (it.isEmpty()) {
-                        sendNotFound(response, "Pokemon " + pokemonName + " not found");
-                    } else {
-                        sendRow(it.get(), response);
-                    }
-                })
+                .thenAccept(maybeRow -> maybeRow
+                .ifPresentOrElse(
+                        row -> response.send(row.as(Pokemon.class)),
+                        () -> sendNotFound(response, "Pokemon " + pokemonName + " not found")))
                 .exceptionally(throwable -> sendError(throwable, response));
     }
 
@@ -121,10 +118,6 @@ public class PokemonService implements Service {
     private void sendNotFound(ServerResponse response, String message) {
         response.status(Http.Status.NOT_FOUND_404);
         response.send(message);
-    }
-
-    private void sendRow(DbRow row, ServerResponse response) {
-        response.send(row.as(javax.json.JsonObject.class));
     }
 
     /**
