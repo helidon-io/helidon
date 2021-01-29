@@ -51,13 +51,27 @@ class ProxyProcessor implements Processor<Object, Object> {
 
         switch (method.getType()) {
             case PROCESSOR_PUBLISHER_BUILDER_MSG_2_PUBLISHER_BUILDER_MSG:
+                PublisherBuilder<Object> publisherBuilderMsgParam = ReactiveStreams.fromPublisher(this);
+                publisher = ((PublisherBuilder<Object>) method.invoke(publisherBuilderMsgParam))
+                        .buildRs();
+                break;
             case PROCESSOR_PUBLISHER_BUILDER_PAYL_2_PUBLISHER_BUILDER_PAYL:
-                PublisherBuilder<Object> paramPublisherBuilder = ReactiveStreams.fromPublisher(this);
-                publisher = ((PublisherBuilder<Object>) method.invoke(paramPublisherBuilder)).buildRs();
+                PublisherBuilder<Object> publisherBuilderParam = ReactiveStreams.fromPublisher(this)
+                        .map(MessageUtils::unwrap);
+                publisher = ((PublisherBuilder<Object>) method.invoke(publisherBuilderParam))
+                        .map(MessageUtils::wrap)
+                        .buildRs();
                 break;
             case PROCESSOR_PUBLISHER_MSG_2_PUBLISHER_MSG:
-            case PROCESSOR_PUBLISHER_PAYL_2_PUBLISHER_PAYL:
                 publisher = method.invoke(this);
+                break;
+            case PROCESSOR_PUBLISHER_PAYL_2_PUBLISHER_PAYL:
+                Publisher<Object> publisherParam = ReactiveStreams.fromPublisher(this)
+                        .map(MessageUtils::unwrap)
+                        .buildRs();
+                publisher = ReactiveStreams.fromPublisher(method.invoke(publisherParam))
+                        .map(MessageUtils::wrap)
+                        .buildRs();
                 break;
             case PROCESSOR_PROCESSOR_BUILDER_MSG_2_VOID:
                 processor = ReactiveStreams.builder()
@@ -124,7 +138,7 @@ class ProxyProcessor implements Processor<Object, Object> {
     @Override
     public void onNext(Object o) {
         preProcess(o);
-        subscriber.onNext(MessageUtils.unwrap(o, this.method.getMethod()));
+        subscriber.onNext(o);
     }
 
     @Override
