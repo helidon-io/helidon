@@ -18,6 +18,7 @@ package io.helidon.webserver;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
+import io.helidon.webserver.ByteBufRequestChunk.DataChunkHoldingQueue;
 
 import io.netty.buffer.ByteBuf;
 
@@ -28,18 +29,18 @@ import io.netty.buffer.ByteBuf;
  */
 class HttpRequestScopedPublisher extends BufferedEmittingPublisher<DataChunk> {
 
-    private final ReferenceHoldingQueue<DataChunk> referenceQueue;
+    private final DataChunkHoldingQueue holdingQueue;
 
-    HttpRequestScopedPublisher(ReferenceHoldingQueue<DataChunk> referenceQueue) {
+    HttpRequestScopedPublisher(DataChunkHoldingQueue holdingQueue) {
         super();
-        this.referenceQueue = referenceQueue;
+        this.holdingQueue = holdingQueue;
     }
 
     public int emit(ByteBuf data) {
         try {
-            return super.emit(new ByteBufRequestChunk(data, referenceQueue));
+            return super.emit(new ByteBufRequestChunk(data, holdingQueue));
         } finally {
-            referenceQueue.release();
+            holdingQueue.release();
         }
     }
 
@@ -61,7 +62,7 @@ class HttpRequestScopedPublisher extends BufferedEmittingPublisher<DataChunk> {
         try {
             super.complete();
         } finally {
-            referenceQueue.release();
+            holdingQueue.release();
         }
     }
 
@@ -70,7 +71,7 @@ class HttpRequestScopedPublisher extends BufferedEmittingPublisher<DataChunk> {
         try {
             super.fail(throwable);
         } finally {
-            referenceQueue.release();
+            holdingQueue.release();
         }
     }
 }

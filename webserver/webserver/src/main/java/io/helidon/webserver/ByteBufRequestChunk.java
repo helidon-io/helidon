@@ -99,9 +99,9 @@ class ByteBufRequestChunk implements DataChunk {
 
     /**
      * An implementation of {@link ReferenceHoldingQueue} that logs a warning
-     * message once and only once.
+     * message once and only once when releasing a reference in the queue.
      */
-    static class RefHoldingQueue extends ReferenceHoldingQueue<DataChunk> {
+    static class DataChunkHoldingQueue extends ReferenceHoldingQueue<DataChunk> {
 
         @Override
         protected void hookOnAutoRelease() {

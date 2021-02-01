@@ -27,8 +27,8 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 
-import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.webserver.ByteBufRequestChunk.DataChunkHoldingQueue;
 import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
 
 import io.netty.buffer.ByteBuf;
@@ -161,7 +161,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     .ifPresent(name -> request.headers().set(Http.Header.X_HELIDON_CN, name));
 
             // Context, publisher and DataChunk queue for this request/response
-            ReferenceHoldingQueue<DataChunk> queue = new ReferenceHoldingQueue<>();
+            DataChunkHoldingQueue queue = new DataChunkHoldingQueue();
             requestContext = new RequestContext(new HttpRequestScopedPublisher(queue), request);
 
             // Closure local variables that cache mutable instance variables
@@ -172,7 +172,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             // publisher is ready for collection, we have access to queue by calling its
             // acquire method. We shall also attempt to release queue on completion of
             // bareResponse below.
-            IndirectReference<HttpRequestScopedPublisher, ReferenceHoldingQueue<DataChunk>> publisherPh =
+            IndirectReference<HttpRequestScopedPublisher, DataChunkHoldingQueue> publisherPh =
                     new IndirectReference<>(publisherRef, queues, queue);
 
             // Set up read strategy for channel based on consumer demand
