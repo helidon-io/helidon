@@ -30,9 +30,6 @@ class EnvironmentVariableTest {
 
     private Config config;
 
-    EnvironmentVariableTest() {
-    }
-
     @BeforeEach
     void installConfig() {
         this.config = ConfigProvider.getConfig();
