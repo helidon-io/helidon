@@ -34,7 +34,9 @@ import com.oracle.bmc.identity.IdentityClient;
 import com.oracle.bmc.identity.requests.ListRegionsRequest;
 import com.oracle.bmc.identity.responses.ListRegionsResponse;
 
-
+/**
+ * Region service class. Currently the easiest way to test connectivity and authentication to OCI.
+ */
 public class RegionsService implements Service {
     private static final Logger LOGGER = Logger.getLogger(RegionsService.class.getName());
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());

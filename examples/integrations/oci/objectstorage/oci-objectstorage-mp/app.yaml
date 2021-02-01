@@ -17,18 +17,18 @@
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: helidon-examples-integrations-cdi-oci-objectstorage-mp-mp
+  name: helidon-examples-integrations-cdi-oci-objectstorage-mp
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: helidon-examples-integrations-cdi-oci-objectstorage-mp-mp
+        app: helidon-examples-integrations-cdi-oci-objectstorage-mp
         version: v1
     spec:
       containers:
-      - name: helidon-examples-integrations-cdi-oci-objectstorage-mp-mp
-        image: helidon-examples-integrations-cdi-oci-objectstorage-mp-mp
+      - name: helidon-examples-integrations-cdi-oci-objectstorage-mp
+        image: helidon-examples-integrations-cdi-oci-objectstorage-mp
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -72,23 +72,23 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-examples-integrations-cdi-oci-objectstorage-mp-mp
+  name: helidon-examples-integrations-cdi-oci-objectstorage-mp
   labels:
-    app: helidon-examples-integrations-cdi-oci-objectstorage-mp-mp
+    app: helidon-examples-integrations-cdi-oci-objectstorage-mp
 spec:
   type: ClusterIP
   ports:
   - name: http
     port: 8080
   selector:
-    app: helidon-examples-integrations-cdi-oci-objectstorage-mp-mp
+    app: helidon-examples-integrations-cdi-oci-objectstorage-mp
   sessionAffinity: None
 ---
 
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: helidon-examples-integrations-cdi-oci-objectstorage-mp-mp
+  name: helidon-examples-integrations-cdi-oci-objectstorage-mp
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
@@ -98,5 +98,5 @@ spec:
       paths:
       - path: /oci-objectstorage/(.*)
         backend:
-          serviceName: helidon-examples-integrations-cdi-oci-objectstorage-mp-mp
+          serviceName: helidon-examples-integrations-cdi-oci-objectstorage-mp
           servicePort: 8080
