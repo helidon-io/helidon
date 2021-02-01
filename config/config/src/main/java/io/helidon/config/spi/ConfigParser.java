@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.config.spi;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -78,6 +79,22 @@ public interface ConfigParser {
      * @throws ConfigParserException in case of problem to parse configuration from the source
      */
     ObjectNode parse(Content content) throws ConfigParserException;
+
+    /**
+     * Config parser can define supported file suffixes. If such are defined, Helidon will
+     * use these to discover default configuration sources.
+     * For example if there is a {@code ConfigParser} that returns {@code xml}, config would look for
+     * {@code meta-config.xml} to discover meta configuration, and for {@code application.xml} on file
+     * system and on classpath to discover configuration files.
+     * <p>
+     * Note that the suffixes must resolve into a media type supported by a config parser
+     * (see {@link io.helidon.common.media.type.MediaTypes#detectExtensionType(String)}).
+     *
+     * @return a set of file suffixes supported by this config parser.
+     */
+    default List<String> supportedSuffixes() {
+        return List.of();
+    }
 
     /**
      * Config content to be parsed by a {@link ConfigParser}.
