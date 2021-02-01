@@ -50,32 +50,34 @@ class GraphQlSupportTest {
                 .start()
                 .await(10, TimeUnit.SECONDS);
 
-        WebClient webClient = WebClient.builder()
-                .addMediaSupport(JsonbSupport.create())
-                .build();
+        try {
+            WebClient webClient = WebClient.builder()
+                    .addMediaSupport(JsonbSupport.create())
+                    .build();
 
-        LinkedHashMap<String, Object> response = webClient
-                .post()
-                .uri("http://localhost:" + server.port() + "/graphql")
-                .submit("{\"query\": \"{hello}\"}", LinkedHashMap.class)
-                .await(10, TimeUnit.SECONDS);
+            LinkedHashMap<String, Object> response = webClient
+                    .post()
+                    .uri("http://localhost:" + server.port() + "/graphql")
+                    .submit("{\"query\": \"{hello}\"}", LinkedHashMap.class)
+                    .await(10, TimeUnit.SECONDS);
 
-        Map<String, Object> data = (Map<String, Object>) response.get("data");
-        assertThat("POST errors: " + response.get("errors"), data, notNullValue());
-        assertThat("POST", data.get("hello"), is("world"));
+            Map<String, Object> data = (Map<String, Object>) response.get("data");
+            assertThat("POST errors: " + response.get("errors"), data, notNullValue());
+            assertThat("POST", data.get("hello"), is("world"));
 
-        response = webClient
-                .get()
-                .uri("http://localhost:" + server.port() + "/graphql")
-                .queryParam("query", "{hello}")
-                .request(LinkedHashMap.class)
-                .await(10, TimeUnit.SECONDS);
+            response = webClient
+                    .get()
+                    .uri("http://localhost:" + server.port() + "/graphql")
+                    .queryParam("query", "{hello}")
+                    .request(LinkedHashMap.class)
+                    .await(10, TimeUnit.SECONDS);
 
-        data = (Map<String, Object>) response.get("data");
-        assertThat("GET errors: " + response.get("errors"), data, notNullValue());
-        assertThat("GET", data.get("hello"), is("world"));
-
-        server.shutdown();
+            data = (Map<String, Object>) response.get("data");
+            assertThat("GET errors: " + response.get("errors"), data, notNullValue());
+            assertThat("GET", data.get("hello"), is("world"));
+        } finally {
+            server.shutdown();
+        }
     }
 
     private static GraphQLSchema buildSchema() {
