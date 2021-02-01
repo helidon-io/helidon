@@ -108,8 +108,8 @@
         </plugins>
     </build>
 
-    <properties>
-        <reuseForks>false</reuseForks>
-    </properties>
+<!--    <properties>-->
+<!--        <reuseForks>false</reuseForks>-->
+<!--    </properties>-->
 
 </project>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,32 +26,31 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
-final class EnvironmentVariableTest {
+class EnvironmentVariableTest {
 
     private Config config;
 
-    private EnvironmentVariableTest() {
-        super();
+    EnvironmentVariableTest() {
     }
 
     @BeforeEach
-    final void installConfig() {
+    void installConfig() {
         this.config = ConfigProvider.getConfig();
         assertThat(this.config, notNullValue());
     }
 
     @Test
-    final void testEnvironmentVariableOverridesCamelCase() {
+    void testEnvironmentVariableOverridesCamelCase() {
         assertThat(this.config.getValue("camelCase", String.class), is("no"));
     }
 
     @Test
-    final void testEnvironmentVariableOverridesYamlProperty() {
+    void testEnvironmentVariableOverridesYamlProperty() {
         assertThat(this.config.getValue("yamlProperty", String.class), is("overridden"));
     }
 
     @Test
-    final void testEnvironmentVariableOverridesNestedYamlProperty() {
+    void testEnvironmentVariableOverridesNestedYamlProperty() {
         assertThat(this.config.getValue("nested.yamlProperty", String.class), is("overridden"));
     }
 
