@@ -61,7 +61,7 @@
         <version.lib.jgit>4.9.9.201903122025-r</version.lib.jgit>
         <version.lib.jsch>0.1.55</version.lib.jsch>
         <version.lib.kafka-junit5>3.2.1</version.lib.kafka-junit5>
-        <version.lib.netty.tcnative>2.0.26.Final</version.lib.netty.tcnative>
+        <version.lib.netty.tcnative>2.0.36.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
         <version.lib.rxjava>2.2.10</version.lib.rxjava>
