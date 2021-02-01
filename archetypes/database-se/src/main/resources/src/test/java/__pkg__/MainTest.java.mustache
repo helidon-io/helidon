@@ -79,14 +79,14 @@ public class MainTest {
         webClient.get()
                 .path("/pokemon/1")
                 .request(JsonObject.class)
-                .thenAccept(pokemon -> assertThat(pokemon.getString("NAME"), is("Bulbasaur")))
+                .thenAccept(pokemon -> assertThat(pokemon.getString("name"), is("Bulbasaur")))
                 .toCompletableFuture()
                 .get();
 
         webClient.get()
                 .path("/pokemon/name/Charmander")
                 .request(JsonObject.class)
-                .thenAccept(pokemon -> assertThat(pokemon.getJsonNumber("ID_TYPE").intValue(), is(10)))
+                .thenAccept(pokemon -> assertThat(pokemon.getJsonNumber("idType").intValue(), is(10)))
                 .toCompletableFuture()
                 .get();
 
