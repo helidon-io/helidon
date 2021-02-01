@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,16 +63,15 @@ public class TyrusReaderSubscriber implements Flow.Subscriber<DataChunk> {
 
     @Override
     public void onNext(DataChunk item) {
+        // Copy underlying buffer into a ByteBuffer and release DataChunk
+        ByteBuffer byteBuffer = ByteBuffer.wrap(item.bytes());
+        item.release();
+
+        // Submit buffer to Tyrus
         if (executorService == null) {
-            for (ByteBuffer byteBuffer : item.data()) {
-                submitBuffer(byteBuffer);
-            }
+            submitBuffer(byteBuffer);
         } else {
-            executorService.submit(() -> {
-                for (ByteBuffer byteBuffer : item.data()) {
-                    submitBuffer(byteBuffer);
-                }
-            });
+            executorService.submit(() -> submitBuffer(byteBuffer));
         }
     }
 
