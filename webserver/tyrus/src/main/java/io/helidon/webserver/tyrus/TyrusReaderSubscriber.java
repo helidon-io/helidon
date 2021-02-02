@@ -63,33 +63,55 @@ public class TyrusReaderSubscriber implements Flow.Subscriber<DataChunk> {
 
     @Override
     public void onNext(DataChunk item) {
-        // Copy underlying buffer into a ByteBuffer and release DataChunk
-        ByteBuffer byteBuffer = ByteBuffer.wrap(item.bytes());
-        item.release();
-
-        // Submit buffer to Tyrus
-        if (executorService == null) {
-            submitBuffer(byteBuffer);
+        if (subscription != null) {
+            if (executorService == null) {
+                submitDataChunk(item);
+            } else {
+                executorService.submit(() -> submitDataChunk(item));
+            }
         } else {
-            executorService.submit(() -> submitBuffer(byteBuffer));
+            item.release();
         }
     }
 
     /**
-     * Submits data buffer to Tyrus. Retries a few times to make sure the entire buffer
-     * is consumed or logs an error.
+     * Submits all data in a chunk and requests one more if successful.
+     *
+     * @param item a data chunk
+     */
+    private void submitDataChunk(DataChunk item) {
+        try {
+            for (ByteBuffer byteBuffer : item.data()) {
+                submitBuffer(byteBuffer);
+            }
+        } finally {
+            item.release();
+        }
+        if (subscription != null) {
+            subscription.request(1L);
+        }
+    }
+
+    /**
+     * Submits single buffer to Tyrus. Retries a few times to make sure the entire buffer
+     * is consumed.
      *
      * @param data Data buffer.
      */
     private void submitBuffer(ByteBuffer data) {
+        // Pass all data to Tyrus spi
         int retries = MAX_RETRIES;
         while (data.remaining() > 0 && retries-- > 0) {
             connection.getReadHandler().handle(data);
         }
+
+        // If we can't push all data to Tyrus, cancel and report problem
         if (retries == 0) {
-            LOGGER.warning("Tyrus did not consume all data buffer after " + MAX_RETRIES + " retries");
+            subscription.cancel();
+            subscription = null;
+            connection.close(new CloseReason(UNEXPECTED_CONDITION, "Tyrus did not "
+                    + "consume all data after " + MAX_RETRIES + " retries"));
         }
-        subscription.request(1L);
     }
 
     @Override
