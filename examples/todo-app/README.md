@@ -25,7 +25,9 @@ docker run --name zipkin -d -p 9411:9411 openzipkin/zipkin
 
 With Kubernetes:
 ```bash
-kubectl apply -f ../k8s/ingress.yaml -f ../k8s/zipkin.yaml
+kubectl apply \
+  -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/ingress-nginx-3.15.2/deploy/static/provider/cloud/deploy.yaml \
+  -f ../k8s/zipkin.yaml
 ```
 
 ## Build and run
@@ -76,8 +78,6 @@ docker stop zipkin \
 Delete the Kubernetes resources:
 ```bash
 kubectl delete \
-    -f ../k8s/ingress.yaml \
-    -f ../k8s/zipkin.yaml \
     -f cassandra.yaml \
     -f backend/app.yaml \
     -f frontend/app.yaml

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,29 +14,32 @@
 # limitations under the License.
 #
 
----
+apiVersion: apps/v1
 kind: Deployment
-apiVersion: extensions/v1beta1
 metadata:
   name: helidon-examples-integrations-cdi-jedis
+  labels:
+    app: helidon-examples-integrations-cdi-jedis
+    version: v1
 spec:
   replicas: 1
   template:
     metadata:
       labels:
         app: helidon-examples-integrations-cdi-jedis
-        version: v1
     spec:
       containers:
-      - name: helidon-examples-integrations-cdi-jedis
-        image: helidon-examples-integrations-cdi-jedis
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8080
-        env:
-        - name: redis_clients_jedis_JedisPool_default_host
-          value: redis
+        - name: helidon-examples-integrations-cdi-jedis
+          image: helidon-examples-integrations-cdi-jedis
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: redis_clients_jedis_JedisPool_default_host
+              value: redis
+
 ---
+
 kind: Service
 apiVersion: v1
 metadata:
@@ -51,8 +54,10 @@ spec:
   selector:
     app: helidon-examples-integrations-cdi-jedis
   sessionAffinity: None
+
 ---
-apiVersion: extensions/v1beta1
+
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: helidon-examples-integrations-cdi-jedis
@@ -60,10 +65,13 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
   rules:
-  - host: localhost
-    http:
-      paths:
-      - path: /helidon-cdi-jedis/(.*)
-        backend:
-          serviceName: helidon-examples-integrations-cdi-jedis
-          servicePort: 8080
+    - host: localhost
+      http:
+        paths:
+          - path: /helidon-cdi-jedis/(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: helidon-examples-integrations-cdi-jedis
+                port:
+                  number: 8080
