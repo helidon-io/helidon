@@ -19,7 +19,6 @@ package io.helidon.webserver.tyrus;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
-import java.util.logging.Logger;
 
 import javax.websocket.CloseReason;
 
