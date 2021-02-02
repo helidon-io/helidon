@@ -222,6 +222,7 @@ public class Oci {
                                 .userId(ociAuthUser)
                                 .fingerprint(ociAuthFingerprint)
                                 .region(Region.valueOf(ociAuthRegion))
+                                .passphraseCharacters(ociAuthPassphraseCharacters.toCharArray())
                                 .privateKeySupplier(this::getPrivateKey)
                                 .build();
                 return simpleProvider;
