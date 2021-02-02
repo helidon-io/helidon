@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package io.helidon.messaging;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -215,6 +216,63 @@ public interface Messaging {
         }
 
         /**
+         * Register {@link java.util.function.Consumer} for listening every payload coming from upstream.
+         * This Blocking listener creates unbounded({@link Long#MAX_VALUE}) demand.
+         * {@link org.eclipse.microprofile.reactive.messaging.Message}s are automatically acked and unwrapped.
+         * Equivalent of
+         * {@link org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder#forEach(java.util.function.Consumer)}.
+         *
+         * This listeners blocks on each call. Intended to be used with virtual threads.
+         *
+         * @param channel   to use subscriber in
+         * @param consumer  to consume payloads
+         * @param <PAYLOAD> message payload type
+         * @return this builder
+         */
+        public <PAYLOAD> Builder blockingListener(Channel<PAYLOAD> channel, Consumer<? super PAYLOAD> consumer) {
+            this.messaging.registerChannel(channel);
+            channel.setSubscriber(Builder.<PAYLOAD>unwrapProcessorBuilder()
+                    .flatMapCompletionStage(payload -> {
+                        CompletableFuture.supplyAsync(() -> {
+                            consumer.accept(payload);
+                            return Void.class;
+                        });
+                        return CompletableFuture.completedFuture(Void.class); // parallel exec
+                    })
+                    .ignore()
+                    .build());
+            return this;
+        }
+
+        /**
+         * Register {@link java.util.function.Consumer} for listening every payload coming from upstream.
+         * This Blocking listener creates unbounded({@link Long#MAX_VALUE}) demand.
+         * Standard MicroProfile reactive message is used. Currently there is no way to block the
+         * {@code ack()} method.
+         *
+         * This listener blocks on each call. Intended to be used with virtual threads.
+         *
+         * @param channel   to use subscriber in
+         * @param consumer  to consume payloads
+         * @param <PAYLOAD> message with a payload type
+         * @return this builder
+         */
+        public <PAYLOAD> Builder blockingMessageListener(Channel<PAYLOAD> channel, Consumer<Message<? extends PAYLOAD>> consumer) {
+            this.messaging.registerChannel(channel);
+            channel.setSubscriber(ReactiveStreams.<Message<? extends PAYLOAD>>builder()
+                    .flatMapCompletionStage(payload -> {
+                        CompletableFuture.supplyAsync(() -> {
+                            consumer.accept(payload);
+                            return Void.class;
+                        });
+                        return CompletableFuture.completedFuture(Void.class); // parallel exec
+                    })
+                    .ignore()
+                    .build());
+            return this;
+        }
+
+        /**
          * Register {@link Flow.Subscriber} to be used for supplied {@link Channel}.
          *
          * @param channel    to use subscriber in
@@ -362,6 +420,8 @@ public interface Messaging {
                     .peek(Message::ack)
                     .<PAYLOAD>map(Message::getPayload);
         }
+
+
     }
 
 

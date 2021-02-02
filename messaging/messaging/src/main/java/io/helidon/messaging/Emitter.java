@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,28 @@ public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
             return CompletableFuture.completedStage(null);
         }));
         return future;
+    }
+
+    /**
+     * Send raw payload to downstream, wrapped to {@link Message} when demand is higher than 0.
+     * Publishes the given item to each current subscriber by asynchronously invoking
+     * its onNext method, blocking uninterruptibly while resources for any subscriber
+     * are unavailable.
+     *
+     * @param msg payload to be wrapped and sent(or buffered if there is no demand)
+     * @return callback being invoked when message is acked
+     */
+    public void sendBlocking(PAYLOAD msg) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        submissionPublisher.submit(Message.of(msg, () -> {
+            future.complete(null);
+            return null;
+        }));
+        try {
+            future.wait();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
