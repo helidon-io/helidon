@@ -34,7 +34,6 @@ import static javax.websocket.CloseReason.CloseCodes.UNEXPECTED_CONDITION;
  * Class TyrusReaderSubscriber.
  */
 public class TyrusReaderSubscriber implements Flow.Subscriber<DataChunk> {
-    private static final Logger LOGGER = Logger.getLogger(TyrusSupport.class.getName());
 
     private static final int MAX_RETRIES = 5;
     private static final CloseReason CONNECTION_CLOSED = new CloseReason(NORMAL_CLOSURE, "Connection closed");
