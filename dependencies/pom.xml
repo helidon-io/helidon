@@ -76,7 +76,7 @@
         <version.lib.jboss.transaction-api>1.0.0.Final</version.lib.jboss.transaction-api>
         <version.lib.jboss.transaction-spi>7.6.0.Final</version.lib.jboss.transaction-spi>
         <version.lib.jedis>3.1.0</version.lib.jedis>
-        <version.lib.jersey>2.32</version.lib.jersey>
+        <version.lib.jersey>2.33</version.lib.jersey>
         <version.lib.jms-api>2.0</version.lib.jms-api>
         <version.lib.jsonb-api>1.0.2</version.lib.jsonb-api>
         <version.lib.jsonp-api>1.1.6</version.lib.jsonp-api>

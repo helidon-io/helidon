@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,8 +49,8 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.internal.PropertiesDelegate;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.server.ApplicationHandler;
@@ -98,7 +98,6 @@ public class JerseySupport implements Service {
 
     private static final Type REQUEST_TYPE = (new GenericType<Ref<ServerRequest>>() { }).getType();
     private static final Type RESPONSE_TYPE = (new GenericType<Ref<ServerResponse>>() { }).getType();
-    private static final Type SPAN_TYPE = (new GenericType<Ref<Span>>() { }).getType();
     private static final Type SPAN_CONTEXT_TYPE = (new GenericType<Ref<SpanContext>>() { }).getType();
     private static final AtomicReference<ExecutorService> DEFAULT_THREAD_POOL = new AtomicReference<>();
 
@@ -107,6 +106,18 @@ public class JerseySupport implements Service {
     private final JerseyHandler handler = new JerseyHandler();
     private final HelidonJerseyContainer container;
     private final Thread serviceShutdownHook;
+
+    /**
+     * This configuration via system properties is for the Jersey Client API. Any
+     * response in an exception will be mapped to an empty one to prevent data leaks.
+     * See https://github.com/eclipse-ee4j/jersey/pull/4641.
+     */
+    static final String IGNORE_EXCEPTION_RESPONSE = "jersey.config.client.ignoreExceptionResponse";
+
+    static {
+         System.setProperty(CommonProperties.ALLOW_SYSTEM_PROPERTIES_PROVIDER, "true");
+         System.setProperty(IGNORE_EXCEPTION_RESPONSE, "true");
+    }
 
     /**
      * Creates a Jersey Support based on the provided JAX-RS application.
