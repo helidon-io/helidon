@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,6 +44,40 @@
                         <java.util.logging.config.file>${project.build.testOutputDirectory}/logging-test.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
                 </configuration>
+                <executions>
+                    <!--
+                      - Execute all tests except DataChunkReleaseTest in the same VM. Check
+                      - output files for keyword "LEAK:".
+                      -->
+                    <execution>
+                        <id>default-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <phase>test</phase>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/DataChunkReleaseTest.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <!--
+                      - Run DataChunkReleaseTest in its own VM to avoid logging buffer leaks
+                      - in other tests.
+                      -->
+                    <execution>
+                        <id>datachunk-release-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <phase>test</phase>
+                        <configuration>
+                            <includes>
+                                <include>**/DataChunkReleaseTest.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
