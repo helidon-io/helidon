@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>2.1.1-SNAPSHOT</version>
+        <version>2.2.1-SNAPSHOT</version>
         <relativePath>../../../../../applications/mp/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.integrations.oci</groupId>
@@ -45,11 +45,7 @@
         <dependency>
             <groupId>io.helidon.integrations.oci</groupId>
             <artifactId>helidon-integrations-oci-base</artifactId>
-            <version>2.1.1-SNAPSHOT</version>
-            <scope>compile</scope>
         </dependency>
-
-
         <!-- Runtime-scoped dependencies. -->
         <dependency>
             <groupId>org.jboss</groupId>
