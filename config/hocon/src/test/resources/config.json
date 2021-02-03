@@ -9,5 +9,6 @@
     },
     "nulls": {
         "null": null
-    }
+    },
+    "nulls-array": ["test", null]
 }
