@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,6 +103,13 @@ class DateTimeIT extends AbstractGraphQlCdiIT {
         assertThat(fd.description(), is(nullValue()));
         assertThat(fd.isDefaultFormatApplied(), is(false));
         assertThat(fd.returnType(), is(FORMATTED_DATE_SCALAR));
+
+        fd = getFieldDefinition(type, "legacyDate");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.format()[0], is("yyyy-MM-dd"));
+        assertThat(fd.description(), is(nullValue()));
+        assertThat(fd.isDefaultFormatApplied(), is(true));
+        assertThat(fd.returnType(), is(DATE_SCALAR));
 
         // test default values for date and time
         assertDefaultFormat(type, "offsetTime", "HH[:mm][:ss]Z", true);
@@ -212,6 +219,11 @@ class DateTimeIT extends AbstractGraphQlCdiIT {
                 "query { echoZonedDateTime(value: \"19 February 1900 at 12:00 in Africa/Johannesburg\") }"));
         assertThat(mapResults, is(notNullValue()));
         assertThat(mapResults.get("echoZonedDateTime"), is("1900-02-19T12:00:00+0130[Africa/Johannesburg]"));
+
+        mapResults = getAndAssertResult(executionContext.execute(
+                "query { echoLegacyDate(value: \"1968-02-17\") }"));
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("echoLegacyDate"), is("1968-02-17"));
     }
 
     @Test
