@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,7 +149,12 @@ public class HoconConfigParser implements ConfigParser {
             } else if (value instanceof ConfigObject) {
                 builder.addObject(key, fromConfig((ConfigObject) value));
             } else {
-                builder.addValue(key, value.unwrapped().toString());
+                Object unwrapped = value.unwrapped();
+                if (unwrapped == null) {
+                    builder.addValue(key, "");
+                } else {
+                    builder.addValue(key, String.valueOf(unwrapped));
+                }
             }
         });
         return builder.build();
