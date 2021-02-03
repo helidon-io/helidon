@@ -16,10 +16,10 @@
 
 oci:
   auth:
-    user: "ocid1.user.oc1.."
-    fingerprint: "7c:6d:89:fc:05:32:5b:4c:b8:94::43:b5:0b:b0:e3"
-    tenancy: "ocid1.tenancy.oc1.."
-    keyFile: no/way
+    user: "your user name"
+    fingerprint: "your fingerprint"
+    tenancy: "tenancy"
+    keyFile: path/to/keyfile
     region: "eu-frankfurt-1"
 
 server:

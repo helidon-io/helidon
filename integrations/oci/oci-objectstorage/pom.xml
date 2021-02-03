@@ -30,20 +30,6 @@
     <artifactId>helidon-integrations-oci-objectstorage</artifactId>
     <name>Helidon OCI object storage integrations</name>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.oracle.oci.sdk</groupId>
-                <artifactId>oci-java-sdk-bom</artifactId>
-                <version>${version.oci}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-    <properties>
-        <version.oci>1.27.1</version.oci>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>io.helidon.integrations.oci</groupId>
@@ -52,17 +38,14 @@
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-objectstorage</artifactId>
-            <version>${version.oci}</version>
         </dependency>
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-objectstorage-generated</artifactId>
-            <version>${version.oci}</version>
         </dependency>
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-objectstorage-extensions</artifactId>
-            <version>${version.oci}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>

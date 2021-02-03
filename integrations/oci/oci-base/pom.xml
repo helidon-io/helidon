@@ -31,20 +31,6 @@
     <artifactId>helidon-integrations-oci-base</artifactId>
     <name>Helidon OCI base integrations</name>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.oracle.oci.sdk</groupId>
-                <artifactId>oci-java-sdk-bom</artifactId>
-                <version>${version.oci}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-    <properties>
-        <version.oci>1.27.1</version.oci>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
