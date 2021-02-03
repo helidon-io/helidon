@@ -18,11 +18,7 @@ package io.helidon.config.hocon;
 
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -206,7 +202,7 @@ public class HoconConfigParserTest {
 
         Config config = Config
                 .builder(ConfigSources.create(JSON, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
-                .addParser(HoconConfigParser.create())
+                .addParser(new HoconConfigParser())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableParserServices()
@@ -251,7 +247,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testGetSupportedMediaTypes() {
-        HoconConfigParser parser = HoconConfigParser.create();
+        HoconConfigParser parser = new HoconConfigParser();
 
         assertThat(parser.supportedMediaTypes(), is(not(empty())));
     }
@@ -260,7 +256,7 @@ public class HoconConfigParserTest {
     public void testCustomTypeMapping() {
         Config config = Config
                 .builder(ConfigSources.create(AppType.DEF, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
-                .addParser(HoconConfigParser.create())
+                .addParser(new HoconConfigParser())
                 .addMapper(AppType.class, new AppTypeMapper())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -282,8 +278,8 @@ public class HoconConfigParserTest {
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
                 .disableParserServices()
-                .addParser(HoconConfigParser.create())
-                .addSource(ConfigSources.classpath("config.json"))
+                .addParser(new HoconConfigParser())
+                .sources(ConfigSources.classpath("config.json"))
                 .build();
 
         Optional<String> property = config.get("oracle.com").asString().asOptional();
