@@ -131,7 +131,12 @@ public class HoconConfigParser implements ConfigParser {
                     } else if (value instanceof ConfigObject) {
                         builder.addObject(key, fromConfig((ConfigObject) value));
                     } else {
-                        builder.addValue(key, value.unwrapped().toString());
+                        Object unwrapped = value.unwrapped();
+                        if (unwrapped == null) {
+                            builder.addValue(key, "");
+                        } else {
+                            builder.addValue(key, String.valueOf(unwrapped));
+                        }
                     }
                 });
         return builder.build();
