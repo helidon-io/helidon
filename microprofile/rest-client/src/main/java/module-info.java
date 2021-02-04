@@ -25,6 +25,8 @@ module io.helidon.microprofile.restclient {
     requires jersey.mp.rest.client;
     requires java.ws.rs;
 
+    exports io.helidon.microprofile.restclient;
+
     provides org.eclipse.microprofile.rest.client.spi.RestClientListener
             with io.helidon.microprofile.restclient.MpRestClientListener;
     provides org.glassfish.jersey.internal.spi.ForcedAutoDiscoverable
