@@ -27,6 +27,8 @@ module io.helidon.microprofile.restclient {
 
     exports io.helidon.microprofile.restclient;
 
+    opens io.helidon.microprofile.restclient to weld.core.impl, io.helidon.microprofile.cdi;
+
     provides org.eclipse.microprofile.rest.client.spi.RestClientListener
             with io.helidon.microprofile.restclient.MpRestClientListener;
     provides org.glassfish.jersey.internal.spi.ForcedAutoDiscoverable
