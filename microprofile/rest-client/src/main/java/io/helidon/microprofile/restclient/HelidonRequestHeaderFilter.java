@@ -27,7 +27,7 @@ import io.helidon.common.context.Contexts;
  * Uses {@link Contexts} to propagate headers.
  */
 @ConstrainedTo(RuntimeType.SERVER)
-class HelidonRequestHeaderFilter implements ContainerRequestFilter{
+class HelidonRequestHeaderFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
