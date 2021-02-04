@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -760,7 +760,7 @@ This guide has demonstrated how to use the Helidon SE tracing feature with Zipki
 
 Refer to the following references for additional information:
 
-- MicroProfile OpenTracing specification at https://github.com/eclipse/microprofile-opentracing/releases/tag/1.3
+- MicroProfile OpenTracing specification at https://github.com/eclipse/microprofile-opentracing/releases/tag/2.0
 - Helidon Javadoc at https://helidon.io/docs/latest/apidocs/index.html?overview-summary.html
 
 

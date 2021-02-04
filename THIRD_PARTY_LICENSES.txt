@@ -4633,7 +4633,7 @@ License Identifier: Apache-2.0
 --------------------------------------------
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-MicroProfile OpenTracing API 1.3.3 Eclipse Foundation
+MicroProfile OpenTracing API 2.0 Eclipse Foundation
 Apache 2.0
 Used by: [helidon-microprofile-tracing]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
