@@ -758,10 +758,18 @@
             </dependency>
             <dependency>
                 <groupId>com.oracle.oci.sdk</groupId>
-                <artifactId>oci-java-sdk-bom</artifactId>
+                <artifactId>oci-java-sdk-core</artifactId>
                 <version>${version.lib.oci-java-sdk}</version>
-                <type>pom</type>
-                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.oracle.oci.sdk</groupId>
+                <artifactId>oci-java-sdk-objectstorage</artifactId>
+                <version>${version.lib.oci-java-sdk}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.oracle.oci.sdk</groupId>
+                <artifactId>oci-java-sdk-identity</artifactId>
+                <version>${version.lib.oci-java-sdk}</version>
             </dependency>
             <dependency>
                 <groupId>com.oracle.oci.sdk</groupId>
