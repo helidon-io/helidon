@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -47,6 +48,7 @@ import static io.helidon.config.testing.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -276,6 +278,26 @@ public class HoconConfigParserTest {
 
     }
 
+    @Test
+    void testParserFromJson() {
+        Config config = Config.builder()
+                .disableSystemPropertiesSource()
+                .disableEnvironmentVariablesSource()
+                .disableParserServices()
+                .addParser(new HoconConfigParser())
+                .sources(ConfigSources.classpath("config.json"))
+                .build();
+
+        Optional<String> property = config.get("oracle.com").asString().asOptional();
+        assertThat(property, is(Optional.of("1")));
+
+        property = config.get("nulls.null").asString().asOptional();
+        assertThat(property, is(Optional.of("")));
+
+        List<String> properties = config.get("nulls-array").asList(String.class).get();
+        assertThat(properties, hasItems("test", ""));
+    }
+
     //
     // helper
     //
@@ -311,11 +333,11 @@ public class HoconConfigParserTest {
                 + "  storagePassphrase = \"${AES=thisIsEncriptedPassphrase}\""
                 + "}";
 
-        private String greeting;
-        private String name;
-        private int pageSize;
-        private List<Integer> basicRange;
-        private String storagePassphrase;
+        private final String greeting;
+        private final String name;
+        private final int pageSize;
+        private final List<Integer> basicRange;
+        private final String storagePassphrase;
 
         public AppType(
                 String name,
@@ -359,15 +381,14 @@ public class HoconConfigParserTest {
 
         @Override
         public AppType apply(Config config) throws ConfigMappingException, MissingValueException {
-            AppType app = new AppType(
+
+            return new AppType(
                     config.get("name").asString().get(),
                     config.get("greeting").asString().get(),
                     config.get("page-size").asInt().get(),
                     config.get("basic-range").asList(Integer.class).get(),
                     config.get("storagePassphrase").asString().get()
             );
-
-            return app;
         }
     }
 }

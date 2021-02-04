@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,6 +92,7 @@ public final class HoconConfigParserBuilder implements Builder<ConfigParser> {
      *
      * @return new instance of HOCON ConfigParser.
      */
+    @Override
     public ConfigParser build() {
         return new HoconConfigParser(resolvingEnabled, resolveOptions);
     }
