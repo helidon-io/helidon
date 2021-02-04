@@ -42,6 +42,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.Routing;
@@ -108,16 +109,9 @@ public class JerseySupport implements Service {
     private final Thread serviceShutdownHook;
 
     /**
-     * This configuration via system properties is for the Jersey Client API. Any
-     * response in an exception will be mapped to an empty one to prevent data leaks.
-     * See https://github.com/eclipse-ee4j/jersey/pull/4641.
+     * If set to {@code "true"}, Jersey will ignore responses in exceptions.
      */
     static final String IGNORE_EXCEPTION_RESPONSE = "jersey.config.client.ignoreExceptionResponse";
-
-    static {
-         System.setProperty(CommonProperties.ALLOW_SYSTEM_PROPERTIES_PROVIDER, "true");
-         System.setProperty(IGNORE_EXCEPTION_RESPONSE, "true");
-    }
 
     /**
      * Creates a Jersey Support based on the provided JAX-RS application.
@@ -148,6 +142,16 @@ public class JerseySupport implements Service {
 
         this.appHandler = new ApplicationHandler(builder.resourceConfig, new ServerBinder(executorService));
         this.container = new HelidonJerseyContainer(appHandler, builder.resourceConfig);
+
+        // This configuration via system properties is for the Jersey Client API. Any
+        // response in an exception will be mapped to an empty one to prevent data leaks
+        // unless property in config is set to false.
+        // See https://github.com/eclipse-ee4j/jersey/pull/4641.
+        if (!System.getProperties().contains(IGNORE_EXCEPTION_RESPONSE)) {
+            System.setProperty(CommonProperties.ALLOW_SYSTEM_PROPERTIES_PROVIDER, "true");
+            ConfigValue<String> ignore = builder.config.get(IGNORE_EXCEPTION_RESPONSE).asString();
+            System.setProperty(IGNORE_EXCEPTION_RESPONSE, ignore.orElse("true"));
+        }
     }
 
     @Override
