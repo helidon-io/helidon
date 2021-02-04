@@ -48,6 +48,7 @@ import static io.helidon.config.testing.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -292,6 +293,9 @@ public class HoconConfigParserTest {
 
         property = config.get("nulls.null").asString().asOptional();
         assertThat(property, is(Optional.of("")));
+
+        List<String> properties = config.get("nulls-array").asList(String.class).get();
+        assertThat(properties, hasItems("test", ""));
     }
 
     //
