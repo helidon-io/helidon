@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ for native image.
 |✅ |{nbsp} |Integration: gRPC |{nbsp}
 |✅ |{nbsp} |OIDC |{nbsp}
 |✅ |{nbsp} |Provider: ABAC |{nbsp}
-|❓ |{nbsp} |Provider/ABAC/Policy: EL |Not yet tested.
+|✅ |{nbsp} |Provider/ABAC/Policy: EL |Not yet tested.
 |✅ |{nbsp} |Provider/ABAC: Role |{nbsp}
 |✅ |{nbsp} |Provider/ABAC: Scope |{nbsp}
 |✅ |{nbsp} |Provider/ABAC: Time |{nbsp}
@@ -103,9 +103,9 @@ for native image.
 |✅ |{nbsp} |Multi-part |{nbsp}
 |❓ |{nbsp} |Prometheus |Not yet tested.
 |✅ |{nbsp} |Websocket |Server only.
-|❓ |gRPC Server |gRPC Server |Not yet tested.
+|✅ |gRPC Server |gRPC Server |Since GraalVM 21.0.0
 |✅ |{nbsp} |Metrics |{nbsp}
-|❓ |gRPC Client |gRPC Client |Not yet tested.
+|✅ |gRPC Client |gRPC Client |Since GraalVM 21.0.0
 |✅ |{nbsp} |Metrics |{nbsp}
 |===
 
