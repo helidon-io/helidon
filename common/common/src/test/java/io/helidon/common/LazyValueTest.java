@@ -111,7 +111,7 @@ class LazyValueTest {
         LazyValue<String> value = LazyValue.create(() -> {
             try {
                 future.complete(null);
-                Thread.sleep(1000);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 // falls through
             }
