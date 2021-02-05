@@ -129,7 +129,7 @@
         <version.lib.validation-api>2.0.2</version.lib.validation-api>
         <version.lib.websockets-api>1.1.2</version.lib.websockets-api>
         <version.lib.weld-api>3.1.SP2</version.lib.weld-api>
-        <version.lib.weld>3.1.4.Final</version.lib.weld>
+        <version.lib.weld>3.1.6.Final</version.lib.weld>
         <version.lib.yasson>1.0.8</version.lib.yasson>
         <version.lib.zipkin.sender-urlconnection>2.12.0</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
