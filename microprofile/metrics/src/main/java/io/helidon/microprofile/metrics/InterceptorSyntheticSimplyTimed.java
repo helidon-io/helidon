@@ -18,6 +18,7 @@ package io.helidon.microprofile.metrics;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.annotation.Priority;
@@ -79,7 +80,7 @@ final class InterceptorSyntheticSimplyTimed {
             }
             return simpleTimer.time(context::proceed);
         } catch (Throwable t) {
-            LOGGER.fine("Throwable caught by interceptor '" + t.getMessage() + "'");
+            LOGGER.log(Level.FINE, "Throwable caught by interceptor", t);
             throw t;
         }
     }
@@ -101,6 +102,9 @@ final class InterceptorSyntheticSimplyTimed {
         public void onComplete(Throwable throwable) {
             long nowNanos = System.nanoTime();
             simpleTimer.update(Duration.ofNanos(nowNanos - startTimeNanos));
+            if (throwable != null) {
+                LOGGER.log(Level.FINE, "Throwable detected by interceptor callback", throwable);
+            }
         }
     }
 }
