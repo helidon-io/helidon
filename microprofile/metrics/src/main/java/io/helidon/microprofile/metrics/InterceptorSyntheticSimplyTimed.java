@@ -17,7 +17,6 @@
 package io.helidon.microprofile.metrics;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.time.Duration;
 import java.util.logging.Logger;
 
@@ -28,9 +27,7 @@ import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.CompletionCallback;
-import javax.ws.rs.container.Suspended;
 
-import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 
 /**
@@ -47,12 +44,12 @@ final class InterceptorSyntheticSimplyTimed {
 
     private static final Logger LOGGER = Logger.getLogger(InterceptorSyntheticSimplyTimed.class.getName());
 
-    private final MetricRegistry metricRegistry;
     private final boolean isEnabled;
+    private final RestEndpointMetricsInfo restEndpointMetricsInfo;
 
     @Inject
-    InterceptorSyntheticSimplyTimed(MetricRegistry registry, RestEndpointMetricsInfo restEndpointMetricsInfo) {
-        metricRegistry = registry;
+    InterceptorSyntheticSimplyTimed(RestEndpointMetricsInfo restEndpointMetricsInfo) {
+        this.restEndpointMetricsInfo = restEndpointMetricsInfo;
         isEnabled = restEndpointMetricsInfo.isEnabled();
     }
 
@@ -75,7 +72,7 @@ final class InterceptorSyntheticSimplyTimed {
 
             Method timedMethod = context.getMethod();
             SimpleTimer simpleTimer = MetricsCdiExtension.syntheticSimpleTimer(timedMethod);
-            AsyncResponse asyncResponse = asyncResponse(context);
+            AsyncResponse asyncResponse = restEndpointMetricsInfo.asyncResponse(context);
             if (asyncResponse != null) {
                 asyncResponse.register(new FinishCallback(startNanos, simpleTimer));
                 return context.proceed();
@@ -87,20 +84,9 @@ final class InterceptorSyntheticSimplyTimed {
         }
     }
 
-    private AsyncResponse asyncResponse(InvocationContext context) {
-        Method m = context.getMethod();
-        int candidateAsyncResponseParameterSlot = 0;
-
-        for (Parameter p : m.getParameters()) {
-            if (AsyncResponse.class.isAssignableFrom(p.getType()) && p.getAnnotation(Suspended.class) != null) {
-                return AsyncResponse.class.cast(context.getParameters()[candidateAsyncResponseParameterSlot]);
-            }
-            candidateAsyncResponseParameterSlot++;
-
-        }
-         return null;
-    }
-
+    /**
+     * Async callback which updates a {@code SimpleTimer} associated with the REST endpoint.
+     */
     static class FinishCallback implements CompletionCallback {
 
         private final long startTimeNanos;
