@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,13 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * HelloWorldResource class.
@@ -33,6 +39,11 @@ import javax.ws.rs.core.MediaType;
 @Path("helloworld")
 @RequestScoped
 public class HelloWorldResource {
+
+    static final String SLOW_RESPONSE = "At last";
+    static final int SLOW_DELAY_SECS = 5;
+
+    private static ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Inject
     MetricRegistry metricRegistry;
@@ -50,5 +61,19 @@ public class HelloWorldResource {
     @Consumes(MediaType.TEXT_PLAIN)
     public String messageWithArg(String input){
         return "Hello World, " + input;
+    }
+
+    @GET
+    @Path("/slow")
+    @Produces(MediaType.TEXT_PLAIN)
+    public void slowMessage(@Suspended AsyncResponse ar) {
+        executorService.execute(() -> {
+            try {
+                TimeUnit.SECONDS.sleep(SLOW_DELAY_SECS);
+            } catch (InterruptedException e) {
+                // absorb silently
+            }
+            ar.resume(SLOW_RESPONSE);
+        });
     }
 }
