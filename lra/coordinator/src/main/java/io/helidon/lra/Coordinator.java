@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.lra;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -119,7 +118,7 @@ public class Coordinator implements Runnable {
             String rootParentOrChild = "parent(root)";
             if (parentLRA != null && !parentLRA.isEmpty()) {
                 LRA parent = lraMap.get(parentLRA.replace("http://127.0.0.1:8080/lra-coordinator/", ""));
-                if (parent != null) { // todo null would be unexpected and cause to compensate or exit entirely
+                if (parent != null) { // todo null would be unexpected and cause to compensate or exit entirely akin to systemexception
                     LRA childLRA = new LRA(lraUUID, new URI(parentLRA));
                     lraMap.put(lraUUID, childLRA);
                     parent.addChild(lraUUID, childLRA);
@@ -220,14 +219,14 @@ public class Coordinator implements Runnable {
             }
             long currentTime = System.currentTimeMillis();
             if (currentTime > lra.timeout) {
-                log("[join]] expired");
+                log("[join] expired");
                 return Response.status(412).build(); // 410 also acceptable/equivalent behavior
             }
         }
         if (compensatorData == null || compensatorData.trim().equals("")) {
             log("[join] no compensatorLink information");
         }
-        String debugString = lra.addParticipant(compensatorLink, false);
+        String debugString = lra.addParticipant(compensatorLink);
         log("[join] " + debugString + " to " + getParentChildDebugString(lra) +
                 " lraIdParam = " + lraIdParam + ", timeLimit = " + timeLimit );
         StringBuilder recoveryUrl = new StringBuilder(); //todo

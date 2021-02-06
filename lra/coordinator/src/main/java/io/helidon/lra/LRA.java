@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.lra;
 
-import io.helidon.lra.rest.RestParticipant;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 
 import java.net.URI;
@@ -87,16 +85,24 @@ public class LRA {
     }
 
     //return debug string
-    String addParticipant(String compensatorLink, boolean isMessaging) {
-        if (compensatorLinks.contains(compensatorLink)) return "participant already enlisted";
+    String addParticipant(String compensatorLink) {
+        if (compensatorLinks.contains(compensatorLink)) return "participant already enlisted"; //todo this should be correct/sufficient but need to test
         else compensatorLinks.add(compensatorLink);
-        String uriPrefix = getConditionalStringValue(isMessaging, "<messaging://", "<http://");
         // <messaging://completeinventorylra>; rel="complete"; title="complete URI"; type="text/plain",
         // <messaging://compensate>; rel="compensate"; title="compensate URI"; type="text/plain"
         // <http://127.0.0.1:8091/inventory/completeInventory?method=javax.ws.rs.PUT>; rel="complete"; title="complete URI"; type="text/plain",
 //        Participant existingparticipant = participants.contains(compensatorLink)
-        if (compensatorLink.indexOf(uriPrefix) > -1) {
-            Participant participant = new RestParticipant();
+        String uriPrefix = null;
+        boolean isMessaging = false;
+        if (compensatorLink.indexOf("<http://") > -1) {
+            uriPrefix = "<http://";
+            isMessaging = false;
+        } else if (compensatorLink.indexOf("<messaging://") > -1) {
+            uriPrefix = "<messaging://";
+            isMessaging = true;
+        }
+        if (uriPrefix != null) {
+            Participant participant = isMessaging?new AQParticipant():new RestParticipant();
             participants.add(participant);
             String endpoint = "";
             Pattern linkRelPattern = Pattern.compile("(\\w+)=\"([^\"]+)\"|([^\\s]+)");
@@ -156,16 +162,17 @@ public class LRA {
         setProcessing(true);
         this.isCancel = isCancel;
         if (isUnilateralCallIfNested && isChild && !isCancel)  isNestedThatShouldBeForgottenAfterParentEnds = true;
-        if (isChild && !isCancel && areAllInEndStateCompensatedOrFailedToCompensate()) return; //todo this only check this child, not children of this child
-        if (isParent) for (LRA nestedLRA : children) {   //  && nestedTerminate++ == 1
+        if (isChild && !isCancel && areAllInEndStateCompensatedOrFailedToCompensate()) return; //todo this only checks this child, not children of this child, verify correctness
+        if (isParent) for (LRA nestedLRA : children) {
             log("LRA.endChildren nestedLRA.participants.size():" + nestedLRA.participants.size());
             if (!nestedLRA.areAllInEndStateOrListenerOnlyForTerminationType(isCancel)) {
                 nestedLRA.terminate(isCancel, false); //todo this is the classic afterLRA/tx sync scenario - need to check if we traverse the tree twice or couple end and listener calls
             }
         }
         sendCompleteOrCancel(isCancel);
-        sendAfterLRA(); log("areAllInEndState():" + areAllInEndState() + " areAllAfterLRASuccessfullyCalledOrForgotten():" + areAllAfterLRASuccessfullyCalledOrForgotten() +
-                " !areAllForgotten():" + !areAllForgotten() + " isUnilateralCallIfNested:" + isUnilateralCallIfNested);
+        sendAfterLRA();
+//        log("areAllInEndState():" + areAllInEndState() + " areAllAfterLRASuccessfullyCalledOrForgotten():" + areAllAfterLRASuccessfullyCalledOrForgotten() +
+//                " !areAllForgotten():" + !areAllForgotten() + " isUnilateralCallIfNested:" + isUnilateralCallIfNested);
         if (areAllInEndState() && areAllAfterLRASuccessfullyCalledOrForgotten()) {
             if (forgetAnyUnilaterallyCompleted()) isReadyToDelete = true;
         }

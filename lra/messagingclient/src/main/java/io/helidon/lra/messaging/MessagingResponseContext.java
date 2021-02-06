@@ -13,26 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.lra;
+package io.helidon.lra.messaging;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
-import java.util.HashSet;
-import java.util.Set;
+import org.glassfish.jersey.server.ContainerRequest;
+import org.glassfish.jersey.server.ContainerResponse;
 
-@ApplicationScoped
-@ApplicationPath("/")
-public class CoordinatorApplication extends Application {
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
-    @Override
-    public Set<Class<?>> getClasses() {
-        Set<Class<?>> s = new HashSet<>();
-        s.add(Coordinator.class);
-        s.add(RecoveryManager.class);
-        s.add(FilterRegistration.class);
-        return s;
+public class MessagingResponseContext extends ContainerResponse {
+    public MessagingResponseContext(ContainerRequest requestContext, Response response) {
+        super(requestContext, response);
     }
-
+//
+//    public int getStatus() {
+//        return 0;
+//    }
+//
+//    public void setEntity(String failureMessage, Object o, MediaType textPlainType) {
+//    }
 }
-
