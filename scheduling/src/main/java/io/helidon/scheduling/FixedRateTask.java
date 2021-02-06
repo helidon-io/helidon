@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.scheduling;
+package io.helidon.scheduling;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -28,21 +28,23 @@ class FixedRateTask implements Task {
     private static final Logger LOGGER = Logger.getLogger(FixedRateTask.class.getName());
 
     private final AtomicLong iteration = new AtomicLong(0);
+    private ScheduledExecutorService executorService;
     private final long initialDelay;
     private final long delay;
     private final TimeUnit timeUnit;
-    private final Task.InternalTask actualTask;
+    private final ScheduledConsumer actualTask;
 
     FixedRateTask(ScheduledExecutorService executorService,
                   long initialDelay,
                   long delay,
                   TimeUnit timeUnit,
-                  Task.InternalTask actualTask) {
+                  ScheduledConsumer actualTask) {
+        this.executorService = executorService;
         this.initialDelay = initialDelay;
         this.delay = delay;
         this.timeUnit = timeUnit;
         this.actualTask = actualTask;
-        executorService.scheduleAtFixedRate(this, initialDelay, delay, timeUnit);
+        executorService.scheduleAtFixedRate(this::run, initialDelay, delay, timeUnit);
     }
 
     @Override
@@ -56,7 +58,11 @@ class FixedRateTask implements Task {
     }
 
     @Override
-    public void run() {
+    public ScheduledExecutorService executor() {
+        return this.executorService;
+    }
+
+    void run() {
         try {
             long it = iteration.incrementAndGet();
             actualTask.run(new FixedRateInvocation() {

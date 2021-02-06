@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.scheduling;
+package io.helidon.scheduling;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -44,7 +44,7 @@ class CronTask implements Task {
     private final AtomicLong iteration = new AtomicLong(0);
     private final ExecutionTime executionTime;
     private final boolean concurrentExecution;
-    private final Task.InternalTask actualTask;
+    private final ScheduledConsumer<CronInvocation> actualTask;
     private final ScheduledExecutorService executorService;
     private final Cron cron;
     private final ReentrantLock scheduleNextLock = new ReentrantLock();
@@ -53,7 +53,7 @@ class CronTask implements Task {
     CronTask(ScheduledExecutorService executorService,
              String cronExpression,
              boolean concurrentExecution,
-             Task.InternalTask actualTask) {
+             ScheduledConsumer<CronInvocation> actualTask) {
         this.executorService = executorService;
         this.concurrentExecution = concurrentExecution;
         this.actualTask = actualTask;
@@ -66,8 +66,7 @@ class CronTask implements Task {
         scheduleNext();
     }
 
-    @Override
-    public void run() {
+    void run() {
         if (concurrentExecution) {
             scheduleNext();
         }
@@ -107,6 +106,11 @@ class CronTask implements Task {
         return CronDescriptor.instance(Locale.ENGLISH).describe(cron);
     }
 
+    @Override
+    public ScheduledExecutorService executor() {
+        return this.executorService;
+    }
+
     private void scheduleNext() {
         try {
             scheduleNextLock.lock();
@@ -129,7 +133,7 @@ class CronTask implements Task {
             }
 
             time.ifPresent(t -> {
-                        executorService.schedule(this, t.toMillis(), TimeUnit.MILLISECONDS);
+                        executorService.schedule(this::run, t.toMillis(), TimeUnit.MILLISECONDS);
                     }
             );
 

@@ -14,25 +14,33 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.scheduling;
+package io.helidon.scheduling;
+
+import java.util.concurrent.TimeUnit;
 
 /**
- * Scheduled method invocation metadata.
+ * Specific method invocation metadata for method scheduled with {@link io.helidon.microprofile.scheduling.FixedRate}.
  */
-public interface Invocation {
+public interface FixedRateInvocation extends Invocation {
 
     /**
-     * How many times has been scheduled method invoked yet.
+     * Initial delay before the very first invocation.
      *
-     * @return actual iteration number
+     * @return delay in units specified by {@link #timeUnit()}
      */
-    long iteration();
+    long initialDelay();
 
     /**
-     * Human readable description of the scheduled interval.
+     * Delay before next invocation.
      *
-     * @return description as string
+     * @return delay in units specified by {@link #timeUnit()}
      */
-    String description();
+    long delay();
 
+    /**
+     * Time unit used for interpreting {@link #initialDelay()} and {@link #delay()}.
+     *
+     * @return used time unit
+     */
+    TimeUnit timeUnit();
 }

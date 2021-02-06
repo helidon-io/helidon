@@ -34,8 +34,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.cronutils</groupId>
-            <artifactId>cron-utils</artifactId>
+            <groupId>io.helidon.scheduling</groupId>
+            <artifactId>helidon-scheduling</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>

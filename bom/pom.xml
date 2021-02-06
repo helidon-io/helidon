@@ -713,6 +713,12 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- Scheduling -->
+            <dependency>
+                <groupId>io.helidon.scheduling</groupId>
+                <artifactId>helidon-scheduling</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.helidon.microprofile.scheduling</groupId>
                 <artifactId>helidon-microprofile-scheduling</artifactId>

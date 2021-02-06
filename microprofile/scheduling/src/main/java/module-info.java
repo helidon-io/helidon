@@ -29,7 +29,7 @@ module io.helidon.microprofile.scheduling {
     requires io.helidon.config.mp;
     requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.config;
-    requires cron.utils;
+    requires io.helidon.scheduling;
 
     exports io.helidon.microprofile.scheduling;
     opens io.helidon.microprofile.scheduling;

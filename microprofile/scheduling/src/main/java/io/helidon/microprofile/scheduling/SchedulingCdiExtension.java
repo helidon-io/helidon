@@ -48,6 +48,9 @@ import javax.enterprise.inject.spi.WithAnnotations;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.scheduling.Invocation;
+import io.helidon.scheduling.Scheduling;
+import io.helidon.scheduling.Task;
 
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
@@ -133,8 +136,13 @@ public class SchedulingCdiExtension implements Extension {
                         .map(TimeUnit::valueOf)
                         .orElseGet(annotation::timeUnit);
 
-                Task task = new FixedRateTask(executorService, initialDelay, delay, timeUnit,
-                        inv -> invokeWithOptionalParam(beanInstance, method, inv));
+                Task task = Scheduling.fixedRate()
+                        .executor(executorService)
+                        .initialDelay(initialDelay)
+                        .delay(delay)
+                        .timeUnit(timeUnit)
+                        .task(inv -> invokeWithOptionalParam(beanInstance, method, inv))
+                        .build();
 
                 LOGGER.log(Level.FINE, () -> String.format("Method %s#%s scheduled to be executed %s",
                         aClass.getSimpleName(), method.getName(), task.description()));
@@ -148,8 +156,12 @@ public class SchedulingCdiExtension implements Extension {
                 boolean concurrent = methodConfig.get("concurrent").asBoolean()
                         .orElseGet(annotation::concurrentExecution);
 
-                Task task = new CronTask(executorService, cron, concurrent,
-                        inv -> invokeWithOptionalParam(beanInstance, method, inv));
+                Task task = Scheduling.cron()
+                        .executor(executorService)
+                        .concurrentExecution(concurrent)
+                        .expression(cron)
+                        .task(inv -> invokeWithOptionalParam(beanInstance, method, inv))
+                        .build();
 
                 LOGGER.log(Level.FINE, () -> String.format("Method %s#%s scheduled to be executed %s",
                         aClass.getSimpleName(), method.getName(), task.description()));
