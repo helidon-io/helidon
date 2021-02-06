@@ -1,7 +1,19 @@
 Third Party Attributions
 
-The following software (or subsets of the software) are third party dependencies
-of Helidon. They are identified by the Helidon module(s) that use them.
+The following software (or subsets of the software) are dependencies
+of this product. They are identified by the Helidon module(s) that use
+them.
+
+The first section ("Third Party Runtime Dependencies") contains dependencies
+that might be used at runtime by a Helidon application.
+
+The second section ("Third Party Attributions for Examples, Tests, Builds, etc")
+contains dependencies that are used in examples and to test and build Helidon.
+They are likely not needed at runtime by a Helidon application.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Third Party Runtime Dependencies
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Brave OpenTracing Java Bridge for Zipkin 0.35.0 The OpenZipkin Authors
@@ -9794,3 +9806,2190 @@ version(s), and exceptions or additional permissions here}."
   You may add additional accurate notices of copyright ownership.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Third Party Attributions for Examples, Tests, Builds, etc
+
+The following software (or subsets of the software) is used when building
+Helidon, or in the examples and tests. They are generally not required by
+users of Helidon and not required during runtime.
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Arquillian 1.4.0.Final RedHat, Inc., JBoss community
+Apache 2.0
+Used by: [helidon-arquillian, tck-jwt-auth, tck-metrics, tck-metrics2]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Copyright 2008 Red Hat Inc. and/or its affiliates and other contributors
+Copyright 2009 Red Hat Inc. and/or its affiliates and other contributors
+Copyright 2010 Red Hat Inc. and/or its affiliates and other contributors
+Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+--------------------------------------------
+License Identifier: Apache-2.0
+--------------------------------------------
+--------------------------------------------
+"AOP alliance" 1.0 (aopalliance:aopalliance)
+  Public Domain
+--------------------------------------------
+"Aether API" 1.0.0.v20140518 (org.eclipse.aether:aether-api)
+  Copyright (c) 2010,2014 Sonatype, Inc.
+--------------------------------------------
+"Aether Implementation" 1.0.0.v20140518 (org.eclipse.aether:aether-impl)
+  Copyright (c) 2010,2014 Sonatype, Inc.
+--------------------------------------------
+"Aether SPI" 1.0.0.v20140518 (org.eclipse.aether:aether-spi)
+  Copyright (c) 2010,2014 Sonatype, Inc.
+--------------------------------------------
+"Aether Utilities" 1.0.0.v20140518 (org.eclipse.aether:aether-util)
+  Copyright (c) 2010,2014 Sonatype, Inc.
+--------------------------------------------
+"Aether Connector Basic" 1.0.0.v20140518 (org.eclipse.aether:aether-connector-basic)
+  Copyright (c) 2013,2014 Sonatype, Inc.
+--------------------------------------------
+"Aether Transport Wagon" 1.0.0.v20140518 (org.eclipse.aether:aether-transport-wagon)
+  Copyright (c) 2010,2014 Sonatype, Inc.
+--------------------------------------------
+"org.eclipse.sisu.plexus" 0.3.0.M1 (org.eclipse.sisu:org.eclipse.sisu.plexus)
+  Copyright (c) 2010,2013 Sonatype, Inc.
+--------------------------------------------
+"org.eclipse.sisu.inject" 0.3.0.M1 (org.eclipse.sisu:org.eclipse.sisu.inject)
+  Copyright (c) 2010,2013 Sonatype, Inc.
+  Copyright (c) 2000-2013 INRIA, France Telecom
+--------------------------------------------
+"Aether API" 1.0.0.v20140518 (org.eclipse.aether:aether-api)
+"Aether Implementation" 1.0.0.v20140518 (org.eclipse.aether:aether-impl)
+"Aether SPI" 1.0.0.v20140518 (org.eclipse.aether:aether-spi)
+"Aether Utilities" 1.0.0.v20140518 (org.eclipse.aether:aether-util)
+"Aether Connector Basic" 1.0.0.v20140518 (org.eclipse.aether:aether-connector-basic)
+"Aether Transport Wagon" 1.0.0.v20140518 (org.eclipse.aether:aether-transport-wagon)
+"org.eclipse.sisu.plexus" 0.3.0.M1 (org.eclipse.sisu:org.eclipse.sisu.plexus)
+"org.eclipse.sisu.inject" 0.3.0.M1 (org.eclipse.sisu:org.eclipse.sisu.inject)
+
+Eclipse Public License - v 1.0 THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE
+TERMS OF THIS ECLIPSE PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR
+DISTRIBUTION OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS
+AGREEMENT.
+
+1. DEFINITIONS
+
+"Contribution" means:
+
+a) in the case of the initial Contributor, the initial code and documentation
+distributed under this Agreement, and
+
+b) in the case of each subsequent Contributor:
+
+i) changes to the Program, and
+
+ii) additions to the Program;
+
+where such changes and/or additions to the Program originate from and are
+distributed by that particular Contributor. A Contribution 'originates' from a
+Contributor if it was added to the Program by such Contributor itself or anyone
+acting on such Contributor's behalf. Contributions do not include additions to
+the Program which: (i) are separate modules of software distributed in
+conjunction with the Program under their own license agreement, and (ii) are not
+derivative works of the Program.
+
+"Contributor" means any person or entity that distributes the Program.
+
+"Licensed Patents" mean patent claims licensable by a Contributor which are
+necessarily infringed by the use or sale of its Contribution alone or when
+combined with the Program.
+
+"Program" means the Contributions distributed in accordance with this Agreement.
+
+"Recipient" means anyone who receives the Program under this Agreement,
+including all Contributors.
+
+2. GRANT OF RIGHTS
+
+a) Subject to the terms of this Agreement, each Contributor hereby grants
+Recipient a non-exclusive, worldwide, royalty-free copyright license to
+reproduce, prepare derivative works of, publicly display, publicly perform,
+distribute and sublicense the Contribution of such Contributor, if any, and such
+derivative works, in source code and object code form.
+
+b) Subject to the terms of this Agreement, each Contributor hereby grants
+Recipient a non-exclusive, worldwide, royalty-free patent license under Licensed
+Patents to make, use, sell, offer to sell, import and otherwise transfer the
+Contribution of such Contributor, if any, in source code and object code form.
+This patent license shall apply to the combination of the Contribution and the
+Program if, at the time the Contribution is added by the Contributor, such
+addition of the Contribution causes such combination to be covered by the
+Licensed Patents. The patent license shall not apply to any other combinations
+which include the Contribution. No hardware per se is licensed hereunder.
+
+c) Recipient understands that although each Contributor grants the licenses to
+its Contributions set forth herein, no assurances are provided by any
+Contributor that the Program does not infringe the patent or other intellectual
+property rights of any other entity. Each Contributor disclaims any liability to
+Recipient for claims brought by any other entity based on infringement of
+intellectual property rights or otherwise. As a condition to exercising the
+rights and licenses granted hereunder, each Recipient hereby assumes sole
+responsibility to secure any other intellectual property rights needed, if any.
+For example, if a third party patent license is required to allow Recipient to
+distribute the Program, it is Recipient's responsibility to acquire that license
+before distributing the Program.
+
+d) Each Contributor represents that to its knowledge it has sufficient copyright
+rights in its Contribution, if any, to grant the copyright license set forth in
+this Agreement.
+
+3. REQUIREMENTS
+
+A Contributor may choose to distribute the Program in object code form under its
+own license agreement, provided that:
+
+a) it complies with the terms and conditions of this Agreement; and
+
+b) its license agreement:
+
+i) effectively disclaims on behalf of all Contributors all warranties and
+conditions, express and implied, including warranties or conditions of title and
+non-infringement, and implied warranties or conditions of merchantability and
+fitness for a particular purpose;
+
+ii) effectively excludes on behalf of all Contributors all liability for
+damages, including direct, indirect, special, incidental and consequential
+damages, such as lost profits;
+
+iii) states that any provisions which differ from this Agreement are offered by
+that Contributor alone and not by any other party; and
+
+iv) states that source code for the Program is available from such Contributor,
+and informs licensees how to obtain it in a reasonable manner on or through a
+medium customarily used for software exchange.
+
+When the Program is made available in source code form:
+
+a) it must be made available under this Agreement; and
+
+b) a copy of this Agreement must be included with each copy of the Program.
+
+Contributors may not remove or alter any copyright notices contained within the
+Program.
+
+Each Contributor must identify itself as the originator of its Contribution, if
+any, in a manner that reasonably allows subsequent Recipients to identify the
+originator of the Contribution.
+
+4. COMMERCIAL DISTRIBUTION
+
+Commercial distributors of software may accept certain responsibilities with
+respect to end users, business partners and the like. While this license is
+intended to facilitate the commercial use of the Program, the Contributor who
+includes the Program in a commercial product offering should do so in a manner
+which does not create potential liability for other Contributors. Therefore, if
+a Contributor includes the Program in a commercial product offering, such
+Contributor ("Commercial Contributor") hereby agrees to defend and indemnify
+every other Contributor ("Indemnified Contributor") against any losses, damages
+and costs (collectively "Losses") arising from claims, lawsuits and other legal
+actions brought by a third party against the Indemnified Contributor to the
+extent caused by the acts or omissions of such Commercial Contributor in
+connection with its distribution of the Program in a commercial product
+offering. The obligations in this section do not apply to any claims or Losses
+relating to any actual or alleged intellectual property infringement. In order
+to qualify, an Indemnified Contributor must: a) promptly notify the Commercial
+Contributor in writing of such claim, and b) allow the Commercial Contributor to
+control, and cooperate with the Commercial Contributor in, the defense and any
+related settlement negotiations. The Indemnified Contributor may participate in
+any such claim at its own expense.
+
+For example, a Contributor might include the Program in a commercial product
+offering, Product X. That Contributor is then a Commercial Contributor. If that
+Commercial Contributor then makes performance claims, or offers warranties
+related to Product X, those performance claims and warranties are such
+Commercial Contributor's responsibility alone. Under this section, the
+Commercial Contributor would have to defend claims against the other
+Contributors related to those performance claims and warranties, and if a court
+requires any other Contributor to pay any damages as a result, the Commercial
+Contributor must pay those damages.
+
+5. NO WARRANTY
+
+EXCEPT AS EXPRESSLY SET FORTH IN THIS AGREEMENT, THE PROGRAM IS PROVIDED ON AN
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR
+IMPLIED INCLUDING, WITHOUT LIMITATION, ANY WARRANTIES OR CONDITIONS OF TITLE,
+NON-INFRINGEMENT, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Each
+Recipient is solely responsible for determining the appropriateness of using and
+distributing the Program and assumes all risks associated with its exercise of
+rights under this Agreement , including but not limited to the risks and costs
+of program errors, compliance with applicable laws, damage to or loss of data,
+programs or equipment, and unavailability or interruption of operations.
+
+6. DISCLAIMER OF LIABILITY
+
+EXCEPT AS EXPRESSLY SET FORTH IN THIS AGREEMENT, NEITHER RECIPIENT NOR ANY
+CONTRIBUTORS SHALL HAVE ANY LIABILITY FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING WITHOUT LIMITATION LOST
+PROFITS), HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OR DISTRIBUTION OF THE PROGRAM OR THE EXERCISE OF ANY RIGHTS
+GRANTED HEREUNDER, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+7. GENERAL
+
+If any provision of this Agreement is invalid or unenforceable under applicable
+law, it shall not affect the validity or enforceability of the remainder of the
+terms of this Agreement, and without further action by the parties hereto, such
+provision shall be reformed to the minimum extent necessary to make such
+provision valid and enforceable.
+
+If Recipient institutes patent litigation against any entity (including a
+cross-claim or counterclaim in a lawsuit) alleging that the Program itself
+(excluding combinations of the Program with other software or hardware)
+infringes such Recipient's patent(s), then such Recipient's rights granted under
+Section 2(b) shall terminate as of the date such litigation is filed.
+
+All Recipient's rights under this Agreement shall terminate if it fails to
+comply with any of the material terms or conditions of this Agreement and does
+not cure such failure in a reasonable period of time after becoming aware of
+such noncompliance. If all Recipient's rights under this Agreement terminate,
+Recipient agrees to cease use and distribution of the Program as soon as
+reasonably practicable. However, Recipient's obligations under this Agreement
+and any licenses granted by Recipient relating to the Program shall continue and
+survive.
+
+Everyone is permitted to copy and distribute copies of this Agreement, but in
+order to avoid inconsistency the Agreement is copyrighted and may only be
+modified in the following manner. The Agreement Steward reserves the right to
+publish new versions (including revisions) of this Agreement from time to time.
+No one other than the Agreement Steward has the right to modify this Agreement.
+The Eclipse Foundation is the initial Agreement Steward. The Eclipse Foundation
+may assign the responsibility to serve as the Agreement Steward to a suitable
+separate entity. Each new version of the Agreement will be given a
+distinguishing version number. The Program (including Contributions) may always
+be distributed subject to the version of the Agreement under which it was
+received. In addition, after a new version of the Agreement is published,
+Contributor may elect to distribute the Program (including its Contributions)
+under the new version. Except as expressly stated in Sections 2(a) and 2(b)
+above, Recipient receives no rights or licenses to the intellectual property of
+any Contributor under this Agreement, whether expressly, by implication,
+estoppel or otherwise. All rights in the Program not expressly granted under
+this Agreement are reserved.
+
+This Agreement is governed by the laws of the State of New York and the
+intellectual property laws of the United States of America. No party to this
+Agreement will bring a legal action under this Agreement more than one year
+after the cause of action arose. Each party waives its rights to a jury trial in
+any resulting litigation.
+
+--------------------------------------------
+"Hamcrest Core" 1.3 (org.hamcrest:hamcrest-core)
+  Copyright (c) www.hamcrest.org
+  Apache License Version 2.0
+--------------------------------------------
+"JUnit" 4.11 (junit:junit)
+  Copyright 2010 Google Inc. All Rights Reserved.
+  Apache License Version 2.0
+--------------------------------------------
+"SLF4J API Module" 1.7.10 (org.slf4j:slf4j-api)
+  Copyright (c) 2004-2011 QOS.ch
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Core API" 1.4.0.Final (org.jboss.arquillian.core:arquillian-core-api)
+  Copyright 2009,2011 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Core SPI" 1.4.0.Final (org.jboss.arquillian.core:arquillian-core-spi)
+  Copyright 2009,2011 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Core Implementation Base" 1.4.0.Final (org.jboss.arquillian.core:arquillian-core-impl-base)
+  Copyright 2009,2014 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Config API" 1.4.0.Final (org.jboss.arquillian.config:arquillian-config-api)
+  Copyright 2010,2013 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Config SPI" 1.4.0.Final (org.jboss.arquillian.config:arquillian-config-spi)
+  Copyright 2010 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Config Implementation Base" 1.4.0.Final (org.jboss.arquillian.config:arquillian-config-impl-base)
+  Copyright 2010,2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2005, JBoss Inc., and individual contributors as indicated
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Test API" 1.4.0.Final (org.jboss.arquillian.test:arquillian-test-api)
+  Copyright 2010 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Test SPI" 1.4.0.Final (org.jboss.arquillian.test:arquillian-test-spi)
+  Copyright 2009,2016 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2010, Red Hat Middleware LLC, and individual contributors
+  Copyright 2014,2015 Red Hat, Inc. and/or its affiliates, and individual
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Test Implementation Base" 1.4.0.Final (org.jboss.arquillian.test:arquillian-test-impl-base)
+  Copyright 2009,2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2014, Red Hat, Inc. and/or its affiliates, and individual
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Container SPI" 1.4.0.Final (org.jboss.arquillian.container:arquillian-container-spi)
+  Copyright 2009,2011 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Container Implementation Base" 1.4.0.Final (org.jboss.arquillian.container:arquillian-container-impl-base)
+  Copyright 2009,2013 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Container Test API" 1.4.0.Final (org.jboss.arquillian.container:arquillian-container-test-api)
+  Copyright 2009,2010 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Container Test SPI" 1.4.0.Final (org.jboss.arquillian.container:arquillian-container-test-spi)
+  Copyright 2008,2011 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Container Test Implementation Base" 1.4.0.Final (org.jboss.arquillian.container:arquillian-container-test-impl-base)
+  Copyright 2009,2015 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian TestRunner JUnit Core" 1.4.0.Final (org.jboss.arquillian.junit:arquillian-junit-core)
+  Copyright 2009,2015 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian TestRunner JUnit Container" 1.4.0.Final (org.jboss.arquillian.junit:arquillian-junit-container)
+  Copyright 2009,2016 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian TestRunner JUnit Standalone" 1.4.0.Final (org.jboss.arquillian.junit:arquillian-junit-standalone)
+  Copyright 2011,2015 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian TestRunner TestNG Core" 1.4.0.Final (org.jboss.arquillian.testng:arquillian-testng-core)
+  Copyright 2009,2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2009, Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian TestRunner TestNG Container" 1.4.0.Final (org.jboss.arquillian.testng:arquillian-testng-container)
+  Copyright 2009,2011 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian TestRunner TestNG Standalone" 1.4.0.Final (org.jboss.arquillian.testng:arquillian-testng-standalone)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Protocol Servlet 2.5/3.x" 1.4.0.Final (org.jboss.arquillian.protocol:arquillian-protocol-servlet)
+  Copyright 2009,2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2010,2011 Red Hat, Inc., and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Protocol JMX" 1.4.0.Final (org.jboss.arquillian.protocol:arquillian-protocol-jmx)
+  Copyright 2009,2011 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian TestEnricher CDI" 1.4.0.Final (org.jboss.arquillian.testenricher:arquillian-testenricher-cdi)
+  Copyright 2009,2014 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian TestEnricher EJB" 1.4.0.Final (org.jboss.arquillian.testenricher:arquillian-testenricher-ejb)
+  Copyright 2009,2011 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian TestEnricher Resource" 1.4.0.Final (org.jboss.arquillian.testenricher:arquillian-testenricher-resource)
+  Copyright 2009,2011 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian TestEnricher InitialContext" 1.4.0.Final (org.jboss.arquillian.testenricher:arquillian-testenricher-initialcontext)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap API" 1.2.6 (org.jboss.shrinkwrap:shrinkwrap-api)
+  Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap SPI" 1.2.6 (org.jboss.shrinkwrap:shrinkwrap-spi)
+  Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Implementation Base" 1.2.6 (org.jboss.shrinkwrap:shrinkwrap-impl-base)
+  Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap NIO.2 API" 1.2.6 (org.jboss.shrinkwrap:shrinkwrap-api-nio2)
+  Copyright 2012, Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap NIO.2 Implementation" 1.2.6 (org.jboss.shrinkwrap:shrinkwrap-impl-nio2)
+  Copyright 2012, Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Resolver API" 2.2.6 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-api)
+  Copyright 2009,2013 Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Resolver SPI" 2.2.6 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-spi)
+  Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Resolver Maven API" 2.2.6 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-api-maven)
+  Copyright 2009,2013 Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Resolver Maven SPI" 2.2.6 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-spi-maven)
+  Copyright 2012, Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Resolver Maven Implementation" 2.2.6 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-impl-maven)
+  Copyright (c) 2010 Sonatype, Inc. All rights reserved.
+  Copyright 2009,2015 Red Hat Middleware LLC, and individual contributors
+  Copyright 2013 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Maven Aether Provider" 3.2.5 (org.apache.maven:maven-aether-provider)
+  Copyright 2001-2014 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Maven Model" 3.2.5 (org.apache.maven:maven-model)
+  Copyright 2001-2014 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Maven Model Builder" 3.2.5 (org.apache.maven:maven-model-builder)
+  Copyright 2001-2014 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Plexus :: Component Annotations" 1.5.5 (org.codehaus.plexus:plexus-component-annotations)
+  Copyright (C) 2007 the original author or authors.
+  Apache License Version 2.0
+--------------------------------------------
+"Maven Repository Metadata Model" 3.2.5 (org.apache.maven:maven-repository-metadata)
+  Copyright 2001-2014 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Maven Settings" 3.2.5 (org.apache.maven:maven-settings)
+  Copyright 2001-2014 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Maven Settings Builder" 3.2.5 (org.apache.maven:maven-settings-builder)
+  Copyright 2001-2014 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Guava: Google Core Libraries for Java" 18.0 (com.google.guava:guava)
+  Copyright (C) 2005,2014 The Guava Authors
+  Apache License Version 2.0
+--------------------------------------------
+"Plexus Interpolation API" 1.21 (org.codehaus.plexus:plexus-interpolation)
+  Copyright 2001-2009 Codehaus Foundation.
+  Copyright (c) 2004, The Codehaus
+  Copyright 2001-2004 The Apache Software Foundation.
+  Copyright 2007 The Codehaus Foundation.
+  Copyright (c) 2001-2003 The Apache Software Foundation.  All rights
+  Apache License Version 2.0
+--------------------------------------------
+"Plexus Common Utilities" 3.0.20 (org.codehaus.plexus:plexus-utils)
+  Copyright (c) 2003 Extreme! Lab, Indiana University. All rights reserved.
+  Copyright (c) 2001- 2003, ThoughtWorks, Inc.
+  Copyright (C) 2003 The Trustees of Indiana University.
+  Copyright ,2011 The Codehaus Foundation.
+  Copyright (c) 2000-2003 The Apache Software Foundation.  All rights
+  Copyright 2003-2004 The Apache Software Foundation.
+  Copyright 2004 Sun Microsystems, Inc.
+  Copyright (c) 2003, ThoughtWorks, Inc.
+  Apache License Version 2.0
+--------------------------------------------
+"Plexus Security Dispatcher Component" 1.3 (org.sonatype.plexus:plexus-sec-dispatcher)
+  Copyright (c) 2008 Sonatype, Inc. All rights reserved.
+  Apache License Version 2.0
+--------------------------------------------
+"Plexus Cipher: encryption/decryption Component" 1.4 (org.sonatype.plexus:plexus-cipher)
+  Copyright (c) 2008 Sonatype, Inc. All rights reserved.
+  Apache License Version 2.0
+--------------------------------------------
+"Apache Maven Wagon :: API" 2.6 (org.apache.maven.wagon:wagon-provider-api)
+  Copyright 2003-2013 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Apache Maven Wagon :: Providers :: File Provider" 2.6 (org.apache.maven.wagon:wagon-file)
+  Copyright 2003-2013 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Commons Lang" 2.6 (commons-lang:commons-lang)
+  Copyright 2001-2011 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Apache Maven Wagon :: Providers :: Lightweight HTTP Provider" 2.6 (org.apache.maven.wagon:wagon-http-lightweight)
+  Copyright 2003-2013 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Apache Maven Wagon :: Providers :: HTTP Shared Library" 2.6 (org.apache.maven.wagon:wagon-http-shared)
+  Copyright 2003-2013 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Commons IO" 2.2 (commons-io:commons-io)
+  Copyright 2002-2012 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Resolver Maven Archive API" 2.2.6 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-api-maven-archive)
+  Copyright 2012,2013 Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Resolver Maven Archive Implementation" 2.2.6 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-impl-maven-archive)
+  Copyright 2009,2013 Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Resolver Maven Archive SPI" 2.2.6 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-spi-maven-archive)
+  Copyright 2012, Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Plexus Javac Component" 2.3 (org.codehaus.plexus:plexus-compiler-javac)
+  Copyright (c) 2005, The Codehaus
+  Copyright 2004 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Plexus Compiler Api" 2.3 (org.codehaus.plexus:plexus-compiler-api)
+  Copyright (c) 2004,2005 The Codehaus
+  Copyright 2004 The Apache Software Foundation
+  Copyright 2001-2005 The Apache Software Foundation.
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Resolver Maven Plugin" 2.2.6 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-maven-plugin)
+  Copyright 2012,2014 Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Maven Plugin API" 3.2.5 (org.apache.maven:maven-plugin-api)
+  Copyright 2001-2014 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Maven Artifact" 3.2.5 (org.apache.maven:maven-artifact)
+  Copyright 2001-2014 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Maven Core" 3.2.5 (org.apache.maven:maven-core)
+  Copyright 2001-2014 The Apache Software Foundation
+  Apache License Version 2.0
+--------------------------------------------
+"Sisu Guice - Core Library" 3.2.3 (org.sonatype.sisu:sisu-guice)
+  Copyright (C) 2006,2013 Google Inc.
+  Copyright 2006-2014 Google, Inc.
+  Apache License Version 2.0
+--------------------------------------------
+"Plexus Classworlds" 2.5.2 (org.codehaus.plexus:plexus-classworlds)
+  Copyright 2002 (C) The Werken Company. All Rights Reserved.
+  Copyright 2001-2010 Codehaus Foundation.
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Resolver Embedded Gradle Archive API" 2.2.6 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-api-gradle-embedded-archive)
+  Copyright 2014, Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Resolver Embedded Gradle Archive Implementation" 2.2.6 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-impl-gradle-embedded-archive)
+  Copyright 2014, Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Descriptors API Base" 2.0.0 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-api-base)
+  Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Descriptors Generated Java EE API" 2.0.0 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-api-javaee)
+  RedHat, Inc., JBoss community
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Descriptors Generated JBoss API" 2.0.0 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-api-jboss)
+  RedHat, Inc., JBoss community
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Descriptors Source Generator" 2.0.0 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-gen)
+  RedHat, Inc., JBoss community
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Descriptors Implementation" 2.0.0 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-impl-base)
+  Copyright 2010, Red Hat, Inc., and individual contributors
+  Copyright 2010, Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Descriptors Generated Java EE Impl" 2.0.0 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-impl-javaee)
+  RedHat, Inc., JBoss community
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Descriptors Generated JBoss Impl" 2.0.0 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-impl-jboss)
+  RedHat, Inc., JBoss community
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Descriptors SPI" 2.0.0 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-spi)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Descriptors Dependency Chain" 2.0.0 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-depchain)
+  RedHat, Inc., JBoss community
+  Apache License Version 2.0
+--------------------------------------------
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Arquillian Container Weld 2.0.0.Final Red Hat, Inc.
+Other FOSS License
+Used by: [helidon-microprofile-grpc-core, helidon-microprofile-grpc-server, tck-config]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Arquillian Container Weld (org.jboss.arquillian.container:arquillian-weld-embedded)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Copyright Red Hat Middleware LLC, and individual contributors
+  Copyright Red Hat, Inc., and individual contributors
+--------------------------------------------
+Creative Commons Legal Code
+
+CC0 1.0 Universal
+
+    CREATIVE COMMONS CORPORATION IS NOT A LAW FIRM AND DOES NOT PROVIDE
+    LEGAL SERVICES. DISTRIBUTION OF THIS DOCUMENT DOES NOT CREATE AN
+    ATTORNEY-CLIENT RELATIONSHIP. CREATIVE COMMONS PROVIDES THIS
+    INFORMATION ON AN "AS-IS" BASIS. CREATIVE COMMONS MAKES NO WARRANTIES
+    REGARDING THE USE OF THIS DOCUMENT OR THE INFORMATION OR WORKS
+    PROVIDED HEREUNDER, AND DISCLAIMS LIABILITY FOR DAMAGES RESULTING FROM
+    THE USE OF THIS DOCUMENT OR THE INFORMATION OR WORKS PROVIDED
+    HEREUNDER.
+
+Statement of Purpose
+
+The laws of most jurisdictions throughout the world automatically confer
+exclusive Copyright and Related Rights (defined below) upon the creator
+and subsequent owner(s) (each and all, an "owner") of an original work of
+authorship and/or a database (each, a "Work").
+
+Certain owners wish to permanently relinquish those rights to a Work for
+the purpose of contributing to a commons of creative, cultural and
+scientific works ("Commons") that the public can reliably and without fear
+of later claims of infringement build upon, modify, incorporate in other
+works, reuse and redistribute as freely as possible in any form whatsoever
+and for any purposes, including without limitation commercial purposes.
+These owners may contribute to the Commons to promote the ideal of a free
+culture and the further production of creative, cultural and scientific
+works, or to gain reputation or greater distribution for their Work in
+part through the use and efforts of others.
+
+For these and/or other purposes and motivations, and without any
+expectation of additional consideration or compensation, the person
+associating CC0 with a Work (the "Affirmer"), to the extent that he or she
+is an owner of Copyright and Related Rights in the Work, voluntarily
+elects to apply CC0 to the Work and publicly distribute the Work under its
+terms, with knowledge of his or her Copyright and Related Rights in the
+Work and the meaning and intended legal effect of CC0 on those rights.
+
+1. Copyright and Related Rights. A Work made available under CC0 may be
+protected by copyright and related or neighboring rights ("Copyright and
+Related Rights"). Copyright and Related Rights include, but are not
+limited to, the following:
+
+  i. the right to reproduce, adapt, distribute, perform, display,
+     communicate, and translate a Work;
+ ii. moral rights retained by the original author(s) and/or performer(s);
+iii. publicity and privacy rights pertaining to a person's image or
+     likeness depicted in a Work;
+ iv. rights protecting against unfair competition in regards to a Work,
+     subject to the limitations in paragraph 4(a), below;
+  v. rights protecting the extraction, dissemination, use and reuse of data
+     in a Work;
+ vi. database rights (such as those arising under Directive 96/9/EC of the
+     European Parliament and of the Council of 11 March 1996 on the legal
+     protection of databases, and under any national implementation
+     thereof, including any amended or successor version of such
+     directive); and
+vii. other similar, equivalent or corresponding rights throughout the
+     world based on applicable law or treaty, and any national
+     implementations thereof.
+
+2. Waiver. To the greatest extent permitted by, but not in contravention
+of, applicable law, Affirmer hereby overtly, fully, permanently,
+irrevocably and unconditionally waives, abandons, and surrenders all of
+Affirmer's Copyright and Related Rights and associated claims and causes
+of action, whether now known or unknown (including existing as well as
+future claims and causes of action), in the Work (i) in all territories
+worldwide, (ii) for the maximum duration provided by applicable law or
+treaty (including future time extensions), (iii) in any current or future
+medium and for any number of copies, and (iv) for any purpose whatsoever,
+including without limitation commercial, advertising or promotional
+purposes (the "Waiver"). Affirmer makes the Waiver for the benefit of each
+member of the public at large and to the detriment of Affirmer's heirs and
+successors, fully intending that such Waiver shall not be subject to
+revocation, rescission, cancellation, termination, or any other legal or
+equitable action to disrupt the quiet enjoyment of the Work by the public
+as contemplated by Affirmer's express Statement of Purpose.
+
+3. Public License Fallback. Should any part of the Waiver for any reason
+be judged legally invalid or ineffective under applicable law, then the
+Waiver shall be preserved to the maximum extent permitted taking into
+account Affirmer's express Statement of Purpose. In addition, to the
+extent the Waiver is so judged Affirmer hereby grants to each affected
+person a royalty-free, non transferable, non sublicensable, non exclusive,
+irrevocable and unconditional license to exercise Affirmer's Copyright and
+Related Rights in the Work (i) in all territories worldwide, (ii) for the
+maximum duration provided by applicable law or treaty (including future
+time extensions), (iii) in any current or future medium and for any number
+of copies, and (iv) for any purpose whatsoever, including without
+limitation commercial, advertising or promotional purposes (the
+"License"). The License shall be deemed effective as of the date CC0 was
+applied by Affirmer to the Work. Should any part of the License for any
+reason be judged legally invalid or ineffective under applicable law, such
+partial invalidity or ineffectiveness shall not invalidate the remainder
+of the License, and in such case Affirmer hereby affirms that he or she
+will not (i) exercise any of his or her remaining Copyright and Related
+Rights in the Work or (ii) assert any associated claims and causes of
+action with respect to the Work, in either case contrary to Affirmer's
+express Statement of Purpose.
+
+4. Limitations and Disclaimers.
+
+ a. No trademark or patent rights held by Affirmer are waived, abandoned,
+    surrendered, licensed or otherwise affected by this document.
+ b. Affirmer offers the Work as-is and makes no representations or
+    warranties of any kind concerning the Work, express, implied,
+    statutory or otherwise, including without limitation warranties of
+    title, merchantability, fitness for a particular purpose, non
+    infringement, or the absence of latent or other defects, accuracy, or
+    the present or absence of errors, whether or not discoverable, all to
+    the greatest extent permissible under applicable law.
+ c. Affirmer disclaims responsibility for clearing rights of other persons
+    that may apply to the Work or any use thereof, including without
+    limitation any person's Copyright and Related Rights in the Work.
+    Further, Affirmer disclaims responsibility for obtaining any necessary
+    consents, permissions or other rights required for any use of the
+    Work.
+ d. Affirmer understands and acknowledges that Creative Commons is not a
+    party to this document and has no duty or obligation with respect to
+    this CC0 or use of the Work.
+
+--------------------------------------------
+Fourth Party Dependencies
+--------------------------------------------
+"Arquillian Container SPI" 1.1.15.Final (org.jboss.arquillian.container:arquillian-container-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Core SPI" 1.1.15.Final (org.jboss.arquillian.core:arquillian-core-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Core API" 1.1.15.Final (org.jboss.arquillian.core:arquillian-core-api)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Config API" 1.1.15.Final (org.jboss.arquillian.config:arquillian-config-api)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Config Implementation Base" 1.1.15.Final (org.jboss.arquillian.config:arquillian-config-impl-base)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Copyright JBoss Inc., and individual contributors as indicated
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Descriptors SPI" 2.0.0 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Copyright Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap API" 1.2.6 (org.jboss.shrinkwrap:shrinkwrap-api)
+Copyright Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Descriptors API Base" 2.0.0 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-api-base)
+Copyright Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Container Test SPI" 1.1.15.Final (org.jboss.arquillian.container:arquillian-container-test-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Test SPI" 1.1.15.Final (org.jboss.arquillian.test:arquillian-test-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Copyright Red Hat Middleware LLC, and individual contributors
+  Copyright Red Hat, Inc. and/or its affiliates, and individual
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Test API" 1.1.15.Final (org.jboss.arquillian.test:arquillian-test-api)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Container Test API" 1.1.15.Final (org.jboss.arquillian.container:arquillian-container-test-api)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian TestEnricher CDI" 1.1.15.Final (org.jboss.arquillian.testenricher:arquillian-testenricher-cdi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Arquillian TestRunner TestNG 1.4.0.Final Red Hat, Inc.
+Apache 2.0
+Used by: [tck-config, tck-fault-tolerance, tck-health, tck-jwt-auth, tck-openapi]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Arquillian TestRunner TestNG Container (org.jboss.arquillian.testng:arquillian-testng-container)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+Fourth Party Dependencies
+--------------------------------------------
+"Arquillian TestRunner TestNG Core" 1.4.0.Final (org.jboss.arquillian.testng:arquillian-testng-core)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Copyright Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Test API" 1.4.0.Final (org.jboss.arquillian.test:arquillian-test-api)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Core API" 1.4.0.Final (org.jboss.arquillian.core:arquillian-core-api)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Test SPI" 1.4.0.Final (org.jboss.arquillian.test:arquillian-test-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Copyright Red Hat Middleware LLC, and individual contributors
+  Copyright Red Hat, Inc. and/or its affiliates, and individual
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Core SPI" 1.4.0.Final (org.jboss.arquillian.core:arquillian-core-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Container Test API" 1.4.0.Final (org.jboss.arquillian.container:arquillian-container-test-api)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap API" 1.2.6 (org.jboss.shrinkwrap:shrinkwrap-api)
+Copyright Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Descriptors API Base" 2.0.0 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-api-base)
+Copyright Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Container Test SPI" 1.4.0.Final (org.jboss.arquillian.container:arquillian-container-test-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Container SPI" 1.4.0.Final (org.jboss.arquillian.container:arquillian-container-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Core Implementation Base" 1.4.0.Final (org.jboss.arquillian.core:arquillian-core-impl-base)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Test Implementation Base" 1.4.0.Final (org.jboss.arquillian.test:arquillian-test-impl-base)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Copyright Red Hat, Inc. and/or its affiliates, and individual
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Container Implementation Base" 1.4.0.Final (org.jboss.arquillian.container:arquillian-container-impl-base)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Config API" 1.4.0.Final (org.jboss.arquillian.config:arquillian-config-api)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Config Implementation Base" 1.4.0.Final (org.jboss.arquillian.config:arquillian-config-impl-base)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Copyright JBoss Inc., and individual contributors as indicated
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Config SPI" 1.4.0.Final (org.jboss.arquillian.config:arquillian-config-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Descriptors SPI" 2.0.0 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Copyright Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"Arquillian Container Test Implementation Base" 1.4.0.Final (org.jboss.arquillian.container:arquillian-container-test-impl-base)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap Implementation Base" 1.2.6 (org.jboss.shrinkwrap:shrinkwrap-impl-base)
+Copyright Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+"ShrinkWrap SPI" 1.2.6 (org.jboss.shrinkwrap:shrinkwrap-spi)
+Copyright Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2.0
+--------------------------------------------
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+JUnit 4.12 JUnit
+Eclipse Public License 1.0
+Used by: [helidon-arquillian]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Copyright © 2002-2014 JUnit. All Rights Reserved.
+Copyright © 2002-2017 JUnit. All Rights Reserved.
+EPL-1.0
+--------------------------------------------
+Fourth Party Dependencies
+--------------------------------------------
+org.hamcrest: hamcrest-core</artifactId  - BSD3
+org.hamcrest: hamcrest-library</artifactId> - BSD 3
+
+BSD License
+
+Copyright (c) 2000-2015 www.hamcrest.org
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+Redistributions of source code must retain the above copyright notice, this list of
+conditions and the following disclaimer. Redistributions in binary form must reproduce
+the above copyright notice, this list of conditions and the following disclaimer in
+the documentation and/or other materials provided with the distribution.
+
+Neither the name of Hamcrest nor the names of its contributors may be used to endorse
+or promote products derived from this software without specific prior written
+permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
+WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+JUnit 5.6.2 JUnit Team
+Eclipse Public License 2.0
+Used by: Many
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+License Identifier: EPL-2.0
+1.  The follow files are available in source code form under the Eclipse Public License at:
+    https://github.com/junit-team/junit5
+2.  All past Contributors to JUnit5 disclaim all warranties and conditions, express and
+    implied, including warranties or conditions of title and non-infringement, and implied
+    warranties or conditions of merchantability and fitness for a particular purpose.
+    In addition, such Contributors are not liable for any damages, including direct,
+    indirect, special, incidental and consequential damages, such as lost profits.  
+3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public License
+    are offered by Oracle alone and not by any other party.
+--------------------------------------------
+Fourth Party Dependencies
+--------------------------------------------
+junit-jupiter-params & junit-platform-console directories include an Apache license file
+Apache License 2
+--------------------
+https://github.com/apiguardian-team/apiguardian/archive/r1.1.0.zip
+ * Copyright 2002-2017 the original author or authors.
+Apache 2.0 License
+--------------------
+https://github.com/ota4j-team/opentest4j/archive/r1.2.0.zip
+ * Copyright 2015-2018 the original author or authors.
+Apache 2.0 License
+--------------------
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+MicroProfile Config TCK 1.4 Eclipse Foundation
+Apache 2.0
+Used by: [tck-config]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+MicroProfile Config TCK (org.eclipse.microprofile.config:microprofile-config-tck)
+Copyright (c) Contributors to the Eclipse Foundation  
+License Identifier: Apache-2.0
+--------------------------------------------
+"BeanShell" 2.0b4 (org.beanshell:bsh)
+Copyright Patrick Niemeyer
+
+                   GNU LESSER GENERAL PUBLIC LICENSE
+                       Version 3, 29 June 2007
+
+ Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+
+
+  This version of the GNU Lesser General Public License incorporates
+the terms and conditions of version 3 of the GNU General Public
+License, supplemented by the additional permissions listed below.
+
+  0. Additional Definitions.
+
+  As used herein, "this License" refers to version 3 of the GNU Lesser
+General Public License, and the "GNU GPL" refers to version 3 of the GNU
+General Public License.
+
+  "The Library" refers to a covered work governed by this License,
+other than an Application or a Combined Work as defined below.
+
+  An "Application" is any work that makes use of an interface provided
+by the Library, but which is not otherwise based on the Library.
+Defining a subclass of a class defined by the Library is deemed a mode
+of using an interface provided by the Library.
+
+  A "Combined Work" is a work produced by combining or linking an
+Application with the Library.  The particular version of the Library
+with which the Combined Work was made is also called the "Linked
+Version".
+
+  The "Minimal Corresponding Source" for a Combined Work means the
+Corresponding Source for the Combined Work, excluding any source code
+for portions of the Combined Work that, considered in isolation, are
+based on the Application, and not on the Linked Version.
+
+  The "Corresponding Application Code" for a Combined Work means the
+object code and/or source code for the Application, including any data
+and utility programs needed for reproducing the Combined Work from the
+Application, but excluding the System Libraries of the Combined Work.
+
+  1. Exception to Section 3 of the GNU GPL.
+
+  You may convey a covered work under sections 3 and 4 of this License
+without being bound by section 3 of the GNU GPL.
+
+  2. Conveying Modified Versions.
+
+  If you modify a copy of the Library, and, in your modifications, a
+facility refers to a function or data to be supplied by an Application
+that uses the facility (other than as an argument passed when the
+facility is invoked), then you may convey a copy of the modified
+version:
+
+   a) under this License, provided that you make a good faith effort to
+   ensure that, in the event an Application does not supply the
+   function or data, the facility still operates, and performs
+   whatever part of its purpose remains meaningful, or
+
+   b) under the GNU GPL, with none of the additional permissions of
+   this License applicable to that copy.
+
+  3. Object Code Incorporating Material from Library Header Files.
+
+  The object code form of an Application may incorporate material from
+a header file that is part of the Library.  You may convey such object
+code under terms of your choice, provided that, if the incorporated
+material is not limited to numerical parameters, data structure
+layouts and accessors, or small macros, inline functions and templates
+(ten or fewer lines in length), you do both of the following:
+
+   a) Give prominent notice with each copy of the object code that the
+   Library is used in it and that the Library and its use are
+   covered by this License.
+
+   b) Accompany the object code with a copy of the GNU GPL and this license
+   document.
+
+  4. Combined Works.
+
+  You may convey a Combined Work under terms of your choice that,
+taken together, effectively do not restrict modification of the
+portions of the Library contained in the Combined Work and reverse
+engineering for debugging such modifications, if you also do each of
+the following:
+
+   a) Give prominent notice with each copy of the Combined Work that
+   the Library is used in it and that the Library and its use are
+   covered by this License.
+
+   b) Accompany the Combined Work with a copy of the GNU GPL and this license
+   document.
+
+   c) For a Combined Work that displays copyright notices during
+   execution, include the copyright notice for the Library among
+   these notices, as well as a reference directing the user to the
+   copies of the GNU GPL and this license document.
+
+   d) Do one of the following:
+
+       0) Convey the Minimal Corresponding Source under the terms of this
+       License, and the Corresponding Application Code in a form
+       suitable for, and under terms that permit, the user to
+       recombine or relink the Application with a modified version of
+       the Linked Version to produce a modified Combined Work, in the
+       manner specified by section 6 of the GNU GPL for conveying
+       Corresponding Source.
+
+       1) Use a suitable shared library mechanism for linking with the
+       Library.  A suitable mechanism is one that (a) uses at run time
+       a copy of the Library already present on the user's computer
+       system, and (b) will operate properly with a modified version
+       of the Library that is interface-compatible with the Linked
+       Version.
+
+   e) Provide Installation Information, but only if you would otherwise
+   be required to provide such information under section 6 of the
+   GNU GPL, and only to the extent that such information is
+   necessary to install and execute a modified version of the
+   Combined Work produced by recombining or relinking the
+   Application with a modified version of the Linked Version. (If
+   you use option 4d0, the Installation Information must accompany
+   the Minimal Corresponding Source and Corresponding Application
+   Code. If you use option 4d1, you must provide the Installation
+   Information in the manner specified by section 6 of the GNU GPL
+   for conveying Corresponding Source.)
+
+  5. Combined Libraries.
+
+  You may place library facilities that are a work based on the
+Library side by side in a single library together with other library
+facilities that are not Applications and are not covered by this
+License, and convey such a combined library under terms of your
+choice, if you do both of the following:
+
+   a) Accompany the combined library with a copy of the same work based
+   on the Library, uncombined with any other library facilities,
+   conveyed under the terms of this License.
+
+   b) Give prominent notice with the combined library that part of it
+   is a work based on the Library, and explaining where to find the
+   accompanying uncombined form of the same work.
+
+  6. Revised Versions of the GNU Lesser General Public License.
+
+  The Free Software Foundation may publish revised and/or new versions
+of the GNU Lesser General Public License from time to time. Such new
+versions will be similar in spirit to the present version, but may
+differ in detail to address new problems or concerns.
+
+  Each version is given a distinguishing version number. If the
+Library as you received it specifies that a certain numbered version
+of the GNU Lesser General Public License "or any later version"
+applies to it, you have the option of following the terms and
+conditions either of that published version or of any later version
+published by the Free Software Foundation. If the Library as you
+received it does not specify a version number of the GNU Lesser
+General Public License, you may choose any version of the GNU Lesser
+General Public License ever published by the Free Software Foundation.
+
+  If the Library as you received it specifies that a proxy can decide
+whether future versions of the GNU Lesser General Public License shall
+apply, that proxy's public statement of acceptance of any version is
+permanent authorization for you to choose that version for the
+Library.
+
+--------------------------------------------
+"Hamcrest Core" 1.1 (org.hamcrest:hamcrest-core)
+Copyright (c) www.hamcrest.org
+--------------------------------------------
+"Hamcrest All" 1.3 (org.hamcrest:hamcrest-all)
+Copyright (c) www.hamcrest.org
+--------------------------------------------
+"Hamcrest Core" 1.1 (org.hamcrest:hamcrest-core)
+"Hamcrest All" 1.3 (org.hamcrest:hamcrest-all)
+
+The 2-Clause BSD License
+SPDX short identifier: BSD-2-Clause
+
+Further resources on the 2-clause BSD license
+Note: This license has also been called the "Simplified BSD License" and the
+"FreeBSD License". See also the 3-clause BSD License.
+
+Copyright <YEAR> <COPYRIGHT HOLDER>
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------
+"JUnit" 4.10 (junit:junit)
+Copyright (c) JUnit. All Rights Reserved.
+
+Common Public License Version 1.0 (CPL)
+(NOTE: This license has been superseded by the Eclipse Public License)
+
+(text)
+
+THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS COMMON PUBLIC
+LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION OF THE PROGRAM
+CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+
+1. DEFINITIONS
+
+"Contribution" means:
+
+a) in the case of the initial Contributor, the initial code and documentation
+distributed under this Agreement, and
+
+b) in the case of each subsequent Contributor:
+
+i) changes to the Program, and
+
+ii) additions to the Program;
+
+where such changes and/or additions to the Program originate from and are
+distributed by that particular Contributor. A Contribution 'originates' from
+a Contributor if it was added to the Program by such Contributor itself or
+anyone acting on such Contributor's behalf. Contributions do not include
+additions to the Program which: (i) are separate modules of software
+distributed in conjunction with the Program under their own license agreement,
+and (ii) are not derivative works of the Program.
+
+"Contributor" means any person or entity that distributes the Program.
+
+"Licensed Patents " mean patent claims licensable by a Contributor which are
+necessarily infringed by the use or sale of its Contribution alone or when
+combined with the Program.
+
+"Program" means the Contributions distributed in accordance with this
+Agreement.
+
+"Recipient" means anyone who receives the Program under this Agreement,
+including all Contributors.
+
+2. GRANT OF RIGHTS
+
+a) Subject to the terms of this Agreement, each Contributor hereby grants
+Recipient a non-exclusive, worldwide, royalty-free copyright license to
+reproduce, prepare derivative works of, publicly display, publicly perform,
+distribute and sublicense the Contribution of such Contributor, if any, and
+such derivative works, in source code and object code form.
+
+b) Subject to the terms of this Agreement, each Contributor hereby grants
+Recipient a non-exclusive, worldwide, royalty-free patent license under
+Licensed Patents to make, use, sell, offer to sell, import and otherwise
+transfer the Contribution of such Contributor, if any, in source code and
+object code form. This patent license shall apply to the combination of the
+Contribution and the Program if, at the time the Contribution is added by the
+Contributor, such addition of the Contribution causes such combination to be
+covered by the Licensed Patents. The patent license shall not apply to any
+other combinations which include the Contribution. No hardware per se is
+licensed hereunder.
+
+c) Recipient understands that although each Contributor grants the licenses to
+its Contributions set forth herein, no assurances are provided by any
+Contributor that the Program does not infringe the patent or other intellectual
+property rights of any other entity. Each Contributor disclaims any liability
+to Recipient for claims brought by any other entity based on infringement of
+intellectual property rights or otherwise. As a condition to exercising the
+rights and licenses granted hereunder, each Recipient hereby assumes sole
+responsibility to secure any other intellectual property rights needed, if any.
+For example, if a third party patent license is required to allow Recipient to
+distribute the Program, it is Recipient's responsibility to acquire that
+license before distributing the Program.
+
+d) Each Contributor represents that to its knowledge it has sufficient
+copyright rights in its Contribution, if any, to grant the copyright license
+set forth in this Agreement.
+
+3. REQUIREMENTS
+
+A Contributor may choose to distribute the Program in object code form under
+its own license agreement, provided that:
+
+a) it complies with the terms and conditions of this Agreement; and
+
+b) its license agreement:
+
+i) effectively disclaims on behalf of all Contributors all warranties and
+conditions, express and implied, including warranties or conditions of title
+and non-infringement, and implied warranties or conditions of merchantability
+and fitness for a particular purpose;
+
+ii) effectively excludes on behalf of all Contributors all liability for
+damages, including direct, indirect, special, incidental and consequential
+damages, such as lost profits;
+
+iii) states that any provisions which differ from this Agreement are offered by
+that Contributor alone and not by any other party; and
+
+iv) states that source code for the Program is available from such Contributor,
+and informs licensees how to obtain it in a reasonable manner on or through a
+medium customarily used for software exchange.
+
+When the Program is made available in source code form:
+
+a) it must be made available under this Agreement; and
+
+b) a copy of this Agreement must be included with each copy of the Program.
+
+Contributors may not remove or alter any copyright notices contained within the
+Program.
+
+Each Contributor must identify itself as the originator of its Contribution, if
+any, in a manner that reasonably allows subsequent Recipients to identify the
+originator of the Contribution.
+
+4. COMMERCIAL DISTRIBUTION
+
+Commercial distributors of software may accept certain responsibilities with
+respect to end users, business partners and the like. While this license is
+intended to facilitate the commercial use of the Program, the Contributor who
+includes the Program in a commercial product offering should do so in a manner
+which does not create potential liability for other Contributors. Therefore, if
+a Contributor includes the Program in a commercial product offering, such
+Contributor ("Commercial Contributor") hereby agrees to defend and indemnify
+every other Contributor ("Indemnified Contributor") against any losses, damages
+and costs (collectively "Losses") arising from claims, lawsuits and other legal
+actions brought by a third party against the Indemnified Contributor to the
+extent caused by the acts or omissions of such Commercial Contributor in
+connection with its distribution of the Program in a commercial product
+offering. The obligations in this section do not apply to any claims or Losses
+relating to any actual or alleged intellectual property infringement. In order
+to qualify, an Indemnified Contributor must: a) promptly notify the Commercial
+Contributor in writing of such claim, and b) allow the Commercial Contributor
+to control, and cooperate with the Commercial Contributor in, the defense and
+any related settlement negotiations. The Indemnified Contributor may
+participate in any such claim at its own expense.
+
+For example, a Contributor might include the Program in a commercial product
+offering, Product X. That Contributor is then a Commercial Contributor. If that
+Commercial Contributor then makes performance claims, or offers warranties
+related to Product X, those performance claims and warranties are such
+Commercial Contributor's responsibility alone. Under this section, the
+Commercial Contributor would have to defend claims against the other
+Contributors related to those performance claims and warranties, and if a court
+requires any other Contributor to pay any damages as a result, the Commercial
+Contributor must pay those damages.
+
+5. NO WARRANTY
+
+EXCEPT AS EXPRESSLY SET FORTH IN THIS AGREEMENT, THE PROGRAM IS PROVIDED ON AN
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR
+IMPLIED INCLUDING, WITHOUT LIMITATION, ANY WARRANTIES OR CONDITIONS OF TITLE,
+NON-INFRINGEMENT, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Each
+Recipient is solely responsible for determining the appropriateness of using
+and distributing the Program and assumes all risks associated with its
+exercise of rights under this Agreement, including but not limited to the
+risks and costs of program errors, compliance with applicable laws, damage to
+or loss of data, programs or equipment, and unavailability or interruption of
+operations.
+
+6. DISCLAIMER OF LIABILITY
+
+EXCEPT AS EXPRESSLY SET FORTH IN THIS AGREEMENT, NEITHER RECIPIENT NOR ANY
+CONTRIBUTORS SHALL HAVE ANY LIABILITY FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING WITHOUT LIMITATION
+LOST PROFITS), HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OR DISTRIBUTION OF THE PROGRAM OR THE EXERCISE OF ANY
+RIGHTS GRANTED HEREUNDER, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+7. GENERAL
+
+If any provision of this Agreement is invalid or unenforceable under applicable
+law, it shall not affect the validity or enforceability of the remainder of the
+terms of this Agreement, and without further action by the parties hereto, such
+provision shall be reformed to the minimum extent necessary to make such
+provision valid and enforceable.
+
+If Recipient institutes patent litigation against a Contributor with respect to
+a patent applicable to software (including a cross-claim or counterclaim in a
+lawsuit), then any patent licenses granted by that Contributor to such
+Recipient under this Agreement shall terminate as of the date such litigation
+is filed. In addition, if Recipient institutes patent litigation against any
+entity (including a cross-claim or counterclaim in a lawsuit) alleging that the
+Program itself (excluding combinations of the Program with other software or
+hardware) infringes such Recipient's patent(s), then such Recipient's rights
+granted under Section 2(b) shall terminate as of the date such litigation is
+filed.
+
+All Recipient's rights under this Agreement shall terminate if it fails to
+comply with any of the material terms or conditions of this Agreement and does
+not cure such failure in a reasonable period of time after becoming aware of
+such noncompliance. If all Recipient's rights under this Agreement terminate,
+Recipient agrees to cease use and distribution of the Program as soon as
+reasonably practicable. However, Recipient's obligations under this Agreement
+and any licenses granted by Recipient relating to the Program shall continue
+and survive.
+
+Everyone is permitted to copy and distribute copies of this Agreement, but in
+order to avoid inconsistency the Agreement is copyrighted and may only be
+modified in the following manner. The Agreement Steward reserves the right to
+publish new versions (including revisions) of this Agreement from time to time.
+No one other than the Agreement Steward has the right to modify this Agreement.
+IBM is the initial Agreement Steward. IBM may assign the responsibility to
+serve as the Agreement Steward to a suitable separate entity. Each new version
+of the Agreement will be given a distinguishing version number. The Program
+(including Contributions) may always be distributed subject to the version of
+the Agreement under which it was received. In addition, after a new version of
+the Agreement is published, Contributor may elect to distribute the Program
+(including its Contributions) under the new version. Except as expressly stated
+in Sections 2(a) and 2(b) above, Recipient receives no rights or licenses to
+the intellectual property of any Contributor under this Agreement, whether
+expressly, by implication, estoppel or otherwise. All rights in the Program not
+expressly granted under this Agreement are reserved.
+
+This Agreement is governed by the laws of the State of New York and the
+intellectual property laws of the United States of America. No party to this
+Agreement will bring a legal action under this Agreement more than one year
+after the cause of action arose. Each party waives its rights to a jury trial
+in any resulting litigation.
+
+--------------------------------------------
+"JCommander" 1.48 (com.beust:jcommander)
+Copyright (C) the original author or authors.
+Apache License 2
+--------------------------------------------
+"org.apache.tools.ant" 1.7.0 (org.apache.ant:ant)
+Copyright The Apache Software Foundation
+Apache License 2
+--------------------------------------------
+"ant-launcher" 1.7.0 (org.apache.ant:ant-launcher)
+Copyright The Apache Software Foundation
+Apache License 2
+--------------------------------------------
+"Arquillian TestRunner TestNG Container" 1.1.13.Final (org.jboss.arquillian.testng:arquillian-testng-container)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+Apache License 2
+--------------------------------------------
+"Arquillian TestRunner TestNG Core" 1.1.13.Final (org.jboss.arquillian.testng:arquillian-testng-core)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Copyright Red Hat Middleware LLC, and individual contributors
+Apache License 2
+--------------------------------------------
+"Arquillian Test API" 1.1.13.Final (org.jboss.arquillian.test:arquillian-test-api)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+Apache License 2
+--------------------------------------------
+"Arquillian Core API" 1.1.13.Final (org.jboss.arquillian.core:arquillian-core-api)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+Apache License 2
+--------------------------------------------
+"Arquillian Test SPI" 1.1.13.Final (org.jboss.arquillian.test:arquillian-test-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Copyright Red Hat Middleware LLC, and individual contributors
+  Copyright Red Hat, Inc. and/or its affiliates, and individual
+Apache License 2
+--------------------------------------------
+"Arquillian Core SPI" 1.1.13.Final (org.jboss.arquillian.core:arquillian-core-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+Apache License 2
+--------------------------------------------
+"Arquillian Container Test API" 1.1.13.Final (org.jboss.arquillian.container:arquillian-container-test-api)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+Apache License 2
+--------------------------------------------
+"Arquillian Container Test SPI" 1.1.13.Final (org.jboss.arquillian.container:arquillian-container-test-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+Apache License 2
+--------------------------------------------
+"Arquillian Container SPI" 1.1.13.Final (org.jboss.arquillian.container:arquillian-container-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+Apache License 2
+--------------------------------------------
+"ShrinkWrap Descriptors API Base" 2.0.0-alpha-10 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-api-base)
+Copyright Red Hat Middleware LLC, and individual contributors
+Apache License 2
+--------------------------------------------
+"Arquillian Core Implementation Base" 1.1.13.Final (org.jboss.arquillian.core:arquillian-core-impl-base)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+Apache License 2
+--------------------------------------------
+"Arquillian Test Implementation Base" 1.1.13.Final (org.jboss.arquillian.test:arquillian-test-impl-base)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Copyright Red Hat, Inc. and/or its affiliates, and individual
+Apache License 2
+--------------------------------------------
+"Arquillian Container Implementation Base" 1.1.13.Final (org.jboss.arquillian.container:arquillian-container-impl-base)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+Apache License 2
+--------------------------------------------
+"Arquillian Config API" 1.1.13.Final (org.jboss.arquillian.config:arquillian-config-api)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+Apache License 2
+--------------------------------------------
+"Arquillian Config Implementation Base" 1.1.13.Final (org.jboss.arquillian.config:arquillian-config-impl-base)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Copyright JBoss Inc., and individual contributors as indicated
+Apache License 2
+--------------------------------------------
+"ShrinkWrap Descriptors SPI" 2.0.0-alpha-10 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-spi)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+  Copyright Red Hat Middleware LLC, and individual contributors
+Apache License 2
+--------------------------------------------
+"Arquillian Container Test Implementation Base" 1.1.13.Final (org.jboss.arquillian.container:arquillian-container-test-impl-base)
+Copyright Red Hat Inc. and/or its affiliates and other contributors
+Apache License 2
+--------------------------------------------
+"ShrinkWrap Implementation Base" 1.2.6 (org.jboss.shrinkwrap:shrinkwrap-impl-base)
+Copyright Red Hat Middleware LLC, and individual contributors
+Apache License 2
+--------------------------------------------
+"ShrinkWrap SPI" 1.2.6 (org.jboss.shrinkwrap:shrinkwrap-spi)
+Copyright Red Hat Middleware LLC, and individual contributors
+Apache License 2
+--------------------------------------------
+"ShrinkWrap API" 1.2.6 (org.jboss.shrinkwrap:shrinkwrap-api)
+Copyright Red Hat Middleware LLC, and individual contributors
+Apache License 2
+--------------------------------------------
+"testng" 6.9.9 (org.testng:testng)
+Copyright (c) 2004 IBM Corporation and others.
+  Copyright GigaSpaces Technologies Inc.
+Apache License 2
+--------------------------------------------
+"SnakeYAML" 1.15 (org.yaml:snakeyaml)
+Copyright (c) http://www.snakeyaml.org
+Apache License 2
+--------------------------------------------
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+MicroProfile Metrics TCK 2.2 Eclipse Foundation
+Apache 2.0
+Used by: [tck-metrics]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+MicroProfile Metrics TCK
+  Copyright (c) 2017 Contributors to the Eclipse Foundation
+Apache License 2
+--------------------------------------------
+Fourth Party Dependencies
+--------------------------------------------
+"jsoup" 1.7.2 (org.jsoup:jsoup)
+  Copyright © 2009 - 2017 Jonathan Hedley (jonathan@hedley.net)
+  Eclipse Public License - v 1.0 
+--------------------------------------------
+"Aether API" 0.9.0.M2 (org.eclipse.aether:aether-api)
+  Copyright (c) 2010,2013 Sonatype, Inc.
+  Eclipse Public License - v 1.0 
+--------------------------------------------
+"Aether Implementation" 0.9.0.M2 (org.eclipse.aether:aether-impl)
+  Copyright (c) 2010,2013 Sonatype, Inc.
+  Eclipse Public License - v 1.0 
+--------------------------------------------
+"Aether SPI" 0.9.0.M2 (org.eclipse.aether:aether-spi)
+  Copyright (c) 2010,2013 Sonatype, Inc.
+  Eclipse Public License - v 1.0 
+--------------------------------------------
+"Aether Utilities" 0.9.0.M2 (org.eclipse.aether:aether-util)
+  Copyright (c) 2010,2013 Sonatype, Inc.
+  Eclipse Public License - v 1.0 
+--------------------------------------------
+"Aether Connector Wagon" 0.9.0.M2 (org.eclipse.aether:aether-connector-wagon)
+  Copyright (c) 2010,2012 Sonatype, Inc.
+  Eclipse Public License - v 1.0 
+--------------------------------------------
+"JUnit" 4.12 (junit:junit)
+  Copyright (c) JUnit. All Rights Reserved.
+  BSD 2-Clause
+--------------------------------------------
+"Hamcrest integration" 1.2.1 (org.hamcrest:hamcrest-integration)
+  Copyright (c) www.hamcrest.org
+  BSD 2-Clause
+--------------------------------------------
+"Hamcrest library" 1.2.1 (org.hamcrest:hamcrest-library)
+  Copyright (c) www.hamcrest.org
+  BSD 2-Clause
+--------------------------------------------
+"Hamcrest Core" 1.3 (org.hamcrest:hamcrest-core)
+  Copyright (c) www.hamcrest.org
+  BSD 2-Clause
+--------------------------------------------
+The 2-Clause BSD License
+SPDX short identifier: BSD-2-Clause
+
+Further resources on the 2-clause BSD license
+Note: This license has also been called the "Simplified BSD License" and the
+"FreeBSD License". See also the 3-clause BSD License.
+
+Copyright <YEAR> <COPYRIGHT HOLDER>
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------
+"MicroProfile Metrics API-TCK" 1.1 (org.eclipse.microprofile.metrics:microprofile-metrics-api-tck)
+"MicroProfile Metrics REST-TCK" 1.1 (org.eclipse.microprofile.metrics:microprofile-metrics-rest-tck)
+  Copyright (c) 2017 Contributors to the Eclipse Foundation
+  Copyright © 2013 Antonin Stefanutti (antonin.stefanutti@gmail.com)
+  Apache License 2
+--------------------------------------------
+"REST Assured" 2.4.0 (com.jayway.restassured:rest-assured)
+  Copyright 2011,2014 the original author or authors.
+  Apache License 2
+--------------------------------------------
+"Groovy" 2.3.7 (org.codehaus.groovy:groovy)
+  Copyright 2003-2014 the original author or authors.
+  Copyright (c) 2004 IBM Corporation and others.
+  Apache License 2
+--------------------------------------------
+"Groovy" 2.3.7 (org.codehaus.groovy:groovy-xml)
+  Copyright 2003-2014 the original author or authors.
+  Apache License 2
+--------------------------------------------
+"Commons Logging" 1.1.3 (commons-logging:commons-logging)
+  Copyright 2003-2013 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"Commons Codec" 1.6 (commons-codec:commons-codec)
+  Copyright (C) 2002 Kevin Atkinson (kevina@gnu.org). Verbatim copying
+  Copyright 2002-2011 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"TagSoup" 1.2.1 (org.ccil.cowan.tagsoup:tagsoup)
+  Copyright 2002-2008 by John Cowan
+  Apache License 2
+--------------------------------------------
+"json-path" 2.4.0 (com.jayway.restassured:json-path)
+  Copyright 2013 the original author or authors.
+  Apache License 2
+--------------------------------------------
+"Groovy" 2.3.7 (org.codehaus.groovy:groovy-json)
+  Copyright 2003-2014 the original author or authors.
+  Apache License 2
+--------------------------------------------
+"rest-assured-common" 2.4.0 (com.jayway.restassured:rest-assured-common)
+  Copyright 2013 the original author or authors.
+  Apache License 2
+--------------------------------------------
+"xml-path" 2.4.0 (com.jayway.restassured:xml-path)
+  Copyright 2013 the original author or authors.
+  Apache License 2
+--------------------------------------------
+"Apache Commons Lang" 3.3.2 (org.apache.commons:commons-lang3)
+  Copyright 2001-2014 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"jackson-databind" 2.8.6 (com.fasterxml.jackson.core:jackson-databind)
+  Copyright (c) Tatu Saloranta, tatu.saloranta@iki.f
+  Apache License 2
+--------------------------------------------
+"Jackson-annotations" 2.8.0 (com.fasterxml.jackson.core:jackson-annotations)
+  No copyright in source code or on pages, part of FasterXML LLC code (https://github.com/FasterXML)
+  Apache License 2
+--------------------------------------------
+"Jackson-core" 2.8.6 (com.fasterxml.jackson.core:jackson-core)
+  Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
+  Apache License 2
+--------------------------------------------
+"ShrinkWrap Resolver Maven Implementation" 2.1.1 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-impl-maven)
+  Copyright 2009,2014 Red Hat Middleware LLC, and individual contributors
+  Copyright (c) 2010 Sonatype, Inc. All rights reserved.
+  Copyright 2013 Red Hat Inc. and/or its affiliates and other contributors
+  Apache License 2
+--------------------------------------------
+"ShrinkWrap Resolver Maven API" 2.1.1 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-api-maven)
+  Copyright 2009,2013 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"ShrinkWrap Resolver API" 2.1.1 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-api)
+  Copyright 2009,2013 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"ShrinkWrap Resolver Maven SPI" 2.1.1 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-spi-maven)
+  Copyright 2012, Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"ShrinkWrap Resolver SPI" 2.1.1 (org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-spi)
+  Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"Maven Aether Provider" 3.1.1 (org.apache.maven:maven-aether-provider)
+  Copyright 2001-2013 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"Maven Model" 3.1.1 (org.apache.maven:maven-model)
+  Copyright 2001-2013 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"Maven Model Builder" 3.1.1 (org.apache.maven:maven-model-builder)
+  Copyright 2001-2013 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"Plexus :: Component Annotations" 1.5.5 (org.codehaus.plexus:plexus-component-annotations)
+  Copyright (C) 2007 the original author or authors.
+  Apache License 2
+--------------------------------------------
+"Maven Repository Metadata Model" 3.1.1 (org.apache.maven:maven-repository-metadata)
+  Copyright 2001-2013 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"Maven Settings" 3.1.1 (org.apache.maven:maven-settings)
+  Copyright 2001-2013 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"Maven Settings Builder" 3.1.1 (org.apache.maven:maven-settings-builder)
+  Copyright 2001-2013 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"Plexus Interpolation API" 1.19 (org.codehaus.plexus:plexus-interpolation)
+  Copyright 2001-2009 Codehaus Foundation.
+  Copyright (c) 2004, The Codehaus
+  Copyright 2001-2004 The Apache Software Foundation.
+  Copyright 2007 The Codehaus Foundation.
+  Copyright (c) 2001-2003 The Apache Software Foundation.  All rights
+  Apache License 2
+--------------------------------------------
+"Plexus Common Utilities" 3.0.15 (org.codehaus.plexus:plexus-utils)
+  Copyright (c) 2003 Extreme! Lab, Indiana University. All rights reserved.
+  Copyright (c) 2000,2003 The Apache Software Foundation.  All rights
+  Copyright (c) 2001- 2003, ThoughtWorks, Inc.
+  Copyright (C) 2003 The Trustees of Indiana University.
+  Copyright ,2011 The Codehaus Foundation.
+  Copyright 2003-2004 The Apache Software Foundation.
+  Copyright 2004 Sun Microsystems, Inc.
+  Copyright (c) 2003, ThoughtWorks, Inc.
+  Apache License 2
+--------------------------------------------
+"Plexus Security Dispatcher Component" 1.3 (org.sonatype.plexus:plexus-sec-dispatcher)
+  Copyright (c) 2008 Sonatype, Inc. All rights reserved.
+  Apache License 2
+--------------------------------------------
+"Plexus Cipher: encryption/decryption Component" 1.4 (org.sonatype.plexus:plexus-cipher)
+  Copyright (c) 2008 Sonatype, Inc. All rights reserved.
+  Apache License 2
+--------------------------------------------
+"Apache Maven Wagon :: API" 2.6 (org.apache.maven.wagon:wagon-provider-api)
+  Copyright 2003-2013 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"Apache Maven Wagon :: Providers :: File Provider" 2.6 (org.apache.maven.wagon:wagon-file)
+  Copyright 2003-2013 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"Commons Lang" 2.6 (commons-lang:commons-lang)
+  Copyright 2001-2011 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"Apache Maven Wagon :: Providers :: Lightweight HTTP Provider" 2.6 (org.apache.maven.wagon:wagon-http-lightweight)
+  Copyright 2003-2013 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"Apache Maven Wagon :: Providers :: HTTP Shared Library" 2.6 (org.apache.maven.wagon:wagon-http-shared)
+  Copyright 2003-2013 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"Commons IO" 2.2 (commons-io:commons-io)
+  Copyright 2002-2012 The Apache Software Foundation
+  Apache License 2
+--------------------------------------------
+"Arquillian TestRunner JUnit Container" 1.1.8.Final (org.jboss.arquillian.junit:arquillian-junit-container)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2009, Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"Arquillian TestRunner JUnit Core" 1.1.8.Final (org.jboss.arquillian.junit:arquillian-junit-core)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2009, Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"Arquillian Test API" 1.1.8.Final (org.jboss.arquillian.test:arquillian-test-api)
+  Copyright 2010, Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"Arquillian Core API" 1.1.8.Final (org.jboss.arquillian.core:arquillian-core-api)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2009,2010 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"Arquillian Test SPI" 1.1.8.Final (org.jboss.arquillian.test:arquillian-test-spi)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2009,2010 Red Hat Middleware LLC, and individual contributors
+  Copyright 2014,2015 Red Hat, Inc. and/or its affiliates, and individual
+  Apache License 2
+--------------------------------------------
+"Arquillian Core SPI" 1.1.8.Final (org.jboss.arquillian.core:arquillian-core-spi)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2009,2010 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"Arquillian Container Test API" 1.1.8.Final (org.jboss.arquillian.container:arquillian-container-test-api)
+  Copyright 2009,2010 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"ShrinkWrap API" 1.2.2 (org.jboss.shrinkwrap:shrinkwrap-api)
+  Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"Arquillian Container Test SPI" 1.1.8.Final (org.jboss.arquillian.container:arquillian-container-test-spi)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2008,2010 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"Arquillian Container SPI" 1.1.8.Final (org.jboss.arquillian.container:arquillian-container-spi)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2009,2010 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"ShrinkWrap Descriptors API Base" 2.0.0-alpha-7 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-api-base)
+  Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"Arquillian Core Implementation Base" 1.1.8.Final (org.jboss.arquillian.core:arquillian-core-impl-base)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2009,2010 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"Arquillian Test Implementation Base" 1.1.8.Final (org.jboss.arquillian.test:arquillian-test-impl-base)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2014, Red Hat, Inc. and/or its affiliates, and individual
+  Copyright 2009,2010 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"Arquillian Container Implementation Base" 1.1.8.Final (org.jboss.arquillian.container:arquillian-container-impl-base)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2009,2013 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"Arquillian Config API" 1.1.8.Final (org.jboss.arquillian.config:arquillian-config-api)
+  Copyright 2011,2013 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2010, Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"Arquillian Config Implementation Base" 1.1.8.Final (org.jboss.arquillian.config:arquillian-config-impl-base)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2010,2011 Red Hat Middleware LLC, and individual contributors
+  Copyright 2005, JBoss Inc., and individual contributors as indicated
+  Apache License 2
+--------------------------------------------
+"ShrinkWrap Descriptors SPI" 2.0.0-alpha-7 (org.jboss.shrinkwrap.descriptors:shrinkwrap-descriptors-spi)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"Arquillian Container Test Implementation Base" 1.1.8.Final (org.jboss.arquillian.container:arquillian-container-test-impl-base)
+  Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
+  Copyright 2009,2013 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"ShrinkWrap Implementation Base" 1.2.2 (org.jboss.shrinkwrap:shrinkwrap-impl-base)
+  Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"ShrinkWrap SPI" 1.2.2 (org.jboss.shrinkwrap:shrinkwrap-spi)
+  Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
+  Apache License 2
+--------------------------------------------
+"MicroProfile Config API" 1.1 (org.eclipse.microprofile.config:microprofile-config-api)
+  Copyright (c) 2009-2017 Contributors to the Eclipse Foundation
+  Apache License 2
+--------------------------------------------
+"org.osgi:org.osgi.annotation.versioning" 1.0.0 (org.osgi:org.osgi.annotation.versioning)
+  Copyright (c) OSGi Alliance (2013, 2014). All Rights Reserved.
+  Copyright (c) OSGi Alliance (2013). All Rights Reserved.
+  Apache License 2
+--------------------------------------------
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+OkHttp 3.14.1 Square, Inc.
+Apache 2.0
+Used by: [bookstore-se]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+OkHttp (com.squareup.okhttp3:okhttp)
+  Copyright (C) 2012,2019 Square, Inc.
+  Copyright 2013 Twitter, Inc.
+  Copyright (C) 2010,2012 The Android Open Source Project
+  Apache License 2
+-------------------------------------------
+Fourth Party Dependencies
+--------------------------------------------
+"Okio" 1.17.2 (com.squareup.okio:okio)
+  Copyright 2014 Square Inc.
+  Copyright (C) 2014,2019 Square, Inc.
+Apache License 2.0
+  
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Restito 0.9.1 Mark Kotsur
+MIT
+Used by: [helidon-config, helidon-config-tests-integration-tests]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+Copyright (C) 2015 Restito contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+--------------------------------------------
+Fourth Party Dependencies
+--------------------------------------------
+"ASM Core" 5.0.3 (org.ow2.asm:asm)
+Copyright (c) INRIA, France Telecom
+  Copyright (c) Eugene Kuleshov
+
+Copyright (c) 2000-2011 INRIA, France Telecom
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holders nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------
+"JUnit" 4.12 (junit:junit)
+Copyright (c) JUnit. All Rights Reserved.
+Eclipse Public License - v 1.0 THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE
+TERMS OF THIS ECLIPSE PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR
+DISTRIBUTION OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS
+AGREEMENT.
+--------------------------------------------
+"Hamcrest Core" 1.3 (org.hamcrest:hamcrest-core)
+Copyright (c) www.hamcrest.org
+The 2-Clause BSD License
+SPDX short identifier: BSD-2-Clause
+
+Further resources on the 2-clause BSD license
+Note: This license has also been called the "Simplified BSD License" and the
+"FreeBSD License". See also the 3-clause BSD License.
+
+Copyright <YEAR> <COPYRIGHT HOLDER>
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------
+"SLF4J API Module" 1.7.21 (org.slf4j:slf4j-api)
+Copyright (c) QOS.ch
+
+The MIT License SPDX short identifier: MIT
+
+Further resources on the MIT License Copyright <YEAR> <COPYRIGHT HOLDER>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+--------------------------------------------
+"Json Path" 2.1.0 (com.jayway.jsonpath:json-path)
+Copyright the original author or authors.
+Apache License 2.0
+--------------------------------------------
+"JSON Small and Fast Parser" 2.2 (net.minidev:json-smart)
+Copyright JSON-SMART authors
+Apache License 2.0
+--------------------------------------------
+"ASM based accessors helper used by json-smart" 1.1 (net.minidev:accessors-smart)
+Copyright JSON-SMART authors
+Apache License 2.0
+--------------------------------------------
+"Apache MINA Core" 2.0.13 (org.apache.mina:mina-core)
+Copyright (c) Eric Glass Permission to use, copy, modify, and distribute
+Apache License 2.0
+--------------------------------------------
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+mockito-core 2.23.4 Mockito
+MIT
+Used by: Many
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+mockito-core (org.mockito:mockito-core:2.23.0)
+The MIT License
+
+Copyright (c) 2007 Mockito contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+======================================================================
+FOURTH PARTY LIBRARIES
+Byte Buddy (without dependencies) (net.bytebuddy:byte-buddy:1.9.0 - http://bytebuddy.net/byte-buddy)
+Byte Buddy Java agent (net.bytebuddy:byte-buddy-agent:1.9.0 - http://bytebuddy.net/byte-buddy-agent)
+Objenesis (org.objenesis:objenesis:2.6 - http://objenesis.org)
+Apache License 2.0
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+com.datastax.cassandra:cassandra-driver-core 3.4.0
+Used by: [helidon-examples-todo-backend]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Copyright DataStax, Inc
+Apache License Version 2.0
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+com.github.akarnokd:rxjava2-jdk9-interop 0.1.0
+Used by: [helidon-config-tests-integration-tests]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Copyright 2016-2020 David Karnok
+Apache License 2.0
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+io.netty:netty-tcnative-boringssl-static 2.0.26.Final
+Used by: [helidon-grpc-client, helidon-grpc-server]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Copyright 2016 The Netty Project
+Apache License 2.0
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+io.reactivex.rxjava2:rxjava 2.0.8
+Used by: [helidon-grpc-client, helidon-microprofile-grpc-server, helidon-config-tests-integration-tests, helidon-grpc-server]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Copyright (c) 2016-present, RxJava Contributors.
+Apache License 2.0
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+io.zipkin.zipkin2:zipkin-junit 2.12.5
+Used by: [helidon-grpc-server]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Copyright 2015-2020 The OpenZipkin Authors
+Apache License 2.0
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+org.awaitility:awaitility 3.1.6
+Used by: [helidon-common-configurable]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Copyright 2010 the original author or authors.
+Copyright 2011 the original author or authors.
+Copyright 2015 the original author or authors.
+Copyright 2016 the original author or authors.
+Apache License 2.0
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+org.eclipse.microprofile.health:microprofile-health-tck 2.1
+Used by: [tck-health]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Copyright (c) 2017,2019 Contributors to the Eclipse Foundation
+Apache License 2.0
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+org.hamcrest:hamcrest-all 1.3
+Used by: Many
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+BSD License
+
+Copyright (c) 2000-2015 www.hamcrest.org
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+Redistributions of source code must retain the above copyright notice, this list of
+conditions and the following disclaimer. Redistributions in binary form must reproduce
+the above copyright notice, this list of conditions and the following disclaimer in
+the documentation and/or other materials provided with the distribution.
+
+Neither the name of Hamcrest nor the names of its contributors may be used to endorse
+or promote products derived from this software without specific prior written
+permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
+WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+org.junit.jupiter:junit-jupiter-api 5.6.2
+Used by: [helidon-quickstart-se]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Copyright 2015-2020 the original author or authors.
+Eclipse Public License - v 2.0
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+org.reactivestreams:reactive-streams-tck 1.0.2
+Used by: [helidon-common-reactive]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Licensed under Public Domain (CC0)
+
+To the extent possible under law, the person who associated CC0 with
+this code has waived all copyright and related or neighboring
+rights to this code.
+
+You should have received a copy of the CC0 legalcode along with this
+work. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+org.testng:testng 6.13.1
+Used by: [tck-config, tck-rest-client, tck-openapi, tck-health, tck-fault-tolerance, tck-metrics2, tck-jwt-auth, tck-opentracing, tck-metrics, tck-project]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Copyright 2015 the original author or authors.
+Copyright 2011 Wolfgang Baltes
+Apache License 2.0
