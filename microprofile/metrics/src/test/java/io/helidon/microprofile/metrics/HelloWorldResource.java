@@ -41,7 +41,9 @@ import java.util.concurrent.TimeUnit;
 public class HelloWorldResource {
 
     static final String SLOW_RESPONSE = "At last";
-    static final int SLOW_DELAY_SECS = 5;
+
+    // In case pipeline runs need a different time
+    static final int SLOW_DELAY_SECS = Integer.getInteger("helidon.asyncSimplyTimedDelaySeconds", 2);
 
     private static ExecutorService executorService = Executors.newSingleThreadExecutor();
 
