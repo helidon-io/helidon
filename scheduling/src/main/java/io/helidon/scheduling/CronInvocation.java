@@ -18,7 +18,7 @@
 package io.helidon.scheduling;
 
 /**
- * Specific method invocation metadata for method scheduled with {@link io.helidon.microprofile.scheduling.Scheduled}.
+ * Specific method invocation metadata for scheduled task.
  */
 public interface CronInvocation extends Invocation {
 

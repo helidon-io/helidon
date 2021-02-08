@@ -19,7 +19,7 @@ package io.helidon.scheduling;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Specific method invocation metadata for method scheduled with {@link io.helidon.microprofile.scheduling.FixedRate}.
+ * Specific method invocation metadata for scheduled task.
  */
 public interface FixedRateInvocation extends Invocation {
 
