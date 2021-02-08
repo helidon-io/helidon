@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,9 @@ import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
+import io.helidon.common.servicesupport.cdi.CdiExtensionBase;
+import io.helidon.common.servicesupport.cdi.LookupResult;
+import io.helidon.common.servicesupport.cdi.MatchingType;
 import io.helidon.metrics.Registry;
 
 import org.eclipse.microprofile.metrics.Metric;
@@ -40,9 +43,8 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 
-import static io.helidon.microprofile.metrics.MetricUtil.MatchingType;
+import static io.helidon.common.servicesupport.cdi.LookupResult.lookupAnnotation;
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
-import static io.helidon.microprofile.metrics.MetricUtil.lookupAnnotation;
 import static io.helidon.microprofile.metrics.MetricUtil.tags;
 
 /**
@@ -138,11 +140,11 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
      * @return The class.
      */
     protected <E extends Member & AnnotatedElement> Class<?> getClass(InvocationContext context, E element) {
-        return context.getTarget() != null ? MetricsCdiExtension.getRealClass(context.getTarget()) : element.getDeclaringClass();
+        return context.getTarget() != null ? CdiExtensionBase.getRealClass(context.getTarget()) : element.getDeclaringClass();
     }
 
     private <E extends Member & AnnotatedElement> Object called(InvocationContext context, E element) throws Exception {
-        MetricUtil.LookupResult<A> lookupResult = lookupAnnotation(element, annotationClass, getClass(context, element));
+        LookupResult<A> lookupResult = lookupAnnotation(element, annotationClass, getClass(context, element));
         if (lookupResult != null) {
             T metricInstance = getMetricForElement(element, getClass(context, element), lookupResult);
 
@@ -205,7 +207,7 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
      * @return the metric to be updated for the annotated element being invoked
      */
     private <E extends Member & AnnotatedElement> T getMetricForElement(E element, Class<?> clazz,
-            MetricUtil.LookupResult<A> lookupResult) {
+            LookupResult<A> lookupResult) {
 
         T metric = elementMetricMap.computeIfAbsent(element, e -> createMetricForElement(element, clazz, lookupResult));
         return metric;
@@ -221,7 +223,7 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
      * @return the metric retrieved from the registry and added to the site-to-metric map
      */
     private <E extends Member & AnnotatedElement> T createMetricForElement(E element, Class<?> clazz,
-            MetricUtil.LookupResult<A> lookupResult) {
+            LookupResult<A> lookupResult) {
 
         /*
          * Build the metric name that should exist for this annotation site and look up all metric IDs associated with that name.

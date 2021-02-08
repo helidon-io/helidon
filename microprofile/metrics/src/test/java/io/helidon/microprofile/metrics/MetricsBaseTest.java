@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.microprofile.metrics;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 
+import io.helidon.common.servicesupport.cdi.CdiExtensionBase;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -42,7 +43,7 @@ public class MetricsBaseTest {
     @SuppressWarnings("unchecked")
     <T extends Metric> T getMetric(Object bean, String name) {
         MetricID metricName = new MetricID(String.format(METRIC_NAME_TEMPLATE,
-                MetricsCdiExtension.getRealClass(bean).getName(),        // CDI proxies
+                CdiExtensionBase.getRealClass(bean).getName(),        // CDI proxies
                 name));
         return (T) getMetricRegistry().getMetrics().get(metricName);
     }

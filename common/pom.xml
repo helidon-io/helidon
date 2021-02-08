@@ -41,5 +41,6 @@
         <module>mapper</module>
         <module>media-type</module>
         <module>service-support</module>
+        <module>service-support-cdi</module>
     </modules>
 </project>

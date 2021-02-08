@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.servicesupport.cdi.LookupResult;
+import io.helidon.common.servicesupport.cdi.MatchingType;
 import io.helidon.grpc.metrics.GrpcMetrics;
 import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
@@ -28,7 +30,6 @@ import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
 import io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
 import io.helidon.microprofile.grpc.server.GrpcServiceBuilder;
-import io.helidon.microprofile.metrics.MetricUtil;
 import io.helidon.microprofile.metrics.MetricsCdiExtension;
 
 import org.eclipse.microprofile.metrics.MetricType;
@@ -108,7 +109,7 @@ public class MetricsConfigurer
             String grpcMethodName = GrpcServiceBuilder.determineMethodName(annotatedMethod, rpcMethod);
             String metricName = getMetricName(method,
                                               annotatedClass,
-                                              MetricUtil.MatchingType.METHOD,
+                                              MatchingType.METHOD,
                                               name,
                                               absolute);
 
@@ -117,8 +118,8 @@ public class MetricsConfigurer
                                                        builder.name(),
                                                        grpcMethodName));
 
-            MetricUtil.LookupResult<? extends Annotation> lookupResult
-                    = MetricUtil.lookupAnnotation(method, annotation.annotationType(), annotatedClass);
+            LookupResult<? extends Annotation> lookupResult
+                    = LookupResult.lookupAnnotation(method, annotation.annotationType(), annotatedClass);
 
             if (annotation instanceof Metered) {
                 Metered metered = (Metered) annotation;
