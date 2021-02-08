@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,5 +65,17 @@ class TenantTest {
             String entityValue = r.readEntity(String.class);
             assertThat(entityValue, is(paramValue));
         }
+    }
+
+    @Test
+    public void test4() {
+        Response r;
+        r = baseTarget.path("test4")
+                .queryParam("param1", "1")
+                .request()
+                .get();
+        assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
+        String entityValue = r.readEntity(String.class);
+        assertThat(entityValue, is("1"));
     }
 }

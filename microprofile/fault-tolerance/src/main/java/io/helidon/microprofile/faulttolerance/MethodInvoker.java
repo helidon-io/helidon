@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -587,21 +587,9 @@ class MethodInvoker implements FtSupplier<Object> {
         if (introspector.hasFallback()) {
             Fallback<Object> fallback = Fallback.builder()
                     .fallback(throwable -> {
-                        try {
-                            // Reference request context if request scope is active
-                            if (requestScope != null) {
-                                requestContext = requestScope.referenceCurrent();
-                            }
-
-                            // Execute callback logic
-                            CommandFallback cfb = new CommandFallback(context, introspector, throwable);
-                            return toCompletionStageSupplier(cfb::execute).get();
-                        } finally {
-                            // Release request context if referenced
-                            if (requestContext != null) {
-                                requestContext.release();
-                            }
-                        }
+                        // Execute callback logic
+                        CommandFallback cfb = new CommandFallback(context, introspector, throwable);
+                        return toCompletionStageSupplier(cfb::execute).get();
                     })
                     .applyOn(mapTypes(introspector.getFallback().applyOn()))
                     .skipOn(mapTypes(introspector.getFallback().skipOn()))
