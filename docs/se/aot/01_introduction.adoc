@@ -92,6 +92,7 @@ for native image.
 |✅ |{nbsp} |Metrics |{nbsp}
 |✅ |{nbsp} |Multi-part |{nbsp}
 |✅ |{nbsp} |Security |{nbsp}
+|✅ |{nbsp} |Scheduling |{nbsp}
 |✅ |{nbsp} |Tracing |{nbsp}
 |✅ |WebServer |WebServer |{nbsp}
 |✅ |{nbsp} |Access Log |{nbsp}

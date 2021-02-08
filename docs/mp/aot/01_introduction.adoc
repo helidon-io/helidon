@@ -89,6 +89,7 @@ for native image.
 |✅ |Web Client |Web Client |{nbsp}
 |✅ |{nbsp} |Metrics |{nbsp}
 |✅ |{nbsp} |Security |{nbsp}
+|✅ |{nbsp} |Scheduling |{nbsp}
 |✅ |{nbsp} |Tracing |{nbsp}
 |❓ |Websocket |Websocket |Not yet tested.
 |❓ |gRPC Server |gRPC Server |Not yet tested.
