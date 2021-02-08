@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,25 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
+module io.helidon.common.servicesupport {
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.webserver;
+    requires transitive io.helidon.webserver.cors;
 
-/**
- * Helidon Metrics implementation.
- */
-module io.helidon.metrics {
-    requires java.logging;
+    exports io.helidon.common.servicesupport;
 
-    requires io.helidon.common;
-    requires io.helidon.webserver.cors;
-
-    requires transitive microprofile.metrics.api;
-    requires java.management;
-    requires io.helidon.webserver;
-    requires io.helidon.media.jsonp;
-    requires java.json;
-    requires io.helidon.config.mp;
-    requires microprofile.config.api;
-    requires io.helidon.common.servicesupport;
-
-    exports io.helidon.metrics;
 }
