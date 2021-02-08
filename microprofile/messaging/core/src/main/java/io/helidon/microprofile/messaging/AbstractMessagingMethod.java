@@ -31,6 +31,7 @@ import io.helidon.config.Config;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 
 abstract class AbstractMessagingMethod implements MessagingMethod {
 
@@ -46,6 +47,7 @@ abstract class AbstractMessagingMethod implements MessagingMethod {
     private BiConsumer<MessagingMethod, Object> afterInvokeCallback;
     private BiConsumer<MessagingMethod, Message<?>> beforeInvokeCallback;
     private FailureCallback onFailureCallback;
+    private Config config;
 
 
     AbstractMessagingMethod(Method method, Errors.Collector errors) {
@@ -77,6 +79,7 @@ abstract class AbstractMessagingMethod implements MessagingMethod {
     }
 
     void init(BeanManager beanManager, Config config) {
+        this.config = config;
         this.beanInstance = ChannelRouter.lookup(bean, beanManager);
     }
 
@@ -110,6 +113,20 @@ abstract class AbstractMessagingMethod implements MessagingMethod {
 
     public String getOutgoingChannelName() {
         return outgoingChannelName;
+    }
+
+    @Override
+    public org.eclipse.microprofile.config.Config getOutgoingChannelConfig() {
+        return AdHocConfigBuilder
+                .from(this.config.get(ConnectorFactory.OUTGOING_PREFIX + getOutgoingChannelName()))
+                .build();
+    }
+
+    @Override
+    public org.eclipse.microprofile.config.Config getIncomingChannelConfig() {
+        return AdHocConfigBuilder
+                .from(this.config.get(ConnectorFactory.INCOMING_PREFIX + getIncomingChannelName()))
+                .build();
     }
 
     void setIncomingChannelName(String incomingChannelName) {

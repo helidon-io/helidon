@@ -78,10 +78,6 @@ class UniversalChannel {
         return ready;
     }
 
-    Config getConfig(){
-        return this.config;
-    }
-
     void connect() {
         StringBuilder connectMessage = new StringBuilder("Connecting channel ")
                 .append(name).append(" with outgoing method ");

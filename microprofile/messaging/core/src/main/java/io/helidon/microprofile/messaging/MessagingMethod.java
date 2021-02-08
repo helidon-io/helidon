@@ -19,6 +19,7 @@ package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.Method;
 
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 
 /**
@@ -55,6 +56,20 @@ public interface MessagingMethod {
      * @return name of the outgoing channel
      */
     String getOutgoingChannelName();
+
+    /**
+     * Returns outgoing config of this concrete channel.
+     *
+     * @return detached sub config of specific channel
+     */
+    Config getOutgoingChannelConfig();
+
+    /**
+     * Returns incoming config of this concrete channel.
+     *
+     * @return detached sub config of specific channel
+     */
+    Config getIncomingChannelConfig();
 
     /**
      * Resolved messaging method signature type.
