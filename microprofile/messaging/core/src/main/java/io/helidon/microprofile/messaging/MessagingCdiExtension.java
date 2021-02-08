@@ -17,6 +17,7 @@
 package io.helidon.microprofile.messaging;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -34,13 +35,14 @@ import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.WithAnnotations;
 
 import io.helidon.common.Errors;
+import io.helidon.config.Config;
+
+import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
-
-import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 /**
  * MicroProfile Reactive Messaging CDI Extension.
@@ -49,6 +51,17 @@ public class MessagingCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(MessagingCdiExtension.class.getName());
 
     private final ChannelRouter channelRouter = new ChannelRouter();
+
+    /**
+     * Get config of given channel merged with referenced connector config.
+     *
+     * @param channelName name of the messaging channel
+     * @return merged config of desired channel or empty optional
+     */
+    public Optional<Config> channelConfig(String channelName) {
+        return Optional.ofNullable(channelRouter.getChannelMap().get(channelName))
+                .map(UniversalChannel::getConfig);
+    }
 
     /**
      * Get names of all channels accompanied by boolean if cancel or onError signal has been intercepted in it.
