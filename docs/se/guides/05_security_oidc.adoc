@@ -35,8 +35,8 @@ to secure your application with OIDC security provider.
 * <<Introduction,Introduction>>
 * <<Keycloak Installation,Keycloak Installation>>
 * <<Set up Keycloak,Set up Keycloak>>
-* <<Test Keycloak process with Postman,Test Keycloak process with Postman>>
 * <<Set up Helidon,Set up Helidon>>
+* <<Test Keycloak process with Postman,Test Keycloak process with Postman>>
 * <<Restrict access to a specific role,Restrict access to a specific role>>
 
 === Introduction
@@ -206,134 +206,6 @@ A new tab named `Credentials` is created. Click on it to access this new tab.
 Keycloak is now configured and ready. Keep keycloak running on your terminal and open a new tab to
 set up Helidon.
 
-=== Test Keycloak process with Postman
-
-Keycloak supports many authentication and authorization flows and only two of them will be shown. This chapter describes
-the different way to get an access token, refresh token and/or identity token. The identity token contains information
-about the user. Postman will help us to display such information from the token. The access token contains access
-information that the application can use to determine what resources the user is allowed to access. Once expired,
-the refresh token allows the application to obtain a new access token.As these token contains sensitive information,
-they are valid for a very short period. It is possible to make them last longer in order to let you manipulate them
-with Postman. To do so:
-
-* Go to the admin console
-* Click on the `Realm Setting` in the left menu
-* Navigate to the `Tokens` tab
-
-You can increase the access token lifespan.
-
-==== Authorization Code Flow
-
-It is a suitable flow for a browser base application. It is composed of three main steps:
-
-1. The browser visit the application. The user is not logged in, so it redirects the browser to keycloak which require
-username and password for authentication.
-2. Keycloak authenticates the user and return a temporary authorization code as a query parameter in the url.
-3. The authorization code is used to get access and refresh token from keycloak token endpoint.
-
-For the first step, open your favorite browser and copy past into the url:
-`http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/auth?client_id=myClientID&response_type=code`.
-The first part of the url `http:/../auth` is the keycloak endpoint to request an authorization code. Two query
-parameters are provided, the client id and the response type.
-Press enter and Keycloak responds by a different url containing a query parameter `code`. You successfully received
-the authorization code.
-
-In order to achieve the third step, we can use Postman to exchange the authorization code for tokens. In Postman,
-select the Http POST method. Keycloak endpoint to get token is the following:
-`http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token`.
-In the body of the request, select `x-www-form-urlencoded` type. Add the following data:
-
-[source,json]
-.Enter the key:value
-----
-[{"key":"grant_type","value":"authorization_code"},
-{"key":"client_id","value":"myClientID"},
-{"key":"client_secret","value":"client secret"},
-{"key":"code","value":"authorization code"}]
-----
-
-Do not forget to replace the `client secret` by its value (generated during Create a Client), and `authorization code`
-by the code value in the query parameter. Send the request by pressing `Send`. Keycloak returns an access token and
-a refresh token.
-
-[source,json]
-.Expected response:
-----
-{
-    "access_token": "...",
-    "expires_in": 600,
-    "refresh_expires_in": 1800,
-    "refresh_token": "...",
-    "token_type": "bearer",
-    "not-before-policy": 0,
-    "session_state": "1456adab-1e5d-4f6d-bb93-7d4b872a0e3a",
-    "scope": "profile email"
-}
-----
-
-==== Resource Owner Password Credentials Grant (Direct Access Grants)
-
-The Direct Access Grants flow is used by REST clients which wants to request tokens on behalf of a user. It is simply
-one Http POST method containing all information about the client and the user to Keycloak token endpoint.
-
-Use Postman to make this request on behalf of `myuser`. Select the POST method and enter this url:
-`http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token`.
-
-[source,json]
-.Enter the following information:
-----
-[{"key":"client_id","value":"myClientID"},
-{"key":"client_secret","value":"client secret"},
-{"key":"password","value":"password"},
-{"key":"username","value":"myuser"},
-{"key":"scope","value":"openid"},
-{"key":"grant_type","value":"password"}]
-----
-
-Send the request by pressing `Send`. Keycloak responds with access, refresh and identity token.
-
-[source,json]
-.Expected response:
-----
-{
-    "access_token": "...",
-    "expires_in": 600,
-    "refresh_expires_in": 1800,
-    "refresh_token": "...",
-    "token_type": "bearer",
-    "id_token": "...",
-    "not-before-policy": 0,
-    "session_state": "d82bfd33-14df-465d-ad94-e1d7c40e68f3",
-    "scope": "openid profile email"
-}
-----
-
-The access token gives access to keycloak user information endpoint. While the token is still valid, reach this endpoint
-by the following steps.
-
-* Enter this URL `http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/userinfo`.
-* Select POST method.
-* Add `x-www-form-encoded` data with key `access_token` and value the actual token.
-* Press `Send`.
-
-Keycloak return user information in Json format.
-
-[source,json]
-.Expected response:
-----
-{
-    "sub": "fa13dfbb-e0a7-4823-a559-894332c26c6f",
-    "email_verified": false,
-    "name": "Jack Smith",
-    "preferred_username": "myuser",
-    "given_name": "Jack",
-    "family_name": "Smith",
-    "email": "email@outlook.com"
-}
-----
-
-The values can be different according to what user information you entered during user creation.
-
 === Set up Helidon
 
 Use the Helidon SE Maven archetype to create a simple project. It will be used as an example
@@ -389,6 +261,7 @@ security:
       client-secret: "Client secret generated into Keycloak client credential" // <2>
       identity-uri: "http://localhost:8080/auth/realms/myRealm" // <3>
       audience: "account"
+      header-use: "true"
       # proxy-host should be defined if you operate behind a proxy, can be removed otherwise
       proxy-host: ""
       frontend-uri: "http://localhost:7987" // <4>
@@ -483,6 +356,82 @@ now protected, its access is limited, and the tests are not built to take oidc s
 . Press `Ctrl+C` to stop the application.
 
 From the actual settings, the user needs to log in only once, then Keycloak saves all the connection data.
+
+=== Test Keycloak process with Postman
+
+Keycloak supports many authentication and authorization flows and only two of them will be shown. This chapter describes
+the different way to get an access token, refresh token and/or identity token. The identity token contains information
+about the user. The access token contains access information that the application can use to determine what resources
+the user is allowed to access. Once expired, the refresh token allows the application to obtain a new access token.
+As these token contains sensitive information, they are valid for a very short period. It is possible to make them
+last longer in order to let you manipulate them with Postman. To do so:
+
+* Go to the admin console
+* Click on the `Realm Setting` in the left menu
+* Navigate to the `Tokens` tab
+
+You can increase the access token lifespan.
+
+==== Authorization Code Flow
+
+It is a suitable flow for a browser base application. It is composed of three main steps:
+
+1. The browser visit the application. The user is not logged in, so it redirects the browser to keycloak which require
+username and password for authentication.
+2. Keycloak authenticates the user and return a temporary authorization code as a query parameter in the url.
+3. The authorization code is used to get access and refresh token from keycloak token endpoint.
+
+For the first step, open your favorite browser and copy past into the url:
+`http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/auth?client_id=myClientID&response_type=code`.
+The first part of the url `http:/../auth` is the keycloak endpoint to request an authorization code. Two query
+parameters are provided, the client id and the response type.
+Press enter and Keycloak responds by a different url containing a query parameter `code`. You successfully received
+the authorization code.
+
+In order to achieve the third step, we can use Postman to exchange the authorization code for tokens. In Postman,
+select the Http POST method. Keycloak endpoint to get token is the following:
+`http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token`.
+In the body of the request, select `x-www-form-urlencoded` type. Add the following data:
+
+[source,json]
+.Enter the key:value
+----
+[{"key":"grant_type","value":"authorization_code"},
+{"key":"client_id","value":"myClientID"},
+{"key":"client_secret","value":"client secret"},
+{"key":"code","value":"authorization code"}]
+----
+
+Do not forget to replace the `client secret` by its value (generated during Create a Client), and `authorization code`
+by the code value in the query parameter. Send the request by pressing `Send`. Keycloak returns an access token and
+a refresh token.
+
+==== Resource Owner Password Credentials Grant (Direct Access Grants)
+
+The Direct Access Grants flow is used by REST clients which wants to request tokens on behalf of a user.
+Use Postman to make this request on behalf of `myuser`. Select the GET method and enter this url:
+`http://localhost:7987/greet/`. Under `Authorization` tab, select authorization type`OAuth 2.0`. Under it, complete the
+sentence  `Add authorization data to` with `Request Headers`, and fulfil the required fields.
+
+[source,json]
+.Enter the following information:
+----
+[{"key":"Header Prefix","value":"bearer"},
+{"key":"Grant type","value":"Password  Credentials"},
+{"key":"Access Token URL","value":"http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token"},
+{"key":"Client ID","value":"myClientID"},
+{"key":"Client Secret","value":"client secret"},
+{"key":"Username","value":"myuser"},
+{"key":"Password","value":"password"},
+{"key":"Scope","value":"openid"},
+{"key":"Client Authentication","value":"Send as Basic Auth Header"}
+]
+----
+
+Again, make sure to replace `client secret` by the actual client secret. Click on `Get New Access Token`. A pop up
+window appears with Authentication complete, click on proceed to display access, refresh and identity token.
+Copy past the access token to `Access Token` field and press `Send`. Helidon greeting application sends back
+`Hello World !`.
 
 ==== Update tests to the secure environment
 
