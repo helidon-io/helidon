@@ -20,13 +20,12 @@
 
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.applications</groupId>
-        <artifactId>helidon-se</artifactId>
+        <groupId>io.helidon.examples.integrations</groupId>
+        <artifactId>helidon-examples-integrations-project</artifactId>
         <version>2.2.1-SNAPSHOT</version>
-        <relativePath>../../applications/se/pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon.examples.integrations</groupId>
-    <artifactId>helidon-examples-micrometer</artifactId>
+
+    <artifactId>helidon-examples-micrometer-project</artifactId>
     <name>Helidon Micrometer Examples</name>
 
     <packaging>pom</packaging>

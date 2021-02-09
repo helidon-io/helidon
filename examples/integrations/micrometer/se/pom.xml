@@ -26,7 +26,7 @@
         <relativePath>../../../../applications/se/pom.xml</relativePath>
     </parent>
 
-    <groupId>io.helidon.examples</groupId>
+    <groupId>io.helidon.examples.integrations.micrometer-project</groupId>
     <artifactId>helidon-examples-micrometer-se</artifactId>
 
     <name>Helidon SE Examples Micrometer</name>
