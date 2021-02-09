@@ -854,6 +854,11 @@
                 <artifactId>helidon-mp-graal-native-image-extension</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations</groupId>
+                <artifactId>helidon-integrations-micrometer</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- OpenAPI support -->
             <dependency>
                 <groupId>io.helidon.openapi</groupId>
