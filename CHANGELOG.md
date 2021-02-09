@@ -7,7 +7,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [2.2.1-SNAPSHOT]
+## [2.2.1]
 
 2.2.1 is a bugfix release of Helidon. It contains bug fixes, performance fixes and dependency upgrades.
 
@@ -30,8 +30,10 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 - Examples: Fix WebServer Basics example [2634](https://github.com/oracle/helidon/pull/2634)
 - Examples: Fixed different output in DbClient SE archetype [2703](https://github.com/oracle/helidon/pull/2703)
 - Examples: PokemonService template fixed in SE Database Archetype. [2701](https://github.com/oracle/helidon/pull/2701)
+- Fault Tolerance: Do not attempt to access the request context in Fallback callback [2748](https://github.com/oracle/helidon/pull/2748)
 - Jersey: Allow override of Jersey property via config [2737](https://github.com/oracle/helidon/pull/2737)
 - K8s: Update k8s descriptors to avoid using deprecated APIs [2719](https://github.com/oracle/helidon/pull/2719)
+- Metrics: Support async invocations using optional synthetic SimplyTimed behavior [2745](https://github.com/oracle/helidon/pull/2745)
 - Micronaut extensions: micronaut data with ucp [2572](https://github.com/oracle/helidon/pull/2572)
 - Performance: New implementation of LazyValue [2738](https://github.com/oracle/helidon/pull/2738)
 - Performance: Properly release underlying buffer before passing it to WebSocket handler [2715](https://github.com/oracle/helidon/pull/2715)
@@ -1231,7 +1233,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.2.1-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.2.0...HEAD
+[2.2.1]: https://github.com/oracle/helidon/compare/2.2.0...2.2.1
 [2.2.0]: https://github.com/oracle/helidon/compare/2.1.0...2.2.0
 [2.1.0]: https://github.com/oracle/helidon/compare/2.0.2...2.1.0
 [2.0.2]: https://github.com/oracle/helidon/compare/2.0.1...2.0.2
