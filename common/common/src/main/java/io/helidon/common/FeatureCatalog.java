@@ -110,6 +110,10 @@ final class FeatureCatalog {
               "Metrics",
               "Metrics support",
               "Metrics");
+        add("io.helidon.integrations.micrometer",
+                "Micrometer",
+                "Simple Micrometer Support",
+                "Micrometer");
         add("io.helidon.metrics.prometheus",
             FeatureDescriptor.builder()
                     .name("Prometheus")
@@ -325,7 +329,6 @@ final class FeatureCatalog {
                     .flavor(HelidonFlavor.MP)
                     .experimental(true)
         );
-
         /*
          * Common modules
          */
