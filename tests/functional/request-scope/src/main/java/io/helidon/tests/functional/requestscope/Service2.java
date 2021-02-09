@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,15 +24,15 @@ import javax.ws.rs.core.Response;
 
 @RequestScoped
 @Path("/test2")
-public class MultiTenantService2 {
+public class Service2 {
 
     @Inject
-    SomeService2 someService2;
+    private Bean2 bean2;
 
     @GET
     public String getTenantResource() {
         try {
-            String s = someService2.test();
+            String s = bean2.test();
             return s == null ? "" : s;
         } catch (Exception e) {
             // This path implies a CDI exception related to request scope

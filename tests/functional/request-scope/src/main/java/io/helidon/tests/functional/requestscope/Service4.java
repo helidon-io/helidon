@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,25 +19,23 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
 @RequestScoped
-@Path("/test")
-public class MultiTenantService {
+@Path("/test4")
+public class Service4 {
 
     @Inject
-    SomeService someService;
+    private Bean4 bean4;
 
     @GET
-    public String getTenantResource() {
+    public String getTestResource(@QueryParam("param1") String param1) {
         try {
-            return someService.test();
-        } catch (IllegalTenantException e) {
-            return "Expected";
+            return bean4.test(param1);
         } catch (Exception e) {
-            // This path implies a CDI exception related to request scope
-            // See https://github.com/oracle/helidon/issues/2480
+            System.out.println(e.getMessage());
             throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
