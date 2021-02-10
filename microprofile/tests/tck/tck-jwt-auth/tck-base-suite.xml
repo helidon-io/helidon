@@ -70,7 +70,6 @@
             </class>
             <class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.RolesAllowedTest">
                 <methods>
-                    <include name="callEchoSignToken"/>
                     <exclude name="testNeedsGroup1Mapping"/>
                 </methods>
             </class>
