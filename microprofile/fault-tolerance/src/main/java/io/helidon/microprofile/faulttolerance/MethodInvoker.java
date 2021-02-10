@@ -15,9 +15,6 @@
  */
 package io.helidon.microprofile.faulttolerance;
 
-import javax.enterprise.context.control.RequestContextController;
-import javax.enterprise.inject.spi.CDI;
-import javax.interceptor.InvocationContext;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Arrays;
@@ -34,6 +31,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+import javax.enterprise.context.control.RequestContextController;
+import javax.enterprise.inject.spi.CDI;
+import javax.interceptor.InvocationContext;
+
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.reactive.Single;
@@ -47,6 +48,7 @@ import io.helidon.faulttolerance.FtHandlerTyped;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.RetryTimeoutException;
 import io.helidon.faulttolerance.Timeout;
+
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.metrics.Counter;
