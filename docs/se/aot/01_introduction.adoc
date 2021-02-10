@@ -92,7 +92,6 @@ for native image.
 |✅ |{nbsp} |Metrics |{nbsp}
 |✅ |{nbsp} |Multi-part |{nbsp}
 |✅ |{nbsp} |Security |{nbsp}
-|✅ |{nbsp} |Scheduling |{nbsp}
 |✅ |{nbsp} |Tracing |{nbsp}
 |✅ |WebServer |WebServer |{nbsp}
 |✅ |{nbsp} |Access Log |{nbsp}
@@ -108,5 +107,6 @@ for native image.
 |✅ |{nbsp} |Metrics |{nbsp}
 |✅ |gRPC Client |gRPC Client |Since GraalVM 21.0.0
 |✅ |{nbsp} |Metrics |{nbsp}
+|✅ |Scheduling |Scheduling |{nbsp}
 |===
 

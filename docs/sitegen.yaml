@@ -185,6 +185,14 @@ backend:
               items:
                 - includes:
                     - "se/security/*.adoc"
+            - title: "Scheduling"
+              pathprefix: "/se/scheduling"
+              glyph:
+                type: "icon"
+                value: "access_alarm"
+              items:
+                - includes:
+                    - "se/scheduling/*.adoc"
             - title: "Tracing"
               pathprefix: "/se/tracing"
               glyph:
