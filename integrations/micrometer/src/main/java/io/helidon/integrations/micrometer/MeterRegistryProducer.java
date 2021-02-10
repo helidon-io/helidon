@@ -27,6 +27,8 @@ import io.micrometer.core.instrument.MeterRegistry;
 @ApplicationScoped
 final class MeterRegistryProducer {
 
+    static final String CONFIG_KEY = "micrometer";
+
     /*
      * Also maintains a lazy refc to the single {@code MicrometerSupport} instance.
      */
@@ -51,12 +53,12 @@ final class MeterRegistryProducer {
     }
 
     private static MicrometerSupport createMicrometerSupport() {
-        Config config = Config.create();
+        Config micrometerConfig = Config.create().get(CONFIG_KEY);
         MeterRegistryFactory factory = MeterRegistryFactory.getInstance(
                 MeterRegistryFactory.builder()
-                    .config(config));
+                    .config(micrometerConfig));
         MicrometerSupport result = MicrometerSupport.builder()
-                .config(config)
+                .config(micrometerConfig)
                 .meterRegistryFactorySupplier(factory)
                 .build();
 

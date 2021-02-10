@@ -131,10 +131,6 @@ public class MicrometerSupport extends ServiceSupportBase<MicrometerSupport, Mic
             super(Builder.class, DEFAULT_CONTEXT);
         }
 
-        /**
-         * Available built-in Micrometer meter registry types.
-         */
-
         @Override
         public MicrometerSupport build() {
             if (null == meterRegistryFactorySupplier) {
