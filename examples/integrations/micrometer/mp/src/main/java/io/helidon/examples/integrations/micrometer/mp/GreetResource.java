@@ -33,6 +33,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -58,7 +59,11 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 @RequestScoped
 public class GreetResource {
 
-    private static final String GETS_COUNTER_NAME = "getsCount";
+    private static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
+    private static final String PERSONALIZED_GETS_COUNTER_DESCRIPTION = "Counts personalized GET operations";
+    private static final String GETS_TIMER_NAME = "allGets";
+    private static final String GETS_TIMER_DESCRIPTION = "Tracks all GET operations";
+
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
@@ -85,7 +90,7 @@ public class GreetResource {
     @SuppressWarnings("checkstyle:designforextension")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Counted(value = GETS_COUNTER_NAME)
+    @Timed(value = GETS_TIMER_NAME, description = GETS_TIMER_DESCRIPTION, histogram = true)
     public JsonObject getDefaultMessage() {
         return createResponse("World");
     }
@@ -100,7 +105,8 @@ public class GreetResource {
     @Path("/{name}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Counted(value = GETS_COUNTER_NAME)
+    @Counted(value = PERSONALIZED_GETS_COUNTER_NAME, description = PERSONALIZED_GETS_COUNTER_DESCRIPTION)
+    @Timed(value = GETS_TIMER_NAME, description = GETS_TIMER_DESCRIPTION, histogram = true)
     public JsonObject getMessage(@PathParam("name") String name) {
         return createResponse(name);
     }

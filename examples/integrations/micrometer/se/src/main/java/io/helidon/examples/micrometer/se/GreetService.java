@@ -31,6 +31,7 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Timer;
 
 /**
  * A simple service to greet you. Examples:
@@ -54,15 +55,17 @@ public class GreetService implements Service {
      */
     private String greeting;
 
-    private final Counter getCounter;
+    private final Timer getTimer;
+    private final Counter personalizedGetCounter;
 
     private static final JsonBuilderFactory JSON_BF = Json.createBuilderFactory(Collections.emptyMap());
 
     private static final JsonReaderFactory JSON_RF = Json.createReaderFactory(Collections.emptyMap());
 
-    GreetService(Config config, Counter getCounter) {
+    GreetService(Config config, Timer getTimer, Counter personalizedGetCounter) {
         this.greeting = config.get("app.greeting").asString().orElse("Ciao");
-        this.getCounter = getCounter;
+        this.getTimer = getTimer;
+        this.personalizedGetCounter = personalizedGetCounter;
     }
 
     /**
@@ -72,9 +75,11 @@ public class GreetService implements Service {
     @Override
     public void update(Routing.Rules rules) {
         rules
-             .get((ServerRequest req, ServerResponse resp) -> { getCounter.increment(); req.next(); })
+            .get((req, resp) -> getTimer.record((Runnable) req::next)) // Update the timer with every GET.
             .get("/", this::getDefaultMessageHandler)
-            .get("/{name}", this::getMessageHandler)
+            .get("/{name}",
+                    (req, resp) -> {personalizedGetCounter.increment(); req.next();}, // Count personalized GETs...
+                    this::getMessageHandler) // ...and process them.
             .put("/greeting", this::updateGreetingHandler);
     }
 

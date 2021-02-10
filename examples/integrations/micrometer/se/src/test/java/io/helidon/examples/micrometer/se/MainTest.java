@@ -113,8 +113,12 @@ public class MainTest {
                         String output = response.content()
                                 .as(String.class)
                                 .get();
-                        Assertions.assertTrue(output.contains("gets total 3.0"), "Unable to find expected " +
-                                "result 3.0"); // 3 gets; the put is not tallied in the Counter
+                        Assertions.assertTrue(output.contains("get_seconds_count 2.0"),
+                                "Unable to find expected all-gets timer count 2.0"); // 2 gets; the put is not counted
+                        Assertions.assertTrue(output.contains("get_seconds_sum"),
+                                "Unable to find expected all-gets timer sum");
+                        Assertions.assertTrue(output.contains("personalizedGets_total 1.0"),
+                                "Unable to find expected counter result 1.0");
                     } catch (InterruptedException | ExecutionException e) {
                         throw new RuntimeException(e);
                     }

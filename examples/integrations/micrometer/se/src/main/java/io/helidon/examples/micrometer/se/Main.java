@@ -16,6 +16,8 @@
 
 package io.helidon.examples.micrometer.se;
 
+import java.io.IOException;
+
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.integrations.micrometer.MicrometerSupport;
@@ -24,8 +26,7 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
 import io.micrometer.core.instrument.Counter;
-
-import java.io.IOException;
+import io.micrometer.core.instrument.Timer;
 
 /**
  * Simple Hello World rest application.
@@ -89,15 +90,19 @@ public final class Main {
     /**
      * Creates new {@link Routing}.
      *
-     * @return routing configured with JSON support, a health check, and a service
+     * @return routing configured with JSON support, Micrometer metrics, and the greeting service
      * @param config configuration of this server
      */
     private static Routing createRouting(Config config) {
 
         MicrometerSupport micrometerSupport = MicrometerSupport.create();
-        Counter getCounter = micrometerSupport.registry()
-                .counter("gets");
-        GreetService greetService = new GreetService(config, getCounter);
+        Counter personalizedGetCounter = micrometerSupport.registry()
+                .counter("personalizedGets");
+        Timer getTimer = Timer.builder("allGets")
+                .publishPercentileHistogram()
+                .register(micrometerSupport.registry());
+
+        GreetService greetService = new GreetService(config, getTimer, personalizedGetCounter);
 
         return Routing.builder()
                 .register(micrometerSupport)                 // Micrometer support at "/micrometer"
