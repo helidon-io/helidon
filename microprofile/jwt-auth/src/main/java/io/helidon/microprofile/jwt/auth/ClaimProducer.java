@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,9 @@ import java.lang.reflect.Type;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.enterprise.context.Dependent;
 import javax.enterprise.context.spi.CreationalContext;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.inject.Provider;
@@ -56,15 +55,18 @@ class ClaimProducer implements Bean<Object> {
 
     private final JwtAuthCdiExtension.MpClaimQualifier qualifier;
     private final Type type;
-    private final BeanManager bm;
+    private final Class<? extends Annotation> scope;
 
-    ClaimProducer(JwtAuthCdiExtension.MpClaimQualifier q, Type type, BeanManager bm) {
+    ClaimProducer(JwtAuthCdiExtension.MpClaimQualifier q,
+                  Type type,
+                  Class<? extends Annotation> scope) {
         this.qualifier = q;
-        this.bm = bm;
+        this.scope = scope;
         Type actualType = type;
         if (type instanceof ParameterizedType) {
             ParameterizedType paramType = (ParameterizedType) type;
-            if (Provider.class.equals(paramType.getRawType())) {
+            if (Provider.class.equals(paramType.getRawType())
+                    || Instance.class.equals(paramType.getRawType())) {
                 actualType = paramType.getActualTypeArguments()[0];
             }
         }
@@ -76,8 +78,8 @@ class ClaimProducer implements Bean<Object> {
                                 JsonWebTokenImpl webToken,
                                 JwtAuthCdiExtension.MpClaimQualifier q) {
         return getParametrizedClaimValue(claimName,
-                webToken,
-                q);
+                                         webToken,
+                                         q);
     }
 
     @SuppressWarnings("unchecked")
@@ -103,8 +105,12 @@ class ClaimProducer implements Bean<Object> {
             result = webToken.getClaim(claimName, claimLiteral.rawType());
         }
 
-        if (claimLiteral.optional()) result = Optional.ofNullable(result);
-        if (claimLiteral.claimValue()) result = new ClaimValueWrapper<>(claimName, result);
+        if (claimLiteral.optional()) {
+            result = Optional.ofNullable(result);
+        }
+        if (claimLiteral.claimValue()) {
+            result = new ClaimValueWrapper<>(claimName, result);
+        }
         return result;
     }
 
@@ -155,7 +161,7 @@ class ClaimProducer implements Bean<Object> {
 
     @Override
     public Class<? extends Annotation> getScope() {
-        return Dependent.class;
+        return scope;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,10 @@
  */
 package io.helidon.microprofile.jwt.auth;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
-import javax.ws.rs.core.Context;
+import javax.inject.Inject;
 
 import io.helidon.security.SecurityContext;
 
@@ -26,21 +27,23 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 /**
  * Producer of JsonWebTokenImpl for CDI.
  */
-// must be in RequestScoped - ApplicationScoped fails some tests
-@RequestScoped
+@ApplicationScoped
 class JsonWebTokenProducer {
-    @Context
+
+    @Inject
     private SecurityContext securityContext;
 
     @Produces
+    @RequestScoped
     public JsonWebToken produceToken() {
         return securityContext.userPrincipal()
                 .map(JsonWebToken.class::cast)
-                .orElse(null);
+                .orElseGet(JsonWebTokenImpl::empty);
     }
 
     @Produces
     @Impl
+    @RequestScoped
     public JsonWebTokenImpl produceTokenImpl() {
         return (JsonWebTokenImpl) produceToken();
     }

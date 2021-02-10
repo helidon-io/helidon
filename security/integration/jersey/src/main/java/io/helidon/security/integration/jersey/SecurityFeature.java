@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,6 +138,7 @@ public final class SecurityFeature implements Feature {
         private boolean prematchingAuthorization = FeatureConfig.DEFAULT_PREMATCHING_ATZ;
         private boolean prematchingAuthentication = FeatureConfig.DEFAULT_PREMATCHING_ATN;
         private boolean useAbortWith = FeatureConfig.DEFAULT_USE_ABORT_WITH;
+        private boolean authenticationRequiredIfPresent = FeatureConfig.DEFAULT_ATN_REQ_IF_PRESENT;
 
         private Builder(Security security) {
             this.security = security;
@@ -224,6 +225,17 @@ public final class SecurityFeature implements Feature {
         }
 
         /**
+         *
+         *
+         * @param atnReqIfPresent
+         * @return
+         */
+        private Builder authenticationRequiredIfPresent(Boolean atnReqIfPresent) {
+            this.authenticationRequiredIfPresent = atnReqIfPresent;
+            return this;
+        }
+
+        /**
          * Set debugging on.
          * Will return description from response in entity.
          *
@@ -281,6 +293,7 @@ public final class SecurityFeature implements Feature {
             config.get("prematching-authentication").asBoolean().ifPresent(this::usePrematchingAuthentication);
             config.get("prematching-authorization").asBoolean().ifPresent(this::usePrematchingAuthorization);
             config.get("use-abort-with").asBoolean().ifPresent(this::useAbortWith);
+            config.get("atn-required-if-present").asBoolean().ifPresent(this::authenticationRequiredIfPresent);
 
             Config myConfig = config.get("defaults");
             myConfig.get("authorize-annotated-only").asBoolean().ifPresent(this::authorizeAnnotatedOnly);
@@ -331,6 +344,10 @@ public final class SecurityFeature implements Feature {
 
         boolean useAbortWith() {
             return useAbortWith;
+        }
+
+        boolean authenticationRequiredIfPresent() {
+            return authenticationRequiredIfPresent;
         }
     }
 

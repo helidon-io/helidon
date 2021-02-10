@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ module io.helidon.microprofile.jwt.auth {
 
     requires jakarta.enterprise.cdi.api;
     requires jakarta.inject.api;
+    requires jakarta.interceptor.api;
     requires java.ws.rs;
     requires microprofile.config.api;
     requires transitive microprofile.jwt.auth.api;

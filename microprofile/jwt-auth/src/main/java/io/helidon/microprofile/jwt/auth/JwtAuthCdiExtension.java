@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,9 @@ import java.util.Set;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
 import javax.enterprise.context.Initialized;
+import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
@@ -72,6 +74,7 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
 import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 /**
@@ -79,6 +82,7 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  */
 public class JwtAuthCdiExtension implements Extension {
     private final List<ClaimIP> qualifiers = new LinkedList<>();
+    private final List<ClaimIP> claimValueQualifiers = new LinkedList<>();
     private Config config;
 
     /**
@@ -107,7 +111,6 @@ public class JwtAuthCdiExtension implements Extension {
             InjectionPoint ip = pip.getInjectionPoint();
             Type type = ip.getType();
             FieldTypes ft = FieldTypes.forType(type);
-
             ClaimLiteral q = new ClaimLiteral(
                     (claim.standard() == Claims.UNKNOWN)
                             ? claim.value()
@@ -123,8 +126,11 @@ public class JwtAuthCdiExtension implements Extension {
 
             pip.configureInjectionPoint()
                     .addQualifier(q);
-
-            qualifiers.add(new ClaimIP(q, type));
+            if (ft.getField0().getRawType().equals(ClaimValue.class)) {
+                claimValueQualifiers.add(new ClaimIP(q, type));
+            } else {
+                qualifiers.add(new ClaimIP(q, type));
+            }
         }
     }
 
@@ -136,7 +142,8 @@ public class JwtAuthCdiExtension implements Extension {
      */
     void registerClaimProducers(@Observes AfterBeanDiscovery abd, BeanManager bm) {
         // each injection point will have its own bean
-        qualifiers.forEach(q -> abd.addBean(new ClaimProducer(q.qualifier, q.type, bm)));
+        qualifiers.forEach(q -> abd.addBean(new ClaimProducer(q.qualifier, q.type, Dependent.class)));
+        claimValueQualifiers.forEach(q -> abd.addBean(new ClaimProducer(q.qualifier, q.type, RequestScoped.class)));
     }
 
     /**
@@ -312,11 +319,28 @@ public class JwtAuthCdiExtension implements Extension {
 
         } catch (IllegalArgumentException ignored) {
             //If claim requested claim is the custom claim, its unwrapped field type has to be JsonValue or its subtype
-            if (!JsonValue.class.isAssignableFrom(clazz)) {
-                throw new DeploymentException("Field type has to be JsonValue or its subtype while using custom claim name. "
-                                                      + "Field " + claimLiteral.id + " can not be type: "
-                                                      + claimLiteral.fieldTypeString);
+            if (clazz.equals(Long.class) || clazz.equals(long.class) || JsonNumber.class.isAssignableFrom(clazz)) {
+                return;
             }
+
+            if (clazz.equals(String.class) || JsonString.class.isAssignableFrom(clazz)) {
+                return;
+            }
+
+            if (clazz.equals(Boolean.class) || clazz.equals(boolean.class) || JsonValue.class.isAssignableFrom(clazz)) {
+                return;
+            }
+
+            if (clazz.equals(JsonObject.class)) {
+                return;
+            }
+
+            if (clazz.equals(JsonArray.class)) {
+                return;
+            }
+            throw new DeploymentException("Field type has to be JsonValue or its subtype while using custom claim name. "
+                                                  + "Field " + claimLiteral.id + " can not be type: "
+                                                  + claimLiteral.fieldTypeString);
         }
     }
 

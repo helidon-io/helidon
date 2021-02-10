@@ -95,7 +95,7 @@
         <version.lib.microprofile-fault-tolerance-api>2.1.1</version.lib.microprofile-fault-tolerance-api>
         <version.lib.microprofile-graphql>1.0.3</version.lib.microprofile-graphql>
         <version.lib.microprofile-health>2.2</version.lib.microprofile-health>
-        <version.lib.microprofile-jwt>1.1.1</version.lib.microprofile-jwt>
+        <version.lib.microprofile-jwt>1.2</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>2.3.2</version.lib.microprofile-metrics-api>
         <version.lib.microprofile-openapi-api>1.1.2</version.lib.microprofile-openapi-api>
         <version.lib.microprofile-reactive-messaging-api>1.0</version.lib.microprofile-reactive-messaging-api>

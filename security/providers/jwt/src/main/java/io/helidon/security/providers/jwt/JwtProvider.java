@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
@@ -181,7 +182,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
             if (errors.isValid()) {
                 Jwt jwt = signedJwt.getJwt();
                 // verify the audience is correct
-                Errors validate = jwt.validate(null, expectedAudience);
+                Errors validate = jwt.validate(null, Set.of(expectedAudience));
                 if (validate.isValid()) {
                     return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
                 } else {

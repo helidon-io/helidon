@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,21 +27,19 @@ import javax.json.JsonString;
 import javax.json.JsonValue;
 
 import io.helidon.security.Principal;
-import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.util.AbacSupport;
 
-import org.eclipse.microprofile.jwt.ClaimValue;
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 /**
  * Implementation of {@link JsonWebToken} with additional support of {@link AbacSupport}.
  */
-public final class JsonWebTokenImpl implements JsonWebToken, Principal {
+class JsonWebTokenImpl implements JsonWebToken, Principal {
     private final Jwt jwt;
     private final SignedJwt signed;
     private final String id;
@@ -85,6 +83,25 @@ public final class JsonWebTokenImpl implements JsonWebToken, Principal {
         return new JsonWebTokenImpl(signed);
     }
 
+    static JsonWebToken empty() {
+        return new JsonWebToken() {
+            @Override
+            public String getName() {
+                return null;
+            }
+
+            @Override
+            public Set<String> getClaimNames() {
+                return null;
+            }
+
+            @Override
+            public <T> T getClaim(String claimName) {
+                return null;
+            }
+        };
+    }
+
     @Override
     public String getName() {
         return name;
@@ -99,7 +116,7 @@ public final class JsonWebTokenImpl implements JsonWebToken, Principal {
     @Override
     public <T> T getClaim(String claimName) {
         try {
-            return (T) getClaim(Claims.valueOf(claimName));
+            return (T) getClaimPrivate(Claims.valueOf(claimName));
         } catch (IllegalArgumentException e) {
             //If claimName is name of the custom claim
             return (T) getJsonValue(claimName).orElse(null);
@@ -120,22 +137,15 @@ public final class JsonWebTokenImpl implements JsonWebToken, Principal {
             Claims claims = Claims.valueOf(claimName);
             return JsonValue.class.isAssignableFrom(clazz)
                     ? (T) getJsonValue(claimName).orElse(null)
-                    : (T) getClaim(claims);
+                    : (T) getClaimPrivate(claims);
         } catch (IllegalArgumentException ignored) {
-            //If claimName is name of the custom claim
-            Object value = getJsonValue(claimName).orElse(null);
-            if ((value != null)
-                    && (clazz != ClaimValue.class)
-                    && (clazz != Optional.class)
-                    && !clazz.isAssignableFrom(value.getClass())) {
-                throw new SecurityException("Cannot set instance of " + value.getClass().getName()
-                                                    + " to the field of type " + clazz.getName());
-            }
-            return (T) value;
+            return (T) getJsonValue(claimName)
+                    .map(val -> convertClass(clazz, val))
+                    .orElse(null);
         }
     }
 
-    private Object getClaim(Claims claims) {
+    private Object getClaimPrivate(Claims claims) {
         switch (claims) {
         case raw_token:
             return signed.tokenContent();
@@ -170,6 +180,10 @@ public final class JsonWebTokenImpl implements JsonWebToken, Principal {
 
     private Object convert(Claims claims, JsonValue value) {
         Class<?> claimClass = claims.getType();
+        return convertClass(claimClass, value);
+    }
+
+    private Object convertClass(Class<?> claimClass, JsonValue value) {
         if (claimClass.equals(String.class)) {
             if (value instanceof JsonString) {
                 return ((JsonString) value).getString();
@@ -186,9 +200,13 @@ public final class JsonWebTokenImpl implements JsonWebToken, Principal {
         if (claimClass.equals(JsonObject.class)) {
             return value;
         }
-
-        if (value instanceof JsonString) {
-            return ((JsonString) value).getString();
+        if (Boolean.TYPE.equals(claimClass) || Boolean.class.equals(claimClass)){
+            if (JsonValue.TRUE.equals(value)) {
+                return true;
+            }
+            if (JsonValue.FALSE.equals(value)) {
+                return false;
+            }
         }
 
         return value;

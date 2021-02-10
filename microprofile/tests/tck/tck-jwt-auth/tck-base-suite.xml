@@ -1,6 +1,6 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 <!--
-  Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -37,44 +37,43 @@
                 <exclude name="excludes"/>
             </run>
         </groups>
+        <packages>
+            <package name="org.eclipse.microprofile.jwt.tck.*">
+                <!-- Optional, we do not support those-->
+                <exclude name="org.eclipse.microprofile.jwt.tck.container.servlet"/>
+                <exclude name="org.eclipse.microprofile.jwt.tck.container.ejb"/>
+                <exclude name="org.eclipse.microprofile.jwt.tck.container.jacc"/>
+            </package>
+        </packages>
         <classes>
-            <class name="org.eclipse.microprofile.jwt.tck.util.TokenUtilsTest"/>
-            <class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.UnsecuredPingTest"/>
-            <class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.RequiredClaimsTest"/>
-            <!-- TODO expects injection into custom claims that are NOT JsonValue
-            https://github.com/eclipse/microprofile-jwt-auth/issues/117
-            -->
-            <!--<class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.ClaimValueInjectionTest"/>-->
-            <class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.JsonValueInjectionTest"/>
-            <!-- TODO expects injection into custom claims that are NOT JsonValue
-            https://github.com/eclipse/microprofile-jwt-auth/issues/117
-            -->
-            <!--<class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.ProviderInjectionTest"/>-->
-            <class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.RolesAllowedTest"/>
-            <class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.InvalidTokenTest"/>
-            <!-- TODO https://github.com/eclipse/microprofile-jwt-auth/issues/116 -->
-            <!--<class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.PrimitiveInjectionTest"/>-->
-            <class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.PrincipalInjectionTest"/>
-            <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsPEMTest"/>
-            <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsPEMLocationTest"/>
             <!-- TODO expects server to be running before security is configured
             https://github.com/eclipse/microprofile-jwt-auth/issues/118
             -->
-            <!--<class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsPEMLocationURLTest"/>-->
-            <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsJWKTest"/>
-            <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsJWKLocationTest"/>
-            <!-- TODO expects server to be running before security is configured
-            https://github.com/eclipse/microprofile-jwt-auth/issues/118
-            -->
-            <!--<class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsJWKLocationURLTest"/>-->
-            <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsJWKSTest"/>
-            <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsJWKSLocationTest"/>
-            <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsBase64JWKTest"/>
-            <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsFileLocationURLTest"/>
-            <class name="org.eclipse.microprofile.jwt.tck.config.IssNoValidationNoIssTest"/>
-            <class name="org.eclipse.microprofile.jwt.tck.config.IssNoValidationBadIssTest"/>
-            <class name="org.eclipse.microprofile.jwt.tck.config.IssValidationTest"/>
-            <class name="org.eclipse.microprofile.jwt.tck.config.IssValidationFailTest"/>
+            <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsPEMLocationURLTest">
+                <methods>
+                    <exclude name="validateLocationUrlContents"/>
+                    <exclude name="testKeyAsLocationUrl"/>
+                </methods>
+            </class>
+            <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsJWKLocationURLTest">
+                <methods>
+                    <exclude name="validateLocationUrlContents"/>
+                    <exclude name="testKeyAsLocationUrl"/>
+                </methods>
+            </class>
+
+            <!-- Optional, we do not support those-->
+            <class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.jwe.RolesAllowedSignEncryptTest">
+                <methods>
+                    <exclude name="testNeedsGroup1Mapping"/>
+                </methods>
+            </class>
+            <class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.RolesAllowedTest">
+                <methods>
+                    <include name="callEchoSignToken"/>
+                    <exclude name="testNeedsGroup1Mapping"/>
+                </methods>
+            </class>
         </classes>
     </test>
 </suite>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -56,6 +57,7 @@ public class JwtTest {
     @Test
     public void testOidcJwt() {
         String audience = "id_of_audience";
+        Set<String> audiences = Set.of(audience);
         String subject = "54564645646465";
         String username = "jarda@jarda.com";
         String issuer = "I am issuer";
@@ -89,7 +91,7 @@ public class JwtTest {
         //and this one should be valid
         List<Validator<Jwt>> vals = Jwt.defaultTimeValidators();
         Jwt.addIssuerValidator(vals, issuer, true);
-        Jwt.addAudienceValidator(vals, audience, true);
+        Jwt.addAudienceValidator(vals, audiences, true);
 
         Errors errors = jwt.validate(vals);
 
@@ -97,7 +99,7 @@ public class JwtTest {
         errors.checkValid();
 
         //another try with defaults
-        errors = jwt.validate(issuer, audience);
+        errors = jwt.validate(issuer, audiences);
         errors.log(LOGGER);
         errors.checkValid();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ class FeatureConfig {
     static final boolean DEFAULT_PREMATCHING_ATN = false;
     static final boolean DEFAULT_PREMATCHING_ATZ = false;
     static final boolean DEFAULT_USE_ABORT_WITH = true;
+    static final boolean DEFAULT_ATN_REQ_IF_PRESENT = false;
 
     private final boolean debug;
     private final boolean authorizeAnnotatedOnly;
@@ -38,6 +39,7 @@ class FeatureConfig {
     private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
     private final boolean authenticateAnnotatedOnly;
     private final boolean useAbortWith;
+    private final boolean authenticationRequiredIfPresent;
 
     FeatureConfig() {
         this.debug = DEFAULT_DEBUG;
@@ -46,6 +48,7 @@ class FeatureConfig {
         this.usePrematchingAtz = DEFAULT_PREMATCHING_ATZ;
         this.authenticateAnnotatedOnly = DEFAULT_ATN_ANNOTATED_ONLY;
         this.useAbortWith = DEFAULT_USE_ABORT_WITH;
+        this.authenticationRequiredIfPresent = DEFAULT_ATN_REQ_IF_PRESENT;
     }
 
     FeatureConfig(SecurityFeature.Builder builder) {
@@ -61,10 +64,15 @@ class FeatureConfig {
 
         this.queryParamHandlers.addAll(builder.queryParamHandlers());
         this.useAbortWith = builder.useAbortWith();
+        this.authenticationRequiredIfPresent = builder.authenticationRequiredIfPresent();
     }
 
     boolean shouldAuthorizeAnnotatedOnly() {
         return authorizeAnnotatedOnly;
+    }
+
+    boolean authenticationRequiredIfPresent() {
+        return authenticationRequiredIfPresent;
     }
 
     boolean shouldAuthenticateAnnotatedOnly() {

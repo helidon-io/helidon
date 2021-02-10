@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 import javax.json.Json;
@@ -409,6 +410,10 @@ public class Jwt {
         validators.add(FieldValidator.create(Jwt::issuer, "Issuer", issuer, mandatory));
     }
 
+    private static void addUserPrincipalValidator(Collection<Validator<Jwt>> validators) {
+        validators.add(new UserPrincipalValidator());
+    }
+
     /**
      * Add validator of audience to the collection of validators.
      *
@@ -416,11 +421,11 @@ public class Jwt {
      * @param audience   audience expected to be in the token
      * @param mandatory  whether the audience field is mandatory in the token
      */
-    public static void addAudienceValidator(Collection<Validator<Jwt>> validators, String audience, boolean mandatory) {
+    public static void addAudienceValidator(Collection<Validator<Jwt>> validators, Set<String> audience, boolean mandatory) {
         validators.add((jwt, collector) -> {
             Optional<List<String>> jwtAudiences = jwt.audience();
             if (jwtAudiences.isPresent()) {
-                if (jwtAudiences.get().contains(audience)) {
+                if (audience.stream().anyMatch(jwtAudiences.get()::contains)) {
                     return;
                 }
                 collector.fatal(jwt, "Audience must contain " + audience + ", yet it is: " + jwtAudiences);
@@ -895,7 +900,7 @@ public class Jwt {
      * Validate this JWT against provided validators.
      *
      * @param validators Validators to validate with. Obtain them through (e.g.) {@link #defaultTimeValidators()}
-     *                   , {@link #addAudienceValidator(Collection, String, boolean)}
+     *                   , {@link #addAudienceValidator(Collection, Set, boolean)}
      *                   , {@link #addIssuerValidator(Collection, String, boolean)}
      * @return errors instance to check if valid and access error messages
      */
@@ -922,19 +927,20 @@ public class Jwt {
      *                 audience claim mandatory
      * @return errors instance to check for validation result
      */
-    public Errors validate(String issuer, String audience) {
+    public Errors validate(String issuer, Set<String> audience) {
         List<Validator<Jwt>> validators = defaultTimeValidators();
         if (null != issuer) {
             addIssuerValidator(validators, issuer, true);
         }
-        if (null != audience) {
+        if (!audience.isEmpty()) {
             addAudienceValidator(validators, audience, true);
         }
+        addUserPrincipalValidator(validators);
         return validate(validators);
     }
 
     private abstract static class OptionalValidator {
-        private boolean mandatory;
+        private final boolean mandatory;
 
         OptionalValidator() {
             this.mandatory = false;
@@ -958,6 +964,13 @@ public class Jwt {
         private final TemporalUnit allowedTimeSkewUnit;
 
         private InstantValidator() {
+            this.instant = Instant.now();
+            this.allowedTimeSkewAmount = 5;
+            this.allowedTimeSkewUnit = ChronoUnit.SECONDS;
+        }
+
+        private InstantValidator(boolean mandatory) {
+            super(mandatory);
             this.instant = Instant.now();
             this.allowedTimeSkewAmount = 5;
             this.allowedTimeSkewUnit = ChronoUnit.SECONDS;
@@ -1114,6 +1127,19 @@ public class Jwt {
         }
     }
 
+    private static final class UserPrincipalValidator extends OptionalValidator implements Validator<Jwt> {
+
+        private UserPrincipalValidator() {
+            super(true);
+        }
+
+        @Override
+        public void validate(Jwt object, Errors.Collector collector) {
+            super.validate("User Principle", object.userPrincipal(), collector);
+        }
+
+    }
+
     /**
      * Validator of issue time claim.
      */
@@ -1171,6 +1197,7 @@ public class Jwt {
      */
     public static final class ExpirationValidator extends InstantValidator implements Validator<Jwt> {
         private ExpirationValidator() {
+            super(true);
         }
 
         private ExpirationValidator(Instant now, int allowedTimeSkew, TemporalUnit allowedTimeSkewUnit, boolean mandatory) {
