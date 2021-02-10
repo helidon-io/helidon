@@ -15,8 +15,6 @@
  *
  */
 
-import io.helidon.integrations.micrometer.MicrometerCdiExtension;
-
 module io.helidon.integrations.micrometer {
 
     requires java.logging;
@@ -49,5 +47,5 @@ module io.helidon.integrations.micrometer {
     // this is needed for CDI extensions that use non-public observer methods
     opens io.helidon.integrations.micrometer to weld.core.impl, io.helidon.microprofile.cdi;
 
-    provides javax.enterprise.inject.spi.Extension with MicrometerCdiExtension;
+    provides javax.enterprise.inject.spi.Extension with io.helidon.integrations.micrometer.MicrometerCdiExtension;
 }
