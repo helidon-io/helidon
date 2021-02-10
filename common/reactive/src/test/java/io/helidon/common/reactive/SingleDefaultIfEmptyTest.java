@@ -16,13 +16,15 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.util.concurrent.SubmissionPublisher;
 
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+
 
 public class SingleDefaultIfEmptyTest {
 

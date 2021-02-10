@@ -17,8 +17,6 @@
 
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Test;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,7 +25,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 public class SingleTappedPublisherTest {
 
@@ -38,14 +38,16 @@ public class SingleTappedPublisherTest {
 
         new SingleTappedPublisher<>(
                 Single.<Integer>empty(),
-                s -> { throw new IllegalArgumentException(); },
+                s -> {
+                    throw new IllegalArgumentException();
+                },
                 null,
                 null,
                 null,
                 null,
                 null
         )
-        .subscribe(ts);
+                .subscribe(ts);
 
         assertThat(ts.getItems().isEmpty(), is(true));
         assertThat(ts.getLastError(), instanceOf(IllegalArgumentException.class));
@@ -62,7 +64,9 @@ public class SingleTappedPublisherTest {
 
         new SingleTappedPublisher<>(
                 Single.<Integer>empty(),
-                s -> { calls.getAndIncrement(); },
+                s -> {
+                    calls.getAndIncrement();
+                },
                 null,
                 null,
                 null,
@@ -84,8 +88,10 @@ public class SingleTappedPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         Single.just(1)
-        .peek(v -> { throw new IllegalArgumentException(); })
-        .subscribe(ts);
+                .peek(v -> {
+                    throw new IllegalArgumentException();
+                })
+                .subscribe(ts);
 
         ts.requestMax();
 
@@ -100,7 +106,9 @@ public class SingleTappedPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         Single.<Integer>error(new IOException())
-                .onError(v -> { throw new IllegalArgumentException(); })
+                .onError(v -> {
+                    throw new IllegalArgumentException();
+                })
                 .subscribe(ts);
 
         assertThat(ts.getItems().isEmpty(), is(true));
@@ -115,7 +123,9 @@ public class SingleTappedPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         Single.<Integer>empty()
-                .onComplete(() -> { throw new IllegalArgumentException(); })
+                .onComplete(() -> {
+                    throw new IllegalArgumentException();
+                })
                 .subscribe(ts);
 
         ts.requestMax();
@@ -131,7 +141,9 @@ public class SingleTappedPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         Single.<Integer>empty()
-                .onTerminate(() -> { throw new IllegalArgumentException(); })
+                .onTerminate(() -> {
+                    throw new IllegalArgumentException();
+                })
                 .subscribe(ts);
 
         ts.requestMax();
@@ -147,7 +159,9 @@ public class SingleTappedPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         Single.<Integer>error(new IOException())
-                .onTerminate(() -> { throw new IllegalArgumentException(); })
+                .onTerminate(() -> {
+                    throw new IllegalArgumentException();
+                })
                 .subscribe(ts);
 
         ts.requestMax();
@@ -177,7 +191,7 @@ public class SingleTappedPublisherTest {
                 },
                 null
         )
-        .subscribe(ts);
+                .subscribe(ts);
 
         ts.requestMax();
 
@@ -294,7 +308,7 @@ public class SingleTappedPublisherTest {
             calls.getAndIncrement();
             throw new IllegalArgumentException();
         })
-        .subscribe(ts);
+                .subscribe(ts);
 
         ts.getSubcription().cancel();
 

@@ -16,9 +16,11 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Test;
-
 import java.util.function.Function;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
 
 public class MultiToTest {
 
@@ -36,14 +38,16 @@ public class MultiToTest {
         ts.assertResult("1");
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void composeNull() {
-        Multi.just(1).to(null);
+        assertThrows(NullPointerException.class, () -> Multi.just(1).to(null));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void composeThrows() {
-        Multi.just(1)
-                .to(s -> { throw new IllegalArgumentException(); });
+        assertThrows(IllegalArgumentException.class, () -> Multi.just(1)
+                .to(s -> {
+                    throw new IllegalArgumentException();
+                }));
     }
 }

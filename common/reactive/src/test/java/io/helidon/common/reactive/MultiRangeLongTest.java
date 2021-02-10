@@ -16,7 +16,9 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
 
 public class MultiRangeLongTest {
 
@@ -33,9 +35,9 @@ public class MultiRangeLongTest {
         ts.assertResult(1L, 2L);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void negativeCount() {
-        Multi.rangeLong(1, -1);
+        assertThrows(IllegalArgumentException.class, () -> Multi.rangeLong(1, -1));
     }
 
     @Test

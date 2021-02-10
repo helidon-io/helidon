@@ -16,7 +16,6 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Test;
 
 import java.lang.reflect.Proxy;
 import java.util.Collections;
@@ -26,9 +25,14 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 public class MultiFromStreamTest {
     @Test
@@ -37,7 +41,7 @@ public class MultiFromStreamTest {
         AtomicInteger close = new AtomicInteger();
 
         Multi.create(Stream.empty().onClose(close::incrementAndGet))
-        .subscribe(ts);
+                .subscribe(ts);
 
         assertThat(ts.getItems().isEmpty(), is(true));
         assertThat(ts.isComplete(), is(true));
@@ -59,7 +63,7 @@ public class MultiFromStreamTest {
 
         ts.requestMax();
 
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(true));
         assertThat(ts.getLastError(), is(nullValue()));
     }
@@ -73,7 +77,7 @@ public class MultiFromStreamTest {
                 .subscribe(ts);
 
         ts.requestMax();
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(true));
         assertThat(ts.getLastError(), is(nullValue()));
     }
@@ -92,7 +96,7 @@ public class MultiFromStreamTest {
 
         ts.request1();
 
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(true));
         assertThat(ts.getLastError(), is(nullValue()));
     }
@@ -101,7 +105,7 @@ public class MultiFromStreamTest {
     public void iteratorNull() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.create(Stream.of((Integer)null))
+        Multi.create(Stream.of((Integer) null))
                 .subscribe(ts);
 
         ts.request1();
@@ -128,7 +132,7 @@ public class MultiFromStreamTest {
                 throw new IllegalArgumentException();
             }
         }, close))
-        .subscribe(ts);
+                .subscribe(ts);
 
         ts.request1();
 
@@ -156,7 +160,7 @@ public class MultiFromStreamTest {
                 return 1;
             }
         }, close))
-        .subscribe(ts);
+                .subscribe(ts);
 
         ts.request1();
 
@@ -173,6 +177,7 @@ public class MultiFromStreamTest {
 
         Multi.create(withIterator(new Iterator<Integer>() {
             int calls;
+
             @Override
             public boolean hasNext() {
                 if (++calls == 2) {
@@ -190,7 +195,7 @@ public class MultiFromStreamTest {
 
         ts.request1();
 
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(false));
         assertThat(ts.getLastError(), instanceOf(IllegalArgumentException.class));
         assertThat(close.get(), is(1));
@@ -204,6 +209,7 @@ public class MultiFromStreamTest {
 
         Multi.create(withIterator(new Iterator<Integer>() {
             int calls;
+
             @Override
             public boolean hasNext() {
                 if (++calls == 2) {
@@ -217,11 +223,11 @@ public class MultiFromStreamTest {
                 return 1;
             }
         }, close))
-        .subscribe(ts);
+                .subscribe(ts);
 
         ts.request1();
 
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(false));
         assertThat(ts.getLastError(), is(nullValue()));
         assertThat(close.get(), is(1));
@@ -242,7 +248,7 @@ public class MultiFromStreamTest {
                 .subscribe(ts);
 
         ts.requestMax();
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(true));
         assertThat(ts.getLastError(), is(nullValue()));
 
@@ -250,7 +256,7 @@ public class MultiFromStreamTest {
 
     @SuppressWarnings("unchecked")
     static <T> Stream<T> withIterator(Iterator<T> it, AtomicInteger close) {
-        return (Stream<T>)Proxy.newProxyInstance(Stream.class.getClassLoader(), new Class[] { Stream.class }, (proxy, method, args) -> {
+        return (Stream<T>) Proxy.newProxyInstance(Stream.class.getClassLoader(), new Class[] {Stream.class}, (proxy, method, args) -> {
             if (method.getName().equals("iterator")) {
                 return it;
             }
@@ -260,7 +266,9 @@ public class MultiFromStreamTest {
 
             return null;
         });
-    };
+    }
+
+    ;
 
     @Test
     public void normal() {
@@ -317,7 +325,7 @@ public class MultiFromStreamTest {
 
         ts.assertFailure(IllegalStateException.class);
 
-        assertThat(ts.getLastError().getSuppressed()[0],  instanceOf(IllegalArgumentException.class));
+        assertThat(ts.getLastError().getSuppressed()[0], instanceOf(IllegalArgumentException.class));
     }
 
     @Test

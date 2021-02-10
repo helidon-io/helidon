@@ -16,16 +16,20 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Test;
-
-import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+
 
 public class TerminatedFutureTest {
 
@@ -142,13 +146,13 @@ public class TerminatedFutureTest {
         assertTrue(TerminatedFuture.CANCELED.isDone());
     }
 
-    @Test(expectedExceptions = CancellationException.class)
+    @Test
     public void canceledGet() {
-        TerminatedFuture.CANCELED.get();
+        assertThrows(CancellationException.class, TerminatedFuture.CANCELED::get);
     }
 
-    @Test(expectedExceptions = CancellationException.class)
+    @Test
     public void canceledGetTimeout() {
-        TerminatedFuture.CANCELED.get(1, TimeUnit.MINUTES);
+        assertThrows(CancellationException.class, () -> TerminatedFuture.CANCELED.get(1, TimeUnit.MINUTES));
     }
 }

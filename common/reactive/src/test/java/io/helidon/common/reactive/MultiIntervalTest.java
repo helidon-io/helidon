@@ -16,9 +16,9 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,12 +28,12 @@ public class MultiIntervalTest {
 
     private static ScheduledExecutorService executor;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         executor = Executors.newSingleThreadScheduledExecutor();
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         executor.shutdown();
     }

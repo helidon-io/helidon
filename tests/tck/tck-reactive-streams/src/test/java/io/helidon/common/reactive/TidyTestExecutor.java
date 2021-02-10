@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package io.helidon.common.reactive;
@@ -24,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Assertions;
 
 public class TidyTestExecutor extends ThreadPoolExecutor {
 
@@ -68,7 +69,7 @@ public class TidyTestExecutor extends ThreadPoolExecutor {
                     try {
                         Thread.sleep(250);
                     } catch (InterruptedException e) {
-                        fail(e);
+                        Assertions.fail(e);
                     }
                 }
                 futures.clear();

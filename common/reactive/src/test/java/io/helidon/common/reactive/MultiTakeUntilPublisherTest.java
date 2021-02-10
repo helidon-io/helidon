@@ -16,9 +16,9 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Test;
-
 import java.io.IOException;
+
+import org.junit.jupiter.api.Test;
 
 public class MultiTakeUntilPublisherTest {
 

@@ -47,6 +47,15 @@
         <module>integration</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>tck</id>
+            <modules>
+                <module>tck</module>
+            </modules>
+        </profile>
+    </profiles>
+
     <build>
         <pluginManagement>
             <plugins>

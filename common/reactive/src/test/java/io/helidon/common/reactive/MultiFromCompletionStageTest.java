@@ -18,7 +18,7 @@ package io.helidon.common.reactive;
 
 import java.util.concurrent.CompletableFuture;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 public class MultiFromCompletionStageTest {
 
