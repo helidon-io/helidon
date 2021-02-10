@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.Routing;
@@ -49,8 +50,8 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.internal.PropertiesDelegate;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.server.ApplicationHandler;
@@ -98,7 +99,6 @@ public class JerseySupport implements Service {
 
     private static final Type REQUEST_TYPE = (new GenericType<Ref<ServerRequest>>() { }).getType();
     private static final Type RESPONSE_TYPE = (new GenericType<Ref<ServerResponse>>() { }).getType();
-    private static final Type SPAN_TYPE = (new GenericType<Ref<Span>>() { }).getType();
     private static final Type SPAN_CONTEXT_TYPE = (new GenericType<Ref<SpanContext>>() { }).getType();
     private static final AtomicReference<ExecutorService> DEFAULT_THREAD_POOL = new AtomicReference<>();
 
@@ -107,6 +107,11 @@ public class JerseySupport implements Service {
     private final JerseyHandler handler = new JerseyHandler();
     private final HelidonJerseyContainer container;
     private final Thread serviceShutdownHook;
+
+    /**
+     * If set to {@code "true"}, Jersey will ignore responses in exceptions.
+     */
+    static final String IGNORE_EXCEPTION_RESPONSE = "jersey.config.client.ignoreExceptionResponse";
 
     /**
      * Creates a Jersey Support based on the provided JAX-RS application.
@@ -137,6 +142,16 @@ public class JerseySupport implements Service {
 
         this.appHandler = new ApplicationHandler(builder.resourceConfig, new ServerBinder(executorService));
         this.container = new HelidonJerseyContainer(appHandler, builder.resourceConfig);
+
+        // This configuration via system properties is for the Jersey Client API. Any
+        // response in an exception will be mapped to an empty one to prevent data leaks
+        // unless property in config is set to false.
+        // See https://github.com/eclipse-ee4j/jersey/pull/4641.
+        if (!System.getProperties().contains(IGNORE_EXCEPTION_RESPONSE)) {
+            System.setProperty(CommonProperties.ALLOW_SYSTEM_PROPERTIES_PROVIDER, "true");
+            ConfigValue<String> ignore = builder.config.get(IGNORE_EXCEPTION_RESPONSE).asString();
+            System.setProperty(IGNORE_EXCEPTION_RESPONSE, ignore.orElse("true"));
+        }
     }
 
     @Override

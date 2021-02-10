@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,29 +15,36 @@
  */
 package io.helidon.tests.functional.requestscope;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 
 @ApplicationScoped
-public class SomeService3 {
+public class Bean2 {
 
     private AtomicLong counter = new AtomicLong(0);
 
+    @Inject
+    private TenantContext tenantContext;
+
+    @CircuitBreaker(successThreshold = 2, requestVolumeThreshold = 4)
     @Fallback(fallbackMethod = "testFallback")
-    public String test(String testParam) throws Exception {
+    public String test() {
         maybeFail();
-        return testParam;
+        return tenantContext.getTenantId();
     }
 
-    public String testFallback(String testParam) throws Exception {
-        return testParam;
+    public String testFallback() {
+        return tenantContext.getTenantId();
     }
 
     private void maybeFail() {
-        final Long invocationNumber = counter.getAndIncrement();
-        if (invocationNumber % 4 > 1) { // alternate 2 successful and 2 failing invocations
+        final long invocationNumber = counter.getAndIncrement();
+        if (invocationNumber % 4 > 1) {     // alternate 2 successful and 2 failing invocations
             throw new RuntimeException("Service failed.");
         }
     }
