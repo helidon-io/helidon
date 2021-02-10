@@ -19,6 +19,7 @@ package io.helidon.integrations.micrometer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -47,7 +48,12 @@ import io.micrometer.core.instrument.Timer;
 /**
  * CDI extension for handling Micrometer artifacts.
  */
-public class MicrometerCdiExtension extends CdiExtensionBase<Meter, MicrometerSupport, MicrometerSupport.Builder> {
+public class MicrometerCdiExtension extends CdiExtensionBase<
+        Meter,
+        MicrometerCdiExtension.MicrometerAsyncResponseInfo,
+        MicrometerCdiExtension.MicrometerRestEndpointInfo,
+        MicrometerSupport,
+        MicrometerSupport.Builder> {
 
     private static final Logger LOGGER = Logger.getLogger(MicrometerCdiExtension.class.getName());
 
@@ -93,8 +99,10 @@ public class MicrometerCdiExtension extends CdiExtensionBase<Meter, MicrometerSu
      *
      * @param discovery bean discovery event
      */
-    void before(@Observes BeforeBeanDiscovery discovery) {
+    @Override
+    protected void before(@Observes BeforeBeanDiscovery discovery) {
         LOGGER.log(Level.FINE, () -> "Before bean discovery " + discovery);
+        super.before(discovery);
 
         // Initialize our implementation
         MeterRegistryProducer.clear();
@@ -105,6 +113,17 @@ public class MicrometerCdiExtension extends CdiExtensionBase<Meter, MicrometerSu
 
         prepareInterceptor(discovery, Counted.class, InterceptorCounted.class, CountedLiteral.INSTANCE);
         prepareInterceptor(discovery, Timed.class, InterceptorTimed.class, TimedLiteral.INSTANCE);
+    }
+
+    @Override
+    protected MicrometerRestEndpointInfo newRestEndpointInfo() {
+        return new MicrometerRestEndpointInfo();
+    }
+
+    @Override
+    protected MicrometerAsyncResponseInfo newAsyncResponseInfo(Method method) {
+        int slot = asyncParameterSlot(method);
+        return slot >= 0 ? new MicrometerAsyncResponseInfo(slot) : null;
     }
 
     private static <A extends Annotation, M extends Meter, I extends InterceptorBase<M, A>>
@@ -140,6 +159,16 @@ public class MicrometerCdiExtension extends CdiExtensionBase<Meter, MicrometerSu
     private void recordMetricAnnotatedClass(@Observes
     @WithAnnotations({Counted.class, Timed.class}) ProcessAnnotatedType<?> pat) {
         checkAndRecordCandidateClass(pat);
+    }
+
+    static class MicrometerRestEndpointInfo extends RestEndpointInfo {
+    }
+
+    static class MicrometerAsyncResponseInfo extends AsyncResponseInfo {
+
+        MicrometerAsyncResponseInfo(int parameterSlot) {
+            super(parameterSlot);
+        }
     }
 
     static final class InterceptorBindingLiteral extends AnnotationLiteral<InterceptorBinding> implements InterceptorBinding {

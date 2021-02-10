@@ -45,13 +45,13 @@ final class InterceptorSyntheticSimplyTimed {
 
     private static final Logger LOGGER = Logger.getLogger(InterceptorSyntheticSimplyTimed.class.getName());
 
+    private final MetricsCdiExtension.MpRestEndpointInfo restEndpointInfo;
     private final boolean isEnabled;
-    private final RestEndpointMetricsInfo restEndpointMetricsInfo;
 
     @Inject
-    InterceptorSyntheticSimplyTimed(RestEndpointMetricsInfo restEndpointMetricsInfo) {
-        this.restEndpointMetricsInfo = restEndpointMetricsInfo;
-        isEnabled = restEndpointMetricsInfo.isEnabled();
+    InterceptorSyntheticSimplyTimed(MetricsCdiExtension extension) {
+        this.restEndpointInfo = extension.restEndpointInfo();
+        isEnabled = restEndpointInfo.isEnabled();
     }
 
     /**
@@ -73,7 +73,7 @@ final class InterceptorSyntheticSimplyTimed {
 
             Method timedMethod = context.getMethod();
             SimpleTimer simpleTimer = MetricsCdiExtension.syntheticSimpleTimer(timedMethod);
-            AsyncResponse asyncResponse = restEndpointMetricsInfo.asyncResponse(context);
+            AsyncResponse asyncResponse = restEndpointInfo.asyncResponse(context);
             if (asyncResponse != null) {
                 asyncResponse.register(new FinishCallback(startNanos, simpleTimer));
                 return context.proceed();

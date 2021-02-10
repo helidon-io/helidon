@@ -24,5 +24,8 @@ module io.helidon.common.servicesupport.cdi {
     requires jakarta.inject.api;
     requires io.helidon.microprofile.server;
 
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.common.servicesupport.cdi to weld.core.impl, io.helidon.microprofile.cdi;
+
     exports io.helidon.common.servicesupport.cdi;
 }

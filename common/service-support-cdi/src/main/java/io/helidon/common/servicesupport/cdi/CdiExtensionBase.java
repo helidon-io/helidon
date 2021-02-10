@@ -20,7 +20,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -42,6 +44,7 @@ import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
@@ -49,6 +52,9 @@ import javax.enterprise.inject.spi.ProcessProducerField;
 import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.inject.Qualifier;
 import javax.interceptor.Interceptor;
+import javax.interceptor.InvocationContext;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 
 import io.helidon.common.servicesupport.ServiceSupportBase;
 import io.helidon.config.Config;
@@ -63,12 +69,36 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * Abstract superclass of service-specific CDI extensions.
+ * <p>
+ *     This heavily parameterized class implements a substantial amount of the work many extensions need to do to process
+ *     annotated types. Although originally inspired by the needs of metrics extensions, this class can be suitable for other
+ *     extensions as well.
+ * </p>
+ * <p>
+ *     Each extension is presumed to layer on an SE-style service support class which itself is a subclass of
+ *     {@link ServiceSupportBase} with an associated {@code Builder} class. The service support base class and its builder are
+ *     both type parameters to this class.
+ * </p>
+ * <p>
+ *     Inner classes contain information harvested by the extension plus logic that might be useful outside the extension, such as
+ *     from interceptors. This class identifies "asynchronous" annotated methods as those with a
+ *     {@code Suspended} {@code AsyncResponse}
+ *     parameter. It records information about those as instances of concrete subclasses of {@link AsyncResponseInfo}. These
+ *     info instances are collected inside a REST endpoint info data structure which extends {@link RestEndpointInfo}. Both of
+ *     these types are parameters to this class so concrete implementations can add data that is specific to their specific
+ *     technologies to the data structures. Concrete implementations of this class provide factory methods for these
+ *     parameterized types.
+ * </p>
  *
- * @param <M> Common supertype of all classes (e.g., metrics) whose annotations are managed by the extension
+ * @param <M> Common supertype of all classes (e.g., metrics) for which producers are managed by the extension
+ * @param <A> concrete {@code AsyncResponseInfo} type
+ * @param <R> concrete {@code RestEndpointInfo} type
  * @param <T> concrete type of {@code ServiceSupportBase} used
  * @param <B> Builder for the concrete type of {@code }ServiceSupportBase}
  */
 public abstract class CdiExtensionBase<M,
+        A extends CdiExtensionBase.AsyncResponseInfo,
+        R extends CdiExtensionBase.RestEndpointInfo,
         T extends ServiceSupportBase<T, B>,
         B extends ServiceSupportBase.Builder<T, B>> implements Extension {
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
@@ -84,8 +114,23 @@ public abstract class CdiExtensionBase<M,
 
     private T serviceSupport = null;
 
-    protected CdiExtensionBase(Logger logger, Set<Class<? extends Annotation>> annotations, Class<?> ownProducer,
-            Function<Config, T> serviceSupportFactory, String configPrefix) {
+    private R restEndpointInfo = null;
+
+    /**
+     * Common initialization for concrete implementations.
+     *
+     * @param logger Logger instance to use for logging messages
+     * @param annotations set of annotations this extension handles
+     * @param ownProducer type of producer class use in creating beans needed by the extension
+     * @param serviceSupportFactory function from config to the corresponding SE-style service support object
+     * @param configPrefix prefix for retrieving config related to this extension
+     */
+    protected CdiExtensionBase(
+            Logger logger,
+            Set<Class<? extends Annotation>> annotations,
+            Class<?> ownProducer,
+            Function<Config, T> serviceSupportFactory,
+            String configPrefix) {
         this.logger = logger;
         this.annotations = annotations;
         this.ownProducer = ownProducer; // class containing producers provided by this module
@@ -115,6 +160,16 @@ public abstract class CdiExtensionBase<M,
         return annotatedClassesProcessed;
     }
 
+    protected void before(@Observes BeforeBeanDiscovery discovery) {
+        restEndpointInfo = newRestEndpointInfo();
+    }
+
+    /**
+     * Cleans up any data structures created during annotation processing but which are not needed once the CDI container has
+     * started.
+     *
+     * @param adv the {@code AfterDeploymentValidation} event
+     */
     protected void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
         if (logger.isLoggable(Level.FINE)) {
             Set<Class<?>> annotatedClassesIgnored = new HashSet<>(annotatedClasses());
@@ -128,6 +183,58 @@ public abstract class CdiExtensionBase<M,
         annotatedClasses.clear();
         annotatedClassesProcessed.clear();
     }
+
+    protected R restEndpointInfo() {
+        return restEndpointInfo;
+    }
+
+    /**
+     * Finds an existing or adds a new extension-specific {@code AsyncResponseInfo} for the indicated method.
+     *
+     * @param method the Method for which the AsyncResponseInfo is needed
+     * @return the pre-existing or newly-created instance, if any; null if no existing mapping was found and the factory method
+     * declined to create one
+     */
+    protected A computeIfAbsentAsyncResponseInfo(Method method){
+        Map<Method, A> asyncResponseInfo = restEndpointInfo.asyncResponseInfo();
+        return asyncResponseInfo.computeIfAbsent(method, this::newAsyncResponseInfo);
+    }
+
+    /**
+     * Returns a {@code AsyncResponseInfo} (or subclass) instance describing the async information about the specified method.
+     *
+     * @param method Method to examine for asynchronous behavior
+     * @return AsyncResponseInfo describing the async behavior; null if the method is synchronous
+     */
+    protected abstract A newAsyncResponseInfo(Method method);
+
+    /**
+     * Returns the index in the method's array of parameters, if any, with type {@code AsyncResponse} and annotated with
+     * {@code Suspended}.
+     *
+     * @param m the method to examine
+     * @return the array index of the async parameter, if any; -1 otherwise
+     */
+    protected static int asyncParameterSlot(Method m) {
+        int candidateAsyncResponseParameterSlot = 0;
+
+        for (Parameter p : m.getParameters()) {
+            if (AsyncResponse.class.isAssignableFrom(p.getType()) && p.getAnnotation(Suspended.class) != null) {
+                return candidateAsyncResponseParameterSlot;
+            }
+            candidateAsyncResponseParameterSlot++;
+
+        }
+        return -1;
+    }
+
+    /**
+     * Returns a new instance of the extension-specific REST endpoint information.
+     *
+     * @return newly-initialized instance
+     */
+    protected abstract R newRestEndpointInfo();
+
 
     /**
      * Observes all beans but immediately dismisses ones for which the Java class was not previously noted
@@ -330,5 +437,49 @@ public abstract class CdiExtensionBase<M,
         }
     }
 
+    /**
+     * Captures information about REST endpoints so, for example, interceptors can be quicker. Includes
+     * which JAX-RS endpoint methods (if any) are asynchronous.
+     *
+     * @param <A> concrete type of {@code AsyncResponseInfo}
+     */
+    protected static class RestEndpointInfo<A extends AsyncResponseInfo> {
 
+        private final Map<Method, A> asyncResponseInfo = new HashMap<>();
+
+        public AsyncResponse asyncResponse(InvocationContext context) {
+            A info = asyncResponseInfo.get(context.getMethod());
+            return info == null ? null : info.asyncResponse(context);
+        }
+
+        public Map<Method, A> asyncResponseInfo() {
+            return asyncResponseInfo;
+
+        }
+    }
+
+    /**
+     * Description of an {@code AsyncResponse} parameter annotated with {@code Suspended} in a JAX-RS method.
+     */
+    protected static class AsyncResponseInfo {
+
+        // which parameter slot in the method the AsyncResponse is
+        private final int parameterSlot;
+
+
+        protected AsyncResponseInfo(int parameterSlot) {
+            this.parameterSlot = parameterSlot;
+        }
+
+        /**
+         * Returns the {@code AsyncResponse} argument object in the given invocation.
+         *
+         * @param context the {@code InvocationContext} representing the call with an {@code AsyncResponse} parameter
+         * @return the {@code AsyncResponse} instance
+         */
+        public AsyncResponse asyncResponse(InvocationContext context) {
+            return AsyncResponse.class.cast(context.getParameters()[parameterSlot]);
+        }
+    }
 }
+
