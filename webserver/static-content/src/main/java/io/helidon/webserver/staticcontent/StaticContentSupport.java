@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Function;
 
-import io.helidon.common.http.HttpRequest;
 import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Service;
 
