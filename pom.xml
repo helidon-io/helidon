@@ -690,7 +690,7 @@
                             <resources>
                                 <resource>
                                     <!--suppress UnresolvedMavenProperty -->
-                                    <directory>${top.parent.basedir}</directory>
+                                    <directory>${top.parent.basedir}/licensing/templates</directory>
                                     <targetPath>META-INF/</targetPath>
                                     <filtering>true</filtering>
                                     <includes>
