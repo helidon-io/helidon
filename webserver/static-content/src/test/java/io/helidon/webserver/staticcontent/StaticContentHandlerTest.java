@@ -168,7 +168,7 @@ class StaticContentHandlerTest {
         TestContentHandler handler = TestContentHandler.create(true);
         handler.handle(Http.Method.GET, request, response);
         verify(request, never()).next();
-        assertThat(handler.path, is(Paths.get("/root").toAbsolutePath().normalize()));
+        assertThat(handler.path, is(Paths.get(".").toAbsolutePath().normalize()));
     }
 
     @Test
@@ -188,7 +188,7 @@ class StaticContentHandlerTest {
         TestContentHandler handler = TestContentHandler.create(true);
         handler.handle(Http.Method.GET, request, response);
         verify(request, never()).next();
-        assertThat(handler.path, is(Paths.get("/root/foo/some.txt").toAbsolutePath().normalize()));
+        assertThat(handler.path, is(Paths.get("foo/some.txt").toAbsolutePath().normalize()));
     }
 
     @Test
@@ -228,13 +228,13 @@ class StaticContentHandlerTest {
         final boolean returnValue;
         Path path;
 
-        TestContentHandler(StaticContentSupport.Builder builder, boolean returnValue) {
-            super(builder, builder.fsRoot());
+        TestContentHandler(StaticContentSupport.FileSystemBuilder builder, boolean returnValue) {
+            super(builder);
             this.returnValue = returnValue;
         }
         
         static TestContentHandler create(boolean returnValue) {
-            return new TestContentHandler(StaticContentSupport.builder(Paths.get("/root")), returnValue);
+            return new TestContentHandler(StaticContentSupport.builder(Paths.get(".")), returnValue);
         }
         
         @Override
@@ -250,8 +250,8 @@ class StaticContentHandlerTest {
         final AtomicInteger counter = new AtomicInteger(0);
         final boolean returnValue;
 
-        TestClassPathContentHandler(StaticContentSupport.Builder builder, boolean returnValue) {
-            super(builder, StaticContentHandlerTest.class.getClassLoader(), builder.clRoot());
+        TestClassPathContentHandler(StaticContentSupport.ClassPathBuilder builder, boolean returnValue) {
+            super(builder);
             this.returnValue = returnValue;
         }
 

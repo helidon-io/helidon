@@ -16,19 +16,19 @@
 
 package io.helidon.webserver.staticcontent;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
-import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 
 /**
  * Serves 'static content' (files) from filesystem or using a classloader to the {@link io.helidon.webserver.WebServer WebServer}
- * {@link io.helidon.webserver.Routing}. It is possible to {@link io.helidon.webserver.Routing.Builder#register(io.helidon.webserver.Service...) register} it on the routing.
+ * {@link io.helidon.webserver.Routing}. It is possible to
+ * {@link io.helidon.webserver.Routing.Builder#register(io.helidon.webserver.Service...) register} it on the routing.
  * <pre>{@code
  * // Serve content of attached '/static/pictures' on '/pics'
  * Routing.builder()
@@ -38,43 +38,7 @@ import io.helidon.webserver.Service;
  * <p>
  * Content is served ONLY on HTTP {@code GET} method.
  */
-public class StaticContentSupport implements Service {
-
-    private final StaticContentHandler handler;
-
-    private int webServerCounter = 0;
-
-    /**
-     * Creates new instance.
-     *
-     * @param handler an handler to use
-     */
-    StaticContentSupport(StaticContentHandler handler) {
-        this.handler = handler;
-    }
-
-    @Override
-    public void update(Routing.Rules routing) {
-        routing.onNewWebServer(ws -> {
-            webServerStarted();
-            ws.whenShutdown().thenRun(this::webServerStopped);
-        });
-        routing.get((req, res) -> handler.handle(Http.Method.GET, req, res));
-        routing.head((req, res) -> handler.handle(Http.Method.HEAD, req, res));
-    }
-
-    private synchronized void webServerStarted() {
-        webServerCounter++;
-    }
-
-    private synchronized void webServerStopped() {
-        webServerCounter--;
-        if (webServerCounter <= 0) {
-            webServerCounter = 0;
-            handler.releaseCache();
-        }
-    }
-
+public interface StaticContentSupport extends Service {
     /**
      * Creates new builder with defined static content root as a class-loader resource. Builder provides ability to define
      * more advanced configuration.
@@ -85,7 +49,7 @@ public class StaticContentSupport implements Service {
      * @return a builder
      * @throws NullPointerException if {@code resourceRoot} attribute is {@code null}
      */
-    public static Builder builder(String resourceRoot) {
+    static ClassPathBuilder builder(String resourceRoot) {
         Objects.requireNonNull(resourceRoot, "Attribute resourceRoot is null!");
         return builder(resourceRoot, Thread.currentThread().getContextClassLoader());
     }
@@ -99,9 +63,11 @@ public class StaticContentSupport implements Service {
      * @return a builder
      * @throws NullPointerException if {@code resourceRoot} attribute is {@code null}
      */
-    public static Builder builder(String resourceRoot, ClassLoader classLoader) {
+    static ClassPathBuilder builder(String resourceRoot, ClassLoader classLoader) {
         Objects.requireNonNull(resourceRoot, "Attribute resourceRoot is null!");
-        return new Builder(resourceRoot, classLoader);
+        return new ClassPathBuilder()
+                .root(resourceRoot)
+                .classLoader(classLoader);
     }
 
     /**
@@ -112,9 +78,10 @@ public class StaticContentSupport implements Service {
      * @return a builder
      * @throws NullPointerException if {@code root} attribute is {@code null}
      */
-    public static Builder builder(Path root) {
+    static FileSystemBuilder builder(Path root) {
         Objects.requireNonNull(root, "Attribute root is null!");
-        return new Builder(root);
+        return new FileSystemBuilder()
+                .root(root);
     }
 
     /**
@@ -126,7 +93,7 @@ public class StaticContentSupport implements Service {
      * @return created instance
      * @throws NullPointerException if {@code resourceRoot} attribute is {@code null}
      */
-    public static StaticContentSupport create(String resourceRoot) {
+    static StaticContentSupport create(String resourceRoot) {
         return create(resourceRoot, Thread.currentThread().getContextClassLoader());
     }
 
@@ -138,7 +105,7 @@ public class StaticContentSupport implements Service {
      * @return created instance
      * @throws NullPointerException if {@code resourceRoot} attribute is {@code null}
      */
-    public static StaticContentSupport create(String resourceRoot, ClassLoader classLoader) {
+    static StaticContentSupport create(String resourceRoot, ClassLoader classLoader) {
         return builder(resourceRoot, classLoader).build();
     }
 
@@ -149,39 +116,87 @@ public class StaticContentSupport implements Service {
      * @return created instance
      * @throws NullPointerException if {@code root} attribute is {@code null}
      */
-    public static StaticContentSupport create(Path root) {
+    static StaticContentSupport create(Path root) {
         return builder(root).build();
+    }
+
+    /**
+     * Creates static content support serving a single resource from classpath.
+     *
+     * @param resource a resource on classpath
+     * @param classLoader a class-loader for the static content
+     *
+     * @return a new static content instance serving the resource for any request
+     */
+    static StaticContentSupport singleFile(String resource, ClassLoader classLoader) {
+        String resourceRoot;
+        String welcomeFile;
+
+        int i = resource.lastIndexOf('/');
+        if (i < 1) {
+            resourceRoot = "";
+            welcomeFile = resource;
+        } else {
+            resourceRoot = resource.substring(0, i);
+            welcomeFile = resource.substring(i + 1);
+        }
+
+        return builder(resourceRoot, classLoader)
+                .welcomeFileName(welcomeFile)
+                .ignorePath(true)
+                .build();
+    }
+
+    /**
+     * Creates static content support serving a single resource from classpath.
+     *
+     * @param resource a resource on classpath
+     *
+     * @return a new static content instance serving the resource for any request
+     */
+    static StaticContentSupport singleFile(String resource) {
+        return singleFile(resource, Thread.currentThread().getContextClassLoader());
+    }
+
+    /**
+     * Creates static content support serving a single resource from filesystem.
+     *
+     * @param resource path of the file to serve
+     *
+     * @return a new static content instance serving the resource for any request
+     */
+    static StaticContentSupport singleFile(Path resource) {
+        return builder(resource.getParent())
+                .welcomeFileName(resource.getFileName().toString())
+                .ignorePath(true)
+                .build();
     }
 
     /**
      * Fluent builder of the StaticContent detailed parameters.
      */
-    public static class Builder implements io.helidon.common.Builder<StaticContentSupport> {
-
-        private final Path fsRoot;
-        private final String clRoot;
-        private final ClassLoader classLoader;
-        private final Map<String, MediaType> specificContentTypes = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-
+    @SuppressWarnings("unchecked")
+    abstract class Builder<B extends Builder<B>> implements io.helidon.common.Builder<StaticContentSupport> {
         private String welcomeFileName;
-        private Path tmpDir;
+        private boolean ignorePath;
 
-        Builder(Path fsRoot) {
-            Objects.requireNonNull(fsRoot, "Attribute fsRoot is null!");
-            this.fsRoot = fsRoot;
-            this.clRoot = null;
-            this.classLoader = null;
+        protected Builder() {
         }
 
-        Builder(String clRoot, ClassLoader classLoader) {
-            Objects.requireNonNull(clRoot, "Attribute clRoot is null!");
-            if (clRoot.startsWith("/")) {
-                clRoot = clRoot.substring(1);
+        @Override
+        public final StaticContentSupport build() {
+            if (ignorePath && (welcomeFileName == null || welcomeFileName.isBlank())) {
+                throw new IllegalArgumentException("When ignorePath is set to true, a welcome file must be defined");
             }
-            this.clRoot = clRoot;
-            this.classLoader = classLoader;
-            this.fsRoot = null;
+            return doBuild();
         }
+
+        /**
+         * Build the actual instance.
+         *
+         * @return static content support
+         */
+        protected abstract StaticContentSupport doBuild();
 
         /**
          * Sets a name of the "file" which will be returned if directory is requested.
@@ -189,21 +204,47 @@ public class StaticContentSupport implements Service {
          * @param welcomeFileName a name of the welcome file
          * @return updated builder
          */
-        public Builder welcomeFileName(String welcomeFileName) {
+        public B welcomeFileName(String welcomeFileName) {
+            Objects.requireNonNull(welcomeFileName, "Welcome file cannot be null");
+            if (welcomeFileName.isBlank()) {
+                throw new IllegalArgumentException("Welcome file cannot be empty");
+            }
             this.welcomeFileName = welcomeFileName;
-            return this;
+            return (B) this;
         }
 
         /**
-         * Sets custom temporary folder for extracting static content from a jar.
+         * When configured to {@code true}, request path is ignored, and file is served directly
+         * from the configured root.
+         * This is useful as a fallback static content support that serves {@code index.html} for any missing
+         * resource.
+         * As this would always find a file if welcome file is configured, it should be configured as the
+         * last service in routing.
          *
-         * @param tmpDir custom temporary folder
+         * @param ignore whether to ignore path in HTTP request
          * @return updated builder
          */
-        public Builder tmpDir(Path tmpDir) {
-            this.tmpDir = tmpDir;
-            return this;
+        public B ignorePath(boolean ignore) {
+            this.ignorePath = ignore;
+            return (B) this;
         }
+
+        String welcomeFileName() {
+            return welcomeFileName;
+        }
+
+        boolean ignorePath() {
+            return ignorePath;
+        }
+    }
+
+    /**
+     * Builder for file based static content supports, such as file based and classpath based.
+     * @param <T>
+     */
+    @SuppressWarnings("unchecked")
+    abstract class FileBasedBuilder<T extends FileBasedBuilder<T>> extends StaticContentSupport.Builder<FileBasedBuilder<T>> {
+        private final Map<String, MediaType> specificContentTypes = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         /**
          * Maps a filename extension to the response content type.
@@ -219,7 +260,7 @@ public class StaticContentSupport implements Service {
          * @throws NullPointerException if any parameter is {@code null}
          * @throws IllegalArgumentException if {@code filenameExtension} is empty
          */
-        public Builder contentType(String filenameExtension, MediaType contentType) {
+        public T contentType(String filenameExtension, MediaType contentType) {
             Objects.requireNonNull(filenameExtension, "Parameter 'filenameExtension' is null!");
             Objects.requireNonNull(contentType, "Parameter 'contentType' is null!");
             filenameExtension = filenameExtension.trim();
@@ -230,32 +271,66 @@ public class StaticContentSupport implements Service {
                 throw new IllegalArgumentException("Parameter 'filenameExtension' cannot be empty!");
             }
             specificContentTypes.put(filenameExtension, contentType);
+            return (T) this;
+        }
+
+        Map<String, MediaType> specificContentTypes() {
+            return specificContentTypes;
+        }
+    }
+
+    /**
+     * Builder for class path based static content.
+     */
+    class ClassPathBuilder extends StaticContentSupport.FileBasedBuilder<ClassPathBuilder> {
+        private String clRoot;
+        private ClassLoader classLoader;
+        private Path tmpDir;
+
+        protected ClassPathBuilder() {
+        }
+
+        @Override
+        protected StaticContentSupport doBuild() {
+            return new ClassPathContentHandler(this);
+        }
+
+        ClassPathBuilder classLoader(ClassLoader cl) {
+            this.classLoader = cl;
+            return this;
+        }
+
+        ClassPathBuilder root(String root) {
+            Objects.requireNonNull(root, "Attribute root is null!");
+            String cleanRoot = root;
+            if (cleanRoot.startsWith("/")) {
+                cleanRoot = cleanRoot.substring(1);
+            }
+            while (cleanRoot.endsWith("/")) {
+                cleanRoot = cleanRoot.substring(0, cleanRoot.length() - 1);
+            }
+
+            if (cleanRoot.isEmpty()) {
+                throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
+            }
+
+            this.clRoot = cleanRoot;
+
             return this;
         }
 
         /**
-         * Builds new {@link io.helidon.webserver.staticcontent.StaticContentSupport} instance.
+         * Sets custom temporary folder for extracting static content from a jar.
          *
-         * @return a new instance
+         * @param tmpDir custom temporary folder
+         * @return updated builder
          */
-        @Override
-        public StaticContentSupport build() {
-            StaticContentHandler handler;
-            if (fsRoot != null) {
-                handler = FileSystemContentHandler.create(this);
-            } else if (clRoot != null) {
-                handler = ClassPathContentHandler.create(this);
-            } else {
-                throw new IllegalArgumentException("Builder was created without specified static content root!");
-            }
-            return new StaticContentSupport(handler);
+        public ClassPathBuilder tmpDir(Path tmpDir) {
+            this.tmpDir = tmpDir;
+            return this;
         }
 
-        Path fsRoot() {
-            return fsRoot;
-        }
-
-        String clRoot() {
+        String root() {
             return clRoot;
         }
 
@@ -263,16 +338,39 @@ public class StaticContentSupport implements Service {
             return classLoader;
         }
 
-        Map<String, MediaType> specificContentTypes() {
-            return specificContentTypes;
-        }
-
-        String welcomeFileName() {
-            return welcomeFileName;
-        }
-
         Path tmpDir() {
             return tmpDir;
+        }
+    }
+
+    /**
+     * Builder for file system based static content.
+     */
+    class FileSystemBuilder extends StaticContentSupport.FileBasedBuilder<FileSystemBuilder> {
+        private Path root;
+
+        protected FileSystemBuilder() {
+        }
+
+        @Override
+        protected StaticContentSupport doBuild() {
+            return new FileSystemContentHandler(this);
+        }
+
+        FileSystemBuilder root(Path root) {
+            Objects.requireNonNull(root, "Attribute root is null!");
+            this.root = root.toAbsolutePath().normalize();
+
+            if (!(Files.exists(this.root) && Files.isDirectory(this.root))) {
+                throw new IllegalArgumentException("Cannot create file system static content, path "
+                                                           + this.root
+                                                           + " does not exist or is not a directory");
+            }
+            return this;
+        }
+
+        Path root() {
+            return root;
         }
     }
 }

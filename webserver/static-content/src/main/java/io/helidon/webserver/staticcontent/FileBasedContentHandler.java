@@ -43,7 +43,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
 
     private final Map<String, MediaType> customMediaTypes;
 
-    FileBasedContentHandler(StaticContentSupport.Builder builder) {
+    FileBasedContentHandler(StaticContentSupport.FileBasedBuilder<?> builder) {
         super(builder);
 
         this.customMediaTypes = builder.specificContentTypes();
@@ -176,5 +176,6 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
     void send(ServerResponse response, Path path) {
         response.send(PATH_WRITER.marshall(path));
     }
+
 
 }

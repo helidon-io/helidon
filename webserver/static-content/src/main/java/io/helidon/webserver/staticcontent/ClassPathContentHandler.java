@@ -56,11 +56,11 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     // URL's hash code and equal are not suitable for map or set
     private final Map<String, ExtractedJarEntry> extracted = new ConcurrentHashMap<>();
 
-    ClassPathContentHandler(StaticContentSupport.Builder builder, ClassLoader classLoader, String root) {
+    ClassPathContentHandler(StaticContentSupport.ClassPathBuilder builder) {
         super(builder);
 
-        this.classLoader = classLoader;
-        this.root = root;
+        this.classLoader = builder.classLoader();
+        this.root = builder.root();
         this.rootWithTrailingSlash = root + '/';
 
         Path tmpDir = builder.tmpDir();
@@ -81,26 +81,6 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                 }
             };
         }
-    }
-
-    static ClassPathContentHandler create(StaticContentSupport.Builder builder) {
-        ClassLoader classLoader = (
-                builder.classLoader() == null
-                        ? ClassPathContentHandler.class.getClassLoader()
-                        : builder.classLoader());
-
-        String clRoot = builder.clRoot();
-        String cleanRoot = clRoot;
-
-        while (cleanRoot.endsWith("/")) {
-            cleanRoot = clRoot.substring(0, cleanRoot.length() - 1);
-        }
-
-        if (cleanRoot.isEmpty()) {
-            throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
-        }
-
-        return new ClassPathContentHandler(builder, classLoader, cleanRoot);
     }
 
     @SuppressWarnings("checkstyle:RegexpSinglelineJava")

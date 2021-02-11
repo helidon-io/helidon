@@ -32,25 +32,12 @@ import io.helidon.webserver.ServerResponse;
 class FileSystemContentHandler extends FileBasedContentHandler {
     private static final Logger LOGGER = Logger.getLogger(FileSystemContentHandler.class.getName());
 
-
     private final Path root;
 
-    FileSystemContentHandler(StaticContentSupport.Builder builder, Path root) {
+    FileSystemContentHandler(StaticContentSupport.FileSystemBuilder builder) {
         super(builder);
 
-        this.root = root;
-    }
-
-    static FileSystemContentHandler create(StaticContentSupport.Builder builder) {
-        Path root = builder.fsRoot().toAbsolutePath().normalize();
-
-        if (!(Files.exists(root) && Files.isDirectory(root))) {
-            throw new IllegalArgumentException("Cannot create file system static content, path "
-                                                       + root
-                                                       + " does not exist or is not a directory");
-        }
-
-        return new FileSystemContentHandler(builder, root);
+        this.root = builder.root();
     }
 
     @Override
@@ -80,4 +67,5 @@ class FileSystemContentHandler extends FileBasedContentHandler {
 
         return true;
     }
+
 }

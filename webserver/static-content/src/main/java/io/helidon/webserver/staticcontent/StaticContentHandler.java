@@ -29,19 +29,46 @@ import io.helidon.common.http.Http;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.ResponseHeaders;
+import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
 /**
- * Request {@link io.helidon.webserver.Handler} processing a static content.
+ * Base implementation of static content support.
  */
-abstract class StaticContentHandler {
+abstract class StaticContentHandler implements StaticContentSupport {
     private static final Logger LOGGER = Logger.getLogger(StaticContentHandler.class.getName());
 
     private final String welcomeFilename;
+    private final boolean ignorePath;
 
-    StaticContentHandler(StaticContentSupport.Builder builder) {
+    StaticContentHandler(StaticContentSupport.Builder<?> builder) {
         this.welcomeFilename = builder.welcomeFileName();
+        this.ignorePath = builder.ignorePath();
+    }
+
+    private int webServerCounter = 0;
+
+    @Override
+    public void update(Routing.Rules routing) {
+        routing.onNewWebServer(ws -> {
+            webServerStarted();
+            ws.whenShutdown().thenRun(this::webServerStopped);
+        });
+        routing.get((req, res) -> handle(Http.Method.GET, req, res));
+        routing.head((req, res) -> handle(Http.Method.HEAD, req, res));
+    }
+
+    private synchronized void webServerStarted() {
+        webServerCounter++;
+    }
+
+    private synchronized void webServerStopped() {
+        webServerCounter--;
+        if (webServerCounter <= 0) {
+            webServerCounter = 0;
+            releaseCache();
+        }
     }
 
     /**
@@ -64,9 +91,15 @@ abstract class StaticContentHandler {
             return;
         }
         // Resolve path
-        String requestPath = request.path().toString();
-        if (requestPath.startsWith("/")) {
-            requestPath = requestPath.substring(1);
+        String requestPath;
+        if (ignorePath) {
+            // force use of welcome file
+            requestPath = "";
+        } else {
+            requestPath = request.path().toString();
+            if (requestPath.startsWith("/")) {
+                requestPath = requestPath.substring(1);
+            }
         }
 
         // Call doHandle
