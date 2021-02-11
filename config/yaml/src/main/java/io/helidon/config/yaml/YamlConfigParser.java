@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ public class YamlConfigParser implements ConfigParser {
     public static final int PRIORITY = ConfigParser.PRIORITY + 100;
 
     private static final Set<String> SUPPORTED_MEDIA_TYPES = Set.of(MEDIA_TYPE_APPLICATION_YAML);
+    private static final List<String> SUPPORTED_SUFFIXES = List.of("yml", "yaml");
 
     /**
      * Default constructor needed by Java Service loader.
@@ -87,6 +88,11 @@ public class YamlConfigParser implements ConfigParser {
     @Override
     public Set<String> supportedMediaTypes() {
         return SUPPORTED_MEDIA_TYPES;
+    }
+
+    @Override
+    public List<String> supportedSuffixes() {
+        return SUPPORTED_SUFFIXES;
     }
 
     @Override
