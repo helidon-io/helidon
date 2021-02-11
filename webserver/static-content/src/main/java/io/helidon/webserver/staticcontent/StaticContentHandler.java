@@ -230,12 +230,21 @@ abstract class StaticContentHandler implements StaticContentSupport {
     /**
      * Redirects to the given location.
      *
+     * @param request request used to obtain query parameters for redirect
      * @param response a server response to use
      * @param location a location to redirect
      */
-    static void redirect(ServerResponse response, String location) {
+    static void redirect(ServerRequest request, ServerResponse response, String location) {
+        String query = request.query();
+        String locationWithQuery;
+        if (query == null) {
+            locationWithQuery = location;
+        } else {
+            locationWithQuery = location + "?" + request.query();
+        }
+
         response.status(Http.Status.MOVED_PERMANENTLY_301);
-        response.headers().put(Http.Header.LOCATION, location);
+        response.headers().put(Http.Header.LOCATION, locationWithQuery);
         response.send();
     }
 

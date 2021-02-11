@@ -146,7 +146,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                 path = resolveWelcomeFile(path, welcomePage);
             } else {
                 // Or redirect to slash ended
-                redirect(response, rawFullPath + "/");
+                redirect(request, response, rawFullPath + "/");
                 return;
             }
         }

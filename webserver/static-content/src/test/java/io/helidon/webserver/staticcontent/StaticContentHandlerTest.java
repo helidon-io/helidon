@@ -146,8 +146,9 @@ class StaticContentHandlerTest {
     void redirect() {
         ResponseHeaders resh = mock(ResponseHeaders.class);
         ServerResponse res = mock(ServerResponse.class);
+        ServerRequest req = mock(ServerRequest.class);
         Mockito.doReturn(resh).when(res).headers();
-        StaticContentHandler.redirect(res, "/foo/");
+        StaticContentHandler.redirect(req, res, "/foo/");
         verify(res).status(Http.Status.MOVED_PERMANENTLY_301);
         verify(resh).put(Http.Header.LOCATION, "/foo/");
         verify(res).send();

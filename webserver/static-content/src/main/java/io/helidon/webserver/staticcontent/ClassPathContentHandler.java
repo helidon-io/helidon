@@ -117,7 +117,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                     url = welcomeUrl;
                 } else {
                     // must redirect
-                    redirect(response, rawFullPath + "/");
+                    redirect(request, response, rawFullPath + "/");
                     return true;
                 }
             }
