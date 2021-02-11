@@ -174,6 +174,7 @@ public interface StaticContentSupport extends Service {
 
     /**
      * Fluent builder of the StaticContent detailed parameters.
+     * @param <B> type of a subclass of a concrete builder
      */
     @SuppressWarnings("unchecked")
     abstract class Builder<B extends Builder<B>> implements io.helidon.common.Builder<StaticContentSupport> {
@@ -224,7 +225,7 @@ public interface StaticContentSupport extends Service {
          * @param ignore whether to ignore path in HTTP request
          * @return updated builder
          */
-        public B ignorePath(boolean ignore) {
+        B ignorePath(boolean ignore) {
             this.ignorePath = ignore;
             return (B) this;
         }
@@ -240,7 +241,7 @@ public interface StaticContentSupport extends Service {
 
     /**
      * Builder for file based static content supports, such as file based and classpath based.
-     * @param <T>
+     * @param <T> type of a subclass of a concrete builder
      */
     @SuppressWarnings("unchecked")
     abstract class FileBasedBuilder<T extends FileBasedBuilder<T>> extends StaticContentSupport.Builder<FileBasedBuilder<T>> {
