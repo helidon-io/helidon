@@ -21,7 +21,9 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.function.Function;
 
+import io.helidon.common.http.HttpRequest;
 import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Service;
 
@@ -121,74 +123,19 @@ public interface StaticContentSupport extends Service {
     }
 
     /**
-     * Creates static content support serving a single resource from classpath.
-     *
-     * @param resource a resource on classpath
-     * @param classLoader a class-loader for the static content
-     *
-     * @return a new static content instance serving the resource for any request
-     */
-    static StaticContentSupport singleFile(String resource, ClassLoader classLoader) {
-        String resourceRoot;
-        String welcomeFile;
-
-        int i = resource.lastIndexOf('/');
-        if (i < 1) {
-            resourceRoot = "";
-            welcomeFile = resource;
-        } else {
-            resourceRoot = resource.substring(0, i);
-            welcomeFile = resource.substring(i + 1);
-        }
-
-        return builder(resourceRoot, classLoader)
-                .welcomeFileName(welcomeFile)
-                .ignorePath(true)
-                .build();
-    }
-
-    /**
-     * Creates static content support serving a single resource from classpath.
-     *
-     * @param resource a resource on classpath
-     *
-     * @return a new static content instance serving the resource for any request
-     */
-    static StaticContentSupport singleFile(String resource) {
-        return singleFile(resource, Thread.currentThread().getContextClassLoader());
-    }
-
-    /**
-     * Creates static content support serving a single resource from filesystem.
-     *
-     * @param resource path of the file to serve
-     *
-     * @return a new static content instance serving the resource for any request
-     */
-    static StaticContentSupport singleFile(Path resource) {
-        return builder(resource.getParent())
-                .welcomeFileName(resource.getFileName().toString())
-                .ignorePath(true)
-                .build();
-    }
-
-    /**
      * Fluent builder of the StaticContent detailed parameters.
      * @param <B> type of a subclass of a concrete builder
      */
     @SuppressWarnings("unchecked")
     abstract class Builder<B extends Builder<B>> implements io.helidon.common.Builder<StaticContentSupport> {
         private String welcomeFileName;
-        private boolean ignorePath;
+        private Function<String, String> resolvePathFunction = Function.identity();
 
         protected Builder() {
         }
 
         @Override
         public final StaticContentSupport build() {
-            if (ignorePath && (welcomeFileName == null || welcomeFileName.isBlank())) {
-                throw new IllegalArgumentException("When ignorePath is set to true, a welcome file must be defined");
-            }
             return doBuild();
         }
 
@@ -215,18 +162,14 @@ public interface StaticContentSupport extends Service {
         }
 
         /**
-         * When configured to {@code true}, request path is ignored, and file is served directly
-         * from the configured root.
-         * This is useful as a fallback static content support that serves {@code index.html} for any missing
-         * resource.
-         * As this would always find a file if welcome file is configured, it should be configured as the
-         * last service in routing.
+         * Map request path to resource path. Default uses the same path as requested.
+         * This can be used to resolve all paths to a single file, or to filter out files.
          *
-         * @param ignore whether to ignore path in HTTP request
+         * @param resolvePathFunction function
          * @return updated builder
          */
-        B ignorePath(boolean ignore) {
-            this.ignorePath = ignore;
+        public B pathMapper(Function<String, String> resolvePathFunction) {
+            this.resolvePathFunction = resolvePathFunction;
             return (B) this;
         }
 
@@ -234,8 +177,8 @@ public interface StaticContentSupport extends Service {
             return welcomeFileName;
         }
 
-        boolean ignorePath() {
-            return ignorePath;
+        Function<String, String> resolvePathFunction() {
+            return resolvePathFunction;
         }
     }
 

@@ -47,10 +47,14 @@ public class Gh2631 {
         return Routing.builder()
                 .register("/simple", classpath)
                 .register("/fallback", classpath)
-                .register("/fallback", StaticContentSupport.singleFile("fallback/index.txt"))
+                .register("/fallback", StaticContentSupport.builder("fallback")
+                        .pathMapper(path -> "index.txt")
+                        .build())
                 .register("/simpleFile", file)
                 .register("/fallbackFile", file)
-                .register("/fallbackFile", StaticContentSupport.singleFile(Paths.get("src/main/resources/fallback/index.txt")))
+                .register("/fallbackFile", StaticContentSupport.builder(Paths.get("src/main/resources/fallback"))
+                        .pathMapper(path -> "index.txt")
+                        .build())
                 .build();
     }
 }

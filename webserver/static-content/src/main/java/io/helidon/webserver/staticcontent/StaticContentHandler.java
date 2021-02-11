@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.time.chrono.ChronoZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,11 +41,11 @@ abstract class StaticContentHandler implements StaticContentSupport {
     private static final Logger LOGGER = Logger.getLogger(StaticContentHandler.class.getName());
 
     private final String welcomeFilename;
-    private final boolean ignorePath;
+    private final Function<String, String> resolvePathFunction;
 
     StaticContentHandler(StaticContentSupport.Builder<?> builder) {
         this.welcomeFilename = builder.welcomeFileName();
-        this.ignorePath = builder.ignorePath();
+        this.resolvePathFunction = builder.resolvePathFunction();
     }
 
     private int webServerCounter = 0;
@@ -91,16 +92,11 @@ abstract class StaticContentHandler implements StaticContentSupport {
             return;
         }
         // Resolve path
-        String requestPath;
-        if (ignorePath) {
-            // force use of welcome file
-            requestPath = "";
-        } else {
-            requestPath = request.path().toString();
-            if (requestPath.startsWith("/")) {
-                requestPath = requestPath.substring(1);
-            }
+        String requestPath = request.path().toString();
+        if (requestPath.startsWith("/")) {
+            requestPath = requestPath.substring(1);
         }
+        requestPath = resolvePathFunction.apply(requestPath);
 
         // Call doHandle
         try {
