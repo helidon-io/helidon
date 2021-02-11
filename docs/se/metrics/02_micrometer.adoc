@@ -29,10 +29,10 @@ include::{common-page-prefix-inc}[tags=intro;!intro-mp-specific]
 include::{common-page-prefix-inc}[tags=prereq]
 
 == Using Micrometer in Your Application
-You need to make two types of changes to your application to use Helidon's Micrometer support:
+You need to make two types of changes to your application to use Helidon SE integration with Micrometer:
 
 . Register an instance of link:{javadoc-base-url-api}/MicrometerSupport.html[`MicrometerSupport`] with the web server.
-. Create and update meters using the meter registry which `MicrometerSupport` manages.
+. Create  meters using the meter registry which `MicrometerSupport` manages and update those meters.
 
 === Register an Instance of `MicrometerSupport` with the Web Server
 
@@ -52,7 +52,7 @@ Routing.builder()
 <2> Register the support instance as a service; by default, `MicrometerSupport` exposes the endpoint as `/micrometer`.
 <3> Pass the `MicrometerSupport` object's meter registry to your service for use in creating and updating meters.
 
-=== Create and Update Micrometer Meters in your Application Service
+=== Create and Update Meters in your Application Service
 
 [source,java]
 .Define and use a `Counter`
@@ -130,14 +130,14 @@ To create additional types of registries and enroll them with `MicrometerSupport
 . Write a `Handler` +
 +
 Each meter registry has its own way of producing output.
-Write your handler so that it has a reference to the meter registry it should use and so
+Write your handler so that it has a reference to the meter registry it should use and so that
 its `accept` method sets the payload in the HTTP response using the registry's mechanism for creating output.
 
 . Write a `Function` which accepts a `ServerRequest` and returns an `Optional<Handler>` +
 +
 In general, your function looks at the request--the `Content-Type`, query parameters, etc.--to
 decide whether your handler should respond to the request.
-If so, your function should instantiate your `Handler` and return an `Optional.of(theInstance)`;
+If so, your function should instantiate your `Handler` and return an `Optional.of(theHandlerInstance)`;
 otherwise, your function should return `Optional.empty()`. +
 +
 When `MicrometerSupport` receives a request, it invokes the functions of all the enrolled registries,
@@ -162,7 +162,7 @@ MicrometerSupport support = MicrometerSupport.builder()
 ----
 <1> Create the meter registry. This example uses a Prometheus registry but it can be any extension of `MeterRegistry`.
 <2> Provide the function that checks if the link:{javadoc-base-url-webserver}/ServerRequest.html[`ServerRequest`]
-accepts `text/plain` (or unspecified) content (either is normally an indication for Prometheus-style output)
+accepts content that your meter registry can produce (e.g., either `text/plain` or unspecified is normally an indication for Prometheus-style output)
 and returns the appropriate `Optional<link:{:javadoc-base-url-webserver}/Handler.html[``Handler``]>`.
 <3> A very simple in-line `Handler` that sets the response entity from the Prometheus registry's `scrape()` method.
 
@@ -170,9 +170,9 @@ include::{common-page-prefix-inc}[tag=accessing-endpoint-intro]
 
 When `MicrometerSupport` receives a request at the endpoint, it looks for the first enrolled meter registry for which
 the corresponding `Function<ServerRequest, Optional<Handler>>` returns a non-empty `Handler`.
-Helidon invokes that `Handler` which must retrieve the metrics output from the corresponding meter registry and set
+Helidon invokes that `Handler` which must retrieve the metrics output from its meter registry and set
 and send the response.
-Note that the `Handler` which your function returns must have a reference to the meter registry it will use
+Note that the `Handler` which your function returns typically has a reference to the meter registry it will use
 in preparing the response.
 
 

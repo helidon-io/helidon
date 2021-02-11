@@ -64,7 +64,7 @@ import io.micrometer.core.annotation.Timed;
     }
 ----
 <1> Declare constants used in annotating multiple methods.
-<2> Use `@Timed` to time and count all `GET` methods.
+<2> Use `@Timed` to time and count both `GET` methods.
 <3> Use `@Counted` to count the accesses to the `GET` method that returns a personalized greeting.
 
 include::{common-page-prefix-inc}[tags=overriding-intro;overriding-using-config]

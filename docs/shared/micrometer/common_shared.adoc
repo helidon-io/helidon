@@ -32,14 +32,14 @@ Helidon {h1Prefix} simplifies how you can use Micrometer for application-specifi
 responds to the HTTP request.
 
 
-ifdef::se[]
+ifdef::isSE[]
 * The `MicrometerSupport` class: A convenience class for enrolling Micrometer meter registries your application
 creates explicitly or for selecting which built-in Micrometer meter registries to
 to use.
-endif::se[]
-ifdef::mp[]
+endif::isSE[]
+ifdef::isMP[]
 * The Micrometer annotations `@Timed` and `@Counted`.
-endif::mp[]
+endif::isMP[]
 * Configuration to tailor the Prometheus and other Micrometer meter registries.
 
 In Helidon {helidon-version}, Micrometer support is separate from the Helidon {h1Prefix} metrics API and the built-in Helidon metrics.
@@ -55,13 +55,17 @@ Declare the following dependency in your project:
 ----
 <dependency>
     <groupId>io.helidon.integrations</groupId>
-    <artifactId>helidon-micrometer</artifactId>
+    <artifactId>helidon-integrations-micrometer</artifactId>
 </dependency>
 ----
 
 Micrometer supports different types of meter registries which have different output styles and formats.
 Helidon provides built-in support for the Prometheus meter registry.
-To use other meter registry types, you will need to add dependencies for them to your `pom.xml` and, optionally, add configuration to set them up as you wish.
+To use other meter registry types, you will need to add dependencies for them to your `pom.xml` and, optionally, add
+ifdef::isSE[]
+code to your application or add
+endif::isSE[]
+configuration to set them up as you wish.
 
 // end::prereq[]
 
@@ -93,9 +97,9 @@ micrometer:
     - type: prometheus
       prefix: myPrefix
 ----
-Note that the first example is equivalent to the default Helidon Micrometer behavior; Helidon by default supports the Prometheus meter registry.
+Note that the first config example is equivalent to the default Helidon Micrometer behavior; Helidon by default supports the Prometheus meter registry.
 
-The configuration keys that are valid for the `builtin-registries` entry depend on the type of Micrometer meter
+The configuration keys that are valid for the `builtin-registries` child entries depend on the type of Micrometer meter
 registry.
 For example, the Prometheus meter registry supports the `prefix` configuration setting but other meter registries might not and might support other settings.
 Refer to the documentation for the meter registry you want to configure to find out what items apply to that registry
