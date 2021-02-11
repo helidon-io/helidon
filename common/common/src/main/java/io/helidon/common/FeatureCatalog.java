@@ -154,10 +154,6 @@ final class FeatureCatalog {
                     .path("WebServer", "Websocket")
                     .nativeSupported(true)
                     .nativeDescription("Server only"));
-        addSe("io.helidon.faulttolerance",
-              "Fault Tolerance",
-              "Fault tolerance support",
-              "FT");
         add("io.helidon.graphql.server",
             FeatureDescriptor.builder()
                     .name("GraphQL")
