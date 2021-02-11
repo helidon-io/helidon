@@ -21,7 +21,6 @@ import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -52,7 +51,7 @@ import io.helidon.webserver.Service;
 
 import io.opentracing.SpanContext;
 import org.glassfish.jersey.CommonProperties;
-import org.glassfish.jersey.internal.PropertiesDelegate;
+import org.glassfish.jersey.internal.MapPropertiesDelegate;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.server.ApplicationHandler;
 import org.glassfish.jersey.server.ContainerRequest;
@@ -261,7 +260,7 @@ public class JerseySupport implements Service {
                                                                    req.absoluteUri(),
                                                                    req.method().name(),
                                                                    new WebServerSecurityContext(),
-                                                                   new WebServerPropertiesDelegate(req),
+                                                                   new MapPropertiesDelegate(),
                                                                    null);
             // set headers
             req.headers().toMap().forEach(requestContext::headers);
@@ -316,43 +315,6 @@ public class JerseySupport implements Service {
      */
     public void close() {
         appHandler.onShutdown(container);
-    }
-
-    /**
-     * A limited implementation of {@link PropertiesDelegate} that doesn't support
-     * a significant set of operations due to the Web Server design.
-     * <p>
-     * It is expected that the limitations would be overcome (somehow) in the future if needed.
-     */
-    private static class WebServerPropertiesDelegate implements PropertiesDelegate {
-
-        private final ServerRequest req;
-
-        WebServerPropertiesDelegate(ServerRequest req) {
-            this.req = req;
-        }
-
-        @Override
-        public Object getProperty(String name) {
-            return req.context().get(name, Object.class).orElse(null);
-        }
-
-        @Override
-        public Collection<String> getPropertyNames() {
-            // TODO we don't provide an ability to iterate over the registered properties
-            throw new UnsupportedOperationException("iteration over property names not allowed");
-        }
-
-        @Override
-        public void setProperty(String name, Object object) {
-            req.context().register(name, object);
-        }
-
-        @Override
-        public void removeProperty(String name) {
-            // TODO do we want to remove properties?
-            throw new UnsupportedOperationException("property removal from the context is not allowed");
-        }
     }
 
     /**
