@@ -1,0 +1,123 @@
+///////////////////////////////////////////////////////////////////////////////
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+//Contains content that is shared between multiple Micrometer pages.
+:keywords: helidon, java, micrometer, integration, se, mp
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.integrations.mimcrometer/io/helidon/integrations/micrometer
+
+:common-page-prefix-inc: ../../shared/micrometer/common_shared.adoc
+
+= Micrometer Shared content
+
+// tag::intro[]
+Helidon {h1Prefix} simplifies how you can use Micrometer for application-specific metrics:
+
+* The endpoint `/micrometer`: A configurable endpoint that exposes metrics according to which Micrometer meter registry
+responds to the HTTP request.
+
+
+ifdef::se[]
+* The `MicrometerSupport` class: A convenience class for enrolling Micrometer meter registries your application
+creates explicitly or for selecting which built-in Micrometer meter registries to
+to use.
+endif::se[]
+ifdef::mp[]
+* The Micrometer annotations `@Timed` and `@Counted`.
+endif::mp[]
+* Configuration to tailor the Prometheus and other Micrometer meter registries.
+
+In Helidon {helidon-version}, Micrometer support is separate from the Helidon {h1Prefix} metrics API and the built-in Helidon metrics.
+
+// end::intro[]
+
+// tag::prereq[]
+== Prerequisites
+
+Declare the following dependency in your project:
+
+[source,xml,subs="verbatim,attributes"]
+----
+<dependency>
+    <groupId>io.helidon.integrations</groupId>
+    <artifactId>helidon-micrometer</artifactId>
+</dependency>
+----
+
+Micrometer supports different types of meter registries which have different output styles and formats.
+Helidon provides built-in support for the Prometheus meter registry.
+To use other meter registry types, you will need to add dependencies for them to your `pom.xml` and, optionally, add configuration to set them up as you wish.
+
+// end::prereq[]
+
+// tag::overriding-intro[]
+=== Overriding Defaults for Built-in Meter Registry Types
+Unless you specify otherwise, Helidon uses defaults for any built-in Micrometer meter registry.
+For example, Helidon configures the built-in Prometheus registry using `PrometheusConfig.DEFAULT`.
+
+// end::overriding-intro[]
+
+
+// tag::overriding-using-config[]
+To use configuration to control the selection and behavior of Helidon's built-in Micrometer meter registries,
+include in your configuration (such as `application.yaml`) a `micrometer.builtin-registries` section.
+
+[source,yaml]
+.Enroll Prometheus built-in meter registry using default configuration
+----
+micrometer:
+  builtin-registries:
+    - type: prometheus
+----
+
+[source,yaml]
+.Enroll Prometheus built-in meter registry with non-default configuration
+----
+micrometer:
+  builtin-registries:
+    - type: prometheus
+      prefix: myPrefix
+----
+Note that the first example is equivalent to the default Helidon Micrometer behavior; Helidon by default supports the Prometheus meter registry.
+
+The configuration keys that are valid for the `builtin-registries` entry depend on the type of Micrometer meter
+registry.
+For example, the Prometheus meter registry supports the `prefix` configuration setting but other meter registries might not and might support other settings.
+Refer to the documentation for the meter registry you want to configure to find out what items apply to that registry
+type.
+
+Helidon does not validate the configuration keys you specify for
+meter registries.
+
+// end::overriding-using-config[]
+
+// tag::accessing-endpoint-intro[]
+== Accessing the Helidon Micrometer Endpoint
+By default, Helidon Micrometer integration exposes the `/micrometer` endpoint. You can override this
+using
+ifdef::isSE[]
+the `Builder` or
+endif::isSE[]
+the `micrometer.web-context` configuration key.
+
+// end::accessing-endpoint-intro[]
+
+// tag::accessing-endpoint-end[]
+
+// end::accessing-endpoint-end[]
+

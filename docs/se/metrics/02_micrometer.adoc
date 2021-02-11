@@ -21,39 +21,18 @@
 :keywords: micrometer, helidon, metrics, integration
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.integrations.micrometer/io/helidon/integrations/micrometer
 :h1Prefix: SE
+:common-page-prefix-inc: ../../shared/micrometer/common_shared.adoc
+:isSE: true
 
-Helidon {h1Prefix} simplifies how you can use Micrometer for application-specific metrics:
+include::{common-page-prefix-inc}[tags=intro;!intro-mp-specific]
 
-* The endpoint `/micrometer`: A configurable endpoint that exposes metrics according to which Micrometer meter registry
-responds to the HTTP request.
-* The `MicrometerSupport` class: A convenience class for enrolling Micrometer meter registries your application
-creates explicitly or for selecting which built-in Micrometer meter registries to
-to use.
-
-In Helidon {helidon-version}, Micrometer support is separate from the Helidon SE metrics API and the built-in Helidon metrics.
-
-== Prerequisites
-
-Declare the following dependency in your project:
-
-[source,xml,subs="verbatim,attributes"]
-----
-<dependency>
-    <groupId>io.helidon.integrations</groupId>
-    <artifactId>helidon-micrometer</artifactId>
-</dependency>
-----
-
-Micrometer supports different types of meter registries which have different output styles and formats.
-Helidon provides built-in support for the Prometheus meter registry.
-To use other meter registry types, you will need to add dependencies for them to your `pom.xml`.
+include::{common-page-prefix-inc}[tags=prereq]
 
 == Using Micrometer in Your Application
 You need to make two types of changes to your application to use Helidon's Micrometer support:
 
-1. Register an instance of link:{javadoc-base-url-api}/MicrometerSupport.html[`MicrometerSupport`] with the web server.
-2. Modify your application service code to use the meter registry which `MicrometerSupport` manages to create
-and update meters.
+. Register an instance of link:{javadoc-base-url-api}/MicrometerSupport.html[`MicrometerSupport`] with the web server.
+. Create and update meters using the meter registry which `MicrometerSupport` manages.
 
 === Register an Instance of `MicrometerSupport` with the Web Server
 
@@ -110,9 +89,7 @@ The example above enrolls the built-in Prometheus meter registry with the defaul
 You can change the default setup for built-in registries, and you can enroll other meter registries your application
 creates itself.
 
-=== Overriding Defaults for Built-in Meter Registry Types
-Unless you specify otherwise, Helidon uses defaults for any built-in Micrometer meter registry.
-For example, Helidon configures the built-in Prometheus registry using `PrometheusConfig.DEFAULT`.
+include::{common-page-prefix-inc}[tag=overriding-intro]
 
 You can override these defaults in either of two ways:
 
@@ -144,38 +121,11 @@ MicrometerSupport support = MicrometerSupport.builder()
 
 
 ==== Using Configuration
-To use configuration to control the selection and behavior of Helidon's built-in Micrometer meter registries,
-include in your configuration a `metrics.micrometer.builtin-registries` section.
+include::{common-page-prefix-inc}[tag=overriding-using-config]
 
-[source,yaml]
-.Enroll Prometheus built-in meter registry using default configuration
-----
-metrics:
-  micrometer:
-    builtin-registries:
-      - type: prometheus
-----
-
-[source,yaml]
-.Enroll Prometheus built-in meter registry with non-default configuration
-----
-metrics:
-  micrometer:
-    builtin-registries:
-      - type: prometheus
-        prefix: myPrefix
-----
-
-The configuration keys that are valid for the 'builtin-registries' entry depend on the type of Micrometer meter
-registry.
-Refer to the documentation for the meter registry you want to configure to find out what items apply to that registry
-type.
-
-Helidon does not validate the configuration keys you specify against the items defined by the corresponding
-meter registry configuration class.
 
 === Enrolling other Micrometer meter registries
-To create your own registries and enroll them with `MicrometerSupport`, you need to:
+To create additional types of registries and enroll them with `MicrometerSupport`, you need to:
 
 . Write a `Handler` +
 +
@@ -216,9 +166,7 @@ accepts `text/plain` (or unspecified) content (either is normally an indication 
 and returns the appropriate `Optional<link:{:javadoc-base-url-webserver}/Handler.html[``Handler``]>`.
 <3> A very simple in-line `Handler` that sets the response entity from the Prometheus registry's `scrape()` method.
 
-== Accessing the Helidon Micrometer Endpoint
-By default, Helidon Micrometer support exposes the `/micrometer` endpoint. You can override this
-using the `Builder` or the `metrics.micrometer.web-context` configuration key.
+include::{common-page-prefix-inc}[tag=accessing-endpoint-intro]
 
 When `MicrometerSupport` receives a request at the endpoint, it looks for the first enrolled meter registry for which
 the corresponding `Function<ServerRequest, Optional<Handler>>` returns a non-empty `Handler`.
@@ -226,3 +174,5 @@ Helidon invokes that `Handler` which must retrieve the metrics output from the c
 and send the response.
 Note that the `Handler` which your function returns must have a reference to the meter registry it will use
 in preparing the response.
+
+
