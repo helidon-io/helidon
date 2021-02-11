@@ -219,7 +219,9 @@ public class ServerCdiExtension implements Extension {
 
     private void registerPathStaticContent(Config config) {
         Config context = config.get("context");
-        StaticContentSupport.FileSystemBuilder pBuilder = StaticContentSupport.builder(config.get("location").as(Path.class).get());
+        StaticContentSupport.FileSystemBuilder pBuilder = StaticContentSupport.builder(config.get("location")
+                                                                                               .as(Path.class)
+                                                                                               .get());
         config.get("welcome")
                 .asString()
                 .ifPresent(pBuilder::welcomeFileName);
