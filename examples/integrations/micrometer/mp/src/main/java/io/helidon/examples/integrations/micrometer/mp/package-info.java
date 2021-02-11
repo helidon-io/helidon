@@ -16,6 +16,6 @@
  */
 
 /**
- * Example for Micrometer integration
+ * Example for Micrometer integration.
  */
 package io.helidon.examples.integrations.micrometer.mp;
