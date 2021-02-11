@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,7 @@
 # limitations under the License.
 #
 
-
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: helidon-examples-translator-frontend
@@ -29,17 +28,17 @@ spec:
         app: helidon-examples-translator-frontend
     spec:
       containers:
-      - image: helidon-examples-translator-frontend:latest
-        imagePullPolicy: IfNotPresent
-        name: translator-frontend
-        ports:
-        - containerPort: 8080
-        env:
-        - name: tracing.host
-          value: "zipkin"
-        - name: backend.host
-          value: "helidon-examples-translator-backend"
-      restartPolicy: Always
+        - name: translator-frontend
+          image: helidon-examples-translator-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: tracing.host
+              value: zipkin
+            - name: backend.host
+              value: helidon-examples-translator-backend
+
 ---
 
 apiVersion: v1
@@ -59,16 +58,19 @@ spec:
 
 ---
 
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: helidon-examples-translator-frontend
 spec:
   rules:
-  - host: localhost
-    http:
-      paths:
-      - path: /translator
-        backend:
-          serviceName: helidon-examples-translator-frontend
-          servicePort: 8080
+    - host: localhost
+      http:
+        paths:
+          - path: /translator
+            pathType: Prefix
+            backend:
+              service:
+                name: helidon-examples-translator-frontend
+                port:
+                  number: 8080

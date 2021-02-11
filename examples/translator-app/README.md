@@ -18,7 +18,9 @@ java -jar zipkin.jar
 
 With Kubernetes:
 ```bash
-kubectl apply -f ../k8s/ingress.yaml -f ../k8s/zipkin.yaml
+kubectl apply \
+ -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/ingress-nginx-3.15.2/deploy/static/provider/cloud/deploy.yaml \
+ -f ../k8s/zipkin.yaml
 ```
 
 ## Build and run

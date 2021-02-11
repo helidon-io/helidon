@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.functional.requestscope;
+package io.helidon.microprofile.restclient;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import java.util.List;
+import java.util.Map;
 
-import org.eclipse.microprofile.faulttolerance.Retry;
+/**
+ * Wrapper object from obtained inbound request headers.
+ */
+class InboundHeaders {
 
-@ApplicationScoped
-public class SomeService {
+    private final Map<String, List<String>> inboundHeaders;
 
-    @Inject
-    @TestQualifier
-    RequestTestQualifier requestTestQualifier;
+    InboundHeaders(Map<String, List<String>> inboundHeaders) {
+        this.inboundHeaders = inboundHeaders;
+    }
 
-    @Retry
-    public String test() throws Exception {
-        return requestTestQualifier.test();
+    public Map<String, List<String>> getInboundHeaders() {
+        return inboundHeaders;
     }
 }

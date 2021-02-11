@@ -9,13 +9,40 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ## [2.2.1-SNAPSHOT]
 
-2.2.1 is a bugfix release of Helidon. 
+2.2.1 is a bugfix release of Helidon. It contains bug fixes, performance fixes and dependency upgrades.
 
 ### Compatibility
 
 2.2.1 is API compatible with 2.2.0.
 
 ### CHANGES    
+
+- Config: Fix issue with null value in JSON. [2723](https://github.com/oracle/helidon/pull/2723)
+- Config: Fix null array values in HOCON/JSON config parser. [2731](https://github.com/oracle/helidon/pull/2731)
+- Dependencies: Re-organize dependencyManagement  [2646](https://github.com/oracle/helidon/pull/2646)
+- Dependencies: Update Jackson to 2.12.1 [2690](https://github.com/oracle/helidon/pull/2690)
+- Dependencies: Upgrade Netty to 4.1.58 [2678](https://github.com/oracle/helidon/pull/2678)
+- Dependencies: Upgrade Weld [2668](https://github.com/oracle/helidon/pull/2668)
+- Dependencies: Upgrade grpc to v1.35.0 [2713](https://github.com/oracle/helidon/pull/2713)
+- Dependencies: Upgrade to Jersey 2.33 and set of client property [2727](https://github.com/oracle/helidon/pull/2727)
+- Dependencies: Upgrades OCI SDK to version 1.31.0 [2699](https://github.com/oracle/helidon/pull/2699)
+- Examples: Fix TODO application: [2708](https://github.com/oracle/helidon/pull/2708)
+- Examples: Fix WebServer Basics example [2634](https://github.com/oracle/helidon/pull/2634)
+- Examples: Fixed different output in DbClient SE archetype [2703](https://github.com/oracle/helidon/pull/2703)
+- Examples: PokemonService template fixed in SE Database Archetype. [2701](https://github.com/oracle/helidon/pull/2701)
+- Jersey: Allow override of Jersey property via config [2737](https://github.com/oracle/helidon/pull/2737)
+- K8s: Update k8s descriptors to avoid using deprecated APIs [2719](https://github.com/oracle/helidon/pull/2719)
+- Micronaut extensions: micronaut data with ucp [2572](https://github.com/oracle/helidon/pull/2572)
+- Performance: New implementation of LazyValue [2738](https://github.com/oracle/helidon/pull/2738)
+- Performance: Properly release underlying buffer before passing it to WebSocket handler [2715](https://github.com/oracle/helidon/pull/2715)
+- Performance: improvements to queue(s) management in Webserver [2704](https://github.com/oracle/helidon/pull/2704)
+- Reactive: Concat array enhancement [2508](https://github.com/oracle/helidon/pull/2508)
+- Rest Client: Rest client async header propagation with usage of Helidon Context [2735](https://github.com/oracle/helidon/pull/2735)
+- Security: Added overall timeout to evictable cache [2659](https://github.com/oracle/helidon/pull/2659)
+- Testing: Proves that environment variable overrides work with our MicroProfile Config implementation [2648](https://github.com/oracle/helidon/pull/2648)
+- Testing: Separate execution of DataChunkReleaseTest in its own VM [2716](https://github.com/oracle/helidon/pull/2716)
+- WebServer: Lays the groundwork for permitting other Netty transports [2478](https://github.com/oracle/helidon/pull/2478)
+- Build: Manage versions of version plugin and helidon-maven-plugin [2626](https://github.com/oracle/helidon/pull/2626)
 
 ## [2.2.0]
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,19 +25,18 @@ import javax.ws.rs.core.Response;
 
 @RequestScoped
 @Path("/test3")
-public class MyResource {
+public class Service3 {
 
     @Inject
-    SomeService3 someService3;
+    private Bean3 bean3;
 
     @GET
     public String getTestResource(@QueryParam("param1") String param1) {
         try {
-            return someService3.test(param1);
+            return bean3.test(param1);
         } catch (Exception e) {
             System.out.println(e.getMessage());
             throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
-
 }

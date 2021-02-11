@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,20 @@
 
 package io.helidon.webserver;
 
+import java.lang.ref.ReferenceQueue;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 
-import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.webserver.ByteBufRequestChunk.DataChunkHoldingQueue;
+import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -68,7 +69,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private final Routing routing;
     private final NettyWebServer webServer;
     private final SSLEngine sslEngine;
-    private final Queue<ReferenceHoldingQueue<DataChunk>> queues;
+    private final ReferenceQueue<Object> queues;
     private final HttpRequestDecoder httpRequestDecoder;
     private final long maxPayloadSize;
 
@@ -82,11 +83,13 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
     private CompletableFuture<?> prevRequestFuture;
     private boolean lastContent;
+    private final Runnable clearQueues;
 
     ForwardingHandler(Routing routing,
                       NettyWebServer webServer,
                       SSLEngine sslEngine,
-                      Queue<ReferenceHoldingQueue<DataChunk>> queues,
+                      ReferenceQueue<Object> queues,
+                      Runnable clearQueues,
                       HttpRequestDecoder httpRequestDecoder,
                       long maxPayloadSize) {
         this.routing = routing;
@@ -95,9 +98,11 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         this.queues = queues;
         this.httpRequestDecoder = httpRequestDecoder;
         this.maxPayloadSize = maxPayloadSize;
+        this.clearQueues = clearQueues;
     }
 
     private void reset() {
+        lastContent = false;
         isWebSocketUpgrade = false;
         actualPayloadSize = 0L;
         ignorePayload = false;
@@ -132,7 +137,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 System.identityHashCode(this), System.identityHashCode(ctx.channel()), msg.getClass()));
 
         if (msg instanceof HttpRequest) {
-            lastContent = false;
+            // On new request, use chance to cleanup queues in HttpInitializer
+            clearQueues.run();
+
             // Turns off auto read
             ctx.channel().config().setAutoRead(false);
 
@@ -153,20 +160,46 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             Optional.ofNullable(ctx.channel().attr(CERTIFICATE_NAME).get())
                     .ifPresent(name -> request.headers().set(Http.Header.X_HELIDON_CN, name));
 
-            // Queue, context and publisher creation
-            ReferenceHoldingQueue<DataChunk> queue = new ReferenceHoldingQueue<>();
-            queues.add(queue);
-            RequestContext requestContext = new RequestContext(new HttpRequestScopedPublisher(ctx, queue), request);
-            this.requestContext = requestContext;
+            // Context, publisher and DataChunk queue for this request/response
+            DataChunkHoldingQueue queue = new DataChunkHoldingQueue();
+            requestContext = new RequestContext(new HttpRequestScopedPublisher(queue), request);
 
-            // the only reason we have the 'ref' here is that the field might get assigned with null
-            final HttpRequestScopedPublisher publisherRef = requestContext.publisher();
+            // Closure local variables that cache mutable instance variables
+            RequestContext requestContextRef = requestContext;
+            HttpRequestScopedPublisher publisherRef = requestContextRef.publisher();
+
+            // Creates an indirect reference between publisher and queue so that when
+            // publisher is ready for collection, we have access to queue by calling its
+            // acquire method. We shall also attempt to release queue on completion of
+            // bareResponse below.
+            IndirectReference<HttpRequestScopedPublisher, DataChunkHoldingQueue> publisherPh =
+                    new IndirectReference<>(publisherRef, queues, queue);
+
+            // Set up read strategy for channel based on consumer demand
+            publisherRef.onRequest((n, demand) -> {
+                if (publisherRef.isUnbounded()) {
+                    LOGGER.finest("Netty autoread: true");
+                    ctx.channel().config().setAutoRead(true);
+                } else {
+                    LOGGER.finest("Netty autoread: false");
+                    ctx.channel().config().setAutoRead(false);
+                }
+
+                if (publisherRef.hasRequests()) {
+                    LOGGER.finest("Requesting next chunks from Netty.");
+                    ctx.channel().read();
+                } else {
+                    LOGGER.finest("No hook action required.");
+                }
+            });
+
+            // New request ID
             long requestId = REQUEST_ID_GENERATOR.incrementAndGet();
 
             // If a problem with the request URI, return 400 response
             BareRequestImpl bareRequest;
             try {
-                bareRequest = new BareRequestImpl((HttpRequest) msg, requestContext.publisher(),
+                bareRequest = new BareRequestImpl((HttpRequest) msg, requestContextRef.publisher(),
                         webServer, ctx, sslEngine, requestId);
             } catch (IllegalArgumentException e) {
                 send400BadRequest(ctx, e.getMessage());
@@ -206,17 +239,18 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             CompletableFuture<?> thisResp = prevRequestFuture;
             bareResponse.whenCompleted()
                         .thenRun(() -> {
-                            if (requestContext != null) {
-                                requestContext.responseCompleted(true);
-                            }
+                            // Mark response completed in context
+                            requestContextRef.responseCompleted(true);
+
+                            // Consume and release any buffers in publisher
+                            publisherRef.clearAndRelease();
 
                             // Cleanup for these queues is done in HttpInitializer, but
                             // we try to do it here if possible to reduce memory usage,
                             // especially for keep-alive connections
                             if (queue.release()) {
-                                queues.remove(queue);
+                                publisherPh.acquire();      // clears reference to other
                             }
-                            publisherRef.clearAndRelease();
 
                             // Enables next response to proceed (HTTP pipelining)
                             thisResp.complete(null);
@@ -314,6 +348,18 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     /**
+     * Overrides behavior when exception is thrown in pipeline.
+     *
+     * @param ctx channel context.
+     * @param cause the throwable.
+     */
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        failPublisher(cause);
+        ctx.close();
+    }
+
+    /**
      * Check that an HTTP message has been successfully decoded.
      *
      * @param request The HTTP request.
@@ -362,19 +408,18 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
      * @param ctx Channel context.
      * @param message The message.
      */
-    private static void send400BadRequest(ChannelHandlerContext ctx, String message) {
+    private void send400BadRequest(ChannelHandlerContext ctx, String message) {
         byte[] entity = message.getBytes(StandardCharsets.UTF_8);
         FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, BAD_REQUEST, Unpooled.wrappedBuffer(entity));
         response.headers().add(HttpHeaderNames.CONTENT_TYPE, "text/plain");
         response.headers().add(HttpHeaderNames.CONTENT_LENGTH, entity.length);
         response.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
-
         ctx.write(response)
                 .addListener(future -> {
                     ctx.flush();
                     ctx.close();
                 });
-
+        failPublisher(new Error("400: Bad request"));
     }
 
     /**
@@ -384,14 +429,22 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
      */
     private void send413PayloadTooLarge(ChannelHandlerContext ctx) {
         FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, REQUEST_ENTITY_TOO_LARGE);
-        ctx.write(response);
+        ctx.write(response)
+                .addListener(future -> {
+                    ctx.flush();
+                    ctx.close();
+                });
+        failPublisher(new Error("413: Payload is too large"));
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    /**
+     * Informs publisher of failure.
+     *
+     * @param cause the cause.
+     */
+    private void failPublisher(Throwable cause) {
         if (requestContext != null) {
             requestContext.publisher().fail(cause);
         }
-        ctx.close();
     }
 }
