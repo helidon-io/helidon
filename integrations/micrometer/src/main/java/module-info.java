@@ -26,21 +26,14 @@ module io.helidon.integrations.micrometer {
     requires static jakarta.inject.api;
     requires static jakarta.interceptor.api;
 
-    requires io.helidon.common;
     requires io.helidon.common.servicesupport;
-    requires io.helidon.common.servicesupport.cdi;
+    requires static io.helidon.common.servicesupport.cdi;
     requires io.helidon.config;
-    requires io.helidon.webserver;
     requires io.helidon.webserver.cors;
 
-    requires io.helidon.microprofile.config;
-    requires io.helidon.microprofile.server;
-
-    requires transitive micrometer.core;
-    requires transitive micrometer.registry.prometheus;
+    requires micrometer.core;
+    requires micrometer.registry.prometheus;
     requires simpleclient;
-
-    requires microprofile.config.api;
 
     exports io.helidon.integrations.micrometer;
 
