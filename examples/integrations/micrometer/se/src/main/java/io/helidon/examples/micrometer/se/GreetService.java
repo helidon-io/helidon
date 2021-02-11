@@ -78,7 +78,10 @@ public class GreetService implements Service {
             .get((req, resp) -> getTimer.record((Runnable) req::next)) // Update the timer with every GET.
             .get("/", this::getDefaultMessageHandler)
             .get("/{name}",
-                    (req, resp) -> {personalizedGetCounter.increment(); req.next();}, // Count personalized GETs...
+                    (req, resp) -> {
+                            personalizedGetCounter.increment();
+                            req.next();
+                        }, // Count personalized GETs...
                     this::getMessageHandler) // ...and process them.
             .put("/greeting", this::updateGreetingHandler);
     }
