@@ -70,7 +70,7 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 /**
  * Abstract superclass of service-specific CDI extensions.
  * <p>
- *     This heavily parameterized class implements a substantial amount of the work many extensions need to do to process
+ *     This heavily parameterized class implements a substantial amount of the work many extensions must do to process
  *     annotated types. Although originally inspired by the needs of metrics extensions, this class can be suitable for other
  *     extensions as well.
  * </p>
@@ -81,7 +81,7 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * </p>
  * <p>
  *     Inner classes contain information harvested by the extension plus logic that might be useful outside the extension, such as
- *     from interceptors. This class identifies "asynchronous" annotated methods as those with a
+ *     from interceptors. This implementation identifies "asynchronous" annotated methods as those with a
  *     {@code Suspended} {@code AsyncResponse}
  *     parameter. It records information about those as instances of concrete subclasses of {@link AsyncResponseInfo}. These
  *     info instances are collected inside a REST endpoint info data structure which extends {@link RestEndpointInfo}. Both of
@@ -90,13 +90,12 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  *     parameterized types.
  * </p>
  *
- * @param <M> Common supertype of all classes (e.g., metrics) for which producers are managed by the extension
  * @param <A> concrete {@code AsyncResponseInfo} type
  * @param <R> concrete {@code RestEndpointInfo} type
  * @param <T> concrete type of {@code ServiceSupportBase} used
  * @param <B> Builder for the concrete type of {@code }ServiceSupportBase}
  */
-public abstract class CdiExtensionBase<M,
+public abstract class CdiExtensionBase<
         A extends CdiExtensionBase.AsyncResponseInfo,
         R extends CdiExtensionBase.RestEndpointInfo,
         T extends ServiceSupportBase<T, B>,
@@ -350,23 +349,23 @@ public abstract class CdiExtensionBase<M,
 
 
     /**
-     * Records producer fields defined by the application. Ignores producers
+     * Records a producer field defined by the application. Ignores producers
      * with non-default qualifiers and library producers.
      *
      * @param ppf Producer field.
      */
-    protected void recordProducerFields(@Observes ProcessProducerField<? extends M, ?> ppf) {
-        recordProducerMember("recordProducerFields", ppf.getAnnotatedProducerField(), ppf.getBean());
+    protected void recordProducerField(ProcessProducerField<?, ?> ppf) {
+        recordProducerMember("recordProducerField", ppf.getAnnotatedProducerField(), ppf.getBean());
     }
 
     /**
-     * Records producer methods defined by the application. Ignores producers
+     * Records a producer method defined by the application. Ignores producers
      * with non-default qualifiers and library producers.
      *
      * @param ppm Producer method.
      */
-    protected void recordProducerMethods(@Observes ProcessProducerMethod<? extends M, ?> ppm) {
-        recordProducerMember("recordProducerMethods", ppm.getAnnotatedProducerMethod(), ppm.getBean());
+    protected void recordProducerMethod(ProcessProducerMethod<?, ?> ppm) {
+        recordProducerMember("recordProducerMethod", ppm.getAnnotatedProducerMethod(), ppm.getBean());
     }
 
     protected Map<Bean<?>, AnnotatedMember<?>> producers() {
@@ -412,7 +411,7 @@ public abstract class CdiExtensionBase<M,
         return serviceSupport;
     }
 
-    private void recordProducerMember(String logPrefix, AnnotatedMember<?> member, Bean<?> bean) {
+    protected void recordProducerMember(String logPrefix, AnnotatedMember<?> member, Bean<?> bean) {
         logger.log(Level.FINE, () -> logPrefix + " " + bean.getBeanClass());
         if (!ownProducer.equals(bean.getBeanClass())) {
             Set<Class<? extends Annotation>> siteAnnotationTypes = new HashSet<>();

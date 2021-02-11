@@ -29,7 +29,7 @@ import io.helidon.webserver.cors.CrossOriginConfig;
  * <p>
  *     This base class takes care of some tasks common to many services, using config and other settings in the builder:
  *     <ul>
- *         <li>Seting up the endpoint path (web context) for the service, using settings in the builder and config.</li>
+ *         <li>Setting up the endpoint path (web context) for the service, using settings in the builder and config.</li>
  *         <li>Providing automatic CORS support (and the ability to control it via config).</li>
  *     </ul>
  *

@@ -29,6 +29,8 @@ import java.util.logging.Logger;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
+import javax.enterprise.inject.spi.ProcessProducerField;
+import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.util.AnnotationLiteral;
 import javax.enterprise.util.Nonbinding;
@@ -49,7 +51,6 @@ import io.micrometer.core.instrument.Timer;
  * CDI extension for handling Micrometer artifacts.
  */
 public class MicrometerCdiExtension extends CdiExtensionBase<
-        Meter,
         MicrometerCdiExtension.MicrometerAsyncResponseInfo,
         MicrometerCdiExtension.MicrometerRestEndpointInfo,
         MicrometerSupport,
@@ -124,6 +125,14 @@ public class MicrometerCdiExtension extends CdiExtensionBase<
     protected MicrometerAsyncResponseInfo newAsyncResponseInfo(Method method) {
         int slot = asyncParameterSlot(method);
         return slot >= 0 ? new MicrometerAsyncResponseInfo(slot) : null;
+    }
+
+    protected void recordProducerFields(@Observes ProcessProducerField<? extends Meter, ?> ppf) {
+        recordProducerField(ppf);
+    }
+
+    protected void recordProducerMethods(@Observes ProcessProducerMethod<? extends Meter, ?> ppm) {
+        recordProducerMethod(ppm);
     }
 
     private static <A extends Annotation, M extends Meter, I extends InterceptorBase<M, A>>
