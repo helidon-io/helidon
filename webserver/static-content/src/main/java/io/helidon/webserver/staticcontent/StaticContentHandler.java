@@ -240,7 +240,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
         if (query == null) {
             locationWithQuery = location;
         } else {
-            locationWithQuery = location + "?" + request.query();
+            locationWithQuery = location + "?" + query;
         }
 
         response.status(Http.Status.MOVED_PERMANENTLY_301);
