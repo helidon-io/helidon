@@ -19,7 +19,6 @@ package io.helidon.webserver.staticcontent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
@@ -47,7 +46,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
         if (requestedPath.isEmpty()) {
             resolved = root;
         } else {
-            resolved = root.resolve(Paths.get(requestedPath)).normalize();
+            resolved = root.resolve(requestedPath).normalize();
             LOGGER.finest(() -> "Requested file: " + resolved.toAbsolutePath());
             if (!resolved.startsWith(root)) {
                 return false;
