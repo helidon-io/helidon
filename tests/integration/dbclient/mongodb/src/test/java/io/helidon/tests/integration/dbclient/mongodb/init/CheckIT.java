@@ -117,8 +117,7 @@ public class CheckIT extends AbstractIT {
      */
     @Test
     public void testDmlStatementExecution() throws ExecutionException, InterruptedException {
-        Multi<DbRow> result = DB_CLIENT.execute(exec -> exec.namedQuery("ping"));
-
+        Multi<DbRow> result = DB_CLIENT.execute(exec -> exec.namedQuery("ping-query"));
         List<DbRow> rowsList = result.collectList().await(5, TimeUnit.SECONDS);
         DbRow row = rowsList.get(0);
         Double ok = row.column("ok").as(Double.class);

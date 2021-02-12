@@ -132,7 +132,7 @@ public class MapperIT extends AbstractIT  {
      */
     @Test
     public void testUpdateWithNamedMapping() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(BASE_ID+4 , "ZapdMoltresos", TYPES.get(3), TYPES.get(13));
+        Pokemon pokemon = new Pokemon(BASE_ID+4 , "Moltres", TYPES.get(3), TYPES.get(13));
         Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedUpdate("update-pokemon-named-arg")
                 .namedParam(pokemon)

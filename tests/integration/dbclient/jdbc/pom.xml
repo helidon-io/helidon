@@ -28,7 +28,7 @@
     </parent>
 
     <groupId>io.helidon.tests.integration.dbclient</groupId>
-    <artifactId>heldion-tests-integration-dbclient-jdbc</artifactId>
+    <artifactId>helidon-tests-integration-dbclient-jdbc</artifactId>
     <name>Integration Tests: DB Client JDBC</name>
 
     <properties>
@@ -37,7 +37,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.tests.integration.dbclient</groupId>
-            <artifactId>heldion-tests-integration-dbclient-common</artifactId>
+            <artifactId>helidon-tests-integration-dbclient-common</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
@@ -147,7 +147,7 @@
                         </goals>
                         <configuration>
                             <dependenciesToScan>
-                                <dependency>io.helidon.tests.integration.dbclient:heldion-tests-integration-dbclient-common</dependency>
+                                <dependency>io.helidon.tests.integration.dbclient:helidon-tests-integration-dbclient-common</dependency>
                             </dependenciesToScan>
                             <includes>
                                 <include>io.helidon.tests.integration.dbclient.common.tests.simple.*IT</include>

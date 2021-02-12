@@ -1,6 +1,7 @@
 {
     "classes": [
         "org.postgresql.Driver",
+        "org.postgresql.PGProperty",
         "org.postgresql.ds.common.BaseDataSource",
         "org.hibernate.dialect.PostgreSQL10Dialect",
         "org.hibernate.dialect.PostgreSQL81Dialect",

@@ -41,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class FlowControlIT {
 
-    /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(FlowControlIT.class.getName());
 
     /**
@@ -166,6 +165,7 @@ public class FlowControlIT {
      * @throws InterruptedException if the current thread was interrupted
      */
     @Test
+    @SuppressWarnings("SleepWhileInLoop")
     public void testFlowControl() throws InterruptedException {
         CompletableFuture<Long> rowsFuture = new CompletableFuture<>();
         TestSubscriber subscriber = new TestSubscriber();

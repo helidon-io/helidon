@@ -1063,6 +1063,17 @@
                 <artifactId>helidon-integrations-neo4j-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <!-- Helidon tests tools -->
+            <dependency>
+                <groupId>io.helidon.tests.integration.tools</groupId>
+                <artifactId>helidon-tests-integration-tools-service</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.tests.integration.tools</groupId>
+                <artifactId>helidon-tests-integration-tools-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

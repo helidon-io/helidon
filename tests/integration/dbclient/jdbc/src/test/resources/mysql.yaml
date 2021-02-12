@@ -21,12 +21,13 @@ server:
 db:
   source: jdbc
   connection:
-    url: jdbc:mysql://${db.host}:${db.port}/${db.database}?useSSL=false&allowPublicKeyRetrieval=true
+    url: ${db.url}
     username: ${db.user}
     password: ${db.password}
+  health-check:
+    type: dml
+    statement: "DO 0"
   statements:
-    # required ping statement
-    ping: "DO 0"
     # custom DML ping statement
     ping-dml: "DO 0"
     # custom query ping statement

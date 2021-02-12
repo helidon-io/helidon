@@ -24,9 +24,10 @@ db:
     url: jdbc:sqlserver://${db.host}:${db.port};databaseName=${db.database}
     username: ${db.user}
     password: ${db.password}
+  health-check:
+    type: query
+    statement: "SELECT 0"
   statements:
-    # required ping statement
-    ping: "SELECT 0"
     # custom query ping statement
     ping-query: "SELECT 0"
     # database schema initialization statements
