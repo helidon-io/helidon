@@ -63,10 +63,6 @@
             <artifactId>helidon-webserver-cors</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media</groupId>
-            <artifactId>helidon-media-jsonp</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
         </dependency>
