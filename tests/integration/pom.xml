@@ -40,6 +40,7 @@
         <module>health</module>
         <module>mp-ws-services</module>
         <module>webclient</module>
+        <module>webserver</module>
         <module>security</module>
         <module>mp-gh-1538</module>
         <module>mp-gh-2421</module>
