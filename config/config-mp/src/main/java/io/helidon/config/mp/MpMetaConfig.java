@@ -29,11 +29,14 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigSource;
 
-class MpMetaConfig {
+final class MpMetaConfig {
     private static final String META_CONFIG_ENV_VAR = "HELIDON_MP_META_CONFIG";
     static final String META_CONFIG_SYSTEM_PROPERTY = "io.helidon.config.mp.meta-config";
 
     private static final Logger LOGGER = Logger.getLogger(MpMetaConfig.class.getName());
+
+    private MpMetaConfig() {
+    }
 
     static Optional<Config> metaConfig() {
         return findMetaConfig()
