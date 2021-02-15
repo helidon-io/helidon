@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.config.yaml;
 
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
@@ -24,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -121,6 +123,25 @@ public class YamlMpConfigSource implements ConfigSource {
 
         return new YamlMpConfigSource(name, fromMap(yamlMap));
 
+    }
+
+    /**
+     * Create from YAML file(s) on classpath.
+     *
+     * @param resource resource name to locate on classpath (looks for all instances)
+     * @return list of config sources discovered (may be zero length)
+     */
+    public static List<ConfigSource> classPath(String resource) {
+        List<ConfigSource> sources = new LinkedList<>();
+        try {
+            Thread.currentThread().getContextClassLoader().getResources(resource)
+                    .asIterator()
+                    .forEachRemaining(it -> sources.add(create(it)));
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read YAML \"" + resource + "\" from classpath");
+        }
+
+        return sources;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -50,18 +51,24 @@ import java.util.ServiceLoader;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.common.serviceloader.Priorities;
+import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigMappers;
+import io.helidon.config.ConfigValue;
 import io.helidon.config.mp.spi.MpConfigFilter;
+import io.helidon.config.yaml.YamlMpConfigSource;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.eclipse.microprofile.config.spi.Converter;
+
+import static io.helidon.config.mp.MpMetaConfig.MetaConfigSource;
 
 /**
  * Configuration builder.
@@ -123,6 +130,142 @@ public class MpConfigBuilder implements ConfigBuilder {
             this.converters.add(new OrdinalConverter(converter));
         }
         return this;
+    }
+
+    void mpMetaConfig(io.helidon.config.Config meta) {
+        meta.get("add-discovered-sources").asBoolean().ifPresent(it -> {
+            if (it) {
+                addDiscoveredSources();
+            }
+        });
+        meta.get("add-discovered-converters").asBoolean().ifPresent(it -> {
+            if (it) {
+                addDiscoveredConverters();
+            }
+        });
+        meta.get("add-default-sources").asBoolean().ifPresent(it -> {
+            if (it) {
+                addDefaultSources();
+            }
+        });
+
+        meta.get("sources")
+                .asNodeList()
+                .ifPresent(this::processMetaSources);
+    }
+
+    private void processMetaSources(List<io.helidon.config.Config> configs) {
+        for (io.helidon.config.Config config : configs) {
+            String type = config.get("type").asString()
+                    .orElseThrow(() -> new ConfigException("Meta configuration sources must have a \"type\" property defined"));
+            // in MP, we have a hardcoded list of supported configuration source types
+            List<ConfigSource> delegates;
+            switch (type) {
+            case "system-properties":
+                delegates = List.of(MpConfigSources.systemProperties());
+                break;
+            case "environment-variables":
+                delegates = List.of(MpConfigSources.environmentVariables());
+                break;
+            case "properties":
+                delegates = propertiesSource(config);
+                break;
+            case "yaml":
+                delegates = yamlSource(config);
+                break;
+            default:
+                throw new ConfigException("Meta configuration source type \"" + type + "\" is not supported. Use on of: "
+                                                  + "system-properties, environment-variables, properties, yaml");
+            }
+            boolean shouldCount = delegates.size() > 1;
+            int counter = 0;
+
+            for (ConfigSource delegate : delegates) {
+                MetaConfigSource.Builder builder = MetaConfigSource.builder()
+                        .delegate(delegate);
+
+                config.get("ordinal").asInt().ifPresent(builder::ordinal);
+                ConfigValue<String> name = config.get("name").asString();
+                if (shouldCount) {
+                    if (name.isPresent()) {
+                        // multiple instances - count them
+                        builder.name(name.get() + "_" + counter++);
+                    }
+                } else {
+                    name.ifPresent(builder::name);
+                }
+
+                withSources(builder.build());
+            }
+        }
+    }
+
+    private List<ConfigSource> propertiesSource(io.helidon.config.Config config) {
+        return sourceFromMeta(config,
+                              MpConfigSources::create,
+                              MpConfigSources::classPath,
+                              MpConfigSources::create);
+    }
+
+    private List<ConfigSource> yamlSource(io.helidon.config.Config config) {
+        return sourceFromMeta(config,
+                              YamlMpConfigSource::create,
+                              YamlMpConfigSource::classPath,
+                              YamlMpConfigSource::create);
+    }
+
+    private List<ConfigSource> sourceFromMeta(io.helidon.config.Config config,
+                                              Function<Path, ConfigSource> fromPath,
+                                              Function<String, List<ConfigSource>> fromClasspath,
+                                              Function<URL, ConfigSource> fromUrl) {
+
+        boolean optional = config.get("optional").asBoolean().orElse(false);
+
+        String location;
+        Exception cause = null;
+
+        ConfigValue<Path> pathConfig = config.get("path").as(Path.class);
+        if (pathConfig.isPresent()) {
+            Path path = pathConfig.get();
+            if (Files.exists(path) && Files.isRegularFile(path)) {
+                return List.of(fromPath.apply(path));
+            }
+            location = "path " + path.toAbsolutePath();
+        } else {
+            ConfigValue<String> classpathConfig = config.get("classpath").as(String.class);
+            if (classpathConfig.isPresent()) {
+                String classpath = classpathConfig.get();
+                List<ConfigSource> sources = fromClasspath.apply(classpath);
+                if (!sources.isEmpty()) {
+                    return sources;
+                }
+                location = "classpath " + classpath;
+            } else {
+                ConfigValue<URL> urlConfig = config.get("url").as(URL.class);
+                if (urlConfig.isPresent()) {
+                    URL url = urlConfig.get();
+                    try {
+                        return List.of(fromUrl.apply(url));
+                    } catch (ConfigException e) {
+                        location = "url " + url;
+                        cause = e;
+                    }
+                } else {
+                    throw new ConfigException("MP meta configuration does not contain config source location. Node: " + config
+                            .key());
+                }
+            }
+        }
+
+        if (optional) {
+            return List.of();
+        }
+        String message = "Meta configuration could not find non-optional config source on " + location;
+        if (cause == null) {
+            throw new ConfigException(message);
+        } else {
+            throw new ConfigException(message, cause);
+        }
     }
 
     @Override
