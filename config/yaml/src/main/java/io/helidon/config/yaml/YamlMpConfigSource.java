@@ -138,7 +138,7 @@ public class YamlMpConfigSource implements ConfigSource {
                     .asIterator()
                     .forEachRemaining(it -> sources.add(create(it)));
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to read YAML \"" + resource + "\" from classpath");
+            throw new IllegalStateException("Failed to read YAML \"" + resource + "\" from classpath", e);
         }
 
         return sources;

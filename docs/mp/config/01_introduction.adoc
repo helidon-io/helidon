@@ -137,8 +137,8 @@ add-discovered-converters: false <2>
 add-default-sources: false <3>
 
 sources:
-  - type: "system-properties" <4>
-  - type: "environment-variables" <5>
+  - type: "environment-variables" <4>
+  - type: "system-properties" <5>
   - type: "properties" <6>
     path: "/conf/prod.properties" <7>
     ordinal: 50 <8>
@@ -152,7 +152,7 @@ sources:
 <2> If configured to `true`, converters discovered through service loader will be added
 <3> If configured to `true`, default config sources (system properties, environment variables, and `META-INF/microprofile-config.properties) will be added
 <4> Loads the environment variables config source.
-<5> Loads the system variables config source.
+<5> Loads the system properties config source.
 <6> Loads a properties file
 <7> Location of the file: `/conf/prod.properties` on the file system
 <8> Custom ordinal, if not defined, the value defined in the file, or default value is used
