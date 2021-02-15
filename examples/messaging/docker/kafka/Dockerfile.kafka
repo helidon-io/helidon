@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,15 +14,20 @@
 # limitations under the License.
 #
 
-FROM openjdk:8-jre-alpine
+FROM openjdk:11-jre-slim-buster
 
-ENV VERSION=2.5.0
+RUN apt-get -qq update && apt-get -qq -y install bash curl wget netcat jq
 
-RUN apk add --no-cache bash curl jq gcompat
-
-# Find closest mirror, download and extract Kafka
-RUN MIRROR=$(curl -s 'https://www.apache.org/dyn/closer.cgi?as_json=1' | jq -r '.http[0]') \
-&& wget -q -O kafka.tar.gz ${MIRROR}kafka/${VERSION}/kafka_2.12-${VERSION}.tgz \
+# Find and dowload latest Kafka
+RUN VERSION=$(curl -s https://projects.apache.org/json/foundation/releases.json \
+              | jq '.kafka | to_entries[]' \
+              | jq -s -r '. | sort_by(.value)[0].key' \
+              | sed -r 's/^kafka(_[0-9].[0-9]+)?-([0-9.]*).*/\2/') \
+&& echo "Preparing download of the latest Kafka binaries: ${VERSION}" \
+# Find closest mirror, download and extract Kafka bins
+&& MIRROR=$(curl -s 'https://www.apache.org/dyn/closer.cgi?as_json=1' | jq -r '.http[0]') \
+&& echo "Downloading from the closest mirror: ${MIRROR} ..." \
+&& wget -q -O kafka.tar.gz ${MIRROR}kafka/${VERSION}/kafka_2.13-${VERSION}.tgz \
 && tar -xzf kafka.tar.gz -C /opt && rm kafka.tar.gz \
 && mv /opt/kafka* /opt/kafka
 
