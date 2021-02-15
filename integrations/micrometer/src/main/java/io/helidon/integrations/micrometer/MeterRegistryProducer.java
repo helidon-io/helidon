@@ -25,7 +25,7 @@ import io.helidon.config.Config;
 import io.micrometer.core.instrument.MeterRegistry;
 
 @ApplicationScoped
-final class MeterRegistryProducer {
+class MeterRegistryProducer {
 
     static final String CONFIG_KEY = "micrometer";
 

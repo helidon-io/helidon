@@ -33,9 +33,9 @@ import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
+import io.helidon.common.servicesupport.cdi.AnnotationLookupResult;
+import io.helidon.common.servicesupport.cdi.AnnotationSiteType;
 import io.helidon.common.servicesupport.cdi.CdiExtensionBase;
-import io.helidon.common.servicesupport.cdi.LookupResult;
-import io.helidon.common.servicesupport.cdi.MatchingType;
 import io.helidon.metrics.Registry;
 
 import org.eclipse.microprofile.metrics.Metric;
@@ -43,7 +43,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 
-import static io.helidon.common.servicesupport.cdi.LookupResult.lookupAnnotation;
+import static io.helidon.common.servicesupport.cdi.AnnotationLookupResult.lookupAnnotation;
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
 import static io.helidon.microprofile.metrics.MetricUtil.tags;
 
@@ -144,7 +144,7 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
     }
 
     private <E extends Member & AnnotatedElement> Object called(InvocationContext context, E element) throws Exception {
-        LookupResult<A> lookupResult = lookupAnnotation(element, annotationClass, getClass(context, element));
+        AnnotationLookupResult<A> lookupResult = lookupAnnotation(element, annotationClass, getClass(context, element));
         if (lookupResult != null) {
             T metricInstance = getMetricForElement(element, getClass(context, element), lookupResult);
 
@@ -207,7 +207,7 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
      * @return the metric to be updated for the annotated element being invoked
      */
     private <E extends Member & AnnotatedElement> T getMetricForElement(E element, Class<?> clazz,
-            LookupResult<A> lookupResult) {
+            AnnotationLookupResult<A> lookupResult) {
 
         T metric = elementMetricMap.computeIfAbsent(element, e -> createMetricForElement(element, clazz, lookupResult));
         return metric;
@@ -223,16 +223,16 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
      * @return the metric retrieved from the registry and added to the site-to-metric map
      */
     private <E extends Member & AnnotatedElement> T createMetricForElement(E element, Class<?> clazz,
-            LookupResult<A> lookupResult) {
+            AnnotationLookupResult<A> lookupResult) {
 
         /*
          * Build the metric name that should exist for this annotation site and look up all metric IDs associated with that name.
          * (This is very efficient in the registry.)
          */
         A annot = lookupResult.getAnnotation();
-        MatchingType matchingType = lookupResult.getType();
+        AnnotationSiteType annotationSiteType = lookupResult.getType();
 
-        String metricName = getMetricName(element, clazz, matchingType, nameFunction.apply(annot),
+        String metricName = getMetricName(element, clazz, annotationSiteType, nameFunction.apply(annot),
                 isAbsoluteFunction.apply(annot));
         Optional<Map.Entry<? extends Metric, List<MetricID>>> matchingEntry = hRegistry.getOptionalMetricWithIDsEntry(metricName);
         if (!matchingEntry.isPresent()) {

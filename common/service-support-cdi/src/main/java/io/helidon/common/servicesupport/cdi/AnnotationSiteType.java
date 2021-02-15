@@ -27,7 +27,7 @@ import javax.enterprise.inject.spi.AnnotatedMember;
  * Types of possible matching.
  *
  */
-public enum MatchingType {
+public enum AnnotationSiteType {
     /**
      * Method.
      */
@@ -38,12 +38,12 @@ public enum MatchingType {
     CLASS;
 
     /**
-     * Returns the {@code MatchingType} appropriate for the supplied {@code Annotated} annotation site.
+     * Returns the {@code AnnotationSiteType} appropriate for the supplied {@code Annotated} annotation site.
      *
      * @param annotated the annotation site
      * @return the appropriate matching type
      */
-    public static MatchingType matchingType(Annotated annotated) {
+    public static AnnotationSiteType matchingType(Annotated annotated) {
         return annotated instanceof AnnotatedMember
                 ? (((AnnotatedMember) annotated).getJavaMember() instanceof Method
                     ? METHOD : CLASS)

@@ -26,8 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
-import io.helidon.common.servicesupport.cdi.LookupResult;
-import io.helidon.common.servicesupport.cdi.MatchingType;
+import io.helidon.common.servicesupport.cdi.AnnotationLookupResult;
+import io.helidon.common.servicesupport.cdi.AnnotationSiteType;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -53,7 +53,7 @@ public final class MetricUtil {
      *
      * @param element such as method
      * @param clazz class
-     * @param matchingType type to match
+     * @param annotationSiteType type to match
      * @param explicitName name
      * @param absolute if absolute
      * @param <E> type of element
@@ -61,9 +61,10 @@ public final class MetricUtil {
      * @return name of the metric
      */
     public static <E extends Member & AnnotatedElement>
-    String getMetricName(E element, Class<?> clazz, MatchingType matchingType, String explicitName, boolean absolute) {
+    String getMetricName(E element, Class<?> clazz, AnnotationSiteType annotationSiteType, String explicitName,
+            boolean absolute) {
         String result;
-        if (matchingType == MatchingType.METHOD) {
+        if (annotationSiteType == AnnotationSiteType.METHOD) {
             result = explicitName == null || explicitName.isEmpty()
                     ? getElementName(element, clazz) : explicitName;
             if (!absolute) {
@@ -78,7 +79,7 @@ public final class MetricUtil {
                 }
                 result = declaringClass.getName() + '.' + result;
             }
-        } else if (matchingType == MatchingType.CLASS) {
+        } else if (annotationSiteType == AnnotationSiteType.CLASS) {
             if (explicitName == null || explicitName.isEmpty()) {
                 result = getElementName(element, clazz);
                 if (!absolute) {
@@ -107,7 +108,7 @@ public final class MetricUtil {
      * @param <E> the annotated element type
      */
     public static <E extends Member & AnnotatedElement>
-    void registerMetric(E element, Class<?> clazz, LookupResult<? extends Annotation> lookupResult) {
+    void registerMetric(E element, Class<?> clazz, AnnotationLookupResult<? extends Annotation> lookupResult) {
         registerMetric(element, clazz, lookupResult.getAnnotation(), lookupResult.getType());
     }
 
@@ -117,11 +118,11 @@ public final class MetricUtil {
      * @param element the annotated element
      * @param clazz the annotated class
      * @param annotation the annotation to register
-     * @param type the {@link MatchingType} indicating the type of annotated element
+     * @param type the {@link AnnotationSiteType} indicating the type of annotated element
      * @param <E> the annotated element type
      */
     public static <E extends Member & AnnotatedElement>
-    void registerMetric(E element, Class<?> clazz, Annotation annotation, MatchingType type) {
+    void registerMetric(E element, Class<?> clazz, Annotation annotation, AnnotationSiteType type) {
         registerMetric(getMetricRegistry(), element, clazz, annotation, type);
     }
 
@@ -132,11 +133,11 @@ public final class MetricUtil {
      * @param element the annotated element
      * @param clazz the annotated class
      * @param annotation the annotation to register
-     * @param type the {@link MatchingType} indicating the type of annotated element
+     * @param type the {@link AnnotationSiteType} indicating the type of annotated element
      * @param <E> the annotated element type
      */
     public static <E extends Member & AnnotatedElement>
-    void registerMetric(MetricRegistry registry, E element, Class<?> clazz, Annotation annotation, MatchingType type) {
+    void registerMetric(MetricRegistry registry, E element, Class<?> clazz, Annotation annotation, AnnotationSiteType type) {
 
         if (annotation instanceof Counted) {
             Counted counted = (Counted) annotation;

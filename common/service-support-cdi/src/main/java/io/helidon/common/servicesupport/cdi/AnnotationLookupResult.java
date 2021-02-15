@@ -19,7 +19,7 @@ package io.helidon.common.servicesupport.cdi;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
-import java.util.List;
+import java.util.Collection;
 import java.util.stream.Collectors;
 
 import javax.enterprise.inject.spi.Annotated;
@@ -27,81 +27,85 @@ import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedType;
 
 /**
- * Encapsulation of the result of locating an annotation, indicating the type of site
- * ({@link MatchingType}) as well as the annotation itself.
+ * Encapsulation of the result of locating an annotation, indicating the type of site ({@link AnnotationSiteType}) as well as the
+ * annotation itself.
  *
  * @param <A> type of annotation
  */
-public class LookupResult<A extends Annotation> {
+public class AnnotationLookupResult<A extends Annotation> {
 
-    private final MatchingType type;
+    private final AnnotationSiteType type;
 
     private final A annotation;
 
     /**
      * Creates a new instance based on the provided annotation class and element bearing that annotation.
      *
-     * @param element element
+     * @param element    element
      * @param annotClass annotation class
-     * @param clazz class
-     * @param <E> element type
-     * @param <A> annotation type
+     * @param clazz      class
+     * @param <E>        element type
+     * @param <A>        annotation type
      * @return lookup result
      */
     public static <E extends Member & AnnotatedElement, A extends Annotation>
-    LookupResult<A> lookupAnnotation(E element, Class<? extends A> annotClass, Class<?> clazz) {
+    AnnotationLookupResult<A> lookupAnnotation(E element, Class<? extends A> annotClass, Class<?> clazz) {
         // First check annotation on element
         A annotation = element.getAnnotation(annotClass);
         if (annotation != null) {
-            return new LookupResult<>(MatchingType.METHOD, annotation);
+            return new AnnotationLookupResult<>(AnnotationSiteType.METHOD, annotation);
         }
         // Finally check annotations on class
-        annotation = element.getDeclaringClass().getAnnotation(annotClass);
+        annotation = element.getDeclaringClass()
+                .getAnnotation(annotClass);
         if (annotation == null) {
             annotation = clazz.getAnnotation(annotClass);
         }
-        return annotation == null ? null : new LookupResult<>(MatchingType.CLASS, annotation);
+        return annotation == null ? null : new AnnotationLookupResult<>(AnnotationSiteType.CLASS, annotation);
     }
 
     /**
-     * Creates a list of lookup results given an annotation type and an {@code Annotated} site.
+     * Creates a collection of lookup results given an annotation type and an {@code Annotated} site.
      *
-     * @param annotated the annotated site
+     * @param annotated  the annotated site
      * @param annotClass the annotation type class
-     * @param <A> the annotation type
+     * @param <A>        the annotation type
      * @return lookup result
      */
-    public static <A extends Annotation> List<LookupResult<A>> lookupAnnotations(Annotated annotated,
+    public static <A extends Annotation> Collection<AnnotationLookupResult<A>> lookupAnnotations(Annotated annotated,
             Class<A> annotClass) {
         // We have to filter by annotation class ourselves, because annotatedMethod.getAnnotations(Class) delegates
         // to the Java method. That would bypass any annotations that had been added dynamically to the configurator.
-        return annotated.getAnnotations().stream()
+        return annotated.getAnnotations()
+                .stream()
                 .filter(annotClass::isInstance)
-                .map(annotation -> new LookupResult<>(MatchingType.matchingType(annotated), annotClass.cast(annotation)))
+                .map(annotation -> new AnnotationLookupResult<>(AnnotationSiteType.matchingType(annotated),
+                        annotClass.cast(annotation)))
                 .collect(Collectors.toList());
     }
 
     /**
-     * Creates a list of lookup results for an annotation on a given method or, failing that, at the corresponding class level.
+     * Creates a collection of lookup results for an annotation on a given method or, failing that, at the corresponding class
+     * level.
      *
-     * @param annotatedType the type on which the annotation might appear
+     * @param annotatedType   the type on which the annotation might appear
      * @param annotatedMethod the method to check for the annotation
-     * @param annotClass the annotation to check for
-     * @param <A> the type of the annotation
-     * @return {@code List} of {@code LookupResult}
+     * @param annotClass      the annotation to check for
+     * @param <A>             the type of the annotation
+     * @return {@code List} of {@code AnnotationLookupResult}
      */
-    public static <A extends Annotation> List<LookupResult<A>> lookupAnnotations(
+    public static <A extends Annotation> Collection<AnnotationLookupResult<A>> lookupAnnotations(
             AnnotatedType<?> annotatedType,
             AnnotatedMethod<?> annotatedMethod,
             Class<A> annotClass) {
-        List<LookupResult<A>> result = lookupAnnotations(annotatedMethod, annotClass);
+        Collection<AnnotationLookupResult<A>> result = lookupAnnotations(annotatedMethod, annotClass);
         if (result.isEmpty()) {
             result = lookupAnnotations(annotatedType, annotClass);
         }
         return result;
     }
 
-    private LookupResult(MatchingType type, A annotation) {
+    private AnnotationLookupResult(AnnotationSiteType type, A annotation) {
         this.type = type;
         this.annotation = annotation;
     }
@@ -111,7 +115,7 @@ public class LookupResult<A extends Annotation> {
      *
      * @return the matching type
      */
-    public MatchingType getType() {
+    public AnnotationSiteType getType() {
         return type;
     }
 

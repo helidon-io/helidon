@@ -36,8 +36,8 @@ import javax.enterprise.util.AnnotationLiteral;
 import javax.enterprise.util.Nonbinding;
 import javax.interceptor.InterceptorBinding;
 
+import io.helidon.common.servicesupport.cdi.AnnotationLookupResult;
 import io.helidon.common.servicesupport.cdi.CdiExtensionBase;
-import io.helidon.common.servicesupport.cdi.LookupResult;
 
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
@@ -75,7 +75,7 @@ public class MicrometerCdiExtension extends CdiExtensionBase<
 
     @Override
     protected <E extends Member & AnnotatedElement>
-    void register(E element, Class<?> clazz, LookupResult<? extends Annotation> lookupResult) {
+    void register(E element, Class<?> clazz, AnnotationLookupResult<? extends Annotation> lookupResult) {
         Annotation annotation = lookupResult.getAnnotation();
 
         if (annotation instanceof Counted) {
@@ -108,7 +108,7 @@ public class MicrometerCdiExtension extends CdiExtensionBase<
         // Initialize our implementation
         MeterRegistryProducer.clear();
 
-        // Register beans manually
+        // Register types manually
         discovery.addAnnotatedType(MeterRegistryProducer.class, "MeterRegistryProducer");
         discovery.addAnnotatedType(MeterProducer.class, "MeterProducer");
 
@@ -167,7 +167,7 @@ public class MicrometerCdiExtension extends CdiExtensionBase<
      */
     private void recordMetricAnnotatedClass(@Observes
     @WithAnnotations({Counted.class, Timed.class}) ProcessAnnotatedType<?> pat) {
-        checkAndRecordCandidateClass(pat);
+        recordConcreteNonInterceptor(pat);
     }
 
     static class MicrometerRestEndpointInfo extends RestEndpointInfo {

@@ -25,7 +25,7 @@ import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
 /**
- * Common base implementation for service support classes.
+ * Common base implementation for {@linkplain Service service} support classes.
  * <p>
  *     This base class takes care of some tasks common to many services, using config and other settings in the builder:
  *     <ul>
@@ -137,7 +137,7 @@ public abstract class ServiceSupportBase<T extends ServiceSupportBase<T, B>, B e
         }
 
         /**
-         * Set a new root context for REST API of metrics.
+         * Set the root context for the REST API of the service.
          *
          * @param path context to use
          * @return updated builder instance

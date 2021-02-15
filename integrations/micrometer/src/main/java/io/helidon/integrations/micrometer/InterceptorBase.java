@@ -28,13 +28,13 @@ import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
-import io.helidon.common.servicesupport.cdi.LookupResult;
+import io.helidon.common.servicesupport.cdi.AnnotationLookupResult;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 
+import static io.helidon.common.servicesupport.cdi.AnnotationLookupResult.lookupAnnotation;
 import static io.helidon.common.servicesupport.cdi.CdiExtensionBase.getRealClass;
-import static io.helidon.common.servicesupport.cdi.LookupResult.lookupAnnotation;
 
 @Dependent
 abstract class InterceptorBase<T extends Meter, A extends Annotation> {
@@ -122,7 +122,7 @@ abstract class InterceptorBase<T extends Meter, A extends Annotation> {
     }
 
     private <E extends Member & AnnotatedElement> Object called(InvocationContext context, E element) throws Throwable {
-        LookupResult<A> lookupResult = lookupAnnotation(element, annotationClass, getClass(context, element));
+        AnnotationLookupResult<A> lookupResult = lookupAnnotation(element, annotationClass, getClass(context, element));
         if (lookupResult != null) {
 
             Throwable throwable = null;
@@ -154,7 +154,7 @@ abstract class InterceptorBase<T extends Meter, A extends Annotation> {
      * @return the meter to be updated for the annotated element being invoked
      */
     private <E extends Member & AnnotatedElement> T getMeterForElement(E element, Class<?> clazz,
-            LookupResult<A> lookupResult) {
+            AnnotationLookupResult<A> lookupResult) {
 
         return elementMeterMap.computeIfAbsent(element, e -> createMeterForElement(element, clazz, lookupResult));
     }
@@ -169,7 +169,7 @@ abstract class InterceptorBase<T extends Meter, A extends Annotation> {
      * @return the metric retrieved from the registry and added to the site-to-metric map
      */
     private <E extends Member & AnnotatedElement> T createMeterForElement(E element, Class<?> clazz,
-            LookupResult<A> lookupResult) {
+            AnnotationLookupResult<A> lookupResult) {
 
         A annot = lookupResult.getAnnotation();
 

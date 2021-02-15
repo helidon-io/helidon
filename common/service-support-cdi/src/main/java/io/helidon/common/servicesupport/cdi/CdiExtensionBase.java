@@ -64,7 +64,7 @@ import io.helidon.webserver.Routing;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
-import static io.helidon.common.servicesupport.cdi.LookupResult.lookupAnnotation;
+import static io.helidon.common.servicesupport.cdi.AnnotationLookupResult.lookupAnnotation;
 import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
@@ -218,7 +218,7 @@ public abstract class CdiExtensionBase<
         int candidateAsyncResponseParameterSlot = 0;
 
         for (Parameter p : m.getParameters()) {
-            if (AsyncResponse.class.isAssignableFrom(p.getType()) && p.getAnnotation(Suspended.class) != null) {
+            if (AsyncResponse.class.isAssignableFrom(p.getType()) && p.isAnnotationPresent(Suspended.class)) {
                 return candidateAsyncResponseParameterSlot;
             }
             candidateAsyncResponseParameterSlot++;
@@ -236,7 +236,7 @@ public abstract class CdiExtensionBase<
 
 
     /**
-     * Observes all beans but immediately dismisses ones for which the Java class was not previously noted
+     * Observes all managed beans but immediately dismisses ones for which the Java class was not previously noted
      * by the {@code ProcessAnnotatedType} observer (which recorded only classes with selected annotations).
      *
      * @param pmb event describing the managed bean being processed
@@ -263,12 +263,12 @@ public abstract class CdiExtensionBase<
                 continue;
             }
             annotations.forEach(annotation -> {
-                for (LookupResult<? extends Annotation> lookupResult : LookupResult.lookupAnnotations(
+                for (AnnotationLookupResult<? extends Annotation> lookupResult : AnnotationLookupResult.lookupAnnotations(
                         type, annotatedMethod, annotation)) {
                     // For methods, register the object only on the declaring
                     // class, not subclasses per the MP Metrics 2.0 TCK
                     // VisibilityTimedMethodBeanTest.
-                    if (lookupResult.getType() != MatchingType.METHOD
+                    if (lookupResult.getType() != AnnotationSiteType.METHOD
                             || clazz.equals(annotatedMethod.getJavaMember()
                             .getDeclaringClass())) {
                         register(annotatedMethod.getJavaMember(), clazz, lookupResult);
@@ -284,7 +284,7 @@ public abstract class CdiExtensionBase<
                 continue;
             }
             annotations.forEach(annotation -> {
-                LookupResult<? extends Annotation> lookupResult
+                AnnotationLookupResult<? extends Annotation> lookupResult
                         = lookupAnnotation(c, annotation, clazz);
                 if (lookupResult != null) {
                     register(c, clazz, lookupResult);
@@ -307,7 +307,7 @@ public abstract class CdiExtensionBase<
      * @param <E> type of method or field or constructor
      */
     protected abstract <E extends Member & AnnotatedElement>
-    void register(E element, Class<?> clazz, LookupResult<? extends Annotation> lookupResult);
+    void register(E element, Class<?> clazz, AnnotationLookupResult<? extends Annotation> lookupResult);
 
     /**
      * Checks to make sure the annotated type is not abstract and is not an interceptor.
@@ -315,7 +315,7 @@ public abstract class CdiExtensionBase<
      * @param pat {@code ProcessAnnotatedType} event
      * @return true if the annotated type should be kept for potential processing later; false otherwise
      */
-    protected boolean checkCandidateClass(ProcessAnnotatedType<?> pat) {
+    protected boolean isConcreteNonInterceptor(ProcessAnnotatedType<?> pat) {
         AnnotatedType<?> annotatedType = pat.getAnnotatedType();
         Class<?> clazz = annotatedType.getJavaClass();
 
@@ -339,8 +339,8 @@ public abstract class CdiExtensionBase<
      * @param pat {@code ProcessAnnotatedType} event
      * @return true if the annotated type should be kept for potential processing later; false otherwise
      */
-    protected boolean checkAndRecordCandidateClass(ProcessAnnotatedType<?> pat) {
-        boolean result = checkCandidateClass(pat);
+    protected boolean recordConcreteNonInterceptor(ProcessAnnotatedType<?> pat) {
+        boolean result = isConcreteNonInterceptor(pat);
         if (result) {
             annotatedClasses.add(pat.getAnnotatedType().getJavaClass());
         }
@@ -378,16 +378,15 @@ public abstract class CdiExtensionBase<
      *
      * @param adv app-scoped initialization event
      * @param bm BeanManager
+     * @param server the ServerCdiExtension
      * @return default routing
      */
     protected Routing.Builder registerService(
             @Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
-            BeanManager bm) {
+            BeanManager bm, ServerCdiExtension server) {
+
         Config config = ((Config) ConfigProvider.getConfig()).get(configPrefix);
-
         serviceSupport = serviceSupportFactory.apply(config);
-
-        ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
 
         ConfigValue<String> routingNameConfig = config.get("routing").asString();
         Routing.Builder defaultRouting = server.serverRoutingBuilder();

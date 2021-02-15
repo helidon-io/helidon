@@ -34,8 +34,10 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
 
 /**
- * A simple service to greet you. Examples:
- *
+ * A simple service to greet you.
+ * <p>
+ * Examples:
+ * <pre>{@code
  * Get default greeting message:
  * curl -X GET http://localhost:8080/greet
  *
@@ -45,7 +47,10 @@ import io.micrometer.core.instrument.Timer;
  * Change greeting
  * curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Howdy"}' http://localhost:8080/greet/greeting
  *
- * The message is returned as a JSON object
+ * }</pre>
+ * The greeting message is returned as a JSON object.
+ *
+ * </p>
  */
 
 public class GreetService implements Service {
