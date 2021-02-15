@@ -133,21 +133,20 @@ public class MpConfigBuilder implements ConfigBuilder {
     }
 
     void mpMetaConfig(io.helidon.config.Config meta) {
-        meta.get("add-discovered-sources").asBoolean().ifPresent(it -> {
-            if (it) {
-                addDiscoveredSources();
-            }
-        });
-        meta.get("add-discovered-converters").asBoolean().ifPresent(it -> {
-            if (it) {
-                addDiscoveredConverters();
-            }
-        });
-        meta.get("add-default-sources").asBoolean().ifPresent(it -> {
-            if (it) {
-                addDefaultSources();
-            }
-        });
+        meta.get("add-discovered-sources")
+                .asBoolean()
+                .filter(it -> it)
+                .ifPresent(it -> addDiscoveredSources());
+
+        meta.get("add-discovered-converters")
+                .asBoolean()
+                .filter(it -> it)
+                .ifPresent(it -> addDiscoveredConverters());
+
+        meta.get("add-default-sources")
+                .asBoolean()
+                .filter(it -> it)
+                .ifPresent(it -> addDefaultSources());
 
         meta.get("sources")
                 .asNodeList()
