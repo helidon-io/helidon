@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,29 +22,28 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-@Test
-public class MultiFromNotTrustedInputStreamTckTest extends MultiFromTrustedInputStreamTckTest {
-    private static final Logger LOGGER = Logger.getLogger(MultiFromNotTrustedInputStreamTckTest.class.getName());
+public class MultiFromNotTrustedInputStreamTest {
+
+    private static final Logger LOGGER = Logger.getLogger(MultiFromNotTrustedInputStreamTest.class.getName());
 
     static final int BUFFER_SIZE = 4;
 
     ExecutorService executorService = null;
 
-    @Override
-    @BeforeMethod
+    @BeforeEach
     public void setUp() throws Exception {
-        super.setUp();
         executorService = Executors.newFixedThreadPool(4);
     }
 
-    @AfterMethod
+    @AfterEach
     public void tearDown() {
         executorService.shutdown();
         try {
@@ -77,5 +76,20 @@ public class MultiFromNotTrustedInputStreamTckTest extends MultiFromTrustedInput
         pub.subscribe(sub);
         sub.awaitDone(100, TimeUnit.MILLISECONDS);
         sub.assertError(IllegalArgumentException.class);
+    }
+
+    Flow.Publisher<ByteBuffer> createFlowPublisher(long l) {
+        AtomicLong remaining = new AtomicLong(l * BUFFER_SIZE);
+        final byte[] theByte = {0};
+        InputStream is = new InputStream() {
+            @Override
+            public int read() {
+                if (0 == remaining.getAndDecrement()) {
+                    return -1;
+                }
+                return theByte[0]++;
+            }
+        };
+        return getPublisher(is);
     }
 }
