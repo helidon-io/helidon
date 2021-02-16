@@ -116,7 +116,7 @@ class JsonWebTokenImpl implements JsonWebToken, Principal {
     @Override
     public <T> T getClaim(String claimName) {
         try {
-            return (T) getClaimPrivate(Claims.valueOf(claimName));
+            return (T) claimFromToken(Claims.valueOf(claimName));
         } catch (IllegalArgumentException e) {
             //If claimName is name of the custom claim
             return (T) getJsonValue(claimName).orElse(null);
@@ -137,7 +137,7 @@ class JsonWebTokenImpl implements JsonWebToken, Principal {
             Claims claims = Claims.valueOf(claimName);
             return JsonValue.class.isAssignableFrom(clazz)
                     ? (T) getJsonValue(claimName).orElse(null)
-                    : (T) getClaimPrivate(claims);
+                    : (T) claimFromToken(claims);
         } catch (IllegalArgumentException ignored) {
             return (T) getJsonValue(claimName)
                     .map(val -> convertClass(clazz, val))
@@ -145,7 +145,7 @@ class JsonWebTokenImpl implements JsonWebToken, Principal {
         }
     }
 
-    private Object getClaimPrivate(Claims claims) {
+    private Object claimFromToken(Claims claims) {
         switch (claims) {
         case raw_token:
             return signed.tokenContent();
