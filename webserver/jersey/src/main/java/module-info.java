@@ -29,6 +29,7 @@ module io.helidon.webserver.jersey {
     requires io.helidon.common.reactive;
     requires java.logging;
     requires hk2.api;
+    requires io.netty.buffer;
 
     exports io.helidon.webserver.jersey;
 

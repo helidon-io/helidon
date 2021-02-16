@@ -142,6 +142,30 @@ public interface DataChunk extends Iterable<ByteBuffer> {
     ByteBuffer[] data();
 
     /**
+     * Returns a representation of this chunk as an array of T's.
+     *
+     * @return an array of T's
+     */
+    @SuppressWarnings("unchecked")
+    default <T> T[] data(Class<T> clazz) {
+        if (ByteBuffer.class.isAssignableFrom(clazz)) {
+            return (T[]) data();
+        }
+        throw new UnsupportedOperationException("Unsupported operation for class " + clazz);
+    }
+
+    /**
+     * Checks if this instance is backed by buffers of a certain kind.
+     *
+     * @param clazz a buffer class instance
+     * @param <T> the buffer type
+     * @return outcome of test
+     */
+    default <T> boolean isBackedBy(Class<T> clazz) {
+        return ByteBuffer.class.isAssignableFrom(clazz);
+    }
+
+    /**
      * Returns the sum of elements between the current position and the limit of each of the underlying ByteBuffer.
      *
      * @return The number of elements remaining in all underlying buffers
