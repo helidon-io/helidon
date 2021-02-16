@@ -103,6 +103,7 @@ for native image.
 |✅ |{nbsp} |Multi-part |{nbsp}
 |❓ |{nbsp} |Prometheus |Not yet tested.
 |✅ |{nbsp} |Websocket |Server only.
+|✅ |{nbsp} |Blocking |{nbsp}
 |✅ |gRPC Server |gRPC Server |Since GraalVM 21.0.0
 |✅ |{nbsp} |Metrics |{nbsp}
 |✅ |gRPC Client |gRPC Client |Since GraalVM 21.0.0

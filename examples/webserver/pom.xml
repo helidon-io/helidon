@@ -33,6 +33,7 @@
 
     <modules>
         <module>basics</module>
+        <module>blocking</module>
         <module>tutorial</module>
         <module>comment-aas</module>
         <module>static-content</module>

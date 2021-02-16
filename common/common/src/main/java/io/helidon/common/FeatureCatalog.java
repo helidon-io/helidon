@@ -163,6 +163,13 @@ final class FeatureCatalog {
                     .flavor(HelidonFlavor.SE)
                     .experimental(true));
 
+        add("io.helidon.webserver.blocking",
+            FeatureDescriptor.builder()
+                    .flavor(HelidonFlavor.SE)
+                    .name("Blocking API")
+                    .description("WebServer blocking API")
+                    .path("WebServer", "Blocking")
+                    .experimental(true));
         /*
          * MP Modules
          */

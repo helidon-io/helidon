@@ -38,6 +38,7 @@
         <module>access-log</module>
         <module>tyrus</module>
         <module>cors</module>
+        <module>blocking</module>
         <module>static-content</module>
     </modules>
 </project>

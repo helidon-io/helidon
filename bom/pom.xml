@@ -78,6 +78,11 @@
                 <artifactId>helidon-webserver-cors</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-blocking</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Helidon Jersey -->
             <dependency>
                 <groupId>io.helidon.jersey</groupId>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,9 +50,9 @@ class ThreadPoolSupplierTest {
 
     @BeforeAll
     static void initClass() {
-        defaultInstance = ThreadPoolSupplier.create().getThreadPool();
+        defaultInstance = (ThreadPoolExecutor) ThreadPoolSupplier.create().getThreadPool();
 
-        builtInstance = ThreadPoolSupplier.builder()
+        builtInstance = (ThreadPoolExecutor) ThreadPoolSupplier.builder()
                                           .threadNamePrefix("thread-pool-unit-test-")
                                           .corePoolSize(2)
                                           .daemon(true)
@@ -61,7 +61,7 @@ class ThreadPoolSupplierTest {
                                           .build()
                                           .getThreadPool();
 
-        configuredInstance = ThreadPoolSupplier.create(Config.create().get("unit.thread-pool"))
+        configuredInstance = (ThreadPoolExecutor) ThreadPoolSupplier.create(Config.create().get("unit.thread-pool"))
                                                .getThreadPool();
     }
 

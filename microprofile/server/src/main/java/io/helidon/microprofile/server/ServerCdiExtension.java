@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -49,7 +48,6 @@ import io.helidon.common.Prioritized;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.config.DeprecatedConfig;
 import io.helidon.microprofile.cdi.BuildTimeStart;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.webserver.Routing;
@@ -111,34 +109,10 @@ public class ServerCdiExtension implements Extension {
         // make sure all configuration is in place
         if (null == jaxRsExecutorService) {
             Config serverConfig = config.get("server");
-            final java.lang.reflect.Method m;
-            if (DeprecatedConfig.get(serverConfig, "executor-service.virtual-threads", "virtual-threads")
-                    .asBoolean().orElse(false)) {
-                java.lang.reflect.Method temp = null;
-                try {
-                    temp = Executors.class.getDeclaredMethod("newVirtualThreadExecutor");
-                } catch (final ReflectiveOperationException notLoomEarlyAccess) {
-                    temp = null;
-                } finally {
-                    m = temp;
-                }
-            } else {
-                m = null;
-            }
-            if (m != null) {
-                jaxRsExecutorService = () -> {
-                    try {
-                        return (ExecutorService) m.invoke(null);
-                    } catch (final ReflectiveOperationException reflectiveOperationException) {
-                        throw new IllegalStateException(reflectiveOperationException.getMessage(), reflectiveOperationException);
-                    }
-                };
-            } else {
-                jaxRsExecutorService = ServerThreadPoolSupplier.builder()
+            jaxRsExecutorService = ServerThreadPoolSupplier.builder()
                     .name("server")
                     .config(serverConfig.get("executor-service"))
                     .build();
-            }
         }
 
         // redirect to the first page when root is accessed (if configured)
