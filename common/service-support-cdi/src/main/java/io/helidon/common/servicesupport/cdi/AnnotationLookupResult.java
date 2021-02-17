@@ -115,7 +115,7 @@ public class AnnotationLookupResult<A extends Annotation> {
      *
      * @return the matching type
      */
-    public AnnotationSiteType getType() {
+    public AnnotationSiteType siteType() {
         return type;
     }
 
@@ -124,7 +124,7 @@ public class AnnotationLookupResult<A extends Annotation> {
      *
      * @return the annotation
      */
-    public A getAnnotation() {
+    public A annotation() {
         return annotation;
     }
 }

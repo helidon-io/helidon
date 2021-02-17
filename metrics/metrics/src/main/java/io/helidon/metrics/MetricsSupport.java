@@ -46,7 +46,7 @@ import javax.json.JsonValue;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.servicesupport.ServiceSupportBase;
+import io.helidon.common.servicesupport.HelidonRestServiceSupport;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.media.common.MessageBodyWriter;
@@ -96,7 +96,7 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  *  req.context().get(MetricRegistry.class).ifPresent(reg -> reg.counter("myCounter").inc());
  * }</pre>
  */
-public final class MetricsSupport extends ServiceSupportBase<MetricsSupport, MetricsSupport.Builder> {
+public final class MetricsSupport extends HelidonRestServiceSupport<MetricsSupport, MetricsSupport.Builder> {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";
@@ -498,7 +498,7 @@ public final class MetricsSupport extends ServiceSupportBase<MetricsSupport, Met
     /**
      * A fluent API builder to build instances of {@link MetricsSupport}.
      */
-    public static final class Builder extends ServiceSupportBase.Builder<MetricsSupport, Builder>
+    public static final class Builder extends HelidonRestServiceSupport.Builder<MetricsSupport, Builder>
             implements io.helidon.common.Builder<MetricsSupport> {
 
         private Supplier<RegistryFactory> registryFactory;
@@ -508,7 +508,7 @@ public final class MetricsSupport extends ServiceSupportBase<MetricsSupport, Met
         }
 
         @Override
-        protected Config getWebContextConfig(Config config) {
+        protected Config webContextConfig(Config config) {
             // align with health checks
             return DeprecatedConfig.get(config, "web-context", "context");
 

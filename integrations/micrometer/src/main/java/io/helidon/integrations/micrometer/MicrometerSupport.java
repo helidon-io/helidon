@@ -19,7 +19,7 @@ package io.helidon.integrations.micrometer;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-import io.helidon.common.servicesupport.ServiceSupportBase;
+import io.helidon.common.servicesupport.HelidonRestServiceSupport;
 import io.helidon.config.Config;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
@@ -43,7 +43,7 @@ import io.micrometer.core.instrument.MeterRegistry;
  * MeterRegistry} to create or locate meters.
  * </p>
  */
-public class MicrometerSupport extends ServiceSupportBase<MicrometerSupport, MicrometerSupport.Builder> {
+public class MicrometerSupport extends HelidonRestServiceSupport<MicrometerSupport, MicrometerSupport.Builder> {
 
     static final String DEFAULT_CONTEXT = "/micrometer";
     private static final String SERVICE_NAME = "Micrometer";
@@ -122,7 +122,7 @@ public class MicrometerSupport extends ServiceSupportBase<MicrometerSupport, Mic
     /**
      * Fluid builder for {@code MicrometerSupport} objects.
      */
-    public static class Builder extends ServiceSupportBase.Builder<MicrometerSupport, Builder>
+    public static class Builder extends HelidonRestServiceSupport.Builder<MicrometerSupport, Builder>
             implements io.helidon.common.Builder<MicrometerSupport> {
 
         private Supplier<MeterRegistryFactory> meterRegistryFactorySupplier = null;

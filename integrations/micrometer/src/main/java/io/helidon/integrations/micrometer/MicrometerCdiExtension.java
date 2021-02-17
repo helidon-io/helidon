@@ -37,7 +37,7 @@ import javax.enterprise.util.Nonbinding;
 import javax.interceptor.InterceptorBinding;
 
 import io.helidon.common.servicesupport.cdi.AnnotationLookupResult;
-import io.helidon.common.servicesupport.cdi.CdiExtensionBase;
+import io.helidon.common.servicesupport.cdi.HelidonRestCdiExtension;
 
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
@@ -50,7 +50,7 @@ import io.micrometer.core.instrument.Timer;
 /**
  * CDI extension for handling Micrometer artifacts.
  */
-public class MicrometerCdiExtension extends CdiExtensionBase<
+public class MicrometerCdiExtension extends HelidonRestCdiExtension<
         MicrometerCdiExtension.MicrometerAsyncResponseInfo,
         MicrometerCdiExtension.MicrometerRestEndpointInfo,
         MicrometerSupport,
@@ -76,7 +76,7 @@ public class MicrometerCdiExtension extends CdiExtensionBase<
     @Override
     protected <E extends Member & AnnotatedElement>
     void register(E element, Class<?> clazz, AnnotationLookupResult<? extends Annotation> lookupResult) {
-        Annotation annotation = lookupResult.getAnnotation();
+        Annotation annotation = lookupResult.annotation();
 
         if (annotation instanceof Counted) {
             Counter counter = MeterProducer.produceCounter(meterRegistry, (Counted) annotation);

@@ -65,8 +65,6 @@ public class GreetService implements Service {
 
     private static final JsonBuilderFactory JSON_BF = Json.createBuilderFactory(Collections.emptyMap());
 
-    private static final JsonReaderFactory JSON_RF = Json.createReaderFactory(Collections.emptyMap());
-
     GreetService(Config config, Timer getTimer, Counter personalizedGetCounter) {
         this.greeting = config.get("app.greeting").asString().orElse("Ciao");
         this.getTimer = getTimer;

@@ -109,7 +109,7 @@ public final class MetricUtil {
      */
     public static <E extends Member & AnnotatedElement>
     void registerMetric(E element, Class<?> clazz, AnnotationLookupResult<? extends Annotation> lookupResult) {
-        registerMetric(element, clazz, lookupResult.getAnnotation(), lookupResult.getType());
+        registerMetric(element, clazz, lookupResult.annotation(), lookupResult.siteType());
     }
 
     /**

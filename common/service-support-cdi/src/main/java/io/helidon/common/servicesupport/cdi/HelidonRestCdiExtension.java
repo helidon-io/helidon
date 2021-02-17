@@ -56,7 +56,7 @@ import javax.interceptor.InvocationContext;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 
-import io.helidon.common.servicesupport.ServiceSupportBase;
+import io.helidon.common.servicesupport.HelidonRestServiceSupport;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -76,7 +76,7 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * </p>
  * <p>
  *     Each extension is presumed to layer on an SE-style service support class which itself is a subclass of
- *     {@link ServiceSupportBase} with an associated {@code Builder} class. The service support base class and its builder are
+ *     {@link HelidonRestServiceSupport} with an associated {@code Builder} class. The service support base class and its builder are
  *     both type parameters to this class.
  * </p>
  * <p>
@@ -92,14 +92,14 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  *
  * @param <A> concrete {@code AsyncResponseInfo} type
  * @param <R> concrete {@code RestEndpointInfo} type
- * @param <T> concrete type of {@code ServiceSupportBase} used
- * @param <B> Builder for the concrete type of {@code }ServiceSupportBase}
+ * @param <T> concrete type of {@code HelidonRestServiceSupport} used
+ * @param <B> Builder for the concrete type of {@code }HelidonRestServiceSupport}
  */
-public abstract class CdiExtensionBase<
-        A extends CdiExtensionBase.AsyncResponseInfo,
-        R extends CdiExtensionBase.RestEndpointInfo,
-        T extends ServiceSupportBase<T, B>,
-        B extends ServiceSupportBase.Builder<T, B>> implements Extension {
+public abstract class HelidonRestCdiExtension<
+        A extends HelidonRestCdiExtension.AsyncResponseInfo,
+        R extends HelidonRestCdiExtension.RestEndpointInfo,
+        T extends HelidonRestServiceSupport<T, B>,
+        B extends HelidonRestServiceSupport.Builder<T, B>> implements Extension {
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 
     private final Set<Class<?>> annotatedClasses = new HashSet<>();
@@ -124,7 +124,7 @@ public abstract class CdiExtensionBase<
      * @param serviceSupportFactory function from config to the corresponding SE-style service support object
      * @param configPrefix prefix for retrieving config related to this extension
      */
-    protected CdiExtensionBase(
+    protected HelidonRestCdiExtension(
             Logger logger,
             Set<Class<? extends Annotation>> annotations,
             Class<?> ownProducer,
@@ -143,7 +143,7 @@ public abstract class CdiExtensionBase<
      * @param object The object.
      * @return Its class.
      */
-    public static Class<?> getRealClass(Object object) {
+    public static Class<?> realClass(Object object) {
         Class<?> result = object.getClass();
         while (result.isSynthetic()) {
             result = result.getSuperclass();
@@ -268,7 +268,7 @@ public abstract class CdiExtensionBase<
                     // For methods, register the object only on the declaring
                     // class, not subclasses per the MP Metrics 2.0 TCK
                     // VisibilityTimedMethodBeanTest.
-                    if (lookupResult.getType() != AnnotationSiteType.METHOD
+                    if (lookupResult.siteType() != AnnotationSiteType.METHOD
                             || clazz.equals(annotatedMethod.getJavaMember()
                             .getDeclaringClass())) {
                         register(annotatedMethod.getJavaMember(), clazz, lookupResult);

@@ -41,13 +41,13 @@ import io.helidon.webserver.cors.CrossOriginConfig;
  * @param <T> the concrete service support class
  * @param <B> the concrete {@code Builder} class for {@code T}
  */
-public abstract class ServiceSupportBase<T extends ServiceSupportBase<T, B>, B extends ServiceSupportBase.Builder<T, B>>
+public abstract class HelidonRestServiceSupport<T extends HelidonRestServiceSupport<T, B>, B extends HelidonRestServiceSupport.Builder<T, B>>
         implements Service {
 
     private final String context;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
 
-    protected ServiceSupportBase(Builder<T, B> builder, String serviceName) {
+    protected HelidonRestServiceSupport(Builder<T, B> builder, String serviceName) {
         this.context = builder.context;
         corsEnabledServiceHelper = CorsEnabledServiceHelper.create(serviceName, builder.crossOriginConfig);
     }
@@ -90,7 +90,7 @@ public abstract class ServiceSupportBase<T extends ServiceSupportBase<T, B>, B e
      * @param <T> type of the concrete service
      * @param <B> type of the concrete builder for the service
      */
-    public abstract static class Builder<T extends ServiceSupportBase<T, B>, B extends Builder<T, B>>
+    public abstract static class Builder<T extends HelidonRestServiceSupport<T, B>, B extends Builder<T, B>>
             implements io.helidon.common.Builder<T> {
 
         private final Class<B> builderClass;
@@ -116,7 +116,7 @@ public abstract class ServiceSupportBase<T extends ServiceSupportBase<T, B>, B e
         public B config(Config config) {
             this.config = config;
 
-            getWebContextConfig(config)
+            webContextConfig(config)
                     .asString()
                     .ifPresent(this::webContext);
 
@@ -172,7 +172,7 @@ public abstract class ServiceSupportBase<T extends ServiceSupportBase<T, B>, B e
             return builderClass.cast(this);
         }
 
-        protected Config getWebContextConfig(Config config) {
+        protected Config webContextConfig(Config config) {
             return config.get("web-context");
         }
     }

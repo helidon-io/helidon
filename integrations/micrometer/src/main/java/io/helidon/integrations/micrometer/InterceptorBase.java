@@ -34,7 +34,7 @@ import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import static io.helidon.common.servicesupport.cdi.AnnotationLookupResult.lookupAnnotation;
-import static io.helidon.common.servicesupport.cdi.CdiExtensionBase.getRealClass;
+import static io.helidon.common.servicesupport.cdi.HelidonRestCdiExtension.realClass;
 
 @Dependent
 abstract class InterceptorBase<T extends Meter, A extends Annotation> {
@@ -84,7 +84,7 @@ abstract class InterceptorBase<T extends Meter, A extends Annotation> {
      * @return The class.
      */
     protected <E extends Member & AnnotatedElement> Class<?> getClass(InvocationContext context, E element) {
-        return context.getTarget() != null ? getRealClass(context.getTarget()) : element.getDeclaringClass();
+        return context.getTarget() != null ? realClass(context.getTarget()) : element.getDeclaringClass();
     }
 
     /**
@@ -126,7 +126,7 @@ abstract class InterceptorBase<T extends Meter, A extends Annotation> {
         if (lookupResult != null) {
 
             Throwable throwable = null;
-            A annot = lookupResult.getAnnotation();
+            A annot = lookupResult.annotation();
 
             Object result = null;
             T meter = getMeterForElement(element, getClass(context, element), lookupResult);
@@ -171,7 +171,7 @@ abstract class InterceptorBase<T extends Meter, A extends Annotation> {
     private <E extends Member & AnnotatedElement> T createMeterForElement(E element, Class<?> clazz,
             AnnotationLookupResult<A> lookupResult) {
 
-        A annot = lookupResult.getAnnotation();
+        A annot = lookupResult.annotation();
 
         String[] tags = tagsFunction.apply(annot);
         String meterName = nameFunction.apply(annot);

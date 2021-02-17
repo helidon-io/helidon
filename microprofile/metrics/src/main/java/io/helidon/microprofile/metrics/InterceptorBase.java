@@ -35,7 +35,7 @@ import javax.interceptor.InvocationContext;
 
 import io.helidon.common.servicesupport.cdi.AnnotationLookupResult;
 import io.helidon.common.servicesupport.cdi.AnnotationSiteType;
-import io.helidon.common.servicesupport.cdi.CdiExtensionBase;
+import io.helidon.common.servicesupport.cdi.HelidonRestCdiExtension;
 import io.helidon.metrics.Registry;
 
 import org.eclipse.microprofile.metrics.Metric;
@@ -140,7 +140,7 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
      * @return The class.
      */
     protected <E extends Member & AnnotatedElement> Class<?> getClass(InvocationContext context, E element) {
-        return context.getTarget() != null ? CdiExtensionBase.getRealClass(context.getTarget()) : element.getDeclaringClass();
+        return context.getTarget() != null ? HelidonRestCdiExtension.realClass(context.getTarget()) : element.getDeclaringClass();
     }
 
     private <E extends Member & AnnotatedElement> Object called(InvocationContext context, E element) throws Exception {
@@ -149,7 +149,7 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
             T metricInstance = getMetricForElement(element, getClass(context, element), lookupResult);
 
             Exception ex = null;
-            A annot = lookupResult.getAnnotation();
+            A annot = lookupResult.annotation();
             try {
                 return prepareAndInvoke(metricInstance, annot, context);
             } catch (Exception e) {
@@ -229,8 +229,8 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
          * Build the metric name that should exist for this annotation site and look up all metric IDs associated with that name.
          * (This is very efficient in the registry.)
          */
-        A annot = lookupResult.getAnnotation();
-        AnnotationSiteType annotationSiteType = lookupResult.getType();
+        A annot = lookupResult.annotation();
+        AnnotationSiteType annotationSiteType = lookupResult.siteType();
 
         String metricName = getMetricName(element, clazz, annotationSiteType, nameFunction.apply(annot),
                 isAbsoluteFunction.apply(annot));

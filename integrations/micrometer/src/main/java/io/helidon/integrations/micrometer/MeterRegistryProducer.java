@@ -39,7 +39,7 @@ class MeterRegistryProducer {
     }
 
     @Produces
-    public static MeterRegistry getMeterRegistry() {
+    static MeterRegistry getMeterRegistry() {
         return getMicrometerSupport()
                 .registry();
     }
