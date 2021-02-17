@@ -105,6 +105,15 @@ public class ByteBufDataChunk implements DataChunk {
         return Optional.ofNullable(writeFuture);
     }
 
+    @Override
+    public int remaining() {
+        int remaining = 0;
+        for (ByteBuf byteBuf : data(ByteBuf.class)) {
+            remaining += byteBuf.readableBytes();
+        }
+        return remaining;
+    }
+
     // -- Unsupported methods
 
     @Override
@@ -112,10 +121,6 @@ public class ByteBufDataChunk implements DataChunk {
         throw new UnsupportedOperationException("Unsupported");
     }
 
-    @Override
-    public int remaining() {
-        throw new UnsupportedOperationException("Unsupported");
-    }
 
     @Override
     public byte[] bytes() {
