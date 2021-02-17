@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.jersey;
 
-import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
@@ -28,13 +27,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
-import io.helidon.webserver.ByteBufDataChunk;
-import io.netty.buffer.ByteBuf;
+import javax.ws.rs.core.MediaType;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.webserver.ByteBufDataChunk;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
+
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import org.glassfish.jersey.server.ContainerException;
@@ -140,7 +141,7 @@ class ResponseWriter implements ContainerResponseWriter {
         private static final long WAIT = -1;
         private static final ByteBuf ZERO_BUF = Unpooled.buffer(0);
 
-        private byte[] ONE_BYTE;
+        private byte[] oneByteArray;
         private ByteBuf byteBuf;
         private boolean autoFlush;
         private Flow.Subscriber<? super DataChunk> downstream;
@@ -155,11 +156,11 @@ class ResponseWriter implements ContainerResponseWriter {
 
         @Override
         public void write(int b) throws IOException {
-            if (ONE_BYTE == null) {
-                ONE_BYTE = new byte[1];
+            if (oneByteArray == null) {
+                oneByteArray = new byte[1];
             }
-            ONE_BYTE[0] = (byte) b;
-            write(ONE_BYTE, 0, 1);
+            oneByteArray[0] = (byte) b;
+            write(oneByteArray, 0, 1);
         }
 
         @Override
@@ -234,8 +235,8 @@ class ResponseWriter implements ContainerResponseWriter {
                 return;
             }
 
-            long req = requested.getAndUpdate(r -> r == WAIT ? n - 1 :
-                    r < 0 ? r : Long.MAX_VALUE - n > r ? r + n : Long.MAX_VALUE);
+            long req = requested.getAndUpdate(r -> r == WAIT ? n - 1
+                    : r < 0 ? r : Long.MAX_VALUE - n > r ? r + n : Long.MAX_VALUE);
             if (req == WAIT) {
                 sema.release();
             }

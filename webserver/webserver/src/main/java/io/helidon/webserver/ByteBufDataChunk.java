@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,13 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.http.DataChunk;
+
 import io.netty.buffer.ByteBuf;
 
+/**
+ * A special DataChunk implementation based on Netty's buffers. This is used by
+ * our Jersey SPI implementation to take advantage of Netty's buffer pooling.
+ */
 public class ByteBufDataChunk implements DataChunk {
 
     private final ByteBuf[] byteBufs;
@@ -34,18 +39,30 @@ public class ByteBufDataChunk implements DataChunk {
     private boolean isReleased = false;
     private CompletableFuture<DataChunk> writeFuture;
 
-    public ByteBufDataChunk(boolean flush, boolean readOnly, ByteBuf... byteBuffers) {
-        this.flush = flush;
-        this.readOnly = readOnly;
-        this.releaseCallback = null;
-        this.byteBufs = Objects.requireNonNull(byteBuffers, "byteBuffers is null");
+    /**
+     * Creates an instance given an array of {@code ByteBuf}'s.
+     *
+     * @param flush a signal that this chunk should be written and flushed from any cache if possible
+     * @param readOnly marks this buffer as read only
+     * @param byteBufs the data for this chunk. Should not be reused until {@code releaseCallback} is used
+     */
+    public ByteBufDataChunk(boolean flush, boolean readOnly, ByteBuf... byteBufs) {
+        this(flush, readOnly, null, byteBufs);
     }
 
-    public ByteBufDataChunk(boolean flush, boolean readOnly, Runnable releaseCallback, ByteBuf... byteBuffers) {
+    /**
+     * Creates an instance given an array of {@code ByteBuf}'s.
+     *
+     * @param flush a signal that this chunk should be written and flushed from any cache if possible
+     * @param readOnly marks this buffer as read only
+     * @param releaseCallback a callback which is called when this chunk is completely processed and instance is free for reuse
+     * @param byteBufs the data for this chunk. Should not be reused until {@code releaseCallback} is used
+     */
+    public ByteBufDataChunk(boolean flush, boolean readOnly, Runnable releaseCallback, ByteBuf... byteBufs) {
         this.flush = flush;
         this.readOnly = readOnly;
         this.releaseCallback = Objects.requireNonNull(releaseCallback, "release callback is null");
-        this.byteBufs = Objects.requireNonNull(byteBuffers, "byteBuffers is null");
+        this.byteBufs = Objects.requireNonNull(byteBufs, "byteBuffers is null");
     }
 
     @Override
