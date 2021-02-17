@@ -424,8 +424,7 @@ sentence  `Add authorization data to` with `Request Headers`, and fulfil the req
 {"key":"Username","value":"myuser"},
 {"key":"Password","value":"password"},
 {"key":"Scope","value":"openid"},
-{"key":"Client Authentication","value":"Send as Basic Auth Header"}
-]
+{"key":"Client Authentication","value":"Send as Basic Auth Header"}]
 ----
 
 Again, make sure to replace `client secret` by the actual client secret. Click on `Get New Access Token`. A pop up
