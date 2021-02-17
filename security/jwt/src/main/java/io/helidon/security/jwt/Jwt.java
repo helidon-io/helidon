@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -412,6 +413,17 @@ public class Jwt {
 
     private static void addUserPrincipalValidator(Collection<Validator<Jwt>> validators) {
         validators.add(new UserPrincipalValidator());
+    }
+
+    /**
+     * Add validator of audience to the collection of validators.
+     *
+     * @param validators collection of validators
+     * @param audience   audience expected to be in the token
+     * @param mandatory  whether the audience field is mandatory in the token
+     */
+    public static void addAudienceValidator(Collection<Validator<Jwt>> validators, String audience, boolean mandatory) {
+        addAudienceValidator(validators, Set.of(audience), mandatory);
     }
 
     /**
@@ -927,13 +939,37 @@ public class Jwt {
      *                 audience claim mandatory
      * @return errors instance to check for validation result
      */
+    public Errors validate(String issuer, String audience) {
+        return validate(issuer, Set.of(audience));
+    }
+
+    /**
+     * Validates all default values.
+     * Values validated:
+     * <ul>
+     * <li>{@link #expirationTime() Expiration time} if defined</li>
+     * <li>{@link #issueTime() Issue time} if defined</li>
+     * <li>{@link #notBefore() Not before time} if defined</li>
+     * <li>{@link #issuer()} Issuer} if defined</li>
+     * <li>{@link #audience() Audience} if defined</li>
+     * </ul>
+     *
+     * @param issuer   validates that this JWT was issued by this issuer. Setting this to non-null value will make
+     *                 issuer claim mandatory
+     * @param audience validates that this JWT was issued for this audience. Setting this to non-null value and with
+     *                 any non-null value in the Set will make audience claim mandatory
+     * @return errors instance to check for validation result
+     */
     public Errors validate(String issuer, Set<String> audience) {
         List<Validator<Jwt>> validators = defaultTimeValidators();
         if (null != issuer) {
             addIssuerValidator(validators, issuer, true);
         }
-        if (!audience.isEmpty()) {
-            addAudienceValidator(validators, audience, true);
+        if (null != audience) {
+            audience.stream()
+                    .filter(Objects::nonNull)
+                    .findAny()
+                    .ifPresent(it -> addAudienceValidator(validators, audience, true));
         }
         addUserPrincipalValidator(validators);
         return validate(validators);

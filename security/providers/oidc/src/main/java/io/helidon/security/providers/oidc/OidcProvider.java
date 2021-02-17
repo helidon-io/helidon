@@ -431,7 +431,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         jwtValidator.accept(signedJwt, collector);
 
         Errors errors = collector.collect();
-        Errors validationErrors = jwt.validate(oidcConfig.issuer(), Set.of(oidcConfig.audience()));
+        Errors validationErrors = jwt.validate(oidcConfig.issuer(), oidcConfig.audience());
 
         if (errors.isValid() && validationErrors.isValid()) {
 

@@ -57,7 +57,6 @@ public class JwtTest {
     @Test
     public void testOidcJwt() {
         String audience = "id_of_audience";
-        Set<String> audiences = Set.of(audience);
         String subject = "54564645646465";
         String username = "jarda@jarda.com";
         String issuer = "I am issuer";
@@ -91,7 +90,7 @@ public class JwtTest {
         //and this one should be valid
         List<Validator<Jwt>> vals = Jwt.defaultTimeValidators();
         Jwt.addIssuerValidator(vals, issuer, true);
-        Jwt.addAudienceValidator(vals, audiences, true);
+        Jwt.addAudienceValidator(vals, audience, true);
 
         Errors errors = jwt.validate(vals);
 
@@ -99,7 +98,7 @@ public class JwtTest {
         errors.checkValid();
 
         //another try with defaults
-        errors = jwt.validate(issuer, audiences);
+        errors = jwt.validate(issuer, audience);
         errors.log(LOGGER);
         errors.checkValid();
     }
