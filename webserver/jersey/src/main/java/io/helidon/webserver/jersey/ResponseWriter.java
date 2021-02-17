@@ -186,7 +186,7 @@ class ResponseWriter implements ContainerResponseWriter {
         public void flush() throws IOException {
             if (byteBuf == null) {
                 awaitRequest();
-                publish(true, null);
+                publish(true, ZERO_BUF);
             } else {
                 publish(true, byteBuf);
                 byteBuf = null;
@@ -245,7 +245,7 @@ class ResponseWriter implements ContainerResponseWriter {
         // -- Private methods -------------------------------------------------
 
         private void publish(boolean doFlush, ByteBuf buf) {
-            DataChunk d = new ByteBufDataChunk(doFlush, true, buf == null ? ZERO_BUF : buf);
+            DataChunk d = new ByteBufDataChunk(doFlush, true, buf::release, buf);
             if (requested.get() >= 0) {
                 downstream.onNext(d);
             } else {
