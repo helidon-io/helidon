@@ -44,6 +44,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.Routing;
@@ -53,6 +54,7 @@ import io.helidon.webserver.Service;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.internal.PropertiesDelegate;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.server.ApplicationHandler;
@@ -61,6 +63,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.model.Resource;
 
 import static java.util.Objects.requireNonNull;
+import static org.glassfish.jersey.CommonProperties.PROVIDER_DEFAULT_DISABLE;
 
 /**
  * The Jersey Support integrates Jersey (JAX-RS RI) into the Web Server.
@@ -116,6 +119,11 @@ public class JerseySupport implements Service {
     private final JerseyHandler handler = new JerseyHandler();
 
     /**
+     * If set to {@code "true"}, Jersey will ignore responses in exceptions.
+     */
+    static final String IGNORE_EXCEPTION_RESPONSE = "jersey.config.client.ignoreExceptionResponse";
+
+    /**
      * Creates a Jersey Support based on the provided JAX-RS application.
      *
      * @param builder builder with application (the JAX-RS application to build the Jersey Support from),
@@ -140,6 +148,16 @@ public class JerseySupport implements Service {
         }
 
         this.appHandler = new ApplicationHandler(builder.resourceConfig, new ServerBinder(executorService));
+
+        // This configuration via system properties is for the Jersey Client API. Any
+        // response in an exception will be mapped to an empty one to prevent data leaks
+        // unless property in config is set to false.
+        // See https://github.com/eclipse-ee4j/jersey/pull/4641.
+        if (!System.getProperties().contains(IGNORE_EXCEPTION_RESPONSE)) {
+            System.setProperty(CommonProperties.ALLOW_SYSTEM_PROPERTIES_PROVIDER, "true");
+            ConfigValue<String> ignore = builder.config.get(IGNORE_EXCEPTION_RESPONSE).asString();
+            System.setProperty(IGNORE_EXCEPTION_RESPONSE, ignore.orElse("true"));
+        }
     }
 
     @Override
