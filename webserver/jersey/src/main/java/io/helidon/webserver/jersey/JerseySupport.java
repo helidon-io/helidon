@@ -63,7 +63,6 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.model.Resource;
 
 import static java.util.Objects.requireNonNull;
-import static org.glassfish.jersey.CommonProperties.PROVIDER_DEFAULT_DISABLE;
 
 /**
  * The Jersey Support integrates Jersey (JAX-RS RI) into the Web Server.
