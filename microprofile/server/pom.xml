@@ -31,6 +31,47 @@
     <name>Helidon Microprofile Server</name>
     <description>Server of the microprofile implementation</description>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <!--
+                      - Execute all tests except JerseyPropertiesTest in the same VM.
+                      -->
+                    <execution>
+                        <id>default-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <phase>test</phase>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/JerseyPropertiesTest.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <!--
+                      - Run JerseyPropertiesTest in its own VM to avoid conflicts.
+                      -->
+                    <execution>
+                        <id>jersey-properties-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <phase>test</phase>
+                        <configuration>
+                            <includes>
+                                <include>**/JerseyPropertiesTest.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
     <dependencies>
         <dependency>
             <groupId>javax.ws.rs</groupId>
