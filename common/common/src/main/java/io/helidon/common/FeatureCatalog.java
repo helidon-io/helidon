@@ -45,14 +45,16 @@ final class FeatureCatalog {
                     .description("Server for gRPC services")
                     .path("grpc")
                     .flavor(HelidonFlavor.SE)
-                    .nativeSupported(false));
+                    .nativeSupported(true)
+                    .nativeDescription("Experimental support in native image"));
         add("io.helidon.grpc.client",
             FeatureDescriptor.builder()
                     .name("gRPC Client")
                     .description("Client for gRPC services")
                     .path("grpcClient")
                     .flavor(HelidonFlavor.SE)
-                    .nativeSupported(false));
+                    .nativeSupported(true)
+                    .nativeDescription("Experimental support in native image"));
         addSe("io.helidon.grpc.metrics",
               "Metrics",
               "Metrics for gRPC services",
@@ -415,7 +417,8 @@ final class FeatureCatalog {
                     .name("EL")
                     .description("ABAC Jakarta Expression Language policy support")
                     .path("Security", "Provider", "ABAC", "Policy", "EL")
-                    .nativeSupported(false));
+                    .nativeSupported(true)
+                    .nativeDescription("Properties used in expressions must have reflection configuration added"));
         add("io.helidon.security.abac.role",
             "Role",
             "ABAC Role based attribute validator",
@@ -537,6 +540,10 @@ final class FeatureCatalog {
                     .path("Logging", "Log4j")
                     .description("Log4j MDC support")
                     .nativeDescription("Only programmatic configuration supported, does not work with Helidon loggers"));
+        add("io.helidon.webserver.staticcontent",
+            "Static Content",
+            "Static content support for webserver",
+            "WebServer", "Static Content");
 
         /*
          * Packages that are not a feature
@@ -598,6 +605,8 @@ final class FeatureCatalog {
         exclude("io.helidon.tracing.tracerresolver");
         exclude("io.helidon.webclient.jaxrs");
         exclude("io.helidon.webclient.spi");
+        exclude("io.helidon.common.context.spi");
+        exclude("io.helidon.grpc.core");
     }
 
     static Set<FeatureDescriptor> get(String packageName) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import static io.helidon.config.testing.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -207,7 +208,7 @@ public class HoconConfigParserTest {
 
         Config config = Config
                 .builder(ConfigSources.create(JSON, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
-                .addParser(new HoconConfigParser())
+                .addParser(HoconConfigParser.create())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableParserServices()
@@ -252,7 +253,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testGetSupportedMediaTypes() {
-        HoconConfigParser parser = new HoconConfigParser();
+        HoconConfigParser parser = HoconConfigParser.create();
 
         assertThat(parser.supportedMediaTypes(), is(not(empty())));
     }
@@ -261,7 +262,7 @@ public class HoconConfigParserTest {
     public void testCustomTypeMapping() {
         Config config = Config
                 .builder(ConfigSources.create(AppType.DEF, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
-                .addParser(new HoconConfigParser())
+                .addParser(HoconConfigParser.create())
                 .addMapper(AppType.class, new AppTypeMapper())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -275,6 +276,26 @@ public class HoconConfigParserTest {
         assertThat("page-size", app.getPageSize(), is(AppType.PAGE_SIZE));
         assertThat("basic-range", app.getBasicRange(), is(AppType.BASIC_RANGE));
 
+    }
+
+    @Test
+    void testParserFromJson() {
+        Config config = Config.builder()
+                .disableSystemPropertiesSource()
+                .disableEnvironmentVariablesSource()
+                .disableParserServices()
+                .addParser(HoconConfigParser.create())
+                .addSource(ConfigSources.classpath("config.json"))
+                .build();
+
+        Optional<String> property = config.get("oracle.com").asString().asOptional();
+        assertThat(property, is(Optional.of("1")));
+
+        property = config.get("nulls.null").asString().asOptional();
+        assertThat(property, is(Optional.of("")));
+
+        List<String> properties = config.get("nulls-array").asList(String.class).get();
+        assertThat(properties, hasItems("test", ""));
     }
 
     //
@@ -317,11 +338,11 @@ public class HoconConfigParserTest {
                 + "  storagePassphrase = \"${AES=thisIsEncriptedPassphrase}\""
                 + "}";
 
-        private String greeting;
-        private String name;
-        private int pageSize;
-        private List<Integer> basicRange;
-        private String storagePassphrase;
+        private final String greeting;
+        private final String name;
+        private final int pageSize;
+        private final List<Integer> basicRange;
+        private final String storagePassphrase;
 
         public AppType(
                 String name,
@@ -365,15 +386,14 @@ public class HoconConfigParserTest {
 
         @Override
         public AppType apply(Config config) throws ConfigMappingException, MissingValueException {
-            AppType app = new AppType(
+
+            return new AppType(
                     config.get("name").asString().get(),
                     config.get("greeting").asString().get(),
                     config.get("page-size").asInt().get(),
                     config.get("basic-range").asList(Integer.class).get(),
                     config.get("storagePassphrase").asString().get()
             );
-
-            return app;
         }
     }
 }
