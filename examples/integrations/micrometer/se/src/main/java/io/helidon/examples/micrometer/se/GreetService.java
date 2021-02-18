@@ -21,7 +21,6 @@ import java.util.Collections;
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
-import javax.json.JsonReaderFactory;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
