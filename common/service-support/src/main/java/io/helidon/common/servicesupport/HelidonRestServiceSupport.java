@@ -25,7 +25,7 @@ import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
 /**
- * Common base implementation for {@linkplain Service service} support classes.
+ * Common base implementation for {@linkplain Service service} support classes which involve REST endpoints.
  * <p>
  *     This base class takes care of some tasks common to many services, using config and other settings in the builder:
  *     <ul>

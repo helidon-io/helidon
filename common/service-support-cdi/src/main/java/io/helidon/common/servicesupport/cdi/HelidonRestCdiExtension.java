@@ -68,16 +68,16 @@ import static io.helidon.common.servicesupport.cdi.AnnotationLookupResult.lookup
 import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
- * Abstract superclass of service-specific CDI extensions.
+ * Abstract superclass of service-specific, REST-based CDI extensions.
  * <p>
  *     This heavily parameterized class implements a substantial amount of the work many extensions must do to process
- *     annotated types. Although originally inspired by the needs of metrics extensions, this class can be suitable for other
- *     extensions as well.
+ *     annotated types for REST-based services. Although originally inspired by the needs of metrics extensions, this class can
+ *     be suitable for other extensions as well.
  * </p>
  * <p>
  *     Each extension is presumed to layer on an SE-style service support class which itself is a subclass of
- *     {@link HelidonRestServiceSupport} with an associated {@code Builder} class. The service support base class and its builder are
- *     both type parameters to this class.
+ *     {@link HelidonRestServiceSupport} with an associated {@code Builder} class. The service support base class and its
+ *     builder are both type parameters to this class.
  * </p>
  * <p>
  *     Inner classes contain information harvested by the extension plus logic that might be useful outside the extension, such as
@@ -436,8 +436,21 @@ public abstract class HelidonRestCdiExtension<
     }
 
     /**
-     * Captures information about REST endpoints so, for example, interceptors can be quicker. Includes
-     * which JAX-RS endpoint methods (if any) are asynchronous.
+     * Captures information about REST endpoints.
+     * <p>
+     *     This class records information about REST endpoints discovered during annotation processing. The primary goal is to
+     *     allow runtime elements -- such as interceptors -- to retrieve efficiently information about REST endpoints that
+     *     helps them do their work.
+     * </p>
+     * <p>
+     *     This base class records information about {@code @Suspended} {@code AsyncResponse}
+     *     arguments (if any) in JAX-RS endpoint methods. Interceptors can efficiently tell if the intercepted method is sync
+     *     or async and vary their behavior accordingly.
+     * </p>
+     * <p>
+     *     Subclasses can add other behavior particular to their requirements and override the {@link #newRestEndpointInfo()}
+     *     factory method.
+     * </p>
      *
      * @param <A> concrete type of {@code AsyncResponseInfo}
      */
@@ -458,6 +471,11 @@ public abstract class HelidonRestCdiExtension<
 
     /**
      * Description of an {@code AsyncResponse} parameter annotated with {@code Suspended} in a JAX-RS method.
+     * <p>
+     *     This base implementation stores (at annotation processing time) which parameter slot number the
+     *     {@code AsyncResponse} parameter occupies and returns (at, runtime -- for example, in an interceptor)
+     *     the {@code AsyncResponse} from that slot in the {@code InvocationContext}.
+     * </p>
      */
     protected static class AsyncResponseInfo {
 
@@ -479,5 +497,3 @@ public abstract class HelidonRestCdiExtension<
             return AsyncResponse.class.cast(context.getParameters()[parameterSlot]);
         }
     }
-}
-
