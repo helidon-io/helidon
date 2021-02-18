@@ -41,7 +41,8 @@ import io.helidon.webserver.cors.CrossOriginConfig;
  * @param <T> the concrete service support class
  * @param <B> the concrete {@code Builder} class for {@code T}
  */
-public abstract class HelidonRestServiceSupport<T extends HelidonRestServiceSupport<T, B>, B extends HelidonRestServiceSupport.Builder<T, B>>
+public abstract class HelidonRestServiceSupport<T extends HelidonRestServiceSupport<T, B>,
+        B extends HelidonRestServiceSupport.Builder<T, B>>
         implements Service {
 
     private final String context;

@@ -118,11 +118,11 @@ public abstract class HelidonRestCdiExtension<
     /**
      * Common initialization for concrete implementations.
      *
-     * @param logger Logger instance to use for logging messages
-     * @param annotations set of annotations this extension handles
-     * @param ownProducer type of producer class use in creating beans needed by the extension
+     * @param logger                Logger instance to use for logging messages
+     * @param annotations           set of annotations this extension handles
+     * @param ownProducer           type of producer class use in creating beans needed by the extension
      * @param serviceSupportFactory function from config to the corresponding SE-style service support object
-     * @param configPrefix prefix for retrieving config related to this extension
+     * @param configPrefix          prefix for retrieving config related to this extension
      */
     protected HelidonRestCdiExtension(
             Logger logger,
@@ -194,7 +194,7 @@ public abstract class HelidonRestCdiExtension<
      * @return the pre-existing or newly-created instance, if any; null if no existing mapping was found and the factory method
      * declined to create one
      */
-    protected A computeIfAbsentAsyncResponseInfo(Method method){
+    protected A computeIfAbsentAsyncResponseInfo(Method method) {
         Map<Method, A> asyncResponseInfo = restEndpointInfo.asyncResponseInfo();
         return asyncResponseInfo.computeIfAbsent(method, this::newAsyncResponseInfo);
     }
@@ -208,8 +208,8 @@ public abstract class HelidonRestCdiExtension<
     protected abstract A newAsyncResponseInfo(Method method);
 
     /**
-     * Returns the index in the method's array of parameters, if any, with type {@code AsyncResponse} and annotated with
-     * {@code Suspended}.
+     * Returns the index in the method's array of parameters, if any, with type {@code AsyncResponse} and annotated with {@code
+     * Suspended}.
      *
      * @param m the method to examine
      * @return the array index of the async parameter, if any; -1 otherwise
@@ -236,13 +236,13 @@ public abstract class HelidonRestCdiExtension<
 
 
     /**
-     * Observes all managed beans but immediately dismisses ones for which the Java class was not previously noted
-     * by the {@code ProcessAnnotatedType} observer (which recorded only classes with selected annotations).
+     * Observes all managed beans but immediately dismisses ones for which the Java class was not previously noted by the {@code
+     * ProcessAnnotatedType} observer (which recorded only classes with selected annotations).
      *
      * @param pmb event describing the managed bean being processed
      */
     protected void registerObjects(@Observes ProcessManagedBean<?> pmb) {
-        AnnotatedType<?> type =  pmb.getAnnotatedBeanClass();
+        AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
         Class<?> clazz = type.getJavaClass();
         if (!annotatedClasses.contains(clazz)) {
             return;
@@ -259,7 +259,8 @@ public abstract class HelidonRestCdiExtension<
 
         // Process methods keeping non-private declared on this class
         for (AnnotatedMethod<?> annotatedMethod : type.getMethods()) {
-            if (Modifier.isPrivate(annotatedMethod.getJavaMember().getModifiers())) {
+            if (Modifier.isPrivate(annotatedMethod.getJavaMember()
+                    .getModifiers())) {
                 continue;
             }
             annotations.forEach(annotation -> {
@@ -296,15 +297,15 @@ public abstract class HelidonRestCdiExtension<
     /**
      * Registers an object based on an annotation site.
      * <p>
-     *     The meaning of "register" varies among the concrete implementations. At this point, this base implementation has
-     *     managed the annotation processing in a general way (e.g., only non-vetoed beans survive) and now delegates to the
-     *     concrete implementations to actually respond appropriately to the annotation site.
+     * The meaning of "register" varies among the concrete implementations. At this point, this base implementation has managed
+     * the annotation processing in a general way (e.g., only non-vetoed beans survive) and now delegates to the concrete
+     * implementations to actually respond appropriately to the annotation site.
      * </p>
      *
-     * @param element the Element hosting the annotation
-     * @param clazz the class on which the hosting Element appears
+     * @param element      the Element hosting the annotation
+     * @param clazz        the class on which the hosting Element appears
      * @param lookupResult result of looking up an annotation on an element, its class, and its ancestor classes
-     * @param <E> type of method or field or constructor
+     * @param <E>          type of method or field or constructor
      */
     protected abstract <E extends Member & AnnotatedElement>
     void register(E element, Class<?> clazz, AnnotationLookupResult<? extends Annotation> lookupResult);
@@ -342,15 +343,15 @@ public abstract class HelidonRestCdiExtension<
     protected boolean recordConcreteNonInterceptor(ProcessAnnotatedType<?> pat) {
         boolean result = isConcreteNonInterceptor(pat);
         if (result) {
-            annotatedClasses.add(pat.getAnnotatedType().getJavaClass());
+            annotatedClasses.add(pat.getAnnotatedType()
+                    .getJavaClass());
         }
         return result;
     }
 
 
     /**
-     * Records a producer field defined by the application. Ignores producers
-     * with non-default qualifiers and library producers.
+     * Records a producer field defined by the application. Ignores producers with non-default qualifiers and library producers.
      *
      * @param ppf Producer field.
      */
@@ -359,8 +360,7 @@ public abstract class HelidonRestCdiExtension<
     }
 
     /**
-     * Records a producer method defined by the application. Ignores producers
-     * with non-default qualifiers and library producers.
+     * Records a producer method defined by the application. Ignores producers with non-default qualifiers and library producers.
      *
      * @param ppm Producer method.
      */
@@ -373,11 +373,11 @@ public abstract class HelidonRestCdiExtension<
     }
 
     /**
-     * Registers the service-related endpoint, after security and as CDI initializes the app scope, returning the default
-     * routing for optional use by the caller.
+     * Registers the service-related endpoint, after security and as CDI initializes the app scope, returning the default routing
+     * for optional use by the caller.
      *
-     * @param adv app-scoped initialization event
-     * @param bm BeanManager
+     * @param adv    app-scoped initialization event
+     * @param bm     BeanManager
      * @param server the ServerCdiExtension
      * @return default routing
      */
@@ -388,7 +388,8 @@ public abstract class HelidonRestCdiExtension<
         Config config = ((Config) ConfigProvider.getConfig()).get(configPrefix);
         serviceSupport = serviceSupportFactory.apply(config);
 
-        ConfigValue<String> routingNameConfig = config.get("routing").asString();
+        ConfigValue<String> routingNameConfig = config.get("routing")
+                .asString();
         Routing.Builder defaultRouting = server.serverRoutingBuilder();
 
         Routing.Builder endpointRouting = defaultRouting;
@@ -438,18 +439,17 @@ public abstract class HelidonRestCdiExtension<
     /**
      * Captures information about REST endpoints.
      * <p>
-     *     This class records information about REST endpoints discovered during annotation processing. The primary goal is to
-     *     allow runtime elements -- such as interceptors -- to retrieve efficiently information about REST endpoints that
-     *     helps them do their work.
+     * This class records information about REST endpoints discovered during annotation processing. The primary goal is to allow
+     * runtime elements -- such as interceptors -- to retrieve efficiently information about REST endpoints that helps them do
+     * their work.
      * </p>
      * <p>
-     *     This base class records information about {@code @Suspended} {@code AsyncResponse}
-     *     arguments (if any) in JAX-RS endpoint methods. Interceptors can efficiently tell if the intercepted method is sync
-     *     or async and vary their behavior accordingly.
+     * This base class records information about {@code @Suspended} {@code AsyncResponse} arguments (if any) in JAX-RS endpoint
+     * methods. Interceptors can efficiently tell if the intercepted method is sync or async and vary their behavior accordingly.
      * </p>
      * <p>
-     *     Subclasses can add other behavior particular to their requirements and override the {@link #newRestEndpointInfo()}
-     *     factory method.
+     * Subclasses can add other behavior particular to their requirements and override the {@link #newRestEndpointInfo()} factory
+     * method.
      * </p>
      *
      * @param <A> concrete type of {@code AsyncResponseInfo}
@@ -472,9 +472,9 @@ public abstract class HelidonRestCdiExtension<
     /**
      * Description of an {@code AsyncResponse} parameter annotated with {@code Suspended} in a JAX-RS method.
      * <p>
-     *     This base implementation stores (at annotation processing time) which parameter slot number the
-     *     {@code AsyncResponse} parameter occupies and returns (at, runtime -- for example, in an interceptor)
-     *     the {@code AsyncResponse} from that slot in the {@code InvocationContext}.
+     * This base implementation stores (at annotation processing time) which parameter slot number the {@code AsyncResponse}
+     * parameter occupies and returns (at, runtime -- for example, in an interceptor) the {@code AsyncResponse} from that slot in
+     * the {@code InvocationContext}.
      * </p>
      */
     protected static class AsyncResponseInfo {
@@ -497,3 +497,4 @@ public abstract class HelidonRestCdiExtension<
             return AsyncResponse.class.cast(context.getParameters()[parameterSlot]);
         }
     }
+}
