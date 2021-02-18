@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,16 +103,19 @@ class ServerSseTest {
         @Produces(MediaType.SERVER_SENT_EVENTS)
         public void listenToEvents(@Context SseEventSink eventSink, @Context Sse sse) {
             while (true) {
-                eventSink.send(sse.newEvent("hello")).thenAccept(t -> {
-                    if (t != null) {
-                        System.out.println(t);
-                        connClosedFuture.complete(null);
-                    }
-                });
                 try {
-                    Thread.sleep(50);
+                    eventSink.send(sse.newEvent("hello")).thenAccept(t -> {
+                        if (t != null) {
+                            System.out.println(t);
+                            connClosedFuture.complete(null);
+                        }
+                    });
+                    TimeUnit.MILLISECONDS.sleep(5);
                 } catch (InterruptedException e) {
                     // falls through
+                } catch (IllegalStateException e) {
+                    //https://github.com/oracle/helidon/issues/1290
+                    connClosedFuture.complete(null);
                 }
             }
         }

@@ -67,7 +67,7 @@
         <version.lib.jaxrs-api>2.1</version.lib.jaxrs-api>
         <version.lib.jboss-transaction-spi>7.6.0.Final</version.lib.jboss-transaction-spi>
         <version.lib.jedis>3.1.0</version.lib.jedis>
-        <version.lib.jersey>2.29.1</version.lib.jersey>
+        <version.lib.jersey>2.33</version.lib.jersey>
         <version.lib.jsonb-api>1.0.1</version.lib.jsonb-api>
         <version.lib.jsonp-api>1.1.2</version.lib.jsonp-api>
         <version.lib.jsonp-impl>1.1.2</version.lib.jsonp-impl>
