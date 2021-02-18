@@ -37,7 +37,7 @@ The `GreetingService` class
 With JDK11+
 ```bash
 mvn package
-java -jar helidon-examples-micrometer.jar
+java -jar target/helidon-examples-integrations-micrometer-se.jar
 ```
 
 ## Using the app endpoints as with the "classic" greeting app
@@ -60,9 +60,14 @@ curl -X GET http://localhost:8080/greet/Jose
 ## Using Micrometer
 
 Access the `/micrometer` endpoint which reports the newly-added timer and counter.
+```bash
+curl http://localhost:8080/micrometer
+```
 
 Because we created the `Timer` with a histogram,
-the actual timer output includes a lengthy histogram (only part of which is shown below).
+the actual timer output includes a lengthy histogram (only part of which is shown below). 
+Your output might show the `personalizedGets` output before the `allGets` output, 
+rather than after as shown here.
 
 ```
 curl http://localhost:8080/micrometer

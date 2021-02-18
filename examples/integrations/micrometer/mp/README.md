@@ -49,8 +49,13 @@ curl -X GET http://localhost:8080/greet/Jose
 
 Access the `/micrometer` endpoint which reports the newly-added timer and counter.
 
+```bash
+curl http://localhost:8080/micrometer
+```
 Because the `@Timer` annotation specifies a histogram, 
-the actual timer output includes a lengthy histogram (only part of which is shown below).
+the actual timer output includes a lengthy histogram (only part of which is shown below). 
+Your output might show the `personalizedGets` output before the `allGets` output,
+rather than after as shown here.
 
 ```
 curl http://localhost:8080/micrometer

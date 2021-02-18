@@ -27,7 +27,7 @@
     </parent>
 
     <groupId>io.helidon.examples.integrations.micrometer-project</groupId>
-    <artifactId>helidon-examples-micrometer-se</artifactId>
+    <artifactId>helidon-examples-integrations-micrometer-se</artifactId>
 
     <name>Helidon SE Examples Micrometer</name>
 
