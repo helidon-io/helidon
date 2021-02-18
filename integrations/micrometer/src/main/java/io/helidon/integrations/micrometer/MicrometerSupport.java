@@ -92,7 +92,7 @@ public class MicrometerSupport extends HelidonRestServiceSupport<MicrometerSuppo
      * @return the composite registry
      */
     public MeterRegistry registry() {
-        return meterRegistryFactory.getMeterRegistry();
+        return meterRegistryFactory.meterRegistry();
     }
 
     @Override
@@ -103,7 +103,7 @@ public class MicrometerSupport extends HelidonRestServiceSupport<MicrometerSuppo
     @Override
     protected void postConfigureEndpoint(Routing.Rules rules) {
         rules
-                .any(new MetricsContextHandler(meterRegistryFactory.getMeterRegistry()))
+                .any(new MetricsContextHandler(meterRegistryFactory.meterRegistry()))
                 .get(context(), this::getOrOptions)
                 .options(context(), this::getOrOptions);
     }

@@ -170,7 +170,7 @@ public final class MeterRegistryFactory {
      *
      * @return the meter registry
      */
-    public MeterRegistry getMeterRegistry() {
+    public MeterRegistry meterRegistry() {
         return compositeMeterRegistry;
     }
 
