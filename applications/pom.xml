@@ -203,4 +203,26 @@
             </build>
         </profile>
     </profiles>
+
+    <!-- Remove the Helidon specific info from the effective pom. -->
+    <url/>
+    <scm>
+        <connection/>
+        <developerConnection/>
+        <url/>
+    </scm>
+    <inceptionYear/>
+    <organization/>
+    <licenses>
+        <license/>
+    </licenses>
+    <developers>
+        <developer/>
+    </developers>
+    <distributionManagement>
+        <!--suppress MavenModelInspection -->
+        <repository />
+        <!--suppress MavenModelInspection -->
+        <snapshotRepository />
+    </distributionManagement>
 </project>
