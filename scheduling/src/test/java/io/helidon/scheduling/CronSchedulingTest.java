@@ -33,8 +33,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
+
 @Execution(ExecutionMode.CONCURRENT)
-public class CronTests {
+public class CronSchedulingTest {
 
     static final long ERROR_MARGIN_MILLIS = 500;
 

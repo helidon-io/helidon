@@ -32,7 +32,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
 @Execution(ExecutionMode.CONCURRENT)
-public class FixedRateTests {
+public class FixedRateSchedulingTest {
 
     static final long ERROR_MARGIN_MILLIS = 500;
 
