@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.dbclient.blocking;
+
+import io.helidon.dbclient.DbRow;
+import io.helidon.dbclient.DbStatementQuery;
+
+import java.util.Collection;
 
 /**
- * JDBC example.
+ * Database query statement.
  */
-module io.helidon.examples.dbclient.jdbc {
-    requires java.logging;
+public interface BlockingDbStatementQuery extends BlockingDbStatement<BlockingDbStatementQuery, Collection<DbRow>> {
 
-    requires io.helidon.config;
-    requires io.helidon.dbclient.health;
-    requires io.helidon.health;
-    requires io.helidon.media.jsonb;
-    requires io.helidon.media.jsonp;
-    requires io.helidon.metrics;
-    requires io.helidon.tracing;
-    requires io.helidon.examples.dbclient.common;
-    requires io.helidon.dbclient.blocking;
-    requires io.helidon.webserver;
+    static BlockingDbStatementQuery create(DbStatementQuery dbStatementQuery) {
+        return new BlockingDbStatementQueryImpl(dbStatementQuery);
+    }
 }

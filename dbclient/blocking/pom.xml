@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+  Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,28 +20,29 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>helidon-project</artifactId>
-        <groupId>io.helidon</groupId>
+        <artifactId>helidon-dbclient-project</artifactId>
+        <groupId>io.helidon.dbclient</groupId>
         <version>2.3.0-SNAPSHOT</version>
     </parent>
-    <packaging>pom</packaging>
 
-    <groupId>io.helidon.dbclient</groupId>
-    <artifactId>helidon-dbclient-project</artifactId>
-    <name>Helidon DB Client Project</name>
+    <artifactId>helidon-dbclient-blocking</artifactId>
+    <name>Helidon DB Client Blocking</name>
+    <description>Helidon Blocking Database Client API</description>
 
-    <description>Support for reactive database client access.</description>
-
-    <modules>
-        <module>dbclient</module>
-        <module>common</module>
-        <module>jdbc</module>
-        <module>mongodb</module>
-        <module>tracing</module>
-        <module>metrics</module>
-        <module>metrics-jdbc</module>
-        <module>health</module>
-        <module>jsonp</module>
-        <module>blocking</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>
