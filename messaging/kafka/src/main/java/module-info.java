@@ -31,6 +31,8 @@ module io.helidon.messaging.connectors.kafka {
     requires io.helidon.messaging;
     requires microprofile.config.api;
     requires static svm;
+    requires java.security.sasl;
+    requires transitive org.slf4j;
 
     exports io.helidon.messaging.connectors.kafka;
 }

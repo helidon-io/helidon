@@ -5,7 +5,10 @@
         "org.apache.kafka.common.serialization.Serializer",
         "org.apache.kafka.common.serialization.Deserializer",
         "org.apache.kafka.clients.consumer.ConsumerPartitionAssignor",
-        "org.apache.kafka.clients.producer.Partitioner"
+        "org.apache.kafka.clients.producer.Partitioner",
+        "org.apache.kafka.common.security.auth.AuthenticateCallbackHandler",
+        "org.apache.kafka.common.security.auth.Login",
+        "javax.security.auth.spi.LoginModule"
     ],
     "classes": [
         "org.xerial.snappy.SnappyInputStream",
@@ -14,6 +17,12 @@
         "com.github.luben.zstd.ZstdOutputStream",
         "com.github.luben.zstd.util.Native"
     ],
-    "exclude": [
+    "bundles": [
+        {
+            "name": "sun.security.util.Resources"
+        },
+        {
+            "name": "sun.security.util.AuthResources"
+        }
     ]
 }
