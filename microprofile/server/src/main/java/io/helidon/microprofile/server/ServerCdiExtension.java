@@ -282,7 +282,6 @@ public class ServerCdiExtension implements Extension {
         } finally {
             long t = TimeUnit.MILLISECONDS.convert(System.nanoTime() - beforeT, TimeUnit.NANOSECONDS);
             LOGGER.info(() -> "Server stopped in " + t + " milliseconds.");
-            System.out.println("Server stopped in " + t + " milliseconds.");
         }
     }
 
