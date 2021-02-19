@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>tck-project</artifactId>
-        <version>2.2.1-SNAPSHOT</version>
+        <version>2.3.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tck-reactive-streams</artifactId>
