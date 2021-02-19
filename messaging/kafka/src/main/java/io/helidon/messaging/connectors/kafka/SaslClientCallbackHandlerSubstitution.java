@@ -47,20 +47,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @TargetClass(org.apache.kafka.common.security.authenticator.SaslClientCallbackHandler.class)
+@SuppressWarnings("checkstyle:RedundantModifier")
 final class SaslClientCallbackHandlerSubstitution implements AuthenticateCallbackHandler {
 
     @Alias
-    String mechanism;
+    private String mechanism;
 
     @Inject
-    Logger LOGGER;
+    private Logger logger;
 
     @Inject
-    Subject subject;
+    private Subject subject;
 
     @Substitute
     public SaslClientCallbackHandlerSubstitution() {
-        LOGGER = LoggerFactory.getLogger(LoginManager.class);
+        logger = LoggerFactory.getLogger(LoginManager.class);
     }
 
     @Override
@@ -71,10 +72,10 @@ final class SaslClientCallbackHandlerSubstitution implements AuthenticateCallbac
 
         int entrySize = jaasConfigEntries.size();
         if (entrySize == 0) {
-            LOGGER.warn("Missing JAAS config entry, missing or malformed sasl.jaas.config property.");
+            logger.warn("Missing JAAS config entry, missing or malformed sasl.jaas.config property.");
             return;
         } else if (entrySize > 1) {
-            LOGGER.warn("Multiple JAAS config entries, Kafka client's sasl.jaas.config can have only one JAAS config entry.");
+            logger.warn("Multiple JAAS config entries, Kafka client's sasl.jaas.config can have only one JAAS config entry.");
             return;
         }
 
@@ -113,8 +114,8 @@ final class SaslClientCallbackHandlerSubstitution implements AuthenticateCallbac
                     char[] password = subject.getPrivateCredentials(String.class).iterator().next().toCharArray();
                     ((PasswordCallback) callback).setPassword(password);
                 } else {
-                    String errorMessage = "Could not login: the client is being asked for a password, but the Kafka" +
-                            " client code does not currently support obtaining a password from the user.";
+                    String errorMessage = "Could not login: the client is being asked for a password, but the Kafka"
+                            + " client code does not currently support obtaining a password from the user.";
                     throw new UnsupportedCallbackException(callback, errorMessage);
                 }
             } else if (callback instanceof RealmCallback) {
@@ -131,12 +132,13 @@ final class SaslClientCallbackHandlerSubstitution implements AuthenticateCallbac
             } else if (callback instanceof ScramExtensionsCallback) {
                 if (ScramMechanism.isScram(mechanism) && subject != null && !subject.getPublicCredentials(Map.class).isEmpty()) {
                     @SuppressWarnings("unchecked")
-                    Map<String, String> extensions = (Map<String, String>) subject.getPublicCredentials(Map.class).iterator().next();
+                    Map<String, String> extensions =
+                            (Map<String, String>) subject.getPublicCredentials(Map.class).iterator().next();
                     ((ScramExtensionsCallback) callback).extensions(extensions);
                 }
             } else if (callback instanceof SaslExtensionsCallback) {
-                if (!SaslConfigs.GSSAPI_MECHANISM.equals(mechanism) &&
-                        subject != null && !subject.getPublicCredentials(SaslExtensions.class).isEmpty()) {
+                if (!SaslConfigs.GSSAPI_MECHANISM.equals(mechanism)
+                        && subject != null && !subject.getPublicCredentials(SaslExtensions.class).isEmpty()) {
                     SaslExtensions extensions = subject.getPublicCredentials(SaslExtensions.class).iterator().next();
                     ((SaslExtensionsCallback) callback).extensions(extensions);
                 }

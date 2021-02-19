@@ -16,13 +16,5 @@
         "com.github.luben.zstd.ZstdInputStream",
         "com.github.luben.zstd.ZstdOutputStream",
         "com.github.luben.zstd.util.Native"
-    ],
-    "bundles": [
-        {
-            "name": "sun.security.util.Resources"
-        },
-        {
-            "name": "sun.security.util.AuthResources"
-        }
     ]
 }
