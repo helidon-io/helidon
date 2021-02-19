@@ -36,12 +36,10 @@ public class BlockingPokemonService extends AbstractPokemonService {
 
         // dirty hack to prepare database for our POC
         // MySQL init
-        dbClient.execute(handle -> handle.namedDml("create-table"))
-                .thenAccept(System.out::println)
-                .exceptionally(throwable -> {
-                    LOGGER.log(Level.WARNING, "Failed to create table, maybe it already exists?", throwable);
-                    return null;
-                });
+        BlockingDbClient blockingDbClient = BlockingDbClient.create(dbClient);
+        long result = blockingDbClient.execute(handle -> handle.namedDml("create-table"));
+        System.out.println(result);
+
     }
 
     /**

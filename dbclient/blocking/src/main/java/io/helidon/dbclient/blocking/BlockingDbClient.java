@@ -51,15 +51,21 @@ public interface BlockingDbClient {
     String dbType();
 
     /**
-     * Create Helidon database handler builder.
+     * Create Helidon blocking database handler builder.
      *
      * @param config name of the configuration node with driver configuration
-     * @return database handler builder
+     * @return database client
      */
     static BlockingDbClient create(Config config) {
         return BlockingDbClientImpl.create(config);
     }
 
+    /**
+     * Create Helidon blocking database handler builder.
+     *
+     * @param DBClient already set up driver
+     * @return database client
+     */
     static BlockingDbClient create(DbClient dbClient) {
         return BlockingDbClientImpl.create(dbClient);
     }
