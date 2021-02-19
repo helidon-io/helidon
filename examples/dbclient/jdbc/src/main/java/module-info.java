@@ -27,7 +27,9 @@ module io.helidon.examples.dbclient.jdbc {
     requires io.helidon.media.jsonp;
     requires io.helidon.metrics;
     requires io.helidon.tracing;
-    requires io.helidon.examples.dbclient.common;
     requires io.helidon.dbclient.blocking;
     requires io.helidon.webserver;
+    requires io.helidon.dbclient;
+
+    requires io.helidon.examples.dbclient.common;
 }

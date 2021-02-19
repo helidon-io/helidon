@@ -1,9 +1,11 @@
 package io.helidon.dbclient.blocking;
 
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbTransaction;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 class BlockingDbClientImpl implements BlockingDbClient {
@@ -20,7 +22,15 @@ class BlockingDbClientImpl implements BlockingDbClient {
 
     @Override
     public <T> T execute(Function<BlockingDbExecute, T> executor) {
-        return null;
+        return dbClient.execute(it -> {
+            CompletableFuture<T> result = new CompletableFuture<>();
+            try {
+                result.complete(executor.apply(BlockingDbExecute.create(it)));
+            } catch (Exception e) {
+                result.completeExceptionally(e);
+            }
+            return Single.create(result);
+        }).await();
     }
 
     @Override

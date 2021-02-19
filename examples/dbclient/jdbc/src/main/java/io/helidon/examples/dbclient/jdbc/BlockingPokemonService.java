@@ -16,29 +16,48 @@
 
 package io.helidon.examples.dbclient.jdbc;
 
+import io.helidon.common.Errors;
 import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.blocking.BlockingDbClient;
 import io.helidon.examples.dbclient.common.AbstractPokemonService;
+import io.helidon.webserver.Handler;
+import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import javax.json.JsonObject;
 
 /**
  * Example service using a database.
  */
 public class BlockingPokemonService extends AbstractPokemonService {
-    private static final Logger LOGGER = Logger.getLogger(PokemonService.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(BlockingDbClient.class.getName());
 
     BlockingPokemonService(DbClient dbClient) {
         super(dbClient);
 
         // dirty hack to prepare database for our POC
         // MySQL init
-        BlockingDbClient blockingDbClient = BlockingDbClient.create(dbClient);
-        long result = blockingDbClient.execute(handle -> handle.namedDml("create-table"));
-        System.out.println(result);
+        BlockingDbClient blockingDbClient = BlockingDbClient.create(dbClient());
+        try {
+            long result = blockingDbClient.execute(handle -> handle.namedDml("create-table"));
+            System.out.println(result);
+        } catch (Throwable t) {
+            LOGGER.log(Level.WARNING, "Failed to create table, maybe it already exists?", t);
+        }
+    }
+
+    @Override
+    public void update(Routing.Rules rules) {
+        rules
+                .get("/", this::listPokemonsBlocking)
+                .delete("/", this::deleteAllPokemons);
 
     }
 
@@ -64,5 +83,10 @@ public class BlockingPokemonService extends AbstractPokemonService {
         }
     }
 
+    protected void listPokemonsBlocking(ServerRequest request, ServerResponse response) {
+        BlockingDbClient blockingDbClient = BlockingDbClient.create(dbClient());
+        Collection<DbRow> rows = blockingDbClient.execute(exec -> exec.namedQuery("select-all"));
+        response.send(rows.stream().map(it -> it.as(JsonObject.class)).collect(Collectors.toList()));
+    }
 
 }

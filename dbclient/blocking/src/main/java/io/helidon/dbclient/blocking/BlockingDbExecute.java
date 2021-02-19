@@ -15,6 +15,7 @@
  */
 package io.helidon.dbclient.blocking;
 
+import io.helidon.dbclient.DbExecute;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementType;
 
@@ -52,7 +53,7 @@ public interface BlockingDbExecute {
      * Create a database query using a named statement passed as argument.
      *
      * @param statementName the name of the statement
-     * @param statement the query statement
+     * @param statement     the query statement
      * @return database statement that can process query returning multiple rows
      */
     BlockingDbStatementQuery createNamedQuery(String statementName, String statement);
@@ -103,7 +104,7 @@ public interface BlockingDbExecute {
      * Create a database query returning a single row using a named statement passed as an argument.
      *
      * @param statementName the name of the statement
-     * @param statement the statement text
+     * @param statement     the statement text
      * @return database statement that can process query returning a single row
      */
     BlockingDbStatementGet createNamedGet(String statementName, String statement);
@@ -154,7 +155,7 @@ public interface BlockingDbExecute {
      * Create an insert statement using a named statement passed as an argument.
      *
      * @param statementName the name of the statement
-     * @param statement the statement text
+     * @param statement     the statement text
      * @return database statement that can insert data
      */
     default BlockingDbStatementDml createNamedInsert(String statementName, String statement) {
@@ -207,7 +208,7 @@ public interface BlockingDbExecute {
      * Create an update statement using a named statement passed as an argument.
      *
      * @param statementName the name of the statement
-     * @param statement the statement text
+     * @param statement     the statement text
      * @return database statement that can update data
      */
     default BlockingDbStatementDml createNamedUpdate(String statementName, String statement) {
@@ -260,7 +261,7 @@ public interface BlockingDbExecute {
      * Create a delete statement using a named statement passed as an argument.
      *
      * @param statementName the name of the statement
-     * @param statement the statement text
+     * @param statement     the statement text
      * @return database statement that can delete data
      */
     default BlockingDbStatementDml createNamedDelete(String statementName, String statement) {
@@ -313,7 +314,7 @@ public interface BlockingDbExecute {
      * Create a data modification statement using a named statement passed as an argument.
      *
      * @param statementName the name of the statement
-     * @param statement the statement text
+     * @param statement     the statement text
      * @return data modification statement
      */
     BlockingDbStatementDml createNamedDmlStatement(String statementName, String statement);
@@ -354,5 +355,9 @@ public interface BlockingDbExecute {
      */
     default long dml(String statement, Object... parameters) {
         return createDmlStatement(statement).params(parameters).execute();
+    }
+
+    static BlockingDbExecute create(DbExecute dbExecute) {
+        return new BlockingDbExecuteImpl(dbExecute);
     }
 }

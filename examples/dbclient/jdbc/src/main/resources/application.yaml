@@ -30,12 +30,12 @@ db:
     # H2 configuration
     #
     # Embedded mode (does not work with native image)
-#    url: jdbc:h2:~/test
+    #url: jdbc:h2:~/test
     # Server mode, run: docker run --rm --name h2 -p 9092:9082 -p 8082:8082 nemerosa/h2
-#    url: "jdbc:h2:tcp://localhost:9092/~test"
-#    username: sa
-#    password:
-#    poolName: h2
+    url: "jdbc:h2:tcp://localhost/~/test"
+    username: sa
+    password:
+    poolName: h2
     #
     # MySQL configuration
     #
@@ -49,10 +49,10 @@ db:
     # Oracle configuration
     #
     # docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnameless/oracle-xe-11g-r2
-    url: jdbc:oracle:thin:@localhost:1521/XE
-    username: system
-    password: oracle
-    poolName: oracle
+#    url: jdbc:oracle:thin:@localhost:1521/XE
+#    username: system
+#    password: oracle
+#    poolName: oracle
     initializationFailTimeout: -1
     connectionTimeout: 2000
     helidon:
