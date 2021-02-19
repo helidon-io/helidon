@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,18 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Test;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 public class SingleFlatMapIterableTest {
 
@@ -212,7 +212,7 @@ public class SingleFlatMapIterableTest {
 
         ts.request1();
 
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(false));
         assertThat(ts.getLastError(), instanceOf(IllegalArgumentException.class));
     }
@@ -241,7 +241,7 @@ public class SingleFlatMapIterableTest {
 
         ts.request1();
 
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(false));
         assertThat(ts.getLastError(), is(nullValue()));
     }
@@ -261,7 +261,7 @@ public class SingleFlatMapIterableTest {
                 .subscribe(ts);
 
         ts.requestMax();
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(true));
         assertThat(ts.getLastError(), is(nullValue()));
     }

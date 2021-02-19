@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ RUN set -x \
     && apt-get -y install curl
 
 RUN curl -O -L \
-    https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.2.0/graalvm-ce-java11-linux-amd64-20.2.0.tar.gz && \
+    https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.0.0/graalvm-ce-java11-linux-amd64-21.0.0.tar.gz && \
     tar -xvzf graalvm-*.tar.gz && \
     rm graalvm-*.tar.gz && \
     mv graalvm-* graalvm && \
@@ -50,10 +50,42 @@ FROM debian:stretch-slim as final
 
 RUN set -x \
     && apt-get -y update \
-    && apt-get -y install gcc zlib1g-dev libstdc++-6-dev \
+    && apt-get -y install gcc zlib1g-dev libstdc++-6-dev curl unzip make \
     && apt-get clean autoclean \
     && apt-get autoremove --yes \
     && rm -rf /var/lib/apt /var/lib/dpkg /var/lib/cache /var/lib/log
+
+# BEGIN PRE-REQUISITES FOR STATIC NATIVE IMAGES FOR GRAAL
+# SEE: https://www.graalvm.org/reference-manual/native-image/StaticImages/
+ARG RESULT_LIB="/staticlibs"
+
+RUN mkdir ${RESULT_LIB} && \
+    curl -L -o musl.tar.gz https://musl.libc.org/releases/musl-1.2.2.tar.gz && \
+    mkdir musl && \
+    tar -xvzf musl.tar.gz -C musl --strip-components 1 && \
+    cd musl && \
+    ./configure --disable-shared --prefix=${RESULT_LIB} && \
+    make && \
+    make install && \
+    cd / && \
+    rm -rf /muscl && \
+    rm -f /musl.tar.gz && \
+    cp /usr/lib/gcc/x86_64-linux-gnu/6.3.0/libstdc++.a ${RESULT_LIB}/lib/
+
+ENV PATH="$PATH:${RESULT_LIB}/bin"
+ENV CC="musl-gcc"
+
+RUN curl -L -o zlib.tar.gz https://zlib.net/zlib-1.2.11.tar.gz && \
+   mkdir zlib && \
+   tar -xvzf zlib.tar.gz -C zlib --strip-components 1 && \
+   cd zlib && \
+   ./configure --static --prefix=${RESULT_LIB} && \
+    make && \
+    make install && \
+    cd / && \
+    rm -rf /zlib && \
+    rm -f /zlib.tar.gz
+#END PRE-REQUISITES FOR STATIC NATIVE IMAGES FOR GRAAL
 
 WORKDIR /graal
 COPY --from=build /build/graalvm /graal/graalvm

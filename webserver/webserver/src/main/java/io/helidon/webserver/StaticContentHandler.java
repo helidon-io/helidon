@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import io.helidon.common.http.MediaType;
 /**
  * Request {@link Handler} processing a static content.
  */
+@Deprecated
 abstract class StaticContentHandler {
     private static final Logger LOGGER = Logger.getLogger(StaticContentHandler.class.getName());
 
