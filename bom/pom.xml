@@ -909,6 +909,17 @@
                 <artifactId>helidon-logging-log4j</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <!-- OCI -->
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-objectstorage</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
