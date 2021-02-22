@@ -31,4 +31,5 @@ module io.helidon.examples.dbclient.mongodb {
     requires io.helidon.examples.dbclient.common;
     requires io.helidon.dbclient.metrics;
     requires io.helidon.dbclient.tracing;
+    requires io.helidon.dbclient.blocking;
 }

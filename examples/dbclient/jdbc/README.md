@@ -61,6 +61,8 @@ The query operation adds database trace.
 - `curl http://localhost:8079/db` - list all Pokemon in the database
 - `curl -i -X PUT -d '{"name":"Squirtle","type":"water"}' http://localhost:8079/db` - add a new pokemon
 - `curl http://localhost:8079/db/Squirtle` - get a single pokemon
+- `curl http://localhost:8079/blockigdb` - list all Pokemon in the database in a blocking way
+- `curl -i -X DELETE http://localhost:8079/blockingdb` - delete all pokemon in a blocking way
 
 The application also supports update and delete - see `PokemonService.java` for bound endpoints.
 

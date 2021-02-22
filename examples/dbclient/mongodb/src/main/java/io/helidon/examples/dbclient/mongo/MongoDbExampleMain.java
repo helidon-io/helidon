@@ -111,6 +111,7 @@ public final class MongoDbExampleMain {
                 .register(health)                   // Health at "/health"
                 .register(MetricsSupport.create())  // Metrics at "/metrics"
                 .register("/db", new PokemonService(dbClient))
+                .register("/blockingdb", new BlockingPokemonService(dbClient))
                 .build();
     }
 

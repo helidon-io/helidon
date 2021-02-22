@@ -90,6 +90,10 @@
             <groupId>io.helidon.examples.dbclient</groupId>
             <artifactId>helidon-examples-dbclient-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-blocking</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

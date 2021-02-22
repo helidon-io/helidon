@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
  */
 package io.helidon.dbclient.blocking;
 
+import java.util.Optional;
+
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.DbStatementGet;
 
-import java.util.Optional;
 
 /**
  * Database statement that queries the database and returns a single row if present, or an empty optional.
@@ -28,6 +29,12 @@ import java.util.Optional;
  */
 public interface BlockingDbStatementGet extends DbStatement<BlockingDbStatementGet, Optional<DbRow>> {
 
+    /**
+     * Create Blocking DbStatementGet wrapper.
+     *
+     * @param dbStatementGet input DbStatementDml
+     * @return Blocking DbStatementGet
+     */
     static BlockingDbStatementGet create(DbStatementGet dbStatementGet){
         return new BlockingDbStatementGetImpl(dbStatementGet);
     }

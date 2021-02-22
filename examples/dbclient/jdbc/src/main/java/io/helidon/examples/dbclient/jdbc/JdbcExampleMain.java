@@ -106,7 +106,7 @@ public final class JdbcExampleMain {
                 .register(health)                   // Health at "/health"
                 .register(MetricsSupport.create())  // Metrics at "/metrics"
                 .register("/db", new PokemonService(dbClient))
-                .register("/blockingDb", new BlockingPokemonService(dbClient))
+                .register("/blockingdb", new BlockingPokemonService(dbClient))
                 .build();
     }
 }

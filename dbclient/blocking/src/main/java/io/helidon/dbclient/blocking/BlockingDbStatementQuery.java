@@ -15,16 +15,22 @@
  */
 package io.helidon.dbclient.blocking;
 
+import java.util.Collection;
+
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementQuery;
-
-import java.util.Collection;
 
 /**
  * Database query statement.
  */
 public interface BlockingDbStatementQuery extends BlockingDbStatement<BlockingDbStatementQuery, Collection<DbRow>> {
 
+    /**
+     * Create Blocking DbStatementQuery wrapper.
+     *
+     * @param dbStatementQuery
+     * @return Blocking DbStatementQuery
+     */
     static BlockingDbStatementQuery create(DbStatementQuery dbStatementQuery) {
         return new BlockingDbStatementQueryImpl(dbStatementQuery);
     }

@@ -15,11 +15,12 @@
  */
 package io.helidon.dbclient.blocking;
 
+import java.util.function.Function;
+
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbTransaction;
 
-import java.util.function.Function;
 
 /**
  * Helidon blocking database client.
@@ -63,11 +64,11 @@ public interface BlockingDbClient {
     /**
      * Create Helidon blocking database handler builder.
      *
-     * @param DBClient already set up driver
+     * @param dbClient already set up client
      * @return database client
      */
     static BlockingDbClient create(DbClient dbClient) {
         return BlockingDbClientImpl.create(dbClient);
     }
-    
+
 }

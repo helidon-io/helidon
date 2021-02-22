@@ -15,18 +15,6 @@
  */
 
 /**
- * Helidon Blocking DB Client.
- *
- * @see io.helidon.dbclient.DbClient
+ * Blocking DB Client package.
  */
-module io.helidon.dbclient.blocking {
-    requires java.logging;
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.context;
-    requires transitive io.helidon.common.mapper;
-    requires transitive io.helidon.common.serviceloader;
-    requires io.helidon.dbclient;
-
-    exports io.helidon.dbclient.blocking;
-}
+package io.helidon.dbclient.blocking;

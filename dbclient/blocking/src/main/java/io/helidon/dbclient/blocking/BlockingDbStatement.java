@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 package io.helidon.dbclient.blocking;
 
-import io.helidon.dbclient.DbStatement;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +23,7 @@ import java.util.Map;
  * Database statement that can process parameters.
  * Method {@link #execute()} processes the statement and returns appropriate response.
  * <p>
- * All methods are non-blocking. The {@link #execute()} method returns either a {@link java.util.concurrent.CompletionStage}
- * or another object that provides similar API for eventual processing of the response.
+ * All methods are blocking.
  * <p>
  * Once parameters are set using one of the {@code params} methods, all other methods throw an
  * {@link IllegalStateException}.
@@ -36,7 +33,7 @@ import java.util.Map;
  * <p>
  * Once {@link #execute()} is called, all methods would throw an {@link IllegalStateException}.
  *
- * @param <R> Type of the result of this statement (e.g. a {@link java.util.concurrent.CompletionStage})
+ * @param <R> Type of the result of this statement
  * @param <D> Type of the descendant of this class
  */
 public interface BlockingDbStatement<D, R> {
@@ -108,7 +105,7 @@ public interface BlockingDbStatement<D, R> {
     /**
      * Execute this statement using the parameters configured with {@code params} and {@code addParams} methods.
      *
-     * @return The result of this statement, never blocking.
+     * @return The result of this statement, blocking.
      */
     R execute();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,12 @@
  */
 package io.helidon.dbclient.blocking;
 
-import io.helidon.dbclient.DbExecute;
-import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbStatementType;
-
 import java.util.Collection;
 import java.util.Optional;
 
+import io.helidon.dbclient.DbExecute;
+import io.helidon.dbclient.DbRow;
+import io.helidon.dbclient.DbStatementType;
 /**
  * Database executor.
  * <p>The database executor provides methods to create {@link BlockingDbStatement} instances for different types
@@ -31,10 +30,10 @@ import java.util.Optional;
  * <p>There are five methods for each {@link DbStatementType}, example for query (the implementation
  * detail is for the default implementation, providers may differ):
  * <ol>
- *     <li>{@code DbStatement} {@link #createNamedQuery(String, String)} - full control over the name and content of the
+ *     <li>{@code BlockingDbStatement} {@link #createNamedQuery(String, String)} - full control over the name and content of the
  *     statement</li>
- *     <li>{@code DbStatement} {@link #createNamedQuery(String)} - use statement text from configuration</li>
- *     <li>{@code DbStatement} {@link #createQuery(String)} - use the provided statement, name is generated </li>
+ *     <li>{@code BlockingDbStatement} {@link #createNamedQuery(String)} - use statement text from configuration</li>
+ *     <li>{@code BlockingDbStatement} {@link #createQuery(String)} - use the provided statement, name is generated </li>
  *     <li>{@code DbRowResult} {@link #namedQuery(String, Object...)} - shortcut method to a named query with a list of
  *     parameters (or with no parameters at all)</li>
  *     <li>{@code DbRowResult} {@link #query(String, Object...)} - shortcut method to unnamed query with a list of parameters
@@ -42,7 +41,7 @@ import java.util.Optional;
  * </ol>
  * The first three methods return a statement that can have parameters configured (and other details modified).
  * The last two methods directly execute the statement and provide appropriate response for future processing.
- * All the methods are non-blocking.
+ * All the methods are  blocking.
  */
 public interface BlockingDbExecute {
     /*
@@ -357,6 +356,12 @@ public interface BlockingDbExecute {
         return createDmlStatement(statement).params(parameters).execute();
     }
 
+    /**
+     * Create Implementation of BlockingDBExecute.
+     *
+     * @param dbExecute non-blocking DBExecute
+     * @return Blocking DBExecute
+     */
     static BlockingDbExecute create(DbExecute dbExecute) {
         return new BlockingDbExecuteImpl(dbExecute);
     }

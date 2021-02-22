@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,22 @@
 
 package io.helidon.examples.dbclient.jdbc;
 
-import io.helidon.common.Errors;
+import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import javax.json.JsonObject;
+
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.blocking.BlockingDbClient;
 import io.helidon.examples.dbclient.common.AbstractPokemonService;
-import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import javax.json.JsonObject;
-
 /**
- * Example service using a database.
+ * Example service using a blocking database client.
  */
 public class BlockingPokemonService extends AbstractPokemonService {
     private static final Logger LOGGER = Logger.getLogger(BlockingDbClient.class.getName());
@@ -83,6 +80,12 @@ public class BlockingPokemonService extends AbstractPokemonService {
         }
     }
 
+    /**
+     * List all pokemons.
+     *
+     * @param request  the server request
+     * @param response the server response
+     */
     protected void listPokemonsBlocking(ServerRequest request, ServerResponse response) {
         BlockingDbClient blockingDbClient = BlockingDbClient.create(dbClient());
         Collection<DbRow> rows = blockingDbClient.execute(exec -> exec.namedQuery("select-all"));
