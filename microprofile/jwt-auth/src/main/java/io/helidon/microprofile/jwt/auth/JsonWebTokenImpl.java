@@ -47,6 +47,14 @@ class JsonWebTokenImpl implements JsonWebToken, Principal {
     private final AbacSupport properties;
     private final String name;
 
+    private JsonWebTokenImpl() {
+        jwt = null;
+        signed = null;
+        id = null;
+        properties = null;
+        name = null;
+    }
+
     private JsonWebTokenImpl(SignedJwt signed) {
         this.jwt = signed.getJwt();
         this.signed = signed;
@@ -84,7 +92,7 @@ class JsonWebTokenImpl implements JsonWebToken, Principal {
     }
 
     static JsonWebToken empty() {
-        return new JsonWebToken() {
+        return new JsonWebTokenImpl() {
             @Override
             public String getName() {
                 return null;
@@ -97,6 +105,11 @@ class JsonWebTokenImpl implements JsonWebToken, Principal {
 
             @Override
             public <T> T getClaim(String claimName) {
+                return null;
+            }
+
+            @Override
+            public <T> T getClaim(String claimName, Class<T> clazz) {
                 return null;
             }
         };
