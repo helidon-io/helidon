@@ -1250,8 +1250,9 @@ public class Jwt {
         }
 
         /**
-         * New instance with default values (allowed time skew 5 seconds, optional).
+         * New instance with default values (allowed time skew 5 seconds).
          *
+         * @param mandatory if this value is mandatory or not
          * @return expiration time validator with defaults
          */
         public static ExpirationValidator create(boolean mandatory) {
