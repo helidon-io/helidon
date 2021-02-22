@@ -49,7 +49,6 @@ import com.oracle.bmc.auth.internal.AuthUtils;
  */
 public class Oci {
 
-
     private AuthenticationDetailsProvider provider;
     private ClientConfiguration clientConfig;
 
@@ -77,7 +76,7 @@ public class Oci {
      *
      * @return AuthenticationDetailsProvider.
      */
-    public AuthenticationDetailsProvider getProvider() {
+    public AuthenticationDetailsProvider provider() {
         return provider;
     }
 
@@ -86,7 +85,7 @@ public class Oci {
      *
      * @return ClientConfiguration.
      */
-    public ClientConfiguration getClientConfig() {
+    public ClientConfiguration clientConfig() {
         return clientConfig;
     }
 
@@ -99,47 +98,11 @@ public class Oci {
         return new Builder();
     }
 
+
     /**
-     * Tenancy ID resolver.
-     *
-     * @param authenticationDetailsProvider
-     * @return TenancyIdResolver when running in the Oracle cloud
+     * Builder for {@link Oci}
      */
-    public String tenancyIdResolve(BasicAuthenticationDetailsProvider authenticationDetailsProvider) {
-
-        //Consul with OCI for this:
-        String metadataServiceUrl = "http://169.254.169.254/opc/v1/";
-
-        if (authenticationDetailsProvider == null) {
-            throw new OciException("Invalid Oracle Cloud Configuration");
-        }
-
-        if (authenticationDetailsProvider instanceof AuthenticationDetailsProvider) {
-            return ((AuthenticationDetailsProvider) authenticationDetailsProvider).getTenantId();
-        } else if (authenticationDetailsProvider instanceof ResourcePrincipalAuthenticationDetailsProvider) {
-            return ((ResourcePrincipalAuthenticationDetailsProvider) authenticationDetailsProvider)
-                    .getStringClaim(ResourcePrincipalAuthenticationDetailsProvider.ClaimKeys.TENANT_ID_CLAIM_KEY);
-        } else if (authenticationDetailsProvider instanceof InstancePrincipalsAuthenticationDetailsProvider) {
-            URLBasedX509CertificateSupplier urlBasedX509CertificateSupplier;
-            String tenantId;
-            try {
-                urlBasedX509CertificateSupplier = new URLBasedX509CertificateSupplier(
-                        new URL(metadataServiceUrl + "identity/cert.pem"),
-                        new URL(metadataServiceUrl + "identity/key.pem"),
-                        (char[]) null);
-                tenantId = AuthUtils.getTenantIdFromCertificate(
-                        urlBasedX509CertificateSupplier.getCertificateAndKeyPair().getCertificate()
-                );
-            } catch (MalformedURLException e) {
-                throw new OciException("Unable to retrieve tenancy ID from metadata.");
-            }
-            return tenantId;
-        }
-        return null;
-
-    }
-
-    private static final class Builder implements io.helidon.common.Builder<Oci> {
+    public static final class Builder implements io.helidon.common.Builder<Oci> {
 
         private AuthenticationDetailsProvider provider;
         private ClientConfiguration clientConfig;
@@ -179,7 +142,7 @@ public class Oci {
          * @return
          */
         public Builder config(Config config) {
-            config.get("config.profile").asString().ifPresent(this::configProfile);
+            config.get("config.profile").as(Profile.class).ifPresent(this::configProfile);
             config.get("auth.profile").asString().ifPresent(this::ociAuthProfile);
             config.get("config.path").asString().ifPresent(this::ociConfigPath);
             config.get("auth.fingerprint").asString().ifPresent(this::ociAuthFingerprint);
@@ -196,12 +159,21 @@ public class Oci {
             return this;
         }
 
-        enum Profile {
+        /**
+         * Configuration profile.
+         */
+        public enum Profile {
+            /**
+             * Should be used when external OCI config file provided
+             */
             DEFAULT,
+            /**
+             * Should be used when Helidon configuration is the source for parameters
+             */
             MANUAL
         }
 
-        private AuthenticationDetailsProvider configureProvider() {
+        AuthenticationDetailsProvider configureProvider() {
             if (configProfile == Profile.DEFAULT) {
                 ConfigFileAuthenticationDetailsProvider temp = null;
                 try {
@@ -229,7 +201,7 @@ public class Oci {
             }
         }
 
-        private ClientConfiguration configureClient() {
+        ClientConfiguration configureClient() {
             ClientConfiguration clientConfig
                     = ClientConfiguration.builder()
                     .connectionTimeoutMillis(clientConnectionTimeoutMillis)
@@ -272,62 +244,134 @@ public class Oci {
             }
         }
 
-        private Builder ociAuthProfile(String ociAuthProfile) {
+        /**
+         * OCI Auth profile.
+         *
+         * @param ociAuthProfile
+         * @return builder
+         */
+        public Builder ociAuthProfile(String ociAuthProfile) {
             this.ociAuthProfile = ociAuthProfile;
             return this;
         }
 
-        private Builder ociConfigPath(String ociConfigPath) {
+        /**
+         * OCI Config path.
+         *
+         * @param ociConfigPath
+         * @return builder
+         */
+        public Builder ociConfigPath(String ociConfigPath) {
             this.ociConfigPath = ociConfigPath;
             return this;
         }
 
-        private Builder ociAuthFingerprint(String ociAuthFingerprint) {
+        /**
+         * OCI Auth Fingerprint.
+         *
+         * @param ociAuthFingerprint
+         * @return builder
+         */
+        public Builder ociAuthFingerprint(String ociAuthFingerprint) {
             this.ociAuthFingerprint = ociAuthFingerprint;
             return this;
         }
 
-        private Builder ociAuthPassphraseCharacters(String ociAuthPassphraseCharacters) {
+        /**
+         * OCI Auth Passphrase Characters.
+         *
+         * @param ociAuthPassphraseCharacters
+         * @return builder
+         */
+        public Builder ociAuthPassphraseCharacters(String ociAuthPassphraseCharacters) {
             this.ociAuthPassphraseCharacters = ociAuthPassphraseCharacters;
             return this;
         }
 
-        private Builder ociAuthTenancy(String ociAuthTenancy) {
+        /**
+         * OCI Auth Tenancy.
+         *
+         * @param ociAuthTenancy
+         * @return builder
+         */
+        public Builder ociAuthTenancy(String ociAuthTenancy) {
             this.ociAuthTenancy = ociAuthTenancy;
             return this;
         }
 
-        private Builder ociAuthUser(String ociAuthUser) {
+        /**
+         *  OCI Auth User.
+         *
+         * @param ociAuthUser
+         * @return builder
+         */
+        public Builder ociAuthUser(String ociAuthUser) {
             this.ociAuthUser = ociAuthUser;
             return this;
         }
 
-        private Builder ociAuthPrivateKey(String ociAuthPrivateKey) {
+        /**
+         * OCI Auth Private Key.
+         *
+         * @param ociAuthPrivateKey
+         * @return builder
+         */
+        public Builder ociAuthPrivateKey(String ociAuthPrivateKey) {
             this.ociAuthPrivateKey = ociAuthPrivateKey;
             return this;
         }
 
-        private Builder ociAuthKeyFile(String ociAuthKeyFile) {
+        /**
+         * OCI Auth Key File.
+         *
+         * @param ociAuthKeyFile
+         * @return builder
+         */
+        public Builder ociAuthKeyFile(String ociAuthKeyFile) {
             this.ociAuthKeyFile = ociAuthKeyFile;
             return this;
         }
 
-        private Builder ociAuthRegion(String ociAuthRegion) {
+        /**
+         * OCI Auth Region.
+         *
+         * @param ociAuthRegion
+         * @return builder
+         */
+        public Builder ociAuthRegion(String ociAuthRegion) {
             this.ociAuthRegion = ociAuthRegion;
             return this;
         }
 
-        private Builder configProfile(String configProfile) {
-            this.configProfile = Profile.valueOf(configProfile);
+        /**
+         * Config Profile.
+         *
+         * @param configProfile
+         * @return builder
+         */
+        public Builder configProfile(Profile configProfile) {
+            this.configProfile = configProfile;
             return this;
         }
 
-        private Builder clientConnectionTimeoutMillis(int clientConnectionTimeoutMillis) {
+        /**
+         * Client Connection Timeout Millis.
+         *
+         * @param clientConnectionTimeoutMillis
+         * @return builder
+         */
+        public Builder clientConnectionTimeoutMillis(int clientConnectionTimeoutMillis) {
             this.clientConnectionTimeoutMillis = clientConnectionTimeoutMillis;
             return this;
         }
 
-        private Builder clientReadTimeoutMillis(int clientReadTimeoutMillis) {
+        /**
+         * Client Read Timeout Millis.
+         *
+         * @param clientReadTimeoutMillis
+         * @return builder
+         */
+        public Builder clientReadTimeoutMillis(int clientReadTimeoutMillis) {
             this.clientReadTimeoutMillis = clientReadTimeoutMillis;
             return this;
         }

@@ -22,7 +22,7 @@ module io.helidon.integrations.oci.objectstorage {
 
     requires static jakarta.enterprise.cdi.api;
     requires static jakarta.inject.api;
-    requires jakarta.interceptor.api;
+    requires static jakarta.interceptor.api;
     requires io.helidon.config;
     requires io.helidon.config.mp;
 

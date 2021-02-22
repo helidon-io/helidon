@@ -32,7 +32,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>base</module>
+        <module>oci</module>
         <module>objectstorage</module>
     </modules>
 </project>

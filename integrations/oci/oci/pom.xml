@@ -28,7 +28,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.helidon.integrations.oci</groupId>
-    <artifactId>helidon-integrations-oci-base</artifactId>
+    <artifactId>helidon-integrations-oci</artifactId>
     <name>Helidon OCI base integrations</name>
 
     <dependencies>
@@ -51,6 +51,7 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-mp</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>jakarta.enterprise</groupId>

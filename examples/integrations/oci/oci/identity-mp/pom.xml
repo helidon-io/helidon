@@ -27,37 +27,46 @@
         <relativePath>../../../../../applications/mp/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.integrations.oci</groupId>
-    <artifactId>helidon-examples-integrations-oci-listregions-se</artifactId>
-    <name>Examples OCI list regions with Helidon SE</name>
+    <artifactId>helidon-examples-integrations-oci-listregions-mp</artifactId>
+    <name>Examples OCI list regions with Helidon MP</name>
 
     <dependencies>
         <!-- Compile-scoped dependencies. -->
-
+        <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.config</groupId>
+            <artifactId>microprofile-config-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
         <dependency>
             <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-base</artifactId>
+            <artifactId>helidon-integrations-oci</artifactId>
+        </dependency>
+        <!-- Runtime-scoped dependencies. -->
+        <dependency>
+            <groupId>org.jboss</groupId>
+            <artifactId>jandex</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver</artifactId>
+            <groupId>io.helidon.microprofile.server</groupId>
+            <artifactId>helidon-microprofile-server</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media</groupId>
-            <artifactId>helidon-media-jsonp</artifactId>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient</artifactId>
-            <scope>test</scope>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 

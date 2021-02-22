@@ -32,7 +32,7 @@
     <name>Helidon OCI Integrations</name>
 
     <modules>
-        <module>oci-base</module>
+        <module>oci</module>
         <module>oci-objectstorage</module>
     </modules>
 </project>

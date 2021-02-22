@@ -907,7 +907,7 @@
             <!-- OCI -->
             <dependency>
                 <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-base</artifactId>
+                <artifactId>helidon-integrations-oci</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

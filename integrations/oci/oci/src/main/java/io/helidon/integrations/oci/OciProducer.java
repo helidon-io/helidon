@@ -44,8 +44,8 @@ public class OciProducer {
     public OciProducer(io.helidon.config.Config config) {
         ConfigValue<Oci> configValue = config.get(OCI_NAME_PREFIX).as(Oci::create);
         if (configValue.isPresent()) {
-            provider = configValue.get().getProvider();
-            clientConfig = configValue.get().getClientConfig();
+            provider = configValue.get().provider();
+            clientConfig = configValue.get().clientConfig();
         } else {
             throw new OciException("OCI cannot be properly configured!");
         }

@@ -22,7 +22,7 @@ module io.helidon.integrations.oci {
 
     requires static jakarta.enterprise.cdi.api;
     requires static jakarta.inject.api;
-    requires jakarta.interceptor.api;
+    requires static jakarta.interceptor.api;
     requires io.helidon.config;
     requires io.helidon.config.mp;
 
@@ -33,6 +33,4 @@ module io.helidon.integrations.oci {
 
     opens io.helidon.integrations.oci to weld.core.impl, io.helidon.microprofile.cdi;
 
-
-    //provides javax.enterprise.inject.spi.Extension with io.helidon.integrations.oci.OciCdiExtension;
 }

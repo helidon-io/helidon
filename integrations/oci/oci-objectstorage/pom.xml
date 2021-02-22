@@ -33,7 +33,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-base</artifactId>
+            <artifactId>helidon-integrations-oci</artifactId>
         </dependency>
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
@@ -58,6 +58,7 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-mp</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>jakarta.enterprise</groupId>
