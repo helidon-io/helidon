@@ -270,10 +270,14 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                         Jwt jwt = signedJwt.getJwt();
                         // verify the audience is correct
                         Errors validate = jwt.validate(expectedIssuer, expectedAudiences);
+                        if (!validate.isValid()) {
+                            return AuthenticationResponse.failed("Audience is invalid or missing: " + expectedAudiences);
+                        }
+                        validate = jwt.validate(List.of(Jwt.ExpirationValidator.create(true)));
                         if (validate.isValid()) {
                             return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
                         } else {
-                            return AuthenticationResponse.failed("Audience is invalid or missing: " + expectedAudiences);
+                            return AuthenticationResponse.failed("Expiration date is missing");
                         }
                     } else {
                         return AuthenticationResponse.failed(errors.toString());

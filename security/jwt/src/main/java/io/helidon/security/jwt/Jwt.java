@@ -372,7 +372,7 @@ public class Jwt {
      */
     public static List<Validator<Jwt>> defaultTimeValidators() {
         List<Validator<Jwt>> validators = new LinkedList<>();
-        validators.add(new ExpirationValidator());
+        validators.add(new ExpirationValidator(false));
         validators.add(new IssueTimeValidator());
         validators.add(new NotBeforeValidator());
         return validators;
@@ -1232,8 +1232,8 @@ public class Jwt {
      * Validator of expiration claim.
      */
     public static final class ExpirationValidator extends InstantValidator implements Validator<Jwt> {
-        private ExpirationValidator() {
-            super(true);
+        private ExpirationValidator(boolean mandatory) {
+            super(mandatory);
         }
 
         private ExpirationValidator(Instant now, int allowedTimeSkew, TemporalUnit allowedTimeSkewUnit, boolean mandatory) {
@@ -1246,7 +1246,16 @@ public class Jwt {
          * @return expiration time validator with defaults
          */
         public static ExpirationValidator create() {
-            return new ExpirationValidator();
+            return new ExpirationValidator(false);
+        }
+
+        /**
+         * New instance with default values (allowed time skew 5 seconds, optional).
+         *
+         * @return expiration time validator with defaults
+         */
+        public static ExpirationValidator create(boolean mandatory) {
+            return new ExpirationValidator(mandatory);
         }
 
         /**
