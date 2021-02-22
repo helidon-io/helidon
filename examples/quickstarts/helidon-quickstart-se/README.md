@@ -80,7 +80,7 @@ You can build a native executable in 2 different ways:
 ### Local build
 
 Download Graal VM at https://www.graalvm.org/downloads, the versions
- currently supported for Helidon are `19.2` and `19.3`.
+ currently supported for Helidon are `20.2.0`.
 
 ```
 # Setup the environment

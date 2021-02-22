@@ -47,7 +47,7 @@
         <version.lib.el-impl>3.0.0</version.lib.el-impl>
         <version.lib.etcd4j>2.17.0</version.lib.etcd4j>
         <version.lib.google-api-client>1.30.11</version.lib.google-api-client>
-        <version.lib.graalvm>19.2.0</version.lib.graalvm>
+        <version.lib.graalvm>20.2.0</version.lib.graalvm>
         <version.lib.grpc>1.35.0</version.lib.grpc>
         <version.lib.guava>30.0-jre</version.lib.guava>
         <version.lib.h2>1.4.199</version.lib.h2>
@@ -656,7 +656,7 @@
                 <version>${version.lib.graalvm}</version>
             </dependency>
             <dependency>
-                <groupId>com.oracle.substratevm</groupId>
+                <groupId>org.graalvm.nativeimage</groupId>
                 <artifactId>svm</artifactId>
                 <version>${version.lib.graalvm}</version>
             </dependency>
