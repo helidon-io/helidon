@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,27 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-
 import java.io.IOException;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.SubmissionPublisher;
+import java.util.concurrent.TimeUnit;
 
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 
 public class SingleTimeoutTest {
 
     private static ScheduledExecutorService executor;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         executor = Executors.newSingleThreadScheduledExecutor();
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         executor.shutdown();
     }

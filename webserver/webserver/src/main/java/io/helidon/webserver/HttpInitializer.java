@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,21 @@
 
 package io.helidon.webserver;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 
-import io.helidon.common.http.DataChunk;
 import io.helidon.webserver.HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder;
+import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -60,7 +63,21 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     private final NettyWebServer webServer;
     private final SocketConfiguration soConfig;
     private final Routing routing;
-    private final Queue<ReferenceHoldingQueue<DataChunk>> queues = new ConcurrentLinkedQueue<>();
+    private final AtomicBoolean clearLock = new AtomicBoolean();
+
+    /**
+     * Reference queue that collects ReferenceHoldingQueue's when they become
+     * ready for garbage collection. ReferenceHoldingQueue's extracted from
+     * this collection that cannot be fully released (some buffers still in
+     * use) will be added to {@code unreleasedQueues} for later retries.
+     */
+    private final ReferenceQueue<Object> queues = new ReferenceQueue<>();
+
+    /**
+     * Concurrent queue to track all ReferenceHoldingQueue's not fully released
+     * (some buffers still in use) after becoming ready for garbage collection.
+     */
+    private final Queue<ReferenceHoldingQueue<?>> unreleasedQueues = new ConcurrentLinkedQueue<>();
 
     HttpInitializer(SocketConfiguration soConfig,
                     SslContext sslContext,
@@ -72,17 +89,53 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         this.webServer = webServer;
     }
 
+    /**
+     * Calls release on every ReferenceHoldingQueue that has been deemed ready for
+     * garbage collection and added to {@code queues}. The ReferenceHoldingQueue's not
+     * fully released are added to {@code unreleasedQueues} for later retries. Uses
+     * a lock to avoid concurrent modifications to {@code queues}.
+     */
+    @SuppressWarnings("unchecked")
     private void clearQueues() {
-        queues.removeIf(ReferenceHoldingQueue::release);
+        if (clearLock.get() || !clearLock.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            for (Reference<?> r = queues.poll(); r != null; r = queues.poll()) {
+                if (!(r instanceof IndirectReference<?, ?>)) {
+                    LOGGER.finest("Unexpected reference in queues");
+                    continue;
+                }
+                ReferenceHoldingQueue<?> q = ((IndirectReference<?, ReferenceHoldingQueue<?>>) r).acquire();
+                if (q == null) {
+                    continue;       // no longer referenced
+                }
+                if (!q.release()) {
+                    unreleasedQueues.add(q);
+                }
+            }
+            unreleasedQueues.removeIf(ReferenceHoldingQueue::release);
+        } finally {
+            clearLock.lazySet(false);
+        }
     }
 
+    /**
+     * Clears and shuts down all remaining ReferenceHoldingQueue's still being tracked.
+     */
     void queuesShutdown() {
-        queues.removeIf(queue -> {
+        clearQueues();
+        unreleasedQueues.removeIf(queue -> {
             queue.shutdown();
             return true;
         });
     }
 
+    /**
+     * Initializes pipeline for new socket channel.
+     *
+     * @param ch the socket channel.
+     */
     @Override
     public void initChannel(SocketChannel ch) {
         final ChannelPipeline p = ch.pipeline();
@@ -132,13 +185,20 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         }
 
         // Helidon's forwarding handler
-        p.addLast(new ForwardingHandler(routing, webServer, sslEngine, queues,
+        p.addLast(new ForwardingHandler(routing, webServer, sslEngine, queues, this::clearQueues,
                                         requestDecoder, soConfig.maxPayloadSize()));
 
         // Cleanup queues as part of event loop
         ch.eventLoop().execute(this::clearQueues);
     }
 
+    /**
+     * Sets {@code CERTIFICATE_NAME} in socket channel.
+     *
+     * @param future future passed to listener
+     * @param ch the socket channel
+     * @param sslHandler the SSL handler
+     */
     private void obtainClientCN(Future<? super Channel> future, SocketChannel ch, SslHandler sslHandler) {
         if (future.cause() == null) {
             try {
@@ -166,6 +226,9 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         }
     }
 
+    /**
+     * Event logger for HTTP/2 events.
+     */
     private static final class HelidonEventLogger extends ChannelInboundHandlerAdapter {
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {

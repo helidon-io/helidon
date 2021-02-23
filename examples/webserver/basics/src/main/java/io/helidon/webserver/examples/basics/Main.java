@@ -35,9 +35,9 @@ import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.RequestPredicate;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
+import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 /**
  * This example consists of few first tutorial steps of WebServer API. Each step is represented by a single method.

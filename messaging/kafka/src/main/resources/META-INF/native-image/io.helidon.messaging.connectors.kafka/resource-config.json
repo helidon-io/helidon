@@ -1,0 +1,10 @@
+{
+  "bundles": [
+    {
+      "name": "sun.security.util.Resources"
+    },
+    {
+      "name": "sun.security.util.AuthResources"
+    }
+  ]
+}

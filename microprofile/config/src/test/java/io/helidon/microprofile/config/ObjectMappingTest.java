@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.helidon.config.mp.MpConfigSources;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -32,26 +33,30 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
 public class ObjectMappingTest {
+    private static ClassLoader classLoader;
+    private static ConfigProviderResolver resolver;
+
+    @BeforeAll
+    static void initClass() {
+        classLoader = Thread.currentThread().getContextClassLoader();
+        resolver = ConfigProviderResolver.instance();
+    }
+
     @Test
     void testIt() {
         // Removed use of system properties, as those stay around after test is finished
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        ConfigProviderResolver configProvider = ConfigProviderResolver.instance();
-
-        Config orig = configProvider.getConfig(cl);
-
         Map<String, String> configMap = Map.of("built.it", "configured",
                                                "list.0.it", "first",
                                                "list.1.it", "second");
 
-        configProvider.registerConfig(configProvider.getBuilder()
-                                              .withSources(MpConfigSources.create(configMap))
-                                              .build(),
-                                      cl);
-
+        resolver.registerConfig(resolver.getBuilder()
+                                        .withSources(MpConfigSources.create(configMap))
+                                        .build(),
+                                classLoader);
 
         // need to go through resolver to wrap config in our SE/MP wrapper
-        io.helidon.config.Config helidonConfig = (io.helidon.config.Config) configProvider.getConfig(cl);
+        Config config = resolver.getConfig(classLoader);
+        io.helidon.config.Config helidonConfig = (io.helidon.config.Config) config;
 
         try {
             Built built = helidonConfig.get("built").as(Built.class).get();
@@ -62,7 +67,7 @@ public class ObjectMappingTest {
             assertThat(list, Matchers.contains(new Built("first"), new Built("second")));
 
         } finally {
-            configProvider.registerConfig(orig, cl);
+            resolver.releaseConfig(config);
         }
     }
 
