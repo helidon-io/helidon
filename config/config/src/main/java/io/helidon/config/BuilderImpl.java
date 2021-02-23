@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -414,7 +414,7 @@ class BuilderImpl implements Config.Builder {
 
         if (nothingConfigured) {
             // use meta configuration to load all sources
-            MetaConfig.configSources(mediaType -> context.findParser(mediaType).isPresent())
+            MetaConfig.configSources(mediaType -> context.findParser(mediaType).isPresent(), context.supportedSuffixes())
                     .stream()
                     .map(context::sourceRuntimeBase)
                     .forEach(targetSources::add);
@@ -564,6 +564,16 @@ class BuilderImpl implements Config.Builder {
 
         Executor changesExecutor() {
             return changesExecutor;
+        }
+
+        List<String> supportedSuffixes() {
+            List<String> result = new LinkedList<>();
+
+            configParsers.stream()
+                    .map(ConfigParser::supportedSuffixes)
+                    .forEach(result::addAll);
+
+            return result;
         }
     }
 

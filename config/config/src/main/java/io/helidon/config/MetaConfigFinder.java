@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ConfigSource;
@@ -51,17 +51,18 @@ final class MetaConfigFinder {
     private MetaConfigFinder() {
     }
 
-    static Optional<Config> findMetaConfig(Function<String, Boolean> supportedMediaType) {
-        return findMetaConfigSource(supportedMediaType)
+    static Optional<Config> findMetaConfig(Function<String, Boolean> supportedMediaType, List<String> supportedSuffixes) {
+        return findMetaConfigSource(supportedMediaType, supportedSuffixes)
                 .map(source -> Config.builder(source).build());
     }
 
-    static Optional<ConfigSource> findConfigSource(Function<String, Boolean> supportedMediaType) {
+    static Optional<ConfigSource> findConfigSource(Function<String, Boolean> supportedMediaType, List<String> supportedSuffixes) {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        return findSource(supportedMediaType, cl, CONFIG_PREFIX, "config source");
+        return findSource(supportedMediaType, cl, CONFIG_PREFIX, "config source", supportedSuffixes);
     }
 
-    private static Optional<ConfigSource> findMetaConfigSource(Function<String, Boolean> supportedMediaType) {
+    private static Optional<ConfigSource> findMetaConfigSource(Function<String, Boolean> supportedMediaType,
+                                                               List<String> supportedSuffixes) {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         Optional<ConfigSource> source;
 
@@ -82,19 +83,30 @@ final class MetaConfigFinder {
             LOGGER.info("Meta configuration file not found: " + property);
         }
 
-        return findSource(supportedMediaType, cl, META_CONFIG_PREFIX, "meta configuration");
+        return findSource(supportedMediaType, cl, META_CONFIG_PREFIX, "meta configuration", supportedSuffixes);
     }
 
     private static Optional<ConfigSource> findSource(Function<String, Boolean> supportedMediaType,
                                                      ClassLoader cl,
                                                      String configPrefix,
-                                                     String type) {
+                                                     String type,
+                                                     List<String> supportedSuffixes) {
         Optional<ConfigSource> source;
 
+        // we try to find these files, as we expect them to be used, if they are not supported by any
+        // parser, we log a warning (probably a misconfiguration)
         Set<String> invalidSuffixes = new HashSet<>(CONFIG_SUFFIXES);
-        List<String> validSuffixes = CONFIG_SUFFIXES.stream()
+        invalidSuffixes.addAll(supportedSuffixes);
+
+        // these are the ones we are interested in
+        Set<String> validSuffixes = new LinkedHashSet<>();
+        CONFIG_SUFFIXES.stream()
                 .filter(suffix -> supportedMediaType.apply(MediaTypes.detectExtensionType(suffix).orElse("unknown/unknown")))
-                .collect(Collectors.toList());
+                .forEach(validSuffixes::add);
+
+        supportedSuffixes.stream()
+                .filter(suffix -> supportedMediaType.apply(MediaTypes.detectExtensionType(suffix).orElse("unknown/unknown")))
+                .forEach(validSuffixes::add);
 
         validSuffixes.forEach(invalidSuffixes::remove);
 

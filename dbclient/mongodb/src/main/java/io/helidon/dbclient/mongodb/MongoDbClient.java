@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.dbclient.mongodb;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.Subscribable;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbExecute;
@@ -120,13 +119,6 @@ public class MongoDbClient implements DbClient {
     @Override
     public <U, T extends Subscribable<U>> T execute(Function<DbExecute, T> executor) {
         return executor.apply(new MongoDbExecute(db, clientContext));
-    }
-
-    @Override
-    public Single<Void> ping() {
-        return execute(exec -> exec
-                .get("{\"operation\":\"command\",\"query\":{ping:1}}"))
-                .flatMapSingle(it -> Single.empty());
     }
 
     @Override
