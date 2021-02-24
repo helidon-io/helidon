@@ -74,7 +74,7 @@ public class NarayanaLRARecovery implements LRARecoveryService {
 
     private void sleep() {
         try {
-            Thread.sleep(10 * 1000);
+            Thread.sleep(5 * 1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -88,7 +88,8 @@ public class NarayanaLRARecovery implements LRARecoveryService {
      */
     private boolean recoverLRAs(URI lraId) {
 //        new Throwable("LRARecovery.recoverLRAs").printStackTrace();
-//        sleep();
+        sleep();
+        if(true) return true;
         // trigger a recovery scan
         Client recoveryCoordinatorClient = ClientBuilder.newClient();
 

@@ -16,7 +16,11 @@
 package io.helidon.lra;
 
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.opentracing.Traced;
+
 import java.net.URI;
+import java.util.logging.Logger;
 
 import static org.eclipse.microprofile.lra.annotation.ParticipantStatus.*;
 import static org.eclipse.microprofile.lra.annotation.ParticipantStatus.Compensated;
@@ -29,6 +33,7 @@ public abstract class Participant {
      *          --> Completing --> FailedToComplete                                       /             --> Compensated
      *                         --> Completed --> (only if nested can go to compensating) /
      */
+    private static final Logger LOGGER = Logger.getLogger(Participant.class.getName());
     private boolean isAfterLRASuccessfullyCalledIfEnlisted;
     private boolean isForgotten;
     private ParticipantStatus participantStatus;
@@ -37,6 +42,11 @@ public abstract class Participant {
     private URI afterURI;  // a method that will be reliably invoked when the LRA enters one of the final states 200
     private URI forgetURI; // a method to be executed when the LRA allows participant to clear all associated information 200, 410
     private URI statusURI; // a method that allow user to state status of the participant with regards to a particular LRA 200, 202, 410
+    //The following key is sent on all messages so that customer applications can use selectors, filters, ...
+    //This key is not currently int configuration. This value must be used as documented.
+    public static final String HELIDONLRAOPERATION = "HELIDONLRAOPERATION";
+
+    public abstract void init();
 
     ParticipantStatus getParticipantStatus() {
         return participantStatus;
@@ -109,12 +119,13 @@ public abstract class Participant {
     }
 
     public String toString() {
-        return "ParticipantStatus:" + participantStatus +
-                " completeURI:" + completeURI +
-                " compensateURI:" + compensateURI +
-                " afterURI:" + afterURI +
-                " forgetURI:" + forgetURI +
-                " statusURI:" + statusURI;
+        return "Participant type:" + getParticipantType() +
+               "\n participantStatus:" + participantStatus +
+                "\n completeURI:" + completeURI +
+                "\n compensateURI:" + compensateURI +
+                "\n afterURI:" + afterURI +
+                "\n forgetURI:" + forgetURI +
+                "\n statusURI:" + statusURI;
     }
 
     public boolean isInEndStateOrListenerOnly() {
@@ -138,15 +149,25 @@ public abstract class Participant {
     }
 
 
-    public void log(String message, int nestedDepth) {
-        System.out.println("[lra][depth:" + nestedDepth + "] " + message);
+    public void logParticipantMessageWithTypeAndDepth(String message, int nestedDepth) {
+        LOGGER.info("["+ getParticipantType() +" participant][depth:" + nestedDepth + "] " + message);
     }
 
-    abstract boolean sendForget(LRA lra, boolean areAllThatNeedToBeForgottenForgotten);
+    abstract String getParticipantType();
 
     abstract void sendAfterLRA(LRA lra);
 
+    @Traced
+    @Counted
     abstract void sendCompleteOrCancel(LRA lra, boolean isCancel);
 
     abstract void sendStatus(LRA lra, URI statusURI);
+
+    /**
+     * Send forget call to participant
+     * @param lra LRA to forget
+     * @return true if successfully forgotten, false otherwise
+     */
+    abstract boolean sendForget(LRA lra);
+
 }

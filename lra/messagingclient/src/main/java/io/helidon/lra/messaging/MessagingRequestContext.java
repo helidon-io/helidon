@@ -15,65 +15,106 @@
  */
 package io.helidon.lra.messaging;
 
+import io.helidon.messaging.connectors.aq.AqMessage;
+import io.helidon.messaging.connectors.kafka.KafkaMessage;
+import oracle.AQ.AQMessage;
+import org.apache.kafka.common.header.Headers;
+import org.eclipse.microprofile.reactive.messaging.Message;
 
+import javax.jms.JMSException;
 import javax.ws.rs.core.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.logging.Logger;
 
 public class MessagingRequestContext {
+    private static final Logger LOGGER = Logger.getLogger(MessagingRequestContext.class.getName());
     Map properties = new HashMap<>();
     MultivaluedMap<String, String> multivaluedMap = new MultivaluedHashMap<String, String>();
-    public UriInfo uriInfo;
+    MultivaluedMap<String, String> messagePropertiesMap = new MultivaluedHashMap<String, String>();
 
-//    Object lraContext = MessagingRequestContext.getProperty(LRA_HTTP_CONTEXT_HEADER);
-//    ArrayList<Progress> progress = cast(requestContext.getProperty(ABORT_WITH_PROP));
-//    Object suspendedLRA = requestContext.getProperty(SUSPENDED_LRA_PROP);
-//    URI toClose = (URI) requestContext.getProperty(TERMINAL_LRA_PROP);
-//    Response.Status.Family[] cancel0nFamily = (Response.Status.Family[]) requestContext.getProperty(CANCEL_ON_FAMILY_PROP);
-//    Response.Status[] cancel0n = (Response.Status[]) requestContext.getProperty(CANCEL_ON_PROP);
-    // LRA_HTTP_CONTEXT_HEADER, ABORT_WITH_PROP, SUSPENDED_LRA_PROP, TERMINAL_LRA_PROP, CANCEL_ON_FAMILY_PROP, CANCEL_ON_PROP
+    public MessagingRequestContext(Message message) {
+        if (message instanceof AqMessage) {
+            try {
+                AqMessage aqMessage = (AqMessage) message;
+                javax.jms.Message jmsMessage = aqMessage.getJmsMessage();
+                Enumeration srcProperties = jmsMessage.getPropertyNames();
+                while (srcProperties.hasMoreElements()) {
+                    String propertyName = (String)srcProperties.nextElement ();
+                    String value = "" + jmsMessage.getObjectProperty(propertyName);
+                    messagePropertiesMap.add(propertyName, value);
+                }
+            } catch (JMSException e) {
+                e.printStackTrace();
+            }
+        } else if (message instanceof KafkaMessage) {
+            KafkaMessage kafkaMessage = (KafkaMessage)message;
+            Headers headers = kafkaMessage.getHeaders();
+            //todo messagePropertiesMap.add...
+
+        } else {
+            LOGGER.warning("message type not supported (not of type AQ or Kakfa):" + message);
+        }
+    }
+
     Object getProperty(String var1) {
         return properties.get(var1);
     }
 
-//                    MessagingRequestContext.setProperty(CANCEL_ON_FAMILY_PROP, cancel0nFamily);
-//                MessagingRequestContext.setProperty(CANCEL_ON_PROP, cancel0n);
-//                MessagingRequestContext.setProperty(SUSPENDED_LRA_PROP, incommingLRA);
-//                MessagingRequestContext.setProperty(SUSPENDED_LRA_PROP, suspendedLRA);
-//            MessagingRequestContext.setProperty(TERMINAL_LRA_PROP, lraId);
-//                MessagingRequestContext.setProperty(SUSPENDED_LRA_PROP, incommingLRA);
-//            MessagingRequestContext.setProperty(NEW_LRA_PROP, newLRA);
-//    abortWith(MessagingRequestContext, String, int, String, Collection<Progress>)
-//        MessagingRequestContext.setProperty(ABORT_WITH_PROP, reasons);
     void setProperty(String var1, Object var2){
         properties.put(var1, var2);
     }
 
-    //SUSPENDED_LRA_PROP
     void removeProperty(String var1){
         properties.remove(var1);
     }
 
-//                            resourceInfo.getResourceClass(), MessagingRequestContext.getUriInfo(), timeout);
-//    URI baseUri = MessagingRequestContext.getUriInfo().getBaseUri();
-//    Map<String, String> terminateURIs = NarayanaLRAClient.getTerminationUris(resourceInfo.getResourceClass(), MessagingRequestContext.getUriInfo(), timeout);
-    UriInfo getUriInfo(){
-        return uriInfo;
-    }
-
-//    MultivaluedMap<String, String> headers = MessagingRequestContext.getHeaders();
-//                            Current.getLast(requestContext.getHeaders().get(LRA_HTTP_CONTEXT_HEADER)))) {
-//        requestContext.getHeaders().remove(LRA_HTTP_CONTEXT_HEADER);
-//        requestContext.getHeaders().remove(LRA_HTTP_CONTEXT_HEADER);
-//        Current.getLast(requestContext.getHeaders().get(LRA_HTTP_CONTEXT_HEADER)))) {
-//            requestContext.getHeaders().remove(LRA_HTTP_CONTEXT_HEADER);
     MultivaluedMap<String, String> getHeaders(){
         return multivaluedMap;
+
     }
 
-//    MessagingRequestContext.abortWith(Response.status(statusCode).build());
+    void removeHeader(Object key) {
+        multivaluedMap.remove(key);
+        messagePropertiesMap.remove(key);
+    }
+
+    void add(String key, String value) {
+        multivaluedMap.add(key, value);
+        messagePropertiesMap.add(key, value);
+    }
+
+    void addMessageProperty(String key, String value) {
+        messagePropertiesMap.add(key, value);
+    }
+
+    void setMessageProperties(Object  message)  {
+        if (message instanceof AqMessage) {
+            javax.jms.Message jmsMessage = ((AqMessage) message).getJmsMessage();
+//            AQMessage jmsMessage = ((AQMessage) message); // .getJmsMessage();
+            for (Map.Entry<String, List<String>> entry : messagePropertiesMap.entrySet()) {
+                String propertyName = entry.getKey();
+                Object value = entry.getValue();
+                try {
+                    jmsMessage.setStringProperty(propertyName, "" + value);
+//                    jmsMessage.setMessageProperty(propertyName, value);
+                    LOGGER.info("set JMS MessageProperties for reply property:" + propertyName + " value:" + value);
+                } catch (JMSException e) {
+                    LOGGER.warning("JMSException in setJMSMessageProperties:" + e);
+                }
+            }
+        } else if (message instanceof KafkaMessage) {
+            KafkaMessage kafkaMessage = (KafkaMessage) message;
+            for (Map.Entry<String, List<String>> entry : messagePropertiesMap.entrySet()) {
+                String propertyName = entry.getKey();
+                Object value = entry.getValue();
+                    kafkaMessage.getHeaders().add(propertyName, ((String)value).getBytes());
+                    LOGGER.info("set Kafka MessageProperties for reply property:" + propertyName + " value:" + value);
+            }
+        }
+    }
+
     void abortWith(Response var1){
+        LOGGER.info("MessageRequestContext abortWith:" + var1);
     }
 
 }

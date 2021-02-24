@@ -21,6 +21,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,6 +35,7 @@ public class LRA {
      * --> Closing --> FailedToClose                                     /                  --> Cancelled
      * --> Closed --> (only if nested can go to cancelling) /
      */
+    private static final Logger LOGGER = Logger.getLogger(LRA.class.getName());
     public long timeout;
     public String lraId;
     public URI parentId;
@@ -41,14 +43,13 @@ public class LRA {
     LRA parent;
     List<LRA> children = new ArrayList<>();
     List<Participant> participants = new ArrayList<>();
-    boolean hasStatusEndpoints;
+    boolean hasStatusEndpoints; //todo remove as this is check at participant level
 
     public boolean isRecovering = false;
     public boolean isCancel;
     boolean isRoot = false;
     boolean isParent;
     boolean isChild;
-    boolean isUnilateralCallIfNested = false;
     boolean isNestedThatShouldBeForgottenAfterParentEnds = false;
     public int nestedDepth;
     private boolean isProcessing;
@@ -64,56 +65,38 @@ public class LRA {
         this.parentId = parentId;
     }
 
-    // debug path to root
-    // level = root(0 - lraID) --> child(1 - lraID) --> child(2 - lraID) ...
-    public String nestingDetail() {
-        int depth = 0;
-        LRA lra = this;
-        while (lra.isChild) {
-            depth++;
-            lra = lra.parent;
-        }
-        nestedDepth = depth;
-        String nestingDetail = "";
-        lra = this;
-        while (lra.isChild) {
-            nestingDetail = " depth[" + depth + "] = " + lra.lraId + nestingDetail;
-            depth--;
-            lra = lra.parent;
-        }
-        return nestingDetail;
-    }
 
-    //return debug string
+    /**
+     * Parse the compensatorLink received from join call from participant and add participant (whether it be REST, AQ, or Kafka)
+     * @param compensatorLink from REST or message header/property/value
+     * @return debug string
+     */
     String addParticipant(String compensatorLink) {
         if (compensatorLinks.contains(compensatorLink)) return "participant already enlisted"; //todo this should be correct/sufficient but need to test
         else compensatorLinks.add(compensatorLink);
-        // <messaging://completeinventorylra>; rel="complete"; title="complete URI"; type="text/plain",
-        // <messaging://compensate>; rel="compensate"; title="compensate URI"; type="text/plain"
-        // <http://127.0.0.1:8091/inventory/completeInventory?method=javax.ws.rs.PUT>; rel="complete"; title="complete URI"; type="text/plain",
-//        Participant existingparticipant = participants.contains(compensatorLink)
+        log(compensatorLink);
         String uriPrefix = null;
-        boolean isMessaging = false;
-        if (compensatorLink.indexOf("<http://") > -1) {
+        Participant participant = null;
+        if (compensatorLink.contains("<http://")) {
             uriPrefix = "<http://";
-            isMessaging = false;
-        } else if (compensatorLink.indexOf("<messaging://") > -1) {
+            participant = new RestParticipant();
+        } else if (compensatorLink.contains("<messaging://helidon-aq")) {
             uriPrefix = "<messaging://";
-            isMessaging = true;
+            participant = new AQParticipant();
+        }else if (compensatorLink.contains("<messaging://helidon-kafka")) {
+            uriPrefix = "<messaging://";
+            participant = new KafkaParticipant();
         }
-        if (uriPrefix != null) {
-            Participant participant = isMessaging?new AQParticipant():new RestParticipant();
+        if (participant != null) {
             participants.add(participant);
             String endpoint = "";
             Pattern linkRelPattern = Pattern.compile("(\\w+)=\"([^\"]+)\"|([^\\s]+)");
             Matcher relMatcher = linkRelPattern.matcher(compensatorLink);
             while (relMatcher.find()) {
                 String group0 = relMatcher.group(0);
-                if (group0.indexOf(uriPrefix) > -1) { // <messaging://complete>;
-//                    endpoint = isMessaging ? group0.substring(uriPrefix.length(), group0.indexOf(";") - 1) :
-//                            group0.substring(1, group0.indexOf(";") - 1);
-                    endpoint = isMessaging ? group0.substring(group0.indexOf(uriPrefix) + uriPrefix.length(), group0.indexOf(";") - 1) :
-                            group0.substring(group0.indexOf(uriPrefix) + 1, group0.indexOf(";") - 1);
+                if (group0.indexOf(uriPrefix) > -1) {
+                    endpoint = group0.substring(group0.indexOf(uriPrefix) + 1, group0.indexOf(";") - 1);
+                    log("endpoint:"+endpoint);
                 }
                 String key = relMatcher.group(1);
                 if (key != null && key.equals("rel")) {
@@ -140,18 +123,29 @@ public class LRA {
                     }
                 }
             }
-            return "LRA joined/added:" + (getConditionalStringValue(participant.isListenerOnly(), "listener", "participant"));
+            participant.init();
+            RecoveryManager.log(this, compensatorLink);
+            return "LRA joined/added:" + (getConditionalStringValue(participant.isListenerOnly(), "listener:", "participant:")) + participant;
         } else {
             return "no address found in compensatorLink:" + compensatorLink;
         }
-//        if (isToBeLogged) RecoveryManager.getInstance().log(this, compensatorLink);
     }
 
+    /**
+     * Remove participant that has asked to leave
+     * @param compensatorUrl
+     * @param b
+     * @param b1
+     */
     public void removeParticipant(String compensatorUrl, boolean b, boolean b1) {
         participants = new ArrayList<>(); //todo remove just the participant specified
     }
 
-    public void addChild(String lraUUID, LRA lra) {
+    /**
+     * Add child in nested LRA, mark it as a child, set it's parent, and mark parent as parent
+     * @param lra The child
+     */
+    public void addChild(LRA lra) {
         children.add(lra);
         lra.isChild = true;
         lra.parent = this;
@@ -171,8 +165,8 @@ public class LRA {
         }
         sendCompleteOrCancel(isCancel);
         sendAfterLRA();
-//        log("areAllInEndState():" + areAllInEndState() + " areAllAfterLRASuccessfullyCalledOrForgotten():" + areAllAfterLRASuccessfullyCalledOrForgotten() +
-//                " !areAllForgotten():" + !areAllForgotten() + " isUnilateralCallIfNested:" + isUnilateralCallIfNested);
+        fine("areAllInEndState():" + areAllInEndState() + " areAllAfterLRASuccessfullyCalledOrForgotten():" + areAllAfterLRASuccessfullyCalledOrForgotten() +
+                " !areAllForgottenOrNoForgetMethodExists():" + !areAllForgottenOrNoForgetMethodExists()+ " isUnilateralCallIfNested:" + isUnilateralCallIfNested);
         if (areAllInEndState() && areAllAfterLRASuccessfullyCalledOrForgotten()) {
             if (forgetAnyUnilaterallyCompleted()) isReadyToDelete = true;
         }
@@ -220,7 +214,7 @@ public class LRA {
         boolean areAllThatNeedToBeForgottenForgotten = true;
         for (Participant participant : participants) {
             if (participant.getForgetURI() == null || participant.isForgotten()) continue;
-            areAllThatNeedToBeForgottenForgotten = participant.sendForget(this, areAllThatNeedToBeForgottenForgotten);
+            areAllThatNeedToBeForgottenForgotten = participant.sendForget(this);
         }
         return areAllThatNeedToBeForgottenForgotten;
     }
@@ -242,17 +236,9 @@ public class LRA {
     }
 
     public String toString() {
-        String participantsString = "";
-        for (Participant participant : participants) participantsString += participant;
+        StringBuilder participantsString = new StringBuilder();
+        for (Participant participant : participants) participantsString.append(participant);
         return "lraId:" + lraId + " participants' status:" + participantsString;
-    }
-
-    public boolean areAllCompletedOrCompensatedSuccessfully() {
-        for (Participant participant : participants) {
-            if (participant.getParticipantStatus() != ParticipantStatus.Completed &&
-                    participant.getParticipantStatus() != Compensated) return false;
-        }
-        return true;
     }
 
     public boolean areAnyInFailedState() {
@@ -277,13 +263,6 @@ public class LRA {
         return true;
     }
 
-    public boolean areAllInEndStateCompletedOrFailedToComplete() {
-        for (Participant participant : participants) {
-            if (participant.getParticipantStatus() != Completed && participant.getParticipantStatus() != FailedToComplete) return false;
-        }
-        return true;
-    }
-
     public boolean areAllInEndStateCompensatedOrFailedToCompensate() {
         for (Participant participant : participants) {
             if (participant.getParticipantStatus() != Compensated && participant.getParticipantStatus() != FailedToCompensate) return false;
@@ -298,13 +277,15 @@ public class LRA {
         return true;
     }
 
-    private boolean areAllForgotten() { //todo should be isForgottenOrNoForgetMethodExists
+    // currently unused though may well be useful if only for debug
+    private boolean areAllForgottenOrNoForgetMethodExists() {
         for (Participant participant : participants) {
             if (!participant.isForgotten()) return false;
         }
         return true;
     }
 
+    // currently unused though may well be useful if only for debug
     public boolean areAllAfterLRASuccessfullyCalled() {
         for (Participant participant : participants) {
             if (!participant.isAfterLRASuccessfullyCalledIfEnlisted()) return false;
@@ -312,15 +293,55 @@ public class LRA {
         return true;
     }
 
+    // currently unused though may well be useful if only for debug
+    public boolean areAllInEndStateCompletedOrFailedToComplete() {
+        for (Participant participant : participants) {
+            if (participant.getParticipantStatus() != Completed && participant.getParticipantStatus() != FailedToComplete) return false;
+        }
+        return true;
+    }
+
+    // currently unused though may well be useful if only for debug
+    public boolean areAllCompletedOrCompensatedSuccessfully() {
+        for (Participant participant : participants) {
+            if (participant.getParticipantStatus() != ParticipantStatus.Completed &&
+                    participant.getParticipantStatus() != Compensated) return false;
+        }
+        return true;
+    }
+
     void log(String message) {
-        System.out.println("[lra][depth:" + nestedDepth + "] " + message);
+        LOGGER.info("[lra][depth:" + nestedDepth + "] " + message);
+    }
+
+    void fine(String message) {
+        LOGGER.fine("[lra][depth:" + nestedDepth + "] " + message);
     }
 
     public String getConditionalStringValue(boolean isTrue, String first, String second) {
         return isTrue ? first : second;
     }
 
-    void printStack(String message) {
-        new Throwable(message).printStackTrace();
+    /**
+     * Debug string providing the path to the root for nested LRAs
+     * level = root(0 - lraID) --> child(1 - lraID) --> child(2 - lraID) ...
+     * @return debug String
+     */
+    public String nestingDetail() {
+        int depth = 0;
+        LRA lra = this;
+        while (lra.isChild) {
+            depth++;
+            lra = lra.parent;
+        }
+        nestedDepth = depth;
+        StringBuilder nestingDetail = new StringBuilder();
+        lra = this;
+        while (lra.isChild) {
+            nestingDetail.insert(0, " depth[" + depth + "] = " + lra.lraId);
+            depth--;
+            lra = lra.parent;
+        }
+        return nestingDetail.toString();
     }
 }

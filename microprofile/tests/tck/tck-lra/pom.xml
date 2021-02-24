@@ -22,16 +22,31 @@
     
     <properties>
         <lra.coordinator.exec.plugin.phase>none</lra.coordinator.exec.plugin.phase> <!-- not starting coordinator by default, need -Parq -->
+
+        <!-- currently only defines where to search for the coordinator, it does not change where the coordinator is started -->
+        <lra.coordinator.host>localhost</lra.coordinator.host>
         <lra.coordinator.port>8080</lra.coordinator.port>
+        <!-- the property used by NarayanaLRAClient when passed into the container as the JVM parameter -->
+        <lra.coordinator.url>http://${lra.coordinator.host}:${lra.coordinator.port}/lra-coordinator</lra.coordinator.url>
+        <!-- the lra.coordinator.jar.path needs to be redefined at each test sub-module -->
+        <lra.coordinator.jar.path>${project.basedir}/../coordinator-quarkus/target/lra-coordinator-runner.jar</lra.coordinator.jar.path>
+        <!-- for test executions where coordinator is started as a separate JVM (e.g. for Quarkus) and the test application
+             is deployed at the different JVM; these properties define where the test JVM application is started -->
+        <test.application.host>localhost</test.application.host>
+        <test.application.port>8180</test.application.port>
+
         <lra.coordinator.log.console.disable></lra.coordinator.log.console.disable>
         <lra.coordinator.log.file.enable></lra.coordinator.log.file.enable>
         <lra.coordinator.log.file.path></lra.coordinator.log.file.path>
         <lra.coordinator.log.file.level></lra.coordinator.log.file.level>
         <lra.coordinator.log.file.module.arjuna></lra.coordinator.log.file.module.arjuna>
         <lra.coordinator.log.file.module.narayana></lra.coordinator.log.file.module.narayana>
-        <lra.coordinator.debug.params></lra.coordinator.debug.params> <!-- has content when -Ddebug.coordinator is specified -->
-        <lra.coordinator.debug.port>8787</lra.coordinator.debug.port>
-        <lra.coordinator.jar.path>${project.basedir}/../coordinator-quarkus/target/lra-coordinator-runner.jar</lra.coordinator.jar.path>
+
+        <lra.coordinator.debug.params></lra.coordinator.debug.params> <!-- defined within -Ddebug.coordinator/-Pdebug.lra.coordinator -->
+        <lra.coordinator.debug.port>8788</lra.coordinator.debug.port>
+
+        <thorntail.test.logging.category.arjuna></thorntail.test.logging.category.arjuna>
+        <thorntail.test.logging.category.narayana></thorntail.test.logging.category.narayana>
     </properties>
     
     <dependencies>
@@ -52,14 +67,154 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.thorntail</groupId>
-            <artifactId>arquillian</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <redirectTestOutputToFile>${test.logs.to.file}</redirectTestOutputToFile>
+                    <systemPropertyVariables combine="merge">
+                        <!-- failsafe test startup logging configuration-->
+                        <java.util.logging.config.file>src/test/resources/logging.properties</java.util.logging.config.file>
+                        <!-- host and port where to find the test application -->
+                        <test.application.host>${test.application.host}</test.application.host>
+                        <test.application.port>${test.application.port}</test.application.port>
+                        <lra.tck.suite.host>${test.application.host}</lra.tck.suite.host> <!-- not necessary for test/basic but for TCK it's necessary -->
+                        <lra.tck.suite.port>${test.application.port}</lra.tck.suite.port>
+                        <lra.coordinator.url>${lra.coordinator.url}</lra.coordinator.url>
+                        <!-- passing to Arquillian as configured at arquillian*.xml and used for app server start-up (e.g. sets up debug) -->
+                        <server.jvm.args>${server.jvm.args}</server.jvm.args>
+                        <!-- used at AppServerCoordinatorDeploymentObserver -->
+                        <project.version>${project.version}</project.version>
+                        <!-- used in arquillian*.xml descriptor to place test run related data -->
+                        <project.build.directory>${project.build.directory}</project.build.directory>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     
     <profiles>
+        <profile>
+            <!-- when arq profile is activated we expect to start coordinator -->
+            <id>arq</id>
+            <properties>
+                <!-- making the Quarkus coordinator to be started -->
+                <lra.coordinator.exec.plugin.phase>pre-integration-test</lra.coordinator.exec.plugin.phase>
+                <!-- where the Thorntail test application will be started at (the Quarkus coordinator goes at 8080) -->
+                <test.application.port>8180</test.application.port>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>io.thorntail</groupId>
+                    <artifactId>arquillian</artifactId>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>io.thorntail</groupId>
+                    <artifactId>cdi</artifactId>
+                    <version>${version.thorntail}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <skipITs>false</skipITs>
+                            <systemProperties>
+                                <arquillian.xml>arquillian-thorntail.xml</arquillian.xml>
+                            </systemProperties>
+                            <systemPropertyVariables>
+                                <thorntail.test.logging.category.arjuna>${thorntail.test.logging.category.arjuna}</thorntail.test.logging.category.arjuna>
+                                <thorntail.test.logging.category.narayana>${thorntail.test.logging.category.narayana}</thorntail.test.logging.category.narayana>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>arq.wildfly</id>
+            <properties>
+                <!-- the AppServerCoordinatorDeploymentObserver creates the deployment named 'lra-coordinator' and deploys it to the app server,
+                     the last part of the path with value 'lra-coordinator' is defined by LRA coordinator JAX-RS endpoint -->
+                <lra.coordinator.url>http://${lra.coordinator.host}:${lra.coordinator.port}/lra-coordinator/lra-coordinator</lra.coordinator.url>
+                <!-- where the WFLY test application will be started at (the coordinator is war deployed for the same app server at the same port) -->
+                <test.application.port>8080</test.application.port>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly.arquillian</groupId>
+                    <artifactId>wildfly-arquillian-container-managed</artifactId>
+                    <version>${version.org.wildfly.arquillian}</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.arquillian.protocol</groupId>
+                    <artifactId>arquillian-protocol-servlet</artifactId>
+                    <version>${version.org.jboss.arquillian.core}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-env-variable-jboss-home</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>env.JBOSS_HOME</property>
+                                            <message>You need to define JBOSS_HOME environmental variable!</message>
+                                            <regex>[^ ]*</regex>
+                                            <regexMessage>You must set JBOSS_HOME environmental variable containing at least one non-space character.</regexMessage>
+                                        </requireProperty>
+                                    </rules>
+                                    <fail>true</fail>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <skipITs>false</skipITs>
+                            <systemProperties>
+                                <arquillian.xml>arquillian-wildfly.xml</arquillian.xml>
+                            </systemProperties>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>trace.thorntail.test</id>
+            <activation>
+                <property>
+                    <name>trace.thorntail.test</name>
+                </property>
+            </activation>
+            <properties>
+                <thorntail.test.logging.category.arjuna>-Dthorntail.logging.com.arjuna=TRACE</thorntail.test.logging.category.arjuna>
+                <thorntail.test.logging.category.narayana>-Dthorntail.logging.io.narayana.lra=TRACE</thorntail.test.logging.category.narayana>
+            </properties>
+        </profile>
+
         <profile>
             <id>debug.lra.coordinator</id>
             <activation>
@@ -76,11 +231,11 @@
             <id>trace.lra.coordinator</id>
             <activation>
                 <property>
-                    <name>trace.coordinator</name>
+                    <name>trace.lra.coordinator</name>
                 </property>
             </activation>
             <properties>
-                <!-- # Disabling console trace level logging (By default logger level is INFO)-->
+                <!-- # Disabling console trace level logging (by default logger level is INFO)-->
                 <lra.coordinator.log.console.disable>-Dquarkus.log.console.enable=false</lra.coordinator.log.console.disable>
                 <!--# Enabling file trace logging-->
                 <lra.coordinator.log.file.enable>-Dquarkus.log.file.enable=true</lra.coordinator.log.file.enable>
@@ -90,7 +245,6 @@
                 <!--# Setting categories to TRACE level-->
                 <lra.coordinator.log.file.module.arjuna>-Dquarkus.log.category."com.arjuna".level=TRACE</lra.coordinator.log.file.module.arjuna>
                 <lra.coordinator.log.file.module.narayana>-Dquarkus.log.category."io.narayana.lra".level=TRACE</lra.coordinator.log.file.module.narayana>
-
             </properties>
         </profile>
 
@@ -117,14 +271,10 @@
                                 <configuration>
                                     <name>lra-coordinator-it-test</name>
                                     <workingDir>${basedir}</workingDir>
-                                    <healthCheckUrl>http://localhost:${lra.coordinator.port}/lra-coordinator</healthCheckUrl>
+                                    <healthCheckUrl>${lra.coordinator.url}</healthCheckUrl>
                                     <waitForInterrupt>false</waitForInterrupt>
                                     <waitAfterLaunch>90</waitAfterLaunch>
                                     <!--<processLogFile>${project.build.directory}/failsafe-reports/lra-coordinator-startup.log</processLogFile>-->
-                                    <environment>
-                                        <thorntail.http.port>${lra.coordinator.port}</thorntail.http.port>
-                                        <thorntail.transactions.node-identifier>2</thorntail.transactions.node-identifier>
-                                    </environment>
                                     <arguments>
                                         <argument>${java.home}/bin/java</argument>
                                         <argument>-Djava.net.preferIPv4Stack=true</argument>
@@ -160,7 +310,7 @@
 
     <modules>
         <module>tck</module>
-        <!-- <module>basic</module> -->
+        <module>basic</module>
         <module>arquillian-extension</module>
     </modules>
 </project>

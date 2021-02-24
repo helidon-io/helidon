@@ -15,6 +15,8 @@
  */
 package io.helidon.lra;
 
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -25,11 +27,14 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Initialized;
+import javax.enterprise.event.Observes;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
@@ -38,6 +43,7 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVER
 @Path("lra-coordinator")
 @Tag(name = "LRA Coordinator")
 public class Coordinator implements Runnable {
+    private static final Logger LOGGER = Logger.getLogger(Coordinator.class.getName());
     public static final String COORDINATOR_PATH_NAME = "lra-coordinator";
 
     public static final String STATUS_PARAM_NAME = "Status";
@@ -47,10 +53,23 @@ public class Coordinator implements Runnable {
 
     private boolean isTimeoutThreadRunning;
 
-    @Context
-    private UriInfo context;
+//    @Context
+//    private UriInfo context;
 
     Map<String, LRA> lraMap = new ConcurrentHashMap();
+    static String coordinatorURL = "http://127.0.0.1:8080/lra-coordinator/";
+
+    public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
+        LOGGER.info("Coordinator init");
+        if (!isTimeoutThreadRunning) {
+            new Thread(this).start(); //todo executor
+            isTimeoutThreadRunning = true;
+        }
+        LOGGER.info("Coordinator init timeout thread started");
+        Config config = ConfigProvider.getConfig();
+// todo this or lra.coordinator.url override...  coordinatorURL = "http://" + config.getValue("server.host", String.class) + ":" + config.getValue("server.port", String.class) + "/lra-coordinator/";
+        LOGGER.info("Coordinator init coordinatorURL:" + coordinatorURL);
+    }
 
     @GET
     @Path("/")
@@ -110,18 +129,18 @@ public class Coordinator implements Runnable {
             @Parameter(name = PARENT_LRA_PARAM_NAME)
             @QueryParam(PARENT_LRA_PARAM_NAME) @DefaultValue("") String parentLRA,
             @HeaderParam(LRA_HTTP_CONTEXT_HEADER) String parentId) throws WebApplicationException {
-        String coordinatorUrl = String.format("%s%s", context.getBaseUri(), COORDINATOR_PATH_NAME);
+//        String coordinatorUrl = String.format("%s%s", context.getBaseUri(), COORDINATOR_PATH_NAME);
         URI lraId = null;
         try {
             String lraUUID = "LRAID" + UUID.randomUUID().toString(); //todo better UUID
-            lraId = new URI(String.format("%s/%s", coordinatorUrl, lraUUID)); //todo verify
+            lraId = new URI(String.format("%s/%s", coordinatorURL, lraUUID)); //todo verify
             String rootParentOrChild = "parent(root)";
             if (parentLRA != null && !parentLRA.isEmpty()) {
-                LRA parent = lraMap.get(parentLRA.replace("http://127.0.0.1:8080/lra-coordinator/", ""));
+                LRA parent = lraMap.get(parentLRA.replace(coordinatorURL, ""));  //todo resolve coordinatorUrl here with member coordinatorURL
                 if (parent != null) { // todo null would be unexpected and cause to compensate or exit entirely akin to systemexception
                     LRA childLRA = new LRA(lraUUID, new URI(parentLRA));
                     lraMap.put(lraUUID, childLRA);
-                    parent.addChild(lraUUID, childLRA);
+                    parent.addChild(childLRA);
                     rootParentOrChild = "nested(" + childLRA.nestingDetail() + ")";
                 }
             } else {
@@ -156,18 +175,17 @@ public class Coordinator implements Runnable {
             @Parameter(name = "LraId", description = "The unique identifier of the LRA", required = true)
             @PathParam("LraId") String lraId) throws NotFoundException {
         LRA lra = lraMap.get(lraId);
-        log("[close] " + getParentChildDebugString(lra) + " lraId:" + lraId );
         if (lra == null) {
             log("[close] lraRecord == null lraRecordMap.size():" + lraMap.size());
             for (String lraid : lraMap.keySet()) {
-                log("[close] uri:" + lraid + " lraRecordMap.get(lraid):" + lraMap.get(lraid));
+                log("[close] lraRecord == null, existing values uri:" + lraid + " lraRecordMap.get(lraid):" + lraMap.get(lraid));
             }
             return Response.serverError().build();
         }
+        log("[close] " + getParentChildDebugString(lra) + " lraId:" + lraId );
         lra.terminate(false, true);
         return Response.ok().build();
     }
-
 
     @PUT
     @Path("{LraId}/cancel")
@@ -179,7 +197,7 @@ public class Coordinator implements Runnable {
         if (lra == null) {
             log("[cancel] lraRecord == null lraRecordMap.size():" + lraMap.size());
             for (String lraid : lraMap.keySet()) {
-                log("[close] uri:" + lraid + " lraRecordMap.get(lraid):" + lraMap.get(lraid));
+                log("[cancel] uri:" + lraid + " lraRecordMap.get(lraid):" + lraMap.get(lraid));
             }
             return Response.serverError().build();
         }
@@ -234,17 +252,13 @@ public class Coordinator implements Runnable {
             return Response.status(status)
                     .entity(recoveryUrl.toString())
                     .location(new URI(recoveryUrl.toString()))
-                    .header(LRA_HTTP_RECOVERY_HEADER, "http://127.0.0.1:8080/lra-coordinator/" + lraIdString)
+                    .header(LRA_HTTP_RECOVERY_HEADER, coordinatorURL + lraIdString)
                     .build();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private String getParentChildDebugString(LRA lra) {
-        return (lra.isParent ? "parent" : "") + (lra.isParent && lra.isChild ? " and " : "") +
-                (lra.isChild ? "child" : "") + (!lra.isParent && !lra.isChild ? "currently flat LRA" : "");
-    }
 
     @Override
     public void run() {
@@ -295,7 +309,6 @@ public class Coordinator implements Runnable {
             @Parameter(name = "LraId", description = "The unique identifier of the LRA", required = true)
             @PathParam("LraId") String lraId,
             String compensatorUrl) throws NotFoundException {
-        printStack("remove/leave");
         String lraIdString = lraId.substring(lraId.indexOf("LRAID"));
         LRA lra = lraMap.get(lraIdString);
         if (lra != null) {
@@ -312,16 +325,15 @@ public class Coordinator implements Runnable {
     private URI toURI(String lraId, String message) {
         URL url;
         try {
-            url = new URL(lraId);
-            return url.toURI();
+            return new URL(lraId).toURI();
         } catch (Exception e) {
             try {
-                url = new URL(String.format("%s%s/%s", context.getBaseUri(), COORDINATOR_PATH_NAME, lraId));
+//                url = new URL(String.format("%s%s/%s", context.getBaseUri(), COORDINATOR_PATH_NAME, lraId));
+                url = new URL(coordinatorURL + lraId);
             } catch (MalformedURLException e1) {
                 throw new RuntimeException("todo paul runtime exception badrequest in toURI " + e1);
             }
         }
-
         try {
             return url.toURI();
         } catch (URISyntaxException e) {
@@ -329,12 +341,13 @@ public class Coordinator implements Runnable {
         }
     }
 
+    private String getParentChildDebugString(LRA lra) {
+        return (lra.isParent ? "parent" : "") + (lra.isParent && lra.isChild ? " and " : "") +
+                (lra.isChild ? "child" : "") + (!lra.isParent && !lra.isChild ? "currently flat LRA" : "");
+    }
+
     void log(String message) {
-        System.out.println("[coordinator]" + message);
+        LOGGER.info("[coordinator]" + message);
     }
 
-
-    void printStack(String message) {
-        new Throwable(message).printStackTrace();
-    }
 }

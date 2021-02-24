@@ -14,15 +14,10 @@
     <name>LRA tests: MicroProfile TCK</name>
 
     <properties>
-<lra.coordinator.jar.path>/Users/pparkins/go/src/github.com/paulparkinson/helidon/lra/coordinator/target/lra-coordinator-helidon-0.0.1-SNAPSHOT.jar</lra.coordinator.jar.path>
-<!--        <lra.coordinator.jar.path>/Users/pparkins/Downloads/helidon-master-2/lra/coordinator/target/lra-coordinator-helidon-0.0.1-SNAPSHOT.jar</lra.coordinator.jar.path>-->
-        <lra.tck.suite.host>localhost</lra.tck.suite.host>
-        <lra.tck.suite.port>8180</lra.tck.suite.port>
-        <lra.tck.suite.debug.params></lra.tck.suite.debug.params> <!-- has content when -Ddebug.tck is specified -->
-        <lra.tck.suite.debug.port>8788</lra.tck.suite.debug.port>
-        <!-- TCK TckTests#timeLimit test needs a short, but non zero, delay -->
-        <lra.tck.timeout.factor>1.0</lra.tck.timeout.factor>
+        <lra.coordinator.jar.path>/Users/pparkins/go/src/github.com/paulparkinson/helidon/lra/coordinator/target/lra-coordinator-helidon-0.0.1-SNAPSHOT.jar</lra.coordinator.jar.path>
 
+<!--        <lra.coordinator.jar.path>${project.basedir}/../../coordinator-quarkus/target/lra-coordinator-runner.jar</lra.coordinator.jar.path>-->
+        <!-- TCK TckTests#timeLimit test needs a short, but non zero, delay -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -31,47 +26,18 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-<!--                <reportSets>-->
-<!--                    <reportSet>-->
-<!--                        <id>integration-tests</id>-->
-<!--                        <reports>-->
-<!--                            <report>failsafe-report-only</report>-->
-<!--                        </reports>-->
-<!--                    </reportSet>-->
-<!--                </reportSets>-->
                 <configuration>
                     <dependenciesToScan>
                         <dependency>org.eclipse.microprofile.lra:microprofile-lra-tck</dependency>
                     </dependenciesToScan>
                     <includes>
-<!--                        <include>**/*.java</include>-->
-<!--                        <include>**/*TckContextTests*.java</include>-->
-                        <!--                        hangs...-->
-                        <include>**/*TckTests*.java</include>
-
-
-<!-- <include>**/*TckRecoveryTests*.java</include>-->
-
-                        <!--                         <include>**/*TckUnknownStatusTests*.java</include>-->
-<!--<include>**/*TckUnknownTests*.java</include>-->
-<!--<include>**/*TckCancelOnTests*.java</include>-->
-<!-- <include>**/*TckInvalidSignaturesTests*.java</include>-->
-<!-- <include>**/*TckLRATypeTests*.java</include>-->
-<!-- <include>**/*TckParticipantTests*.java</include>-->
+                        <include>**/*Test*.java</include>
                     </includes>
                     <systemPropertyVariables combine.children="append">
-                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
-                        <lra.tck.suite.host>${lra.tck.suite.host}</lra.tck.suite.host>
-                        <lra.tck.suite.port>${lra.tck.suite.port}</lra.tck.suite.port>
-                        <thorntail.test.logging.category.arjuna>${thorntail.test.logging.category.arjuna}</thorntail.test.logging.category.arjuna>
-                        <thorntail.test.logging.category.narayana>${thorntail.test.logging.category.narayana}</thorntail.test.logging.category.narayana>
-                        <lra.coordinator.port>${lra.coordinator.port}</lra.coordinator.port>
-                        <lra.tck.suite.debug.params>${lra.tck.suite.debug.params}</lra.tck.suite.debug.params>
-                        <lra.tck.timeout.factor>${lra.tck.timeout.factor}</lra.tck.timeout.factor>
+                        <lra.tck.timeout.factor>${lra.test.timeout.factor}</lra.tck.timeout.factor>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
-
         </plugins>
     </build>
 
@@ -79,8 +45,7 @@
         <dependency>
             <groupId>org.eclipse.microprofile.lra</groupId>
             <artifactId>microprofile-lra-tck</artifactId>
-<!--            <version>${version.microprofile.lra.tck}</version>-->
-            <version>1.0-SNAPSHOT</version>
+            <version>${version.microprofile.lra.tck}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -94,43 +59,6 @@
             <artifactId>lra-test-arquillian-extension</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>${version.apache.httpclient}</version>
-        </dependency>
     </dependencies>
 
-    <profiles>
-        <profile>
-            <!-- when arq profile is activated we expect to start coordinator -->
-            <id>arq</id>
-            <properties>
-                <lra.coordinator.exec.plugin.phase>pre-integration-test</lra.coordinator.exec.plugin.phase>
-            </properties>
-        </profile>
-        <profile>
-            <id>debug.lra.tck.suite</id>
-            <activation>
-                <property>
-                    <name>debug.tck</name>
-                </property>
-            </activation>
-            <properties>
-                <lra.tck.suite.debug.params>-Xrunjdwp:transport=dt_socket,address=${lra.tck.suite.debug.port},server=y,suspend=y</lra.tck.suite.debug.params>
-            </properties>
-        </profile>
-        <profile>
-            <id>trace.lra.tck.suite</id>
-            <activation>
-                <property>
-                    <name>trace.tck</name>
-                </property>
-            </activation>
-            <properties>
-                <thorntail.test.logging.category.arjuna>-Dthorntail.logging.com.arjuna=TRACE</thorntail.test.logging.category.arjuna>
-                <thorntail.test.logging.category.narayana>-Dthorntail.logging.io.narayana.lra=TRACE</thorntail.test.logging.category.narayana>
-            </properties>
-        </profile>
-    </profiles>
 </project>

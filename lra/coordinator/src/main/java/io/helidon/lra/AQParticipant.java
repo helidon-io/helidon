@@ -15,157 +15,225 @@
  */
 package io.helidon.lra;
 
-import io.opentracing.Tracer;
+import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import oracle.jms.AQjmsConstants;
-import oracle.jms.AQjmsConsumer;
 import oracle.jms.AQjmsFactory;
 import oracle.jms.AQjmsSession;
 import oracle.ucp.jdbc.PoolDataSource;
 import oracle.ucp.jdbc.PoolDataSourceFactory;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.opentracing.Traced;
 
-import javax.inject.Inject;
 import javax.jms.*;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.logging.Logger;
+
+import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
 public class AQParticipant extends Participant {
+    private static final Logger LOGGER = Logger.getLogger(AQParticipant.class.getName());
+    private boolean isInitialized = false;
+    private boolean isConfigInitialized = false;
+    private AQChannelConfig completeConfig, compensateConfig, afterLRAConfig, forgetConfig;
+    private final static String UCP_POOLDATASOURCE = "oracle.ucp.jdbc.PoolDataSource.";
+    private static PoolDataSource aqParticipantDB;
+    private TopicConnectionFactory topicConnectionFactory;
+    private TopicConnection topicConnection;
+    private static ExecutorService executorService;
+    private static Map<String, AQReplyListener> destinationAndTypeToListenerMap = new ConcurrentHashMap<>();
+    // Unlike REST or Kafka we don't do retries and so we keep track of where we are in the state model with this
+    // These values are also used for message properties in send case and message selectors in receive case.
+    public static final String INIT = "INIT",
+            COMPLETESEND = "COMPLETESEND", COMPLETEREPLY = "COMPLETEREPLY",
+            COMPENSATESEND = "COMPENSATESEND", COMPENSATEREPLY = "COMPENSATEREPLY",
+            AFTERLRASEND = "AFTERLRASEND", AFTERLRAREPLY = "AFTERLRAREPLY",
+            FORGETSEND = "FORGETSEND", FORGETREPLY = "FORGETREPLY";
+    private String lastActionTakenOrReceived = INIT;
 
-    PoolDataSource aqParticipantDB; //todo should be shared
-    TopicConnectionFactory q_cf;
-    TopicConnection q_conn;
+    static {
+        System.setProperty("oracle.jdbc.fanEnabled", "false"); //silence benign message re ONS
+    }
 
-    @Inject
-    private Tracer tracer;
+    String getParticipantType() {
+        return "AQ";
+    }
 
-    //todo these values will come from parsing of joinlra
-    String queueOwner = "orderuser";
-    String selector = "";
-    String compensateQueue = "COMPENSATEQUEUE"; //or topic as the case may be
-    String completeQueue = "COMPLETEQUEUE"; //or topic as the case may be
-    boolean isNotSentYet = true;
-
-    public AQParticipant() {
-        try { //todo get from config
-            initConn(); //todo needs to prime/ping
-        } catch (SQLException | JMSException ex) { //todo add init flag
-            ex.printStackTrace();
+    public void init() {
+        try {
+            if (!isInitialized) {
+                initConn();
+                if (!isConfigInitialized) {
+                    parseURIToConfig(getCompleteURI(), completeConfig = new AQChannelConfig());
+                    parseURIToConfig(getCompensateURI(), compensateConfig = new AQChannelConfig());
+                    parseURIToConfig(getAfterURI(), afterLRAConfig = new AQChannelConfig());
+                    parseURIToConfig(getForgetURI(), forgetConfig = new AQChannelConfig());
+                    isConfigInitialized = true;
+                }
+                executorService = executorService != null ? executorService :
+                        ServerThreadPoolSupplier.builder()
+                                .name(getParticipantType() + "-" + completeConfig.destination + "-" + completeConfig.type)
+                                .build().get();
+                if (!destinationAndTypeToListenerMap.containsKey(completeConfig.destination + "-" + completeConfig.type)) {
+                    AQReplyListener listener = new AQReplyListener(aqParticipantDB, completeConfig, COMPLETEREPLY);
+                    destinationAndTypeToListenerMap.put(completeConfig.destination + "-" + completeConfig.type, listener);
+                    executorService.submit(listener);
+                }
+                isInitialized = true;
+            }
+        } catch (SQLException | JMSException ex) {
+            LOGGER.warning("Exception during init of " + this + ":" + ex);
         }
     }
 
+    private void parseURIToConfig(URI uri, AQChannelConfig channelConfig) {
+        if (uri == null) return;
+        List<NameValuePair> params = URLEncodedUtils.parse(uri, Charset.forName("UTF-8"));
+        String paramName, paramValue;
+        for (NameValuePair param : params) {
+            paramName = param.getName();
+            paramValue = param.getValue();
+            LOGGER.fine(paramName + " : " + paramValue);
+            switch (paramName) {
+                case "owner":
+                    channelConfig.owner = paramValue;
+                    break;
+                case "type":
+                    channelConfig.type = paramValue;
+                    break;
+                case "destination":
+                    channelConfig.destination = paramValue;
+                    break;
+                default:
+            }
+        }
+    }
+
+    /**
+     * Parse and init the connector if necessary and the participant varibles from the URL
+     * User's are required to configure the client and coordinator connector names to match.
+     * Rather than have an additional requirement that the underlying datasource for the AQ connector also have the same name, we look it up here...
+     *
+     * @throws JMSException from AQ creation
+     * @throws SQLException from datasource creation
+     */
     private void initConn() throws JMSException, SQLException { //todo service is not in ready state until this completes/inits at the very least
         Config config = ConfigProvider.getConfig();
-        config.getPropertyNames().forEach(s -> System.out.println("AQParticipant.config s:" + s));
+        String messagingConnectorDatasourceName = config.getValue("mp.messaging.connector.helidon-aq.data-source", String.class);
+        LOGGER.info("messagingConnectorDatasourceName:" + messagingConnectorDatasourceName);
+        String connectionFactoryClassName = config.getValue(UCP_POOLDATASOURCE + messagingConnectorDatasourceName + ".connectionFactoryClassName", String.class);
+        String url = config.getValue(UCP_POOLDATASOURCE + messagingConnectorDatasourceName + ".URL", String.class);
+        String user = config.getValue(UCP_POOLDATASOURCE + messagingConnectorDatasourceName + ".user", String.class);
+        String pw = config.getValue(UCP_POOLDATASOURCE + messagingConnectorDatasourceName + ".password", String.class);
         if (aqParticipantDB == null) {
             aqParticipantDB = PoolDataSourceFactory.getPoolDataSource();
-            aqParticipantDB.setConnectionFactoryClassName("oracle.jdbc.pool.OracleDataSource");
-            aqParticipantDB.setURL("jdbc:oracle:thin:@orderdb_tp?TNS_ADMIN=/Users/pparkins/Downloads/Wallet_ORDERANDINVENTORYDB");
-            aqParticipantDB.setUser("orderuser");
-            aqParticipantDB.setPassword("Welcome12345");
+            aqParticipantDB.setConnectionFactoryClassName(connectionFactoryClassName);
+            aqParticipantDB.setURL(url);
+            aqParticipantDB.setUser(user);
+            aqParticipantDB.setPassword(pw);
+        } //todo handle javax.sql.DataSource. and NoSuchElementException
+        //todo set properties of/on the datasource (ie inactiveConnectionTimeout etc) or devise a way to reuse UCP
+        if (topicConnectionFactory == null)
+            topicConnectionFactory = AQjmsFactory.getTopicConnectionFactory(aqParticipantDB);
+        if (topicConnection == null) topicConnection = topicConnectionFactory.createTopicConnection();
+    }
+
+
+    @Override
+        //break into cancel and complete methods for better metrics and tracing
+    void sendCompleteOrCancel(LRA lra, boolean isCancel) {
+        URI endpointURI = isCancel ? getCompensateURI() : getCompleteURI();
+        if (lastActionTakenOrReceived.equals(INIT)) {
+            LOGGER.info("AQParticipant.sendCompleteOrCancel endpointURI:" + endpointURI);
+            init();
+            if(isCancel) sendCompensate(lra);
+            else sendComplete(lra);
         }
-        if (q_cf == null) q_cf = AQjmsFactory.getTopicConnectionFactory(aqParticipantDB);
-        if (q_conn == null) q_conn = q_cf.createTopicConnection();
+    }
+
+    @Traced
+    @Counted
+    private void sendComplete(LRA lra) {
+        send(COMPLETESEND, lra, completeConfig);
+        lastActionTakenOrReceived = COMPLETESEND;
+    }
+
+    @Traced
+    @Counted
+    private void sendCompensate(LRA lra) {
+        send(COMPLETESEND, lra, completeConfig);
+        lastActionTakenOrReceived = COMPLETESEND;
+    }
+
+
+    @Override
+    void sendStatus(LRA lra, URI statusURI) {
+        //no-op for AQ as there is guaranteed message delivery
     }
 
     @Override
-    boolean sendForget(LRA lra, boolean areAllThatNeedToBeForgottenForgotten) {
+    boolean sendForget(LRA lra) {
+        if (!lastActionTakenOrReceived.equals(FORGETSEND)) {
+            LOGGER.info("AQParticipant.sendForget endpointURI:" + getForgetURI());
+            init();
+            send("FORGET", lra, null);
+            lastActionTakenOrReceived = FORGETSEND;
+        }
         return true;
     }
 
     @Override
     void sendAfterLRA(LRA lra) {
-
-    }
-
-    @Override
-    void sendCompleteOrCancel(LRA lra, boolean isCancel) {
-        URI endpointURI = isCancel ? getCompensateURI() : getCompleteURI();
-        if (isNotSentYet) {
-            System.out.println("AQParticipant.sendCompleteOrCancel endpointURI:" + endpointURI); //todo endpoint has slash ending ie "compensate/"
-            sendEvent(lra, isCancel ? compensateQueue : completeQueue);
+        if (!lastActionTakenOrReceived.equals(AFTERLRASEND)) {
+            LOGGER.info("AQParticipant.sendForget endpointURI:" + getForgetURI());
+            init();
+            send("FORGET", lra, null);
+            lastActionTakenOrReceived = AFTERLRASEND;
         }
     }
 
-    @Override
-    void sendStatus(LRA lra, URI statusURI) {
-
-    }
-
-    String sendEvent(LRA lra, String queueName) {
-        TopicSession session = null;
-        try {
-            System.out.println("AQParticipant.sendEvent q_conn:" + q_conn);
-            initConn();
-            session = q_conn.createTopicSession(true, Session.CLIENT_ACKNOWLEDGE);
-            //check for topic or queue
-            Topic topic = ((AQjmsSession) session).getTopic(queueOwner, queueName);
-            System.out.println("sendEvent topic:" + topic);
+    //todo return the actual reply value
+    private void send(String operation, LRA lra, AQChannelConfig channelConfig) {
+        try (TopicSession session = topicConnection.createTopicSession(true, Session.CLIENT_ACKNOWLEDGE)) {
+            LOGGER.info("session:" + session + " destination:" + channelConfig.destination + " operation:" + operation);
+            Topic topic = ((AQjmsSession) session).getTopic( aqParticipantDB.getUser(), channelConfig.destination);
+            LOGGER.info("sendEvent topic:" + topic);
             TextMessage objmsg = session.createTextMessage();
+            //todo same for queue
             TopicPublisher publisher = session.createPublisher(topic);
+            objmsg.setStringProperty(HELIDONLRAOPERATION, operation);
+            objmsg.setStringProperty(LRA_HTTP_CONTEXT_HEADER, lra.lraId);
             objmsg.setIntProperty("Id", 1);
             objmsg.setIntProperty("Priority", 2);
-//            String jsonString = JsonUtils.writeValueAsString(insertedOrder);
-            String jsonString = "{}";
-            objmsg.setText(jsonString);
-            objmsg.setJMSCorrelationID("" + 1);
-            objmsg.setJMSPriority(2);
             publisher.publish(topic, objmsg, DeliveryMode.PERSISTENT, 2, AQjmsConstants.EXPIRATION_NEVER);
             session.commit();
-            isNotSentYet = false;
-            return topic.toString();
-        } catch (Exception e) {
-            System.out.println("sendEvent failed with exception:" + e +
-                    " (will attempt rollback if session is not null) session:" + session);
-            e.printStackTrace();
-            if (session != null) {
-                try {
-                    session.rollback();
-                } catch (JMSException e1) {
-                    System.out.println("sendEvent session.rollback() failed:" + e1);
-                } finally {
-//                    throw e;
-                }
-//                    throw e;
-            }
-            return "" + e; //todo
-        } finally {
-            isNotSentYet = false;
-            if (session != null) {
-                try {
-                    session.close();
-                } catch (JMSException e) {
-                    e.printStackTrace();
-                }
-            }
+            LOGGER.info("session:" + session + " destination:" + channelConfig.destination + " message sent. Waiting for reply...");
+        } catch (JMSException e) {
+            LOGGER.info(e.getMessage());
         }
-    }
-
-
-    public void listenForMessages(String queueName) throws JMSException {
-        QueueConnectionFactory q_cf = AQjmsFactory.getQueueConnectionFactory(aqParticipantDB);
-        QueueSession qsess = null;
-        QueueConnection qconn = null;
-        AQjmsConsumer consumer = null;
-        boolean done = false;
-        while (!done) {
+        AQReplyListener replyListener = destinationAndTypeToListenerMap.get(channelConfig.destination + "-" + channelConfig.type);
+        replyListener.lraIDToReplyStatusMap.put(lra.lraId, operation);
+        String replyStatus;
+        do {
+            replyStatus = replyListener.lraIDToReplyStatusMap.get(lra.lraId); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
+            LOGGER.info("no reply received for lra, replyStatus " + replyStatus);
             try {
-                if (qconn == null || qsess == null) {
-                    qconn = q_cf.createQueueConnection();
-                    qsess = qconn.createQueueSession(true, Session.CLIENT_ACKNOWLEDGE);
-                    qconn.start();
-                    Queue queue = ((AQjmsSession) qsess).getQueue(queueOwner, queueName);
-                    consumer = (AQjmsConsumer) qsess.createConsumer(queue);
-                }
-                TextMessage textMessage = (TextMessage) consumer.receive(-1);
-                String messageText = textMessage.getText();
-//                MessageResponse messageResponse = JsonUtils.read(messageText, MessageResponse.class);
-                qsess.commit();
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.out.println("Exception in receiveMessages: " + e);
-                qsess.rollback();
+                Thread.sleep(1000 * 1); //todo wait/notify
+            } catch (InterruptedException e) {
+                LOGGER.warning("InterruptedException waiting for reply from destination:" + channelConfig.destination + " operation:" + operation);
             }
-        }
+        } while (replyStatus.equals(operation));
+        LOGGER.info("Returning as replyListener for lraID is " + replyStatus);
     }
+
+
 }
