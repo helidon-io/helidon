@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,35 +15,25 @@
  */
 package io.helidon.tests.functional.requestscope;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.RequestScoped;
-import javax.ws.rs.core.Context;
+import javax.inject.Inject;
 
-import io.helidon.webserver.ServerRequest;
+import org.eclipse.microprofile.faulttolerance.Retry;
 
 @RequestScoped
-public class TenantContext {
+public class Bean6 {
 
-    @Context
-    private ServerRequest request;
+    @Inject
+    private TenantContext tenantContext;
 
-    private String tenantId;
+    private boolean firstCall = true;
 
-    public TenantContext() {
-    }
-
+    @Retry(delay = 500L, jitter = 500L)
     public String getTenantId() {
-        return tenantId;
-    }
-
-    @PostConstruct
-    public void init() {
-        System.out.println("### init " + Thread.currentThread());
-        try {
-            throw new RuntimeException("oops");
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (firstCall) {
+            firstCall = false;
+            throw new RuntimeException("getTenantId exception");
         }
-        tenantId = request.headers().value("x-tenant-id").orElse(null);
+        return tenantContext.getTenantId();
     }
 }

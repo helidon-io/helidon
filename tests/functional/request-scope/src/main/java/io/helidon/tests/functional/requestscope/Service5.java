@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,35 +15,31 @@
  */
 package io.helidon.tests.functional.requestscope;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.RequestScoped;
-import javax.ws.rs.core.Context;
+import javax.inject.Inject;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 
-import io.helidon.webserver.ServerRequest;
+import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.eclipse.microprofile.opentracing.Traced;
 
-@RequestScoped
-public class TenantContext {
+@Path("/test5")
+public class Service5 {
 
-    @Context
-    private ServerRequest request;
+    @Inject
+    private Bean5 bean5;
 
-    private String tenantId;
-
-    public TenantContext() {
-    }
-
-    public String getTenantId() {
-        return tenantId;
-    }
-
-    @PostConstruct
-    public void init() {
-        System.out.println("### init " + Thread.currentThread());
+    @GET
+    @Traced
+    @Timeout(10000L)
+    public String getTestResource() {
         try {
-            throw new RuntimeException("oops");
+            return bean5.test();
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
-        tenantId = request.headers().value("x-tenant-id").orElse(null);
     }
 }

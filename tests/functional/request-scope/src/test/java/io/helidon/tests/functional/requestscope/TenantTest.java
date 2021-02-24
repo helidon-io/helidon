@@ -83,4 +83,17 @@ class TenantTest {
         String entityValue = r.readEntity(String.class);
         assertThat(entityValue, is("1"));
     }
+
+    @Test
+    public void test5() {
+        Response r;
+        r = baseTarget.path("test5")
+                .request()
+                .header("x-tenant-id", "1")
+                .get();
+        assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
+        String entityValue = r.readEntity(String.class);
+        assertThat(entityValue, is("1"));
+    }
+
 }
