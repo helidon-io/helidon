@@ -19,7 +19,6 @@ import java.util.function.Function;
 
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.DbTransaction;
 
 
 /**
@@ -33,7 +32,7 @@ public interface BlockingDbClient {
      * @param executor database statement executor, see {@link BlockingDbExecute}
      * @return statement execution result
      */
-    <T> T inTransaction(Function<DbTransaction, T> executor);
+    <T> T inTransaction(Function<BlockingDbTransaction, T> executor);
 
     /**
      * Execute database statement.

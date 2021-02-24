@@ -21,7 +21,8 @@ import java.util.function.Function;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.DbTransaction;
+
+
 /**
  * Implementation of {@link BlockingDbClient}.
  * {@inheritDoc}
@@ -37,8 +38,16 @@ class BlockingDbClientImpl implements BlockingDbClient {
      * {@inheritDoc}
      */
     @Override
-    public <T> T inTransaction(Function<DbTransaction, T> executor) {
-        throw new UnsupportedOperationException("Not yet implemented");
+    public <T> T inTransaction(Function<BlockingDbTransaction, T> executor) {
+        return dbClient.inTransaction(it -> {
+            CompletableFuture<T> result = new CompletableFuture<>();
+            try {
+                result.complete(executor.apply(BlockingDbTransaction.create(it)));
+            } catch (Exception e) {
+                result.completeExceptionally(e);
+            }
+            return Single.create(result);
+        }).await();
     }
 
     /**
