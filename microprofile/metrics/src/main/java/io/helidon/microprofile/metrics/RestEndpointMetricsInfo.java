@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,43 @@
  */
 package io.helidon.microprofile.metrics;
 
-import javax.annotation.PostConstruct;
+import java.lang.reflect.Method;
+import java.util.Map;
+
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.inject.Inject;
+import javax.interceptor.InvocationContext;
+import javax.ws.rs.container.AsyncResponse;
+
+import io.helidon.microprofile.metrics.MetricsCdiExtension.AsyncResponseInfo;
 
 /**
- * Captures whether configuration enables or disables synthetic {@code SimplyMetric} annotation
- * behavior efficiently so interceptor instances know efficiently whether to find and update
- * the corresponding metrics or not.
+ * Captures information about REST endpoint synthetic annotations so interceptors can be quicker. Includes:
+ * <ul>
+ *     <li>whether configuration enables or disables synthetic {@code SimplyMetric} annotation behavior</li>
+ *     <li>which JAX-RS endpoint methods (if any) are asynchronous</li>
+ * </ul>
  */
 @ApplicationScoped
 class RestEndpointMetricsInfo {
 
     private boolean isEnabled;
+    private Map<Method, AsyncResponseInfo> asyncResponseInfo;
 
-    @PostConstruct
-    void setup() {
-        isEnabled = MetricsCdiExtension.restEndpointsMetricEnabledFromConfig();
+    @Inject
+    RestEndpointMetricsInfo(BeanManager beanManager) {
+        MetricsCdiExtension metricsCdiExtension = beanManager.getExtension(MetricsCdiExtension.class);
+        isEnabled = metricsCdiExtension.restEndpointsMetricEnabledFromConfig();
+        asyncResponseInfo = metricsCdiExtension.asyncResponseInfo();
     }
 
     public boolean isEnabled() {
         return isEnabled;
+    }
+
+    public AsyncResponse asyncResponse(InvocationContext context) {
+        AsyncResponseInfo info = asyncResponseInfo.get(context.getMethod());
+        return info == null ? null : info.asyncResponse(context);
     }
 }

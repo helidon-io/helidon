@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import io.helidon.common.http.MediaType;
 /**
  * Provides mapping between filename extension and media type.
  */
+@Deprecated
 class ContentTypeSelector {
 
     private static final Map<String, MediaType> CONTENT_TYPES = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);

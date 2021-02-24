@@ -6,5 +6,9 @@
     "oracle": {
         "com": "1",
         "cz": "2"
-    }
+    },
+    "nulls": {
+        "null": null
+    },
+    "nulls-array": ["test", null]
 }

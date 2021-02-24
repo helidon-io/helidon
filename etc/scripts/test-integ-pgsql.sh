@@ -1,6 +1,6 @@
 #!/bin/bash -ex
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
-JAVA_HOME='/tools/graalvm-ce-java11-20.2.0'
+JAVA_HOME='/tools/graalvm-ce-java11-21.0.0'
 PATH="${PATH}:${JAVA_HOME}/bin"
 
 mvn ${MAVEN_ARGS} --version

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import javax.websocket.Encoder;
 import javax.websocket.server.ServerEndpointConfig;
 
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.staticcontent.StaticContentSupport;
 import io.helidon.webserver.tyrus.TyrusSupport;
 
 import static io.helidon.webserver.examples.websocket.MessageBoardEndpoint.UppercaseEncoder;

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,18 +26,33 @@ tracing:
 db:
   source: jdbc
   connection:
-    url: jdbc:h2:tcp://localhost:9092//tmp/test
-    username: sa
-    password:
-    poolName: h2
+    #
+    # H2 configuration
+    #
+    # Embedded mode (does not work with native image)
+#    url: jdbc:h2:~/test
+    # Server mode, run: docker run --rm --name h2 -p 9092:9082 -p 8082:8082 nemerosa/h2
+#    url: "jdbc:h2:tcp://localhost:9092/~test"
+#    username: sa
+#    password:
+#    poolName: h2
+    #
+    # MySQL configuration
+    #
+    # docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root \
+    #   -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
 #    url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
 #    username: user
 #    password: password
 #    poolName: mysql
-#    url: jdbc:oracle:thin:@localhost:11521/XE
-#    username: "sys as sysdba"
-#    password: testing12345
-#    poolName: oracle
+    #
+    # Oracle configuration
+    #
+    # docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnameless/oracle-xe-11g-r2
+    url: jdbc:oracle:thin:@localhost:1521/XE
+    username: system
+    password: oracle
+    poolName: oracle
     initializationFailTimeout: -1
     connectionTimeout: 2000
     helidon:
@@ -45,6 +60,9 @@ db:
         enabled: true
         # name prefix defaults to "db.pool." - if you have more than one client within a JVM, you may want to distinguish between them
         name-prefix: "hikari."
+  health-check:
+    type: "query"
+    statementName: "health-check"
   services:
     tracing:
       # would trace all statement names that start with select-
@@ -74,8 +92,10 @@ db:
         name-format: "db.counter.%s.error"
         description: "Counter of failed DML statements"
   statements:
-    # required ping statement
-    ping: "DO 0"
+    # Health check query statement for MySQL and H2 databases
+#    health-check: "SELECT 0"
+    # Health check query statement for Oracle database
+    health-check: "SELECT 1 FROM DUAL"
     # Insert new pokemon
     create-table: "CREATE TABLE pokemons (name VARCHAR(64) NOT NULL PRIMARY KEY, type VARCHAR(32))"
     insert1: "INSERT INTO pokemons VALUES(?, ?)"

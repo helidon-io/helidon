@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -44,9 +46,11 @@ import io.helidon.media.common.MessageBodyWriterContext;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFactory;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.ServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
@@ -68,6 +72,7 @@ class NettyWebServer implements WebServer {
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
     private static final boolean EXIT_ON_STARTED = "!".equals(System.getProperty(EXIT_ON_STARTED_KEY));
 
+    private final Transport transport;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
     private final Map<String, ServerBootstrap> bootstraps = new HashMap<>();
@@ -105,10 +110,11 @@ class NettyWebServer implements WebServer {
         HelidonFeatures.print(HelidonFlavor.SE,
                               Version.VERSION,
                               config.printFeatureDetails());
-        this.bossGroup = new NioEventLoopGroup(sockets.size());
-        this.workerGroup = config.workersCount() <= 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(config.workersCount());
         this.contextualRegistry = config.context();
         this.configuration = config;
+        this.transport = acquireTransport();
+        this.bossGroup = bossGroup();
+        this.workerGroup = workerGroup();
         this.readerContext = MessageBodyReaderContext.create(readerContext);
         this.writerContext = MessageBodyWriterContext.create(writerContext);
 
@@ -168,7 +174,7 @@ class NettyWebServer implements WebServer {
                                                                this);
             initializers.add(childHandler);
             bootstrap.group(bossGroup, workerGroup)
-                     .channel(NioServerSocketChannel.class)
+                     .channelFactory(serverChannelFactory())
                      .handler(new LoggingHandler(NettyLog.class, LogLevel.DEBUG))
                      .childHandler(childHandler);
 
@@ -412,6 +418,85 @@ class NettyWebServer implements WebServer {
         }
         SocketAddress address = channel.localAddress();
         return address instanceof InetSocketAddress ? ((InetSocketAddress) address).getPort() : -1;
+    }
+
+    private Transport acquireTransport() {
+        Transport transport = configuration.transport().orElse(new NioTransport());
+        // (Note that an NioTransport's isAvailableFor() method will
+        // always return true when passed this.)
+        return transport.isAvailableFor(this) ? transport : new NioTransport();
+    }
+
+    private Transport transport() {
+        return transport;
+    }
+
+    @SuppressWarnings("unchecked")
+    private EventLoopGroup bossGroup() {
+        return transport()
+            .createTransportArtifact(EventLoopGroup.class, "bossGroup", configuration)
+            .orElseThrow(() -> noSuchTransportArtifact("bossGroup"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private EventLoopGroup workerGroup() {
+        return transport()
+            .createTransportArtifact(EventLoopGroup.class, "workerGroup", configuration)
+            .orElseThrow(() -> noSuchTransportArtifact("workerGroup"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends ServerChannel> ChannelFactory<T> serverChannelFactory() {
+        return transport()
+            .createTransportArtifact(ChannelFactory.class, "serverChannelFactory", configuration)
+            .orElseThrow(() -> noSuchTransportArtifact("serverChannelFactory"));
+    }
+
+    private NoSuchElementException noSuchTransportArtifact(String name) {
+        return new NoSuchElementException("The current webserver transport, "
+                                          + transport() + ", could not supply "
+                                          + "a transport artifact named \""
+                                          + name + "\"");
+    }
+
+    private static final class NioTransport implements Transport {
+
+        private NioTransport() {
+            super();
+        }
+
+        @Override
+        public boolean isAvailableFor(WebServer webserver) {
+            return webserver instanceof NettyWebServer;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T> Optional<T> createTransportArtifact(Class<T> artifactType,
+                                                       String artifactName,
+                                                       ServerConfiguration config) {
+            if (EventLoopGroup.class.isAssignableFrom(artifactType)) {
+                switch (artifactName) {
+                case "bossGroup":
+                    return Optional.of((T) new NioEventLoopGroup(config.sockets().size()));
+                case "workerGroup":
+                    return Optional.of((T) new NioEventLoopGroup(Math.max(0, config.workersCount())));
+                default:
+                    return Optional.empty();
+                }
+            } else if (ChannelFactory.class.isAssignableFrom(artifactType)) {
+                switch (artifactName) {
+                case "serverChannelFactory":
+                    ChannelFactory<? extends ServerChannel> cf = NioServerSocketChannel::new;
+                    return Optional.of((T) cf);
+                default:
+                    return Optional.empty();
+                }
+            } else {
+                return Optional.empty();
+            }
+        }
+
     }
 
     // this class is only used to create a log handler in NettyLogHandler, to distinguish from webclient

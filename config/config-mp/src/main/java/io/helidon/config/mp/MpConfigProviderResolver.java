@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,13 +173,23 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
         Lock lock = RW_LOCK.readLock();
         AtomicReference<ClassLoader> cl = new AtomicReference<>();
 
+        // in case we get our own delegate, we want to remove the exact same instance of delegate
         try {
             lock.lock();
-            for (Map.Entry<ClassLoader, ConfigDelegate> entry : CONFIGS.entrySet()) {
-                Config configFromRef = entry.getValue().delegate();
-                if (config == configFromRef) {
-                    cl.set(entry.getKey());
-                    break;
+            if (config instanceof ConfigDelegate) {
+                for (Map.Entry<ClassLoader, ConfigDelegate> entry : CONFIGS.entrySet()) {
+                    if (config == entry.getValue()) {
+                        cl.set(entry.getKey());
+                        break;
+                    }
+                }
+            } else {
+                for (Map.Entry<ClassLoader, ConfigDelegate> entry : CONFIGS.entrySet()) {
+                    Config configFromRef = entry.getValue().delegate();
+                    if (config == configFromRef) {
+                        cl.set(entry.getKey());
+                        break;
+                    }
                 }
             }
         } finally {
@@ -259,7 +269,7 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
         }
 
         @Override
-        public <T> T convert(Class<T> type, String value)  {
+        public <T> T convert(Class<T> type, String value) {
             return getCurrent().convert(type, value);
         }
 

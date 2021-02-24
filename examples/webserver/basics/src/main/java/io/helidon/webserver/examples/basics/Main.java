@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,9 @@ import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.RequestPredicate;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
+import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 /**
  * This example consists of few first tutorial steps of WebServer API. Each step is represented by a single method.
@@ -107,7 +107,7 @@ public class Main {
      * @param routing the routing to drive by WebServer instance
      */
     protected void startServer(Routing routing) {
-        startServer(routing, null);
+        startServer(routing, MediaContext.create());
     }
 
     /**
@@ -328,7 +328,7 @@ public class Main {
         hlp.append("Example method names:\n");
         Method[] methods = Main.class.getDeclaredMethods();
         for (Method method : methods) {
-            if (!Modifier.isPrivate(method.getModifiers()) && !Modifier.isStatic(method.getModifiers())) {
+            if (Modifier.isPublic(method.getModifiers()) && !Modifier.isStatic(method.getModifiers())) {
                 hlp.append("    ").append(method.getName()).append('\n');
             }
         }

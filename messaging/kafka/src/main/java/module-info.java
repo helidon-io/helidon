@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ module io.helidon.messaging.connectors.kafka {
     requires io.helidon.messaging;
     requires microprofile.config.api;
     requires static svm;
+    requires java.security.sasl;
+    requires transitive org.slf4j;
 
     exports io.helidon.messaging.connectors.kafka;
 }
