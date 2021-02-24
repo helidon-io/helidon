@@ -17,6 +17,7 @@
 package io.helidon.microprofile.messaging.health;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -24,6 +25,7 @@ import javax.inject.Inject;
 
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
@@ -40,6 +42,10 @@ public class MessagingLivenessCheck implements HealthCheck {
     private final MessagingCdiExtension messagingCdiExtension;
 
     @Inject
+    @ConfigProperty(name = "mp.health.live.exclude-channel", defaultValue = "")
+    private Set<String> excluded;
+
+    @Inject
     MessagingLivenessCheck(MessagingCdiExtension messagingCdiExtension) {
         this.messagingCdiExtension = messagingCdiExtension;
     }
@@ -50,10 +56,17 @@ public class MessagingLivenessCheck implements HealthCheck {
         HealthCheckResponseBuilder b = HealthCheckResponse.builder()
                 .name("messaging");
         AtomicBoolean isUp = new AtomicBoolean(true);
-        channelsHealth.forEach((channelName, up) -> {
+        for (Map.Entry<String, Boolean> entry : channelsHealth.entrySet()) {
+            String channelName = entry.getKey();
+
+            if (excluded.contains(channelName)) {
+                continue;
+            }
+
+            Boolean up = entry.getValue();
             isUp.compareAndSet(true, up);
             b.withData(channelName, up ? "UP" : "DOWN");
-        });
+        }
         b.state(isUp.get());
         return b.build();
     }

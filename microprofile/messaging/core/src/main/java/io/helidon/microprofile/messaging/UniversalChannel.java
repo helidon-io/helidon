@@ -104,25 +104,27 @@ class UniversalChannel {
 
         var optUpstreamChannel = Optional.ofNullable(this.upstreamChannel);
 
+        ChannelHealthProbe healthProbe = ChannelHealthProbe.create(live, ready);
+
         Subscriber<? super Object> subscriber1;
         if (incomingMethod != null) {
             subscriber1 = incomingMethod.getSubscriber();
             connectMessage.append(incomingMethod.getMethod().getName());
-            ChannelHealthProbe.connect(publisher, subscriber1, live, ready);
+            healthProbe.connect(publisher, subscriber1);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 
         } else if (incomingProcessorMethod != null) {
             subscriber1 = incomingProcessorMethod.getProcessor();
             connectMessage.append(incomingProcessorMethod.getMethod().getName());
-            ChannelHealthProbe.connect(publisher, subscriber1, live, ready);
+            healthProbe.connect(publisher, subscriber1);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 
         } else if (incomingConnector != null) {
             subscriber1 = incomingConnector.getSubscriber(name);
             connectMessage.append(incomingConnector.getConnectorName());
-            ChannelHealthProbe.connect(publisher, subscriber1, live, ready);
+            healthProbe.connect(publisher, subscriber1);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 

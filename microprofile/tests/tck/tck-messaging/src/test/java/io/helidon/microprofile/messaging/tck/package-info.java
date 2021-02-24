@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,6 @@
  */
 
 /**
- * MicroProfile Reactive Messaging Health check.
+ * Required classes for bootstrapping the Arquillian client to talk to the server.
  */
-module io.helidon.microprofile.messaging.health {
-    requires java.logging;
-
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
-    requires io.helidon.microprofile.messaging;
-    requires io.helidon.microprofile.health;
-    requires microprofile.health.api;
-    requires microprofile.config.api;
-
-    exports io.helidon.microprofile.messaging.health;
-}
+package io.helidon.microprofile.messaging.tck;

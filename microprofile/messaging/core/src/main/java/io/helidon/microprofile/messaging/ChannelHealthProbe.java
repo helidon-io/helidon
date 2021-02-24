@@ -27,13 +27,15 @@ import org.reactivestreams.Subscription;
  */
 class ChannelHealthProbe {
 
-    private ChannelHealthProbe() {
+    private final AtomicBoolean live;
+    private final AtomicBoolean ready;
+
+    private ChannelHealthProbe(AtomicBoolean live, AtomicBoolean ready) {
+        this.live = live;
+        this.ready = ready;
     }
 
-    static void connect(Publisher<?> pub,
-                        Subscriber<? super Object> sub,
-                        AtomicBoolean live,
-                        AtomicBoolean ready) {
+    void connect(Publisher<?> pub, Subscriber<? super Object> sub) {
         pub.subscribe(new Subscriber<Object>() {
             @Override
             public void onSubscribe(final Subscription s) {
@@ -69,4 +71,9 @@ class ChannelHealthProbe {
             }
         });
     }
+
+    static ChannelHealthProbe create(AtomicBoolean live, AtomicBoolean ready) {
+        return new ChannelHealthProbe(live, ready);
+    }
+
 }
