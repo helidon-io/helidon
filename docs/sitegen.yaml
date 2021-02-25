@@ -244,6 +244,15 @@ backend:
               items:
                 - includes:
                     - "mp/guides/*.adoc"
+                    -
+            - title: "Bean Validation"
+              pathprefix: "/mp/beanvalidation"
+              glyph:
+                type: "icon"
+                value: "receipt"
+              items:
+                - includes:
+                    - "mp/beanvalidation/*.adoc"
             - title: "Config"
               pathprefix: "/mp/config"
               glyph:
