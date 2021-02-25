@@ -3529,7 +3529,7 @@ Apache 2.0
 Used by: [helidon-webserver]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 The Netty Project
-netty-4.1.58.Final
+netty-4.1.59.Final
 Copyright 2012,2019 The Netty Project
 Copyright 2011,2018 The Netty Project
 Copyright 2014,2017 The Netty Project
