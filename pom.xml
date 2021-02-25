@@ -673,7 +673,7 @@
                             <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${top.parent.basedir}</directory>
+                                    <directory>${top.parent.basedir}/etc/licensing</directory>
                                     <targetPath>META-INF/</targetPath>
                                     <filtering>true</filtering>
                                     <includes>
