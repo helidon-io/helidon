@@ -39,25 +39,30 @@ readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
-JAVA_HOME='/tools/graalvm-ce-java11-21.0.0'
+JAVA_HOME='/tools/graalvm-ce-java11-20.2.0'
 PATH="${PATH}:${JAVA_HOME}/bin"
 
 mvn ${MAVEN_ARGS} --version
 
 # Temporary workaround until job stages will share maven repository
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
-    clean install -e \
+    install -e \
     -DskipTests \
     -Ppipeline
 
+(cd tests && \
+  mvn ${MAVEN_ARGS}
+    install -e \
+    -DskipTests)
+
 # Run tests in Java VM application
 (cd tests/integration/jpa && \
-  mvn ${MAVEN_ARGS} clean verify \
+  mvn ${MAVEN_ARGS} verify \
       -Dmaven.test.failure.ignore=true -Dpgsql \
       -pl model,appl)
 
 # Run tests in native image application
 (cd tests/integration/jpa && \
-  mvn ${MAVEN_ARGS} clean verify \
+  mvn ${MAVEN_ARGS} verify \
       -Dmaven.test.failure.ignore=true -Dpgsql \
       -Pnative-image -Dnative-image -pl model,appl)

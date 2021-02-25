@@ -49,8 +49,41 @@ pipeline {
             sh './etc/scripts/checkstyle.sh'
           }
         }
+        stage('integration-tests') {
+          stages {
+            stage('test-mysql') {
+              agent {
+                kubernetes {
+                  inheritFrom 'k8s-slave'
+                  yamlFile 'etc/pods/mysql.yaml'
+                  yamlMergeStrategy merge()
+                }
+              }
+              steps {
+                sh './etc/scripts/test-integ-mysql.sh'
+                archiveArtifacts artifacts: "tests/integration/**/target/failsafe-reports/*.txt"
+                junit testResults: 'tests/integration/**/target/failsafe-reports/*.xml'
+              }
+            }
+            stage('test-pgsql') {
+              agent {
+                kubernetes {
+                  inheritFrom 'k8s-slave'
+                  yamlFile 'etc/pods/pgsql.yaml'
+                  yamlMergeStrategy merge()
+                }
+              }
+              steps {
+                sh './etc/scripts/test-integ-pgsql.sh'
+                archiveArtifacts artifacts: "tests/integration/**/target/failsafe-reports/*.txt"
+                junit testResults: 'tests/integration/**/target/failsafe-reports/*.xml'
+              }
+            }
+          }
+        }
       }
     }
+
     stage('release') {
       when {
         branch '**/release-*'
