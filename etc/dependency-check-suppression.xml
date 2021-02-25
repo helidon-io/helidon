@@ -2,20 +2,6 @@
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
 <!-- For information see https://jeremylong.github.io/DependencyCheck/general/suppression.html -->
 
-<!-- We use snakeyaml for reading local configuration, so this CVE
-     does not apply to our use case. For more information:
-     https://bitbucket.org/asomov/snakeyaml/issues/377/allow-configuration-for-preventing-billion
-     https://bitbucket.org/asomov/snakeyaml/wiki/Changes
--->
-<suppress>
-   <notes><![CDATA[
-   file name: snakeyaml-1.24.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
-   <cve>CVE-2017-18640</cve>
-</suppress>
-
-
 <!-- Applies to Processing:Processing -->
 <suppress>
    <notes><![CDATA[
@@ -93,7 +79,6 @@
    <cpe>cpe:/a:grpc:grpc</cpe>
 </suppress>
 
-
 <!-- CVE in older version of weld, incorrectly attributed to cdi-api -->
 <suppress>
    <notes><![CDATA[
@@ -101,6 +86,30 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/javax\.enterprise/cdi\-api@.*$</packageUrl>
    <cve>CVE-2014-8122</cve>
+</suppress>
+
+<!-- GraalVM -->
+<!-- This suppresses multiple CVEs related to old versions of the JDK -->
+<suppress>
+   <notes><![CDATA[
+   file name: truffle-nfi-21.0.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.truffle/truffle\-nfi@.*$</packageUrl>
+   <cpe>cpe:/a:oracle:graalvm</cpe>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: truffle-nfi-21.0.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.truffle/truffle\-nfi@.*$</packageUrl>
+   <cpe>cpe:/a:oracle:openjdk</cpe>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: truffle-nfi-21.0.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.truffle/truffle\-nfi@.*$</packageUrl>
+   <cpe>cpe:/a:sun:openjdk</cpe>
 </suppress>
 
 <!-- grpc -->
@@ -115,5 +124,16 @@
    <cpe>cpe:/a:grpc:grpc</cpe>
 </suppress>
 
-</suppressions>
+<!-- Apache HttpClient / Google HTTP Client -->
+<!-- This was associating the Google HTTP client version number to Apache HttpClient generating a false positive for
+     an Apache HttpClient CVE for versions 4.5.12 and earlier (we use 4.5.13 in Helidon).
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: google-http-client-1.37.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client@.*$</packageUrl>
+   <cpe>cpe:/a:apache:httpclient</cpe>
+</suppress>
 
+</suppressions>
