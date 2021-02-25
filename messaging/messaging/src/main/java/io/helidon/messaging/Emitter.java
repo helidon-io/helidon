@@ -88,7 +88,6 @@ public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
      * are unavailable.
      *
      * @param msg payload to be wrapped and sent(or buffered if there is no demand)
-     * @return callback being invoked when message is acked
      */
     public void sendBlocking(PAYLOAD msg) {
         CompletableFuture<Void> future = new CompletableFuture<>();

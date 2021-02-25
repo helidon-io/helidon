@@ -257,7 +257,8 @@ public interface Messaging {
          * @param <PAYLOAD> message with a payload type
          * @return this builder
          */
-        public <PAYLOAD> Builder blockingMessageListener(Channel<PAYLOAD> channel, Consumer<Message<? extends PAYLOAD>> consumer) {
+        public <PAYLOAD> Builder blockingMessageListener(Channel<PAYLOAD> channel,
+                                                         Consumer<Message<? extends PAYLOAD>> consumer) {
             this.messaging.registerChannel(channel);
             channel.setSubscriber(ReactiveStreams.<Message<? extends PAYLOAD>>builder()
                     .flatMapCompletionStage(payload -> {
