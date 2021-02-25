@@ -95,11 +95,7 @@ public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
             future.complete(null);
             return null;
         }));
-        try {
-            future.wait();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        future.join();
     }
 
     /**
