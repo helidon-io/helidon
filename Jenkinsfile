@@ -83,7 +83,6 @@ pipeline {
         }
       }
     }
-
     stage('release') {
       when {
         branch '**/release-*'
