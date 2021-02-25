@@ -51,7 +51,7 @@ mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     -Ppipeline
 
 (cd tests && \
-  mvn ${MAVEN_ARGS}
+  mvn ${MAVEN_ARGS} \
     install -e \
     -DskipTests)
 
