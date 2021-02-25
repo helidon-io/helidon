@@ -89,6 +89,11 @@ class ResponseWriter implements ContainerResponseWriter {
             res.headers().put(entry.getKey(), entry.getValue());
         }
 
+        //
+        // Calling ServerResponse.send(publisher) will result in a synchronous subscription
+        // to the supplied publisher. Thus, the publisher/outputstream returned by this method
+        // is ready to immediately accept writes.
+        //
         publisher.autoFlush(MediaType.SERVER_SENT_EVENTS_TYPE.isCompatible(context.getMediaType()));
         res.send(publisher);
         return publisher;

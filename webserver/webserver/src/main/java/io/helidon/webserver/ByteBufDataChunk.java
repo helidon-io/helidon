@@ -61,7 +61,7 @@ public class ByteBufDataChunk implements DataChunk {
     public ByteBufDataChunk(boolean flush, boolean readOnly, Runnable releaseCallback, ByteBuf... byteBufs) {
         this.flush = flush;
         this.readOnly = readOnly;
-        this.releaseCallback = Objects.requireNonNull(releaseCallback, "release callback is null");
+        this.releaseCallback = releaseCallback;
         this.byteBufs = Objects.requireNonNull(byteBufs, "byteBuffers is null");
     }
 
@@ -92,24 +92,13 @@ public class ByteBufDataChunk implements DataChunk {
     }
 
     @Override
-    public boolean isFlushChunk() {
-        if (!flush()) {
-            return false;
-        }
-        for (ByteBuf byteBuf : data(ByteBuf.class)) {
-            if (byteBuf.capacity() > 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Override
     public void release() {
-        if (releaseCallback != null) {
-            releaseCallback.run();
+        if (!isReleased) {
+            if (releaseCallback != null) {
+                releaseCallback.run();
+            }
+            isReleased = true;
         }
-        isReleased = true;
     }
 
     @Override

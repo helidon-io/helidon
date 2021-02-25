@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ public interface DataChunk extends Iterable<ByteBuffer> {
      * @return a data chunk
      */
     static DataChunk create(ByteBuffer... byteBuffers) {
-        return new DataChunkImpl(false, false, byteBuffers);
+        return new ByteBufferDataChunk(false, false, byteBuffers);
     }
 
     /**
@@ -83,7 +83,7 @@ public interface DataChunk extends Iterable<ByteBuffer> {
      * @return a reusable data chunk with no release callback
      */
     static DataChunk create(boolean flush, ByteBuffer... byteBuffers) {
-        return new DataChunkImpl(flush, false, byteBuffers);
+        return new ByteBufferDataChunk(flush, false, byteBuffers);
     }
 
     /**
@@ -95,7 +95,7 @@ public interface DataChunk extends Iterable<ByteBuffer> {
      * @return a reusable data chunk with no release callback
      */
     static DataChunk create(boolean flush, boolean readOnly, ByteBuffer... byteBuffers) {
-        return new DataChunkImpl(flush, readOnly, byteBuffers);
+        return new ByteBufferDataChunk(flush, readOnly, byteBuffers);
     }
 
     /**
@@ -107,7 +107,7 @@ public interface DataChunk extends Iterable<ByteBuffer> {
      * @return a reusable data chunk with a release callback
      */
     static DataChunk create(boolean flush, Runnable releaseCallback, ByteBuffer... byteBuffers) {
-        return new DataChunkImpl(flush, false, releaseCallback, byteBuffers);
+        return new ByteBufferDataChunk(flush, false, releaseCallback, byteBuffers);
     }
 
     /**
@@ -120,7 +120,7 @@ public interface DataChunk extends Iterable<ByteBuffer> {
      * @return a reusable data chunk with a release callback
      */
     static DataChunk create(boolean flush, boolean readOnly, Runnable releaseCallback, ByteBuffer... byteBuffers) {
-        return new DataChunkImpl(flush, readOnly, releaseCallback, byteBuffers);
+        return new ByteBufferDataChunk(flush, readOnly, releaseCallback, byteBuffers);
     }
 
     /**
@@ -311,20 +311,13 @@ public interface DataChunk extends Iterable<ByteBuffer> {
 
     /**
      * An empty data chunk with a flush flag can be used to force a connection
-     * flush. This method determines if this chunk is used for that purpose.
+     * flush without actually writing any bytes. This method determines if
+     * this chunk is used for that purpose.
      *
      * @return Outcome of test.
      */
     default boolean isFlushChunk() {
-        if (!flush()) {
-            return false;
-        }
-        for (ByteBuffer byteBuffer : data()) {
-            if (byteBuffer.limit() != 0) {
-                return false;
-            }
-        }
-        return true;
+        return flush() && remaining() == 0;
     }
 
     /**

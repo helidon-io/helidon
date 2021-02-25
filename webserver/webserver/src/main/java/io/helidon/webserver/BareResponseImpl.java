@@ -392,10 +392,14 @@ class BareResponseImpl implements BareResponse {
 
         DefaultHttpContent httpContent;
         if (data.isBackedBy(ByteBuf.class)) {
+            // DefaultHttpContent will call release, we retain to also call ours
             ByteBuf[] byteBufs = data.data(ByteBuf.class);
             if (byteBufs.length == 1) {
-                httpContent = new DefaultHttpContent(byteBufs[0]);
+                httpContent = new DefaultHttpContent(byteBufs[0].retain());
             } else {
+                for (ByteBuf byteBuf : byteBufs) {
+                    byteBuf.retain();
+                }
                 httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(byteBufs));
             }
         } else {
