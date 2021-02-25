@@ -144,6 +144,7 @@ public interface DataChunk extends Iterable<ByteBuffer> {
     /**
      * Returns a representation of this chunk as an array of T's.
      *
+     * @param clazz class of return type
      * @return an array of T's
      */
     @SuppressWarnings("unchecked")
