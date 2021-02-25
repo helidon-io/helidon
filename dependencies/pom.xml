@@ -85,7 +85,7 @@
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
-        <version.lib.netty>4.1.58.Final</version.lib.netty>
+        <version.lib.netty>4.1.59.Final</version.lib.netty>
         <version.lib.oci-java-sdk-objectstorage>1.31.0</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>19.3.0.0</version.lib.ojdbc8>
         <version.lib.opentracing>0.32.0</version.lib.opentracing>
