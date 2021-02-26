@@ -55,7 +55,7 @@ public class ByteBufDataChunk implements DataChunk {
      *
      * @param flush a signal that this chunk should be written and flushed from any cache if possible
      * @param readOnly marks this buffer as read only
-     * @param releaseCallback a callback which is called when this chunk is completely processed and instance is free for reuse
+     * @param releaseCallback a callback which is called when this chunk is completely processed
      * @param byteBufs the data for this chunk. Should not be reused until {@code releaseCallback} is used
      */
     public ByteBufDataChunk(boolean flush, boolean readOnly, Runnable releaseCallback, ByteBuf... byteBufs) {
@@ -114,10 +114,26 @@ public class ByteBufDataChunk implements DataChunk {
     @Override
     public int remaining() {
         int remaining = 0;
-        for (ByteBuf byteBuf : data(ByteBuf.class)) {
+        for (ByteBuf byteBuf : byteBufs) {
             remaining += byteBuf.readableBytes();
         }
         return remaining;
+    }
+
+    /**
+     * This method is needed for testing some of our examples. It bypasses the optimization
+     * for which this class was created.
+     *
+     * @return array of ByteBuffer
+     */
+    @Override
+    public ByteBuffer[] data() {
+        int i = 0;
+        ByteBuffer[] byteBuffers = new ByteBuffer[byteBufs.length];
+        for (ByteBuf byteBuf : byteBufs) {
+            byteBuffers[i++] = byteBuf.nioBuffer();
+        }
+        return byteBuffers;
     }
 
     // -- Unsupported methods
@@ -127,14 +143,8 @@ public class ByteBufDataChunk implements DataChunk {
         throw new UnsupportedOperationException("Unsupported");
     }
 
-
     @Override
     public byte[] bytes() {
-        throw new UnsupportedOperationException("Unsupported");
-    }
-
-    @Override
-    public ByteBuffer[] data() {
         throw new UnsupportedOperationException("Unsupported");
     }
 

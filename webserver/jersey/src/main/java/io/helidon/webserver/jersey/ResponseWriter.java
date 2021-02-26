@@ -150,6 +150,7 @@ class ResponseWriter implements ContainerResponseWriter {
 
         private byte[] oneByteArray;
         private ByteBuf byteBuf;
+        private ByteBuf byteBufRef;
         private boolean autoFlush;
         private volatile Flow.Subscriber<? super DataChunk> downstream;
         private volatile Semaphore sema;
@@ -176,6 +177,7 @@ class ResponseWriter implements ContainerResponseWriter {
                 if (byteBuf == null) {
                     awaitRequest();
                     byteBuf = PooledByteBufAllocator.DEFAULT.buffer(BYTEBUF_DEFAULT_SIZE);
+                    byteBufRef = byteBuf;
                 }
 
                 int rem = Math.min(byteBuf.writableBytes(), len);
@@ -195,8 +197,9 @@ class ResponseWriter implements ContainerResponseWriter {
                 awaitRequest();
                 publish(true, ZERO_BUF);
             } else {
-                publish(true, byteBuf);
                 byteBuf = null;
+                publish(true, byteBufRef);
+                byteBufRef = null;
             }
         }
 
@@ -210,7 +213,6 @@ class ResponseWriter implements ContainerResponseWriter {
             if (r == CANCEL) {
                 return;
             }
-
             requested.set(CANCEL);
 
             awaitDownstream();
