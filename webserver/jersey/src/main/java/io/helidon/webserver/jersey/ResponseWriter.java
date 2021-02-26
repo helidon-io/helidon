@@ -54,13 +54,12 @@ class ResponseWriter implements ContainerResponseWriter {
     private final ServerResponse res;
     private final ServerRequest req;
     private final CompletableFuture<Void> whenHandleFinishes;
-    private final DataChunkOutputStream publisher;
+    private DataChunkOutputStream publisher;
 
     ResponseWriter(ServerResponse res, ServerRequest req, CompletableFuture<Void> whenHandleFinishes) {
         this.res = res;
         this.req = req;
         this.whenHandleFinishes = whenHandleFinishes;
-        this.publisher = new DataChunkOutputStream();
     }
 
     @Override
@@ -94,6 +93,7 @@ class ResponseWriter implements ContainerResponseWriter {
         // to the supplied publisher. Thus, the publisher/outputstream returned by this method
         // is ready to immediately accept writes.
         //
+        publisher = new DataChunkOutputStream();
         publisher.autoFlush(MediaType.SERVER_SENT_EVENTS_TYPE.isCompatible(context.getMediaType()));
         res.send(publisher);
         return publisher;
@@ -116,11 +116,13 @@ class ResponseWriter implements ContainerResponseWriter {
     public void commit() {
         try {
             // Jersey doesn't close the OutputStream when there is no entity
-            // as such the publisher needs to be closed from here ...
-            // it is assumed it's possible to close the publisher, the OutputStream, multiple times
-            publisher.close();
+            // so the publisher needs to be closed from here. It is
+            // assumed it's possible to close the publisher multiple times.
+            if (publisher != null) {
+                publisher.close();
+            }
         } catch (IOException e) {
-            // based on implementation of 'close', this never happens
+            // Based on implementation of 'close', this never happens
             throw new IllegalStateException("Unexpected IO Exception received!", e);
         }
     }
@@ -149,8 +151,8 @@ class ResponseWriter implements ContainerResponseWriter {
         private byte[] oneByteArray;
         private ByteBuf byteBuf;
         private boolean autoFlush;
-        private Flow.Subscriber<? super DataChunk> downstream;
-        private Semaphore sema;
+        private volatile Flow.Subscriber<? super DataChunk> downstream;
+        private volatile Semaphore sema;
         private final AtomicLong requested = new AtomicLong();
 
         public void autoFlush(boolean autoFlush) {
@@ -205,10 +207,13 @@ class ResponseWriter implements ContainerResponseWriter {
             }
 
             long r = error();
-            if (r == CANCEL || r == ERROR) {
+            if (r == CANCEL) {
                 return;
             }
 
+            requested.set(CANCEL);
+
+            awaitDownstream();
             downstream.onComplete();
         }
 
@@ -216,8 +221,12 @@ class ResponseWriter implements ContainerResponseWriter {
 
         @Override
         public void subscribe(Flow.Subscriber<? super DataChunk> sub) {
-            downstream = sub;
             sub.onSubscribe(this);
+            downstream = sub;
+            if (sema != null) {
+                // Assert: someone entered awaitDownstream
+                sema.release();
+            }
         }
 
         // -- Subscription ----------------------------------------------------
@@ -252,6 +261,7 @@ class ResponseWriter implements ContainerResponseWriter {
         private void publish(boolean doFlush, ByteBuf buf) {
             DataChunk d = new ByteBufDataChunk(doFlush, true, buf::release, buf);
             if (requested.get() >= 0) {
+                awaitDownstream();
                 downstream.onNext(d);
             } else {
                 d.release();
@@ -264,25 +274,45 @@ class ResponseWriter implements ContainerResponseWriter {
             if (r == ERROR) {
                 r = requested.getAndSet(CANCEL);
                 if (r == ERROR) {
+                    r = CANCEL;
+                    awaitDownstream();
                     downstream.onError(new IllegalArgumentException("Bad request is not allowed"));
                 }
             }
             return r;
         }
 
-        private void awaitRequest() throws IOException {
-            if (requested.get() == 0 && sema == null) {
-                sema = new Semaphore(0);
+        private void awaitDownstream() {
+            // Assert: all potentially concurrent accesses to downstream are guarded by awaitDownstream
+            if (downstream == null) {
+                // Assert: acquireRequest was never called, so sema == null
+                Semaphore tmp = new Semaphore(0);
+                sema = tmp;
+                // Assert: requested != WAIT
+                if (downstream == null) {
+                    tmp.acquireUninterruptibly();
+                }
             }
-            long req = requested.getAndUpdate(r -> r + 1 > 0 ? r - 1 : r);
-            if (req == 0) {
+        }
+
+        private void awaitRequest() throws IOException {
+            // Assert: all downstream.onNext are guarded by awaitRequest; ensures backpressure is enforced
+            if (requested.get() == 0 && sema == null) {
+                Semaphore tmp = new Semaphore(0);
+                sema = tmp;
+            }
+            // Assert: r+1 > 0 means r is not MAX_VALUE, and not CANCEL or ERROR
+            long req = requested.updateAndGet(r -> r + 1 > 0 ? r - 1 : r);
+            while (req == WAIT) {
                 sema.acquireUninterruptibly();
                 req = requested.get();
             }
+
             if (req == ERROR) {
                 error();
                 req = CANCEL;
             }
+
             if (req == CANCEL) {
                 throw new IOException("Bad news: the stream has been closed");
             }
