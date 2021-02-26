@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -287,7 +287,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
             this.histogram = HelidonHistogram.create(repoType, Metadata.builder()
                     .withName(name)
                     .withType(MetricType.HISTOGRAM)
-                    .build());
+                    .build(), clock);
             this.clock = clock;
         }
 
