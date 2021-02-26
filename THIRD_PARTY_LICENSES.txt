@@ -28,7 +28,7 @@ Copyright 2013-2019 The OpenZipkin Authors
 Apache License Version 2.0
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-EclipseLink 2.7.4 Eclipse Foundation
+EclipseLink 2.7.5 Eclipse Foundation
 Multiple Licenses
 Used by: [helidon-integrations-cdi-eclipselink]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -138,7 +138,7 @@ License Identifier: Apache-2.0
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Google APIs Client Library for Java 1.30.5 Google Inc
+Google APIs Client Library for Java 1.30.11 Google Inc
 Apache 2.0
 Used by: [helidon-security-providers-google-login]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -239,11 +239,11 @@ Copyright (c) Tatu Saloranta, tatu.saloranta@iki.fi
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Guava 28.1 Google
+Guava 30.0-jre  Google
 Apache 2.0
 Used by: [helidon-security-providers-google-login]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-google guava v28.1
+google guava 30.0
 
 COPYRIGHT: Copyright (C) 2008 The Guava Authors
 
@@ -437,7 +437,7 @@ License Identifier: EPL-1.0
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Hibernate ORM 5.4.4.Final Red Hat Middleware LLC
+Hibernate ORM 5.4.25.Final Red Hat Middleware LLC
 LGPL v.2.1
 Used by: [helidon-integrations-cdi-hibernate]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -1157,7 +1157,7 @@ License Identifier: Apache-2.0
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Jaeger Tracing Client 0.34.0 The Jaeger Authors
+Jaeger Tracing Client 0.35.5 The Jaeger Authors
 Apache 2.0
 Used by: [helidon-tracing-jaeger]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -1272,7 +1272,7 @@ License Identifier: Apache-2.0
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Jersey 2.29.1 Eclipse Foundation
+Jersey 2.33 Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
 Used by: [helidon-integrations-cdi-oci-objectstorage, helidon-jersey-client, helidon-jersey-media-jsonp, helidon-jersey-server, helidon-microprofile-rest-client, helidon-microprofile-server]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -3058,11 +3058,11 @@ Apache License Version 2
 --------------------------------------------
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-SnakeYAML 1.24 SnakeYAML.org
+SnakeYAML 1.27 SnakeYAML.org
 Apache 2.0
 Used by: [helidon-config-yaml, helidon-openapi]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-SnakeYaml 1.24
+SnakeYaml 1.27
 
 No notice only copyright info at  url : https://bitbucket.org/asomov/snakeyaml/src/2ab6273059255189c1594c1995903ba2f5818531/src/etc/header.txt?at=default&fileviewer=file-view-default
 
@@ -3281,7 +3281,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-grpc-java 1.27.1 The gRPC Authors
+grpc-java 1.35.0 The gRPC Authors
 Apache 2.0
 Used by: [helidon-config-etcd, helidon-grpc-core, io.grpc]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -3475,7 +3475,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jackson-databind 2.10.0 FasterXML, LLC
+jackson-databind 2.10.5.1 FasterXML, LLC
 Apache 2.0
 Used by: [helidon-media-jackson-common, helidon-media-jackson-server, helidon-security-providers-google-login]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -3494,7 +3494,7 @@ It is currently developed by a community of developers, as well as supported
 commercially by FasterXML.com.
 
 ## Licensing
------------------jackson-core 2.9.9 -----------------------
+-----------------jackson-core 2.10.5 -----------------------
 COPYRIGHT: Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
 LICENSE: Apache 2.0
 License Identifier: Apache-2.0
@@ -3508,7 +3508,7 @@ FasterXML.com (http://fasterxml.com).
 A list of contributors may be found from CREDITS file, which is included
 in some artifacts (usually source distributions); but is always available
 from the source code management (SCM) system project uses.
------------------jackson-annotations 2.9.9 -----------------------
+-----------------jackson-annotations 2.10.5 -----------------------
 COPYRIGHT: Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
 LICENSE: Apache 2.0
 License Identifier: Apache-2.0
@@ -3524,12 +3524,12 @@ License Identifier: Apache-2.0
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-netty 4.1.51.Final The Netty Project
+netty 4.1.59.Final The Netty Project
 Apache 2.0
 Used by: [helidon-webserver]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 The Netty Project
-netty-4.1.42.Final
+netty-4.1.59.Final
 Copyright 2012,2019 The Netty Project
 Copyright 2011,2018 The Netty Project
 Copyright 2014,2017 The Netty Project
@@ -7224,7 +7224,7 @@ Copyright Red Hat Middleware LLC, and individual contributors
 --------------------------------------------
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-JUnit 4.12 JUnit
+JUnit 4.13.1 JUnit
 Eclipse Public License 1.0
 Used by: [helidon-arquillian]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
