@@ -39,7 +39,7 @@
         <version.lib.activation-api>1.2.0</version.lib.activation-api>
         <version.lib.annotation-api>1.3.1</version.lib.annotation-api>
         <version.lib.apache-httpclient>4.5.13</version.lib.apache-httpclient>
-        <version.lib.apache-thrift>0.13.0</version.lib.apache-thrift>
+        <version.lib.apache-thrift>0.14.0</version.lib.apache-thrift>
         <version.lib.brave-opentracing>0.35.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0</version.lib.cdi-api>
         <version.lib.eclipselink>2.7.5</version.lib.eclipselink>
@@ -149,6 +149,13 @@
                 <groupId>org.apache.thrift</groupId>
                 <artifactId>libthrift</artifactId>
                 <version>${version.lib.apache-thrift}</version>
+                <!-- This is a test dependency. Get it out of here -->
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.tomcat.embed</groupId>
+                        <artifactId>tomcat-embed-core</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.projectreactor</groupId>
