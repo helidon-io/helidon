@@ -22,7 +22,10 @@ chmod +x ./helidon
 sudo mv ./helidon /usr/local/bin/
 ```
 
-Windows builds to come.
+Windows:
+```bat
+PowerShell -Command Invoke-WebRequest -Uri "https://helidon.io/cli/latest/windows/helidon.exe" -OutFile "C:\Windows\system32\helidon.exe"
+```
 
 ## Create a New Project
 

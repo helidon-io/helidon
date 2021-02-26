@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import javax.json.JsonObject;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
 import io.helidon.webserver.Handler;
@@ -72,6 +73,7 @@ public class PokemonService implements Service {
      * @param response the server response
      */
     private void index(ServerRequest request, ServerResponse response) {
+        response.headers().contentType(MediaType.TEXT_PLAIN);
         response.send("Pokemon JDBC Example:\n"
         + "     GET /type                - List all pokemon types\n"
         + "     GET /pokemon             - List all pokemons\n"

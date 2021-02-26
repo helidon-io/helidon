@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +70,22 @@ import io.helidon.config.spi.RetryPolicy;
  */
 public final class MetaConfig {
     private static final Logger LOGGER = Logger.getLogger(MetaConfig.class.getName());
+    private static final Set<String> SUPPORTED_MEDIA_TYPES;
+    private static final List<String> SUPPORTED_SUFFIXES;
+
+    static {
+        Set<String> supportedMediaTypes = new HashSet<>();
+        List<String> supportedSuffixes = new LinkedList<>();
+
+        HelidonServiceLoader.create(ServiceLoader.load(ConfigParser.class))
+                .forEach(parser -> {
+                    supportedMediaTypes.addAll(parser.supportedMediaTypes());
+                    supportedSuffixes.addAll(parser.supportedSuffixes());
+                });
+
+        SUPPORTED_MEDIA_TYPES = Set.copyOf(supportedMediaTypes);
+        SUPPORTED_SUFFIXES = List.copyOf(supportedSuffixes);
+    }
 
     private MetaConfig() {
     }
@@ -104,7 +120,7 @@ public final class MetaConfig {
      * @return meta configuration if present, or empty
      */
     public static Optional<Config> metaConfig() {
-        return MetaConfigFinder.findMetaConfig(supportedMediaTypes());
+        return MetaConfigFinder.findMetaConfig(SUPPORTED_MEDIA_TYPES::contains, SUPPORTED_SUFFIXES);
     }
 
     /**
@@ -200,30 +216,21 @@ public final class MetaConfig {
     }
 
     // only interested in config source
-    static List<ConfigSource> configSources(Function<String, Boolean> supportedMediaType) {
+    static List<ConfigSource> configSources(Function<String, Boolean> supportedMediaType, List<String> supportedSuffixes) {
         Optional<Config> metaConfigOpt = metaConfig();
 
         return metaConfigOpt
                 .map(MetaConfig::configSources)
-                .orElseGet(() -> MetaConfigFinder.findConfigSource(supportedMediaType)
+                .orElseGet(() -> MetaConfigFinder.findConfigSource(supportedMediaType, supportedSuffixes)
                         .map(List::of)
                         .orElseGet(List::of));
 
     }
 
-    private static Function<String, Boolean> supportedMediaTypes() {
-        Set<String> supportedMediaTypes = new HashSet<>();
-
-        HelidonServiceLoader.create(ServiceLoader.load(ConfigParser.class))
-                .forEach(parser -> supportedMediaTypes.addAll(parser.supportedMediaTypes()));
-
-        return supportedMediaTypes::contains;
-    }
-
     private static Config createDefault() {
         // use defaults
         Config.Builder builder = Config.builder();
-        MetaConfigFinder.findConfigSource(supportedMediaTypes()).ifPresent(builder::addSource);
+        MetaConfigFinder.findConfigSource(SUPPORTED_MEDIA_TYPES::contains, SUPPORTED_SUFFIXES).ifPresent(builder::addSource);
         return builder.build();
     }
 }

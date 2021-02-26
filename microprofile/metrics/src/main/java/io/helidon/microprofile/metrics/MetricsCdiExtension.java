@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 import javax.interceptor.Interceptor;
+import javax.interceptor.InvocationContext;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HEAD;
@@ -68,6 +69,8 @@ import javax.ws.rs.OPTIONS;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 
 import io.helidon.common.Errors;
 import io.helidon.common.context.Contexts;
@@ -142,6 +145,7 @@ public class MetricsCdiExtension implements Extension {
     private final Map<Class<?>, Set<Method>> methodsWithSyntheticSimpleTimer = new HashMap<>();
     private final Set<Class<?>> syntheticSimpleTimerClassesProcessed = new HashSet<>();
     private final Set<Method> syntheticSimpleTimersToRegister = new HashSet<>();
+    private final Map<Method, AsyncResponseInfo> asyncSyntheticSimpleTimerInfo = new HashMap<>();
 
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
@@ -312,6 +316,12 @@ public class MetricsCdiExtension implements Extension {
         // Config might disable the MP synthetic SimpleTimer feature for JAX-RS endpoints.
         // For efficiency, prepare to consult config only once rather than from each interceptor instance.
         discovery.addAnnotatedType(RestEndpointMetricsInfo.class, RestEndpointMetricsInfo.class.getSimpleName());
+
+        asyncSyntheticSimpleTimerInfo.clear();
+    }
+
+    Map<Method, AsyncResponseInfo> asyncResponseInfo() {
+        return asyncSyntheticSimpleTimerInfo;
     }
 
     private void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
@@ -517,6 +527,25 @@ public class MetricsCdiExtension implements Extension {
                 .simpleTimer(SYNTHETIC_SIMPLE_TIMER_METADATA, syntheticSimpleTimerMetricTags(method));
     }
 
+    private SimpleTimer registerAndSaveAsyncSyntheticSimpleTimer(Method method) {
+        SimpleTimer result = syntheticSimpleTimer(method);
+        asyncSyntheticSimpleTimerInfo.computeIfAbsent(method, this::asyncResponse);
+        return result;
+    }
+
+    private AsyncResponseInfo asyncResponse(Method m) {
+        int candidateAsyncResponseParameterSlot = 0;
+
+        for (Parameter p : m.getParameters()) {
+            if (AsyncResponse.class.isAssignableFrom(p.getType()) && p.getAnnotation(Suspended.class) != null) {
+                return new AsyncResponseInfo(candidateAsyncResponseParameterSlot);
+            }
+            candidateAsyncResponseParameterSlot++;
+
+        }
+        return null;
+    }
+
     /**
      * Creates the {@link MetricID} for the synthetic {@link SimplyTimed} annotation we add to each JAX-RS method.
      *
@@ -656,7 +685,7 @@ public class MetricsCdiExtension implements Extension {
     }
 
     private void registerSyntheticSimpleTimerMetrics(@Observes @RuntimeStart Object event) {
-        syntheticSimpleTimersToRegister.forEach(MetricsCdiExtension::syntheticSimpleTimer);
+        syntheticSimpleTimersToRegister.forEach(this::registerAndSaveAsyncSyntheticSimpleTimer);
         if (LOGGER.isLoggable(Level.FINE)) {
             Set<Class<?>> syntheticSimpleTimerAnnotatedClassesIgnored = new HashSet<>(methodsWithSyntheticSimpleTimer.keySet());
             syntheticSimpleTimerAnnotatedClassesIgnored.removeAll(syntheticSimpleTimerClassesProcessed);
@@ -670,7 +699,7 @@ public class MetricsCdiExtension implements Extension {
         syntheticSimpleTimersToRegister.clear();
     }
 
-    static boolean restEndpointsMetricEnabledFromConfig() {
+    boolean restEndpointsMetricEnabledFromConfig() {
         try {
             return ((Config) (ConfigProvider.getConfig()))
                     .get("metrics")
@@ -932,6 +961,30 @@ public class MetricsCdiExtension implements Extension {
         @Override
         public boolean isSynthetic() {
             return annotatedMember.getJavaMember().isSynthetic();
+        }
+    }
+
+    /**
+     * A {@code AsyncResponse} parameter annotated with {@code Suspended} in a JAX-RS method subject to inferred
+     * {@code SimplyTimed} behavior.
+     */
+    static class AsyncResponseInfo {
+
+        // which parameter slot in the method the AsyncResponse is
+        private final int parameterSlot;
+
+        AsyncResponseInfo(int parameterSlot) {
+            this.parameterSlot = parameterSlot;
+        }
+
+        /**
+         * Returns the {@code AsyncResponse} argument object in the given invocation.
+         *
+         * @param context the {@code InvocationContext} representing the call with an {@code AsyncResponse} parameter
+         * @return the {@code AsyncResponse} instance
+         */
+        AsyncResponse asyncResponse(InvocationContext context) {
+            return AsyncResponse.class.cast(context.getParameters()[parameterSlot]);
         }
     }
 }
