@@ -42,7 +42,7 @@ public class MessagingReadinessCheck implements HealthCheck {
     private final MessagingCdiExtension messagingCdiExtension;
 
     @Inject
-    @ConfigProperty(name = "mp.health.ready.exclude-channel", defaultValue = "")
+    @ConfigProperty(name = "mp.messaging.health.ready.exclude", defaultValue = "")
     private Set<String> excluded;
 
     @Inject

@@ -42,7 +42,7 @@ public class MessagingLivenessCheck implements HealthCheck {
     private final MessagingCdiExtension messagingCdiExtension;
 
     @Inject
-    @ConfigProperty(name = "mp.health.live.exclude-channel", defaultValue = "")
+    @ConfigProperty(name = "mp.messaging.health.live.exclude", defaultValue = "")
     private Set<String> excluded;
 
     @Inject
