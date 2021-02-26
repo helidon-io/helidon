@@ -106,6 +106,7 @@
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
+        <version.lib.neo4j>4.2.0</version.lib.neo4j>
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
         <version.lib.netty>4.1.59.Final</version.lib.netty>
@@ -1013,6 +1014,12 @@
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-aop</artifactId>
                 <version>${version.lib.micronaut}</version>
+            </dependency>
+            <!-- Neo4j -->
+            <dependency>
+                <groupId>org.neo4j.driver</groupId>
+                <artifactId>neo4j-java-driver</artifactId>
+                <version>${version.lib.neo4j}</version>
             </dependency>
             <!-- END OF Section 1: direct third party dependencies -->
 
