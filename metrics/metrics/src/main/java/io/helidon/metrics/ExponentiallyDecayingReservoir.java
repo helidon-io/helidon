@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -185,6 +185,9 @@ class ExponentiallyDecayingReservoir {
                         final WeightedSnapshot.WeightedSample sample = values.remove(key);
                         final WeightedSnapshot.WeightedSample newSample = new WeightedSnapshot.WeightedSample(sample.getValue(),
                                                                                                               sample.getWeight() * scalingFactor);
+                        if (Double.compare(newSample.getWeight(), 0) == 0) {
+                            continue;
+                        }
                         values.put(key * scalingFactor, newSample);
                     }
                 }
