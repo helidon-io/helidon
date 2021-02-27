@@ -36,7 +36,7 @@ import java.util.Map;
 @ApplicationScoped
 public class AQMessagingResource {
 
-    private ParticipantStatus participantStatus;
+    private ParticipantStatus participantStatus = ParticipantStatus.Active;
     private boolean isCancel; //technically indicates whether to throw Exception
     private String uriToCall;
     private Map lraStatusMap = new HashMap<String, ParticipantStatus>();
@@ -124,38 +124,38 @@ public class AQMessagingResource {
     @Incoming("compensatechannel")
     @Outgoing("compensatereplychannel")
     @Compensate
-    public String compensateMethod(AqMessage<String> msg) throws Exception {
+    public Message compensateMethod(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.compensate");
         String lraID = getLRAID(msg);
         participantStatus = ParticipantStatus.Compensated;
-        return participantStatus.toString(); //todo append lra id
+        return () ->   participantStatus.toString(); //todo append lra id
     }
 
     @Incoming("afterlrachannel")
     @Outgoing("afterlrareplychannel")
     @AfterLRA
-    public String afterLRAMethod(AqMessage<String> msg) throws Exception {
+    public Message afterLRAMethod(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.afterLRA");
         String lraID = getLRAID(msg);
-        return participantStatus.toString(); //todo append lra id
+        return () ->   participantStatus.toString(); //todo append lra id
     }
 
     @Incoming("forgetchannel")
     @Outgoing("forgetreplychannel")
     @Forget
-    public String forgetLRAMethod(AqMessage<String> msg) throws Exception {
+    public Message forgetLRAMethod(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.forget");
         String lraID = getLRAID(msg);
-        return participantStatus.toString(); //todo append lra id
+        return () ->   participantStatus.toString(); //todo append lra id
     }
 
     @Incoming("leavechannel")
     @Outgoing("leavereplychannel")
     @Leave
-    public String leaveLRAMethod(AqMessage<String> msg) throws Exception {
+    public Message leaveLRAMethod(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.leave");
         String lraID = getLRAID(msg);
-        return participantStatus.toString(); //todo append lra id
+        return () ->   participantStatus.toString(); //todo append lra id
     }
 
     //no status method as AQ is guaranteed delivery

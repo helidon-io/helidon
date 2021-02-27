@@ -45,7 +45,7 @@ public class LRACdiExtension implements Extension {
      * @param event       unused
      * @param beanManager used to register callbacks
      */
-    private void init(@Observes @Priority(PLATFORM_AFTER + 102) @Initialized(ApplicationScoped.class) Object event,
+    private void init(@Observes @Priority(PLATFORM_AFTER + 100) @Initialized(ApplicationScoped.class) Object event,
                       BeanManager beanManager) {
         messagingCdiExtension = beanManager.getExtension(MessagingCdiExtension.class);
         messagingCdiExtension.beforeMethodInvocation(this::beforeMethodInvocation);

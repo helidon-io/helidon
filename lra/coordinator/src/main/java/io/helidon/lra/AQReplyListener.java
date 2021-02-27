@@ -45,14 +45,16 @@ public class AQReplyListener implements Runnable {
                     qconn.start();
                     Queue queue = ((AQjmsSession) qsess).getQueue(owner, destination);
                     AQjmsConsumer consumer = (AQjmsConsumer) qsess.createConsumer(queue);
-                    LOGGER.info("Listening for reply on destination:" + destination + " owner:" + owner + " type:" + type);
+                    LOGGER.info("Listening for replies from " + operation +
+                            " operations on destination:" + destination + " owner:" + owner + " type:" + type);
                     Message message = consumer.receive(-1);
 //       todo             String lraHelidonOperation = message.getStringProperty(HELIDONLRAOPERATION);
                     String lraId = message.getStringProperty(LRA_HTTP_CONTEXT_HEADER);
-                    LOGGER.info("Received reply for operation:" + operation + " lraId:" + lraId + " about to commit...");
+                    LOGGER.info("Received reply for operation:" + operation +
+                            " operations on destination:" + destination + " owner:" + owner + " type:" + type + " lraId:" + lraId + " about to commit...");
                     qsess.commit();
 //     todo               lraIDToReplyStatusMap.put("testlraid", lraHelidonOperation);
-                    lraIDToReplyStatusMap.put("testlraid", "TESTREPLYOPERATION");
+                    lraIDToReplyStatusMap.put("testlraid", "TESTREPLYFROM" + operation + "OPERATION");
                 } catch (JMSException e) {
                     LOGGER.warning("JMSException during receive:" + e);
                 }

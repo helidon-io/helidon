@@ -141,7 +141,7 @@ public class RestParticipant extends Participant {
 
     @Override
     public boolean sendForget(LRA lra) {
-        boolean areAllThatNeedToBeForgottenForgotten = true;
+        boolean isForgotten = true;
         try {
             Response response = client.target(getForgetURI())
                     .request()
@@ -153,11 +153,11 @@ public class RestParticipant extends Participant {
             int responsestatus = response.getStatus();
             logParticipantMessageWithTypeAndDepth("RestParticipant sendForget:" + getForgetURI() + " finished  response:" + response + ":" + responsestatus, lra.nestedDepth);
             if (responsestatus == 200 || responsestatus == 410) setForgotten();
-            else areAllThatNeedToBeForgottenForgotten = false;
+            else isForgotten = false;
         } catch (Exception e) {
             logParticipantMessageWithTypeAndDepth("RestParticipant sendForget Exception:" + e, lra.nestedDepth);
-            areAllThatNeedToBeForgottenForgotten = false;
+            isForgotten = false;
         }
-        return areAllThatNeedToBeForgottenForgotten;
+        return isForgotten;
     }
 }

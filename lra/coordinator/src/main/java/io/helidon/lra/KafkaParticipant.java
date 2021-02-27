@@ -118,14 +118,14 @@ public class KafkaParticipant extends Participant {
     @Traced
     @Counted
     private void sendComplete(LRA lra) {
-        sendMessage(lra, completeConfig, COMPLETESEND);
+        sendMessageAndWaitForReply(lra, completeConfig, COMPLETESEND);
         setParticipantStatus(Completed);
     }
 
     @Traced
     @Counted
     private void sendCompensate(LRA lra) {
-        sendMessage(lra, compensateConfig, COMPENSATESEND);
+        sendMessageAndWaitForReply(lra, compensateConfig, COMPENSATESEND);
         setParticipantStatus(Compensated);
     }
 
@@ -133,18 +133,15 @@ public class KafkaParticipant extends Participant {
     @Counted
     @Override
     void sendStatus(LRA lra, URI statusURI) {
-//        logParticipantMessageWithTypeAndDepth("KafkaParticipant.sendStatus", lra.nestedDepth);
-        sendMessage(lra, statusConfig, STATUSSEND);
+        sendMessageAndWaitForReply(lra, statusConfig, STATUSSEND); //todo setParticipantStatus(participantStatus);
     }
 
     @Traced
     @Counted
     @Override
     void sendAfterLRA(LRA lra) {
-//        logParticipantMessageWithTypeAndDepth("KafkaParticipant.sendAfterLRA", lra.nestedDepth);
-        String outcome = sendMessage(lra, afterLRAConfig, AFTERLRASEND);
+        String outcome = sendMessageAndWaitForReply(lra, afterLRAConfig, AFTERLRASEND);
         if (outcome.equals("success") )setAfterLRASuccessfullyCalledIfEnlisted();
-        logParticipantMessageWithTypeAndDepth("RestParticipant afterLRA finished outcome:" + outcome, lra.nestedDepth);
     }
 
     @Traced
@@ -152,7 +149,8 @@ public class KafkaParticipant extends Participant {
     @Override
     boolean sendForget(LRA lra) {
         logParticipantMessageWithTypeAndDepth("KafkaParticipant.sendForget", lra.nestedDepth);
-        sendMessage(lra, forgetConfig, COMPLETESEND);
+        sendMessageAndWaitForReply(lra, forgetConfig, COMPLETESEND);
+        setForgotten();
         return true;
     }
 
@@ -162,7 +160,7 @@ public class KafkaParticipant extends Participant {
      * @param channelConfig The configuration for the topic, etc. we are sending to.
      * @param operation The operation being sent. This will also be passed as a header.
      */
-    private String sendMessage(LRA lra, KafkaChannelConfig channelConfig, String operation) {
+    private String sendMessageAndWaitForReply(LRA lra, KafkaChannelConfig channelConfig, String operation) {
         Properties props = new Properties(); //todo get all of this from config
         props.put("bootstrap.servers", channelConfig.bootstrapservers);
         //todo appropriate values...

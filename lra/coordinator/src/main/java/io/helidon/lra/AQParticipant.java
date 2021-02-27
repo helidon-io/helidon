@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+import static org.eclipse.microprofile.lra.annotation.ParticipantStatus.Compensated;
+import static org.eclipse.microprofile.lra.annotation.ParticipantStatus.Completed;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
 public class AQParticipant extends Participant {
@@ -147,7 +149,7 @@ public class AQParticipant extends Participant {
         //break into cancel and complete methods for better metrics and tracing
     void sendCompleteOrCancel(LRA lra, boolean isCancel) {
         URI endpointURI = isCancel ? getCompensateURI() : getCompleteURI();
-        if (lastActionTakenOrReceived.equals(INIT)) { //todo this is wrong, eg last action could be COMPLETEREPLY with failed status
+        if (lastActionTakenOrReceived.equals(INIT)) { //todo account for failed send as well as
             LOGGER.info("AQParticipant.sendCompleteOrCancel endpointURI:" + endpointURI);
             init();
             if(isCancel) sendCompensate(lra);
@@ -160,6 +162,7 @@ public class AQParticipant extends Participant {
     private void sendComplete(LRA lra) {
         send(COMPLETESEND, lra, completeConfig);
         lastActionTakenOrReceived = COMPLETESEND;
+        setParticipantStatus(Completed);
     }
 
     @Traced
@@ -167,6 +170,7 @@ public class AQParticipant extends Participant {
     private void sendCompensate(LRA lra) {
         send(COMPLETESEND, lra, completeConfig);
         lastActionTakenOrReceived = COMPLETESEND;
+        setParticipantStatus(Compensated);
     }
 
 
@@ -182,10 +186,10 @@ public class AQParticipant extends Participant {
     @Override
     boolean sendForget(LRA lra) {
         if (!lastActionTakenOrReceived.equals(FORGETSEND)) {
-            LOGGER.info("AQParticipant.sendForget endpointURI:" + getForgetURI());
             init();
-            send(FORGETSEND, lra, null);
+            send(FORGETSEND, lra, forgetConfig);
             lastActionTakenOrReceived = FORGETSEND;
+            setForgotten();
         }
         return true;
     }
@@ -195,9 +199,8 @@ public class AQParticipant extends Participant {
     @Override
     void sendAfterLRA(LRA lra) {
         if (!lastActionTakenOrReceived.equals(AFTERLRASEND)) {
-            LOGGER.info("AQParticipant.sendForget endpointURI:" + getForgetURI());
             init();
-            String outcome = send(AFTERLRASEND, lra, null);
+            String outcome = send(AFTERLRASEND, lra, afterLRAConfig);
             lastActionTakenOrReceived = AFTERLRASEND;
             if (outcome.equals("success") )setAfterLRASuccessfullyCalledIfEnlisted();
             logParticipantMessageWithTypeAndDepth("AQParticipant afterLRA finished outcome:" + outcome, lra.nestedDepth);
