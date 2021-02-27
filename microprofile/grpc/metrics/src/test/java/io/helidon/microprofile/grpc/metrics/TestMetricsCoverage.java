@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.inject.Inject;
 
+import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
@@ -36,6 +37,7 @@ import static org.hamcrest.Matchers.is;
 
 @HelidonTest
 @AddExtension(GrpcMetricsCoverageTestCdiExtension.class)
+@AddBean(CoverageTestBeanCounted.class)
 public class TestMetricsCoverage {
 
     interface GeneratedBeanCatalog {
@@ -46,12 +48,29 @@ public class TestMetricsCoverage {
     GrpcMetricsCoverageTestCdiExtension extension;
 
     @Test
+    public void checkThatAllMetricsAnnotationsAreCoveredByTestBeans() {
+        assertThat("Some metrics annotations are not covered by test beans",
+                extension.annotationClassesNotCoveredByTestBeans(), is(empty()));
+    }
+
+    @Test
     public void checkThatAllMetricsWereRemovedFromGrpcMethods() {
 
-        Map<AnnotatedMethod, Set<Class<? extends Annotation>>> leftoverAnnotations =
+        Map<AnnotatedMethod<?>, Set<Class<? extends Annotation>>> leftoverAnnotations =
                 extension.remainingTestBeanMethodAnnotations();
 
         assertThat("Metrics annotations unexpectedly remain on method", leftoverAnnotations.keySet(), is(empty()));
+    }
+
+    @Test
+    public void checkThatAllMetricsAnnotationsWereEncountered() {
+
+        Set<Class<? extends Annotation>> metricsAnnotationsUnused =
+                new HashSet<>(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS_TO_CHECK);
+        metricsAnnotationsUnused.removeAll(extension.metricsAnnotationsUsed());
+
+        assertThat("The CoverageTestBeanBase subclasses seem not to cover all known annotations", metricsAnnotationsUnused,
+                is(empty()));
     }
 
     /**
@@ -69,7 +88,7 @@ public class TestMetricsCoverage {
      * </p>
      */
     @Test
-    public void checkForAllMetricsInMetricsConfigurer() {
+    public void checkForAllMetricsInMetricInfo() {
         Set<Class<? extends Annotation>> metricsAnnotations =
                 new HashSet<>(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS_TO_CHECK);
 

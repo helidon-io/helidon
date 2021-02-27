@@ -21,14 +21,16 @@ On the `registerMetrics` method, add the new metrics annotation(s) to the `@With
 metrics 
 annotations.
 
+### Add `CoverageTestBeanXXX` test class
+where `XXX` is the simple name of the new metrics annotation (e.g., `Counted`).
+Use one of the existing classes as a pattern, removing the existing metrics annotation from the 
+method and adding the new metrics annotation in its place.
+
 ## Testing
 To help make sure all known metrics annotations (from the `microprofile/metrics` artifact) are 
-handled, 
-during 
-testing an 
-annotation processor generates test classes, one per known metrics annotation, each with a 
-method that the normal gRPC CDI extension will process. 
+handled, a test-time CDI extension finds all the coverage test beans and adds them to CDI. 
+It also examines those classes during the normal CDI extension life cycle to make sure the 
+actual gRPC extension processes them as expected.
 
-Several tests make sure 
-that all the known metrics annotations are covered in the areas listed above. 
-Any test failures should list the metrics annotations that seem not to be processed correctly.
+Several tests make sure that all the metrics annotations are represented and processed, listing any annotations that were not processed as expected.
+
