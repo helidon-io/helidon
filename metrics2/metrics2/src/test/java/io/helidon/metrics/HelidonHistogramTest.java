@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 
 import static io.helidon.metrics.HelidonMetricsMatcher.withinTolerance;
 
+import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -45,6 +46,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -225,6 +228,27 @@ class HelidonHistogramTest {
         testSnapshot(1, "delegating integers", delegatingHistoInt.getSnapshot(), 50.6, 29.4389);
         testSnapshot(10, "longs", histoLong.getSnapshot(), 506.3, 294.389);
         testSnapshot(10, "delegating longs", delegatingHistoLong.getSnapshot(), 506.3, 294.389);
+    }
+
+    @Test
+    void testNaNAvoidance() {
+        Metadata metadata = Metadata.builder()
+                .withName("long_idle_test")
+                .withDisplayName("theDisplayName")
+                .withDescription("Simulates a long idle period")
+                .withType(MetricType.HISTOGRAM)
+                .withUnit(MetricUnits.SECONDS)
+                .build();
+        TestClock testClock = TestClock.create();
+        Histogram idleHistogram = HelidonHistogram.create("application", metadata, testClock);
+
+        idleHistogram.update(100);
+
+        for (int i = 1; i < 48; i++) {
+            testClock.add(1, TimeUnit.HOURS);
+            assertThat("Idle histogram failed after simulating " + i + " hours", idleHistogram.getSnapshot().getMean(),
+                    not(equalTo(Double.NaN)));
+        }
     }
 
     private void testSnapshot(int factor, String description, Snapshot snapshot, double mean, double stddev) {

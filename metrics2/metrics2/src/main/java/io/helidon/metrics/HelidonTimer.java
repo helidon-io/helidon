@@ -281,7 +281,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
 
         TimerImpl(String repoType, String name, Clock clock) {
             this.meter = HelidonMeter.create(repoType, new HelidonMetadata(name, MetricType.METERED), clock);
-            this.histogram = HelidonHistogram.create(repoType, new HelidonMetadata(name, MetricType.HISTOGRAM));
+            this.histogram = HelidonHistogram.create(repoType, new HelidonMetadata(name, MetricType.HISTOGRAM), clock);
             this.clock = clock;
         }
 
