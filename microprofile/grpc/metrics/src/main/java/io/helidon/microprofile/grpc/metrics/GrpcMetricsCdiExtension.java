@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package io.helidon.microprofile.grpc.metrics;
 
 import java.lang.annotation.Annotation;
-import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.annotation.Priority;
 import javax.enterprise.event.Observes;
@@ -31,9 +31,13 @@ import javax.interceptor.Interceptor;
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
+import io.helidon.microprofile.metrics.MetricsCdiExtension;
 
+import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.Metric;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
@@ -50,11 +54,17 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 public class GrpcMetricsCdiExtension
         implements Extension {
 
-    /**
-     * The supported metrics annotations.
-     */
-    private static final List<Class<? extends Annotation>> METRIC_ANNOTATIONS
-            = Arrays.asList(Counted.class, Timed.class, Metered.class);
+    static final int OBSERVER_PRIORITY = Interceptor.Priority.APPLICATION;
+
+    static final Set<Class<? extends Annotation>> METRICS_ANNOTATIONS_TO_CHECK;
+
+    static {
+        METRICS_ANNOTATIONS_TO_CHECK = new HashSet<>(MetricsCdiExtension.METRIC_ANNOTATIONS);
+
+        // The original collection includes Metric, which we do not want to worry about here.
+        METRICS_ANNOTATIONS_TO_CHECK.remove(Metric.class);
+    }
+
 
     /**
      * Observer {@link ProcessAnnotatedType} events and process any method
@@ -63,11 +73,11 @@ public class GrpcMetricsCdiExtension
      * @param pat  the {@link ProcessAnnotatedType} to observer
      */
     private void registerMetrics(@Observes
-                                 @WithAnnotations({Counted.class, Timed.class, Metered.class, Grpc.class})
-                                 @Priority(Interceptor.Priority.APPLICATION)
+                                 @WithAnnotations({Counted.class, Timed.class, Metered.class, ConcurrentGauge.class,
+                                         SimplyTimed.class, Grpc.class})
+                                 @Priority(OBSERVER_PRIORITY)
                                  ProcessAnnotatedType<?> pat) {
-
-        METRIC_ANNOTATIONS.forEach(type ->
+        METRICS_ANNOTATIONS_TO_CHECK.forEach(type ->
                pat.configureAnnotatedType()
                   .methods()
                   .stream()

@@ -28,6 +28,9 @@ module io.helidon.microprofile.grpc.metrics {
     requires java.logging;
     requires jakarta.interceptor.api;
 
+    // for test-time annotation processor
+    requires static java.compiler;
+
     provides io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer
             with io.helidon.microprofile.grpc.metrics.MetricsConfigurer;
 

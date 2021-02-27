@@ -113,7 +113,7 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 public class MetricsCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(MetricsCdiExtension.class.getName());
 
-    private static final List<Class<? extends Annotation>> METRIC_ANNOTATIONS
+    public static final List<Class<? extends Annotation>> METRIC_ANNOTATIONS
             = Arrays.asList(Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class);
 
     private static final List<Class<? extends Annotation>> JAX_RS_ANNOTATIONS

@@ -223,6 +223,26 @@ public class GrpcMetrics
         return new GrpcMetrics(new MetricsRules(MetricType.TIMER));
     }
 
+    /**
+     * A static factory method to create a {@link GrpcMetrics} instance
+     * to time gRPC method calls.
+     *
+     * @return a {@link GrpcMetrics} instance to time gRPC method calls
+     */
+    public static GrpcMetrics concurrentGauge() {
+        return new GrpcMetrics(new MetricsRules(MetricType.CONCURRENT_GAUGE));
+    }
+
+    /**
+     * A static factory method to create a {@link GrpcMetrics} instance
+     * to time gRPC method calls.
+     *
+     * @return a {@link GrpcMetrics} instance to time gRPC method calls
+     */
+    public static GrpcMetrics simplyTimed() {
+        return new GrpcMetrics(new MetricsRules(MetricType.SIMPLE_TIMER));
+    }
+
     @Override
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call,
                                                                  Metadata headers,
