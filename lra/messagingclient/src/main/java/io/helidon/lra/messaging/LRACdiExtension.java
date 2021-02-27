@@ -32,16 +32,21 @@ public class LRACdiExtension implements Extension {
     Map<Long, Message<?>> txMap = new ConcurrentHashMap<>();
     Map<MessagingMethod, ServerLRAMessagingFilter> serverToLRAMessageFilterMap = new ConcurrentHashMap<>();
 
+    static { //todo move to AQ client as it's specific to that
+        System.setProperty("oracle.jdbc.fanEnabled", "false"); //silence benign message re ONS
+    }
+
     /**
      * Init the hooks/callbacks pre and post processing of methods annotated with @LRA and messaging annotation
-     *  All three callbacks (beforeMethodInvocation, afterMethodInvocation, and onMethodInvocationFailure)
-     *  apply to all three messaging combinations (@Incoming, @Outgoing, or both/processors)
-     *  Priority is PLATFORM_AFTER + 102 right afer PLATFORM_AFTER + 101 which is used for messaging system.
-     * @param event unused
+     * All three callbacks (beforeMethodInvocation, afterMethodInvocation, and onMethodInvocationFailure)
+     * apply to all three messaging combinations (@Incoming, @Outgoing, or both/processors)
+     * Priority is PLATFORM_AFTER + 102 right afer PLATFORM_AFTER + 101 which is used for messaging system.
+     *
+     * @param event       unused
      * @param beanManager used to register callbacks
      */
-    private void init(@Observes @Priority(PLATFORM_AFTER + 102) @Initialized(ApplicationScoped.class)  Object event,
-                                 BeanManager beanManager) {
+    private void init(@Observes @Priority(PLATFORM_AFTER + 102) @Initialized(ApplicationScoped.class) Object event,
+                      BeanManager beanManager) {
         messagingCdiExtension = beanManager.getExtension(MessagingCdiExtension.class);
         messagingCdiExtension.beforeMethodInvocation(this::beforeMethodInvocation);
         messagingCdiExtension.afterMethodInvocation(this::afterMethodInvocation);
@@ -52,92 +57,136 @@ public class LRACdiExtension implements Extension {
 
     /**
      * Pre-processing that essentially delegates to ServerLRAMessagingFilter
-     * @param method the key used to later retrieve the ServerLRAMessagingFilter in afterMethodInvocation
-     *               Although there is only one MessagingMethod per application method, this is a safe key as
-     *               the MP messaging spec states taht messaging methods must be executed serially.
-     * @param message
+     *
+     * @param method  the key used to later retrieve the ServerLRAMessagingFilter in afterMethodInvocation
+     *                Although there is only one MessagingMethod per application method, this is a safe key as
+     *                the MP messaging spec states taht messaging methods must be executed serially.
+     * @param message incoming message
      * @return long unused but -1 indicating failure, 0 indicating success
      */
     long beforeMethodInvocation(MessagingMethod method, Object message) {
         boolean isAnnotatedWithLRA = method.getMethod().getDeclaringClass().getDeclaredAnnotation(LRA.class) == null;
-        LOGGER.info("LRACdiExtension.beforeMethodInvocation isAnnotatedWithLRA:" + isAnnotatedWithLRA + " method:" + method + "object:" + message);
-        if(!isAnnotatedWithLRA) return 0;
-        if (!(message instanceof Message)) return -1;
+        LOGGER.info("beforeMethodInvocation method:" + method.getMethod().getName() +
+                " message:" + message +  "isAnnotatedWithLRA:" + isAnnotatedWithLRA);
+        if (!isAnnotatedWithLRA) return 0;
+        if (!(message instanceof Message)) {
+            LOGGER.warning("LRACdiExtension.beforeMethodInvocation !(message instanceof Message) returning");
+            return -1;
+        }
         ServerLRAMessagingFilter serverLRAMessagingFilter = new ServerLRAMessagingFilter(method.getMethod());
         serverToLRAMessageFilterMap.put(method, serverLRAMessagingFilter);
-        Config config = method.getIncomingChannelConfig(); //todo this is only the config for the method annotated with incoming - if it was the config of all
-        serverLRAMessagingFilter.beforeMethodInvocation((Message)message);
-        showMessageProperties(message);
+        serverLRAMessagingFilter.beforeMethodInvocation((Message) message);
+//        showMessageProperties("beforeMethodInvocation", method, message);
         return 0;
-    }
-
-    long afterMethodInvocation(MessagingMethod method, Object message) {
-        try {
-        LOGGER.info("LRACdiExtension.afterMethodInvocation method = " + method + ", o = " + message);
-        ServerLRAMessagingFilter serverLRAMessagingFilter = serverToLRAMessageFilterMap.get(method);
-        if (serverLRAMessagingFilter == null) return 0 ;
-        serverLRAMessagingFilter.afterMethodInvocation(method, message);
-        showMessageProperties(message);
-        return 0;
-        } finally {
-            serverToLRAMessageFilterMap.remove(method);
-        }
     }
 
     /**
-     * extend these and add @Provider annotation
-     ClientLRARequestFilter...
-     public void filter(ClientRequestContext context) {
-     if (Current.peek() != null) {
-     context.setProperty(LRA_HTTP_CONTEXT_HEADER, Current.peek());
-     }
-     Current.updateLRAContext(context);
-     }
-
-     ClientLRAResponseFilter ...
-    public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
-    Object callingContext = requestContext.getProperty(LRA_HTTP_CONTEXT_HEADER);
-
-    if (callingContext != null) {
-    Current.push((URI) callingContext);
-    }
-    }
-    }
+     * Post-processing that essentially delegates to ServerLRAMessagingFilter
+     *
+     * @param method  the key to retrieve the ServerLRAMessagingFilter that was added in beforeMethodInvocation
+     *                and so must be removed to avoid leak.
+     * @param message outgoing message that appropriate headers/properties will be added to depending on
+     *                whether it is LRA method and if so if it is reply, calling another microservice, or
+     *                replying from complete, compensate, etc.
+     * @return long unused but -1 indicating failure, 0 indicating success
      */
-
-    long onMethodInvocationFailure(MessagingMethod method, Message<?> message, Throwable t) {
+    long afterMethodInvocation(MessagingMethod method, Object message) {
+//        showAllMessageProperties(message);
         try {
-            serverToLRAMessageFilterMap.get(method).setCancel();
-            LOGGER.fine("LRACdiExtension.onMethodInvocationFailure " +
-                    "method = " + method + ", message = " + message + ", t = " + t);
-            showMessageProperties(message);
+            LOGGER.info("afterMethodInvocation method:" + method.getMethod().getName() + " message:" + message);
+            ServerLRAMessagingFilter serverLRAMessagingFilter = serverToLRAMessageFilterMap.get(method);
+            if (serverLRAMessagingFilter == null) return 0;
+            serverLRAMessagingFilter.afterMethodInvocation(method, message);
+//            showMessageProperties("afterMethodInvocation", method, message);
             return 0;
         } finally {
             serverToLRAMessageFilterMap.remove(method);
         }
     }
 
-    private void showMessageProperties(Object o) {
-        if (true) return; //todo remove
+    /**
+     * Failure case. Should result in LRA cancel if appropriate
+     *
+     * @param method    the key to retrieve the ServerLRAMessagingFilter that was added in beforeMethodInvocation
+     *                  and so must be removed to avoid leak.
+     * @param message   outoing message that will not be sent due to failure
+     * @param throwable the exception that was thrown
+     * @return long unused but -1 indicating failure, 0 indicating success
+     */
+    long onMethodInvocationFailure(MessagingMethod method, Message<?> message, Throwable throwable) {
+        try {
+            serverToLRAMessageFilterMap.get(method).setCancel();
+            LOGGER.fine("LRACdiExtension.onMethodInvocationFailure " +
+                    "method = " + method + ", message = " + message + ", t = " + throwable);
+            showMessageProperties("onMethodInvocationFailure" , method, message);
+            return 0;
+        } finally {
+            serverToLRAMessageFilterMap.remove(method);
+        }
+    }
+
+
+    /**
+     * extend these and add @Provider annotation
+     * ClientLRARequestFilter...
+     * public void filter(ClientRequestContext context) {
+     * if (Current.peek() != null) {
+     * context.setProperty(LRA_HTTP_CONTEXT_HEADER, Current.peek());
+     * }
+     * Current.updateLRAContext(context);
+     * }
+     * <p>
+     * ClientLRAResponseFilter ...
+     * public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
+     * Object callingContext = requestContext.getProperty(LRA_HTTP_CONTEXT_HEADER);
+     * <p>
+     * if (callingContext != null) {
+     * Current.push((URI) callingContext);
+     * }
+     * }
+     * }
+     */
+    private void showMessageProperties(String hookname, MessagingMethod method, Object o) {
         try {
             if (o instanceof AqMessage) {
-                LOGGER.fine("LRACdiExtension.showMessageProperties HelidonLRAOperation:" +
-                        "" + ((AqMessage) o).getJmsMessage().getStringProperty("HelidonLRAOperation"));
-                LOGGER.fine("LRACdiExtension.showMessageProperties org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER:" +
-                        ((AqMessage) o).getJmsMessage().getStringProperty("org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER"));
+                LOGGER.info("LRACdiExtension." + hookname + " method:" + method.getMethod().getName() + " HELIDONLRAOPERATION:" +
+                        "" + ((AqMessage) o).getJmsMessage().getStringProperty("HELIDONLRAOPERATION"));
+                LOGGER.info("LRACdiExtension." + hookname + " method:" + method.getMethod().getName() + " LRA_HTTP_CONTEXT_HEADER:" +
+                        ((AqMessage) o).getJmsMessage().getStringProperty("LRA_HTTP_CONTEXT_HEADER"));
             } else if (o instanceof KafkaMessage) {
                 if (((KafkaMessage) o).getHeaders() != null) {
-                    LOGGER.fine("LRACdiExtension.showMessageProperties HelidonLRAOperation:" +
-                            "" + ((KafkaMessage) o).getHeaders().headers("HelidonLRAOperation"));
-                    LOGGER.fine("LRACdiExtension.showMessageProperties org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER:" +
-                            ((KafkaMessage) o).getHeaders().headers("org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER"));
+                    LOGGER.info("LRACdiExtension." + hookname + " method:" + method.getMethod().getName() + " HELIDONLRAOPERATION:" +
+                            "" + ((KafkaMessage) o).getHeaders().headers("HELIDONLRAOPERATION"));
+                    LOGGER.info("LRACdiExtension." + hookname + " method:" + method.getMethod().getName() + " LRA_HTTP_CONTEXT_HEADER:" +
+                            ((KafkaMessage) o).getHeaders().headers("LRA_HTTP_CONTEXT_HEADER"));
                 }
             } else {
-                LOGGER.fine("LRACdiExtension.showMessageProperties o is not AqMessage nor KafkaMessage o:" + o);
+                LOGGER.info("LRACdiExtension." + hookname + " method:" + method.getMethod() + " o is not AqMessage nor KafkaMessage o:" + o);
             }
         } catch (JMSException e) {
             e.printStackTrace();
         }
     }
 
+    private void showAllMessageProperties(Object o) {
+        if (o instanceof AqMessage) {
+            try {
+                Iterator iterator = ((AqMessage)o).getJmsMessage().getPropertyNames().asIterator();
+                while(iterator.hasNext()) {
+                    LOGGER.fine("LRACdiExtension.AqMessage property:" + iterator.next());
+                }
+            } catch (JMSException e) {
+                e.printStackTrace();
+            }
+        } else if (o instanceof io.helidon.messaging.connectors.kafka.KafkaMessage) {
+            try {
+                Iterator iterator = ((AqMessage)o).getJmsMessage().getPropertyNames().asIterator();
+                while(iterator.hasNext()) {
+                    LOGGER.fine("LRACdiExtension.KafkaMessage property:" + iterator.next());
+                }
+            } catch (JMSException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }

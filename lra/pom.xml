@@ -30,7 +30,7 @@
     <name>Helidon Long Running Actions Project</name>
 
     <modules>
-<!--        <module>clients</module>-->
+        <module>clients</module>
         <module>messagingclient</module>
         <module>coordinator</module>
     </modules>

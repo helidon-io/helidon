@@ -5,6 +5,7 @@ import org.eclipse.microprofile.lra.annotation.*;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 import org.eclipse.microprofile.lra.annotation.ws.rs.Leave;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -25,49 +26,51 @@ public class KafkaMessagingResource {
     @Incoming("orderkafka")
     @Outgoing("inventorykafka")
     @LRA(value = LRA.Type.REQUIRES_NEW)
-    public String requiresNew(KafkaMessage msg) throws Exception {
-        return getResponse("requresNew", msg.getPayload());
+    public Message requiresNew(KafkaMessage msg) throws Exception {
+        return getResponse("requiresNew", msg.getPayload());
     }
 
 //    @Incoming("orderkafka")
 //    @Outgoing("inventorykafka")
 //    @LRA(value = LRA.Type.REQUIRED)
-    public String required(KafkaMessage msg) throws Exception {
+    public Message required(KafkaMessage msg) throws Exception {
         return getResponse("required", msg.getPayload());
     }
 
 //    @Incoming("orderkafka")
 //    @Outgoing("inventorykafka")
 //    @LRA(value = LRA.Type.MANDATORY)
-    public String mandatory(KafkaMessage msg) throws Exception {
+    public Message mandatory(KafkaMessage msg) throws Exception {
         return getResponse("mandatory", msg.getPayload());
     }
 
 //    @Incoming("orderkafka")
 //    @Outgoing("inventorykafka")
 //    @LRA(value = LRA.Type.NEVER)
-    public String never(KafkaMessage msg) throws Exception {
+    public Message never(KafkaMessage msg) throws Exception {
         return getResponse("never", msg.getPayload());
     }
 
 //    @Incoming("orderkafka")
 //    @Outgoing("inventorykafka")
 //    @LRA(value = LRA.Type.NOT_SUPPORTED)
-    public String notSupported(KafkaMessage msg) throws Exception {
+    public Message notSupported(KafkaMessage msg) throws Exception {
         return getResponse("notSupported", msg.getPayload());
     }
 
 //    @Incoming("orderkafka")
 //    @Outgoing("inventorykafka")
 //    @LRA(value = LRA.Type.SUPPORTS)
-    public String supports(KafkaMessage msg) throws Exception {
+    public Message supports(KafkaMessage msg) throws Exception {
+        System.out.println("KafkaMessagingResource.complete msg:" + msg);
         return getResponse("supports", msg.getPayload());
     }
 
 //    @Incoming("orderkafka")
 //    @Outgoing("inventorykafka")
 //    @LRA(value = LRA.Type.NESTED)
-    public String nested(KafkaMessage msg) throws Exception {
+    public Message nested(KafkaMessage msg) throws Exception {
+        System.out.println("KafkaMessagingResource.complete msg:" + msg);
         return getResponse("nested", msg.getPayload());
     }
 
@@ -75,62 +78,61 @@ public class KafkaMessagingResource {
     @Incoming("kafkacompletechannel")
     @Outgoing("kafkacompletereplychannel")
     @Complete
-    public String completeMethod(KafkaMessage msg) throws Exception {
-        System.out.println("InventoryMessagingResource.complete");
+    public Message completeMethod(KafkaMessage msg) throws Exception {
+        System.out.println("KafkaMessagingResource.complete msg:" + msg);
         participantStatus = ParticipantStatus.Completed;
-        return participantStatus.toString(); //todo append lra id
+        return () -> participantStatus.toString();
     }
 
     @Incoming("kafkacompensatechannel")
     @Outgoing("kafkacompensatereplychannel")
     @Compensate
-    public String compensateMethod(KafkaMessage msg) throws Exception {
-        System.out.println("InventoryMessagingResource.compensate");
+    public Message compensateMethod(KafkaMessage msg) throws Exception {
+        System.out.println("KafkaMessagingResource.compensate msg:" + msg);
         participantStatus = ParticipantStatus.Compensated;
-        return participantStatus.toString(); //todo append lra id
+        return () -> participantStatus.toString();
     }
 
 
     @Incoming("kafkastatuschannel")
     @Outgoing("kafkastatusreplychannel")
     @Status
-    public String statusMethod(KafkaMessage msg) throws Exception {
-        System.out.println("InventoryMessagingResource.status");
-        return participantStatus.toString(); //todo append lra id
+    public Message statusMethod(KafkaMessage msg) throws Exception {
+        System.out.println("KafkaMessagingResource.status msg:" + msg);
+        return () -> participantStatus.toString();
     }
 
     @Incoming("kafkaafterlrachannel")
     @Outgoing("kafkaafterlrareplychannel")
     @AfterLRA
-    public String afterLRAMethod(KafkaMessage msg) throws Exception {
-        System.out.println("InventoryMessagingResource.afterLRA");
-        return participantStatus.toString(); //todo append lra id
+    public Message afterLRAMethod(KafkaMessage msg) throws Exception {
+        System.out.println("KafkaMessagingResource.afterLRA msg:" + msg);
+        return () -> participantStatus.toString();
     }
 
     @Incoming("kafkaforgetchannel")
     @Outgoing("kafkaforgetreplychannel")
     @Forget
-    public String forgetLRAMethod(KafkaMessage msg) throws Exception {
-        System.out.println("InventoryMessagingResource.forget");
-        return participantStatus.toString(); //todo append lra id
+    public Message forgetLRAMethod(KafkaMessage msg) throws Exception {
+        System.out.println("KafkaMessagingResource.forget msg:" + msg);
+        return () -> participantStatus.toString();
     }
 
     @Incoming("kafkaleavechannel")
     @Outgoing("kafkaleavereplychannel")
     @Leave
-    public String leaveLRAMethod(KafkaMessage msg) throws Exception {
-        System.out.println("InventoryMessagingResource.forget");
-        return participantStatus.toString(); //todo append lra id
+    public Message leaveLRAMethod(KafkaMessage msg) throws Exception {
+        System.out.println("KafkaMessagingResource.forget");
+        return () -> participantStatus.toString();
     }
-
 
     //methods to set complete/compensate action if/as result of throwing exception
 
-    private String getResponse(String lraType, Object payload) throws Exception {
+    private Message getResponse(String lraType, Object payload) throws Exception {
         System.out.println("AQMessagingResource.getResponse lraType:" + lraType + " msg.getPayload():" + payload + " isCancel:" + isCancel);
         participantStatus = ParticipantStatus.Active;
         if(isCancel) throw new Exception("Intentional exceptio");
-        else return "success";
+        else  return () -> lraType + " success";
     }
 
     @GET

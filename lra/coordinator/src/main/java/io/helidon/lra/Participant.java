@@ -15,11 +15,13 @@
  */
 package io.helidon.lra;
 
+import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.opentracing.Traced;
 
 import java.net.URI;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
 import static org.eclipse.microprofile.lra.annotation.ParticipantStatus.*;
@@ -45,6 +47,15 @@ public abstract class Participant {
     //The following key is sent on all messages so that customer applications can use selectors, filters, ...
     //This key is not currently int configuration. This value must be used as documented.
     public static final String HELIDONLRAOPERATION = "HELIDONLRAOPERATION";
+    protected static ExecutorService executorService = ServerThreadPoolSupplier.builder().name("LRA").build().get();;
+    protected boolean isInitialized = false;
+    protected boolean isConfigInitialized = false;
+    public static final String INIT = "INIT",
+            COMPLETESEND = "COMPLETESEND", COMPLETEREPLY = "COMPLETEREPLY",
+            COMPENSATESEND = "COMPENSATESEND", COMPENSATEREPLY = "COMPENSATEREPLY",
+            AFTERLRASEND = "AFTERLRASEND", AFTERLRAREPLY = "AFTERLRAREPLY",
+            STATUSSEND = "AFTERLRASEND", STATUSREPLY = "AFTERLRAREPLY",
+            FORGETSEND = "FORGETSEND", FORGETREPLY = "FORGETREPLY";
 
     public abstract void init();
 

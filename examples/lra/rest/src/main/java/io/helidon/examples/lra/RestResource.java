@@ -30,7 +30,7 @@ import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_PARENT_CONTEXT_HEADER;
 
-@Path("/inventory")
+@Path("/")
 @ApplicationScoped
 public class RestResource {
 

@@ -30,7 +30,8 @@
     <name>Helidon Long Running Actions Project</name>
 
     <modules>
-        <module>aq-messaging-client</module>
-        <module>kafka-messaging-client</module>
+<!--        <module>aq-messaging-client</module>-->
+<!--        <module>kafka-messaging-client</module>-->
+        <module>rest-client</module>
     </modules>
 </project>

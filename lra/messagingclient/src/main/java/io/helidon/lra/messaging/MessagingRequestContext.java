@@ -33,27 +33,27 @@ public class MessagingRequestContext {
     MultivaluedMap<String, String> messagePropertiesMap = new MultivaluedHashMap<String, String>();
 
     public MessagingRequestContext(Message message) {
-        if (message instanceof AqMessage) {
-            try {
-                AqMessage aqMessage = (AqMessage) message;
-                javax.jms.Message jmsMessage = aqMessage.getJmsMessage();
-                Enumeration srcProperties = jmsMessage.getPropertyNames();
-                while (srcProperties.hasMoreElements()) {
-                    String propertyName = (String)srcProperties.nextElement ();
-                    String value = "" + jmsMessage.getObjectProperty(propertyName);
-                    messagePropertiesMap.add(propertyName, value);
-                }
-            } catch (JMSException e) {
-                e.printStackTrace();
-            }
-        } else if (message instanceof KafkaMessage) {
-            KafkaMessage kafkaMessage = (KafkaMessage)message;
-            Headers headers = kafkaMessage.getHeaders();
-            //todo messagePropertiesMap.add...
-
-        } else {
-            LOGGER.warning("message type not supported (not of type AQ or Kakfa):" + message);
-        }
+//        if (message instanceof AqMessage) {
+//            try {
+//                AqMessage aqMessage = (AqMessage) message;
+//                javax.jms.Message jmsMessage = aqMessage.getJmsMessage();
+//                Enumeration srcProperties = jmsMessage.getPropertyNames();
+//                while (srcProperties.hasMoreElements()) {
+//                    String propertyName = (String)srcProperties.nextElement ();
+//                    String value = "" + jmsMessage.getObjectProperty(propertyName);
+//                    messagePropertiesMap.add(propertyName, value);
+//                }
+//            } catch (JMSException e) {
+//                e.printStackTrace();
+//            }
+//        } else if (message instanceof KafkaMessage) {
+//            KafkaMessage kafkaMessage = (KafkaMessage)message;
+//            Headers headers = kafkaMessage.getHeaders();
+//            //todo messagePropertiesMap.add...
+//
+//        } else {
+//            LOGGER.warning("message type not supported (not of type AQ or Kakfa):" + message);
+//        }
     }
 
     Object getProperty(String var1) {
@@ -70,7 +70,6 @@ public class MessagingRequestContext {
 
     MultivaluedMap<String, String> getHeaders(){
         return multivaluedMap;
-
     }
 
     void removeHeader(Object key) {
@@ -87,6 +86,11 @@ public class MessagingRequestContext {
         messagePropertiesMap.add(key, value);
     }
 
+
+    /**
+     * Set during outgoing in order to propagate lraID
+     * @param message
+     */
     void setMessageProperties(Object  message)  {
         if (message instanceof AqMessage) {
             javax.jms.Message jmsMessage = ((AqMessage) message).getJmsMessage();

@@ -17,46 +17,71 @@ package io.helidon.lra;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.internals.RecordHeader;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.opentracing.Traced;
 
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import static org.eclipse.microprofile.lra.annotation.ParticipantStatus.Compensated;
 import static org.eclipse.microprofile.lra.annotation.ParticipantStatus.Completed;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
-//todo allow queueing of requests/replies as this is rudimentary and inefficient currently both being inline
 public class KafkaParticipant extends Participant {
     private static final Logger LOGGER = Logger.getLogger(KafkaParticipant.class.getName());
 
     // The Kafka specific config parsed from URIs
-    private ChannelConfig completeConfig, compensateConfig, afterLRAConfig, statusConfig, forgetConfig;
+    private KafkaChannelConfig completeConfig, compensateConfig, afterLRAConfig, statusConfig, forgetConfig;
+    // Since topics are fairly inexpensive in Kafka, currently the requirement for KafkaParticipants is a topic per channel.
+    // Ie there is not option to filter on HELIDONLRAOPERATION as there is with AQ selector option, and therefore
+    //  there is  a listener per bootstrapservers plus topic (bootstrapservers + "-" + topic)
+    private static Map<String, KafkaReplyListener> bootstrapserversToListenerMap = new ConcurrentHashMap<>();
 
     /**
-     * Parse URIs into ChannelConfig
+     * Parse URIs into KafkaChannelConfig
      * Eg. messaging://helidon-kafka/?channel=kafkacompletechannel&bootstrap.servers=kafkacompletechannel&topic=order-events&group.id=lra-example
+     * Add KafkaReplyListener to map keyed on completeConfig.bootstrapservers + "-" + completeConfig.topic
      */
-    public  void init(){
-        parseURIToConfig(getCompleteURI(), completeConfig = new ChannelConfig());
-        parseURIToConfig(getCompensateURI(), compensateConfig = new ChannelConfig());
-        parseURIToConfig(getAfterURI(), afterLRAConfig = new ChannelConfig());
-        parseURIToConfig(getStatusURI(), statusConfig = new ChannelConfig());
-        parseURIToConfig(getForgetURI(), forgetConfig = new ChannelConfig());
+    public void init() {
+            if (!isInitialized) {
+                if (!isConfigInitialized) {
+                    parseURIToConfig(getCompleteURI(), completeConfig = new KafkaChannelConfig());
+                    parseURIToConfig(getCompensateURI(), compensateConfig = new KafkaChannelConfig());
+                    parseURIToConfig(getAfterURI(), afterLRAConfig = new KafkaChannelConfig());
+                    parseURIToConfig(getStatusURI(), statusConfig = new KafkaChannelConfig());
+                    parseURIToConfig(getForgetURI(), forgetConfig = new KafkaChannelConfig());
+                    isConfigInitialized = true;
+                    LOGGER.info("Configuration initialized");
+                }
+                addAndStartListener(completeConfig, false, COMPLETESEND);
+                addAndStartListener(compensateConfig, false, COMPENSATESEND);
+                addAndStartListener(afterLRAConfig, true, AFTERLRASEND);
+                addAndStartListener(statusConfig, true, STATUSSEND);
+                addAndStartListener(forgetConfig, true, FORGETSEND);
+                isInitialized = true;
+                LOGGER.info("Reply listeners started");
+            }
     }
 
-    private void parseURIToConfig(URI uri, ChannelConfig channelConfig) {
+    private void addAndStartListener(KafkaChannelConfig config, boolean isOptional, String operation) {
+        if(isOptional && (config.bootstrapservers == null || config.bootstrapservers.equals(""))) return;
+        if (!bootstrapserversToListenerMap.containsKey(config.bootstrapservers + "-" + config.sendtotopic)) {
+            KafkaReplyListener listener = new KafkaReplyListener(config, operation);
+            bootstrapserversToListenerMap.put(config.bootstrapservers + "-" + config.sendtotopic, listener);
+            new Thread(listener).start();
+//            executorService.submit(listener);
+        }
+    }
+
+    private void parseURIToConfig(URI uri, KafkaChannelConfig channelConfig) {
         if (uri == null) return;
         List<NameValuePair> params = URLEncodedUtils.parse(uri, Charset.forName("UTF-8"));
         String paramName, paramValue;
@@ -70,7 +95,7 @@ public class KafkaParticipant extends Participant {
                     channelConfig.bootstrapservers = paramValue;
                     break;
                 case "topic":
-                    channelConfig.topic = paramValue;
+                    channelConfig.sendtotopic = paramValue; //todo this is temp until we pass the outgoing/reply channel info into join
                     break;
                 case "groupid":
                     channelConfig.groupid = paramValue;
@@ -86,36 +111,58 @@ public class KafkaParticipant extends Participant {
 
     @Override
     void sendCompleteOrCancel(LRA lra, boolean isCancel) {
-        sendMessage(lra, isCancel?compensateConfig:completeConfig, false, "COMPLETESEND");
+        if (isCancel) sendCompensate(lra);
+        else sendComplete(lra);
     }
 
+    @Traced
+    @Counted
+    private void sendComplete(LRA lra) {
+        sendMessage(lra, completeConfig, COMPLETESEND);
+        setParticipantStatus(Completed);
+    }
+
+    @Traced
+    @Counted
+    private void sendCompensate(LRA lra) {
+        sendMessage(lra, compensateConfig, COMPENSATESEND);
+        setParticipantStatus(Compensated);
+    }
+
+    @Traced
+    @Counted
     @Override
     void sendStatus(LRA lra, URI statusURI) {
-        logParticipantMessageWithTypeAndDepth("kafka participant.sendstatus", lra.nestedDepth);
-        sendMessage(lra, statusConfig, false, "COMPLETESEND");
+//        logParticipantMessageWithTypeAndDepth("KafkaParticipant.sendStatus", lra.nestedDepth);
+        sendMessage(lra, statusConfig, STATUSSEND);
     }
 
+    @Traced
+    @Counted
     @Override
     void sendAfterLRA(LRA lra) {
-        logParticipantMessageWithTypeAndDepth("kafka participant.sendAfterLRA", lra.nestedDepth);
-        sendMessage(lra, afterLRAConfig, false, "COMPLETESEND");
+//        logParticipantMessageWithTypeAndDepth("KafkaParticipant.sendAfterLRA", lra.nestedDepth);
+        String outcome = sendMessage(lra, afterLRAConfig, AFTERLRASEND);
+        if (outcome.equals("success") )setAfterLRASuccessfullyCalledIfEnlisted();
+        logParticipantMessageWithTypeAndDepth("RestParticipant afterLRA finished outcome:" + outcome, lra.nestedDepth);
     }
 
+    @Traced
+    @Counted
     @Override
     boolean sendForget(LRA lra) {
-        logParticipantMessageWithTypeAndDepth("kafka participant.sendForget", lra.nestedDepth);
-        sendMessage(lra, forgetConfig, false, "COMPLETESEND");
+        logParticipantMessageWithTypeAndDepth("KafkaParticipant.sendForget", lra.nestedDepth);
+        sendMessage(lra, forgetConfig, COMPLETESEND);
         return true;
     }
 
     /**
-     * Is cancel unused
-     * @param lra
-     * @param channelConfig
-     * @param isCancel
-     * @param operation
+     * Sends specified operation message to participant and waits for reply that is received by the KafkaReplyListener.
+     * @param lra The LRA whose id we will send as header.
+     * @param channelConfig The configuration for the topic, etc. we are sending to.
+     * @param operation The operation being sent. This will also be passed as a header.
      */
-    private void sendMessage(LRA lra, ChannelConfig channelConfig, boolean isCancel, String operation) {
+    private String sendMessage(LRA lra, KafkaChannelConfig channelConfig, String operation) {
         Properties props = new Properties(); //todo get all of this from config
         props.put("bootstrap.servers", channelConfig.bootstrapservers);
         //todo appropriate values...
@@ -127,45 +174,30 @@ public class KafkaParticipant extends Participant {
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         Producer<String, String> producer = new KafkaProducer<String, String>(props);
-        LOGGER.info("Sending to topic:" + channelConfig.topic + " lra.lraId:" + lra.lraId+ " bootstrapservers:" + channelConfig.bootstrapservers);
+        LOGGER.info("Sending " + operation + " to topic:" + channelConfig.sendtotopic +
+                " lra.lraId:" + lra.lraId+ " bootstrapservers:" + channelConfig.bootstrapservers);
         List<Header> headers = Arrays.asList(new RecordHeader(LRA_HTTP_CONTEXT_HEADER, lra.lraId.getBytes()));
-        ProducerRecord<String, String> record = new ProducerRecord<>(channelConfig.topic, null, HELIDONLRAOPERATION, operation, headers); //todo partition
+        ProducerRecord<String, String> record =
+                new ProducerRecord<>(channelConfig.sendtotopic, null, HELIDONLRAOPERATION, operation, headers); //todo partition
+        producer.send(record);
         producer.close();
-        receive(channelConfig, isCancel);
-    }
-
-    /**
-     * Receive reply for request as appropriate
-     * @param isCancel if is a termination call is this complete/cancel or compensate/close
-     */
-    void receive(ChannelConfig channelConfig, boolean isCancel)  {
-        Properties props = new Properties(); //todo get all of this from config
-        props.put("bootstrap.servers", channelConfig.bootstrapservers);
-        //todo appropriate values...
-        props.put("group.id", "test");
-        props.put("enable.auto.commit", "true");
-        props.put("auto.commit.interval.ms", "1000");
-        props.put("session.timeout.ms", "30000");
-        props.put("key.deserializer",
-                "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put("value.deserializer",
-                "org.apache.kafka.common.serialization.StringDeserializer");
-        KafkaConsumer<String, String> consumer = new KafkaConsumer
-                <String, String>(props);
-        consumer.subscribe(Arrays.asList(channelConfig.topic + "reply"));
-        boolean isReplyRecordNotFoundYet = true;
-        while (isReplyRecordNotFoundYet) {
-            ConsumerRecords<String, String> records = consumer.poll(100);
-            for (ConsumerRecord<String, String> record : records) { //todo check value
-                LOGGER.info("offset:" + record.offset() + " key:" + record.key() + " value:" + record.value());
-                Iterable<Header> headers = record.headers().headers(LRA_HTTP_CONTEXT_HEADER);
-                setParticipantStatus(isCancel ? Compensated : Completed);
-                isReplyRecordNotFoundYet = false;
+        KafkaReplyListener replyListener = bootstrapserversToListenerMap.get(channelConfig.bootstrapservers + "-" + channelConfig.sendtotopic);
+        replyListener.lraIDToReplyStatusMap.put("testlraid", operation);
+//        replyListener.lraIDToReplyStatusMap.put(lra.lraId, operation);
+        String replyStatus;
+        do {
+            replyStatus = replyListener.lraIDToReplyStatusMap.get("testlraid"); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
+//            replyStatus = replyListener.lraIDToReplyStatusMap.get(lra.lraId); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
+            LOGGER.info("Still waiting for reply from " + operation + " to topic:" + channelConfig.sendtotopic +
+                    " lra.lraId:" + lra.lraId+ " bootstrapservers:" + channelConfig.bootstrapservers + " current replyStatus:" + replyStatus);
+            try {
+                Thread.sleep(1000 * 1); //todo wait/notify
+            } catch (InterruptedException e) {
+                LOGGER.warning("InterruptedException waiting for reply from topic:" + channelConfig.sendtotopic + " operation:" + operation);
             }
-        }
+        } while (replyStatus.equals(operation)); //todo timeout (add backoff and/or config retries) and return "failure" or exception
+        LOGGER.info("Returning as replyListener for operation:" + operation + " lraID is " + replyStatus);
+        return "success";
     }
 
-    private class ChannelConfig {
-        String bootstrapservers, topic, groupid;
-    }
 }

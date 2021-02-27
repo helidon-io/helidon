@@ -15,7 +15,6 @@
  */
 package io.helidon.lra.messaging;
 
-import io.helidon.messaging.connectors.aq.AqConnector;
 import io.helidon.messaging.connectors.aq.AqMessage;
 import io.helidon.microprofile.messaging.MessagingMethod;
 import io.narayana.lra.client.NarayanaLRAClient;
@@ -75,6 +74,7 @@ public class ServerLRAMessagingFilter {
     private static final String NEW_LRA_PROP = "newLRA";
     private static final String ABORT_WITH_PROP = "abortWith";
     private static final String MP_MESSAGING_INCOMING_PREFIX = "mp.messaging.incoming.";
+    private static final String MP_MESSAGING_OUTGOING_PREFIX = "mp.messaging.outgoing.";
     private static final String LINK_TEXT = "Link";
     private static final Pattern START_END_QUOTES_PATTERN = Pattern.compile("^\"|\"$");
     private static final long DEFAULT_TIMEOUT_MILLIS = 0L;
@@ -122,8 +122,8 @@ public class ServerLRAMessagingFilter {
      * @param message Appropriate LRA properties are processed on the message in order to import/infect and propagate LRA
      */
     public void beforeMethodInvocation(Message message) {
-        this.messagingRequestContext = new MessagingRequestContext(message);
-        MultivaluedMap<String, String> headers = messagingRequestContext.getHeaders(); //todo wrap header calls for messaing properties
+        messagingRequestContext = new MessagingRequestContext(message);
+        MultivaluedMap<String, String> headers = messagingRequestContext.getHeaders();
         LRA.Type type = null;
         LRA transactional = AnnotationResolver.resolveAnnotation(LRA.class, method);
         URI lraId;
@@ -380,8 +380,17 @@ public class ServerLRAMessagingFilter {
     }
 
     public void afterMethodInvocation(MessagingMethod method, Object message) {
-        LOGGER.info("afterMethodInvocation method:" + method + " message:" + message );
-        if (message != null && message instanceof AqMessage) {
+//        LOGGER.info("afterMethodInvocation method:" + method + " message:" + message + "message instanceof AqMessage:" + (message instanceof AqMessage));
+//        LOGGER.info("afterMethodInvocation method:" + method + " message:" + message + "message instanceof Message:" + (message instanceof Message));
+        if(message instanceof Message) {
+//            Object unwrapped = ((Message) message).unwrap(Object.class);
+//            LOGGER.info("afterMethodInvocation ((Message)message).unwrap(Object.class) unwrapped:" + unwrapped);
+//            boolean isUnwrappedMessage = unwrapped instanceof Message;
+//            LOGGER.info("afterMethodInvocation isUnwrappedMessage:" + isUnwrappedMessage);
+//            if (isUnwrappedMessage) LOGGER.info("afterMethodInvocation unwrap the unwrapped:" + ((Message) unwrapped).unwrap(Object.class));
+//            LOGGER.info("afterMethodInvocation ((Message)message).unwrap(AqMessage.class):" + ((Message)message).unwrap(AqMessage.class));
+        }
+        if (message != null && message instanceof AqMessage) { // org.eclipse.microprofile.reactive.messaging.Message
             if (method.getMethod().getAnnotation(Complete.class) != null) {
                 LOGGER.info("Complete reply is " + "COMPLETESUCCESS");
                 messagingRequestContext.addMessageProperty("HELIDONLRAOPERATION", "COMPLETESUCCESS"); //todo constants (corresponding send values are in Participant class)
@@ -422,7 +431,7 @@ public class ServerLRAMessagingFilter {
                 } catch (WebApplicationException e) {
                     progress = updateProgress(progress, ProgressStep.CancelFailed, e.getMessage());
                 } catch (ProcessingException e) {
-                    log("ProcessingException: " + e.getMessage() + " " + this.method.getDeclaringClass().getName() + "#" + this.method.getName() + " " + current.toASCIIString());
+                    LOGGER.info("ProcessingException: " + e.getMessage() + " " + this.method.getDeclaringClass().getName() + "#" + this.method.getName() + " " + current.toASCIIString());
                     progress = updateProgress(progress, ProgressStep.CancelFailed, e.getMessage());
                     toClose = null;
                 } finally {
@@ -440,8 +449,10 @@ public class ServerLRAMessagingFilter {
                 try {
                     if (progress == null || progressDoesNotContain(progress, ProgressStep.StartFailed)) {
                         if (isCancel) {
+                            LOGGER.info("Cancel toClose:" + toClose);
                             lraClient.cancelLRA(toClose);
                         } else {
+                            LOGGER.info("Close toClose:" + toClose);
                             lraClient.closeLRA(toClose);
                         }
                         progress = updateProgress(progress, ProgressStep.Ended, null);
@@ -558,7 +569,7 @@ public class ServerLRAMessagingFilter {
                            String message, Collection<Progress> reasons) {
         MessagingRequestContext.abortWith(Response.status(statusCode).build());
         MessagingRequestContext.setProperty(ABORT_WITH_PROP, reasons);
-        log(message + " " + method.getDeclaringClass().getName() + "#" + method.getName() + " lraId:" + lraId);
+        LOGGER.info(message + " " + method.getDeclaringClass().getName() + "#" + method.getName() + " lraId:" + lraId);
     }
 
     private URI toURI(String uri) throws URISyntaxException {
@@ -614,7 +625,7 @@ public class ServerLRAMessagingFilter {
                 checkMethod(annotationToURLMap, method, AFTER, method.getAnnotation(AfterLRA.class));
         }); //todo validate for case where there is LRA annotation but no others
         if (asyncTermination[0] && !annotationToURLMap.containsKey(STATUS) && !annotationToURLMap.containsKey(FORGET)) {
-            log("error_asyncTerminationBeanMissStatusAndForget:" + classWithLRAAnnotations);
+            LOGGER.info("error_asyncTerminationBeanMissStatusAndForget:" + classWithLRAAnnotations);
 
             throw new WebApplicationException(
                     Response.status(BAD_REQUEST)
@@ -673,6 +684,7 @@ public class ServerLRAMessagingFilter {
                             "channel", channelValue,
                             "bootstrap.servers", config.getValue(MP_MESSAGING_INCOMING_PREFIX + channelValue + ".bootstrap.servers", String.class),
                             "topic", config.getValue(MP_MESSAGING_INCOMING_PREFIX + channelValue + ".topic", String.class),
+//           todo                 "replyfromtopic", config.getValue(MP_MESSAGING_OUTGOING_PREFIX + channelValue + ".topic", String.class),
                             "group.id", config.getOptionalValue(MP_MESSAGING_INCOMING_PREFIX + channelValue + ".group.id", String.class));
                     annotationToURLMap.put(lraRelatedAnnotationName, url);
                 } else {
@@ -680,12 +692,8 @@ public class ServerLRAMessagingFilter {
                 }
                 LOGGER.fine("ServerLRAMessagingFilter.checkMethod lraRelatedAnnotationName:" + lraRelatedAnnotationName +
                         " url:" + url);
-//        }
         return 1;
     }
 
-    static void log(String message) {
-        LOGGER.info("[ServerLRAMessagingFilter] " + message);
-    }
 
 }

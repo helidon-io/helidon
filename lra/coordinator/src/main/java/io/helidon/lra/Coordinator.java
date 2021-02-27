@@ -44,7 +44,6 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVER
 @Tag(name = "LRA Coordinator")
 public class Coordinator implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(Coordinator.class.getName());
-    public static final String COORDINATOR_PATH_NAME = "lra-coordinator";
 
     public static final String STATUS_PARAM_NAME = "Status";
     public static final String CLIENT_ID_PARAM_NAME = "ClientID";
@@ -52,9 +51,6 @@ public class Coordinator implements Runnable {
     public static final String PARENT_LRA_PARAM_NAME = "ParentLRA";
 
     private boolean isTimeoutThreadRunning;
-
-//    @Context
-//    private UriInfo context;
 
     Map<String, LRA> lraMap = new ConcurrentHashMap();
     static String coordinatorURL = "http://127.0.0.1:8080/lra-coordinator/";
@@ -67,6 +63,8 @@ public class Coordinator implements Runnable {
         }
         LOGGER.info("Coordinator init timeout thread started");
         Config config = ConfigProvider.getConfig();
+        LOGGER.info("Coordinator init config.getValue(\"lra.coordinator.url\"):" + config.getOptionalValue("lra.coordinator.url", String.class) );
+
 // todo this or lra.coordinator.url override...  coordinatorURL = "http://" + config.getValue("server.host", String.class) + ":" + config.getValue("server.port", String.class) + "/lra-coordinator/";
         LOGGER.info("Coordinator init coordinatorURL:" + coordinatorURL);
     }
@@ -129,7 +127,6 @@ public class Coordinator implements Runnable {
             @Parameter(name = PARENT_LRA_PARAM_NAME)
             @QueryParam(PARENT_LRA_PARAM_NAME) @DefaultValue("") String parentLRA,
             @HeaderParam(LRA_HTTP_CONTEXT_HEADER) String parentId) throws WebApplicationException {
-//        String coordinatorUrl = String.format("%s%s", context.getBaseUri(), COORDINATOR_PATH_NAME);
         URI lraId = null;
         try {
             String lraUUID = "LRAID" + UUID.randomUUID().toString(); //todo better UUID
@@ -228,12 +225,8 @@ public class Coordinator implements Runnable {
         } else {
             if (timeLimit == 0) timeLimit = 60;
             if (lra.timeout == 0) { // todo overrides
-                lra.timeout = System.currentTimeMillis() + (1000 * timeLimit); //todo convert to whatever measurement
                 if (timeLimit == 500) lra.timeout = System.currentTimeMillis() + 500;
-            }
-            if (!isTimeoutThreadRunning) {
-                new Thread(this).start();
-                isTimeoutThreadRunning = true;
+                else lra.timeout = System.currentTimeMillis() + (1000 * timeLimit); //todo convert to whatever measurement
             }
             long currentTime = System.currentTimeMillis();
             if (currentTime > lra.timeout) {

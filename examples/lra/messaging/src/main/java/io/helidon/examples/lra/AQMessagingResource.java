@@ -20,6 +20,7 @@ import io.helidon.messaging.connectors.kafka.KafkaMessage;
 import org.eclipse.microprofile.lra.annotation.*;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 import org.eclipse.microprofile.lra.annotation.ws.rs.Leave;
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
@@ -43,7 +44,6 @@ public class AQMessagingResource {
     @Incoming("order")
     @Outgoing("inventory")
     @LRA(value = LRA.Type.REQUIRES_NEW)
-//    public CompletionStage<?> reserveInventoryForOrderMessaging(AqMessage<String> msg) throws Exception {
     public Message requiresNew(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.requiresNew msg.getPayload():" + msg.getPayload() +
                 " msg.getDbConnection():" + msg.getDbConnection());
@@ -51,75 +51,81 @@ public class AQMessagingResource {
         return () -> "requiresNew success";
     }
 
-//    @Incoming("order")
-//    @Outgoing("inventory")
+//    @Incoming("order-required")
+//    @Outgoing("inventory-required")
 //    @LRA(value = LRA.Type.REQUIRED)
-    public String required(AqMessage<String> msg) throws Exception {
+    public Message required(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.required msg.getPayload():" + msg.getPayload() +
                 " msg.getDbConnection():" + msg.getDbConnection());
-        return "inventoryexists";
+        if (isCancel) throw new Exception("required throws intentional exception as isCancel is true");
+        return () -> "required success";
     }
 
 //    @Incoming("order")
 //    @Outgoing("inventory")
 //    @LRA(value = LRA.Type.MANDATORY)
-    public String mandatory(AqMessage<String> msg) throws Exception {
+    public Message mandatory(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.mandatory msg.getPayload():" + msg.getPayload() +
                 " msg.getDbConnection():" + msg.getDbConnection());
-        return "inventoryexists";
+        if (isCancel) throw new Exception("mandatory throws intentional exception as isCancel is true");
+        return () -> "mandatory success";
     }
 
 //    @Incoming("order")
 //    @Outgoing("inventory")
 //    @LRA(value = LRA.Type.NEVER)
-    public String never(AqMessage<String> msg) throws Exception {
+    public Message never(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.never msg.getPayload():" + msg.getPayload() +
                 " msg.getDbConnection():" + msg.getDbConnection());
-        return "inventoryexists";
+        if (isCancel) throw new Exception("never throws intentional exception as isCancel is true");
+        return () -> "never success";
     }
 
 //    @Incoming("order")
 //    @Outgoing("inventory")
 //    @LRA(value = LRA.Type.NOT_SUPPORTED)
-    public String notSupported(AqMessage<String> msg) throws Exception {
+    public Message notSupported(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.notSupported msg.getPayload():" + msg.getPayload() +
                 " msg.getDbConnection():" + msg.getDbConnection());
-        return "inventoryexists";
+        if (isCancel) throw new Exception("notSupported throws intentional exception as isCancel is true");
+        return () -> "notSupported success";
     }
 
 //    @Incoming("order")
 //    @Outgoing("inventory")
 //    @LRA(value = LRA.Type.SUPPORTS)
-    public String supports(AqMessage<String> msg) throws Exception {
+    public Message supports(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.supports msg.getPayload():" + msg.getPayload() +
                 " msg.getDbConnection():" + msg.getDbConnection());
-        return "inventoryexists";
+        if (isCancel) throw new Exception("supports throws intentional exception as isCancel is true");
+        return () -> "supports success";
     }
 
 //    @Incoming("order")
 //    @Outgoing("inventory")
 //    @LRA(value = LRA.Type.NESTED)
-    public String nested(AqMessage<String> msg) throws Exception {
+    public Message nested(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.nested msg.getPayload():" + msg.getPayload() +
                 " msg.getDbConnection():" + msg.getDbConnection());
-        return "inventoryexists";
+        if (isCancel) throw new Exception("nested throws intentional exception as isCancel is true");
+        return () -> "nested success";
     }
 
     @Incoming("completechannel")
     @Outgoing("completereplychannel")
     @Complete
-    public String completeMethod(AqMessage<String> msg) throws Exception {
-        System.out.println("InventoryMessagingResource.complete");
+    public Message completeMethod(AqMessage<String> msg) throws Exception {
+        System.out.println("AQMessagingResource.complete");
         String lraID = getLRAID(msg);
         participantStatus = ParticipantStatus.Completed;
-        return participantStatus.toString(); //todo append lra id
+        return () ->  participantStatus.toString(); //todo append lra id
     }
 
     @Incoming("compensatechannel")
     @Outgoing("compensatereplychannel")
     @Compensate
     public String compensateMethod(AqMessage<String> msg) throws Exception {
-        System.out.println("InventoryMessagingResource.compensate");
+        System.out.println("AQMessagingResource.compensate");
         String lraID = getLRAID(msg);
         participantStatus = ParticipantStatus.Compensated;
         return participantStatus.toString(); //todo append lra id
@@ -129,7 +135,7 @@ public class AQMessagingResource {
     @Outgoing("afterlrareplychannel")
     @AfterLRA
     public String afterLRAMethod(AqMessage<String> msg) throws Exception {
-        System.out.println("InventoryMessagingResource.afterLRA");
+        System.out.println("AQMessagingResource.afterLRA");
         String lraID = getLRAID(msg);
         return participantStatus.toString(); //todo append lra id
     }
@@ -138,7 +144,7 @@ public class AQMessagingResource {
     @Outgoing("forgetreplychannel")
     @Forget
     public String forgetLRAMethod(AqMessage<String> msg) throws Exception {
-        System.out.println("InventoryMessagingResource.forget");
+        System.out.println("AQMessagingResource.forget");
         String lraID = getLRAID(msg);
         return participantStatus.toString(); //todo append lra id
     }
@@ -147,7 +153,7 @@ public class AQMessagingResource {
     @Outgoing("leavereplychannel")
     @Leave
     public String leaveLRAMethod(AqMessage<String> msg) throws Exception {
-        System.out.println("InventoryMessagingResource.leave");
+        System.out.println("AQMessagingResource.leave");
         String lraID = getLRAID(msg);
         return participantStatus.toString(); //todo append lra id
     }

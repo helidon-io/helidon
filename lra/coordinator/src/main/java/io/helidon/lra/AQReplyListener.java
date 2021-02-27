@@ -27,8 +27,8 @@ public class AQReplyListener implements Runnable {
     public AQReplyListener(DataSource aqParticipantDB, AQChannelConfig channelConfig, String operation) throws JMSException {
         //todo attempt to listen to both queue and topic - generally one will fail but this prevents us from forcing the customer to configure which we should use
         this.operation = operation;
-        this.type = "queue"; // channelConfig.type;
-        this.destination = "LRAREPLYQUEUE"; // + "REPLY" channelConfig.destination;
+        this.type = "queue"; // channelConfig.type; todo for AQ we need to either have it configured our try both topic and queue in order to support topic-to-queue
+        this.destination = "LRAREPLYQUEUE"; // + "REPLY" channelConfig.destination; todo get from config
         this.owner = "ORDERUSER";
         if(type.equals("topic") )topicConnectionFactory = AQjmsFactory.getTopicConnectionFactory(aqParticipantDB);
         else queueConnectionFactory = AQjmsFactory.getQueueConnectionFactory(aqParticipantDB);
@@ -47,13 +47,12 @@ public class AQReplyListener implements Runnable {
                     AQjmsConsumer consumer = (AQjmsConsumer) qsess.createConsumer(queue);
                     LOGGER.info("Listening for reply on destination:" + destination + " owner:" + owner + " type:" + type);
                     Message message = consumer.receive(-1);
-                    String lraHelidonOperation = message.getStringProperty(HELIDONLRAOPERATION);
+//       todo             String lraHelidonOperation = message.getStringProperty(HELIDONLRAOPERATION);
                     String lraId = message.getStringProperty(LRA_HTTP_CONTEXT_HEADER);
-                    LOGGER.info("Received reply for operation:" + operation +
-                            " lraHelidonOperation:" + lraHelidonOperation + " lraId:" + lraId + " about to commit...");
+                    LOGGER.info("Received reply for operation:" + operation + " lraId:" + lraId + " about to commit...");
                     qsess.commit();
-                    lraIDToReplyStatusMap.put("testlraid", lraHelidonOperation);
-                    LOGGER.info("lraHelidonOperation:" + lraHelidonOperation);
+//     todo               lraIDToReplyStatusMap.put("testlraid", lraHelidonOperation);
+                    lraIDToReplyStatusMap.put("testlraid", "TESTREPLYOPERATION");
                 } catch (JMSException e) {
                     LOGGER.warning("JMSException during receive:" + e);
                 }

@@ -15,7 +15,6 @@
  */
 package io.helidon.lra;
 
-import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import oracle.jms.AQjmsConstants;
 import oracle.jms.AQjmsFactory;
 import oracle.jms.AQjmsSession;
@@ -35,30 +34,20 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
 public class AQParticipant extends Participant {
     private static final Logger LOGGER = Logger.getLogger(AQParticipant.class.getName());
-    private boolean isInitialized = false;
-    private boolean isConfigInitialized = false;
     private AQChannelConfig completeConfig, compensateConfig, afterLRAConfig, forgetConfig;
     private final static String UCP_POOLDATASOURCE = "oracle.ucp.jdbc.PoolDataSource.";
     private static PoolDataSource aqParticipantDB;
     private TopicConnectionFactory topicConnectionFactory;
     private TopicConnection topicConnection;
-    private static ExecutorService executorService;
     private static Map<String, AQReplyListener> destinationAndTypeToListenerMap = new ConcurrentHashMap<>();
     // Unlike REST or Kafka we don't do retries and so we keep track of where we are in the state model with this
-    // These values are also used for message properties in send case and message selectors in receive case.
-    public static final String INIT = "INIT",
-            COMPLETESEND = "COMPLETESEND", COMPLETEREPLY = "COMPLETEREPLY",
-            COMPENSATESEND = "COMPENSATESEND", COMPENSATEREPLY = "COMPENSATEREPLY",
-            AFTERLRASEND = "AFTERLRASEND", AFTERLRAREPLY = "AFTERLRAREPLY",
-            FORGETSEND = "FORGETSEND", FORGETREPLY = "FORGETREPLY";
-    private String lastActionTakenOrReceived = INIT;
+    protected String lastActionTakenOrReceived = INIT;
 
     static {
         System.setProperty("oracle.jdbc.fanEnabled", "false"); //silence benign message re ONS
@@ -79,19 +68,25 @@ public class AQParticipant extends Participant {
                     parseURIToConfig(getForgetURI(), forgetConfig = new AQChannelConfig());
                     isConfigInitialized = true;
                 }
-                executorService = executorService != null ? executorService :
-                        ServerThreadPoolSupplier.builder()
-                                .name(getParticipantType() + "-" + completeConfig.destination + "-" + completeConfig.type)
-                                .build().get();
-                if (!destinationAndTypeToListenerMap.containsKey(completeConfig.destination + "-" + completeConfig.type)) {
-                    AQReplyListener listener = new AQReplyListener(aqParticipantDB, completeConfig, COMPLETEREPLY);
-                    destinationAndTypeToListenerMap.put(completeConfig.destination + "-" + completeConfig.type, listener);
-                    executorService.submit(listener);
-                }
+                addAndStartListener(completeConfig, false, COMPLETESEND);
+                addAndStartListener(compensateConfig, false, COMPENSATESEND);
+                addAndStartListener(afterLRAConfig, true, AFTERLRASEND);
+                addAndStartListener(forgetConfig, true, FORGETSEND);
                 isInitialized = true;
+                LOGGER.info("Reply listeners started");
             }
         } catch (SQLException | JMSException ex) {
             LOGGER.warning("Exception during init of " + this + ":" + ex);
+        }
+    }
+
+    private void addAndStartListener(AQChannelConfig config, boolean isOptional, String operation) throws JMSException {
+        if(isOptional && (completeConfig.destination == null || completeConfig.destination.equals(""))) return;
+        if (!destinationAndTypeToListenerMap.containsKey(completeConfig.destination + "-" + completeConfig.type)) {
+            AQReplyListener listener = new AQReplyListener(aqParticipantDB, config, operation);
+            destinationAndTypeToListenerMap.put(completeConfig.destination + "-" + completeConfig.type, listener);
+            new Thread(listener).start();
+//            executorService.submit(listener);
         }
     }
 
@@ -152,7 +147,7 @@ public class AQParticipant extends Participant {
         //break into cancel and complete methods for better metrics and tracing
     void sendCompleteOrCancel(LRA lra, boolean isCancel) {
         URI endpointURI = isCancel ? getCompensateURI() : getCompleteURI();
-        if (lastActionTakenOrReceived.equals(INIT)) {
+        if (lastActionTakenOrReceived.equals(INIT)) { //todo this is wrong, eg last action could be COMPLETEREPLY with failed status
             LOGGER.info("AQParticipant.sendCompleteOrCancel endpointURI:" + endpointURI);
             init();
             if(isCancel) sendCompensate(lra);
@@ -175,37 +170,44 @@ public class AQParticipant extends Participant {
     }
 
 
+    @Traced
+    @Counted
     @Override
     void sendStatus(LRA lra, URI statusURI) {
         //no-op for AQ as there is guaranteed message delivery
     }
 
+    @Traced
+    @Counted
     @Override
     boolean sendForget(LRA lra) {
         if (!lastActionTakenOrReceived.equals(FORGETSEND)) {
             LOGGER.info("AQParticipant.sendForget endpointURI:" + getForgetURI());
             init();
-            send("FORGET", lra, null);
+            send(FORGETSEND, lra, null);
             lastActionTakenOrReceived = FORGETSEND;
         }
         return true;
     }
 
+    @Traced
+    @Counted
     @Override
     void sendAfterLRA(LRA lra) {
         if (!lastActionTakenOrReceived.equals(AFTERLRASEND)) {
             LOGGER.info("AQParticipant.sendForget endpointURI:" + getForgetURI());
             init();
-            send("FORGET", lra, null);
+            String outcome = send(AFTERLRASEND, lra, null);
             lastActionTakenOrReceived = AFTERLRASEND;
+            if (outcome.equals("success") )setAfterLRASuccessfullyCalledIfEnlisted();
+            logParticipantMessageWithTypeAndDepth("AQParticipant afterLRA finished outcome:" + outcome, lra.nestedDepth);
         }
     }
 
-    //todo return the actual reply value
-    private void send(String operation, LRA lra, AQChannelConfig channelConfig) {
+    private String send(String operation, LRA lra, AQChannelConfig channelConfig) {
         try (TopicSession session = topicConnection.createTopicSession(true, Session.CLIENT_ACKNOWLEDGE)) {
             LOGGER.info("session:" + session + " destination:" + channelConfig.destination + " operation:" + operation);
-            Topic topic = ((AQjmsSession) session).getTopic( aqParticipantDB.getUser(), channelConfig.destination);
+            Topic topic = ((AQjmsSession) session).getTopic(aqParticipantDB.getUser(), channelConfig.destination);
             LOGGER.info("sendEvent topic:" + topic);
             TextMessage objmsg = session.createTextMessage();
             //todo same for queue
@@ -221,18 +223,21 @@ public class AQParticipant extends Participant {
             LOGGER.info(e.getMessage());
         }
         AQReplyListener replyListener = destinationAndTypeToListenerMap.get(channelConfig.destination + "-" + channelConfig.type);
-        replyListener.lraIDToReplyStatusMap.put(lra.lraId, operation);
+        replyListener.lraIDToReplyStatusMap.put("testlraid", operation);
+//        replyListener.lraIDToReplyStatusMap.put(lra.lraId, operation);
         String replyStatus;
         do {
-            replyStatus = replyListener.lraIDToReplyStatusMap.get(lra.lraId); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
+//            replyStatus = replyListener.lraIDToReplyStatusMap.get(lra.lraId); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
+            replyStatus = replyListener.lraIDToReplyStatusMap.get("testlraid"); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
             LOGGER.info("no reply received for lra, replyStatus " + replyStatus);
             try {
                 Thread.sleep(1000 * 1); //todo wait/notify
             } catch (InterruptedException e) {
                 LOGGER.warning("InterruptedException waiting for reply from destination:" + channelConfig.destination + " operation:" + operation);
             }
-        } while (replyStatus.equals(operation));
+        } while (replyStatus.equals(operation)); //todo throw exception if timeout
         LOGGER.info("Returning as replyListener for lraID is " + replyStatus);
+        return "success";
     }
 
 

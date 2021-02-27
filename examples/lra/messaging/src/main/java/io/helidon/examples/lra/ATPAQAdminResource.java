@@ -15,11 +15,17 @@
  */
 package io.helidon.examples.lra;
 
+import oracle.jms.AQjmsConstants;
+import oracle.jms.AQjmsFactory;
+import oracle.jms.AQjmsSession;
+
 import java.sql.*;
+import java.sql.Connection;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.jms.*;
 import javax.sql.DataSource;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -358,6 +364,34 @@ public class ATPAQAdminResource {
         return returnValue;
     }
 
+
+    @Path("/sendTestMessage")
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response sendTestMessage() throws JMSException {
+        TopicSession session = null;
+        TopicConnectionFactory q_cf = AQjmsFactory.getTopicConnectionFactory(orderpdbDataSource);
+        try (TopicConnection q_conn = q_cf.createTopicConnection()){
+            session = q_conn.createTopicSession(true, Session.CLIENT_ACKNOWLEDGE);
+            Connection jdbcConnection = ((AQjmsSession) session).getDBConnection();
+            System.out.println("updateDataAndSendEvent jdbcConnection:" + jdbcConnection + " about to insertOrderViaSODA...");
+            Topic topic = ((AQjmsSession) session).getTopic(orderuser, orderQueueName);
+            System.out.println("updateDataAndSendEvent topic:" + topic);
+            TextMessage objmsg = session.createTextMessage();
+            TopicPublisher publisher = session.createPublisher(topic);
+            objmsg.setIntProperty("Id", 1);
+            objmsg.setIntProperty("Priority", 2);
+            objmsg.setText("test message");
+            objmsg.setJMSCorrelationID("" + 1);
+            objmsg.setJMSPriority(2);
+            publisher.publish(topic, objmsg, DeliveryMode.PERSISTENT, 2, AQjmsConstants.EXPIRATION_NEVER);
+            session.commit();
+            System.out.println("sent message");
+            return Response.ok()
+                    .entity("sent message")
+                    .build();
+        }
+    }
 
 }
 

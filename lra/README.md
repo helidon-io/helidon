@@ -23,7 +23,7 @@ Despite being in the "ws.rs" package, the org.eclipse.microprofile.lra.annotatio
 will be reused as the key for AQ message properties and Kafka headers that will be used for LRA functionality.
 
 The only signatures that will be supported in the initial release are those that take and/or return Message objects 
-Ie, no Publisher/PublisherBuilder nor Subscriber/SubscriberBuilder nor Completions nor raw payloads
+Ie, no Publisher/PublisherBuilder nor Subscriber/SubscriberBuilder nor CompletionStage nor raw payloads
 Inversely put, only these signatures will be supported...
 public Message messagingMethod(Message msg) 
 public void messagingMethod(Message msg) 
@@ -89,7 +89,7 @@ Non-java clients will be future work and will start with .NET
 
 - startup order - messages received before LRA hooks are registered
 - unit testing, re-establish tck test run (original setup has changed), HA, k8s, etc. testing, stress test with recovery testing - continuous
-- messaging 
+- for messaging: pass outgoing/reply channel info during join so that "reply" suffix naming is not mandatory
 - propagation/mp.lra.propagation.active
 - verify leave 
 - verify nonjaxrs endpoints, may need portable extension 
