@@ -40,10 +40,6 @@ import static org.hamcrest.Matchers.is;
 @AddBean(CoverageTestBeanCounted.class)
 public class TestMetricsCoverage {
 
-    interface GeneratedBeanCatalog {
-        List<Class<? extends CoverageTestBeanBase>> generatedBeanClasses();
-    }
-
     @Inject
     GrpcMetricsCoverageTestCdiExtension extension;
 

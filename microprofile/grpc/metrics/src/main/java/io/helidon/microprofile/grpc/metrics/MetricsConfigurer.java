@@ -228,13 +228,12 @@ public class MetricsConfigurer
                     = MetricUtil.lookupAnnotation(method, annotation.annotationType(), annotatedClass);
 
             MetricAnnotationInfo<?> mInfo = METRIC_ANNOTATION_INFO.get(annotation.annotationType());
-            if (mInfo == null || mInfo.annotationClass.isInstance(annotation)) {
-                return;
+            if (mInfo != null && mInfo.annotationClass.isInstance(annotation)) {
+                interceptor = interceptor.description(mInfo.description(annotatedMethod))
+                        .displayName(mInfo.displayName(annotatedMethod))
+                        .reusable(mInfo.reusable(annotatedMethod))
+                        .units(mInfo.units(annotatedMethod));
             }
-            interceptor = interceptor.description(mInfo.description(annotatedMethod))
-                    .displayName(mInfo.displayName(annotatedMethod))
-                    .reusable(mInfo.reusable(annotatedMethod))
-                    .units(mInfo.units(annotatedMethod));
 
             MetricsCdiExtension.registerMetric(method, annotatedClass, lookupResult);
             builder.intercept(grpcMethodName, interceptor.nameFunction(new ConstantNamingFunction(metricName)));
