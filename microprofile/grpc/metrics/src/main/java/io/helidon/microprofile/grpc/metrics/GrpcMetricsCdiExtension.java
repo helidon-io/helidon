@@ -17,7 +17,6 @@
 package io.helidon.microprofile.grpc.metrics;
 
 import java.lang.annotation.Annotation;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -37,7 +36,6 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.Metric;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
