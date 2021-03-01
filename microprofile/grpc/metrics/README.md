@@ -37,6 +37,9 @@ The rest of the logic uses the map rather than hard-coded methods.
 
 ### Update `GrpcMetricsCdiExtension`
 
+Add the new metric and its corresponding annotation to the `METRICS_ANNOTATIONS` `EnumMap` 
+initialization.
+
 On the `registerMetrics` method, add the new metrics annotation(s) to the `@WithAnnotation` list of 
 metrics 
 annotations.

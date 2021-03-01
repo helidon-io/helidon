@@ -17,8 +17,9 @@
 package io.helidon.microprofile.grpc.metrics;
 
 import java.lang.annotation.Annotation;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.Map;
 
 import javax.annotation.Priority;
 import javax.enterprise.event.Observes;
@@ -31,8 +32,8 @@ import javax.interceptor.Interceptor;
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
-import io.helidon.microprofile.metrics.MetricsCdiExtension;
 
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
@@ -56,13 +57,17 @@ public class GrpcMetricsCdiExtension
 
     static final int OBSERVER_PRIORITY = Interceptor.Priority.APPLICATION;
 
-    static final Set<Class<? extends Annotation>> METRICS_ANNOTATIONS_TO_CHECK;
+    static final EnumMap<MetricType, Class<? extends Annotation>> METRICS_ANNOTATIONS;
 
     static {
-        METRICS_ANNOTATIONS_TO_CHECK = new HashSet<>(MetricsCdiExtension.METRIC_ANNOTATIONS);
-
-        // The original collection includes Metric, which we do not want to worry about here.
-        METRICS_ANNOTATIONS_TO_CHECK.remove(Metric.class);
+        Map<MetricType, Class<? extends Annotation>> map = Map.of(
+                MetricType.CONCURRENT_GAUGE, ConcurrentGauge.class,
+                MetricType.COUNTER, Counted.class,
+                MetricType.METERED, Metered.class,
+                MetricType.SIMPLE_TIMER, SimplyTimed.class,
+                MetricType.TIMER, Timed.class
+        );
+        METRICS_ANNOTATIONS = new EnumMap<>(map);
     }
 
 
@@ -77,7 +82,7 @@ public class GrpcMetricsCdiExtension
                                          SimplyTimed.class, Grpc.class})
                                  @Priority(OBSERVER_PRIORITY)
                                  ProcessAnnotatedType<?> pat) {
-        METRICS_ANNOTATIONS_TO_CHECK.forEach(type ->
+        METRICS_ANNOTATIONS.values().forEach(type ->
                pat.configureAnnotatedType()
                   .methods()
                   .stream()

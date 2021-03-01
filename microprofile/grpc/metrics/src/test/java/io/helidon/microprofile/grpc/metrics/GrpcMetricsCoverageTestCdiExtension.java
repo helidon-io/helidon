@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -57,7 +56,7 @@ public class GrpcMetricsCoverageTestCdiExtension implements Extension {
         String testBeanClassBaseName = CoverageTestBeanBase.class.getName();
         String testBeanClassNamePrefix = testBeanClassBaseName.substring(0, testBeanClassBaseName.indexOf("Base"));
 
-        GrpcMetricsCdiExtension.METRICS_ANNOTATIONS_TO_CHECK.forEach(annotationClass -> {
+        GrpcMetricsCdiExtension.METRICS_ANNOTATIONS.values().forEach(annotationClass -> {
             String testBeanClassName = testBeanClassNamePrefix + annotationClass.getSimpleName();
             try {
                 Class<?> testBeanClass = Class.forName(testBeanClassName);
@@ -94,7 +93,7 @@ public class GrpcMetricsCoverageTestCdiExtension implements Extension {
                                     .map(Annotation::annotationType)
                                     .collect(Collectors.toSet());
 
-                    metricsAnnotationClassesForThisMethod.retainAll(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS_TO_CHECK);
+                    metricsAnnotationClassesForThisMethod.retainAll(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS.values());
                     LOGGER.log(Level.FINE, () -> String.format("Recording annotation(s) %s on %s",
                             metricsAnnotationClassesForThisMethod, m.getJavaMember().toString()));
                     metricsAnnotationsUsed.addAll(metricsAnnotationClassesForThisMethod);
@@ -115,7 +114,7 @@ public class GrpcMetricsCoverageTestCdiExtension implements Extension {
                                     .map(Annotation::annotationType)
                                     .collect(Collectors.toSet());
 
-                    remainingMetricsAnnotationsForThisMethod.retainAll(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS_TO_CHECK);
+                    remainingMetricsAnnotationsForThisMethod.retainAll(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS.values());
                     if (!remainingMetricsAnnotationsForThisMethod.isEmpty()) {
                         remainingTestBeanMethodAnnotations.put(m, remainingMetricsAnnotationsForThisMethod);
                     }

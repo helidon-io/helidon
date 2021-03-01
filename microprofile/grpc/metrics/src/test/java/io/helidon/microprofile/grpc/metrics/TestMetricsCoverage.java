@@ -17,8 +17,9 @@
 package io.helidon.microprofile.grpc.metrics;
 
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,6 +30,7 @@ import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import org.eclipse.microprofile.metrics.MetricType;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -62,7 +64,7 @@ public class TestMetricsCoverage {
     public void checkThatAllMetricsAnnotationsWereEncountered() {
 
         Set<Class<? extends Annotation>> metricsAnnotationsUnused =
-                new HashSet<>(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS_TO_CHECK);
+                new HashSet<>(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS.values());
         metricsAnnotationsUnused.removeAll(extension.metricsAnnotationsUsed());
 
         assertThat("The CoverageTestBeanBase subclasses seem not to cover all known annotations", metricsAnnotationsUnused,
@@ -86,10 +88,30 @@ public class TestMetricsCoverage {
     @Test
     public void checkForAllMetricsInMetricInfo() {
         Set<Class<? extends Annotation>> metricsAnnotations =
-                new HashSet<>(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS_TO_CHECK);
+                new HashSet<>(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS.values());
 
         metricsAnnotations.removeAll(MetricsConfigurer.metricsAnnotationsSupported());
         assertThat("One or more metrics annotations seem not supported in MetricsConfigurer but should be",
                 metricsAnnotations, is(empty()));
+    }
+
+    /**
+     * Makes sure that all metrics types that have corresponding annotations we process are present in the type-to-annotation
+     * EnumMap.
+     */
+    @Test
+    public void checkForAllMetricTypesMappedToAnnotationType() {
+        Set<MetricType> ignoredMetricTypes = Set.of(MetricType.INVALID, // ignore this
+                MetricType.GAUGE, // we don't process gauge annotations
+                MetricType.HISTOGRAM // there is no histogram annotation for the histogram metric type
+                );
+
+        Set<MetricType> incorrectlySkippedMetricTypes = new HashSet<>(Arrays.asList(MetricType.values()));
+        incorrectlySkippedMetricTypes.removeAll(ignoredMetricTypes);
+
+        incorrectlySkippedMetricTypes.removeAll(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS.keySet());
+        assertThat("At least one MicroProfile metric with an annotation exists that is not present in "
+                        + "GrpcMetricsCdiExtension.METRICS_ANNOTATIONS",
+                incorrectlySkippedMetricTypes, is(empty()));
     }
 }
