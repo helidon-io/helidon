@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ service restarts, network delays, temporal infrastructure instabilities, etc.
 
 The latest implementation of MP Fault Tolerance is built on top of Helidon's SE
 Fault Tolerance. Thus, some configuration for Helidon SE Fault
-Tolerance also applies to MP. The next section describes some
+Tolerance also applies to MP. The next section describes
 configuration properties that are of particular interest to MP applications.
 
 === Configuration
@@ -46,16 +46,15 @@ file as follows:
 [source,yaml]
 ----
 executor:
-  core-pool-size: 8
+  core-pool-size: 32
 
 scheduled-executor:
-  core-pool-size: 8
+  core-pool-size: 32
 ----
 
 NOTE: There is currently _no support_ to configure these executor properties via a
 `microprofile-config.properties` file.
 
-The complete set of properties available to configure these executors is in
-{executor-config}[ServerThreadPoolSupplier] and
-{scheduled-executor-config}[ScheduledThreadPoolSupplier].
-
+For a complete set of properties available to configure these executors, see
+link:{executor-config}[ServerThreadPoolSupplier] and
+link:{scheduled-executor-config}[ScheduledThreadPoolSupplier].
