@@ -112,7 +112,7 @@
         <version.plugin.spotbugs>3.1.12</version.plugin.spotbugs>
         <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
         <version.plugin.surefire>2.19.1</version.plugin.surefire>
-        <version.plugin.dependency-check>6.1.1</version.plugin.dependency-check>
+        <version.plugin.dependency-check>6.0.2</version.plugin.dependency-check>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
