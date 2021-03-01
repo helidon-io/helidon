@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.8-SNAPSHOT]
+## [1.4.8]
 
 This is a bug fix release of Helidon. It contains fixes and a number of dependency upgrades.
 We recommend all Helidon 1.4 users upgrade to this release.
@@ -14,6 +14,14 @@ We recommend all Helidon 1.4 users upgrade to this release.
 
 - Config: AbstractDataSourceExtension now uses Config.getPropertyNames() [2350](https://github.com/oracle/helidon/pull/2350)
 - Config: Fix issue with null value in JSON. [2728](https://github.com/oracle/helidon/pull/2728)
+- Jersey: Added support for remote host and port to jersey and security 1.x [2369](https://github.com/oracle/helidon/pull/2369)
+- Jersey: Enable ignoreExceptionResponse property [2776](https://github.com/oracle/helidon/pull/2776)
+- Metrics: Fix JSON conversion error during metrics formatting after idle period [2817](https://github.com/oracle/helidon/pull/2817)
+- Security: Fix for P-521 curve - wrong id [2280](https://github.com/oracle/helidon/pull/2280)
+- Security: Overall timeout for EvictableCache [2667](https://github.com/oracle/helidon/pull/2667)
+- Security: Security now has higer priority [2298](https://github.com/oracle/helidon/pull/2298)
+- WebServer: Fix hangs when bad request was sent. [2261](https://github.com/oracle/helidon/pull/2261)
+- gRCP: Fix issue with gRPC clients and services where method signatures have types with nested generics [2356](https://github.com/oracle/helidon/pull/2356)
 - Dependencies: Update Prometheus Java Client to 0.9.0 [2420](https://github.com/oracle/helidon/pull/2420)
 - Dependencies: Update Hibernate and Eclipselink [2655](https://github.com/oracle/helidon/pull/2655)
 - Dependencies: Upgrade Jackson to 2.10.5 with 2.10.5.1 databind [2684](https://github.com/oracle/helidon/pull/2684)
@@ -28,13 +36,6 @@ We recommend all Helidon 1.4 users upgrade to this release.
 - Dependencies: Upgrade mysql connecter to 8.0.22 [2788](https://github.com/oracle/helidon/pull/2788)
 - Dependencies: remove weld-probe [2664](https://github.com/oracle/helidon/pull/2664)
 - Documentation: Improve doc for built-in health checks [2562](https://github.com/oracle/helidon/pull/2562)
-- Jersey: Added support for remote host and port to jersey and security 1.x [2369](https://github.com/oracle/helidon/pull/2369)
-- Jersey: Enable ignoreExceptionResponse property [2776](https://github.com/oracle/helidon/pull/2776)
-- Security: Fix for P-521 curve - wrong id [2280](https://github.com/oracle/helidon/pull/2280)
-- Security: Overall timeout for EvictableCache [2667](https://github.com/oracle/helidon/pull/2667)
-- Security: Security now has higer priority [2298](https://github.com/oracle/helidon/pull/2298)
-- WebServer: Fix hangs when bad request was sent. [2261](https://github.com/oracle/helidon/pull/2261)
-- gRCP: Fix issue with gRPC clients and services where method signatures have types with nested generics [2356](https://github.com/oracle/helidon/pull/2356)
 - Build: Add dependency-check-maven plugin [2569](https://github.com/oracle/helidon/pull/2569)
 - Tests: Added timeouts to client, webserver and tests to identify intermitten… [2305](https://github.com/oracle/helidon/pull/2305)
 
@@ -733,7 +734,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[1.4.8-SNAPSHOT]: https://github.com/oracle/helidon/compare/1.4.7..helidon-1.x
+[1.4.8]: https://github.com/oracle/helidon/compare/1.4.7..1.4.8
 [1.4.7]: https://github.com/oracle/helidon/compare/1.4.6..1.4.7
 [1.4.6]: https://github.com/oracle/helidon/compare/1.4.5..1.4.6
 [1.4.5]: https://github.com/oracle/helidon/compare/1.4.4..1.4.5
