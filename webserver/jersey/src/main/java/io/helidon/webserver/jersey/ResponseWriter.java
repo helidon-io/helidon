@@ -261,7 +261,7 @@ class ResponseWriter implements ContainerResponseWriter {
         // -- Private methods -------------------------------------------------
 
         private void publish(boolean doFlush, ByteBuf buf) {
-            DataChunk d = new ByteBufDataChunk(doFlush, true, buf::release, buf);
+            DataChunk d = ByteBufDataChunk.create(doFlush, true, buf::release, buf);
             if (requested.get() >= 0) {
                 awaitDownstream();
                 downstream.onNext(d);

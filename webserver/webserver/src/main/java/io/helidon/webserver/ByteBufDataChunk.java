@@ -45,8 +45,33 @@ public class ByteBufDataChunk implements DataChunk {
      * @param flush a signal that this chunk should be written and flushed from any cache if possible
      * @param readOnly marks this buffer as read only
      * @param byteBufs the data for this chunk. Should not be reused until {@code releaseCallback} is used
+     * @return new chunk
      */
-    public ByteBufDataChunk(boolean flush, boolean readOnly, ByteBuf... byteBufs) {
+    public static ByteBufDataChunk create(boolean flush, boolean readOnly, ByteBuf... byteBufs) {
+        return new ByteBufDataChunk(flush, readOnly, byteBufs);
+    }
+
+    /**
+     * Creates an instance given an array of {@code ByteBuf}'s.
+     *
+     * @param flush a signal that this chunk should be written and flushed from any cache if possible
+     * @param readOnly marks this buffer as read only
+     * @param releaseCallback a callback which is called when this chunk is completely processed
+     * @param byteBufs the data for this chunk. Should not be reused until {@code releaseCallback} is used
+     * @return new chunk
+     */
+    public static ByteBufDataChunk create(boolean flush, boolean readOnly, Runnable releaseCallback, ByteBuf... byteBufs) {
+        return new ByteBufDataChunk(flush, readOnly, releaseCallback, byteBufs);
+    }
+
+    /**
+     * Creates an instance given an array of {@code ByteBuf}'s.
+     *
+     * @param flush a signal that this chunk should be written and flushed from any cache if possible
+     * @param readOnly marks this buffer as read only
+     * @param byteBufs the data for this chunk. Should not be reused until {@code releaseCallback} is used
+     */
+    private ByteBufDataChunk(boolean flush, boolean readOnly, ByteBuf... byteBufs) {
         this(flush, readOnly, null, byteBufs);
     }
 
@@ -58,7 +83,7 @@ public class ByteBufDataChunk implements DataChunk {
      * @param releaseCallback a callback which is called when this chunk is completely processed
      * @param byteBufs the data for this chunk. Should not be reused until {@code releaseCallback} is used
      */
-    public ByteBufDataChunk(boolean flush, boolean readOnly, Runnable releaseCallback, ByteBuf... byteBufs) {
+    private ByteBufDataChunk(boolean flush, boolean readOnly, Runnable releaseCallback, ByteBuf... byteBufs) {
         this.flush = flush;
         this.readOnly = readOnly;
         this.releaseCallback = releaseCallback;
