@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Meter;
@@ -40,6 +41,7 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Timer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -167,6 +169,44 @@ public class GrpcMetricsInterceptorIT {
 
         assertVendorMetrics();
         assertThat(appTimer.getCount(), is(1L));
+    }
+
+    @Test
+    public void shouldUseSimpleTimerMetric() throws Exception {
+        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+                .unary("barSimplyTimed", this::dummyUnary)
+                .build();
+
+        MethodDescriptor methodDescriptor = descriptor.method("barSimplyTimed");
+        GrpcMetrics metrics = GrpcMetrics.simplyTimed();
+
+        ServerCall<String, String> call = call(metrics, methodDescriptor);
+
+        call.close(Status.OK, new Metadata());
+
+        SimpleTimer appSimpleTimer = appRegistry.simpleTimer("Foo.barSimplyTimed");
+
+        assertVendorMetrics();
+        assertThat(appSimpleTimer.getCount(), is(1L));
+    }
+
+    @Test
+    public void shouldUseConcurrentGaugeMetric() throws Exception {
+        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+                .unary("barConcurrentGauge", this::dummyUnary)
+                .build();
+
+        MethodDescriptor methodDescriptor = descriptor.method("barConcurrentGauge");
+        GrpcMetrics metrics = GrpcMetrics.concurrentGauge();
+
+        ServerCall<String, String> call = call(metrics, methodDescriptor);
+
+        call.close(Status.OK, new Metadata());
+
+        ConcurrentGauge appConcurrentGauge = appRegistry.concurrentGauge("Foo.barConcurrentGauge");
+
+        assertVendorMetrics();
+        assertThat(appConcurrentGauge.getCount(), is(1L));
     }
 
     @Test
