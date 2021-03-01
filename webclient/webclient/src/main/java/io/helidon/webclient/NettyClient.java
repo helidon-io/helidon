@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ final class NettyClient implements WebClient {
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofMinutes(1);
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofMinutes(10);
     private static final boolean DEFAULT_FOLLOW_REDIRECTS = false;
-    private static final boolean DEFAULT_KEEP_ALIVE = false;
+    private static final boolean DEFAULT_KEEP_ALIVE = true;
     private static final boolean DEFAULT_VALIDATE_HEADERS = true;
     private static final int DEFAULT_NUMBER_OF_REDIRECTS = 5;
     private static final LazyValue<String> DEFAULT_USER_AGENT = LazyValue

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,7 @@ import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST_ID;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.RESPONSE;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.RESULT;
+import static io.helidon.webclient.WebClientRequestBuilderImpl.RETURN;
 
 /**
  * Created for each request/response interaction.
@@ -80,22 +81,29 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
+        Channel channel = ctx.channel();
         ctx.flush();
         if (publisher != null && publisher.hasRequests()) {
-            ctx.channel().read();
+            channel.read();
+        }
+        if (channel.hasAttr(RETURN) && channel.attr(RETURN).get().compareAndSet(true, false)) {
+            LOGGER.finest(() -> "(client reqID: " + requestId + ") Returning channel " + channel.hashCode() + " to the cache");
+            channel.attr(IN_USE).get().set(false);
+            responseCloser.cf.complete(null);
+            publisher.complete();
         }
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws IOException {
+        Channel channel = ctx.channel();
         if (msg instanceof HttpResponse) {
-            Channel channel = ctx.channel();
             channel.config().setAutoRead(false);
             HttpResponse response = (HttpResponse) msg;
             this.requestId = channel.attr(REQUEST_ID).get();
             WebClientRequestImpl clientRequest = channel.attr(REQUEST).get();
             RequestConfiguration requestConfiguration = clientRequest.configuration();
-            LOGGER.finest(() -> "(client reqID: " + requestId + ") Initial http response message received.");
+            LOGGER.finest(() -> "(client reqID: " + requestId + ") Initial http response message received");
 
             this.publisher = new HttpResponsePublisher(ctx);
             this.responseCloser = new ResponseCloser(ctx);
@@ -171,6 +179,15 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         }
 
         if (responseCloser.isClosed()) {
+            if (channel.hasAttr(RETURN)) {
+                if (msg instanceof LastHttpContent) {
+                    LOGGER.finest(() -> "(client reqID: " + requestId + ") Draining finished");
+                    channel.attr(RETURN).get().set(true);
+                } else {
+                    LOGGER.finest(() -> "(client reqID: " + requestId + ") Draining not finished, requesting new chunk");
+                }
+                channel.read();
+            }
             return;
         }
 
@@ -181,8 +198,14 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         }
 
         if (msg instanceof LastHttpContent) {
-            LOGGER.finest(() -> "(client reqID: " + requestId + ") Last http content received.");
-            responseCloser.close();
+            LOGGER.finest(() -> "(client reqID: " + requestId + ") Last http content received");
+            if (channel.hasAttr(RETURN)) {
+                channel.attr(RETURN).get().set(true);
+                responseCloser.close();
+                channel.read();
+            } else {
+                responseCloser.close();
+            }
         }
     }
 
@@ -293,7 +316,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
          */
         Single<Void> close() {
             if (closed.compareAndSet(false, true)) {
-                LOGGER.finest(() -> "(client reqID: " + requestId + ") Closing the response from the server.");
+                LOGGER.finest(() -> "(client reqID: " + requestId + ") Closing the response from the server");
                 Channel channel = ctx.channel();
                 WebClientServiceResponse clientServiceResponse = channel.attr(SERVICE_RESPONSE).get();
                 CompletableFuture<WebClientServiceResponse> requestComplete = channel.attr(COMPLETED).get();
@@ -301,12 +324,12 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                 WebClientResponse response = channel.attr(RESPONSE).get();
                 String connection = response.headers().first(Http.Header.CONNECTION)
                         .orElseGet(HttpHeaderValues.CLOSE::toString);
-                if (connection.equals(HttpHeaderValues.CLOSE.toString())) {
+                if (connection.equals(HttpHeaderValues.CLOSE.toString()) || !channel.hasAttr(RETURN)) {
                     ctx.close()
                             .addListener(future -> {
                                 if (future.isSuccess()) {
                                     LOGGER.finest(() -> "(client reqID: " + requestId + ") "
-                                            + "Response from the server has been closed.");
+                                            + "Response from the server has been closed");
                                     cf.complete(null);
                                 } else {
                                     LOGGER.log(Level.SEVERE,
@@ -315,13 +338,11 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                                     cf.completeExceptionally(future.cause());
                                 }
                             });
-                } else {
-                    LOGGER.finest(() -> "(client reqID: " + requestId + ") Returning channel to the cache.");
-                    channel.attr(IN_USE).get().set(false);
-                    cf.complete(null);
+                    publisher.complete();
+                } else if (!channel.attr(RETURN).get().get()) {
+                    LOGGER.finest(() -> "(client reqID: " + requestId + ") Drain possible remaining entity parts");
                     channel.read();
                 }
-                publisher.complete();
             }
             return Single.create(cf, true);
         }
