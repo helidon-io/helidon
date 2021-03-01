@@ -108,6 +108,7 @@ class InternalProcessor implements Processor<Object, Object> {
                 }
             }
         } catch (Throwable e) {
+            method.onFailure((Message<?>) MessageUtils.wrap(incomingValue), e);
             subscriber.onError(e);
         }
     }

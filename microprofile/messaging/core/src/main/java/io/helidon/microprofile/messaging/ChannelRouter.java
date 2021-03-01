@@ -178,6 +178,7 @@ class ChannelRouter {
         outgoingMethod.validate();
         outgoingMethod.beforeInvokeCallback(this::beforeMethod);
         outgoingMethod.afterInvokeCallback(this::afterMethod);
+        outgoingMethod.failureCallback(this::onMethodFailure);
 
         String channelName = outgoingMethod.getOutgoingChannelName();
 
@@ -192,6 +193,7 @@ class ChannelRouter {
         channelMethod.validate();
         channelMethod.beforeInvokeCallback(this::beforeMethod);
         channelMethod.afterInvokeCallback(this::afterMethod);
+        channelMethod.failureCallback(this::onMethodFailure);
 
         String incomingChannelName = channelMethod.getIncomingChannelName();
         String outgoingChannelName = channelMethod.getOutgoingChannelName();
