@@ -41,9 +41,9 @@ to secure your application with OIDC security provider.
 
 === Introduction
 
-This guide describes the different steps to protect your whole application or a specific area with a OIDC security.
-OIDC stands for Open ID Connect. It is a secure mechanism for an application to contact an identity service.
-It is built on top of OAuth 2.0 and provide full fledged authentication and authorization protocol.
+This guide describes the steps required to protect your whole application or a specific area with Open ID Connect
+(OIDC) security. OIDC is a secure mechanism for an application to contact an identity service.
+Its built on top of OAuth 2.0 and provides full-fledged authentication and authorization protocols.
 
 === Keycloak Installation
 
@@ -359,33 +359,33 @@ From the actual settings, the user needs to log in only once, then Keycloak save
 
 === Test Keycloak process with Postman
 
-Keycloak supports many authentication and authorization flows and only two of them will be shown. This chapter describes
-the different way to get an access token, refresh token and/or identity token. The identity token contains information
-about the user. The access token contains access information that the application can use to determine what resources
-the user is allowed to access. Once expired, the refresh token allows the application to obtain a new access token.
-As these token contains sensitive information, they are valid for a very short period. It is possible to make them
+Keycloak supports many authentication and authorization flows, but only two of them will be shown. This section
+describes another way you can get an access token or refresh a token or identity token. The identity token contains
+information about the user. The access token contains access information that the application can use to determine what
+resources the user is allowed to access. Once expired, the refresh token allows the application to obtain a new access
+token. As these tokens contain sensitive information, they are valid for a very short period. It is possible to make them
 last longer in order to let you manipulate them with Postman. To do so:
 
-* Go to the admin console
-* Click on the `Realm Setting` in the left menu
-* Navigate to the `Tokens` tab
+* Open the Postman Console.
+* Click on the `Realm Setting` in the left menu.
+* Navigate to the `Tokens` tab.
 
 You can increase the access token lifespan.
 
 ==== Authorization Code Flow
 
-It is a suitable flow for a browser base application. It is composed of three main steps:
+The Authorization Code flow is suitable for browser-based applications. It is composed of three main steps:
 
-1. The browser visit the application. The user is not logged in, so it redirects the browser to keycloak which require
+1. The browser visits the application. The user is not logged in, so it redirects the browser to Keycloak which requires
 username and password for authentication.
-2. Keycloak authenticates the user and return a temporary authorization code as a query parameter in the url.
-3. The authorization code is used to get access and refresh token from keycloak token endpoint.
+2. Keycloak authenticates the user and returns a temporary authorization code as a query parameter in the URL.
+3. The authorization code is used to get access and refresh token from Keycloak token endpoint.
 
-For the first step, open your favorite browser and copy past into the url:
+For the first step, paste the following URL into your browser:
 `http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/auth?client_id=myClientID&response_type=code`.
-The first part of the url `http:/../auth` is the keycloak endpoint to request an authorization code. Two query
+The first part of the url `http:/../auth` is the Keycloak endpoint to request an authorization code. Two query
 parameters are provided, the client id and the response type.
-Press enter and Keycloak responds by a different url containing a query parameter `code`. You successfully received
+Press enter and Keycloak responds with different URL containing a query parameter `code`. You successfully received
 the authorization code.
 
 In order to achieve the third step, we can use Postman to exchange the authorization code for tokens. In Postman,
@@ -408,10 +408,10 @@ a refresh token.
 
 ==== Resource Owner Password Credentials Grant (Direct Access Grants)
 
-The Direct Access Grants flow is used by REST clients which wants to request tokens on behalf of a user.
-Use Postman to make this request on behalf of `myuser`. Select the GET method and enter this url:
+The Direct Access Grants flow is used by REST clients that want to request tokens on behalf of a user.
+To use Postman to make this request on behalf of `myuser`, select the GET method and enter this URL:
 `http://localhost:7987/greet/`. Under `Authorization` tab, select authorization type`OAuth 2.0`. Under it, complete the
-sentence  `Add authorization data to` with `Request Headers`, and fulfil the required fields.
+sentence  `Add authorization data to` with `Request Headers`, and complete the required fields.
 
 [source,json]
 .Enter the following information:
@@ -427,9 +427,9 @@ sentence  `Add authorization data to` with `Request Headers`, and fulfil the req
 {"key":"Client Authentication","value":"Send as Basic Auth Header"}]
 ----
 
-Again, make sure to replace `client secret` by the actual client secret. Click on `Get New Access Token`. A pop up
+Again, make sure to replace `client secret` by the actual client secret. Click on `Get New Access Token`. A popup
 window appears with Authentication complete, click on proceed to display access, refresh and identity token.
-Copy past the access token to `Access Token` field and press `Send`. Helidon greeting application sends back
+Copy and paste the access token to `Access Token` field and press `Send`. Helidon greeting application sends back
 `Hello World !`.
 
 ==== Update tests to the secure environment
