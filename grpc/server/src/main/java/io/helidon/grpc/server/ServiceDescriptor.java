@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
+import io.grpc.protobuf.ProtoFileDescriptorSupplier;
 import io.grpc.stub.ServerCalls;
 import org.eclipse.microprofile.health.HealthCheck;
 
@@ -56,17 +57,20 @@ public class ServiceDescriptor {
     private final PriorityBag<ServerInterceptor> interceptors;
     private final Map<Context.Key<?>, Object> context;
     private final HealthCheck healthCheck;
+    private final Descriptors.FileDescriptor proto;
 
     private ServiceDescriptor(String name,
                               Map<String, MethodDescriptor> methods,
                               PriorityBag<ServerInterceptor> interceptors,
                               Map<Context.Key<?>, Object> context,
-                              HealthCheck healthCheck) {
+                              HealthCheck healthCheck,
+                              Descriptors.FileDescriptor proto) {
         this.name = Objects.requireNonNull(name);
         this.methods = methods;
         this.context = Collections.unmodifiableMap(context);
         this.healthCheck = healthCheck;
         this.interceptors = interceptors.copyMe();
+        this.proto = proto;
     }
 
     /**
@@ -117,6 +121,14 @@ public class ServiceDescriptor {
      */
     public HealthCheck healthCheck() {
         return healthCheck;
+    }
+
+    /**
+     * Return a proto file descriptor.
+     * @return a proto file descriptor
+     */
+    public Descriptors.FileDescriptor proto() {
+        return proto;
     }
 
     BindableService bindableService(PriorityBag<ServerInterceptor> interceptors) {
@@ -457,6 +469,11 @@ public class ServiceDescriptor {
             this.serviceClass = service.getClass();
             this.healthCheck  = ConstantHealthCheck.up(name);
 
+            Object schemaDescriptor = def.getServiceDescriptor().getSchemaDescriptor();
+            if (schemaDescriptor instanceof ProtoFileDescriptorSupplier) {
+                this.proto = ((ProtoFileDescriptorSupplier) schemaDescriptor).getFileDescriptor();
+            }
+
             for (ServerMethodDefinition smd : def.getMethods()) {
                 io.grpc.MethodDescriptor md = smd.getMethodDescriptor();
                 ServerCallHandler        handler = smd.getServerCallHandler();
@@ -627,7 +644,7 @@ public class ServiceDescriptor {
                 methods.put(entry.getKey(), entry.getValue().build());
             }
 
-            return new ServiceDescriptor(name, methods, interceptors, context, healthCheck);
+            return new ServiceDescriptor(name, methods, interceptors, context, healthCheck, proto);
         }
 
         @Override
