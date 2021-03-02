@@ -29,7 +29,6 @@
     </parent>
     <groupId>io.helidon.examples.integrations.neo4j</groupId>
     <artifactId>helidon-examples-integration-neo4j-se</artifactId>
-    <version>2.2.1-SNAPSHOT</version>
     <name>Helidon Integrations Neo4j SE Example</name>
 
     <properties>
@@ -39,10 +38,6 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>org.neo4j.driver</groupId>
-            <artifactId>neo4j-java-driver</artifactId>
-        </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
@@ -103,6 +98,10 @@
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-nop</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
