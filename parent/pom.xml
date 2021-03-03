@@ -123,6 +123,7 @@
         <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.install>3.0.0-M1</version.plugin.install>
         <version.plugin.nexus-staging>1.6.7</version.plugin.nexus-staging>
+        <version.plugin.versions>2.7</version.plugin.versions>
     </properties>
 
     <build>
@@ -159,6 +160,11 @@
                         <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
                         <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>${version.plugin.versions}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
