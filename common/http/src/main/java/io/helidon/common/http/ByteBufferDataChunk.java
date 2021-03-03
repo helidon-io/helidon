@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Default implementation of {@link DataChunk}.
+ * Implementation of {@link DataChunk} based on {@code java.nio.ByteBuffer}.
  */
-final class DataChunkImpl implements DataChunk {
+final class ByteBufferDataChunk implements DataChunk {
 
     private final ByteBuffer[] byteBuffers;
     private final boolean flush;
@@ -38,7 +38,7 @@ final class DataChunkImpl implements DataChunk {
      * @param readOnly        indicates underlying buffers are not reused
      * @param byteBuffers     the data for this chunk. Should not be reused until {@code releaseCallback} is used
      */
-    DataChunkImpl(boolean flush, boolean readOnly, ByteBuffer... byteBuffers) {
+    ByteBufferDataChunk(boolean flush, boolean readOnly, ByteBuffer... byteBuffers) {
         this.flush = flush;
         this.readOnly = readOnly;
         this.releaseCallback = null;
@@ -52,7 +52,7 @@ final class DataChunkImpl implements DataChunk {
      * @param releaseCallback a callback which is called when this chunk is completely processed and instance is free for reuse
      * @param byteBuffers     the data for this chunk. Should not be reused until {@code releaseCallback} is used
      */
-    DataChunkImpl(boolean flush, boolean readOnly, Runnable releaseCallback, ByteBuffer... byteBuffers) {
+    ByteBufferDataChunk(boolean flush, boolean readOnly, Runnable releaseCallback, ByteBuffer... byteBuffers) {
         this.flush = flush;
         this.readOnly = readOnly;
         this.releaseCallback = Objects.requireNonNull(releaseCallback, "release callback is null");
@@ -81,10 +81,12 @@ final class DataChunkImpl implements DataChunk {
 
     @Override
     public void release() {
-        if (releaseCallback != null) {
-            releaseCallback.run();
+        if (!isReleased) {
+            if (releaseCallback != null) {
+                releaseCallback.run();
+            }
+            isReleased = true;
         }
-        isReleased = true;
     }
 
     @Override
