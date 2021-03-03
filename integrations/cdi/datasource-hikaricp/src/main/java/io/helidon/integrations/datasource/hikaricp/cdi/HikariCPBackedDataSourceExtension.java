@@ -130,15 +130,18 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
     private static HikariDataSource produceHikariDataSource(final Instance<Object> instance,
                                                             final Named dataSourceName,
                                                             final Properties dataSourceProperties) {
-        final HikariDataSource returnValue = new HikariDataSource(new HikariConfig(dataSourceProperties));
+        final HikariConfig hikariConfig = new HikariConfig(dataSourceProperties);
+        if (hikariConfig.getPoolName() == null) {
+            hikariConfig.setPoolName(dataSourceName.value());
+        }
         Instance<MetricsTrackerFactory> i = instance.select(MetricsTrackerFactory.class, dataSourceName);
         if (i.isUnsatisfied()) {
             i = instance.select(MetricsTrackerFactory.class); // go for the default one
         }
         if (!i.isUnsatisfied()) {
-            returnValue.setMetricsTrackerFactory(i.get());
+            hikariConfig.setMetricsTrackerFactory(i.get());
         }
-        return returnValue;
+        return new HikariDataSource(hikariConfig);
     }
 
     private void processAnnotatedType(@Observes
