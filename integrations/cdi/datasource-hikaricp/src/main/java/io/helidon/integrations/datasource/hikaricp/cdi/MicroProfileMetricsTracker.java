@@ -16,21 +16,17 @@
 package io.helidon.integrations.datasource.hikaricp.cdi;
 
 import java.time.Duration;
-
 import java.util.Objects;
-
-import java.util.concurrent.TimeUnit;
 
 import com.zaxxer.hikari.metrics.IMetricsTracker;
 import com.zaxxer.hikari.metrics.PoolStats;
-
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.SimpleTimer;
+import org.eclipse.microprofile.metrics.Tag;
 
 final class MicroProfileMetricsTracker implements IMetricsTracker {
 
@@ -149,22 +145,22 @@ final class MicroProfileMetricsTracker implements IMetricsTracker {
     }
 
     @Override
-    public final void recordConnectionAcquiredNanos(final long elapsedAcquiredNanos) {
+    public void recordConnectionAcquiredNanos(final long elapsedAcquiredNanos) {
         this.connectionAcquisitionTimer.update(Duration.ofNanos(elapsedAcquiredNanos));
     }
 
     @Override
-    public final void recordConnectionCreatedMillis(long connectionCreatedMillis) {
+    public void recordConnectionCreatedMillis(long connectionCreatedMillis) {
         this.connectionCreationTimer.update(Duration.ofMillis(connectionCreatedMillis));
     }
 
     @Override
-    public final void recordConnectionUsageMillis(final long elapsedBorrowedMillis) {
+    public void recordConnectionUsageMillis(final long elapsedBorrowedMillis) {
         this.connectionUsageTimer.update(Duration.ofMillis(elapsedBorrowedMillis));
     }
 
     @Override
-    public final void recordConnectionTimeout() {
+    public void recordConnectionTimeout() {
         this.connectionTimeoutCounter.inc();
     }
 

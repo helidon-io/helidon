@@ -17,19 +17,14 @@ package io.helidon.integrations.datasource.hikaricp.cdi;
 
 import java.util.Objects;
 
-import java.util.function.Supplier;
-
 import javax.enterprise.context.ApplicationScoped;
-
 import javax.inject.Inject;
 
 import com.zaxxer.hikari.metrics.IMetricsTracker;
 import com.zaxxer.hikari.metrics.MetricsTrackerFactory;
 import com.zaxxer.hikari.metrics.PoolStats;
-
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
-
 
 @ApplicationScoped
 class MicroProfileMetricsTrackerFactory implements MetricsTrackerFactory {
