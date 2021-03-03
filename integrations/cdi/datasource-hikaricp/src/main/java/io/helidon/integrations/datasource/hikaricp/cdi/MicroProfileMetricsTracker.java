@@ -22,7 +22,9 @@ import com.zaxxer.hikari.metrics.IMetricsTracker;
 import com.zaxxer.hikari.metrics.PoolStats;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.SimpleTimer;
@@ -54,13 +56,15 @@ final class MicroProfileMetricsTracker implements IMetricsTracker {
 
     private static final String METRIC_NAME_MIN_CONNECTIONS = HIKARI_METRIC_NAME_PREFIX + ".connections.min";
 
+    private final Tag metricCategoryTag;
+
     private final MetricRegistry registry;
 
     private final SimpleTimer connectionAcquisitionTimer;
 
     private final SimpleTimer connectionCreationTimer;
 
-    private final SimpleTimer connectionUsageTimer;
+    private final Histogram connectionUsageHistogram;
 
     private final Counter connectionTimeoutCounter;
 
@@ -68,35 +72,35 @@ final class MicroProfileMetricsTracker implements IMetricsTracker {
         super();
         Objects.requireNonNull(poolStats, "poolStats");
         this.registry = Objects.requireNonNull(registry, "registry");
-        final Tag metricCategoryTag = new Tag(METRIC_CATEGORY, Objects.requireNonNull(poolName, "poolName"));
+        this.metricCategoryTag = new Tag(METRIC_CATEGORY, Objects.requireNonNull(poolName, "poolName"));
         this.connectionAcquisitionTimer =
             registry.simpleTimer(Metadata.builder()
                                  .withName(METRIC_NAME_WAIT)
                                  .withDescription("Connection acquire time")
                                  .withUnit(MetricUnits.NANOSECONDS)
                                  .build(),
-                                 metricCategoryTag);
+                                 this.metricCategoryTag);
         this.connectionCreationTimer =
             registry.simpleTimer(Metadata.builder()
                                  .withName(METRIC_NAME_CONNECT)
                                  .withDescription("Connection creation time")
                                  .withUnit(MetricUnits.MILLISECONDS)
                                  .build(),
-                                 metricCategoryTag);
-        this.connectionUsageTimer =
-            registry.simpleTimer(Metadata.builder()
-                                 .withName(METRIC_NAME_USAGE)
-                                 .withDescription("Connection usage time")
-                                 .withUnit(MetricUnits.MILLISECONDS)
-                                 .build(),
-                                 metricCategoryTag);
+                                 this.metricCategoryTag);
+        this.connectionUsageHistogram =
+            registry.histogram(Metadata.builder()
+                               .withName(METRIC_NAME_USAGE)
+                               .withDescription("Connection usage time")
+                               .withUnit(MetricUnits.MILLISECONDS)
+                               .build(),
+                               this.metricCategoryTag);
         this.connectionTimeoutCounter =
             registry.counter(Metadata.builder()
                              .withName(METRIC_NAME_TIMEOUT_RATE)
                              .withDescription("Connection timeout total count")
                              .withUnit("connections")
                              .build(),
-                             metricCategoryTag);
+                             this.metricCategoryTag);
         registry.<Gauge<Integer>>register(Metadata.builder()
                                           .withName(METRIC_NAME_TOTAL_CONNECTIONS)
                                           .withDescription("Total connections")
@@ -150,13 +154,13 @@ final class MicroProfileMetricsTracker implements IMetricsTracker {
     }
 
     @Override
-    public void recordConnectionCreatedMillis(long connectionCreatedMillis) {
+    public void recordConnectionCreatedMillis(final long connectionCreatedMillis) {
         this.connectionCreationTimer.update(Duration.ofMillis(connectionCreatedMillis));
     }
 
     @Override
     public void recordConnectionUsageMillis(final long elapsedBorrowedMillis) {
-        this.connectionUsageTimer.update(Duration.ofMillis(elapsedBorrowedMillis));
+        this.connectionUsageHistogram.update(elapsedBorrowedMillis);
     }
 
     @Override
@@ -166,7 +170,17 @@ final class MicroProfileMetricsTracker implements IMetricsTracker {
 
     @Override
     public void close() {
-        this.registry.removeMatching((id, metric) -> id.getName().startsWith(HIKARI_METRIC_NAME_PREFIX));
+        this.registry.remove(new MetricID(METRIC_NAME_WAIT, this.metricCategoryTag));
+        this.registry.remove(new MetricID(METRIC_NAME_CONNECT, this.metricCategoryTag));
+        this.registry.remove(new MetricID(METRIC_NAME_USAGE, this.metricCategoryTag));
+        this.registry.remove(new MetricID(METRIC_NAME_TIMEOUT_RATE, this.metricCategoryTag));
+
+        this.registry.remove(new MetricID(METRIC_NAME_TOTAL_CONNECTIONS, this.metricCategoryTag));
+        this.registry.remove(new MetricID(METRIC_NAME_IDLE_CONNECTIONS, this.metricCategoryTag));
+        this.registry.remove(new MetricID(METRIC_NAME_ACTIVE_CONNECTIONS, this.metricCategoryTag));
+        this.registry.remove(new MetricID(METRIC_NAME_PENDING_CONNECTIONS, this.metricCategoryTag));
+        this.registry.remove(new MetricID(METRIC_NAME_MAX_CONNECTIONS, this.metricCategoryTag));
+        this.registry.remove(new MetricID(METRIC_NAME_MIN_CONNECTIONS, this.metricCategoryTag));
     }
 
 }
