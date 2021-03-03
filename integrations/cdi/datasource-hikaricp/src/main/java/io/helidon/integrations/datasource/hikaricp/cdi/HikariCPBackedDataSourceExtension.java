@@ -32,6 +32,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.CreationException;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.Annotated;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
@@ -47,6 +48,7 @@ import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.metrics.MetricsTrackerFactory;
 import org.eclipse.microprofile.config.Config;
 
 /**
@@ -123,6 +125,20 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
                         }
                     }
                 });
+    }
+
+    private static HikariDataSource produceHikariDataSource(final Instance<Object> instance,
+                                                            final Named dataSourceName,
+                                                            final Properties dataSourceProperties) {
+        final HikariDataSource returnValue = new HikariDataSource(new HikariConfig(dataSourceProperties));
+        Instance<MetricsTrackerFactory> i = instance.select(MetricsTrackerFactory.class, dataSourceName);
+        if (i.isUnsatisfied()) {
+            i = instance.select(MetricsTrackerFactory.class); // go for the default one
+        }
+        if (!i.isUnsatisfied()) {
+            returnValue.setMetricsTrackerFactory(i.get());
+        }
+        return returnValue;
     }
 
     private void processAnnotatedType(@Observes
