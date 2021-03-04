@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,12 @@
  */
 package io.helidon.openapi;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 
 import io.helidon.config.Config;
 import io.helidon.openapi.internal.OpenAPIConfigImpl;
 
 import io.smallrye.openapi.api.OpenApiConfig;
-import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
 
 /**
  * Builds {@link OpenAPISupport} in a Helidon SE environment.
@@ -34,9 +31,13 @@ import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
  * {@link OpenApiConfig} which is what the smallrye implementation uses to
  * control its behavior.
  */
-public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder {
+public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder<SEOpenAPISupport, SEOpenAPISupportBuilder> {
 
     private final OpenAPIConfigImpl.Builder apiConfigBuilder = OpenAPIConfigImpl.builder();
+
+    protected SEOpenAPISupportBuilder() {
+        super(SEOpenAPISupportBuilder.class);
+    }
 
     /**
      * Set various builder attributes from the specified openapi {@code Config} object.
@@ -55,13 +56,20 @@ public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder {
     }
 
     @Override
-    public OpenApiConfig openAPIConfig() {
-        return apiConfigBuilder.build();
+    public SEOpenAPISupport build() {
+        SEOpenAPISupport result = new SEOpenAPISupport(this);
+        /*
+         * In the SE case we can prepare the model immediately. In MP, we must defer this until the server has created the
+         * Application instances.
+         */
+        validate();
+        result.prepareModel();
+        return result;
     }
 
     @Override
-    public List<FilteredIndexView> perAppFilteredIndexViews() {
-        return Collections.emptyList();
+    public OpenApiConfig openAPIConfig() {
+        return apiConfigBuilder.build();
     }
 
     /**
