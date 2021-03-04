@@ -15,7 +15,6 @@
  */
 package io.helidon.integrations.datasource.hikaricp.cdi;
 
-import java.time.Duration;
 import java.util.Objects;
 
 import com.zaxxer.hikari.metrics.IMetricsTracker;
@@ -27,42 +26,41 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 
 final class MicroProfileMetricsTracker implements IMetricsTracker {
 
-    private static final String HIKARI_METRIC_NAME_PREFIX = "hikaricp";
+    private static final String HIKARI_METRIC_NAME_PREFIX = "hikaricp.";
 
     private static final String METRIC_CATEGORY = "pool";
 
-    private static final String METRIC_NAME_WAIT = HIKARI_METRIC_NAME_PREFIX + ".connections.acquisition";
+    private static final String METRIC_NAME_WAIT = HIKARI_METRIC_NAME_PREFIX + "connections.wait";
 
-    private static final String METRIC_NAME_USAGE = HIKARI_METRIC_NAME_PREFIX + ".connections.usage";
+    private static final String METRIC_NAME_USAGE = HIKARI_METRIC_NAME_PREFIX + "connections.usage";
 
-    private static final String METRIC_NAME_CONNECT = HIKARI_METRIC_NAME_PREFIX + ".connections.creation";
+    private static final String METRIC_NAME_CONNECT = HIKARI_METRIC_NAME_PREFIX + "connections.creation";
 
-    private static final String METRIC_NAME_TIMEOUT_RATE = HIKARI_METRIC_NAME_PREFIX + ".connections.timeout";
+    private static final String METRIC_NAME_TIMEOUT_RATE = HIKARI_METRIC_NAME_PREFIX + "connections.timeout";
 
-    private static final String METRIC_NAME_TOTAL_CONNECTIONS = HIKARI_METRIC_NAME_PREFIX + ".connections";
+    private static final String METRIC_NAME_TOTAL_CONNECTIONS = HIKARI_METRIC_NAME_PREFIX + "connections";
 
-    private static final String METRIC_NAME_IDLE_CONNECTIONS = HIKARI_METRIC_NAME_PREFIX + ".connections.idle";
+    private static final String METRIC_NAME_IDLE_CONNECTIONS = HIKARI_METRIC_NAME_PREFIX + "connections.idle";
 
-    private static final String METRIC_NAME_ACTIVE_CONNECTIONS = HIKARI_METRIC_NAME_PREFIX + ".connections.active";
+    private static final String METRIC_NAME_ACTIVE_CONNECTIONS = HIKARI_METRIC_NAME_PREFIX + "connections.active";
 
-    private static final String METRIC_NAME_PENDING_CONNECTIONS = HIKARI_METRIC_NAME_PREFIX + ".connections.pending";
+    private static final String METRIC_NAME_PENDING_CONNECTIONS = HIKARI_METRIC_NAME_PREFIX + "connections.pending";
 
-    private static final String METRIC_NAME_MAX_CONNECTIONS = HIKARI_METRIC_NAME_PREFIX + ".connections.max";
+    private static final String METRIC_NAME_MAX_CONNECTIONS = HIKARI_METRIC_NAME_PREFIX + "connections.max";
 
-    private static final String METRIC_NAME_MIN_CONNECTIONS = HIKARI_METRIC_NAME_PREFIX + ".connections.min";
+    private static final String METRIC_NAME_MIN_CONNECTIONS = HIKARI_METRIC_NAME_PREFIX + "connections.min";
 
     private final Tag metricCategoryTag;
 
     private final MetricRegistry registry;
 
-    private final SimpleTimer connectionAcquisitionTimer;
+    private final Histogram connectionAcquisitionHistogram;
 
-    private final SimpleTimer connectionCreationTimer;
+    private final Histogram connectionCreationHistogram;
 
     private final Histogram connectionUsageHistogram;
 
@@ -73,20 +71,20 @@ final class MicroProfileMetricsTracker implements IMetricsTracker {
         Objects.requireNonNull(poolStats, "poolStats");
         this.registry = Objects.requireNonNull(registry, "registry");
         this.metricCategoryTag = new Tag(METRIC_CATEGORY, Objects.requireNonNull(poolName, "poolName"));
-        this.connectionAcquisitionTimer =
-            registry.simpleTimer(Metadata.builder()
-                                 .withName(METRIC_NAME_WAIT)
-                                 .withDescription("Connection acquire time")
-                                 .withUnit(MetricUnits.NANOSECONDS)
-                                 .build(),
-                                 this.metricCategoryTag);
-        this.connectionCreationTimer =
-            registry.simpleTimer(Metadata.builder()
-                                 .withName(METRIC_NAME_CONNECT)
-                                 .withDescription("Connection creation time")
-                                 .withUnit(MetricUnits.MILLISECONDS)
-                                 .build(),
-                                 this.metricCategoryTag);
+        this.connectionAcquisitionHistogram =
+            registry.histogram(Metadata.builder()
+                               .withName(METRIC_NAME_WAIT)
+                               .withDescription("Connection acquisition time")
+                               .withUnit(MetricUnits.NANOSECONDS)
+                               .build(),
+                               this.metricCategoryTag);
+        this.connectionCreationHistogram =
+            registry.histogram(Metadata.builder()
+                               .withName(METRIC_NAME_CONNECT)
+                               .withDescription("Connection creation time")
+                               .withUnit(MetricUnits.MILLISECONDS)
+                               .build(),
+                               this.metricCategoryTag);
         this.connectionUsageHistogram =
             registry.histogram(Metadata.builder()
                                .withName(METRIC_NAME_USAGE)
@@ -98,64 +96,57 @@ final class MicroProfileMetricsTracker implements IMetricsTracker {
             registry.counter(Metadata.builder()
                              .withName(METRIC_NAME_TIMEOUT_RATE)
                              .withDescription("Connection timeout total count")
-                             .withUnit("connections")
                              .build(),
                              this.metricCategoryTag);
         registry.<Gauge<Integer>>register(Metadata.builder()
                                           .withName(METRIC_NAME_TOTAL_CONNECTIONS)
                                           .withDescription("Total connections")
-                                          .withUnit("connections")
                                           .build(),
                                           poolStats::getTotalConnections,
-                                          metricCategoryTag);
+                                          this.metricCategoryTag);
         registry.<Gauge<Integer>>register(Metadata.builder()
                                           .withName(METRIC_NAME_IDLE_CONNECTIONS)
                                           .withDescription("Idle connections")
-                                          .withUnit("connections")
                                           .build(),
                                           poolStats::getIdleConnections,
-                                          metricCategoryTag);
+                                          this.metricCategoryTag);
         registry.<Gauge<Integer>>register(Metadata.builder()
                                           .withName(METRIC_NAME_ACTIVE_CONNECTIONS)
                                           .withDescription("Active connections")
-                                          .withUnit("connections")
                                           .build(),
                                           poolStats::getActiveConnections,
-                                          metricCategoryTag);
+                                          this.metricCategoryTag);
         // All of the pre-existing Hikari metrics implementations call
         // this "Pending connections" even though
         // PoolStats#getPendingThreads() is referenced.  We follow suit.
         registry.<Gauge<Integer>>register(Metadata.builder()
                                           .withName(METRIC_NAME_PENDING_CONNECTIONS)
                                           .withDescription("Pending connections")
-                                          .withUnit("connections")
                                           .build(),
                                           poolStats::getPendingThreads,
-                                          metricCategoryTag);
+                                          this.metricCategoryTag);
         registry.<Gauge<Integer>>register(Metadata.builder()
                                           .withName(METRIC_NAME_MAX_CONNECTIONS)
                                           .withDescription("Max connections")
-                                          .withUnit("connections")
                                           .build(),
                                           poolStats::getMaxConnections,
-                                          metricCategoryTag);
+                                          this.metricCategoryTag);
         registry.<Gauge<Integer>>register(Metadata.builder()
                                           .withName(METRIC_NAME_MIN_CONNECTIONS)
                                           .withDescription("Min connections")
-                                          .withUnit("connections")
                                           .build(),
                                           poolStats::getMinConnections,
-                                          metricCategoryTag);
+                                          this.metricCategoryTag);
     }
 
     @Override
     public void recordConnectionAcquiredNanos(final long elapsedAcquiredNanos) {
-        this.connectionAcquisitionTimer.update(Duration.ofNanos(elapsedAcquiredNanos));
+        this.connectionAcquisitionHistogram.update(elapsedAcquiredNanos);
     }
 
     @Override
     public void recordConnectionCreatedMillis(final long connectionCreatedMillis) {
-        this.connectionCreationTimer.update(Duration.ofMillis(connectionCreatedMillis));
+        this.connectionCreationHistogram.update(connectionCreatedMillis);
     }
 
     @Override
