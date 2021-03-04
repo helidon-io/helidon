@@ -15,6 +15,12 @@
  */
 package io.helidon.examples.microprofile.multipart;
 
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.Map;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.json.Json;
@@ -30,11 +36,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.Map;
 
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.BodyPartEntity;
@@ -42,17 +43,23 @@ import org.glassfish.jersey.media.multipart.MultiPart;
 
 @Path("/api")
 @ApplicationScoped
-public class FileServiceResource {
+public class FileService {
 
     private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
 
     private final FileStorage storage;
 
     @Inject
-    FileServiceResource(FileStorage storage) {
+    FileService(FileStorage storage) {
         this.storage = storage;
     }
 
+    /**
+     * Upload a file to the storage.
+     * @param multiPart multipart entity
+     * @return Response
+     * @throws IOException if an IO error occurs
+     */
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response upload(MultiPart multiPart) throws IOException {
@@ -66,6 +73,11 @@ public class FileServiceResource {
         return Response.seeOther(URI.create("ui")).build();
     }
 
+    /**
+     * Download a file from the storage.
+     * @param fname file name of the file to download
+     * @return Response
+     */
     @GET
     @Path("{fname}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
@@ -76,6 +88,10 @@ public class FileServiceResource {
                        .build();
     }
 
+    /**
+     * List the files in the storage.
+     * @return JsonObject
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject list() {

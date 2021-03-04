@@ -13,23 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.microprofile.multipart;
-
-import javax.ws.rs.core.Feature;
-import javax.ws.rs.core.FeatureContext;
-import javax.ws.rs.ext.Provider;
-
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 /**
- * {@link MultiPartFeature} is not auto-discovered. This {@link Feature} is discovered with {@link @Provider}
- * and registers {@link MultiPartFeature} manually.
+ * Helidon Microprofile Examples Multipart.
  */
-@Provider
-public class MultiPartFeatureProvider implements Feature {
-
-    @Override
-    public boolean configure(FeatureContext context) {
-        return new MultiPartFeature().configure(context);
-    }
-}
+package io.helidon.examples.microprofile.multipart;

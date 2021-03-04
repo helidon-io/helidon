@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.microprofile.multipart;
+package io.helidon.examples.media.multipart;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -21,14 +21,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
+import io.helidon.webserver.BadRequestException;
+import io.helidon.webserver.NotFoundException;
 
 /**
  * Simple bean to managed a directory based storage.
  */
-@ApplicationScoped
 public class FileStorage {
 
     private final Path storageDir;
@@ -46,6 +44,7 @@ public class FileStorage {
 
     /**
      * Get the storage directory.
+     *
      * @return directory
      */
     public Path storageDir() {
@@ -54,6 +53,7 @@ public class FileStorage {
 
     /**
      * Get the names of the files in the storage directory.
+     *
      * @return Stream of file names
      */
     public Stream<String> listFiles() {
@@ -69,6 +69,7 @@ public class FileStorage {
 
     /**
      * Create a new file in the storage.
+     *
      * @param fname file name
      * @return file
      * @throws BadRequestException if the resolved file is not contained in the storage directory
@@ -83,9 +84,10 @@ public class FileStorage {
 
     /**
      * Lookup an existing file in the storage.
+     *
      * @param fname file name
      * @return file
-     * @throws NotFoundException If the resolved file does not exist
+     * @throws NotFoundException   If the resolved file does not exist
      * @throws BadRequestException if the resolved file is not contained in the storage directory
      */
     public Path lookup(String fname) {
@@ -94,7 +96,7 @@ public class FileStorage {
             throw new BadRequestException("Invalid file name");
         }
         if (!Files.exists(file)) {
-            throw new NotFoundException();
+            throw new NotFoundException("file not found");
         }
         if (!Files.isRegularFile(file)) {
             throw new BadRequestException("Not a file");
