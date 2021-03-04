@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.metrics</groupId>
         <artifactId>helidon-metrics2-project</artifactId>
-        <version>1.4.8-SNAPSHOT</version>
+        <version>1.4.9-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-metrics2</artifactId>
     <name>Helidon Metrics2</name>

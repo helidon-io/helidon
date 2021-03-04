@@ -21,7 +21,7 @@
     <parent>
         <artifactId>helidon-media-jsonp-project</artifactId>
         <groupId>io.helidon.media.jsonp</groupId>
-        <version>1.4.8-SNAPSHOT</version>
+        <version>1.4.9-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 

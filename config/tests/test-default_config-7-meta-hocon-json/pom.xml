@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.config.tests</groupId>
         <artifactId>helidon-config-tests-project</artifactId>
-        <version>1.4.8-SNAPSHOT</version>
+        <version>1.4.9-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-config-tests-test-default_config-7-meta-hocon-json</artifactId>
     <name>Helidon Config Tests Default Config 7</name>
