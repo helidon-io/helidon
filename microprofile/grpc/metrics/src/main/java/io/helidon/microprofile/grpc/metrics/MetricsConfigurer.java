@@ -34,9 +34,9 @@ import io.helidon.microprofile.grpc.core.GrpcMethod;
 import io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
 import io.helidon.microprofile.grpc.server.GrpcServiceBuilder;
 import io.helidon.microprofile.metrics.MetricsCdiExtension;
-
 import io.helidon.servicecommon.restcdi.AnnotationLookupResult;
 import io.helidon.servicecommon.restcdi.AnnotationSiteType;
+
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
