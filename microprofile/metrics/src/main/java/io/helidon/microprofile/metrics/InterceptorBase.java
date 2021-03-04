@@ -33,19 +33,19 @@ import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
-import io.helidon.common.servicesupport.cdi.AnnotationLookupResult;
-import io.helidon.common.servicesupport.cdi.AnnotationSiteType;
-import io.helidon.common.servicesupport.cdi.HelidonRestCdiExtension;
 import io.helidon.metrics.Registry;
+import io.helidon.servicecommon.restcdi.AnnotationLookupResult;
+import io.helidon.servicecommon.restcdi.AnnotationSiteType;
+import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
 
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 
-import static io.helidon.common.servicesupport.cdi.AnnotationLookupResult.lookupAnnotation;
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
 import static io.helidon.microprofile.metrics.MetricUtil.tags;
+import static io.helidon.servicecommon.restcdi.AnnotationLookupResult.lookupAnnotation;
 
 /**
  * Common methods for interceptors.

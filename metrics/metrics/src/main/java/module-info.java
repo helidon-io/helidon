@@ -30,7 +30,7 @@ module io.helidon.metrics {
     requires java.json;
     requires io.helidon.config.mp;
     requires microprofile.config.api;
-    requires io.helidon.common.servicesupport;
+    requires io.helidon.servicecommon.rest;
 
     exports io.helidon.metrics;
 }

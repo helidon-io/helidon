@@ -14,7 +14,8 @@
  * limitations under the License.
  *
  */
+
 /**
- * General-purpose reusable code to help write CDI extensions, annotation processing, etc. for Helidon services.
+ * Support types for REST services.
  */
-package io.helidon.common.servicesupport.cdi;
+package io.helidon.servicecommon.rest;

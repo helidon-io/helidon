@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.common.servicesupport.cdi;
+package io.helidon.servicecommon.restcdi;
 
 import java.lang.reflect.Method;
 
@@ -25,7 +25,7 @@ import javax.enterprise.inject.spi.AnnotatedMember;
  * DO NOT USE THIS CLASS please.
  * <p>
  * Types of possible matching.
- *
+ * </p>
  */
 public enum AnnotationSiteType {
     /**

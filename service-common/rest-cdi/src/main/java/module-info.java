@@ -14,8 +14,18 @@
  * limitations under the License.
  *
  */
+module io.helidon.servicecommon.restcdi {
 
-/**
- * Common service support types.
- */
-package io.helidon.common.servicesupport;
+    requires jakarta.enterprise.cdi.api;
+    requires io.helidon.servicecommon.rest;
+    requires java.logging;
+    requires microprofile.config.api;
+    requires jakarta.interceptor.api;
+    requires jakarta.inject.api;
+    requires io.helidon.microprofile.server;
+
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.servicecommon.restcdi to weld.core.impl, io.helidon.microprofile.cdi;
+
+    exports io.helidon.servicecommon.restcdi;
+}

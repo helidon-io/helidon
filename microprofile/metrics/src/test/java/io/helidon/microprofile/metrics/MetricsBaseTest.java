@@ -19,8 +19,8 @@ package io.helidon.microprofile.metrics;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 
-import io.helidon.common.servicesupport.cdi.HelidonRestCdiExtension;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;

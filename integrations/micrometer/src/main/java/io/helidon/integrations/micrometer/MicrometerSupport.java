@@ -19,8 +19,8 @@ package io.helidon.integrations.micrometer;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-import io.helidon.common.servicesupport.HelidonRestServiceSupport;
 import io.helidon.config.Config;
+import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -48,12 +48,10 @@ public class MicrometerSupport extends HelidonRestServiceSupport<MicrometerSuppo
     static final String DEFAULT_CONTEXT = "/micrometer";
     private static final String SERVICE_NAME = "Micrometer";
 
-    private static final Logger LOGGER = Logger.getLogger(MicrometerSupport.class.getName());
-
     private final MeterRegistryFactory meterRegistryFactory;
 
     private MicrometerSupport(Builder builder) {
-        super(builder, SERVICE_NAME);
+        super(Logger.getLogger(MicrometerSupport.class.getName()), builder, SERVICE_NAME);
 
         meterRegistryFactory = builder.meterRegistryFactorySupplier.get();
         }

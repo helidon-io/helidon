@@ -46,11 +46,11 @@ import javax.json.JsonValue;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.servicesupport.HelidonRestServiceSupport;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.Routing;
@@ -109,7 +109,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport<MetricsSuppo
     private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
 
     private MetricsSupport(Builder builder) {
-        super(builder, SERVICE_NAME);
+        super(LOGGER, builder, SERVICE_NAME);
         this.rf = builder.registryFactory.get();
     }
 

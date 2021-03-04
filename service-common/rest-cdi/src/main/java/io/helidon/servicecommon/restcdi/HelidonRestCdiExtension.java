@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.common.servicesupport.cdi;
+package io.helidon.servicecommon.restcdi;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -56,15 +56,15 @@ import javax.interceptor.InvocationContext;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 
-import io.helidon.common.servicesupport.HelidonRestServiceSupport;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Routing;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
-import static io.helidon.common.servicesupport.cdi.AnnotationLookupResult.lookupAnnotation;
+import static io.helidon.servicecommon.restcdi.AnnotationLookupResult.lookupAnnotation;
 import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
@@ -120,7 +120,7 @@ public abstract class HelidonRestCdiExtension<
      *
      * @param logger                Logger instance to use for logging messages
      * @param annotations           set of annotations this extension handles
-     * @param ownProducer           type of producer class use in creating beans needed by the extension
+     * @param ownProducer           type of producer class used in creating beans needed by the extension
      * @param serviceSupportFactory function from config to the corresponding SE-style service support object
      * @param configPrefix          prefix for retrieving config related to this extension
      */

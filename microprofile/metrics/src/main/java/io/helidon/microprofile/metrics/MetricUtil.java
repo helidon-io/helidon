@@ -26,8 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
-import io.helidon.common.servicesupport.cdi.AnnotationLookupResult;
-import io.helidon.common.servicesupport.cdi.AnnotationSiteType;
+import io.helidon.servicecommon.restcdi.AnnotationLookupResult;
+import io.helidon.servicecommon.restcdi.AnnotationSiteType;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;

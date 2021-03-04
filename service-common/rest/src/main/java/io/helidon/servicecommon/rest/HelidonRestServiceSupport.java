@@ -14,9 +14,10 @@
  * limitations under the License.
  *
  */
-package io.helidon.common.servicesupport;
+package io.helidon.servicecommon.rest;
 
 import java.util.Objects;
+import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
@@ -47,8 +48,10 @@ public abstract class HelidonRestServiceSupport<T extends HelidonRestServiceSupp
 
     private final String context;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
+    private final Logger logger;
 
-    protected HelidonRestServiceSupport(Builder<T, B> builder, String serviceName) {
+    protected HelidonRestServiceSupport(Logger logger, Builder<T, B> builder, String serviceName) {
+        this.logger = logger;
         this.context = builder.context;
         corsEnabledServiceHelper = CorsEnabledServiceHelper.create(serviceName, builder.crossOriginConfig);
     }
@@ -78,6 +81,10 @@ public abstract class HelidonRestServiceSupport<T extends HelidonRestServiceSupp
 
     protected String context() {
         return context;
+    }
+
+    protected Logger logger() {
+        return logger;
     }
 
     /**

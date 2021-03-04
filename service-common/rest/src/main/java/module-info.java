@@ -14,18 +14,14 @@
  * limitations under the License.
  *
  */
-module io.helidon.common.servicesupport.cdi {
+module io.helidon.servicecommon.rest {
 
-    requires jakarta.enterprise.cdi.api;
-    requires io.helidon.common.servicesupport;
     requires java.logging;
-    requires microprofile.config.api;
-    requires jakarta.interceptor.api;
-    requires jakarta.inject.api;
-    requires io.helidon.microprofile.server;
 
-    // this is needed for CDI extensions that use non-public observer methods
-    opens io.helidon.common.servicesupport.cdi to weld.core.impl, io.helidon.microprofile.cdi;
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.webserver;
+    requires transitive io.helidon.webserver.cors;
 
-    exports io.helidon.common.servicesupport.cdi;
+    exports io.helidon.servicecommon.rest;
+
 }

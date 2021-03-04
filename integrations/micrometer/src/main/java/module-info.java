@@ -27,8 +27,8 @@ module io.helidon.integrations.micrometer {
     requires static jakarta.interceptor.api;
 
     requires io.helidon.common.http;
-    requires io.helidon.common.servicesupport;
-    requires static io.helidon.common.servicesupport.cdi;
+    requires io.helidon.servicecommon.rest;
+    requires static io.helidon.servicecommon.restcdi;
     requires io.helidon.config;
     requires io.helidon.webserver.cors;
 

@@ -28,13 +28,14 @@ import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
-import io.helidon.common.servicesupport.cdi.AnnotationLookupResult;
+import io.helidon.servicecommon.restcdi.AnnotationLookupResult;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 
-import static io.helidon.common.servicesupport.cdi.AnnotationLookupResult.lookupAnnotation;
-import static io.helidon.common.servicesupport.cdi.HelidonRestCdiExtension.realClass;
+import static io.helidon.servicecommon.restcdi.AnnotationLookupResult.lookupAnnotation;
+import static io.helidon.servicecommon.restcdi.HelidonRestCdiExtension.realClass;
+
 
 @Dependent
 abstract class InterceptorBase<T extends Meter, A extends Annotation> {
@@ -128,7 +129,6 @@ abstract class InterceptorBase<T extends Meter, A extends Annotation> {
             Throwable throwable = null;
             A annot = lookupResult.annotation();
 
-            Object result = null;
             T meter = getMeterForElement(element, getClass(context, element), lookupResult);
 
             try {
@@ -156,19 +156,18 @@ abstract class InterceptorBase<T extends Meter, A extends Annotation> {
     private <E extends Member & AnnotatedElement> T getMeterForElement(E element, Class<?> clazz,
             AnnotationLookupResult<A> lookupResult) {
 
-        return elementMeterMap.computeIfAbsent(element, e -> createMeterForElement(element, clazz, lookupResult));
+        return elementMeterMap.computeIfAbsent(element, e -> createMeterForElement(clazz, lookupResult));
     }
 
     /**
-     * Retrieves from the registry -- and stores in the site-to-metric map -- the metric coresponding to the specified site.
+     * Retrieves from the registry -- and stores in the site-to-metric map -- the metric corresponding to the specified site.
      *
-     * @param element the annotated element being invoked
      * @param clazz the type of metric
      * @param lookupResult the combination of the annotation and the matching type
      * @param <E> specific type of element
      * @return the metric retrieved from the registry and added to the site-to-metric map
      */
-    private <E extends Member & AnnotatedElement> T createMeterForElement(E element, Class<?> clazz,
+    private <E extends Member & AnnotatedElement> T createMeterForElement(Class<?> clazz,
             AnnotationLookupResult<A> lookupResult) {
 
         A annot = lookupResult.annotation();

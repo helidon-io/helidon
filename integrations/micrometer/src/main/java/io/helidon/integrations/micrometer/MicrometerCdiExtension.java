@@ -36,8 +36,8 @@ import javax.enterprise.util.AnnotationLiteral;
 import javax.enterprise.util.Nonbinding;
 import javax.interceptor.InterceptorBinding;
 
-import io.helidon.common.servicesupport.cdi.AnnotationLookupResult;
-import io.helidon.common.servicesupport.cdi.HelidonRestCdiExtension;
+import io.helidon.servicecommon.restcdi.AnnotationLookupResult;
+import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
 
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
@@ -170,7 +170,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
         recordConcreteNonInterceptor(pat);
     }
 
-    static class MicrometerRestEndpointInfo extends RestEndpointInfo {
+    static class MicrometerRestEndpointInfo extends RestEndpointInfo<MicrometerAsyncResponseInfo> {
     }
 
     static class MicrometerAsyncResponseInfo extends AsyncResponseInfo {

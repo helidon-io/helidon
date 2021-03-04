@@ -26,8 +26,8 @@ module io.helidon.microprofile.metrics {
     requires static java.annotation;
     requires static jakarta.activation;
 
-    requires io.helidon.common.servicesupport;
-    requires io.helidon.common.servicesupport.cdi;
+    requires io.helidon.servicecommon.rest;
+    requires io.helidon.servicecommon.restcdi;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.config;
     requires transitive io.helidon.metrics;

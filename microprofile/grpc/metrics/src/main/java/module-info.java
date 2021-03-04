@@ -25,7 +25,7 @@ module io.helidon.microprofile.grpc.metrics {
     requires transitive io.helidon.microprofile.metrics;
     requires transitive io.helidon.microprofile.server;
 
-    requires io.helidon.common.servicesupport.cdi;
+    requires io.helidon.servicecommon.restcdi;
 
     requires java.logging;
     requires jakarta.interceptor.api;

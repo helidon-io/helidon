@@ -39,8 +39,8 @@
             <artifactId>helidon-microprofile-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-service-support-cdi</artifactId>
+            <groupId>io.helidon.service-common</groupId>
+            <artifactId>helidon-service-common-rest-cdi</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.enterprise</groupId>

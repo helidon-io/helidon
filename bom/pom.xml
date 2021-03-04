@@ -584,13 +584,13 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.common</groupId>
-                <artifactId>helidon-common-service-support</artifactId>
+                <groupId>io.helidon.service-common</groupId>
+                <artifactId>helidon-service-common-rest</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.common</groupId>
-                <artifactId>helidon-common-service-support-cdi</artifactId>
+                <groupId>io.helidon.service-common</groupId>
+                <artifactId>helidon-service-common-rest-cdi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

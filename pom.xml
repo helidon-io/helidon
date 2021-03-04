@@ -183,6 +183,7 @@
         <module>fault-tolerance</module>
         <module>graphql</module>
         <module>logging</module>
+        <module>service-common</module>
     </modules>
 
 

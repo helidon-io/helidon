@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.common.servicesupport.cdi;
+package io.helidon.servicecommon.restcdi;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
