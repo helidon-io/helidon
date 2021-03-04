@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package io.helidon.microprofile.grpc.metrics;
 
 import java.lang.annotation.Annotation;
-import java.util.Arrays;
-import java.util.List;
+import java.util.EnumMap;
+import java.util.Map;
 
 import javax.annotation.Priority;
 import javax.enterprise.event.Observes;
@@ -32,8 +32,11 @@ import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
 
+import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
@@ -50,11 +53,21 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 public class GrpcMetricsCdiExtension
         implements Extension {
 
-    /**
-     * The supported metrics annotations.
-     */
-    private static final List<Class<? extends Annotation>> METRIC_ANNOTATIONS
-            = Arrays.asList(Counted.class, Timed.class, Metered.class);
+    static final int OBSERVER_PRIORITY = Interceptor.Priority.APPLICATION;
+
+    static final EnumMap<MetricType, Class<? extends Annotation>> METRICS_ANNOTATIONS;
+
+    static {
+        Map<MetricType, Class<? extends Annotation>> map = Map.of(
+                MetricType.CONCURRENT_GAUGE, ConcurrentGauge.class,
+                MetricType.COUNTER, Counted.class,
+                MetricType.METERED, Metered.class,
+                MetricType.SIMPLE_TIMER, SimplyTimed.class,
+                MetricType.TIMER, Timed.class
+        );
+        METRICS_ANNOTATIONS = new EnumMap<>(map);
+    }
+
 
     /**
      * Observer {@link ProcessAnnotatedType} events and process any method
@@ -63,11 +76,11 @@ public class GrpcMetricsCdiExtension
      * @param pat  the {@link ProcessAnnotatedType} to observer
      */
     private void registerMetrics(@Observes
-                                 @WithAnnotations({Counted.class, Timed.class, Metered.class, Grpc.class})
-                                 @Priority(Interceptor.Priority.APPLICATION)
+                                 @WithAnnotations({Counted.class, Timed.class, Metered.class, ConcurrentGauge.class,
+                                         SimplyTimed.class, Grpc.class})
+                                 @Priority(OBSERVER_PRIORITY)
                                  ProcessAnnotatedType<?> pat) {
-
-        METRIC_ANNOTATIONS.forEach(type ->
+        METRICS_ANNOTATIONS.values().forEach(type ->
                pat.configureAnnotatedType()
                   .methods()
                   .stream()
