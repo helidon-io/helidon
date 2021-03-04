@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>1.4.8-SNAPSHOT</version>
+        <version>1.4.9-SNAPSHOT</version>
         <relativePath>../../../../applications/mp/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.integrations.cdi</groupId>

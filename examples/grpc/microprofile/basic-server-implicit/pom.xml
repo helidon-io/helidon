@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+  ~ Copyright (c) 2019, 2021 Oracle and/or its affiliates. All rights reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.examples.grpc.microprofile</groupId>
         <artifactId>helidon-examples-grpc-microprofile-project</artifactId>
-        <version>1.4.8-SNAPSHOT</version>
+        <version>1.4.9-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-examples-grpc-microprofile-basic-implicit</artifactId>
     <name>Helidon Microprofile Examples gRPC Implicit Server</name>

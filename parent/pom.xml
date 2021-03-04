@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon</groupId>
     <artifactId>helidon-parent</artifactId>
-    <version>1.4.8-SNAPSHOT</version>
+    <version>1.4.9-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Helidon Parent</name>
@@ -123,6 +123,7 @@
         <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.install>3.0.0-M1</version.plugin.install>
         <version.plugin.nexus-staging>1.6.7</version.plugin.nexus-staging>
+        <version.plugin.versions>2.7</version.plugin.versions>
     </properties>
 
     <build>
@@ -159,6 +160,11 @@
                         <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
                         <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>${version.plugin.versions}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
