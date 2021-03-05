@@ -25,6 +25,12 @@ import javax.ws.rs.Path;
 @RequestScoped
 @Path("/")
 public class PublicResource {
+
+    /**
+     * Return a worldly greeting message.
+     *
+     * @return {@link String}
+     */
     @Path("/hello")
     @GET
     public String helloWorld() {

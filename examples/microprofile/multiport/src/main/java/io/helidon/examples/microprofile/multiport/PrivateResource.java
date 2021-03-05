@@ -25,6 +25,12 @@ import javax.ws.rs.Path;
 @RequestScoped
 @Path("/private")
 public class PrivateResource {
+
+    /**
+     * Return a private worldly greeting message.
+     *
+     * @return {@link String}
+     */
     @Path("/hello")
     @GET
     public String helloWorld() {

@@ -21,11 +21,10 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.Application;
 
 /**
- * Application to expose public resource
+ * Application to expose public resource.
  */
 @ApplicationScoped
 public class PublicApplication extends Application {
-
     @Override
     public Set<Class<?>> getClasses() {
         return Set.of(PublicResource.class);

@@ -91,7 +91,7 @@ public final class Main {
      */
     private static Routing createPrivateRouting() {
         return Routing.builder()
-                .get("/private/hello", (req, res) -> { res.send("Private Hello!!"); })
+                .get("/private/hello", (req, res) -> res.send("Private Hello!!"))
                 .build();
     }
 
@@ -102,7 +102,7 @@ public final class Main {
      */
     private static Routing createPublicRouting() {
         return Routing.builder()
-                .get("/hello", (req, res) -> { res.send("Public Hello!!"); })
+                .get("/hello", (req, res) -> res.send("Public Hello!!"))
                 .build();
     }
 

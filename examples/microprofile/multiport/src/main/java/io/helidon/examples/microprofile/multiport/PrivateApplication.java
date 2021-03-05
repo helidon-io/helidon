@@ -15,11 +15,12 @@
  */
 package io.helidon.examples.microprofile.multiport;
 
-import io.helidon.microprofile.server.RoutingName;
+import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.Application;
-import java.util.Set;
+
+import io.helidon.microprofile.server.RoutingName;
 
 /**
  * Application to expose private resource.
