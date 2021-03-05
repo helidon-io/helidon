@@ -56,7 +56,7 @@ class MainTest {
         WebTarget baseTarget;
 
         // Probe PUBLIC port
-        response = publicWebTarget.path("/public/hello")
+        response = publicWebTarget.path("/hello")
                 .request()
                 .get();
         assertThat("default port should be serving public resource",

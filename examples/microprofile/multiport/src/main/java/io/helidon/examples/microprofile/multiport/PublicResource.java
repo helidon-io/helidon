@@ -23,7 +23,7 @@ import javax.ws.rs.Path;
  * Simple resource.
  */
 @RequestScoped
-@Path("/public")
+@Path("/")
 public class PublicResource {
     @Path("/hello")
     @GET

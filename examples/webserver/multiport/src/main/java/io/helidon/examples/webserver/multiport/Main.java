@@ -102,7 +102,7 @@ public final class Main {
      */
     private static Routing createPublicRouting() {
         return Routing.builder()
-                .get("/public/hello", (req, res) -> { res.send("Public Hello!!"); })
+                .get("/hello", (req, res) -> { res.send("Public Hello!!"); })
                 .build();
     }
 

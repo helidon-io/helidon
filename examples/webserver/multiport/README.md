@@ -28,7 +28,7 @@ java -jar target/helidon-examples-webserver-multiport.jar
 ## Exercise the application
 
 ```
-curl -X GET http://localhost:8080/public/hello
+curl -X GET http://localhost:8080/hello
 
 curl -X GET http://localhost:8081/private/hello
 

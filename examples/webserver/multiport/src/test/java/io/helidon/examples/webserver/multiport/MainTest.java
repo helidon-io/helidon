@@ -65,7 +65,7 @@ public class MainTest {
     public void portTest() throws Exception {
         webClient.get()
                 .uri("http://localhost:" + PUBLIC_PORT)
-                .path("/public/hello")
+                .path("/hello")
                 .request(String.class)
                 .thenAccept(s -> Assertions.assertEquals("Public Hello!!", s))
                 .toCompletableFuture()
