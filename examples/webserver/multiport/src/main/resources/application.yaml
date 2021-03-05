@@ -15,9 +15,11 @@
 #
 server:
   port: 8080
-  host: 0.0.0.0
+  host: "localhost"
   sockets:
-    private:
+    - name: "private"
       port: 8081
-    admin:
+      bind-address: "localhost"
+    - name: "admin"
       port: 8082
+      bind-address: "localhost"
