@@ -28,10 +28,6 @@
     <artifactId>helidon-examples-microprofile-multiport</artifactId>
     <name>Helidon Microprofile Examples Multiple Ports</name>
 
-   <properties>
-        <mainClass>io.helidon.examples.microprofile.multiport.Main</mainClass>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
@@ -62,6 +58,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.tests</groupId>
+            <artifactId>helidon-microprofile-tests-junit5</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
