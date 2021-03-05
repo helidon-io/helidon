@@ -43,5 +43,6 @@
         <module>tls</module>
         <module>mutual-tls</module>
         <module>fault-tolerance</module>
+        <module>multiport</module>
     </modules>
 </project>
