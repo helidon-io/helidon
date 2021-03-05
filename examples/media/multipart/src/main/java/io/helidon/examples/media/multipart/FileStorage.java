@@ -63,7 +63,7 @@ public class FileStorage {
                         .map(storageDir::relativize)
                         .map(java.nio.file.Path::toString);
         } catch (IOException ex) {
-            throw new RuntimeException(ex);
+            throw new UncheckedIOException(ex);
         }
     }
 
