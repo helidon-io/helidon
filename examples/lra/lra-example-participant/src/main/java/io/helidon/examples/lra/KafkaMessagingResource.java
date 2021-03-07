@@ -81,7 +81,7 @@ public class KafkaMessagingResource {
     public Message completeMethod(KafkaMessage msg) throws Exception {
         System.out.println("KafkaMessagingResource.complete msg:" + msg);
         participantStatus = ParticipantStatus.Completed;
-        return () -> participantStatus.toString();
+        return KafkaMessage.of(participantStatus.toString());
     }
 
     @Incoming("kafkacompensatechannel")
@@ -90,7 +90,7 @@ public class KafkaMessagingResource {
     public Message compensateMethod(KafkaMessage msg) throws Exception {
         System.out.println("KafkaMessagingResource.compensate msg:" + msg);
         participantStatus = ParticipantStatus.Compensated;
-        return () -> participantStatus.toString();
+        return KafkaMessage.of(participantStatus.toString());
     }
 
 
@@ -99,7 +99,7 @@ public class KafkaMessagingResource {
     @Status
     public Message statusMethod(KafkaMessage msg) throws Exception {
         System.out.println("KafkaMessagingResource.status msg:" + msg);
-        return () -> participantStatus.toString();
+        return KafkaMessage.of(participantStatus.toString());
     }
 
     @Incoming("kafkaafterlrachannel")
@@ -107,7 +107,7 @@ public class KafkaMessagingResource {
     @AfterLRA
     public Message afterLRAMethod(KafkaMessage msg) throws Exception {
         System.out.println("KafkaMessagingResource.afterLRA msg:" + msg);
-        return () -> participantStatus.toString();
+        return KafkaMessage.of(participantStatus.toString());
     }
 
     @Incoming("kafkaforgetchannel")
@@ -115,7 +115,7 @@ public class KafkaMessagingResource {
     @Forget
     public Message forgetLRAMethod(KafkaMessage msg) throws Exception {
         System.out.println("KafkaMessagingResource.forget msg:" + msg);
-        return () -> participantStatus.toString();
+        return KafkaMessage.of(participantStatus.toString());
     }
 
     @Incoming("kafkaleavechannel")
@@ -123,16 +123,21 @@ public class KafkaMessagingResource {
     @Leave
     public Message leaveLRAMethod(KafkaMessage msg) throws Exception {
         System.out.println("KafkaMessagingResource.forget");
-        return () -> participantStatus.toString();
+        return KafkaMessage.of(participantStatus.toString());
     }
 
     //methods to set complete/compensate action if/as result of throwing exception
 
+    //todo the payload and headers will be different if the outgoing is calling another service rather than just replying to the same queue and/or caller
     private Message getResponse(String lraType, Object payload) throws Exception {
         System.out.println("AQMessagingResource.getResponse lraType:" + lraType + " msg.getPayload():" + payload + " isCancel:" + isCancel);
         participantStatus = ParticipantStatus.Active;
-        if(isCancel) throw new Exception("Intentional exceptio");
-        else  return () -> lraType + " success";
+        if(isCancel) throw new Exception("Intentional exception");
+        else  {
+            KafkaMessage<Object, String> kafkaMessage = KafkaMessage.of(lraType + " success");
+            kafkaMessage.getHeaders().add("testheader","testvalue".getBytes());
+            return kafkaMessage;
+        }
     }
 
     @GET

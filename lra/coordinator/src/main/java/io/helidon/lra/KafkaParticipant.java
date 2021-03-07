@@ -180,11 +180,11 @@ public class KafkaParticipant extends Participant {
         producer.send(record);
         producer.close();
         KafkaReplyListener replyListener = bootstrapserversToListenerMap.get(channelConfig.bootstrapservers + "-" + channelConfig.sendtotopic);
-        replyListener.lraIDToReplyStatusMap.put("testlraid", operation);
+        replyListener.lraIDToReplyStatusMap.put(lra.lraId, operation);
 //        replyListener.lraIDToReplyStatusMap.put(lra.lraId, operation);
         String replyStatus;
         do {
-            replyStatus = replyListener.lraIDToReplyStatusMap.get("testlraid"); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
+            replyStatus = replyListener.lraIDToReplyStatusMap.get(lra.lraId); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
 //            replyStatus = replyListener.lraIDToReplyStatusMap.get(lra.lraId); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
             LOGGER.info("Still waiting for reply from " + operation + " to topic:" + channelConfig.sendtotopic +
                     " lra.lraId:" + lra.lraId+ " bootstrapservers:" + channelConfig.bootstrapservers + " current replyStatus:" + replyStatus);

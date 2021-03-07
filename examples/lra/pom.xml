@@ -35,7 +35,6 @@
     </description>
 
     <modules>
-        <module>rest</module>
-        <module>messaging</module>
+        <module>lra-example-participant</module>
     </modules>
 </project>

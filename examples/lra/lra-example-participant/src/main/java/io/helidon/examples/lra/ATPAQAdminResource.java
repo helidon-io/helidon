@@ -15,6 +15,7 @@
  */
 package io.helidon.examples.lra;
 
+import oracle.AQ.AQException;
 import oracle.jms.AQjmsConstants;
 import oracle.jms.AQjmsFactory;
 import oracle.jms.AQjmsSession;
@@ -31,6 +32,9 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+
+import java.io.IOException;
+
 @Path("/atpaqadmin")
 @ApplicationScoped
 public class ATPAQAdminResource {
@@ -39,6 +43,7 @@ public class ATPAQAdminResource {
     static String orderpw = "Welcome12345"; //System.getenv("orderuser.password").trim();
     static String inventoryuser = "INVENTORYUSER";
     static String inventorypw =  "Welcome12345"; //System.getenv("inventoryuser.password").trim();
+    static String lraTestQueueName = "LRATESTQUEUE";
     static String orderQueueName = "ORDERQUEUE";
     static String orderQueueTableName = "ORDERQUEUETABLE";
     static String inventoryQueueName = "INVENTORYQUEUE";
@@ -364,31 +369,72 @@ public class ATPAQAdminResource {
         return returnValue;
     }
 
-
-    @Path("/sendTestMessage")
+    @Path("/createLRATestQueue")
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    public Response sendTestMessage() throws JMSException {
+    public Response createLRATestQueue() throws JMSException, AQException {
+        propagationSetup.createQueue(orderpdbDataSource, orderuser, orderpw, "LRATESTQUEUE");
+        propagationSetup.createQueue(orderpdbDataSource, orderuser, orderpw, "HELIDONLRAQUEUE");
+        return Response.ok()
+                        .entity("createLRATestQueue")
+                        .build();
+    }
+
+
+    /**
+     * This is for the propagation case where there are mutliple (P)DBs
+     */
+    @Path("/sendTestMessageToTopic")
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response sendTestMessageToTopic(@QueryParam("LRAType") String lratype) throws JMSException {
         TopicSession session = null;
         TopicConnectionFactory q_cf = AQjmsFactory.getTopicConnectionFactory(orderpdbDataSource);
         try (TopicConnection q_conn = q_cf.createTopicConnection()){
             session = q_conn.createTopicSession(true, Session.CLIENT_ACKNOWLEDGE);
-            Connection jdbcConnection = ((AQjmsSession) session).getDBConnection();
-            System.out.println("updateDataAndSendEvent jdbcConnection:" + jdbcConnection + " about to insertOrderViaSODA...");
             Topic topic = ((AQjmsSession) session).getTopic(orderuser, orderQueueName);
-            System.out.println("updateDataAndSendEvent topic:" + topic);
-            TextMessage objmsg = session.createTextMessage();
+            System.out.println(" about to sendTestMessageToTopic to topic:" + topic);
             TopicPublisher publisher = session.createPublisher(topic);
+            TextMessage objmsg = session.createTextMessage();
+            objmsg.setStringProperty("LRAType", lratype);
             objmsg.setIntProperty("Id", 1);
             objmsg.setIntProperty("Priority", 2);
             objmsg.setText("test message");
             objmsg.setJMSCorrelationID("" + 1);
             objmsg.setJMSPriority(2);
+            // publish(Topic topic, Message message, int deliveryMode, int priority, long timeToLive)
             publisher.publish(topic, objmsg, DeliveryMode.PERSISTENT, 2, AQjmsConstants.EXPIRATION_NEVER);
             session.commit();
-            System.out.println("sent message");
+            System.out.println("sendTestMessageToTopic complete");
             return Response.ok()
-                    .entity("sent message")
+                    .entity("sendTestMessageToTopic complete")
+                    .build();
+        }
+    }
+
+    @Path("/sendTestMessageToQueue")
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response sendTestMessageToQueue(@QueryParam("LRAType") String lratype) throws JMSException {
+        QueueSession session;
+        QueueConnectionFactory q_cf = AQjmsFactory.getQueueConnectionFactory(orderpdbDataSource);
+        try (QueueConnection q_conn = q_cf.createQueueConnection()){
+            session = q_conn.createQueueSession(true, Session.CLIENT_ACKNOWLEDGE);
+            Queue queue = ((AQjmsSession) session).getQueue(orderuser, lraTestQueueName);
+            System.out.println(" about to sendTestMessageToQueue to queue:" + queue);
+            MessageProducer producer = session.createProducer(queue);
+            TextMessage objmsg = session.createTextMessage();
+            objmsg.setStringProperty("LRAType", lratype);
+            objmsg.setIntProperty("Id", 1);
+            objmsg.setIntProperty("Priority", 2);
+            objmsg.setText("test message");
+            objmsg.setJMSCorrelationID("" + 1);
+            objmsg.setJMSPriority(2);
+            producer.send(objmsg);
+            session.commit();
+            System.out.println("sendTestMessageToQueue complete");
+            return Response.ok()
+                    .entity("sendTestMessageToQueue complete")
                     .build();
         }
     }

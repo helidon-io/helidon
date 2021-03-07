@@ -16,7 +16,10 @@
 package io.helidon.examples.lra;
 
 import io.helidon.messaging.connectors.aq.*;
+import io.helidon.messaging.connectors.jms.JmsMessage;
 import io.helidon.messaging.connectors.kafka.KafkaMessage;
+import oracle.jms.AQjmsConstants;
+import oracle.jms.AQjmsSession;
 import org.eclipse.microprofile.lra.annotation.*;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 import org.eclipse.microprofile.lra.annotation.ws.rs.Leave;
@@ -41,19 +44,19 @@ public class AQMessagingResource {
     private String uriToCall;
     private Map lraStatusMap = new HashMap<String, ParticipantStatus>();
 
-    @Incoming("order")
-    @Outgoing("inventory")
+    @Incoming("order-requiresnew")
+//    @Outgoing("inventory")
     @LRA(value = LRA.Type.REQUIRES_NEW)
-    public Message requiresNew(AqMessage<String> msg) throws Exception {
+    public void requiresNew(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.requiresNew msg.getPayload():" + msg.getPayload() +
                 " msg.getDbConnection():" + msg.getDbConnection());
         if (isCancel) throw new Exception("requiresNew throws intentional exception as isCancel is true");
-        return () -> "requiresNew success";
+//        return () -> "requiresNew success";
     }
 
-//    @Incoming("order-required")
-//    @Outgoing("inventory-required")
-//    @LRA(value = LRA.Type.REQUIRED)
+    @Incoming("order-required")
+    @Outgoing("inventory")
+    @LRA(value = LRA.Type.REQUIRED)
     public Message required(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.required msg.getPayload():" + msg.getPayload() +
                 " msg.getDbConnection():" + msg.getDbConnection());
@@ -118,7 +121,8 @@ public class AQMessagingResource {
         System.out.println("AQMessagingResource.complete");
         String lraID = getLRAID(msg);
         participantStatus = ParticipantStatus.Completed;
-        return () ->  participantStatus.toString(); //todo append lra id
+//        return JmsMessage.of(participantStatus.toString());
+        return JmsMessage.builder(participantStatus.toString()).build();
     }
 
     @Incoming("compensatechannel")
@@ -128,7 +132,7 @@ public class AQMessagingResource {
         System.out.println("AQMessagingResource.compensate");
         String lraID = getLRAID(msg);
         participantStatus = ParticipantStatus.Compensated;
-        return () ->   participantStatus.toString(); //todo append lra id
+        return JmsMessage.of(participantStatus.toString());
     }
 
     @Incoming("afterlrachannel")
@@ -137,7 +141,7 @@ public class AQMessagingResource {
     public Message afterLRAMethod(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.afterLRA");
         String lraID = getLRAID(msg);
-        return () ->   participantStatus.toString(); //todo append lra id
+        return JmsMessage.of(participantStatus.toString());
     }
 
     @Incoming("forgetchannel")
@@ -146,7 +150,7 @@ public class AQMessagingResource {
     public Message forgetLRAMethod(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.forget");
         String lraID = getLRAID(msg);
-        return () ->   participantStatus.toString(); //todo append lra id
+        return JmsMessage.of(participantStatus.toString());
     }
 
     @Incoming("leavechannel")
@@ -155,7 +159,7 @@ public class AQMessagingResource {
     public Message leaveLRAMethod(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.leave");
         String lraID = getLRAID(msg);
-        return () ->   participantStatus.toString(); //todo append lra id
+        return JmsMessage.of(participantStatus.toString());
     }
 
     //no status method as AQ is guaranteed delivery

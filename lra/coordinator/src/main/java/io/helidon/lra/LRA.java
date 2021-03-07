@@ -124,7 +124,7 @@ public class LRA {
                 }
             }
             participant.init();
-            RecoveryManager.log(this, compensatorLink);
+            RecoveryManager.getInstance().log(participant);
             return "LRA joined/added:" + (getConditionalStringValue(participant.isListenerOnly(), "listener:", "participant:")) + participant;
         } else {
             return "no address found in compensatorLink:" + compensatorLink;

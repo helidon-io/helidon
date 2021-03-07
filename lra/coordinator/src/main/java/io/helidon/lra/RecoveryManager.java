@@ -22,6 +22,7 @@ import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.sql.DataSource;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -48,29 +49,67 @@ public class RecoveryManager  {
 
     private long timeSinceLastPurge = System.currentTimeMillis();
     private static Connection connection = null;
-    List<String> lraRecoveryRecordMap = new ArrayList<>();
+    private static RecoveryManager instance;
 
-    public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
-        LOGGER.info("RecoveryManager init coordinatordb:" + coordinatordb);
+    static RecoveryManager getInstance() {
+        return instance;
     }
 
-    static void log(LRA lra, String compensatorLink){
-        if(true) return;
-        LOGGER.info("LRARecordPersistence.log... lraRecord.lraId = " + lra.lraId + ", compensatorLink = " + compensatorLink);
-        try { //todo store the timeout
+    public void init(@Observes @Initialized(ApplicationScoped.class) Object init) throws SQLException {
+        LOGGER.info("RecoveryManager init coordinatordb:" + coordinatordb);
+        instance = this;
+        dropTables();
+        createTables();
+        loadLRALogs();
+    }
+
+    void createTables() throws SQLException {
+        LOGGER.info("create LRA log table");
+        try (Connection connection = coordinatordb.getConnection()){
             connection.createStatement().execute(
-                    "insert into lrarecords values ('"+ lra.lraId + "', " +
-                            "'testcompleteurl', 'testcompensateurl', 'teststatusurl', '"+compensatorLink+"')");
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+                    "create table LRALOGS (" +
+                            "lraId varchar(64) NOT NULL, " +
+                            // lraState is updated in all participants during lra state change so is 1-to-n but just using single table for now
+                            "lraState varchar(16) NOT NULL, " +
+                            "participantType varchar(16) NOT NULL, " +
+                            "completeURI varchar(64) NOT NULL, " +
+                            "compensateURI varchar(64) NOT NULL, " +
+                            "afterLRAURI varchar(64), " +
+                            "statusURI varchar(64), " +
+                            "forgetURI varchar(64) " +
+                            ")");
+        } catch (SQLException ex) {
+            LOGGER.info("RecoveryManager createTable failed (expected if this is not initial setup ex:" + ex); //todo conduct if exists to gate this
+        }
+        //todo test and fail throw to init
+    }
+
+
+    public void log(Participant participant) {
+        LOGGER.info("log participant");
+        //todo check if exist in map and if not
+        try (Connection connection = coordinatordb.getConnection()){
+            LOGGER.info("RecoveryManager log connection:" + connection);
+        } catch (SQLException ex) {
+            LOGGER.info("RecoveryManager dropTables failed ex:" + ex);
         }
     }
 
-    @POST
-    @Path("/getAllLRAs")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getAllLRAs() {
-        return Response.ok().build();
+    void dropTables()  {
+        LOGGER.info("create LRA log table");
+        try (Connection connection = coordinatordb.getConnection()){
+            connection.createStatement().execute("drop table LRALOGS");
+        } catch (SQLException ex) {
+            LOGGER.info("RecoveryManager dropTables failed ex:" + ex);
+        }
+    }
+
+    /**
+     * Load records from database and add participants thus initializing config, connectionfactories, etc. as appropriate
+     * This is must be a blocking call
+     */
+    void loadLRALogs(){
+        LOGGER.info("logLRALogs");
     }
 
     /**
@@ -90,4 +129,11 @@ public class RecoveryManager  {
             }
         }
     }
+
+    @POST
+    @Path("/getAllLRAs")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAllLRAs() {
+        return Response.ok().build();
+    } //todo
 }

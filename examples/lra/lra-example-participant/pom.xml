@@ -23,10 +23,10 @@
 
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>messagingparticipant</artifactId>
+    <artifactId>lra-example-participant</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>inventory</name>
-    <description>Helidon LRA Demo Messaging Participant Service</description>
+    <name>lra-example-participant</name>
+    <description>Helidon LRA Example Participant Service</description>
 
     <parent>
         <groupId>io.helidon.applications</groupId>
@@ -42,7 +42,6 @@
         <dependenciesDirectory>libs</dependenciesDirectory>
         <kubernetesSecretName>${project.artifactId}</kubernetesSecretName>
         <spotbugs.exclude>${project.basedir}/src/main/spotbugs/exclusions.xml</spotbugs.exclude>
-        <narayana.lra.version>5.10.7.Final-SNAPSHOT</narayana.lra.version>
     </properties>
 
 
@@ -180,11 +179,6 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.narayana.rts</groupId>
-            <artifactId>lra-client</artifactId>
-            <version>${narayana.lra.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-binding</artifactId>
             <scope>runtime</scope>
@@ -200,7 +194,6 @@
             <artifactId>helidon-lra-messagingclient</artifactId>
             <version>2.0.2-SNAPSHOT</version>
         </dependency>
-
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>

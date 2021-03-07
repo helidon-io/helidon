@@ -15,17 +15,16 @@
  */
 package io.helidon.examples.lra;
 
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
+import org.eclipse.microprofile.lra.annotation.*;
+import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.eclipse.microprofile.lra.annotation.*;
-import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_PARENT_CONTEXT_HEADER;
@@ -101,7 +100,7 @@ public class RestResource {
     @Compensate
     public Response cancelInventory(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) String lraId) throws NotFoundException {
         participantStatus = ParticipantStatus.Compensating;
-        System.out.println("InventoryResource.cancelInventory put inventory back if any lraId:" + lraId);
+        System.out.println("RestResource.cancelInventory put inventory back if any lraId:" + lraId);
         participantStatus = ParticipantStatus.Compensated;
         return Response.status(Response.Status.OK).entity(participantStatus.name()).build();
     }
@@ -112,17 +111,26 @@ public class RestResource {
     @Complete
     public Response completeInventory(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) String lraId) throws NotFoundException {
         participantStatus = ParticipantStatus.Completing;
-        System.out.println("InventoryResource.completeInventory prepare item for shipping lraId:" + lraId);
+        System.out.println("RestResource.completeInventory prepare item for shipping lraId:" + lraId);
         participantStatus = ParticipantStatus.Completed;
         return Response.status(Response.Status.OK).entity(participantStatus.name()).build();
     }
 
-    @GET
+    @PUT
+    @Path("/afterLRAMethod")
+    @AfterLRA
+    public Response afterLRA(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
+                           @HeaderParam(LRA_HTTP_PARENT_CONTEXT_HEADER) URI parent) {
+        System.out.println("RestResource.afterLRA participantStatus:" + participantStatus + " lraId:" + lraId);
+        return Response.ok().entity(participantStatus).build();
+    }
+
+    @PUT
     @Path("/statusMethod")
     @Status
     public Response status(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
                            @HeaderParam(LRA_HTTP_PARENT_CONTEXT_HEADER) URI parent) {
-        System.out.println("InventoryResource.status participantStatus:" + participantStatus + " lraId:" + lraId);
+        System.out.println("RestResource.status participantStatus:" + participantStatus + " lraId:" + lraId);
         return Response.ok().entity(participantStatus).build();
     }
 
@@ -132,6 +140,7 @@ public class RestResource {
     //methods to set complete/compensate action if/as result of throwing exception
 
     private Response getResponse(String lraType) {
+        System.out.println("RestResource.getResponse lraType:" + lraType + " isCancel:" + isCancel);
         participantStatus = ParticipantStatus.Active;
         if(isCancel) return Response.serverError()
                 .entity("isCancel")

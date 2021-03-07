@@ -16,8 +16,10 @@
 package io.helidon.lra.messaging;
 
 import io.helidon.messaging.connectors.aq.AqMessage;
+import io.helidon.messaging.connectors.jms.JmsMessage;
+import io.helidon.messaging.connectors.kafka.KafkaMessage;
 import io.helidon.microprofile.messaging.MessagingMethod;
-import io.narayana.lra.client.NarayanaLRAClient;
+import io.helidon.lra.rest.LRAClient;
 import oracle.AQ.AQMessage;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -43,9 +45,8 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.Type.MANDATORY;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.Type.NESTED;
 
-
-import io.narayana.lra.AnnotationResolver;
-import io.narayana.lra.Current;
+import io.helidon.lra.rest.AnnotationResolver;
+import io.helidon.lra.rest.Current;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
 import org.eclipse.microprofile.lra.annotation.Forget;
@@ -54,13 +55,13 @@ import org.eclipse.microprofile.lra.annotation.Status;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
-import static io.narayana.lra.LRAConstants.AFTER;
-import static io.narayana.lra.LRAConstants.COMPENSATE;
-import static io.narayana.lra.LRAConstants.COMPLETE;
-import static io.narayana.lra.LRAConstants.FORGET;
-import static io.narayana.lra.LRAConstants.LEAVE;
-import static io.narayana.lra.LRAConstants.STATUS;
-import static io.narayana.lra.LRAConstants.TIMELIMIT_PARAM_NAME;
+import static io.helidon.lra.rest.LRAConstants.AFTER;
+import static io.helidon.lra.rest.LRAConstants.COMPENSATE;
+import static io.helidon.lra.rest.LRAConstants.COMPLETE;
+import static io.helidon.lra.rest.LRAConstants.FORGET;
+import static io.helidon.lra.rest.LRAConstants.LEAVE;
+import static io.helidon.lra.rest.LRAConstants.STATUS;
+import static io.helidon.lra.rest.LRAConstants.TIMELIMIT_PARAM_NAME;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_PARENT_CONTEXT_HEADER;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
 
@@ -82,11 +83,11 @@ public class ServerLRAMessagingFilter {
     private final Method method;
     private MessagingRequestContext messagingRequestContext;
     private boolean isCancel;
-    private final NarayanaLRAClient lraClient;
+    private final LRAClient lraClient;
     private static Config config = null;
 
     public ServerLRAMessagingFilter(Method method) {
-        lraClient = new NarayanaLRAClient();
+        lraClient = new LRAClient();
         this.method = method;
         if (!isMessagingURLFactoryRegistered) {
             URL.setURLStreamHandlerFactory(protocol -> "messaging".equals(protocol) ? new URLStreamHandler() {
@@ -320,8 +321,7 @@ public class ServerLRAMessagingFilter {
             return;
         }
         if (!endAnnotation) {
-            Map<String, String> terminateURIs =
-                    getTerminationUris(method.getDeclaringClass(), timeout);
+            Map<String, String> terminateURIs = getTerminationUris(method.getDeclaringClass(), timeout);
             String timeLimitStr = terminateURIs.get(TIMELIMIT_PARAM_NAME);
             long timeLimit = timeLimitStr == null ? DEFAULT_TIMEOUT_MILLIS : Long.parseLong(timeLimitStr);
             if (terminateURIs.containsKey("Link")) {
@@ -380,39 +380,26 @@ public class ServerLRAMessagingFilter {
     }
 
     public void afterMethodInvocation(MessagingMethod method, Object message) {
-//        LOGGER.info("afterMethodInvocation method:" + method + " message:" + message + "message instanceof AqMessage:" + (message instanceof AqMessage));
-//        LOGGER.info("afterMethodInvocation method:" + method + " message:" + message + "message instanceof Message:" + (message instanceof Message));
-        if(message instanceof Message) {
-//            Object unwrapped = ((Message) message).unwrap(Object.class);
-//            LOGGER.info("afterMethodInvocation ((Message)message).unwrap(Object.class) unwrapped:" + unwrapped);
-//            boolean isUnwrappedMessage = unwrapped instanceof Message;
-//            LOGGER.info("afterMethodInvocation isUnwrappedMessage:" + isUnwrappedMessage);
-//            if (isUnwrappedMessage) LOGGER.info("afterMethodInvocation unwrap the unwrapped:" + ((Message) unwrapped).unwrap(Object.class));
-//            LOGGER.info("afterMethodInvocation ((Message)message).unwrap(AqMessage.class):" + ((Message)message).unwrap(AqMessage.class));
-        }
-        if (message != null && message instanceof AqMessage) { // org.eclipse.microprofile.reactive.messaging.Message
+        if (message != null && (message instanceof JmsMessage || message instanceof KafkaMessage)) {
             if (method.getMethod().getAnnotation(Complete.class) != null) {
                 LOGGER.info("Complete reply is " + "COMPLETESUCCESS");
-                messagingRequestContext.addMessageProperty("HELIDONLRAOPERATION", "COMPLETESUCCESS"); //todo constants (corresponding send values are in Participant class)
-//            messagingRequestContext.getHeaders().add(LRA_HTTP_CONTEXT_HEADER, "lraid");
+                messagingRequestContext.addMessageProperty("HELIDONLRAOPERATION", "COMPLETESUCCESS");
             } else if (method.getMethod().getAnnotation(Compensate.class) != null) {
                 LOGGER.info("Compensate reply is " + "COMPENSATESUCCESS");
-                messagingRequestContext.addMessageProperty("HELIDONLRAOPERATION", "COMPENSATESUCCESS"); //todo constants (corresponding send values are in Participant class)
-//            messagingRequestContext.addMessageProperty(LRA_HTTP_CONTEXT_HEADER, "lraid");
+                messagingRequestContext.addMessageProperty("HELIDONLRAOPERATION", "COMPENSATESUCCESS");
             } else if (method.getMethod().getAnnotation(AfterLRA.class) != null) {
                 LOGGER.info("AfterLRA reply is " + "AFTERLRASUCCESS");
-                messagingRequestContext.addMessageProperty("HELIDONLRAOPERATION", "AFTERLRASUCCESS"); //todo constants (corresponding send values are in Participant class)
-//            messagingRequestContext.addMessageProperty(LRA_HTTP_CONTEXT_HEADER, "lraid");
+                messagingRequestContext.addMessageProperty("HELIDONLRAOPERATION", "AFTERLRASUCCESS");
             } else if (method.getMethod().getAnnotation(Forget.class) != null) {
                 LOGGER.info("AfterLRA reply is " + "FORGETSUCCESS");
-                messagingRequestContext.addMessageProperty("HELIDONLRAOPERATION", "FORGETSUCCESS"); //todo constants (corresponding send values are in Participant class)
-//            messagingRequestContext.addMessageProperty(LRA_HTTP_CONTEXT_HEADER, "lraid");
+                messagingRequestContext.addMessageProperty("HELIDONLRAOPERATION", "FORGETSUCCESS");
             } else if (method.getMethod().getAnnotation(Status.class) != null) {
-                LOGGER.info("Status reply is " + "STATUSSUCCESS"); //todo would be finer state of course
-                messagingRequestContext.addMessageProperty("HELIDONLRAOPERATION", "STATUSSUCCESS"); //todo constants (corresponding send values are in Participant class)
-//            messagingRequestContext.addMessageProperty(LRA_HTTP_CONTEXT_HEADER, "lraid");
+                LOGGER.info("Status reply is " + "STATUSSUCCESS");
+                messagingRequestContext.addMessageProperty("HELIDONLRAOPERATION", "STATUSSUCCESS");
             }
             messagingRequestContext.setMessageProperties(message);
+        } else {
+            LOGGER.warning("Unexpected object/message type:" + message);
         }
         ArrayList<Progress> progress = cast(messagingRequestContext.getProperty(ABORT_WITH_PROP));
         Object suspendedLRA = messagingRequestContext.getProperty(SUSPENDED_LRA_PROP);
@@ -598,7 +585,6 @@ public class ServerLRAMessagingFilter {
                     progress);
         } catch (ProcessingException e) {
             updateProgress(progress, ProgressStep.StartFailed, e.getMessage());
-
             abortWith(MessagingRequestContext, null,
                     Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                     String.format("%s %s", e.getClass().getSimpleName(), e.getMessage()),

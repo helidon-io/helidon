@@ -47,6 +47,8 @@ public class AQParticipant extends Participant {
     private static PoolDataSource aqParticipantDB;
     private TopicConnectionFactory topicConnectionFactory;
     private TopicConnection topicConnection;
+    private QueueConnectionFactory queueConnectionFactory;
+    private QueueConnection queueConnection;
     private static Map<String, AQReplyListener> destinationAndTypeToListenerMap = new ConcurrentHashMap<>();
     // Unlike REST or Kafka we don't do retries and so we keep track of where we are in the state model with this
     protected String lastActionTakenOrReceived = INIT;
@@ -142,6 +144,9 @@ public class AQParticipant extends Participant {
         if (topicConnectionFactory == null)
             topicConnectionFactory = AQjmsFactory.getTopicConnectionFactory(aqParticipantDB);
         if (topicConnection == null) topicConnection = topicConnectionFactory.createTopicConnection();
+        if (queueConnectionFactory == null)
+            queueConnectionFactory = AQjmsFactory.getQueueConnectionFactory(aqParticipantDB);
+        if (queueConnection == null) queueConnection = queueConnectionFactory.createQueueConnection();
     }
 
 
@@ -160,7 +165,8 @@ public class AQParticipant extends Participant {
     @Traced
     @Counted
     private void sendComplete(LRA lra) {
-        send(COMPLETESEND, lra, completeConfig);
+        //todo    lra.participant.is.aq.propagation indicates whether topic or queue should be sent to
+        sendViaQueue(COMPLETESEND, lra, completeConfig);
         lastActionTakenOrReceived = COMPLETESEND;
         setParticipantStatus(Completed);
     }
@@ -168,7 +174,7 @@ public class AQParticipant extends Participant {
     @Traced
     @Counted
     private void sendCompensate(LRA lra) {
-        send(COMPLETESEND, lra, completeConfig);
+        sendViaQueue(COMPLETESEND, lra, completeConfig);
         lastActionTakenOrReceived = COMPLETESEND;
         setParticipantStatus(Compensated);
     }
@@ -187,7 +193,8 @@ public class AQParticipant extends Participant {
     boolean sendForget(LRA lra) {
         if (!lastActionTakenOrReceived.equals(FORGETSEND)) {
             init();
-            send(FORGETSEND, lra, forgetConfig);
+            sendViaQueue(FORGETSEND, lra, forgetConfig);
+//            sendViaTopic(FORGETSEND, lra, forgetConfig);
             lastActionTakenOrReceived = FORGETSEND;
             setForgotten();
         }
@@ -200,20 +207,19 @@ public class AQParticipant extends Participant {
     void sendAfterLRA(LRA lra) {
         if (!lastActionTakenOrReceived.equals(AFTERLRASEND)) {
             init();
-            String outcome = send(AFTERLRASEND, lra, afterLRAConfig);
+            String outcome = sendViaQueue(AFTERLRASEND, lra, afterLRAConfig);
             lastActionTakenOrReceived = AFTERLRASEND;
             if (outcome.equals("success") )setAfterLRASuccessfullyCalledIfEnlisted();
             logParticipantMessageWithTypeAndDepth("AQParticipant afterLRA finished outcome:" + outcome, lra.nestedDepth);
         }
     }
 
-    private String send(String operation, LRA lra, AQChannelConfig channelConfig) {
+    private String sendViaTopic(String operation, LRA lra, AQChannelConfig channelConfig) {
         try (TopicSession session = topicConnection.createTopicSession(true, Session.CLIENT_ACKNOWLEDGE)) {
             LOGGER.info("session:" + session + " destination:" + channelConfig.destination + " operation:" + operation);
             Topic topic = ((AQjmsSession) session).getTopic(aqParticipantDB.getUser(), channelConfig.destination);
             LOGGER.info("sendEvent topic:" + topic);
             TextMessage objmsg = session.createTextMessage();
-            //todo same for queue
             TopicPublisher publisher = session.createPublisher(topic);
             objmsg.setStringProperty(HELIDONLRAOPERATION, operation);
             objmsg.setStringProperty(LRA_HTTP_CONTEXT_HEADER, lra.lraId);
@@ -226,12 +232,43 @@ public class AQParticipant extends Participant {
             LOGGER.info(e.getMessage());
         }
         AQReplyListener replyListener = destinationAndTypeToListenerMap.get(channelConfig.destination + "-" + channelConfig.type);
-        replyListener.lraIDToReplyStatusMap.put("testlraid", operation);
-//        replyListener.lraIDToReplyStatusMap.put(lra.lraId, operation);
+        replyListener.lraIDToReplyStatusMap.put(lra.lraId, operation);
         String replyStatus;
         do {
-//            replyStatus = replyListener.lraIDToReplyStatusMap.get(lra.lraId); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
-            replyStatus = replyListener.lraIDToReplyStatusMap.get("testlraid"); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
+            replyStatus = replyListener.lraIDToReplyStatusMap.get(lra.lraId); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
+            LOGGER.info("no reply received for lra, replyStatus " + replyStatus);
+            try {
+                Thread.sleep(1000 * 1); //todo wait/notify
+            } catch (InterruptedException e) {
+                LOGGER.warning("InterruptedException waiting for reply from destination:" + channelConfig.destination + " operation:" + operation);
+            }
+        } while (replyStatus.equals(operation)); //todo throw exception if timeout
+        LOGGER.info("Returning as replyListener for lraID is " + replyStatus);
+        return "success";
+    }
+
+    private String sendViaQueue(String operation, LRA lra, AQChannelConfig channelConfig) {
+        try (QueueSession session = queueConnection.createQueueSession(true, Session.CLIENT_ACKNOWLEDGE)) {
+            LOGGER.info("session:" + session + " destination:" + channelConfig.destination + " operation:" + operation);
+            Queue queue = ((AQjmsSession) session).getQueue(aqParticipantDB.getUser(), channelConfig.destination);
+            LOGGER.info("sendEvent queue:" + queue);
+            TextMessage objmsg = session.createTextMessage();
+            MessageProducer producer = session.createProducer(queue);
+            objmsg.setStringProperty(HELIDONLRAOPERATION, operation);
+            objmsg.setStringProperty(LRA_HTTP_CONTEXT_HEADER, lra.lraId);
+            objmsg.setIntProperty("Id", 1);
+            objmsg.setIntProperty("Priority", 2);
+            producer.send(objmsg);
+            session.commit();
+            LOGGER.info("session:" + session + " destination:" + channelConfig.destination + " message sent. Waiting for reply...");
+        } catch (JMSException e) {
+            LOGGER.info(e.getMessage());
+        }
+        AQReplyListener replyListener = destinationAndTypeToListenerMap.get(channelConfig.destination + "-" + channelConfig.type);
+        replyListener.lraIDToReplyStatusMap.put(lra.lraId, operation);
+        String replyStatus;
+        do {
+            replyStatus = replyListener.lraIDToReplyStatusMap.get(lra.lraId); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
             LOGGER.info("no reply received for lra, replyStatus " + replyStatus);
             try {
                 Thread.sleep(1000 * 1); //todo wait/notify

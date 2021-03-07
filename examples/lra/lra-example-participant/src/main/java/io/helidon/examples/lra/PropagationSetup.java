@@ -304,52 +304,68 @@ class PropagationSetup {
             String name,
             String tableName) throws Exception {
         try {
-            System.out.println("drop source queue table if it exists...");
-            try {
-                AQQueueTable qtable = ((AQjmsSession) topicSession).getQueueTable(topicuser, tableName);
-                qtable.drop(true);
-            } catch (Exception e) {
-                System.out.println("Exception in dropping source (expected if it does not exist)" + e);
-            }
-            System.out.println("drop destination queue table if it exists...");
-            try {
-                AQQueueTable qtable = ((AQjmsSession) queueSession).getQueueTable(queueuser, tableName);
-                qtable.drop(true);
-            } catch (Exception e) {
-                System.out.println("Exception in dropping destination (expected if it does not exist)" + e);
-            }
-            System.out.println("Creating Input Topic Table...");
-            AQQueueTableProperty aqQueueTableProperty = new AQQueueTableProperty("SYS.AQ$_JMS_TEXT_MESSAGE");
-            aqQueueTableProperty.setComment("input topic");
-            aqQueueTableProperty.setMultiConsumer(true);
-            aqQueueTableProperty.setCompatible("8.1");
-            aqQueueTableProperty.setPayloadType("SYS.AQ$_JMS_TEXT_MESSAGE");
-            AQQueueTable inputTopicTable = ((AQjmsSession) topicSession).createQueueTable(topicuser, tableName, aqQueueTableProperty);
-
-            System.out.println("Creating Propagation Queue Table...");
-            AQQueueTableProperty qtprop2 = new AQQueueTableProperty("SYS.AQ$_JMS_TEXT_MESSAGE");
-            qtprop2.setComment("propagation queue");
-            qtprop2.setPayloadType("SYS.AQ$_JMS_TEXT_MESSAGE");
-            qtprop2.setMultiConsumer(false);
-            qtprop2.setCompatible("8.1");
-            AQQueueTable propagationQueueTable = ((AQjmsSession) queueSession).createQueueTable(queueuser, tableName, qtprop2);
-
-            System.out.println("Creating Topic input_queue...");
-            AQjmsDestinationProperty aqjmsDestinationProperty = new AQjmsDestinationProperty();
-            aqjmsDestinationProperty.setComment("create topic ");
-            Topic topic1 = ((AQjmsSession) topicSession).createTopic(inputTopicTable, name, aqjmsDestinationProperty);
-
-            System.out.println("Creating queue prop_queue...");
-            aqjmsDestinationProperty.setComment("create queue");
-            Queue queue1 = ((AQjmsSession) queueSession).createQueue(propagationQueueTable, name, aqjmsDestinationProperty);
-
-            ((AQjmsDestination) topic1).start(topicSession, true, true);
-            ((AQjmsDestination) queue1).start(queueSession, true, true);
+            createTopic(topicSession, topicuser, name, tableName);
+            createQueue((AQjmsSession) queueSession, queueuser, name, tableName);
             System.out.println("Successfully setup topic and queue");
         } catch (Exception ex) {
             System.out.println("Error in setupTopic: " + ex);
             throw ex;
         }
+    }
+
+    private static void createTopic(TopicSession topicSession, String topicuser, String name, String tableName) throws AQException, JMSException {
+        System.out.println("drop source topic table if it exists...");
+        try {
+            AQQueueTable qtable = ((AQjmsSession) topicSession).getQueueTable(topicuser, tableName);
+            qtable.drop(true);
+        } catch (Exception e) {
+            System.out.println("Exception in dropping source (expected if it does not exist)" + e);
+        }
+        System.out.println("Creating topic table...");
+        AQQueueTableProperty aqQueueTableProperty = new AQQueueTableProperty("SYS.AQ$_JMS_TEXT_MESSAGE");
+        aqQueueTableProperty.setComment("input topic");
+        aqQueueTableProperty.setMultiConsumer(true);
+        aqQueueTableProperty.setCompatible("8.1");
+        aqQueueTableProperty.setPayloadType("SYS.AQ$_JMS_TEXT_MESSAGE");
+        AQQueueTable inputTopicTable = ((AQjmsSession) topicSession).createQueueTable(topicuser, tableName, aqQueueTableProperty);
+        System.out.println("Creating topic...");
+        AQjmsDestinationProperty aqjmsDestinationProperty = new AQjmsDestinationProperty();
+        aqjmsDestinationProperty.setComment("create topic ");
+        Topic topic1 = ((AQjmsSession) topicSession).createTopic(inputTopicTable, name, aqjmsDestinationProperty);
+        ((AQjmsDestination) topic1).start(topicSession, true, true);
+        aqjmsDestinationProperty.setComment("topic created");
+    }
+
+    static void createQueue(DataSource targetpdbDataSource, String targetuser, String targetpw, String name)
+            throws AQException, JMSException {
+
+        QueueConnectionFactory qcfact = AQjmsFactory.getQueueConnectionFactory(targetpdbDataSource);
+        QueueConnection qconn = qcfact.createQueueConnection(targetuser, targetpw);
+        QueueSession qsess = qconn.createQueueSession(true, Session.CLIENT_ACKNOWLEDGE);
+        createQueue((AQjmsSession)qsess, targetuser, name, name + "TABLE");
+    }
+
+    static void createQueue(AQjmsSession queueSession, String queueuser, String name, String tableName) throws AQException, JMSException {
+        System.out.println("drop destination queue table if it exists...");
+        try {
+            AQQueueTable qtable = queueSession.getQueueTable(queueuser, tableName);
+            qtable.drop(true);
+        } catch (Exception e) {
+            System.out.println("Exception in dropping destination (expected if it does not exist)" + e);
+        }
+        System.out.println("Creating queue table...");
+        AQQueueTableProperty qtprop2 = new AQQueueTableProperty("SYS.AQ$_JMS_TEXT_MESSAGE");
+        qtprop2.setComment("propagation queue");
+        qtprop2.setPayloadType("SYS.AQ$_JMS_TEXT_MESSAGE");
+        qtprop2.setMultiConsumer(false);
+        qtprop2.setCompatible("8.1");
+        AQQueueTable propagationQueueTable = queueSession.createQueueTable(queueuser, tableName, qtprop2);
+        System.out.println("Creating queue...");
+        AQjmsDestinationProperty aqjmsDestinationProperty = new AQjmsDestinationProperty();
+        aqjmsDestinationProperty.setComment("create queue");
+        Queue queue1 = queueSession.createQueue(propagationQueueTable, name, aqjmsDestinationProperty);
+        ((AQjmsDestination) queue1).start(queueSession, true, true);
+        aqjmsDestinationProperty.setComment("queue created");
     }
 
 

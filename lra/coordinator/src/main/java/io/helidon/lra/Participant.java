@@ -44,6 +44,7 @@ public abstract class Participant {
     private URI afterURI;  // a method that will be reliably invoked when the LRA enters one of the final states 200
     private URI forgetURI; // a method to be executed when the LRA allows participant to clear all associated information 200, 410
     private URI statusURI; // a method that allow user to state status of the participant with regards to a particular LRA 200, 202, 410
+    private String compensationData; // arbitrary data that is fed back in compensate call
     //The following key is sent on all messages so that customer applications can use selectors, filters, ...
     //This key is not currently int configuration. This value must be used as documented.
     public static final String HELIDONLRAOPERATION = "HELIDONLRAOPERATION";

@@ -49,10 +49,10 @@ public class KafkaReplyListener implements Runnable {
             ConsumerRecords<String, String> records = consumer.poll(100);
             for (ConsumerRecord<String, String> record : records) { //todo check value
                 LOGGER.info("offset:" + record.offset() + " key:" + record.key() + " value:" + record.value());
-                Iterable<Header> lraIdHeaders = record.headers().headers(LRA_HTTP_CONTEXT_HEADER);
-                Iterable<Header> lraOperationHeaders = record.headers().headers(HELIDONLRAOPERATION);
-                LOGGER.info("lraIdHeaders:" + lraIdHeaders + " lraOperationHeaders:" + lraOperationHeaders);
-                lraIDToReplyStatusMap.put("testlraid", "TESTREPLYOPERATION");
+                Header lraidheader = record.headers().lastHeader(LRA_HTTP_CONTEXT_HEADER);
+                Header lraOperationHeader = record.headers().lastHeader(HELIDONLRAOPERATION);
+                LOGGER.info("lraIdHeaders:" + new String(lraidheader.value()) + " lraOperationHeader:" + lraOperationHeader);
+                lraIDToReplyStatusMap.put(new String(lraidheader.value()), new String(lraOperationHeader.value()));
             }
         }
         LOGGER.severe("consumer subscribing to topic:" + topic + "on bootstrapservers:" + bootstrapservers + " for operation:" + operation + " exiting");
