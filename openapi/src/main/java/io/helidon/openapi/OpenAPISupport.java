@@ -144,7 +144,7 @@ public abstract class OpenAPISupport<T extends OpenAPISupport<T, B>, B extends O
     private final OpenApiStaticFile openApiStaticFile;
     private final Supplier<List<? extends IndexView>> indexViewsSupplier;
 
-    protected OpenAPISupport(Builder builder) {
+    protected OpenAPISupport(Builder<T, B> builder) {
         adjustTypeDescriptions(helper().types());
         implsToTypes = buildImplsToTypes(helper());
         webContext = builder.webContext();
@@ -614,7 +614,7 @@ public abstract class OpenAPISupport<T extends OpenAPISupport<T, B>, B extends O
      *
      * @return new Builder
      */
-    public static Builder builder() {
+    public static SEOpenAPISupportBuilder builder() {
         return builderSE();
     }
 
@@ -623,7 +623,7 @@ public abstract class OpenAPISupport<T extends OpenAPISupport<T, B>, B extends O
      *
      * @return new OpenAPISUpport
      */
-    public static OpenAPISupport create() {
+    public static OpenAPISupport<?, ?> create() {
         return builderSE().build();
     }
 
@@ -636,7 +636,7 @@ public abstract class OpenAPISupport<T extends OpenAPISupport<T, B>, B extends O
      * @return new {@code OpenAPISupport} instance created using the
      * helidonConfig settings
      */
-    public static OpenAPISupport create(Config config) {
+    public static OpenAPISupport<?, ?> create(Config config) {
         return builderSE().config(config).build();
     }
 
@@ -661,7 +661,7 @@ public abstract class OpenAPISupport<T extends OpenAPISupport<T, B>, B extends O
      * @param <B> concrete subclass of OpenAPISupport.Builder
      */
     public abstract static class Builder<T extends OpenAPISupport<T, B>, B extends Builder<T, B>>
-            implements io.helidon.common.Builder<OpenAPISupport> {
+            implements io.helidon.common.Builder<T> {
 
         /**
          * Config key to select the openapi node from Helidon config.
@@ -681,9 +681,6 @@ public abstract class OpenAPISupport<T extends OpenAPISupport<T, B>, B extends O
         protected B me() {
             return builderClass.cast(this);
         }
-
-        @Override
-        public abstract T build();
 
         /**
          * Set various builder attributes from the specified {@code Config} object.
