@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -194,7 +194,7 @@ For example the default configuration when you use `Config.create()` uses the fo
 2. Environment variables config source
 3. A classpath config source called `application.?` where the `?` depends on supported media types
     currently on the classpath. By default it is `properties`, if you have YAML support on classpath,
-    it would be `application.yaml`
+    it would be `application.yaml` (a `ConfigParser` may add additional supported suffixes for default file)
 
 Let's consider the following keys:
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,21 @@ class EvictableCacheTest {
         EvictableCache<String, String> cache = EvictableCache.<String, String>builder()
                 .evictSchedule(100, 100, TimeUnit.MILLISECONDS)
                 .timeout(50, TimeUnit.MILLISECONDS)
+                .build();
+
+        assertThat(cache.computeValue("one", () -> Optional.of("1")), is(Optional.of("1")));
+        assertThat(cache.get("one"), is(Optional.of("1")));
+        TimeUnit.MILLISECONDS.sleep(200);
+        assertThat(cache.get("one"), is(EMPTY));
+
+        cache.close();
+    }
+
+    @Test
+    void testOverallTimeout() throws InterruptedException {
+        EvictableCache<String, String> cache = EvictableCache.<String, String>builder()
+                .timeout(10, TimeUnit.MINUTES)
+                .overallTimeout(50, TimeUnit.MILLISECONDS)
                 .build();
 
         assertThat(cache.computeValue("one", () -> Optional.of("1")), is(Optional.of("1")));

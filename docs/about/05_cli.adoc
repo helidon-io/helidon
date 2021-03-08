@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -50,8 +50,11 @@ chmod +x ./helidon
 sudo mv ./helidon /usr/local/bin/
 ----
 
-Windows builds to come.
-
+[source,powershell]
+.Windows
+----
+PowerShell -Command Invoke-WebRequest -Uri "https://helidon.io/cli/latest/windows/helidon.exe" -OutFile "C:\Windows\system32\helidon.exe"
+----
 
 == Create a New Project
 

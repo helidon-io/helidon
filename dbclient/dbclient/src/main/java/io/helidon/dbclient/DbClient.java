@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.mapper.MapperManager;
-import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.Subscribable;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
@@ -56,20 +55,6 @@ public interface DbClient {
      * @return statement execution result
      */
     <U, T extends Subscribable<U>> T execute(Function<DbExecute, T> executor);
-
-    /**
-     * Name of the named statement used in database health checks.
-     */
-    String PING_STATEMENT_NAME = "ping";
-
-    /**
-     * Pings the database, completes when DB is up and ready, completes exceptionally if not.
-     * Executes simple SQL query defined as {@code db.statements.ping} configuration property.
-     *
-     * @return stage that completes when the ping finished
-     * @deprecated Use {@code io.helidon.dbclient.health.DbClientHealthCheck} instead.
-     */
-    Single<Void> ping();
 
     /**
      * Type of this database provider (such as jdbc:mysql, mongoDB etc.).

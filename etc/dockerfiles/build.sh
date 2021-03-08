@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ else
 fi
 readonly MY_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; pwd -P)
 
-readonly GRAALVM_VERSION=20.2.0
+readonly GRAALVM_VERSION=21.0.0
 
 docker build -f ${MY_DIR}/Dockerfile.jdk11-graalvm -t helidon/jdk11-graalvm:${GRAALVM_VERSION} ${MY_DIR}
 docker build -f ${MY_DIR}/Dockerfile.jdk11-graalvm-maven -t helidon/jdk11-graalvm-maven:${GRAALVM_VERSION} ${MY_DIR}

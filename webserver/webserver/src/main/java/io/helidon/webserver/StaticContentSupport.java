@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,10 @@ import io.helidon.common.http.MediaType;
  * }</pre>
  * <p>
  * Content is served ONLY on HTTP {@code GET} method.
+ *
+ * @deprecated please use module {@code helidon-webserver-static-content}
  */
+@Deprecated(since = "2.3.0", forRemoval = true)
 public class StaticContentSupport implements Service {
 
     private final StaticContentHandler handler;
