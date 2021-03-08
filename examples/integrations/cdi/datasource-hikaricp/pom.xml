@@ -57,8 +57,7 @@
         <!-- Runtime-scoped dependencies. -->
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc8-production</artifactId>
-            <type>pom</type>
+            <artifactId>ojdbc8</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>

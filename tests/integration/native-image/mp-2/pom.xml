@@ -92,7 +92,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
-            <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+            <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
