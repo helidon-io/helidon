@@ -503,6 +503,16 @@ public class ServerCdiExtension implements Extension {
     }
 
     /**
+     * Named port the server is running on. This information is only available after the
+     * server is actually started.
+     *
+     * @return Named port the server is running on
+     */
+    public int port(String name) {
+        return webserver.port(name);
+    }
+
+    /**
      * State of the server.
      *
      * @return {@code true} if the server is already started, {@code false} otherwise

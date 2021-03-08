@@ -22,6 +22,8 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
+import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,9 +35,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Unit test for {@link Main}.
  */
 @HelidonTest
+@AddConfig(key = "server.sockets.0.port", value = "0")      // Force ports to be dynamically allocated
+@AddConfig(key = "server.sockets.1.port", value = "0")
 class MainTest {
-    private static final int PRIVATE_PORT = 8081;
-    private static final int ADMIN_PORT = 8082;
 
     // Used for the default (public) port which HelidonTest will configure for us
     @Inject
@@ -43,6 +45,9 @@ class MainTest {
 
     // Used for other (private, admin) ports
     private static Client client;
+
+    @Inject
+    private ServerCdiExtension serverCdiExtension;
 
     @BeforeAll
     static void initClass() {
@@ -54,6 +59,9 @@ class MainTest {
         String base = "http://localhost:";
         Response response;
         WebTarget baseTarget;
+
+        final int privatePort = serverCdiExtension.port("private");
+        final int adminPort = serverCdiExtension.port("admin");
 
         // Probe PUBLIC port
         response = publicWebTarget.path("/hello")
@@ -83,27 +91,27 @@ class MainTest {
                 response.getStatusInfo().toEnum(), is(Response.Status.NOT_FOUND));
 
         // Probe PRIVATE port
-        baseTarget = client.target(base + PRIVATE_PORT);
+        baseTarget = client.target(base + privatePort);
         response = baseTarget.path("/private/hello")
                 .request()
                 .get();
-        assertThat("port " + PRIVATE_PORT  + " should be serving private resource",
+        assertThat("port " + privatePort  + " should be serving private resource",
                 response.getStatusInfo().toEnum(), is(Response.Status.OK));
-        assertThat("port " + PRIVATE_PORT  + " should return private data",
+        assertThat("port " + privatePort  + " should return private data",
                 response.readEntity(String.class), is("Private Hello World!!"));
 
         // Probe ADMIN port
-        baseTarget = client.target(base + ADMIN_PORT);
+        baseTarget = client.target(base + adminPort);
         response = baseTarget.path("/health")
                 .request()
                 .get();
-        assertThat("port " + ADMIN_PORT  + " should be serving health",
+        assertThat("port " + adminPort  + " should be serving health",
                 response.getStatusInfo().toEnum(), is(Response.Status.OK));
 
         response = baseTarget.path("/metrics")
                 .request()
                 .get();
-        assertThat("port " + ADMIN_PORT  + " should be serving metrics",
+        assertThat("port " + adminPort  + " should be serving metrics",
                 response.getStatusInfo().toEnum(), is(Response.Status.OK));
     }
 }
