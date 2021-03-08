@@ -17,6 +17,7 @@
 package io.helidon.examples.webserver.multiport;
 
 import io.helidon.common.LogConfig;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
@@ -40,19 +41,18 @@ public final class Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
-        startServer();
+        // By default this will pick up application.yaml from the classpath
+        Config config = Config.create();
+        startServer(config);
     }
 
     /**
      * Start the server.
      * @return the created {@link WebServer} instance
      */
-    static WebServer startServer() {
+    static Single<WebServer> startServer(Config config) {
         // load logging configuration
         LogConfig.configureRuntime();
-
-        // By default this will pick up application.yaml from the classpath
-        Config config = Config.create();
 
         // Build server using three ports:
         // default public port, admin port, private port
@@ -64,10 +64,11 @@ public final class Main {
                 .addNamedRouting("private", createPrivateRouting())
                 .build();
 
+        Single<WebServer> webserver = server.start();
+
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
-        server.start()
-                .thenAccept(ws -> {
+        webserver.thenAccept(ws -> {
                     System.out.println(
                             "WEB server is up! http://localhost:" + ws.port());
                     ws.whenShutdown().thenRun(()
@@ -81,7 +82,7 @@ public final class Main {
 
         // Server threads are not daemon. No need to block. Just react.
 
-        return server;
+        return webserver;
     }
 
     /**

@@ -18,6 +18,9 @@ package io.helidon.examples.webserver.multiport;
 
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.reactive.Single;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
@@ -30,26 +33,21 @@ public class MainTest {
 
     private static WebServer webServer;
     private static WebClient webClient;
-    private static final int PUBLIC_PORT = 8080;
-    private static final int PRIVATE_PORT = 8081;
-    private static final int ADMIN_PORT = 8082;
+    private static int publicPort;
+    private static int privatePort;
+    private static int adminPort;
 
     @BeforeAll
-    public static void startTheServer() throws Exception {
-        webServer = Main.startServer();
+    public static void startTheServer() {
+        // Use test configuration so we can have ports allocated dynamically
+        Config config = Config.builder().addSource(ConfigSources.classpath("application-test.yaml")).build();
+        Single<WebServer> w = Main.startServer(config);
+        webServer = w.await();
+        webClient = WebClient.builder().build();
 
-        long timeout = 2000; // 2 seconds should be enough to start the server
-        long now = System.currentTimeMillis();
-
-        while (!webServer.isRunning()) {
-            Thread.sleep(100);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
-            }
-        }
-
-        webClient = WebClient.builder()
-                .build();
+        publicPort = webServer.port();
+        privatePort = webServer.port("private");
+        adminPort = webServer.port("admin");
     }
 
     @AfterAll
@@ -64,7 +62,7 @@ public class MainTest {
     @Test
     public void portTest() throws Exception {
         webClient.get()
-                .uri("http://localhost:" + PUBLIC_PORT)
+                .uri("http://localhost:" + publicPort)
                 .path("/hello")
                 .request(String.class)
                 .thenAccept(s -> Assertions.assertEquals("Public Hello!!", s))
@@ -72,7 +70,7 @@ public class MainTest {
                 .get();
 
         webClient.get()
-                .uri("http://localhost:" + PUBLIC_PORT)
+                .uri("http://localhost:" + publicPort)
                 .path("/private/hello")
                 .request()
                 .thenAccept(response -> Assertions.assertEquals(404, response.status().code()))
@@ -80,7 +78,7 @@ public class MainTest {
                 .get();
 
         webClient.get()
-                .uri("http://localhost:" + PUBLIC_PORT)
+                .uri("http://localhost:" + publicPort)
                 .path("/health")
                 .request()
                 .thenAccept(response -> Assertions.assertEquals(404, response.status().code()))
@@ -88,7 +86,7 @@ public class MainTest {
                 .get();
 
         webClient.get()
-                .uri("http://localhost:" + PUBLIC_PORT)
+                .uri("http://localhost:" + publicPort)
                 .path("/metrics")
                 .request()
                 .thenAccept(response -> Assertions.assertEquals(404, response.status().code()))
@@ -96,7 +94,7 @@ public class MainTest {
                 .get();
 
         webClient.get()
-                .uri("http://localhost:" + PRIVATE_PORT)
+                .uri("http://localhost:" + privatePort)
                 .path("/private/hello")
                 .request(String.class)
                 .thenAccept(s -> Assertions.assertEquals("Private Hello!!", s))
@@ -104,7 +102,7 @@ public class MainTest {
                 .get();
 
         webClient.get()
-                .uri("http://localhost:" + ADMIN_PORT)
+                .uri("http://localhost:" + adminPort)
                 .path("/health")
                 .request()
                 .thenAccept(response -> Assertions.assertEquals(200, response.status().code()))
@@ -112,7 +110,7 @@ public class MainTest {
                 .get();
 
         webClient.get()
-                .uri("http://localhost:" + ADMIN_PORT)
+                .uri("http://localhost:" + adminPort)
                 .path("/metrics")
                 .request()
                 .thenAccept(response -> Assertions.assertEquals(200, response.status().code()))
