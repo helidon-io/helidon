@@ -44,3 +44,6 @@ if [ $state -ne 0 ]; then
   echo "Kafka stopped."
   exit $state
 fi
+
+# Keep Kafka up till Ctrl+C
+read ;
