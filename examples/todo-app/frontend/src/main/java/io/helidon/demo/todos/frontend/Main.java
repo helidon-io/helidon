@@ -32,9 +32,9 @@ import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.accesslog.AccessLogSupport;
+import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 import io.opentracing.Tracer;
 import org.glassfish.jersey.logging.LoggingFeature;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -52,7 +54,7 @@ public class MultiFromIterableTest {
 
         ts.requestMax();
 
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(true));
         assertThat(ts.getLastError(), is(nullValue()));
     }
@@ -66,7 +68,7 @@ public class MultiFromIterableTest {
                 .subscribe(ts);
 
         ts.requestMax();
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(true));
         assertThat(ts.getLastError(), is(nullValue()));
     }
@@ -85,7 +87,7 @@ public class MultiFromIterableTest {
 
         ts.request1();
 
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(true));
         assertThat(ts.getLastError(), is(nullValue()));
     }
@@ -178,7 +180,7 @@ public class MultiFromIterableTest {
 
         ts.request1();
 
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(false));
         assertThat(ts.getLastError(), instanceOf(IllegalArgumentException.class));
     }
@@ -207,7 +209,7 @@ public class MultiFromIterableTest {
 
         ts.request1();
 
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(false));
         assertThat(ts.getLastError(), is(nullValue()));
     }
@@ -227,7 +229,7 @@ public class MultiFromIterableTest {
                 .subscribe(ts);
 
         ts.requestMax();
-        assertEquals(ts.getItems(), Collections.singleton(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.isComplete(), is(true));
         assertThat(ts.getLastError(), is(nullValue()));
 

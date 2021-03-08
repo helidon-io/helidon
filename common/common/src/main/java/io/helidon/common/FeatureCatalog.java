@@ -499,6 +499,23 @@ final class FeatureCatalog {
             "Zipkin",
             "Zipkin tracer integration",
             "Tracing", "Zipkin");
+        add("io.helidon.integrations.neo4j",
+                FeatureDescriptor.builder()
+                        .name("Neo4j integration")
+                        .description("Integration with Neo4j driver")
+                        .path("Neo4j")
+                        .experimental(true)
+                        .nativeSupported(true));
+        add("io.helidon.integrations.neo4j.health",
+                FeatureDescriptor.builder()
+                        .name("Neo4j Health")
+                        .description("Health check for Neo4j integration")
+                        .path("Neo4j", "Health"));
+        add("io.helidon.integrations.neo4j.metrics",
+                FeatureDescriptor.builder()
+                        .name("Neo4j Metrics")
+                        .description("Metrics for Neo4j integration")
+                        .path("Neo4j", "Metrics"));
         add("io.helidon.webclient",
             FeatureDescriptor.builder()
                     .name("Web Client")
@@ -523,6 +540,10 @@ final class FeatureCatalog {
                     .path("Logging", "Log4j")
                     .description("Log4j MDC support")
                     .nativeDescription("Only programmatic configuration supported, does not work with Helidon loggers"));
+        add("io.helidon.webserver.staticcontent",
+            "Static Content",
+            "Static content support for webserver",
+            "WebServer", "Static Content");
 
         /*
          * Packages that are not a feature
