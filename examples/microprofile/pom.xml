@@ -38,6 +38,7 @@
         <module>static-content</module>
         <module>security</module>
         <module>idcs</module>
+        <module>multipart</module>
         <module>oidc</module>
         <module>openapi-basic</module>
         <module>websocket</module>
