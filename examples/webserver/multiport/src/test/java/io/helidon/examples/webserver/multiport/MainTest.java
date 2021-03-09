@@ -16,8 +16,11 @@
 
 package io.helidon.examples.webserver.multiport;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -28,6 +31,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class MainTest {
 
@@ -50,6 +55,30 @@ public class MainTest {
         adminPort = webServer.port("admin");
     }
 
+    static Stream<Params> initParams() {
+        final String PUBLIC_PATH = "/hello";
+        final String PRIVATE_PATH = "/private/hello";
+        final String HEALTH_PATH = "/health";
+        final String METRICS_PATH = "/health";
+
+        return List.of(
+                new Params(publicPort, PUBLIC_PATH, Http.Status.OK_200),
+                new Params(publicPort, PRIVATE_PATH, Http.Status.NOT_FOUND_404),
+                new Params(publicPort, HEALTH_PATH, Http.Status.NOT_FOUND_404),
+                new Params(publicPort, METRICS_PATH, Http.Status.NOT_FOUND_404),
+
+                new Params(privatePort, PUBLIC_PATH, Http.Status.NOT_FOUND_404),
+                new Params(privatePort, PRIVATE_PATH, Http.Status.OK_200),
+                new Params(privatePort, HEALTH_PATH, Http.Status.NOT_FOUND_404),
+                new Params(privatePort, METRICS_PATH, Http.Status.NOT_FOUND_404),
+
+                new Params(adminPort, PUBLIC_PATH, Http.Status.NOT_FOUND_404),
+                new Params(adminPort, PRIVATE_PATH, Http.Status.NOT_FOUND_404),
+                new Params(adminPort, HEALTH_PATH, Http.Status.OK_200),
+                new Params(adminPort, METRICS_PATH, Http.Status.OK_200)
+        ).stream();
+    }
+
     @AfterAll
     public static void stopServer() throws Exception {
         if (webServer != null) {
@@ -59,37 +88,27 @@ public class MainTest {
         }
     }
 
+    @MethodSource("initParams")
+    @ParameterizedTest
+    public void portAccessTest(Params params) throws Exception {
+        // Verifies we can access endpoints only on the proper port
+        webClient.get()
+                .uri("http://localhost:" + params.port)
+                .path(params.path)
+                .request()
+                .thenAccept(response -> Assertions.assertEquals(params.httpStatus, response.status()))
+                .toCompletableFuture()
+                .get();
+    }
+
     @Test
     public void portTest() throws Exception {
+
         webClient.get()
                 .uri("http://localhost:" + publicPort)
                 .path("/hello")
                 .request(String.class)
                 .thenAccept(s -> Assertions.assertEquals("Public Hello!!", s))
-                .toCompletableFuture()
-                .get();
-
-        webClient.get()
-                .uri("http://localhost:" + publicPort)
-                .path("/private/hello")
-                .request()
-                .thenAccept(response -> Assertions.assertEquals(404, response.status().code()))
-                .toCompletableFuture()
-                .get();
-
-        webClient.get()
-                .uri("http://localhost:" + publicPort)
-                .path("/health")
-                .request()
-                .thenAccept(response -> Assertions.assertEquals(404, response.status().code()))
-                .toCompletableFuture()
-                .get();
-
-        webClient.get()
-                .uri("http://localhost:" + publicPort)
-                .path("/metrics")
-                .request()
-                .thenAccept(response -> Assertions.assertEquals(404, response.status().code()))
                 .toCompletableFuture()
                 .get();
 
@@ -100,22 +119,23 @@ public class MainTest {
                 .thenAccept(s -> Assertions.assertEquals("Private Hello!!", s))
                 .toCompletableFuture()
                 .get();
+    }
 
-        webClient.get()
-                .uri("http://localhost:" + adminPort)
-                .path("/health")
-                .request()
-                .thenAccept(response -> Assertions.assertEquals(200, response.status().code()))
-                .toCompletableFuture()
-                .get();
+    private static class Params {
+        int port;
+        String path;
+        Http.Status httpStatus;
 
-        webClient.get()
-                .uri("http://localhost:" + adminPort)
-                .path("/metrics")
-                .request()
-                .thenAccept(response -> Assertions.assertEquals(200, response.status().code()))
-                .toCompletableFuture()
-                .get();
+        private Params(int port, String path, Http.Status httpStatus) {
+            this.port = port;
+            this.path = path;
+            this.httpStatus = httpStatus;
+        }
+
+        @Override
+        public String toString() {
+            return port + ":" + path + " should return "  + httpStatus;
+        }
     }
 
 }
