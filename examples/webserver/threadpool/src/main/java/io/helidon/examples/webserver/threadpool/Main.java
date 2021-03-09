@@ -17,6 +17,7 @@
 package io.helidon.examples.webserver.threadpool;
 
 import io.helidon.common.LogConfig;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
@@ -42,7 +43,9 @@ public final class Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
-        startServer();
+        // By default this will pick up application.yaml from the classpath
+        Config config = Config.create();
+        startServer(config);
     }
 
     /**
@@ -50,12 +53,9 @@ public final class Main {
      *
      * @return the created {@link WebServer} instance
      */
-    static WebServer startServer() {
+    static Single<WebServer> startServer(Config config) {
         // load logging configuration
         LogConfig.configureRuntime();
-
-        // By default this will pick up application.yaml from the classpath
-        Config config = Config.create();
 
         // Build server using three ports:
         // default public port, admin port, private port
@@ -64,9 +64,11 @@ public final class Main {
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 
+        Single<WebServer> webServerSingle = server.start();
+
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
-        server.start()
+        webServerSingle
                 .thenAccept(ws -> {
                     System.out.println(
                             "WEB server is up! http://localhost:" + ws.port());
@@ -81,7 +83,7 @@ public final class Main {
 
         // Server threads are not daemon. No need to block. Just react.
 
-        return server;
+        return webServerSingle;
     }
 
     /**

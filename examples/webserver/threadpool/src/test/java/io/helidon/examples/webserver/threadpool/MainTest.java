@@ -8,6 +8,8 @@ import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
@@ -32,18 +34,11 @@ public class MainTest {
 
     @BeforeAll
     public static void startTheServer() throws Exception {
-        webServer = Main.startServer();
 
-        long timeout = 2000; // 2 seconds should be enough to start the server
-        long now = System.currentTimeMillis();
+        // Use test configuration so we can have ports allocated dynamically
+        Config config = Config.builder().addSource(ConfigSources.classpath("application-test.yaml")).build();
 
-        while (!webServer.isRunning()) {
-            Thread.sleep(100);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
-            }
-        }
-
+        webServer = Main.startServer(config).await();
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
                 .addMediaSupport(JsonpSupport.create())
