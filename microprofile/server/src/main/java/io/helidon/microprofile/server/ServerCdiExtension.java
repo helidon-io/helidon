@@ -506,6 +506,7 @@ public class ServerCdiExtension implements Extension {
      * Named port the server is running on. This information is only available after the
      * server is actually started.
      *
+     * @param name Socket name
      * @return Named port the server is running on
      */
     public int port(String name) {
