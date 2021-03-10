@@ -26,7 +26,6 @@ import java.lang.reflect.Parameter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -413,31 +412,10 @@ public abstract class HelidonRestCdiExtension<
     protected void recordProducerMember(String logPrefix, AnnotatedMember<?> member, Bean<?> bean) {
         logger.log(Level.FINE, () -> logPrefix + " " + bean.getBeanClass());
         if (!ownProducer.equals(bean.getBeanClass())) {
-            Set<Class<? extends Annotation>> siteAnnotationTypes = new HashSet<>();
-
-            for (Annotation memberAnnotation : member.getAnnotations()) {
-                Class<? extends Annotation> memberAnnotationType = memberAnnotation.annotationType();
-                if (annotations.contains(memberAnnotationType)) {
-                    siteAnnotationTypes.add(memberAnnotationType);
-                }
-            }
             if (bean.getQualifiers().stream()
-                    .filter(Default.class::isInstance)
-                    .findFirst()
-                    .isPresent()) {
+                    .anyMatch(Default.class::isInstance)) {
                 producers.put(bean, member);
             }
-//            if (!siteAnnotationTypes.isEmpty()) {
-//                Optional<Class<? extends Annotation>> hasQualifier
-//                        = siteAnnotationTypes
-//                        .stream()
-//                        .filter(annotationType -> annotationType.isAnnotationPresent(Qualifier.class))
-//                        .findFirst();
-//                // Ignore producers with non-default qualifiers
-//                if (!hasQualifier.isPresent() || Default.class.isInstance(hasQualifier.get())) {
-//                    producers.put(bean, member);
-//                }
-//            }
         }
     }
 
