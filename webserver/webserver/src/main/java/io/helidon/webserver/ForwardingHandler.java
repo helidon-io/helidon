@@ -18,7 +18,6 @@ package io.helidon.webserver;
 
 import java.lang.ref.ReferenceQueue;
 import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -413,8 +412,8 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
      */
     private static void removeHandshakeHandler(ChannelHandlerContext ctx) {
         ChannelHandler handshakeHandler = null;
-        for (Iterator<Map.Entry<String, ChannelHandler>> it = ctx.pipeline().iterator(); it.hasNext(); ) {
-            ChannelHandler handler = it.next().getValue();
+        for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : ctx.pipeline()) {
+            ChannelHandler handler = stringChannelHandlerEntry.getValue();
             if (handler.getClass().getName().endsWith("WebSocketServerProtocolHandshakeHandler")) {
                 handshakeHandler = handler;
                 break;
