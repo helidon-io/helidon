@@ -34,6 +34,8 @@ import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
@@ -70,7 +72,7 @@ public class RequestContentTest {
         MediaContext mediaContext = MediaContext.create();
         doReturn(mediaContext.readerContext()).when(webServer).readerContext();
         doReturn(mediaContext.writerContext()).when(webServer).writerContext();
-        return new RequestTestStub(bareRequestMock, webServer);
+        return Contexts.runInContext(Context.create(), () -> new RequestTestStub(bareRequestMock, webServer));
     }
 
     @Test

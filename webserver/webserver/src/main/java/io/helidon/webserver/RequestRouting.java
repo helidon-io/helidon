@@ -154,7 +154,7 @@ class RequestRouting implements Routing {
         /**
          * Creates new instance of 'the root crawler'.
          *
-         * @param routes routs to crawl throw.
+         * @param routes routes to crawl through.
          * @param path   a URI path to route.
          * @param rawPath not decoded URI path to route.
          * @param method an HTTP method to route.

@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 
@@ -50,12 +51,14 @@ public class RoutingTest {
                 })
                 .build();
 
-        routing.route(mockRequest("/user", Http.Method.POST), mockResponse());
-        assertThat(checker.handlersInvoked(), is("defaultUserHandler"));
+        Contexts.runInContext(Context.create(), () -> {
+            routing.route(mockRequest("/user", Http.Method.POST), mockResponse());
+            assertThat(checker.handlersInvoked(), is("defaultUserHandler"));
 
-        checker.reset();
-        routing.route(mockRequest("/user/john", Http.Method.GET), mockResponse());
-        assertThat(checker.handlersInvoked(), is("namedUserHandler"));
+            checker.reset();
+            routing.route(mockRequest("/user/john", Http.Method.GET), mockResponse());
+            assertThat(checker.handlersInvoked(), is("namedUserHandler"));
+        });
     }
 
     @Test
@@ -85,21 +88,24 @@ public class RoutingTest {
                 })
                 .build();
 
-        routing.route(mockRequest("/admin/user", Http.Method.POST), mockResponse());
-        assertThat(checker.handlersInvoked(), is("anyPath1,anyPath2,postAdminUser"));
+        Contexts.runInContext(Context.create(), () -> {
+            routing.route(mockRequest("/admin/user", Http.Method.POST), mockResponse());
+            assertThat(checker.handlersInvoked(), is("anyPath1,anyPath2,postAdminUser"));
 
-        checker.reset();
-        routing.route(mockRequest("/admin/user/john", Http.Method.GET), mockResponse());
-        assertThat(checker.handlersInvoked(), is("anyPath1,anyPath2,getAdminUser"));
+            checker.reset();
+            routing.route(mockRequest("/admin/user/john", Http.Method.GET), mockResponse());
+            assertThat(checker.handlersInvoked(), is("anyPath1,anyPath2,getAdminUser"));
 
-        checker.reset();
+            checker.reset();
 
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> routing.route(mockRequest("/admin", Http.Method.POST),
-                                                                      mockResponse()));
+            IllegalStateException e = assertThrows(IllegalStateException.class,
+                                                   () -> routing.route(mockRequest("/admin", Http.Method.POST),
+                                                                       mockResponse()));
 
-        assertThat(e.getMessage(), is("Transformation failed!"));
+            assertThat(e.getMessage(), is("Transformation failed!"));
 
-        assertThat(checker.handlersInvoked(), is("anyPath1,anyPath2,anyAdmin,postAdminAudit"));
+            assertThat(checker.handlersInvoked(), is("anyPath1,anyPath2,anyAdmin,postAdminAudit"));
+        });
     }
 
     @Test
@@ -114,12 +120,14 @@ public class RoutingTest {
                     });
                 }).build();
 
-        routing.route(mockRequest("/user/john", Http.Method.GET), mockResponse());
-        assertThat(checker.handlersInvoked(), is("getUser"));
+        Contexts.runInContext(Context.create(), () -> {
+            routing.route(mockRequest("/user/john", Http.Method.GET), mockResponse());
+            assertThat(checker.handlersInvoked(), is("getUser"));
 
-        checker.reset();
-        routing.route(mockRequest("/user", Http.Method.POST), mockResponse());
-        assertThat(checker.handlersInvoked(), is("createUser"));
+            checker.reset();
+            routing.route(mockRequest("/user", Http.Method.POST), mockResponse());
+            assertThat(checker.handlersInvoked(), is("createUser"));
+        });
     }
 
     static BareRequest mockRequest(String path, Http.Method method) {

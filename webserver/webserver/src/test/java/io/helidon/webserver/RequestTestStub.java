@@ -19,6 +19,8 @@ package io.helidon.webserver;
 import java.net.URI;
 import java.util.Optional;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.reactive.Single;
 
 import io.opentracing.Span;

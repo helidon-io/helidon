@@ -29,6 +29,7 @@ import java.util.StringTokenizer;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
@@ -75,7 +76,9 @@ abstract class Request implements ServerRequest {
         this.bareRequest = req;
         this.webServer = webServer;
         this.headers = headers;
-        this.context = Context.create(webServer.context());
+        this.context = Contexts.context()
+                .orElseThrow(() -> new IllegalStateException("A Request is supposed to be created in scope of an existing "
+                                                                     + "Context"));
         this.queryParams = UriComponent.decodeQuery(req.uri().getRawQuery(), true);
         this.eventListener = new MessageBodyEventListener();
         MessageBodyReaderContext readerContext = MessageBodyReaderContext
