@@ -56,7 +56,7 @@ public class GreetService implements Service {
         // Build a thread pool using the configuration
         myThreadPool = ThreadPoolSupplier.builder().config(config.get("application-thread-pool")).build().get();
         if (myThreadPool instanceof ContextAwareExecutorService) {
-            ExecutorService wrapped = ((ContextAwareExecutorService)myThreadPool).unwrap();
+            ExecutorService wrapped = ((ContextAwareExecutorService) myThreadPool).unwrap();
             LOGGER.info("Application thread pool: " + wrapped.toString());
         }
     }
@@ -104,11 +104,12 @@ public class GreetService implements Service {
         String name = request.path().param("name");
 
         // One way to pass data to new thread is to use Context
-        Contexts.context()
-                .ifPresentOrElse(ctx -> ctx.register("NAME_PARAM", name + "_from_context"), () -> { throw new IllegalStateException("No context"); } );
+        Contexts.context().ifPresentOrElse(ctx -> ctx.register("NAME_PARAM", name + "_from_context"), () -> {
+                    throw new IllegalStateException("No context");
+                });
 
         // Another way, just pass via Runnable.
-        myThreadPool.submit( () -> sendResponseSlowly(response, name, 3));
+        myThreadPool.submit(() -> sendResponseSlowly(response, name, 3));
     }
 
     /**
