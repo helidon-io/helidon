@@ -50,7 +50,6 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.ProcessProducerField;
 import javax.enterprise.inject.spi.ProcessProducerMethod;
-import javax.inject.Qualifier;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
 import javax.ws.rs.container.AsyncResponse;
@@ -422,17 +421,23 @@ public abstract class HelidonRestCdiExtension<
                     siteAnnotationTypes.add(memberAnnotationType);
                 }
             }
-            if (!siteAnnotationTypes.isEmpty()) {
-                Optional<Class<? extends Annotation>> hasQualifier
-                        = siteAnnotationTypes
-                        .stream()
-                        .filter(annotationType -> annotationType.isAnnotationPresent(Qualifier.class))
-                        .findFirst();
-                // Ignore producers with non-default qualifiers
-                if (!hasQualifier.isPresent() || Default.class.isInstance(hasQualifier.get())) {
-                    producers.put(bean, member);
-                }
+            if (bean.getQualifiers().stream()
+                    .filter(Default.class::isInstance)
+                    .findFirst()
+                    .isPresent()) {
+                producers.put(bean, member);
             }
+//            if (!siteAnnotationTypes.isEmpty()) {
+//                Optional<Class<? extends Annotation>> hasQualifier
+//                        = siteAnnotationTypes
+//                        .stream()
+//                        .filter(annotationType -> annotationType.isAnnotationPresent(Qualifier.class))
+//                        .findFirst();
+//                // Ignore producers with non-default qualifiers
+//                if (!hasQualifier.isPresent() || Default.class.isInstance(hasQualifier.get())) {
+//                    producers.put(bean, member);
+//                }
+//            }
         }
     }
 
