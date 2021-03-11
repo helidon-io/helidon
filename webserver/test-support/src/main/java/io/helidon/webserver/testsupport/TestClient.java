@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.ReadOnlyParameters;
@@ -147,18 +149,20 @@ public class TestClient {
                       URI path,
                       Map<String, List<String>> headers,
                       Flow.Publisher<DataChunk> publisher) throws InterruptedException, TimeoutException {
-        TestBareRequest req = new TestBareRequest(method, version, path, headers, publisher, mediaContext);
-        TestBareResponse res = new TestBareResponse(req.webServer);
-        routing.route(req, res);
-        try {
-            return res.responseFuture.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (ExecutionException ee) {
-            if (ee.getCause() instanceof RuntimeException) {
-                throw (RuntimeException) ee.getCause();
-            } else {
-                throw new RuntimeException("Unexpected routing issue.", ee.getCause());
+        return Contexts.runInContext(Context.create(), () -> {
+            TestBareRequest req = new TestBareRequest(method, version, path, headers, publisher, mediaContext);
+            TestBareResponse res = new TestBareResponse(req.webServer);
+            routing.route(req, res);
+            try {
+                return res.responseFuture.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (ExecutionException ee) {
+                if (ee.getCause() instanceof RuntimeException) {
+                    throw (RuntimeException) ee.getCause();
+                } else {
+                    throw new RuntimeException("Unexpected routing issue.", ee.getCause());
+                }
             }
-        }
+        });
     }
 
     private static class TestBareRequest implements BareRequest {

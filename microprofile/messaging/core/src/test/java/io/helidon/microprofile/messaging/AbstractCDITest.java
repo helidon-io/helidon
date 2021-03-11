@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
@@ -102,7 +104,7 @@ public abstract class AbstractCDITest {
 
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         initializer.addBeanClasses(beanClasses.toArray(new Class<?>[0]));
-        return initializer.initialize();
+        return Contexts.runInContext(Context.create(), initializer::initialize);
     }
 
     protected static void stopCdiContainer() {

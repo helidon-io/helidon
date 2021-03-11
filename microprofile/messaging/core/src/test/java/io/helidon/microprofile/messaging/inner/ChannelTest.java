@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import java.util.stream.Stream;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.spi.CDI;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.microprofile.messaging.AbstractCDITest;
 import io.helidon.microprofile.messaging.AssertableTestBean;
 import io.helidon.microprofile.messaging.AsyncTestBean;
@@ -62,16 +64,18 @@ public class ChannelTest extends AbstractCDITest {
                     cdiContainer = startCdiContainer(Collections.emptyMap(), testCase.getClazzes()));
         } else {
             cdiContainer = startCdiContainer(Collections.emptyMap(), testCase.getClazzes());
-            testCase.getAsyncBeanClasses()
-                    .map(c -> CDI.current().select(c).get())
-                    .forEach(AsyncTestBean::tearDown);
-            // Wait till all messages are delivered
-            testCase.getCountableBeanClasses()
-                    .map(c -> CDI.current().select(c).get())
-                    .forEach(this::assertAllReceived);
-            testCase.getCompletableBeanClasses()
-                    .map(c -> CDI.current().select(c).get())
-                    .forEach(AssertableTestBean::assertValid);
+            Contexts.runInContext(Context.create(), () -> {
+                testCase.getAsyncBeanClasses()
+                        .map(c -> CDI.current().select(c).get())
+                        .forEach(AsyncTestBean::tearDown);
+                // Wait till all messages are delivered
+                testCase.getCountableBeanClasses()
+                        .map(c -> CDI.current().select(c).get())
+                        .forEach(this::assertAllReceived);
+                testCase.getCompletableBeanClasses()
+                        .map(c -> CDI.current().select(c).get())
+                        .forEach(AssertableTestBean::assertValid);
+            });
         }
     }
 }
