@@ -18,7 +18,6 @@ package io.helidon.tests.functional.requestscope;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
-import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Retry;
 
 @ApplicationScoped
@@ -29,10 +28,13 @@ public class Bean5 {
 
     private boolean firstCall = true;
 
+    /**
+     * A test method.
+     *
+     * @return tenant ID
+     */
     @Retry(delay = 500L, jitter = 500L)
-    @CircuitBreaker
     public String test() {
-        System.out.println("### thread " + Thread.currentThread());
         if (firstCall) {
             firstCall = false;
             throw new RuntimeException("test exception");

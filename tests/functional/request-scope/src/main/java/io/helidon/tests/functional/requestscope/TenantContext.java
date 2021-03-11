@@ -29,21 +29,15 @@ public class TenantContext {
 
     private String tenantId;
 
-    public TenantContext() {
-    }
-
     public String getTenantId() {
         return tenantId;
     }
 
+    /**
+     * Initializer for tenantId.
+     */
     @PostConstruct
     public void init() {
-        System.out.println("### init " + Thread.currentThread());
-        try {
-            throw new RuntimeException("oops");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         tenantId = request.headers().value("x-tenant-id").orElse(null);
     }
 }

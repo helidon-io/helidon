@@ -13,32 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.tests.functional.requestscope;
 
-import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
+import java.util.Set;
 
-@Path("/test5")
-public class Service5 {
+import javax.enterprise.context.ApplicationScoped;
+import javax.ws.rs.core.Application;
 
-    @Inject
-    private Bean5 bean5;
+/**
+ * This functional test requires having two application subclasses.
+ * See: https://github.com/oracle/helidon/issues/2632#issuecomment-796831904
+ */
+@ApplicationScoped
+class Application2 extends Application {
 
-    /**
-     * A JAX-RS test resource.
-     *
-     * @return tenant id
-     */
-    @GET
-    public String getTestResource() {
-        try {
-            return bean5.test();
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
-        }
+    @Override
+    public Set<Class<?>> getClasses() {
+        return Set.of(Service4.class, Service5.class);
     }
 }

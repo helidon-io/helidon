@@ -23,11 +23,16 @@ import javax.inject.Inject;
 public class RequestTestQualifier {
 
     @Inject
-    TenantContext tenantContext;
+    private TenantContext tenantContext;
 
+    /**
+     * A test method.
+     *
+     * @return tenant id
+     * @throws Exception if error occurs
+     */
     public String test() throws Exception {
         String tenantId = tenantContext.getTenantId();
-        System.out.println("Tenant Context: " + tenantId);
         if (tenantId == null) {
             throw new IllegalTenantException("No tenant context");
         }
