@@ -1,0 +1,115 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+= About Long Running Activities (LRA) in Helidon MP
+:h1Prefix: MP
+:pagename: intro-lra-in-mp
+:description: Introduction to LRA in Helidon MP
+:keywords: helidon, java, lra, mp, microprofile
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.microprofile.cors/io/helidon/microprofile/lra
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+:quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-mp
+:lra-spec: https://github.com/eclipse/microprofile-lra/blob/master/spec/src/main/asciidoc/microprofile-lra-spec.adoc
+:helidon-mp-lra-example: {helidon-tag}/examples/microprofile/lra
+:common-page-prefix-inc: ../../shared/lra/common_shared.adoc
+:mp-pages-ref-prefix: mp/lra
+:mp-using-lra-ref: {mp-pages-ref-prefix}/02_using-lra.adoc
+:mp-lra-config-ref: {mp-pages-ref-prefix}/03_configuration-with-lra-mp.adoc
+:helidon-variant: MP
+
+Microservices create challenges for data consistency and integrity that necessitate changes in the transaction processing and data patterns used by them. Helidon MP now has its own LRA implementation that adds additional features to the existing MicroProfile LRA specification.
+
+
+== Overview
+As stated in the MicroProfile 4.0 specification, link:{lra-spec}[MicroProfile LRA], "[...] introduces an API for loosely-coupled services to coordinate long running activities in such a way as to guarantee a globally consistent outcome without the need to take locks on data.” 
+
+Helidon MP supports the features described in the Microprofile spec, but also includes additional features: 
+
+
+* Support for messaging with AQ and Kafka
+* DB persistence of tx/LRA records and config for messaging
+* Future JSON support (if desired). Currently Helidon supports relational/SQL, but in the future we may provide flatfile or other persistence support.
+* Support for high availability (HA) and Kubernetes 
+
+== Messaging Support with AQ and Kafka
+
+The support for MicroProfile Messaging specification mimics the behavior of JAX-RS path as closely as possible. 
+For example, any aspect that applies to LRA-related JAX-RS headers applies to messaging properties as well.
+
+The following is a subset of MP messaging method signatures that are supported in Helidon LRA:
+
+* public Message messagingMethod(Message msg) 
+* public void messagingMethod(Message msg) 
+* public Message messagingMethod(AqMessage<T> msg) 
+* public void messagingMethod(AqMessage<T> msg) 
+* public Message messagingMethod(KafkaMessage msg) 
+* public void messagingMethod(KafkaMessage msg) 
+
+When annotated with `@LRA` the `@Incoming` annotation will adhere to the characteristics of that LRA annotation type and the `@Outgoing` messages will propagate any LRA, etc.
+  
+Despite being in the "ws.ra" package, the `org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER` value
+will be reused as the key for AQ message properties, and Kafka K/V pairs will be used for LRA functionality.
+
+=== Configuring Connectors and Channels
+
+As MP Messaging does not allow for dynamic/runtime/mutable configuration of connectors or channels, there are some related requirements on the user:
+
+1. Preconfigure the coordinator with connectors that are needed to communicate with clients.
+This coupling is required in order to avoid the need to send sensitive connection information from the client to the coordinator.
+   It is not possible for an application or subsystem to access connection factories created by the MicroProfile Messaging directly (ie from outside the `@Incoming/@Outgoing`). This connector configuration is simply used in order to reuse the MP config convention rather than introduce a new one just for LRA.
+   
+2. Configure the channels used for complete, compensate, status, and afterLRA at their choice of granularity at the queue, selector, etc. level. 
+
+3. Configure corresponding reply/outgoing channels for each of these LRA-related incoming channels and the following conventions must be followed:
+
+      - For AQ participants, the outgoing/reply channel must have the same destination value. The type may be queue or topic depending on the AQ configuration. 
+      
+      - For Kafka participants, the outgoing/reply channel must be a topic with the same name as the incoming channel. For example, "complete-events-reply".
+      
+4. The LRA client subsystem, not the application, will implicitly send the microservices channel information for LRA endpoints (`complete`, `compensate`, `status`, `afterLRA`, etc.) and this channel configuration will be persisted at runtime by the coordinator.
+
+5. Channel config persisted by the coordinator will be automatically purged by default after 1 day of inactivity for that channel.
+
+6. The `io.helidon.lra.HELIDONLRAOPERATION {}` key is sent on all messages so that customer applications can use selectors, filters, etc. This key is not currently in the configuration. This value must be used as documented.
+
+
+
+== Advanced Queuing (AQ) Support
+
+Advanced Queuing (AQ) and Transactional Event Queues (TEQ) support queue-to-queue propagation of messages. This messaging is transactional, and can combine a DML operation to the database and a message being sent in the same transaction. This allows AQ and TEQ to be a global messaging framework across distributed databases. 
+
+* Messages can be propagated from one queue to another, allowing applications to communicate with each other without being connected to the same database or to the same queue. The destination queue can be located in the same database or in a remote database. 
+
+* Propagation enables you to fan out messages to a large number of recipients without requiring them all to dequeue messages from a single queue. You can also use propagation to combine messages from different queues into a single queue. This is known as compositing or funneling messages.
+
+=== Other Config Properties
+
+* `mp.lra.propagation.active=true` defined in the LRA spec, this property is used to determine if context is propagated with outgoing requests. This applies to both REST and messaging.
+
+* `lra.coordinator.url` is not defined in the LRA spec, but is the property used by Narayana client in order to locate the LRA Coordinator so we will reuse it in Helidon. This applies only to REST.
+
+* `lra.participant.is.aq` indicates to the coordinator that it is sending to a topic rather than a queue eventhough the participant is listening on queue.  This is how AQ propagation works - the producer sends to a topic and the receiver receives on a queue.
+ 
+== Database Persistence of Transaction/LRA Logging
+
+You must configure a SQL datasource named `LRAlog` that will be used to persist LRA records and any participants' messaging channels used. No additional configuration necessary.
+
+== HA and Kubernetes Considerations
+
+Helidon inherits HA and transaction records from the underlying database architecture. 
+Similarly, by supporting a Kubernetes runtime environment, Helidon also inherits HA for service discovery and routing. 
+
