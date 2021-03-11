@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ For JAX-RS resources, declare security by adding annotations to a resource class
 // you can also use io.helidon.security.abac.role.RoleValidator.Roles
 @RolesAllowed("admin")
 public String adminResource(@Context io.helidon.security.SecurityContext securityContext) {
-  return "you are " + securityContext.getUser();
+  return "you are " + securityContext.userName();
 }
 ----
 
