@@ -43,7 +43,7 @@ public class CronSchedulingTest {
     void cronTest() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
         IntervalMeter meter = new IntervalMeter();
-        Scheduling.cron()
+        Scheduling.cronBuilder()
                 .executor(executorService)
                 .expression("0/2 * * * * ? *")
                 .task(cronInvocation -> meter
@@ -61,7 +61,7 @@ public class CronSchedulingTest {
     void cronConcurrencyDisabled() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
         IntervalMeter meter = new IntervalMeter();
-        Scheduling.cron()
+        Scheduling.cronBuilder()
                 .executor(executorService)
                 .concurrentExecution(false)
                 //every 1 sec
@@ -84,7 +84,7 @@ public class CronSchedulingTest {
         IntervalMeter meter = new IntervalMeter();
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
         try {
-            Scheduling.cron()
+            Scheduling.cronBuilder()
                     .executor(executorService)
                     //every 1 sec
                     .expression("* * * * * ? *")
@@ -106,7 +106,7 @@ public class CronSchedulingTest {
     void cronDefaultExecutor() {
         IntervalMeter meter = new IntervalMeter();
         List<String> threadNames = new ArrayList<>();
-        Task task = Scheduling.cron()
+        Task task = Scheduling.cronBuilder()
                 .expression("0/3 * * * * ? *")
                 .task(cronInvocation -> meter
                         .start()
@@ -129,7 +129,7 @@ public class CronSchedulingTest {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
         try {
             IntervalMeter meter = new IntervalMeter();
-            Assertions.assertThrows(IllegalArgumentException.class, () -> Scheduling.cron()
+            Assertions.assertThrows(IllegalArgumentException.class, () -> Scheduling.cronBuilder()
                     .executor(executorService)
                     .expression("0/2 I N V A ? D")
                     .task(cronInvocation -> meter
@@ -145,7 +145,7 @@ public class CronSchedulingTest {
     void cronMissingTask() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
         try {
-            Assertions.assertThrows(SchedulingException.class, () -> Scheduling.cron()
+            Assertions.assertThrows(SchedulingException.class, () -> Scheduling.cronBuilder()
                     .executor(executorService)
                     .expression("* * * * * ? *")
                     .build());

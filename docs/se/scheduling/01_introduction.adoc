@@ -40,9 +40,9 @@ For scheduling periodic tasks it is possible to choose fixed rate setup or Cron 
 For simple fixed rate invocation use .
 
 [source,java]
-.Example of scheduling with fixed rate use `Scheduling.fixedRate()` builder.
+.Example of scheduling with fixed rate use `Scheduling.fixedRateBuilder()` builder.
 ----
-Scheduling.fixedRate()
+Scheduling.fixedRateBuilder()
         .delay(10)
         .initialDelay(5)
         .timeUnit(TimeUnit.MINUTES)
@@ -56,7 +56,7 @@ FixedRateInvocation provided as task parameter.
 [source,java]
 .Example with ivocation metadata
 ----
-Scheduling.fixedRate()
+Scheduling.fixedRateBuilder()
         .delay(10)
         .task(inv -> System.out.println("Method invoked " + inv.description()))
         .build();
@@ -65,12 +65,12 @@ Scheduling.fixedRate()
 === Cron expression
 
 For more complicated interval definition, cron expression can be leveraged with
-`Scheduling.cron()` builder.
+`Scheduling.cronBuilder()` builder.
 
 [source,java]
 .Example of scheduling with cron expression
 ----
-Scheduling.cron()
+Scheduling.cronBuilder()
     .expression("0 15 8 ? * *")
     .task(inv -> System.out.println("Executer every day at 8:15"))
     .build();
@@ -84,7 +84,7 @@ CronInvocation provided as task parameter.
 [source,java]
 .Example with ivocation metadata
 ----
-Scheduling.cron()
+Scheduling.cronBuilder()
     .expression("0 15 8 ? * *")
     .task(inv -> System.out.println("Method invoked " + inv.description()))
     .build();

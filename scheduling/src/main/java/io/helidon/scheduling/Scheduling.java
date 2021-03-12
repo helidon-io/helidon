@@ -50,7 +50,7 @@ public class Scheduling {
      *
      * @return this builder
      */
-    public static FixedRateBuilder fixedRate() {
+    public static FixedRateBuilder fixedRateBuilder() {
         return new FixedRateBuilder();
     }
 
@@ -59,10 +59,13 @@ public class Scheduling {
      *
      * @return this builder
      */
-    public static CronBuilder cron() {
+    public static CronBuilder cronBuilder() {
         return new CronBuilder();
     }
 
+    /**
+     * Builder for task executed periodically at a fixed rate.
+     */
     public static final class FixedRateBuilder implements io.helidon.common.Builder<Task> {
 
         private ScheduledExecutorService executorService;
@@ -154,6 +157,9 @@ public class Scheduling {
         }
     }
 
+    /**
+     * Builder for task executed periodically according to provided cron expression.
+     */
     public static final class CronBuilder implements io.helidon.common.Builder<Task> {
 
         static final String DEFAULT_THREAD_NAME_PREFIX = "scheduled-";

@@ -136,7 +136,7 @@ public class SchedulingCdiExtension implements Extension {
                         .map(TimeUnit::valueOf)
                         .orElseGet(annotation::timeUnit);
 
-                Task task = Scheduling.fixedRate()
+                Task task = Scheduling.fixedRateBuilder()
                         .executor(executorService)
                         .initialDelay(initialDelay)
                         .delay(delay)
@@ -156,7 +156,7 @@ public class SchedulingCdiExtension implements Extension {
                 boolean concurrent = methodConfig.get("concurrent").asBoolean()
                         .orElseGet(annotation::concurrentExecution);
 
-                Task task = Scheduling.cron()
+                Task task = Scheduling.cronBuilder()
                         .executor(executorService)
                         .concurrentExecution(concurrent)
                         .expression(cron)

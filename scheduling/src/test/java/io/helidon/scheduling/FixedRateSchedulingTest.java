@@ -41,7 +41,7 @@ public class FixedRateSchedulingTest {
         IntervalMeter meter = new IntervalMeter();
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
         try {
-            Scheduling.fixedRate()
+            Scheduling.fixedRateBuilder()
                     .executor(executorService)
                     .delay(2)
                     .task(cronInvocation -> meter
@@ -66,7 +66,7 @@ public class FixedRateSchedulingTest {
 
         try {
 
-            Scheduling.FixedRateBuilder builder = Scheduling.fixedRate()
+            Scheduling.FixedRateBuilder builder = Scheduling.fixedRateBuilder()
                     .executor(executorService)
                     .initialDelay(expectedInitialDelay)
                     .delay(1000)
@@ -97,7 +97,7 @@ public class FixedRateSchedulingTest {
     void fixedRateInvalidDelay() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
         try {
-            Assertions.assertThrows(IllegalArgumentException.class, () -> Scheduling.fixedRate()
+            Assertions.assertThrows(IllegalArgumentException.class, () -> Scheduling.fixedRateBuilder()
                     .executor(executorService)
                     .delay(0)
                     .task(inv -> {})
@@ -112,7 +112,7 @@ public class FixedRateSchedulingTest {
     void fixedRateInvalidMissingDelay() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
         try {
-            Assertions.assertThrows(SchedulingException.class, () -> Scheduling.fixedRate()
+            Assertions.assertThrows(SchedulingException.class, () -> Scheduling.fixedRateBuilder()
                     .executor(executorService)
                     .task(inv -> {})
                     .build());
@@ -126,7 +126,7 @@ public class FixedRateSchedulingTest {
     void fixedRateMissingTask() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
         try {
-            Assertions.assertThrows(SchedulingException.class, () -> Scheduling.fixedRate()
+            Assertions.assertThrows(SchedulingException.class, () -> Scheduling.fixedRateBuilder()
                     .executor(executorService)
                     .delay(2)
                     .build());
