@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,17 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -54,7 +57,7 @@ import io.helidon.common.context.ContextAwareExecutorService;
 /**
  * A {@link ThreadPoolExecutor} with an extensible growth policy and queue state accessors.
  */
-public class    ThreadPool extends ThreadPoolExecutor {
+public class ThreadPool extends ThreadPoolExecutor {
     private static final Logger LOGGER = Logger.getLogger(ThreadPool.class.getName());
     private static final int MAX_GROWTH_RATE = 100;
 
@@ -397,7 +400,7 @@ public class    ThreadPool extends ThreadPoolExecutor {
             // Just add it to the queue if there is capacity
 
             final WorkQueue queue = ((ThreadPool) executor).getQueue();
-            if (!queue.enqueue(task)) {
+            if (!queue.offer(task)) {
 
                 // No capacity, so reject
 
@@ -468,20 +471,24 @@ public class    ThreadPool extends ThreadPoolExecutor {
     /**
      * A queue that tracks peak and average sizes.
      */
-    static class WorkQueue extends LinkedBlockingQueue<Runnable> {
+    static class WorkQueue extends ConcurrentLinkedQueue<Runnable> implements BlockingQueue<Runnable> {
         private final int capacity;
         private final LongAdder totalSize;
         private final AtomicInteger totalTasks;
         private final AtomicInteger peakSize;
+        private final Semaphore semaphoreRead;
+        private final Semaphore semaphoreWrite;
 
         /**
-         * Constructor.
+         * Constructor. Initially {@code capacity} writes (enqueues) and 0 reads (dequeues)
+         * are available.
          *
          * @param capacity The queue capacity.
          */
         WorkQueue(int capacity) {
-            super(capacity);
             this.capacity = capacity;
+            this.semaphoreRead = new Semaphore(0);
+            this.semaphoreWrite = new Semaphore(capacity);
             this.totalSize = new LongAdder();
             this.totalTasks = new AtomicInteger();
             this.peakSize = new AtomicInteger();
@@ -498,31 +505,76 @@ public class    ThreadPool extends ThreadPoolExecutor {
 
         @Override
         public boolean offer(Runnable task) {
-            return enqueue(task);
+            if (!semaphoreWrite.tryAcquire()) {
+               return false;
+            }
+            enqueue(task);
+            semaphoreRead.release();
+            return true;
+        }
+
+        @Override
+        public Runnable poll() {
+            if (!semaphoreRead.tryAcquire()) {
+               return null;
+            }
+            semaphoreWrite.release();
+            return super.poll();
+        }
+
+        @Override
+        public boolean offer(Runnable task, long timeout, TimeUnit tu) throws InterruptedException {
+           if (!semaphoreWrite.tryAcquire(timeout, tu)) {
+              return false;
+           }
+           enqueue(task);
+           semaphoreRead.release();
+           return true;
+        }
+
+        @Override
+        public Runnable poll(long timeout, TimeUnit tu) throws InterruptedException {
+           if (!semaphoreRead.tryAcquire(timeout, tu)) {
+              return null;
+           }
+           semaphoreWrite.release();
+           return super.poll();
+        }
+
+        @Override
+        public void put(Runnable task) throws InterruptedException {
+           semaphoreWrite.acquire();
+           enqueue(task);
+           semaphoreRead.release();
+        }
+
+        @Override
+        public Runnable take() throws InterruptedException {
+           semaphoreRead.acquire();
+           semaphoreWrite.release();
+           return super.poll();
         }
 
         /**
-         * Enqueue the task by invoking the parent {@link #offer(Runnable)} method, updating the statistics
-         * if successful. Moving the actual enqueue logic here provides flexibility for subclasses that override
-         * {@link #offer(Runnable)} and provides a pathway for the {@link RejectionHandler} to directly enqueue a
-         * task without invoking the subclass.
+         * Enqueue the task by invoking the parent {@link #offer(Runnable)} method, updating
+         * the statistics if successful. Moving the actual enqueue logic here provides flexibility
+         * for subclasses that override {@link #offer(Runnable)} and provides a pathway for the
+         * {@link RejectionHandler} to directly enqueue a task without invoking the subclass.
          *
          * @param task The task to enqueue.
          * @return {@code true} if the task was enqueued, {@code false} if the queue is full.
          */
-        boolean enqueue(Runnable task) {
-            if (super.offer(task)) {
-                // Update stats
-                final int queueSize = size();
-                if (queueSize > peakSize.get()) {
-                    peakSize.set(queueSize);
-                }
-                totalSize.add(queueSize);
-                totalTasks.incrementAndGet();
-                return true;
-            } else {
-                return false;
+        private boolean enqueue(Runnable task) {
+            super.offer(task);
+
+            // Update stats
+            final int queueSize = size();
+            if (queueSize > peakSize.get()) {
+                peakSize.set(queueSize);
             }
+            totalSize.add(queueSize);
+            totalTasks.incrementAndGet();
+            return true;
         }
 
         /**
@@ -555,6 +607,48 @@ public class    ThreadPool extends ThreadPoolExecutor {
          */
         public int getPeakSize() {
             return peakSize.get();
+        }
+
+        @Override
+        public int drainTo(Collection<? super Runnable> c) {
+            int i = 0;
+            for (Runnable r = poll(); r != null; i++, r = poll()) {
+                c.add(r);
+            }
+            return i;
+        }
+
+        @Override
+        public int drainTo(Collection<? super Runnable> c, int m) {
+            if (m <= 0) {
+                return 0;
+            }
+
+            Runnable r = poll();
+            int i = 1;
+            m--;
+            while (m > 0 && r != null) {
+                c.add(r);
+                i++;
+                m--;
+                r = poll();
+            }
+
+            if (r != null) {
+                c.add(r);
+            }
+            return i;
+        }
+
+        @Override
+        public int size() {
+            return semaphoreRead.availablePermits();
+        }
+
+        @Override
+        public int remainingCapacity() {
+            // size() should really never become greater than capacity
+            return Math.max(capacity - size(), 0);
         }
     }
 
@@ -610,14 +704,14 @@ public class    ThreadPool extends ThreadPoolExecutor {
                 // Yes, so enqueue if we can
 
                 Event.add(Event.Type.MAX, pool, this);
-                return enqueue(task);
+                return super.offer(task);
 
             } else if (pool.getActiveThreads() < currentSize) {
 
                 // No, but we've got idle threads so enqueue if we can
 
                 Event.add(Event.Type.IDLE, pool, this);
-                return enqueue(task);
+                return super.offer(task);
 
             } else {
 
@@ -637,7 +731,7 @@ public class    ThreadPool extends ThreadPoolExecutor {
 
                 } else {
                     // Enqueue if we can
-                    return enqueue(task);
+                    return super.offer(task);
                 }
             }
         }
