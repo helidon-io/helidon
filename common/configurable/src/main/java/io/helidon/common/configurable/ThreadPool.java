@@ -510,9 +510,11 @@ public class ThreadPool extends ThreadPoolExecutor {
             }
             try {
                 enqueue(task);
-            } finally {
-                semaphoreRead.release();
+            } catch (Exception e) {
+                semaphoreWrite.release();
+                return false;
             }
+            semaphoreRead.release();
             return true;
         }
 
@@ -532,9 +534,11 @@ public class ThreadPool extends ThreadPoolExecutor {
            }
            try {
                enqueue(task);
-           } finally {
-               semaphoreRead.release();
+           } catch (Exception e) {
+               semaphoreWrite.release();
+               return false;
            }
+           semaphoreRead.release();
            return true;
         }
 
@@ -552,9 +556,11 @@ public class ThreadPool extends ThreadPoolExecutor {
            semaphoreWrite.acquire();
            try {
                enqueue(task);
-           } finally {
-               semaphoreRead.release();
+           } catch (Exception e) {
+               semaphoreWrite.release();
+               throw e;
            }
+           semaphoreRead.release();
         }
 
         @Override
