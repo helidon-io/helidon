@@ -508,8 +508,11 @@ public class ThreadPool extends ThreadPoolExecutor {
             if (!semaphoreWrite.tryAcquire()) {
                return false;
             }
-            enqueue(task);
-            semaphoreRead.release();
+            try {
+                enqueue(task);
+            } finally {
+                semaphoreRead.release();
+            }
             return true;
         }
 
@@ -527,8 +530,11 @@ public class ThreadPool extends ThreadPoolExecutor {
            if (!semaphoreWrite.tryAcquire(timeout, tu)) {
               return false;
            }
-           enqueue(task);
-           semaphoreRead.release();
+           try {
+               enqueue(task);
+           } finally {
+               semaphoreRead.release();
+           }
            return true;
         }
 
@@ -544,8 +550,11 @@ public class ThreadPool extends ThreadPoolExecutor {
         @Override
         public void put(Runnable task) throws InterruptedException {
            semaphoreWrite.acquire();
-           enqueue(task);
-           semaphoreRead.release();
+           try {
+               enqueue(task);
+           } finally {
+               semaphoreRead.release();
+           }
         }
 
         @Override
