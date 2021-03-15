@@ -508,14 +508,7 @@ public class ThreadPool extends ThreadPoolExecutor {
             if (!semaphoreWrite.tryAcquire()) {
                return false;
             }
-            try {
-                enqueue(task);
-            } catch (Exception e) {
-                semaphoreWrite.release();
-                return false;
-            }
-            semaphoreRead.release();
-            return true;
+            return enqueue(task);
         }
 
         @Override
@@ -532,14 +525,7 @@ public class ThreadPool extends ThreadPoolExecutor {
            if (!semaphoreWrite.tryAcquire(timeout, tu)) {
               return false;
            }
-           try {
-               enqueue(task);
-           } catch (Exception e) {
-               semaphoreWrite.release();
-               return false;
-           }
-           semaphoreRead.release();
-           return true;
+           return enqueue(task);
         }
 
         @Override
@@ -554,13 +540,7 @@ public class ThreadPool extends ThreadPoolExecutor {
         @Override
         public void put(Runnable task) throws InterruptedException {
            semaphoreWrite.acquire();
-           try {
-               enqueue(task);
-           } catch (Exception e) {
-               semaphoreWrite.release();
-               throw e;
-           }
-           semaphoreRead.release();
+           enqueue(task);
         }
 
         @Override
@@ -575,21 +555,32 @@ public class ThreadPool extends ThreadPoolExecutor {
          * the statistics if successful. Moving the actual enqueue logic here provides flexibility
          * for subclasses that override {@link #offer(Runnable)} and provides a pathway for the
          * {@link RejectionHandler} to directly enqueue a task without invoking the subclass.
+         * This method assumes the write semaphore has been acquired before entering it, and
+         * will release it if an error is encountered.
          *
          * @param task The task to enqueue.
          * @return {@code true} if the task was enqueued, {@code false} if the queue is full.
          */
         private boolean enqueue(Runnable task) {
-            super.offer(task);
+            boolean offered = false;
+            try {
+                offered = super.offer(task);
+            } finally {
+                if (offered) {
+                    semaphoreRead.release();
 
-            // Update stats
-            final int queueSize = size();
-            if (queueSize > peakSize.get()) {
-                peakSize.set(queueSize);
+                    // Update stats
+                    final int queueSize = size();
+                    if (queueSize > peakSize.get()) {
+                        peakSize.set(queueSize);
+                    }
+                    totalSize.add(queueSize);
+                    totalTasks.incrementAndGet();
+                } else {
+                    semaphoreWrite.release();       // acquired before entering
+                }
             }
-            totalSize.add(queueSize);
-            totalTasks.incrementAndGet();
-            return true;
+            return offered;
         }
 
         /**
@@ -633,23 +624,13 @@ public class ThreadPool extends ThreadPoolExecutor {
             return i;
         }
 
-        @Override
         public int drainTo(Collection<? super Runnable> c, int m) {
-            if (m <= 0) {
-                return 0;
-            }
-
-            Runnable r = poll();
-            int i = 1;
-            m--;
-            while (m > 0 && r != null) {
-                c.add(r);
-                i++;
-                m--;
-                r = poll();
-            }
-
-            if (r != null) {
+            int i = 0;
+            for (; m > 0; i++, m--) {
+                Runnable r = poll();
+                if (r == null) {
+                    break;
+                }
                 c.add(r);
             }
             return i;
