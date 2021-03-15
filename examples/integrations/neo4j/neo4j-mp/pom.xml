@@ -41,10 +41,6 @@
             <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.neo4j.driver</groupId>
-            <artifactId>neo4j-java-driver</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.integrations.neo4j</groupId>
             <artifactId>helidon-integrations-neo4j</artifactId>
         </dependency>
@@ -56,6 +52,7 @@
             <groupId>io.helidon.integrations.neo4j</groupId>
             <artifactId>helidon-integrations-neo4j-health</artifactId>
         </dependency>
+
 
         <dependency>
             <groupId>org.jboss</groupId>
@@ -75,6 +72,10 @@
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-nop</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
