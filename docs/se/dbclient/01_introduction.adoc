@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -81,9 +81,8 @@ For the DB Client using JDBC implementation and H2 database, you must include th
          <artifactId>helidon-dbclient-jdbc</artifactId>
      </dependency>
      <dependency>
-         <groupId>com.h2.database</groupId> // <3>
+         <groupId>com.h2database</groupId> // <3>
          <artifactId>h2</artifactId>
-         <version>1.4.200</version>
     </dependency>
 </dependencies>
 ----
