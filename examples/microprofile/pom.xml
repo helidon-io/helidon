@@ -45,5 +45,6 @@
         <module>messaging-sse</module>
         <module>cors</module>
         <module>tls</module>
+        <module>multiport</module>
     </modules>
 </project>
