@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,29 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.functional.requestscope;
+package io.helidon.examples.microprofile.multiport;
 
 import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
 
+/**
+ * Simple resource.
+ */
 @RequestScoped
-@TestQualifier
-public class RequestTestQualifier {
-
-    @Inject
-    private TenantContext tenantContext;
+@Path("/")
+public class PublicResource {
 
     /**
-     * A test method.
+     * Return a worldly greeting message.
      *
-     * @return tenant id
-     * @throws Exception if error occurs
+     * @return {@link String}
      */
-    public String test() throws Exception {
-        String tenantId = tenantContext.getTenantId();
-        if (tenantId == null) {
-            throw new IllegalTenantException("No tenant context");
-        }
-        return tenantId;
+    @Path("/hello")
+    @GET
+    public String helloWorld() {
+        return "Public Hello World!!";
     }
 }
