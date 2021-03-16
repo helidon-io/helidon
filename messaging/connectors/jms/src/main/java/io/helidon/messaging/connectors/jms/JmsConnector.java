@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -381,7 +381,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
             if (message == null) {
                 return;
             }
-            LOGGER.fine(() -> "Received message: " + message.toString());
+            LOGGER.fine(() -> "Received message: " + message);
             JmsMessage<?> preparedMessage = createMessage(message, executor, sessionEntry);
             lastMessage.set(preparedMessage);
             emitter.emit(preparedMessage);
@@ -409,7 +409,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
 
                         if (m instanceof OutgoingJmsMessage) {
                             // custom mapping, properties etc.
-                            jmsMessage = ((OutgoingJmsMessage<?>) m).toJmsMessage(session, mapper.get());
+                            jmsMessage = ((OutgoingJmsMessageImpl<?>) m).toJmsMessage(session, mapper.get());
                         } else {
                             // default mappers
                             jmsMessage = mapper.get().apply(session, m);

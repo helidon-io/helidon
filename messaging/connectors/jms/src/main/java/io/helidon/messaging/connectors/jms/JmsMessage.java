@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -218,21 +218,21 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
     class OutgoingJmsMessageBuilder<PAYLOAD> implements Builder<Message<PAYLOAD>> {
 
         private final HashMap<String, Object> properties = new HashMap<>();
-        private final OutgoingJmsMessage<PAYLOAD> message;
+        private final OutgoingJmsMessageImpl<PAYLOAD> message;
         private String correlationId = null;
         private Destination replyTo = null;
         private String type;
 
         private OutgoingJmsMessageBuilder() {
-            message = new OutgoingJmsMessage<>();
+            message = new OutgoingJmsMessageImpl<>();
         }
 
         private OutgoingJmsMessageBuilder(final PAYLOAD payload) {
-            message = new OutgoingJmsMessage<>(payload);
+            message = new OutgoingJmsMessageImpl<>(payload);
         }
 
         private OutgoingJmsMessageBuilder(javax.jms.Message msg) throws JMSException {
-            message = OutgoingJmsMessage.fromJmsMessage(msg);
+            message = OutgoingJmsMessageImpl.fromJmsMessage(msg);
         }
 
         /**
@@ -390,7 +390,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
 
         @Override
         public Message<PAYLOAD> build() {
-            message.postProcess(m -> {
+            message.postProcessors().add(m -> {
                 // set jms properties
                 for (Map.Entry<String, Object> e : properties.entrySet()) {
                     m.setObjectProperty(e.getKey(), e.getValue());

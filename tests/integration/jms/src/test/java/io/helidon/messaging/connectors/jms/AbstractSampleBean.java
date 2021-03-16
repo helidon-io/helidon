@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,12 @@ package io.helidon.messaging.connectors.jms;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -29,7 +34,10 @@ import javax.jms.TextMessage;
 import io.helidon.common.reactive.Multi;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
@@ -367,6 +375,83 @@ abstract class AbstractSampleBean {
                             })
                             .build()
                     );
+        }
+    }
+
+    @ApplicationScoped
+    public static class ChannelPostProcessors extends AbstractSampleBean {
+        
+        private static final List<String> DATA = List.of("Hello1", "Hello2");
+        public static final String BUILDER_SET_PROPERTY = "builder-set-property";
+        public static final String CUSTOM_MAPPED_PROPERTY = "custom-mapped-property";
+        public static final String POST_PROP_SET_PROP_1 = "post-prop-set-prop-1";
+        public static final String POST_PROP_SET_PROP_2 = "post-prop-set-prop-2";
+        private final CountDownLatch countDownLatch = new CountDownLatch(DATA.size());
+        private final ArrayList<String> result = new ArrayList<>(DATA.size());
+        private final CompletableFuture<String> propertyFromBuilder = new CompletableFuture<>();
+        private final CompletableFuture<String> propertyFromCustomMapper = new CompletableFuture<>();
+        private final CompletableFuture<String> propertyFromPostProcessor1 = new CompletableFuture<>();
+        private final CompletableFuture<String> propertyFromPostProcessor2 = new CompletableFuture<>();
+
+        public void await(long timeout) {
+            try {
+                assertTrue(countDownLatch.await(timeout, TimeUnit.MILLISECONDS));
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public ArrayList<String> assertResult() throws ExecutionException, InterruptedException, TimeoutException {
+            assertThat(result, containsInAnyOrder("Hello1XXXHello1", "Hello2XXXHello2"));
+            assertThat(propertyFromBuilder.get(500, TimeUnit.MILLISECONDS), is(equalTo(BUILDER_SET_PROPERTY)));
+            assertThat(propertyFromCustomMapper.get(500, TimeUnit.MILLISECONDS), is(startsWith("XXX")));
+            assertThat(propertyFromPostProcessor1.get(500, TimeUnit.MILLISECONDS), is(equalTo(POST_PROP_SET_PROP_1)));
+            assertThat(propertyFromPostProcessor2.get(500, TimeUnit.MILLISECONDS), is(equalTo(POST_PROP_SET_PROP_2)));
+            return result;
+        }
+
+        @Incoming("test-channel-post-processors-fromJms")
+        public CompletionStage<Void> from(JmsMessage<String> m) {
+            result.add(m.getPayload() + m.getProperty(CUSTOM_MAPPED_PROPERTY));
+            if(m.hasProperty(POST_PROP_SET_PROP_1)){
+                propertyFromPostProcessor1.complete(m.getProperty(POST_PROP_SET_PROP_1));
+            }
+            if(m.hasProperty(POST_PROP_SET_PROP_2)){
+                propertyFromPostProcessor2.complete(m.getProperty(POST_PROP_SET_PROP_2));
+            }
+            countDownLatch.countDown();
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Outgoing("test-channel-post-processors-processor")
+        public PublisherBuilder<Message<String>> to() {
+            return ReactiveStreams.fromIterable(DATA)
+                    .map(s -> JmsMessage.builder(s)
+                            .property(BUILDER_SET_PROPERTY, BUILDER_SET_PROPERTY)
+                            .customMapper((p, session) -> {
+                                TextMessage textMessage = session.createTextMessage(p);
+                                textMessage.setStringProperty(CUSTOM_MAPPED_PROPERTY, "XXX" + p);
+                                return textMessage;
+                            })
+                            .build()
+                    );
+        }
+
+        @Incoming("test-channel-post-processors-processor")
+        @Outgoing("test-channel-post-processors-toJms")
+        public Message<String> postProcessing(OutgoingJmsMessage<String> message) {
+            // Check that post-processing is done after building and custom mapping of JMS message
+            message.addPostProcessor(m -> m.setStringProperty(POST_PROP_SET_PROP_1, POST_PROP_SET_PROP_1));
+            message.addPostProcessor(m -> {
+                if (m.propertyExists(BUILDER_SET_PROPERTY)) {
+                    propertyFromBuilder.complete(m.getStringProperty(BUILDER_SET_PROPERTY));
+                }
+                if (m.propertyExists(CUSTOM_MAPPED_PROPERTY)) {
+                    propertyFromCustomMapper.complete(m.getStringProperty(CUSTOM_MAPPED_PROPERTY));
+                }
+                m.setStringProperty(POST_PROP_SET_PROP_2, POST_PROP_SET_PROP_2);
+            });
+            return message;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ import org.junit.jupiter.api.Test;
         @AddBean(AbstractSampleBean.ChannelBytes.class),
         @AddBean(AbstractSampleBean.ChannelProperties.class),
         @AddBean(AbstractSampleBean.ChannelCustomMapper.class),
+        @AddBean(AbstractSampleBean.ChannelPostProcessors.class),
         @AddBean(AbstractSampleBean.ChannelDerivedMessage.class),
 })
 @AddExtensions({
@@ -124,6 +125,14 @@ import org.junit.jupiter.api.Test;
         @AddConfig(key = "mp.messaging.outgoing.test-channel-custom-mapper-toJms.connector", value = JmsConnector.CONNECTOR_NAME),
         @AddConfig(key = "mp.messaging.outgoing.test-channel-custom-mapper-toJms.type", value = "queue"),
         @AddConfig(key = "mp.messaging.outgoing.test-channel-custom-mapper-toJms.destination", value = JmsMpTest.TEST_TOPIC_CUST_MAPPER),
+        
+        @AddConfig(key = "mp.messaging.incoming.test-channel-post-processors-fromJms.connector", value = JmsConnector.CONNECTOR_NAME),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-post-processors-fromJms.type", value = "queue"),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-post-processors-fromJms.destination", value = JmsMpTest.TEST_TOPIC_POST_PROCESSOR),
+
+        @AddConfig(key = "mp.messaging.outgoing.test-channel-post-processors-toJms.connector", value = JmsConnector.CONNECTOR_NAME),
+        @AddConfig(key = "mp.messaging.outgoing.test-channel-post-processors-toJms.type", value = "queue"),
+        @AddConfig(key = "mp.messaging.outgoing.test-channel-post-processors-toJms.destination", value = JmsMpTest.TEST_TOPIC_POST_PROCESSOR),
 
         @AddConfig(key = "mp.messaging.incoming.test-channel-derived-msg-fromJms.connector", value = JmsConnector.CONNECTOR_NAME),
         @AddConfig(key = "mp.messaging.incoming.test-channel-derived-msg-fromJms.type", value = "queue"),
@@ -152,6 +161,7 @@ class JmsMpTest extends AbstractMPTest {
     static final String TEST_TOPIC_BYTES = "topic-bytes";
     static final String TEST_TOPIC_PROPS = "topic-properties";
     static final String TEST_TOPIC_CUST_MAPPER = "topic-cust-mapper";
+    static final String TEST_TOPIC_POST_PROCESSOR = "topic-post-processor";
     static final String TEST_TOPIC_DERIVED_1 = "topic-derived-1";
     static final String TEST_TOPIC_DERIVED_2 = "topic-derived-2";
     static final String TEST_TOPIC_ERROR = "topic-error";
@@ -243,6 +253,13 @@ class JmsMpTest extends AbstractMPTest {
     @Test
     void customMapper() {
         AbstractSampleBean.ChannelCustomMapper bean = CDI.current().select(AbstractSampleBean.ChannelCustomMapper.class).get();
+        bean.await(200);
+        bean.assertResult();
+    }
+
+    @Test
+    void postProcessor() throws ExecutionException, InterruptedException, TimeoutException {
+        AbstractSampleBean.ChannelPostProcessors bean = CDI.current().select(AbstractSampleBean.ChannelPostProcessors.class).get();
         bean.await(200);
         bean.assertResult();
     }
