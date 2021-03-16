@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,27 +15,30 @@
  */
 package io.helidon.tests.functional.requestscope;
 
-import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 
-@RequestScoped
-@TestQualifier
-public class RequestTestQualifier {
+@Path("/test5")
+public class Service5 {
 
     @Inject
-    private TenantContext tenantContext;
+    private Bean5 bean5;
 
     /**
-     * A test method.
+     * A JAX-RS test resource.
      *
      * @return tenant id
-     * @throws Exception if error occurs
      */
-    public String test() throws Exception {
-        String tenantId = tenantContext.getTenantId();
-        if (tenantId == null) {
-            throw new IllegalTenantException("No tenant context");
+    @GET
+    public String getTestResource() {
+        try {
+            return bean5.test();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
-        return tenantId;
     }
 }
