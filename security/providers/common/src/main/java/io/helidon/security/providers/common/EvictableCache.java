@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,14 @@ import io.helidon.config.Config;
  * Generic cache with eviction support.
  * Default implementation is backed by {@link java.util.concurrent.ConcurrentHashMap} and provides
  * configuration to set this map up, as can be done through {@link #builder()}, and {@link #create(io.helidon.config.Config)}.
+ *
+ * Cache timeouts:
+ * <ul>
+ *     <li>{@link io.helidon.security.providers.common.EvictableCache.Builder#overallTimeout(long, java.util.concurrent.TimeUnit)}
+ *      defines the timeout of record since its creation</li>
+ *     <li>{@link io.helidon.security.providers.common.EvictableCache.Builder#timeout(long, java.util.concurrent.TimeUnit)}
+ *      defines the timeout of record since last use (a sliding timeout)</li>
+ * </ul>
  *
  * @param <K> type of keys in this cache
  * @param <V> type of values in this cache
@@ -180,8 +188,10 @@ public interface EvictableCache<K, V> {
     class Builder<K, V> implements io.helidon.common.Builder<EvictableCache<K, V>> {
         private boolean cacheEnabled = true;
         private long cacheTimeout = CACHE_TIMEOUT_MINUTES;
-        private long cacheMaxSize = CACHE_MAX_SIZE;
         private TimeUnit cacheTimeoutUnit = TimeUnit.MINUTES;
+        private long overallTimeout = CACHE_TIMEOUT_MINUTES;
+        private TimeUnit overallTimeoutUnit = TimeUnit.MINUTES;
+        private long cacheMaxSize = CACHE_MAX_SIZE;
         private long cacheEvictDelay = CACHE_EVICT_DELAY_MINUTES;
         private long cacheEvictPeriod = CACHE_EVICT_PERIOD_MINUTES;
         private TimeUnit cacheEvictTimeUnit = TimeUnit.MINUTES;
@@ -203,7 +213,7 @@ public interface EvictableCache<K, V> {
         }
 
         /**
-         * Configure record timeout since last modification.
+         * Configure record timeout since last access.
          *
          * @param timeout     timeout value
          * @param timeoutUnit timeout unit
@@ -212,6 +222,19 @@ public interface EvictableCache<K, V> {
         public Builder<K, V> timeout(long timeout, TimeUnit timeoutUnit) {
             this.cacheTimeout = timeout;
             this.cacheTimeoutUnit = timeoutUnit;
+            return this;
+        }
+
+        /**
+         * Configure record timeout since its creation.
+         *
+         * @param timeout timeout value
+         * @param timeoutUnit timeout unit
+         * @return updated builder instance
+         */
+        public Builder<K, V> overallTimeout(long timeout, TimeUnit timeoutUnit) {
+            this.overallTimeout = timeout;
+            this.overallTimeoutUnit = timeoutUnit;
             return this;
         }
 
@@ -306,6 +329,8 @@ public interface EvictableCache<K, V> {
             if (cacheEnabled) {
                 config.get("max-size").asInt().ifPresent(this::maxSize);
                 config.get("cache-timeout-millis").asLong().ifPresent(timeout -> timeout(timeout, TimeUnit.MILLISECONDS));
+                config.get("cache-overall-timeout-millis").asLong()
+                        .ifPresent(timeout -> overallTimeout(timeout, TimeUnit.MILLISECONDS));
                 long evictDelay = config.get("cache-evict-delay-millis").asLong()
                         .orElse(cacheEvictTimeUnit.toMillis(cacheEvictDelay));
                 long evictPeriod = config.get("cache-evict-period-millis").asLong()
@@ -335,12 +360,20 @@ public interface EvictableCache<K, V> {
             return cacheTimeout;
         }
 
-        long cacheMaxSize() {
-            return cacheMaxSize;
-        }
-
         TimeUnit cacheTimeoutUnit() {
             return cacheTimeoutUnit;
+        }
+
+        long overallTimeout() {
+            return overallTimeout;
+        }
+
+        TimeUnit overallTimeoutUnit() {
+            return overallTimeoutUnit;
+        }
+
+        long cacheMaxSize() {
+            return cacheMaxSize;
         }
 
         long cacheEvictDelay() {

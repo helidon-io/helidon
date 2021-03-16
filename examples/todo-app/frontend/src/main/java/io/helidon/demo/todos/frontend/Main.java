@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,9 @@ import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.accesslog.AccessLogSupport;
+import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 import io.opentracing.Tracer;
 import org.glassfish.jersey.logging.LoggingFeature;
@@ -124,7 +124,7 @@ public final class Main {
                 // register metrics features (on "/metrics")
                 .register(MetricsSupport.create())
                 // register security features
-                .register(WebSecurity.create(security, config))
+                .register(WebSecurity.create(security, config.get("security")))
                 // register static content support (on "/")
                 .register(StaticContentSupport.builder("/WEB").welcomeFileName("index.html"))
                 // register API handler (on "/api") - this path is secured (see application.yaml)

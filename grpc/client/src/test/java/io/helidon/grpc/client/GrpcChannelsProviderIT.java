@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,14 @@ import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.grpc.EquivalentAddressGroup;
 import io.grpc.NameResolver;
 import io.grpc.StatusRuntimeException;
+import io.netty.handler.codec.DecoderException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import services.TreeMapService;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -185,13 +187,15 @@ public class GrpcChannelsProviderIT {
     @Test
     public void shouldNotConnectWithoutClientCertTo2WaySslServer() {
         StatusRuntimeException sre = assertThrows(StatusRuntimeException.class, () -> invokeUnary(port2WaySSL, WITH_CA_CERT + WITH_CLIENT_KEY));
-        assertThat(sre.getCause().getClass(), equalTo(javax.net.ssl.SSLHandshakeException.class));
+        assertThat(sre.getCause(), instanceOf(DecoderException.class));
+        assertThat(sre.getCause().getCause(), instanceOf(SSLException.class));
     }
 
     @Test
     public void shouldNotConnectWithoutClientKeyTo2WaySslServer() {
         StatusRuntimeException sre = assertThrows(StatusRuntimeException.class, () -> invokeUnary(port2WaySSL, WITH_CA_CERT + WITH_CLIENT_CERT));
-        assertThat(sre.getCause().getClass(), equalTo(javax.net.ssl.SSLHandshakeException.class));
+        assertThat(sre.getCause(), instanceOf(DecoderException.class));
+        assertThat(sre.getCause().getCause(), instanceOf(SSLException.class));
     }
 
     @Test

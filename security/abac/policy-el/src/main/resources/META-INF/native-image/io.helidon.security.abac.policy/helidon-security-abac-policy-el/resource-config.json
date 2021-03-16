@@ -1,0 +1,10 @@
+{
+    "bundles": [
+        {
+            "name": "javax.el.PrivateMessages"
+        },
+        {
+            "name": "com.sun.el.Messages"
+        }
+    ]
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import io.helidon.common.http.Http;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.media.multipart.MultiPartSupport;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 /**
  * This application provides a simple file upload service with a UI to exercise multipart.
@@ -50,12 +50,18 @@ public final class Main {
     }
 
     /**
-     * Executes the example.
-     *
+     * Application main entry point.
      * @param args command line arguments.
      */
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
+        startServer();
+    }
 
+    /**
+     * Start the server.
+     * @return the created {@link WebServer} instance
+     */
+    static WebServer startServer() {
         WebServer server = WebServer.builder(createRouting())
                 .port(8080)
                 .addMediaSupport(MultiPartSupport.create())
@@ -71,5 +77,8 @@ public final class Main {
         server.whenShutdown()
                 .thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
 
+        return server;
     }
+
+
 }

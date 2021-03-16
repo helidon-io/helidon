@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
 
 public class MultiRangeTest {
 
@@ -33,9 +35,9 @@ public class MultiRangeTest {
         ts.assertResult(1, 2);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void negativeCount() {
-        Multi.range(1, -1);
+        assertThrows(IllegalArgumentException.class, () -> Multi.range(1, -1));
     }
 
     @Test

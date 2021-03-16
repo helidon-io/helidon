@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,12 +23,29 @@
 
 == Static Content Support
 
-Use the `StaticContentSupport` class to serve files and classpath resources. 
+Use the `io.helidon.webserver.staticcontent.StaticContentSupport` class to serve files and classpath resources.
 `StaticContentSupport` can be created for any readable directory or classpath
  context root and registered on a path in `Routing`.
 
 You can combine dynamic handlers with `StaticContentSupport` objects: if no file matches the request path, then the request is forwarded to
- the next handler. 
+ the next handler.
+
+=== Maven Coordinates
+
+Declare the following dependency in your project:
+
+[source,xml,subs="verbatim,attributes"]
+.WebServer Static Content Dependency
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-static-content</artifactId>
+</dependency>
+----
+
+=== Registering Static Content
+
+To register static content based on a file system (`/pictures`), and classpath (`/`):
 
 [source,java]
 ----

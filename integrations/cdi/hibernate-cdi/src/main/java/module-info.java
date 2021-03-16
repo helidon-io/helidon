@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ module io.helidon.integrations.cdi.hibernate {
     requires jakarta.inject.api;
     requires jakarta.enterprise.cdi.api;
     requires org.hibernate.orm.core;
+    // needed only for native image, transitive dependency of hibernate-core
+    requires dom4j;
 
     exports io.helidon.integrations.cdi.hibernate;
 }

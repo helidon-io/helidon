@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Test;
-
 import java.util.function.Function;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
 
 public class MultiComposeTest {
 
@@ -36,14 +38,16 @@ public class MultiComposeTest {
         ts.assertResult("1");
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void composeNull() {
-        Multi.just(1).compose(null);
+        assertThrows(NullPointerException.class, () -> Multi.just(1).compose(null));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void composeThrows() {
-        Multi.just(1)
-                .compose(s -> { throw new IllegalArgumentException(); });
+        assertThrows(IllegalArgumentException.class, () -> Multi.just(1)
+                .compose(s -> {
+                    throw new IllegalArgumentException();
+                }));
     }
 }

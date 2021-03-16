@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,14 +45,16 @@ final class FeatureCatalog {
                     .description("Server for gRPC services")
                     .path("grpc")
                     .flavor(HelidonFlavor.SE)
-                    .nativeSupported(false));
+                    .nativeSupported(true)
+                    .nativeDescription("Experimental support in native image"));
         add("io.helidon.grpc.client",
             FeatureDescriptor.builder()
                     .name("gRPC Client")
                     .description("Client for gRPC services")
                     .path("grpcClient")
                     .flavor(HelidonFlavor.SE)
-                    .nativeSupported(false));
+                    .nativeSupported(true)
+                    .nativeDescription("Experimental support in native image"));
         addSe("io.helidon.grpc.metrics",
               "Metrics",
               "Metrics for gRPC services",
@@ -415,7 +417,8 @@ final class FeatureCatalog {
                     .name("EL")
                     .description("ABAC Jakarta Expression Language policy support")
                     .path("Security", "Provider", "ABAC", "Policy", "EL")
-                    .nativeSupported(false));
+                    .nativeSupported(true)
+                    .nativeDescription("Properties used in expressions must have reflection configuration added"));
         add("io.helidon.security.abac.role",
             "Role",
             "ABAC Role based attribute validator",
@@ -496,6 +499,23 @@ final class FeatureCatalog {
             "Zipkin",
             "Zipkin tracer integration",
             "Tracing", "Zipkin");
+        add("io.helidon.integrations.neo4j",
+                FeatureDescriptor.builder()
+                        .name("Neo4j integration")
+                        .description("Integration with Neo4j driver")
+                        .path("Neo4j")
+                        .experimental(true)
+                        .nativeSupported(true));
+        add("io.helidon.integrations.neo4j.health",
+                FeatureDescriptor.builder()
+                        .name("Neo4j Health")
+                        .description("Health check for Neo4j integration")
+                        .path("Neo4j", "Health"));
+        add("io.helidon.integrations.neo4j.metrics",
+                FeatureDescriptor.builder()
+                        .name("Neo4j Metrics")
+                        .description("Metrics for Neo4j integration")
+                        .path("Neo4j", "Metrics"));
         add("io.helidon.webclient",
             FeatureDescriptor.builder()
                     .name("Web Client")
@@ -520,6 +540,10 @@ final class FeatureCatalog {
                     .path("Logging", "Log4j")
                     .description("Log4j MDC support")
                     .nativeDescription("Only programmatic configuration supported, does not work with Helidon loggers"));
+        add("io.helidon.webserver.staticcontent",
+            "Static Content",
+            "Static content support for webserver",
+            "WebServer", "Static Content");
 
         /*
          * Packages that are not a feature
@@ -581,6 +605,8 @@ final class FeatureCatalog {
         exclude("io.helidon.tracing.tracerresolver");
         exclude("io.helidon.webclient.jaxrs");
         exclude("io.helidon.webclient.spi");
+        exclude("io.helidon.common.context.spi");
+        exclude("io.helidon.grpc.core");
     }
 
     static Set<FeatureDescriptor> get(String packageName) {

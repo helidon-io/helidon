@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,10 @@ import io.grpc.stub.StreamObserver;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
@@ -113,6 +115,47 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.TIMER));
         assertThat(registry.getTimers().get(new MetricID(ServiceOne.class.getName() + ".timed")), is(notNullValue()));
+    }
+
+    @Test
+    public void shouldAddSimpleTimerMetricFromClassAnnotation() {
+        Class<?> serviceClass = ServiceOne.class;
+        Class<?> annotatedClass = ServiceOne.class;
+        ServiceDescriptor.Builder builder = ServiceDescriptor.builder(new ServiceOne());
+
+        MetricsConfigurer configurer = new MetricsConfigurer();
+        configurer.accept(serviceClass, annotatedClass, builder);
+
+        ServiceDescriptor descriptor = builder.build();
+        List<ServerInterceptor> serviceInterceptors = descriptor.interceptors().stream().collect(Collectors.toList());
+        MethodDescriptor<?, ?> methodDescriptor = descriptor.method("simplyTimed");
+        List<ServerInterceptor> methodInterceptors = methodDescriptor.interceptors().stream().collect(Collectors.toList());
+        assertThat(serviceInterceptors, is(emptyIterable()));
+        assertThat(methodInterceptors.size(), is(1));
+        assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
+        assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.SIMPLE_TIMER));
+        assertThat(registry.getSimpleTimers().get(new MetricID(ServiceOne.class.getName() + ".simplyTimed")), is(notNullValue()));
+    }
+
+    @Test
+    public void shouldAddConcurrentGaugeMetricFromClassAnnotation() {
+        Class<?> serviceClass = ServiceOne.class;
+        Class<?> annotatedClass = ServiceOne.class;
+        ServiceDescriptor.Builder builder = ServiceDescriptor.builder(new ServiceOne());
+
+        MetricsConfigurer configurer = new MetricsConfigurer();
+        configurer.accept(serviceClass, annotatedClass, builder);
+
+        ServiceDescriptor descriptor = builder.build();
+        List<ServerInterceptor> serviceInterceptors = descriptor.interceptors().stream().collect(Collectors.toList());
+        MethodDescriptor<?, ?> methodDescriptor = descriptor.method("concurrentGauge");
+        List<ServerInterceptor> methodInterceptors = methodDescriptor.interceptors().stream().collect(Collectors.toList());
+        assertThat(serviceInterceptors, is(emptyIterable()));
+        assertThat(methodInterceptors.size(), is(1));
+        assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
+        assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.CONCURRENT_GAUGE));
+        assertThat(registry.getConcurrentGauges().get(new MetricID(ServiceOne.class.getName() + ".concurrentGauge")),
+                is(notNullValue()));
     }
 
     @Test
@@ -221,6 +264,39 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors, is(emptyIterable()));
     }
 
+    @Test
+    public void shouldIgnoreSimpleTimerMetricFromInterfaceAnnotation() {
+        Class<?> serviceClass = ServiceTwoImpl.class;
+        Class<?> annotatedClass = ServiceTwo.class;
+        ServiceDescriptor.Builder builder = ServiceDescriptor.builder(new ServiceTwoImpl());
+
+        MetricsConfigurer configurer = new MetricsConfigurer();
+        configurer.accept(serviceClass, annotatedClass, builder);
+
+        ServiceDescriptor descriptor = builder.build();
+        List<ServerInterceptor> serviceInterceptors = descriptor.interceptors().stream().collect(Collectors.toList());
+        MethodDescriptor<?, ?> methodDescriptor = descriptor.method("simplyTimed");
+        List<ServerInterceptor> methodInterceptors = methodDescriptor.interceptors().stream().collect(Collectors.toList());
+        assertThat(serviceInterceptors, is(emptyIterable()));
+        assertThat(methodInterceptors, is(emptyIterable()));
+    }
+    @Test
+    public void shouldIgnoreConcurrentGaugeMetricFromInterfaceAnnotation() {
+        Class<?> serviceClass = ServiceTwoImpl.class;
+        Class<?> annotatedClass = ServiceTwo.class;
+        ServiceDescriptor.Builder builder = ServiceDescriptor.builder(new ServiceTwoImpl());
+
+        MetricsConfigurer configurer = new MetricsConfigurer();
+        configurer.accept(serviceClass, annotatedClass, builder);
+
+        ServiceDescriptor descriptor = builder.build();
+        List<ServerInterceptor> serviceInterceptors = descriptor.interceptors().stream().collect(Collectors.toList());
+        MethodDescriptor<?, ?> methodDescriptor = descriptor.method("concurrentGauge");
+        List<ServerInterceptor> methodInterceptors = methodDescriptor.interceptors().stream().collect(Collectors.toList());
+        assertThat(serviceInterceptors, is(emptyIterable()));
+        assertThat(methodInterceptors, is(emptyIterable()));
+    }
+
 
     @Grpc
     public static class ServiceOne
@@ -229,7 +305,9 @@ public class MetricsConfigurerTest {
         public void update(ServiceDescriptor.Rules rules) {
             rules.unary("counted", this::counted)
                  .unary("timed", this::timed)
-                 .unary("metered", this::metered);
+                 .unary("metered", this::metered)
+                 .unary("simplyTimed", this::simplyTimed)
+                 .unary("concurrentGauge", this::concurrentGauge);
         }
 
         @Unary
@@ -245,6 +323,16 @@ public class MetricsConfigurerTest {
         @Unary
         @Metered
         public void metered(String request, StreamObserver<String> response) {
+        }
+
+        @Unary
+        @SimplyTimed
+        public void simplyTimed(String request, StreamObserver<String> response) {
+        }
+
+        @Unary
+        @ConcurrentGauge
+        public void concurrentGauge(String request, StreamObserver<String> response) {
         }
     }
 
@@ -263,6 +351,14 @@ public class MetricsConfigurerTest {
         @Unary
         @Metered
         void metered(String request, StreamObserver<String> response);
+
+        @Unary
+        @SimplyTimed
+        void simplyTimed(String request, StreamObserver<String> response);
+
+        @Unary
+        @ConcurrentGauge
+        void concurrentGauge(String request, StreamObserver<String> response);
     }
 
     public static class ServiceTwoImpl
@@ -271,7 +367,9 @@ public class MetricsConfigurerTest {
         public void update(ServiceDescriptor.Rules rules) {
             rules.unary("counted", this::counted)
                  .unary("timed", this::timed)
-                 .unary("metered", this::metered);
+                 .unary("metered", this::metered)
+                 .unary("simplyTimed", this::simplyTimed)
+                 .unary("concurrentGauge", this::concurrentGauge);
         }
 
         @Override
@@ -284,6 +382,14 @@ public class MetricsConfigurerTest {
 
         @Override
         public void metered(String request, StreamObserver<String> response) {
+        }
+
+        @Override
+        public void simplyTimed(String request, StreamObserver<String> response) {
+        }
+
+        @Override
+        public void concurrentGauge(String request, StreamObserver<String> response) {
         }
     }
 

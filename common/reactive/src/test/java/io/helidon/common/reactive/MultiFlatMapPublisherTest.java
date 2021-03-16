@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,11 +33,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.testng.annotations.Ignore;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class MultiFlatMapPublisherTest {
 
@@ -54,8 +54,8 @@ public class MultiFlatMapPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         items(count)
-        .flatMap(v -> items(inner), maxConcurrent, false, prefetch)
-        .subscribe(ts);
+                .flatMap(v -> items(inner), maxConcurrent, false, prefetch)
+                .subscribe(ts);
 
         ts.requestMax();
 
@@ -150,7 +150,7 @@ public class MultiFlatMapPublisherTest {
         items(3)
                 .map(v -> 6 / (1 - v))
                 .flatMap(Single::just, 32, true, 32)
-        .subscribe(ts);
+                .subscribe(ts);
 
         ts.requestMax();
 
@@ -164,7 +164,7 @@ public class MultiFlatMapPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         items(3)
-                .flatMap(v ->Single.just(v).map(w -> 6 / (1 - w)),
+                .flatMap(v -> Single.just(v).map(w -> 6 / (1 - w)),
                         32, true, 32)
                 .subscribe(ts);
 
@@ -291,9 +291,9 @@ public class MultiFlatMapPublisherTest {
         ts.assertEmpty();
 
         ts.request(1)
-        .assertValuesOnly(1)
-        .request(1)
-        .assertResult(1, 2);
+                .assertValuesOnly(1)
+                .request(1)
+                .assertResult(1, 2);
     }
 
     static final int UPSTREAM_ITEM_COUNT = 100;
@@ -307,7 +307,7 @@ public class MultiFlatMapPublisherTest {
             .collect(Collectors.toList());
 
     @Test
-    @Ignore // takes too long on its own, only for checking out possible bugs
+    @Disabled // takes too long on its own, only for checking out possible bugs
     public void multiLoop() throws Throwable {
         for (int i = 0; i < 1000; i++) {
             if (i % 10 == 0) {

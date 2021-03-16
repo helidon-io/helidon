@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,23 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Test;
-
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
 
 public class MultiRetryTest {
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void negativeCount() {
-        Multi.just(1).retry(-1);
+        assertThrows(IllegalArgumentException.class, () -> Multi.just(1).retry(-1));
     }
 
     @Test
@@ -66,7 +67,9 @@ public class MultiRetryTest {
         TestSubscriber<Object> ts = new TestSubscriber<>();
 
         Multi.error(new IOException())
-                .retryWhen((e, n) -> { throw new IllegalArgumentException(); })
+                .retryWhen((e, n) -> {
+                    throw new IllegalArgumentException();
+                })
                 .subscribe(ts);
 
         ts.assertFailure(IllegalArgumentException.class);
@@ -78,11 +81,13 @@ public class MultiRetryTest {
         TestSubscriber<Object> ts = new TestSubscriber<>();
 
         Multi.error(new IllegalArgumentException())
-                .retryWhen((e, n) -> { throw (RuntimeException)e; })
+                .retryWhen((e, n) -> {
+                    throw (RuntimeException) e;
+                })
                 .subscribe(ts);
 
         ts.assertFailure(IllegalArgumentException.class);
-        assertEquals(ts.getLastError().getSuppressed().length, 0,"" + ts.getLastError());
+        assertEquals(ts.getLastError().getSuppressed().length, 0, "" + ts.getLastError());
     }
 
     @Test
@@ -116,7 +121,7 @@ public class MultiRetryTest {
                 .subscribe(ts);
 
         ts.assertFailure(IllegalArgumentException.class);
-        assertEquals(ts.getLastError().getSuppressed().length, 0,"" + ts.getLastError());
+        assertEquals(ts.getLastError().getSuppressed().length, 0, "" + ts.getLastError());
     }
 
     @Test
@@ -141,7 +146,7 @@ public class MultiRetryTest {
                 .subscribe(ts);
 
         ts.assertFailure(IllegalArgumentException.class);
-        assertEquals(ts.getLastError().getSuppressed().length, 0,"" + ts.getLastError());
+        assertEquals(ts.getLastError().getSuppressed().length, 0, "" + ts.getLastError());
     }
 
     @Test
@@ -155,8 +160,8 @@ public class MultiRetryTest {
             Multi.defer(() -> count.incrementAndGet() < 5
                     ? Multi.error(new IOException()) : Multi.just(1)
             )
-            .retryWhen((e, n) -> Multi.timer(100, TimeUnit.MILLISECONDS, executor))
-            .subscribe(ts);
+                    .retryWhen((e, n) -> Multi.timer(100, TimeUnit.MILLISECONDS, executor))
+                    .subscribe(ts);
 
             ts.awaitDone(5, TimeUnit.SECONDS)
                     .assertResult(1);
@@ -194,8 +199,8 @@ public class MultiRetryTest {
                     ? Multi.concat(Multi.just(c), Multi.error(new IOException()))
                     : Multi.range(6, 5);
         })
-        .retry((e, n) -> e instanceof IOException)
-        .subscribe(ts);
+                .retry((e, n) -> e instanceof IOException)
+                .subscribe(ts);
 
         ts
                 .assertEmpty()

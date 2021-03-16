@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,11 @@ import javax.ws.rs.core.Response;
 
 import io.helidon.common.http.HttpRequest;
 
+import org.glassfish.jersey.CommonProperties;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.webserver.jersey.JerseySupport.IGNORE_EXCEPTION_RESPONSE;
 import static io.helidon.webserver.jersey.JerseySupport.basePath;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -330,6 +332,12 @@ public class JerseySupportTest {
                 is("/my/"));
         assertThat(basePath(new PathMockup("/my/application/path", "/my/application/path")),
                 is("/"));
+    }
+
+    @Test
+    public void testJerseyProperties() {
+        assertThat(System.getProperty(CommonProperties.ALLOW_SYSTEM_PROPERTIES_PROVIDER), is("true"));
+        assertThat(System.getProperty(IGNORE_EXCEPTION_RESPONSE), is("true"));
     }
 
     static class PathMockup implements HttpRequest.Path {
