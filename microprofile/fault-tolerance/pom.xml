@@ -89,6 +89,10 @@
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.ext.cdi</groupId>
+            <artifactId>jersey-weld2-se</artifactId>
+        </dependency>
         <!-- To keep HK2 from complaining when run with Java9+ -->
         <dependency>
             <groupId>jakarta.activation</groupId>
