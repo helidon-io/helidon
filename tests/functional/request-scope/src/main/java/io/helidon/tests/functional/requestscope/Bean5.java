@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,27 +15,30 @@
  */
 package io.helidon.tests.functional.requestscope;
 
-import javax.enterprise.context.RequestScoped;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
-@RequestScoped
-@TestQualifier
-public class RequestTestQualifier {
+import org.eclipse.microprofile.faulttolerance.Retry;
+
+@ApplicationScoped
+public class Bean5 {
 
     @Inject
-    private TenantContext tenantContext;
+    private Bean6 bean6;
+
+    private boolean firstCall = true;
 
     /**
      * A test method.
      *
-     * @return tenant id
-     * @throws Exception if error occurs
+     * @return tenant ID
      */
-    public String test() throws Exception {
-        String tenantId = tenantContext.getTenantId();
-        if (tenantId == null) {
-            throw new IllegalTenantException("No tenant context");
+    @Retry(delay = 500L, jitter = 500L)
+    public String test() {
+        if (firstCall) {
+            firstCall = false;
+            throw new RuntimeException("test exception");
         }
-        return tenantId;
+        return bean6.getTenantId();
     }
 }
