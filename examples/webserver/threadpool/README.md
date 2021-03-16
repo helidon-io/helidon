@@ -35,15 +35,14 @@ mvn package
 java -jar target/helidon-examples-webserver-threadpool.jar
 ```
 
-When the server starts up you will see it display some information about the application
+When the server starts up you will see it log some information about the application
 thread pool. This should reflect what is specified in `application.yaml`. For example:
 
 ```
-Application thread pool: ThreadPool 'helidon-thread-pool-2' {corePoolSize=5, maxPoolSize=50,
- queueCapacity=10000, growthThreshold=1000, growthRate=0%, averageQueueSize=0.00,
- peakQueueSize=0, averageActiveThreads=0.00, peakPoolSize=5, currentPoolSize=5,
- completedTasks=0, failedTasks=0, rejectedTasks=0}
+2021.03.16 13:50:31 FINE io.helidon.common.configurable.ThreadPool Thread[main,5,main]: ThreadPool 'helidon-thread-pool-2' {corePoolSize=5, maxPoolSize=50, queueCapacity=10000, growthThreshold=1000, growthRate=0%, averageQueueSize=0.00, peakQueueSize=0, averageActiveThreads=0.00, peakPoolSize=0, currentPoolSize=0, completedTasks=0, failedTasks=0, rejectedTasks=0}
 ```
+
+See `logging.properties` for the logging configuration.
 
 ## Exercise the application
 

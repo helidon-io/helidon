@@ -70,10 +70,6 @@ public class GreetService implements Service {
 
         // Build a thread pool using the configuration
         myThreadPool = ThreadPoolSupplier.builder().config(config.get("application-thread-pool")).build().get();
-        if (myThreadPool instanceof ContextAwareExecutorService) {
-            ExecutorService wrapped = ((ContextAwareExecutorService) myThreadPool).unwrap();
-            LOGGER.info("Application thread pool: " + wrapped.toString());
-        }
     }
 
     /**
