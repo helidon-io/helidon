@@ -119,9 +119,7 @@ public class GreetService implements Service {
         String name = request.path().param("name");
 
         // One way to pass data to new thread is to use Context
-        Contexts.context().ifPresentOrElse(ctx -> ctx.register("NAME_PARAM", name + "_from_context"), () -> {
-                    throw new IllegalStateException("No context");
-                });
+        request.context().register("NAME_PARAM", name + "_from_context");
 
         // Another way, just pass via Runnable.
         myThreadPool.submit(() -> sendResponseSlowly(response, name, 3));

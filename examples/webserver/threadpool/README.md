@@ -50,18 +50,19 @@ Application thread pool: ThreadPool 'helidon-thread-pool-2' {corePoolSize=5, max
 Each request will return the name of the thread the created the response. For example:
 
 ```
-$ curl -X GET http://localhost:8080/greet/hello
-{"message":"Hello hello!","thread":"Thread[nioEventLoopGroup-3-2,10,main]"}
+$ curl -X GET http://localhost:8080/greet/Jane
+{"message":"Hello Jane!","thread":"Thread[nioEventLoopGroup-3-2,10,main]"}
 ```
 
 `nioEventLoopGroup-` indicates that this is a Netty worker thread. To exercise
 the application thread pool do this:
 
 ```
-curl -X GET http://localhost:8080/greet/slowly/Joe
-{"message":"Hello Joe!","thread":"Thread[my-thread-1,5,helidon-thread-pool-2]"}
+curl -X GET http://localhost:8080/greet/slowly/Jane
+{"message":"Hello Jane!","thread":"Thread[my-thread-1,5,helidon-thread-pool-2]"}
 ```
 
 You'll notice that the response takes ~3 seconds to return -- that's an artificial delay
 we have in our handler. Also note that the thread name starts with `my-thread-`. That indicates
-this is a tread from the dedicated application thread pool.
+this is a thread from the dedicated application thread pool.
+
