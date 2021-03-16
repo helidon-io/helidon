@@ -31,21 +31,29 @@
 :mp-lra-config-ref: {mp-pages-ref-prefix}/03_configuration-with-lra-mp.adoc
 :helidon-variant: MP
 
-Microservices create challenges for data consistency and integrity that necessitate changes in the transaction processing and data patterns used by them. Helidon MP now has its own LRA implementation that adds additional features to the existing MicroProfile LRA specification.
+Microservices create challenges for data consistency and integrity that necessitate changes in the transaction processing and data patterns used. Helidon MP now has its own Long Running Activities (LRA) implementation that adds additional features to the existing MicroProfile LRA specification.
 
 
 == Overview
 As stated in the MicroProfile 4.0 specification, link:{lra-spec}[MicroProfile LRA], "[...] introduces an API for loosely-coupled services to coordinate long running activities in such a way as to guarantee a globally consistent outcome without the need to take locks on data.” 
 
-Helidon MP supports the features described in the Microprofile spec, but also includes additional features: 
+Helidon MP supports the features described in the Microprofile specification, but also includes additional features: 
 
 
-* Support for messaging with AQ and Kafka
-* DB persistence of tx/LRA records and config for messaging
+* Support for messaging with Advanced Queuing (AQ) and Kafka
+* DB persistence of transaction/LRA records and config for messaging
 * Future JSON support (if desired). Currently Helidon supports relational/SQL, but in the future we may provide flatfile or other persistence support.
 * Support for high availability (HA) and Kubernetes 
 
-== Messaging Support with AQ and Kafka
+== Advanced Queuing (AQ) Support
+
+Advanced Queuing (AQ) and Transactional Event Queues (TEQ) support queue-to-queue propagation of messages. This messaging is transactional, and can combine a DML operation to the database and a message being sent in the same transaction. This allows AQ and TEQ to be a global messaging framework across distributed databases. 
+
+* Messages can be propagated from one queue to another, allowing applications to communicate with each other without being connected to the same database or to the same queue. The destination queue can be located in the same database or in a remote database. 
+
+* Propagation enables you to fan out messages to a large number of recipients without requiring them all to dequeue messages from a single queue. You can also use propagation to combine messages from different queues into a single queue. This is known as compositing or funneling messages.
+
+=== Messaging Support with Advanced Queuing (AQ) and Kafka
 
 The support for MicroProfile Messaging specification mimics the behavior of JAX-RS path as closely as possible. 
 For example, any aspect that applies to LRA-related JAX-RS headers applies to messaging properties as well.
@@ -88,14 +96,6 @@ This coupling is required in order to avoid the need to send sensitive connectio
 
 
 
-== Advanced Queuing (AQ) Support
-
-Advanced Queuing (AQ) and Transactional Event Queues (TEQ) support queue-to-queue propagation of messages. This messaging is transactional, and can combine a DML operation to the database and a message being sent in the same transaction. This allows AQ and TEQ to be a global messaging framework across distributed databases. 
-
-* Messages can be propagated from one queue to another, allowing applications to communicate with each other without being connected to the same database or to the same queue. The destination queue can be located in the same database or in a remote database. 
-
-* Propagation enables you to fan out messages to a large number of recipients without requiring them all to dequeue messages from a single queue. You can also use propagation to combine messages from different queues into a single queue. This is known as compositing or funneling messages.
-
 === Other Config Properties
 
 * `mp.lra.propagation.active=true` defined in the LRA spec, this property is used to determine if context is propagated with outgoing requests. This applies to both REST and messaging.
@@ -108,7 +108,7 @@ Advanced Queuing (AQ) and Transactional Event Queues (TEQ) support queue-to-queu
 
 You must configure a SQL datasource named `LRAlog` that will be used to persist LRA records and any participants' messaging channels used. No additional configuration necessary.
 
-== HA and Kubernetes Considerations
+== High Availability (HA) and Kubernetes Considerations
 
 Helidon inherits HA and transaction records from the underlying database architecture. 
 Similarly, by supporting a Kubernetes runtime environment, Helidon also inherits HA for service discovery and routing. 
