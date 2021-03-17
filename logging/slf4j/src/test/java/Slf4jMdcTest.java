@@ -65,11 +65,34 @@ public class Slf4jMdcTest {
         });
     }
 
+    @Test
+    public void testThreadPropagationWithEmptyMdc() {
+        Context context = Context.create();
+        ExecutorService executor = Contexts.wrap(Executors.newFixedThreadPool(1));
+
+        Contexts.runInContext(context, () -> {
+            try {
+                Boolean value = executor.submit(new TestEmptyMdc()).get();
+                assertThat(value, is(true));
+            } catch (Exception e) {
+                throw new ExecutorException("failed to execute", e);
+            }
+        });
+    }
+
     private static final class TestCallable implements Callable<String> {
 
         @Override
         public String call() {
             return MDC.get(TEST_KEY);
+        }
+    }
+
+    private static final class TestEmptyMdc implements Callable<Boolean> {
+
+        @Override
+        public Boolean call() {
+            return MDC.getCopyOfContextMap().isEmpty();
         }
     }
 
