@@ -23,6 +23,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.context.ExecutorException;
 import io.helidon.logging.common.HelidonMdc;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 
@@ -37,6 +38,11 @@ public class Slf4jMdcTest {
 
     private static final String TEST_KEY = "test";
     private static final String TEST_VALUE = "value";
+
+    @AfterEach
+    public void clearMdc() {
+        HelidonMdc.clear();
+    }
 
     @Test
     public void testMdc() {

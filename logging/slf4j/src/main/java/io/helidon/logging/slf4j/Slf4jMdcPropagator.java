@@ -31,7 +31,7 @@ public class Slf4jMdcPropagator implements DataPropagationProvider<Map<String, S
 
     @Override
     public Map<String, String> data() {
-        return Optional.ofNullable(MDC.getCopyOfContextMap()).orElseGet(HashMap::new);
+        return Optional.ofNullable(MDC.getCopyOfContextMap()).orElseGet(Map::of);
     }
 
     @Override
