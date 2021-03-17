@@ -182,7 +182,6 @@ public interface IoMulti {
      *      .to(IoMulti.multiToByteChannel(fileChannel))
      *      .await();
      * }</pre>
-     * </br>
      *
      * @param writableChannel for consuming ByteBuffers from upstream
      * @return mapper consuming {@code Multi<ByteBuffer>} and returning Single for observing asynchronous writing.
@@ -203,7 +202,6 @@ public interface IoMulti {
      *              .build())
      *      .await();
      * }</pre>
-     * </br>
      *
      * @param byteChannel for consuming ByteBuffers from upstream
      * @return mapper consuming {@code Multi<ByteBuffer>} and returning Single for observing asynchronous writing.
@@ -224,7 +222,6 @@ public interface IoMulti {
      *              .build())
      *      .await();
      * }</pre>
-     * </br>
      *
      * @param filePath file for writing all ByteBuffers from upstream to
      * @return mapper consuming {@code Multi<ByteBuffer>} and returning Single for observing asynchronous writing.
