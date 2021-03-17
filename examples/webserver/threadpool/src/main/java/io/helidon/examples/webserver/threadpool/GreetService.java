@@ -28,7 +28,6 @@ import javax.json.JsonException;
 import javax.json.JsonObject;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
-import io.helidon.common.context.ContextAwareExecutorService;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
