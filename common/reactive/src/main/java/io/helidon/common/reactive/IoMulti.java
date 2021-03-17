@@ -169,7 +169,7 @@ public interface IoMulti {
 
     /**
      * Creates function consuming {@code Multi<ByteBuffer>} to supplied {@link WritableByteChannel}.
-     * <br/>
+     * <br>
      * Example usage:
      * <pre>{@code
      * Multi.create(listOfByteBuffers)
@@ -177,6 +177,7 @@ public interface IoMulti {
      *      .to(IoMulti.multiToByteChannel(fileChannel))
      *      .await();
      * }</pre>
+     * </br>
      *
      * @param writableChannel for consuming ByteBuffers from upstream
      * @return mapper consuming {@code Multi<ByteBuffer>} and returning Single for observing asynchronous writing.
@@ -187,7 +188,7 @@ public interface IoMulti {
 
     /**
      * Creates function consuming {@code Multi<ByteBuffer>} to supplied {@link WritableByteChannel}.
-     * <br/>
+     * <br>
      * Example usage:
      * <pre>{@code
      * Multi.create(listOfByteBuffers)
@@ -197,6 +198,7 @@ public interface IoMulti {
      *              .build())
      *      .await();
      * }</pre>
+     * </br>
      *
      * @param byteChannel for consuming ByteBuffers from upstream
      * @return mapper consuming {@code Multi<ByteBuffer>} and returning Single for observing asynchronous writing.
