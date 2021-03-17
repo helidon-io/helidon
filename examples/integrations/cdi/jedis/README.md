@@ -33,7 +33,9 @@ curl http://localhost:8080/jedis/foo
 
 ```bash
 docker build -t helidon-examples-integrations-cdi-jedis .
-kubectl apply -f ../../k8s/ingress.yaml -f app.yaml
+kubectl apply \
+  -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/ingress-nginx-3.15.2/deploy/static/provider/cloud/deploy.yaml \
+  -f app.yaml
 ```
 
 Try the endpoint:
@@ -49,5 +51,5 @@ docker stop redis helidon-examples-integrations-cdi-jedis
 
 Delete the Kubernetes resources:
 ```bash
-kubectl delete -f ../../k8s/ingress.yaml -f app.yaml
+kubectl delete -f app.yaml
 ```

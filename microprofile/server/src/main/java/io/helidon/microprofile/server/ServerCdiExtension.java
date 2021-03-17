@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,9 +54,9 @@ import io.helidon.microprofile.cdi.BuildTimeStart;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
-import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
+import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
@@ -219,7 +219,9 @@ public class ServerCdiExtension implements Extension {
 
     private void registerPathStaticContent(Config config) {
         Config context = config.get("context");
-        StaticContentSupport.Builder pBuilder = StaticContentSupport.builder(config.get("location").as(Path.class).get());
+        StaticContentSupport.FileSystemBuilder pBuilder = StaticContentSupport.builder(config.get("location")
+                                                                                               .as(Path.class)
+                                                                                               .get());
         config.get("welcome")
                 .asString()
                 .ifPresent(pBuilder::welcomeFileName);
@@ -235,7 +237,7 @@ public class ServerCdiExtension implements Extension {
     private void registerClasspathStaticContent(Config config) {
         Config context = config.get("context");
 
-        StaticContentSupport.Builder cpBuilder = StaticContentSupport.builder(config.get("location").asString().get());
+        StaticContentSupport.ClassPathBuilder cpBuilder = StaticContentSupport.builder(config.get("location").asString().get());
         cpBuilder.welcomeFileName(config.get("welcome")
                                           .asString()
                                           .orElse("index.html"));
@@ -282,7 +284,6 @@ public class ServerCdiExtension implements Extension {
         } finally {
             long t = TimeUnit.MILLISECONDS.convert(System.nanoTime() - beforeT, TimeUnit.NANOSECONDS);
             LOGGER.info(() -> "Server stopped in " + t + " milliseconds.");
-            System.out.println("Server stopped in " + t + " milliseconds.");
         }
     }
 
@@ -499,6 +500,17 @@ public class ServerCdiExtension implements Extension {
      */
     public int port() {
         return port;
+    }
+
+    /**
+     * Named port the server is running on. This information is only available after the
+     * server is actually started.
+     *
+     * @param name Socket name
+     * @return Named port the server is running on
+     */
+    public int port(String name) {
+        return webserver.port(name);
     }
 
     /**

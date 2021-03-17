@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-bom</artifactId>
-        <version>2.2.1-SNAPSHOT</version>
+        <version>2.3.0-SNAPSHOT</version>
         <relativePath>../bom/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-dependencies</artifactId>
@@ -52,10 +52,10 @@
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.google-api-client>1.30.11</version.lib.google-api-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
-        <version.lib.graalvm>20.2.0</version.lib.graalvm>
+        <version.lib.graalvm>21.0.0</version.lib.graalvm>
         <version.lib.graphql-java>15.0</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>15.0.0</version.lib.graphql-java.extended.scalars>
-        <version.lib.grpc>1.32.1</version.lib.grpc>
+        <version.lib.grpc>1.35.0</version.lib.grpc>
         <version.lib.guava>30.0-jre</version.lib.guava>
         <version.lib.h2>1.4.199</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
@@ -64,7 +64,7 @@
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.inject>1.0</version.lib.inject>
         <version.lib.interceptor-api>1.2.5</version.lib.interceptor-api>
-        <version.lib.jackson>2.11.1</version.lib.jackson>
+        <version.lib.jackson>2.12.1</version.lib.jackson>
         <version.lib.jaegertracing>1.1.0</version.lib.jaegertracing>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
@@ -76,13 +76,13 @@
         <version.lib.jboss.transaction-api>1.0.0.Final</version.lib.jboss.transaction-api>
         <version.lib.jboss.transaction-spi>7.6.0.Final</version.lib.jboss.transaction-spi>
         <version.lib.jedis>3.1.0</version.lib.jedis>
-        <version.lib.jersey>2.32</version.lib.jersey>
+        <version.lib.jersey>2.33</version.lib.jersey>
         <version.lib.jms-api>2.0</version.lib.jms-api>
         <version.lib.jsonb-api>1.0.2</version.lib.jsonb-api>
         <version.lib.jsonp-api>1.1.6</version.lib.jsonp-api>
         <version.lib.jsonp-impl>1.1.6</version.lib.jsonp-impl>
         <version.lib.junit4>4.13.1</version.lib.junit4>
-        <version.lib.junit>5.6.2</version.lib.junit>
+        <version.lib.junit>5.7.0</version.lib.junit>
         <version.lib.kafka>2.5.0</version.lib.kafka>
         <version.lib.log4j>2.13.3</version.lib.log4j>
         <version.lib.logback>1.2.3</version.lib.logback>
@@ -106,10 +106,11 @@
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
+        <version.lib.neo4j>4.2.0</version.lib.neo4j>
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
-        <version.lib.netty>4.1.51.Final</version.lib.netty>
-        <version.lib.oci-java-sdk-objectstorage>1.28.0</version.lib.oci-java-sdk-objectstorage>
+        <version.lib.netty>4.1.59.Final</version.lib.netty>
+        <version.lib.oci-java-sdk-objectstorage>1.31.0</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>19.8.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
@@ -129,7 +130,7 @@
         <version.lib.validation-api>2.0.2</version.lib.validation-api>
         <version.lib.websockets-api>1.1.2</version.lib.websockets-api>
         <version.lib.weld-api>3.1.SP2</version.lib.weld-api>
-        <version.lib.weld>3.1.4.Final</version.lib.weld>
+        <version.lib.weld>3.1.6.Final</version.lib.weld>
         <version.lib.yasson>1.0.8</version.lib.yasson>
         <version.lib.zipkin.sender-urlconnection>2.12.0</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
@@ -574,6 +575,10 @@
                         <groupId>javax.inject</groupId>
                         <artifactId>javax.inject</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>javax.enterprise</groupId>
+                        <artifactId>cdi-api</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -1014,6 +1019,12 @@
                 <artifactId>micronaut-aop</artifactId>
                 <version>${version.lib.micronaut}</version>
             </dependency>
+            <!-- Neo4j -->
+            <dependency>
+                <groupId>org.neo4j.driver</groupId>
+                <artifactId>neo4j-java-driver</artifactId>
+                <version>${version.lib.neo4j}</version>
+            </dependency>
             <!-- END OF Section 1: direct third party dependencies -->
 
             <!-- Section 2: third party dependencies used by examples -->
@@ -1114,6 +1125,12 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
                 <version>${version.lib.jackson}</version>
+            </dependency>
+            <dependency>
+                <!-- Jackson BOM manages Junit version. It shouldn't. So we are forced to manage it -->
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${version.lib.junit4}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>

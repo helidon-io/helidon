@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,9 +112,10 @@ public final class PokemonMain {
         // Client services are added through a service loader - see mongoDB example for explicit services
         DbClient dbClient = DbClient.builder(dbConfig)
                 .build();
-
+        // Some relational databases do not support DML statement as ping so using query which works for all of them
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(DbClientHealthCheck.create(dbClient))
+                .addLiveness(
+                        DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
                 .build();
 
         // Initialize database schema

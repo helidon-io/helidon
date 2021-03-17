@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ class ByteBufRequestChunk implements DataChunk {
     private final ReferenceHoldingQueue.ReleasableReference<DataChunk> ref;
 
     ByteBufRequestChunk(ByteBuf byteBuf, ReferenceHoldingQueue<DataChunk> referenceHoldingQueue) {
-
         Objects.requireNonNull(byteBuf, "The ByteBuf must not be null!");
         byteBuffers = new ByteBuffer[] {byteBuf.nioBuffer().asReadOnlyBuffer()};
         ref = new ReferenceHoldingQueue.ReleasableReference<>(this, referenceHoldingQueue, byteBuf::release);
@@ -100,9 +99,9 @@ class ByteBufRequestChunk implements DataChunk {
 
     /**
      * An implementation of {@link ReferenceHoldingQueue} that logs a warning
-     * message once and only once.
+     * message once and only once when releasing a reference in the queue.
      */
-    static class RefHoldingQueue extends ReferenceHoldingQueue<DataChunk> {
+    static class DataChunkHoldingQueue extends ReferenceHoldingQueue<DataChunk> {
 
         @Override
         protected void hookOnAutoRelease() {

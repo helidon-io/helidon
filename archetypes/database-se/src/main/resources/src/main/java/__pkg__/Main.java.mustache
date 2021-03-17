@@ -86,7 +86,7 @@ public final class Main {
 
         // Support for health
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(DbClientHealthCheck.create(dbClient))
+                .addLiveness(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
                 .build();
 
         // Initialize database schema

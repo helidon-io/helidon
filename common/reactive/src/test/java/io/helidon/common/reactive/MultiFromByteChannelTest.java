@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ public class MultiFromByteChannelTest {
     }
 
     @Test
-    void testChunky() {
+    void testChunky() throws InterruptedException {
         PeriodicalChannel pc = createChannelWithNoAvailableData(25, 3);
         Multi<ByteBuffer> publisher = IoMulti.multiFromByteChannelBuilder(pc)
                 .retrySchema(RetrySchema.constant(2))
@@ -102,6 +102,7 @@ public class MultiFromByteChannelTest {
         MultiFromByteChannel multi = (MultiFromByteChannel) publisher;
         LazyValue<ScheduledExecutorService> executor = multi.executor();
         assertThat("Executor should have been used", executor.isLoaded(), is(true));
+        assertThat("Executor didn't terminate in time", executor.get().awaitTermination(5, TimeUnit.SECONDS), is(true));
         assertThat("Executor should have been shut down", executor.get().isShutdown(), is(true));
     }
 

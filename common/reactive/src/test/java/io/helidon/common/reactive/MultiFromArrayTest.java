@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,20 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Test;
-
-import java.util.Collections;
-import java.util.Iterator;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 public class MultiFromArrayTest {
     @Test
     public void nullItem() {
         TestSubscriber<Object> ts = new TestSubscriber<>();
 
-        Multi.just(new Integer[] { 1, null, 2 })
-        .subscribe(ts);
+        Multi.just(new Integer[] {1, null, 2})
+                .subscribe(ts);
 
         ts.requestMax();
 
@@ -45,7 +42,7 @@ public class MultiFromArrayTest {
     public void cancelAfterItem() {
         TestSubscriber<Object> ts = new TestSubscriber<>();
 
-        Multi.just(new Integer[] { 1, 2, 3 })
+        Multi.just(new Integer[] {1, 2, 3})
                 .limit(2)
                 .subscribe(ts);
 

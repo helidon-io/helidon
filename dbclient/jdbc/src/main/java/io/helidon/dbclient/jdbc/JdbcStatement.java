@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,10 +116,6 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
             LOGGER.finest(() -> String.format("Converted statement: %s", jdbcStatement));
             preparedStatement = connection.prepareStatement(jdbcStatement);
             List<String> namesOrder = parser.namesOrder();
-            // SQL statement and provided parameters integrity check
-            if (namesOrder.size() > parameters.size()) {
-                throw new DbClientException(namedStatementErrorMessage(namesOrder, parameters));
-            }
             // Set parameters into prepared statement
             int i = 1;
             for (String name : namesOrder) {

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,3 +44,6 @@ if [ $state -ne 0 ]; then
   echo "Kafka stopped."
   exit $state
 fi
+
+# Keep Kafka up till Ctrl+C
+read ;
