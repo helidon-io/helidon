@@ -17,11 +17,16 @@
 
 package io.helidon.common.reactive;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -205,6 +210,32 @@ public interface IoMulti {
      */
     static MultiToByteChannelBuilder multiToByteChannelBuilder(WritableByteChannel byteChannel) {
         return new MultiToByteChannelBuilder(byteChannel);
+    }
+
+    /**
+     * Creates function consuming {@code Multi<ByteBuffer>} to {@link FileChannel} opened from supplied {@link Path}.
+     * <br>
+     * Example usage:
+     * <pre>{@code
+     * Multi.create(listOfByteBuffers)
+     *      .map(s -> ByteBuffer.wrap(s.getBytes(StandardCharsets.UTF_8)))
+     *      .to(IoMulti.writeToFile(path)
+     *              .executor(customExecutor)
+     *              .build())
+     *      .await();
+     * }</pre>
+     * </br>
+     *
+     * @param filePath file for writing all ByteBuffers from upstream to
+     * @return mapper consuming {@code Multi<ByteBuffer>} and returning Single for observing asynchronous writing.
+     */
+    static MultiToByteChannelBuilder writeToFile(Path filePath) {
+        try {
+            FileChannel fileChannel = FileChannel.open(filePath, StandardOpenOption.WRITE);
+            return new MultiToByteChannelBuilder(fileChannel);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**
