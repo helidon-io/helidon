@@ -1189,12 +1189,6 @@
                 <version>${version.lib.jboss.transaction-api}</version>
             </dependency>
             <dependency>
-                <!-- if needed (as excluded from weld) -->
-                <groupId>org.codehaus.groovy</groupId>
-                <artifactId>groovy-all</artifactId>
-                <version>${version.lib.groovy-all}</version>
-            </dependency>
-            <dependency>
                 <!-- required for dependency convergence, transitive dependency of both
                 commons-configuration (through hystrix-core)
                 org.apache.httpcomponents:httpclient (through health-tck)
