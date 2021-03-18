@@ -19,7 +19,7 @@ package io.helidon.openapi;
 /**
  * SE variant of OpenAPISupport.
  */
-class SEOpenAPISupport extends OpenAPISupport<SEOpenAPISupport, SEOpenAPISupportBuilder> {
+class SEOpenAPISupport extends OpenAPISupport {
 
     SEOpenAPISupport(SEOpenAPISupportBuilder builder) {
         super(builder);

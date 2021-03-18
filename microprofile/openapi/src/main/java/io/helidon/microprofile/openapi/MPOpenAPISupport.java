@@ -21,9 +21,9 @@ import io.helidon.openapi.OpenAPISupport;
 /**
  * MP variant of OpenAPISupport.
  */
-class MPOpenAPISupport extends OpenAPISupport<MPOpenAPISupport, MPOpenAPIBuilder> {
+class MPOpenAPISupport extends OpenAPISupport {
 
-    protected MPOpenAPISupport(Builder builder) {
+    protected MPOpenAPISupport(MPOpenAPIBuilder builder) {
         super(builder);
     }
 

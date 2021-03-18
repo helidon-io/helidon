@@ -31,7 +31,7 @@ import io.smallrye.openapi.api.OpenApiConfig;
  * {@link OpenApiConfig} which is what the smallrye implementation uses to
  * control its behavior.
  */
-public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder<SEOpenAPISupport, SEOpenAPISupportBuilder> {
+public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder<SEOpenAPISupportBuilder> {
 
     private final OpenAPIConfigImpl.Builder apiConfigBuilder = OpenAPIConfigImpl.builder();
 

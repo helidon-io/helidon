@@ -53,13 +53,13 @@ public class ServerTest {
     private static final Config OPENAPI_CONFIG_RESTRICTED_CORS = Config.create(
             ConfigSources.classpath("serverCORSRestricted.yaml").build()).get(OpenAPISupport.Builder.CONFIG_KEY);
 
-    static final OpenAPISupport.Builder GREETING_OPENAPI_SUPPORT_BUILDER
+    static final OpenAPISupport.Builder<?> GREETING_OPENAPI_SUPPORT_BUILDER
             = OpenAPISupport.builder()
                     .staticFile("src/test/resources/openapi-greeting.yml")
                     .webContext(GREETING_PATH)
                     .config(OPENAPI_CONFIG_DISABLED_CORS);
 
-    static final OpenAPISupport.Builder TIME_OPENAPI_SUPPORT_BUILDER
+    static final OpenAPISupport.Builder<?> TIME_OPENAPI_SUPPORT_BUILDER
             = OpenAPISupport.builder()
                     .staticFile("src/test/resources/openapi-time-server.yml")
                     .webContext(TIME_PATH)

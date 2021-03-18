@@ -95,10 +95,8 @@ import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY
  * {@code openapi} file, then the {@code /openapi} endpoint responds with a
  * nearly-empty OpenAPI document.
  *
- * @param <T> concrete subclass which extends OpenAPISupport
- * @param <B> concrete builder subclass which extends OpenAPISupport.Builder
  */
-public abstract class OpenAPISupport<T extends OpenAPISupport<T, B>, B extends OpenAPISupport.Builder<T, B>> implements Service {
+public abstract class OpenAPISupport implements Service {
 
     /**
      * Default path for serving the OpenAPI document.
@@ -144,7 +142,7 @@ public abstract class OpenAPISupport<T extends OpenAPISupport<T, B>, B extends O
     private final OpenApiStaticFile openApiStaticFile;
     private final Supplier<List<? extends IndexView>> indexViewsSupplier;
 
-    protected OpenAPISupport(Builder<T, B> builder) {
+    protected OpenAPISupport(Builder<?> builder) {
         adjustTypeDescriptions(helper().types());
         implsToTypes = buildImplsToTypes(helper());
         webContext = builder.webContext();
@@ -623,7 +621,7 @@ public abstract class OpenAPISupport<T extends OpenAPISupport<T, B>, B extends O
      *
      * @return new OpenAPISUpport
      */
-    public static OpenAPISupport<?, ?> create() {
+    public static OpenAPISupport create() {
         return builderSE().build();
     }
 
@@ -636,7 +634,7 @@ public abstract class OpenAPISupport<T extends OpenAPISupport<T, B>, B extends O
      * @return new {@code OpenAPISupport} instance created using the
      * helidonConfig settings
      */
-    public static OpenAPISupport<?, ?> create(Config config) {
+    public static OpenAPISupport create(Config config) {
         return builderSE().config(config).build();
     }
 
@@ -657,11 +655,9 @@ public abstract class OpenAPISupport<T extends OpenAPISupport<T, B>, B extends O
      * service. This lets us constrain what use cases are possible from each
      * (for example, no anno processing from SE).
      *
-     * @param <T> concrete subclass of OpenAPISupport
      * @param <B> concrete subclass of OpenAPISupport.Builder
      */
-    public abstract static class Builder<T extends OpenAPISupport<T, B>, B extends Builder<T, B>>
-            implements io.helidon.common.Builder<T> {
+    public abstract static class Builder<B extends Builder<B>> implements io.helidon.common.Builder<OpenAPISupport> {
 
         /**
          * Config key to select the openapi node from Helidon config.

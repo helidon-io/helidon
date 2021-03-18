@@ -45,7 +45,7 @@ import org.jboss.jandex.IndexView;
 /**
  * Fluent builder for OpenAPISupport in Helidon MP.
  */
-public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPISupport, MPOpenAPIBuilder> {
+public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuilder> {
 
     private static final Logger LOGGER = Logger.getLogger(MPOpenAPIBuilder.class.getName());
 
