@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,20 @@
  */
 package io.helidon.microprofile.metrics;
 
-import javax.enterprise.context.Dependent;
+import org.eclipse.microprofile.metrics.annotation.Counted;
 
-import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
+public class CountedConstructorTestBean {
 
-@Dependent
-@SimplyTimed
-public class SimplyTimedBean {
+    static final String CONSTRUCTOR_COUNTER = "ctorCounted";
 
-    @SimplyTimed
-    public void method1() {
+    private int count = 0;
+
+    @Counted(name = CONSTRUCTOR_COUNTER)
+    public CountedConstructorTestBean() {
+
     }
 
-    // Inherits annotations from class
-    public void method2() {
-    }
-
-    // Used to make sure that deleted metrics used in synthetic annotation interceptor are rejected
-    public void method3() {
+    public void inc() {
+        count++;
     }
 }

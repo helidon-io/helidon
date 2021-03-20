@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,10 +43,9 @@ public class MetricsMpServiceTest {
 
     static MetricRegistry initSyntheticSimpleTimerRegistry() {
         MetricRegistry result = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.BASE);
-        result.remove(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME);
+//        result.remove(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME);
         return result;
     }
-
 
     @Inject
     private MetricRegistry registry;
@@ -63,13 +62,7 @@ public class MetricsMpServiceTest {
         return registry;
     }
 
-    boolean isSyntheticSimpleTimerPresent() {
-        return !syntheticSimpleTimerRegistry().getSimpleTimers((metricID, metric) ->
-                        metricID.equals(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME))
-                .isEmpty();
-    }
-
-    protected void registerCounter(String name) {
+    protected static void registerCounter(MetricRegistry registry, String name) {
         Metadata meta = Metadata.builder()
                         .withName(name)
                         .withDisplayName(name)
@@ -78,6 +71,10 @@ public class MetricsMpServiceTest {
                         .withUnit(MetricUnits.NONE)
                         .build();
         registry.counter(meta);
+    }
+
+    protected void registerCounter(String name) {
+        registerCounter(registry, name);
     }
 
     protected Counter getCounter(String name) {
