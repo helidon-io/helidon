@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,9 @@
 package io.helidon.microprofile.metrics;
 
 import javax.annotation.Priority;
-import javax.inject.Inject;
 import javax.interceptor.Interceptor;
-import javax.interceptor.InvocationContext;
 
 import org.eclipse.microprofile.metrics.Meter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 
 /**
@@ -31,23 +28,15 @@ import org.eclipse.microprofile.metrics.annotation.Metered;
 @Metered
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 9)
-final class InterceptorMetered extends InterceptorBase<Meter, Metered> {
+final class InterceptorMetered extends InterceptorBase<Meter> {
 
-    @Inject
-    InterceptorMetered(MetricRegistry registry) {
-        super(registry,
-              Metered.class,
-              Metered::name,
-              Metered::tags,
-              Metered::absolute,
-              "meter",
-              org.eclipse.microprofile.metrics.Meter.class);
+    InterceptorMetered() {
+        super(Metered.class, Meter.class);
     }
 
     @Override
-    protected Object prepareAndInvoke(Meter meter, Metered annotation, InvocationContext context) throws Exception {
-        meter.mark();
-        return context.proceed();
+    void preInvoke(Meter metric) {
+        metric.mark();
     }
 }
 
