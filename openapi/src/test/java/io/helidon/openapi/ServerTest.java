@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,13 +53,13 @@ public class ServerTest {
     private static final Config OPENAPI_CONFIG_RESTRICTED_CORS = Config.create(
             ConfigSources.classpath("serverCORSRestricted.yaml").build()).get(OpenAPISupport.Builder.CONFIG_KEY);
 
-    static final OpenAPISupport.Builder GREETING_OPENAPI_SUPPORT_BUILDER
+    static final OpenAPISupport.Builder<?> GREETING_OPENAPI_SUPPORT_BUILDER
             = OpenAPISupport.builder()
                     .staticFile("src/test/resources/openapi-greeting.yml")
                     .webContext(GREETING_PATH)
                     .config(OPENAPI_CONFIG_DISABLED_CORS);
 
-    static final OpenAPISupport.Builder TIME_OPENAPI_SUPPORT_BUILDER
+    static final OpenAPISupport.Builder<?> TIME_OPENAPI_SUPPORT_BUILDER
             = OpenAPISupport.builder()
                     .staticFile("src/test/resources/openapi-time-server.yml")
                     .webContext(TIME_PATH)
