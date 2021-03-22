@@ -1087,11 +1087,11 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
-     * Terminal stage, ignore all items and complete returned {@code Single<Void>}.
+     * Terminal stage, ignore all items and complete returned {@code Single<Void>} successfully or exceptionally.
      *
      * @return Single completed when the stream terminates
      */
-    default Single<Void> ignore() {
+    default Single<Void> ignoreElements() {
         return forEach(t -> {});
     }
 
