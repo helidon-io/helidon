@@ -106,7 +106,7 @@ public final class FileService implements Service {
                     res.headers().put(Http.Header.LOCATION, "/ui");
                     res.send();
                 })
-                .ignore();
+                .ignoreElements();
     }
 
     private void streamUpload(ServerRequest req, ServerResponse res) {
@@ -126,7 +126,7 @@ public final class FileService implements Service {
                     res.headers().put(Http.Header.LOCATION, "/ui");
                     res.send();
                 })
-                .ignore();
+                .ignoreElements();
     }
 
 }
