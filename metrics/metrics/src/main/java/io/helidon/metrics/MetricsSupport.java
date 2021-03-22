@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,14 +50,12 @@ import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
-import io.helidon.webserver.cors.CorsEnabledServiceHelper;
-import io.helidon.webserver.cors.CrossOriginConfig;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -67,8 +65,6 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-
-import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
 
 /**
  * Support for metrics for Helidon Web Server.
@@ -100,7 +96,7 @@ import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY
  *  req.context().get(MetricRegistry.class).ifPresent(reg -> reg.counter("myCounter").inc());
  * }</pre>
  */
-public final class MetricsSupport implements Service {
+public final class MetricsSupport extends HelidonRestServiceSupport<MetricsSupport, MetricsSupport.Builder> {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";
@@ -108,16 +104,13 @@ public final class MetricsSupport implements Service {
 
     private static final MessageBodyWriter<JsonStructure> JSONP_WRITER = JsonpSupport.writer();
 
-    private final String context;
     private final RegistryFactory rf;
-    private final CorsEnabledServiceHelper corsEnabledServiceHelper;
 
     private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
 
     private MetricsSupport(Builder builder) {
+        super(LOGGER, builder, SERVICE_NAME);
         this.rf = builder.registryFactory.get();
-        this.context = builder.context;
-        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(SERVICE_NAME, builder.crossOriginConfig);
     }
 
     /**
@@ -254,7 +247,6 @@ public final class MetricsSupport implements Service {
      * @param metricID the {@code MetricID} for the metric to convert
      * @param metric the {@code Metric} to convert to Prometheus format
      * @param withHelpType flag controlling serialization of HELP and TYPE
-     * @return {@code String} containing the Prometheus data
      */
     static void toPrometheusData(StringBuilder sb, MetricID metricID, Metric metric, boolean withHelpType) {
         checkMetricTypeThenRun(sb, metricID, metric, withHelpType);
@@ -366,7 +358,7 @@ public final class MetricsSupport implements Service {
     }
 
     /**
-     * Configure metrics endpoint on the provided routing rules. This method
+     * Finish configuring metrics endpoint on the provided routing rules. This method
      * just adds the endpoint {@code /metrics} (or appropriate one as
      * configured). For simple routings, just register {@code MetricsSupport}
      * instance. This method is exclusive to
@@ -376,30 +368,28 @@ public final class MetricsSupport implements Service {
      * @param rules routing rules (also accepts
      * {@link io.helidon.webserver.Routing.Builder}
      */
-    public void configureEndpoint(Routing.Rules rules) {
+    @Override
+    protected void postConfigureEndpoint(Routing.Rules rules) {
         Registry base = rf.getARegistry(MetricRegistry.Type.BASE);
         Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
         Registry app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
-
-        // CORS first
-        rules.any(context, corsEnabledServiceHelper.processor());
 
         // register the metric registry and factory to be available to all
         rules.any(new MetricsContextHandler(app, rf));
 
         // routing to root of metrics
-        rules.get(context, (req, res) -> getMultiple(req, res, base, app, vendor))
-                .options(context, (req, res) -> optionsMultiple(req, res, base, app, vendor));
+        rules.get(context(), (req, res) -> getMultiple(req, res, base, app, vendor))
+                .options(context(), (req, res) -> optionsMultiple(req, res, base, app, vendor));
 
         // routing to each scope
         Stream.of(app, base, vendor)
                 .forEach(registry -> {
                     String type = registry.type();
 
-                    rules.get(context + "/" + type, (req, res) -> getAll(req, res, registry))
-                            .get(context + "/" + type + "/{metric}", (req, res) -> getByName(req, res, registry))
-                            .options(context + "/" + type, (req, res) -> optionsAll(req, res, registry))
-                            .options(context + "/" + type + "/{metric}", (req, res) -> optionsOne(req, res, registry));
+                    rules.get(context() + "/" + type, (req, res) -> getAll(req, res, registry))
+                            .get(context() + "/" + type + "/{metric}", (req, res) -> getByName(req, res, registry))
+                            .options(context() + "/" + type, (req, res) -> optionsAll(req, res, registry))
+                            .options(context() + "/" + type + "/{metric}", (req, res) -> optionsOne(req, res, registry));
                 });
     }
 
@@ -508,21 +498,26 @@ public final class MetricsSupport implements Service {
     /**
      * A fluent API builder to build instances of {@link MetricsSupport}.
      */
-    public static final class Builder implements io.helidon.common.Builder<MetricsSupport> {
+    public static final class Builder extends HelidonRestServiceSupport.Builder<MetricsSupport, Builder>
+            implements io.helidon.common.Builder<MetricsSupport> {
 
         private Supplier<RegistryFactory> registryFactory;
-        private String context = DEFAULT_CONTEXT;
-        private Config config = Config.empty();
-        private CrossOriginConfig crossOriginConfig = null;
 
         private Builder() {
+            super(Builder.class, DEFAULT_CONTEXT);
+        }
+
+        @Override
+        protected Config webContextConfig(Config config) {
+            // align with health checks
+            return DeprecatedConfig.get(config, "web-context", "context");
 
         }
 
         @Override
         public MetricsSupport build() {
             if (null == registryFactory) {
-                registryFactory = () -> RegistryFactory.getInstance(config);
+                registryFactory = () -> RegistryFactory.getInstance(config());
             }
             return new MetricsSupport(this);
         }
@@ -535,17 +530,7 @@ public final class MetricsSupport implements Service {
          * @see MetricsSupport for details about configuration keys
          */
         public Builder config(Config config) {
-            this.config = config;
-
-            // align with health checks
-            DeprecatedConfig.get(config, "web-context", "context")
-                    .asString()
-                    .ifPresent(this::webContext);
-
-            config.get(CORS_CONFIG_KEY)
-                    .as(CrossOriginConfig::create)
-                    .ifPresent(this::crossOriginConfig);
-
+            super.config(config);
             if (!config.get(BaseRegistry.BASE_ENABLED_KEY).asBoolean().orElse(true)) {
                 LOGGER.finest("Metrics support for base metrics is disabled in configuration");
             }
@@ -553,7 +538,7 @@ public final class MetricsSupport implements Service {
         }
 
         /**
-         * If you want to have mutliple registry factories with different
+         * If you want to have multiple registry factories with different
          * endpoints, you may create them using
          * {@link RegistryFactory#create(io.helidon.config.Config)} or
          * {@link RegistryFactory#create()} and create multiple
@@ -570,33 +555,6 @@ public final class MetricsSupport implements Service {
          */
         public Builder registryFactory(RegistryFactory factory) {
             registryFactory = () -> factory;
-            return this;
-        }
-
-        /**
-         * Set a new root context for REST API of metrics.
-         *
-         * @param path context to use
-         * @return updated builder instance
-         */
-        public Builder webContext(String path) {
-            if (path.startsWith("/")) {
-                this.context = path;
-            } else {
-                this.context = "/" + path;
-            }
-            return this;
-        }
-
-        /**
-         * Set the CORS config from the specified {@code CrossOriginConfig} object.
-         *
-         * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
-         * @return updated builder instance
-         */
-        public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
-            Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
-            this.crossOriginConfig = crossOriginConfig;
             return this;
         }
     }
