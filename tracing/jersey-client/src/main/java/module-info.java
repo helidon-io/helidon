@@ -22,7 +22,6 @@ import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 module io.helidon.tracing.jersey.client {
     requires java.logging;
     requires java.annotation;
-    requires jdk.jfr;
 
     requires java.ws.rs;
     requires jersey.client;

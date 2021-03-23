@@ -163,7 +163,6 @@ public abstract class TracingConfig extends Traceable {
     public static final class Builder implements io.helidon.common.Builder<TracingConfig> {
         private final Map<String, ComponentTracingConfig> components = new HashMap<>();
         private Optional<Boolean> enabled = Optional.empty();
-        private Optional<Boolean> jfrenabled = Optional.empty();
 
         private Builder() {
         }
@@ -181,7 +180,6 @@ public abstract class TracingConfig extends Traceable {
          */
         public Builder config(Config config) {
             config.get("enabled").asBoolean().ifPresent(this::enabled);
-            config.get("jfr-enabled").asBoolean().ifPresent(this::enabled);
             Config compConfig = config.get("components");
             compConfig.asNodeList()
                     .ifPresent(compList -> {
@@ -213,20 +211,6 @@ public abstract class TracingConfig extends Traceable {
          */
         public Builder enabled(boolean enabled) {
             this.enabled = Optional.of(enabled);
-            return this;
-        }
-
-
-        /**
-         * Whether overall jfr is enabled.
-         * If jfr is disabled on this level, all jfr components and spans are disabled - even if explicitly configured
-         *  as enabled.
-         *
-         * @param jfrenabled set to {@code false} to disable jfr for any component and span
-         * @return updated builder instance
-         */
-        public Builder jfrenabled(boolean jfrenabled) {
-            this.jfrenabled = Optional.of(jfrenabled);
             return this;
         }
     }

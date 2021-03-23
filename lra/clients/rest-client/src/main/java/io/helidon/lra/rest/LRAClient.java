@@ -346,10 +346,10 @@ public class LRAClient implements Closeable {
      * @param uriInfo  the uri that triggered this join request.
      * @return map of URI
      */
-    public static Map<String, String> getTerminationUris(Class<?> compensatorClass, UriInfo uriInfo, Long timeout) {
+    public static Map<String, String> getTerminationUris(URI baseUri, Class<?> compensatorClass, UriInfo uriInfo, Long timeout) {
         Map<String, String> paths = new HashMap<>();
         final boolean[] asyncTermination = {false};
-        URI baseUri = uriInfo.getBaseUri();
+//        URI baseUri = uriInfo.getBaseUri();
 
         /*
          * Calculate which path to prepend to the LRA participant methods. If there is more than one matching URI
@@ -465,7 +465,6 @@ public class LRAClient implements Closeable {
                     name.equals(DELETE.class.getName())) {
                 String pathValue = pathAnnotation.value();
                 pathValue = pathValue.startsWith("/") ? pathValue : "/" + pathValue;
-                uriPrefix = "http://localhost:8091";
                 String url = String.format("%s%s?%s=%s", uriPrefix, pathValue, LRAConstants.HTTP_METHOD_NAME, name);
 
                 paths.put(rel, url);

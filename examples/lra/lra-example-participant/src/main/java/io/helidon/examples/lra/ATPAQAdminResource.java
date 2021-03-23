@@ -369,10 +369,10 @@ public class ATPAQAdminResource {
         return returnValue;
     }
 
-    @Path("/createLRATestQueue")
+    @Path("/createLRATestQueues")
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    public Response createLRATestQueue() throws JMSException, AQException {
+    public Response createLRATestQueues() throws JMSException, AQException {
         propagationSetup.createQueue(orderpdbDataSource, orderuser, orderpw, "LRATESTQUEUE");
         propagationSetup.createQueue(orderpdbDataSource, orderuser, orderpw, "HELIDONLRAQUEUE");
         return Response.ok()

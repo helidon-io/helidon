@@ -54,8 +54,8 @@ public class AQMessagingResource {
 //        return () -> "requiresNew success";
     }
 
-    @Incoming("order-required")
-    @Outgoing("inventory")
+//    @Incoming("order-required")
+//    @Outgoing("inventory")
     @LRA(value = LRA.Type.REQUIRED)
     public Message required(AqMessage<String> msg) throws Exception {
         System.out.println("AQMessagingResource.required msg.getPayload():" + msg.getPayload() +
@@ -121,7 +121,6 @@ public class AQMessagingResource {
         System.out.println("AQMessagingResource.complete");
         String lraID = getLRAID(msg);
         participantStatus = ParticipantStatus.Completed;
-//        return JmsMessage.of(participantStatus.toString());
         return JmsMessage.builder(participantStatus.toString()).build();
     }
 

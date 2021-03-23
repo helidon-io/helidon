@@ -1,9 +1,9 @@
 package io.helidon.lra;
 
 public class KafkaChannelConfig {
-    String bootstrapservers, sendtotopic, groupid;
+    String bootstrapservers, sendtotopic, replytopic, groupid;
 
     public String toString() {
-        return "bootstrapservers:" + bootstrapservers + " topic:" + sendtotopic + " groupid:" + groupid ;
+        return "bootstrapservers:" + bootstrapservers + " sendtotopic:" + sendtotopic + " replytopic:" + replytopic + " groupid:" + groupid ;
     }
 }

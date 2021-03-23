@@ -61,7 +61,7 @@ public class AQParticipant extends Participant {
         return "AQ";
     }
 
-    public void init() {
+    public boolean init() {
         try {
             if (!isInitialized) {
                 initConn();
@@ -72,23 +72,25 @@ public class AQParticipant extends Participant {
                     parseURIToConfig(getForgetURI(), forgetConfig = new AQChannelConfig());
                     isConfigInitialized = true;
                 }
-                addAndStartListener(completeConfig, false, COMPLETESEND);
-                addAndStartListener(compensateConfig, false, COMPENSATESEND);
-                addAndStartListener(afterLRAConfig, true, AFTERLRASEND);
-                addAndStartListener(forgetConfig, true, FORGETSEND);
+                addAndStartListener(completeConfig, false, COMPLETE);
+                addAndStartListener(compensateConfig, false, COMPENSATE);
+                addAndStartListener(afterLRAConfig, true, AFTERLRA);
+                addAndStartListener(forgetConfig, true, FORGET);
                 isInitialized = true;
                 LOGGER.info("Reply listeners started");
             }
         } catch (SQLException | JMSException ex) {
             LOGGER.warning("Exception during init of " + this + ":" + ex);
+            return false;
         }
+        return true;
     }
 
     private void addAndStartListener(AQChannelConfig config, boolean isOptional, String operation) throws JMSException {
         if(isOptional && (completeConfig.destination == null || completeConfig.destination.equals(""))) return;
-        if (!destinationAndTypeToListenerMap.containsKey(completeConfig.destination + "-" + completeConfig.type)) {
+        if (!destinationAndTypeToListenerMap.containsKey(operation + "-" + config.destination + "-" + config.type)) {
             AQReplyListener listener = new AQReplyListener(aqParticipantDB, config, operation);
-            destinationAndTypeToListenerMap.put(completeConfig.destination + "-" + completeConfig.type, listener);
+            destinationAndTypeToListenerMap.put(operation + "-" + config.destination + "-" + config.type, listener);
             new Thread(listener).start();
 //            executorService.submit(listener);
         }
@@ -166,7 +168,7 @@ public class AQParticipant extends Participant {
     @Counted
     private void sendComplete(LRA lra) {
         //todo    lra.participant.is.aq.propagation indicates whether topic or queue should be sent to
-        sendViaQueue(COMPLETESEND, lra, completeConfig);
+        sendViaQueue(COMPLETE, lra, completeConfig);
         lastActionTakenOrReceived = COMPLETESEND;
         setParticipantStatus(Completed);
     }
@@ -174,7 +176,7 @@ public class AQParticipant extends Participant {
     @Traced
     @Counted
     private void sendCompensate(LRA lra) {
-        sendViaQueue(COMPLETESEND, lra, completeConfig);
+        sendViaQueue(COMPLETE, lra, completeConfig);
         lastActionTakenOrReceived = COMPLETESEND;
         setParticipantStatus(Compensated);
     }
@@ -193,7 +195,7 @@ public class AQParticipant extends Participant {
     boolean sendForget(LRA lra) {
         if (!lastActionTakenOrReceived.equals(FORGETSEND)) {
             init();
-            sendViaQueue(FORGETSEND, lra, forgetConfig);
+            sendViaQueue(FORGET, lra, forgetConfig);
 //            sendViaTopic(FORGETSEND, lra, forgetConfig);
             lastActionTakenOrReceived = FORGETSEND;
             setForgotten();
@@ -207,7 +209,7 @@ public class AQParticipant extends Participant {
     void sendAfterLRA(LRA lra) {
         if (!lastActionTakenOrReceived.equals(AFTERLRASEND)) {
             init();
-            String outcome = sendViaQueue(AFTERLRASEND, lra, afterLRAConfig);
+            String outcome = sendViaQueue(AFTERLRA, lra, afterLRAConfig);
             lastActionTakenOrReceived = AFTERLRASEND;
             if (outcome.equals("success") )setAfterLRASuccessfullyCalledIfEnlisted();
             logParticipantMessageWithTypeAndDepth("AQParticipant afterLRA finished outcome:" + outcome, lra.nestedDepth);
@@ -231,7 +233,7 @@ public class AQParticipant extends Participant {
         } catch (JMSException e) {
             LOGGER.info(e.getMessage());
         }
-        AQReplyListener replyListener = destinationAndTypeToListenerMap.get(channelConfig.destination + "-" + channelConfig.type);
+        AQReplyListener replyListener = destinationAndTypeToListenerMap.get(operation + "-" + channelConfig.destination + "-" + channelConfig.type);
         replyListener.lraIDToReplyStatusMap.put(lra.lraId, operation);
         String replyStatus;
         do {
@@ -254,7 +256,7 @@ public class AQParticipant extends Participant {
             LOGGER.info("sendEvent queue:" + queue);
             TextMessage objmsg = session.createTextMessage();
             MessageProducer producer = session.createProducer(queue);
-            objmsg.setStringProperty(HELIDONLRAOPERATION, operation);
+            objmsg.setStringProperty(HELIDONLRAOPERATION, operation + "SEND"); //todo remove the "SEND" here and on client
             objmsg.setStringProperty(LRA_HTTP_CONTEXT_HEADER, lra.lraId);
             objmsg.setIntProperty("Id", 1);
             objmsg.setIntProperty("Priority", 2);
@@ -264,7 +266,7 @@ public class AQParticipant extends Participant {
         } catch (JMSException e) {
             LOGGER.info(e.getMessage());
         }
-        AQReplyListener replyListener = destinationAndTypeToListenerMap.get(channelConfig.destination + "-" + channelConfig.type);
+        AQReplyListener replyListener = destinationAndTypeToListenerMap.get(operation + "-" + channelConfig.destination + "-" + channelConfig.type);
         replyListener.lraIDToReplyStatusMap.put(lra.lraId, operation);
         String replyStatus;
         do {

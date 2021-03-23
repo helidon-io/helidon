@@ -49,6 +49,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.StringJoiner;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static io.helidon.lra.rest.LRAConstants.AFTER;
@@ -66,6 +67,7 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.Type.NESTED;
 
 @Provider
 public class ServerLRAFilter implements ContainerRequestFilter, ContainerResponseFilter {
+    private static final Logger LOGGER = Logger.getLogger(ServerLRAFilter.class.getName());
     private static final String CANCEL_ON_FAMILY_PROP = "CancelOnFamily";
     private static final String CANCEL_ON_PROP = "CancelOn";
     private static final String TERMINAL_LRA_PROP = "terminateLRA";
@@ -78,24 +80,11 @@ public class ServerLRAFilter implements ContainerRequestFilter, ContainerRespons
 
     @Context
     protected ResourceInfo resourceInfo;
-//    protected RestResourceInfo resourceInfo;
-    
-    class RestResourceInfo {
 
-        public Method getResourceMethod() {
-            return null;
-        }
-
-        public Class getResourceClass() {
-            return null;
-        }
-    }
+    private URI baseUri;
 
     @Inject
     private LRAParticipantRegistry lraParticipantRegistry;
-
-
-
     private final LRAClient lraClient;
 
     public ServerLRAFilter() {
@@ -116,15 +105,19 @@ public class ServerLRAFilter implements ContainerRequestFilter, ContainerRespons
                     type.name() + " but found tx", progress);
             return true;
         }
-
         return false;
     }
 
     @Override
     public void filter(ContainerRequestContext containerRequestContext) {
-        // Note that this filter uses abortWith instead of throwing exceptions on encountering exceptional
-        // conditions. This facilitates async because filters for asynchronous JAX-RS methods are
-        // not allowed to throw exceptions.
+        baseUri = containerRequestContext.getUriInfo().getBaseUri(); //todo but this is not correct value and thus doing this...
+        try {
+            String path = baseUri.getPath();
+            baseUri = new URI("http://localhost:" + baseUri.getPort() + baseUri.getPath()); //todo get from config with default to server host and port - this deals is ipv6
+            LOGGER.info("ServerLRAFilter.filter baseUri.getPath():" + path + " resultant:" + baseUri);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
         Method method = resourceInfo.getResourceMethod();
         MultivaluedMap<String, String> headers = containerRequestContext.getHeaders();
         LRA.Type type = null;
@@ -183,8 +176,9 @@ public class ServerLRAFilter implements ContainerRequestFilter, ContainerRespons
 
             if (AnnotationResolver.isAnnotationPresent(Leave.class, method)) {
                 // leave the LRA
-                Map<String, String> terminateURIs = LRAClient.getTerminationUris(
+                Map<String, String> terminateURIs = LRAClient.getTerminationUris(baseUri,
                         resourceInfo.getResourceClass(), containerRequestContext.getUriInfo(), timeout);
+//                        resourceInfo.getResourceClass(), containerRequestContext.getUriInfo(), timeout);
                 String compensatorId = terminateURIs.get("Link");
 
                 if (compensatorId == null) {
@@ -386,17 +380,9 @@ public class ServerLRAFilter implements ContainerRequestFilter, ContainerRespons
             return; // any previous actions (such as leave and start requests) will be reported via the response filter
         }
 
-        // TODO make sure it is possible to do compensations inside a new LRA
-        if (!endAnnotation) { // don't enlist for methods marked with Compensate, Complete or Leave
-            URI baseUri = containerRequestContext.getUriInfo().getBaseUri(); //http://[0:0:0:0:0:0:0:1]:8091/rest/
-            try {
-                baseUri.getPath()
-                baseUri = new URI("http://127.0.0.1:8091"); //todo get from config with default to server host and port
-            } catch (URISyntaxException e) {
-                e.printStackTrace();
-            }
-
-            Map<String, String> terminateURIs = LRAClient.getTerminationUris(resourceInfo.getResourceClass(), containerRequestContext.getUriInfo(), timeout);
+        if (!endAnnotation) {
+//            Map<String, String> terminateURIs = LRAClient.getTerminationUris(resourceInfo.getResourceClass(), containerRequestContext.getUriInfo(), timeout);
+            Map<String, String> terminateURIs = LRAClient.getTerminationUris(baseUri, resourceInfo.getResourceClass(), containerRequestContext.getUriInfo(), timeout);
             String timeLimitStr = terminateURIs.get(TIMELIMIT_PARAM_NAME);
             long timeLimit = timeLimitStr == null ? DEFAULT_TIMEOUT_MILLIS : Long.parseLong(timeLimitStr);
 
@@ -583,9 +569,6 @@ public class ServerLRAFilter implements ContainerRequestFilter, ContainerRespons
         return false;
     }
 
-    // the request filter may perform multiple and in failure scenarios the LRA may be left in an ambiguous state:
-    // the following structure is used to track progress so that such failures can be reported in the response
-    // filter processing
     private enum ProgressStep {
         Left ("leave succeeded"),
         LeaveFailed("leave failed"),
@@ -609,8 +592,6 @@ public class ServerLRAFilter implements ContainerRequestFilter, ContainerRespons
         }
     }
 
-    // list of steps (both successful and unsuccesful) performed so far by the request and response filter
-    // and is used for error reporting
     private static class Progress {
         static EnumSet<ProgressStep> failures = EnumSet.of(
                 ProgressStep.LeaveFailed,
@@ -632,7 +613,6 @@ public class ServerLRAFilter implements ContainerRequestFilter, ContainerRespons
         }
     }
 
-    // convert the list of steps carried out by the filters into a warning message
     private String processLRAOperationFailures(ArrayList<Progress> progress) {
         StringJoiner badOps = new StringJoiner(", ");
         StringJoiner goodOps = new StringJoiner(", ");
@@ -648,21 +628,8 @@ public class ServerLRAFilter implements ContainerRequestFilter, ContainerRespons
             }
         });
 
-        /*
-         * return a string which encodes the result:
-         * <major code>-<failed op codes>-<successful op codes>: <details of failed ops> (<details of successful ops>)
-         *
-         * where
-         *
-         * <major code>: corresponds to the id of the message in the logs
-         * <failed op codes>: each digit corresponds to the enum ordinal calue of the ProgressStep enum value that was successful
-         * <successful op codes>: each digit corresponds to the enum ordinal value of the ProgressStep enum value that failed
-         * <details of failed ops>: comma separated list of failed operation details "<op name> (<exception message>)"
-         * <details of successful ops>: comma separated list of successful operation details "<op name> (<op description>)"
-         */
-
         if (badOps.length() != 0) {
-            return "warning";// todo LRALogger.i18NLogger.warn_LRAStatusInDoubt(String.format("%s: %s (%s)", code, badOps, goodOps));
+            return "warning";
         }
 
         return null;
@@ -686,29 +653,21 @@ public class ServerLRAFilter implements ContainerRequestFilter, ContainerRespons
     // the processing performed by the request filter caused the request to abort (without executing application code)
     private void abortWith(ContainerRequestContext containerRequestContext, String lraId, int statusCode,
                            String message, Collection<Progress> reasons) {
-        // the response filter will set the entity body
         containerRequestContext.abortWith(Response.status(statusCode).build());
-        // make the reason for the failure available to the response filter
         containerRequestContext.setProperty(ABORT_WITH_PROP, reasons);
-
         Method method = resourceInfo.getResourceMethod();
-        // todo LRALogger.i18NLogger.warn_lraFilterContainerRequest(message,
-//                method.getDeclaringClass().getName() + "#" + method.getName(),
-//                lraId == null ? "context" : lraId);
     }
 
     private URI toURI(String uri) throws URISyntaxException {
         return uri == null ? null : new URI(uri);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T extends Collection<?>> T cast(Object obj) {
         return (T) obj;
     }
 
     private URI startLRA(ContainerRequestContext containerRequestContext, URI parentLRA, Method method, Long timeout,
                          ArrayList<Progress> progress) {
-        // timeout should already have been converted to milliseconds
         String clientId = method.getDeclaringClass().getName() + "#" + method.getName();
 
         try {

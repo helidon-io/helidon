@@ -18,14 +18,14 @@ public class KafkaReplyListener implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(KafkaReplyListener.class.getName());
     private final String operation;
     private final String bootstrapservers;
-    private final String topic;
+    private final String replytopic;
     private final String groupid;
     Map<String, String> lraIDToReplyStatusMap = new ConcurrentHashMap<>();
 
     public KafkaReplyListener(KafkaChannelConfig channelConfig, String operation)  {
         this.operation = operation;
         this.bootstrapservers = channelConfig.bootstrapservers;
-        this.topic = channelConfig.sendtotopic + "-reply"; //todo get "replyfromtopic" for outgoing channel config once it's added to join
+        this.replytopic = channelConfig.replytopic;
         this.groupid = channelConfig.groupid;
         LOGGER.info("KafkReplyListener created for operation:" + operation + " channelConfig:" + channelConfig);
     }
@@ -42,8 +42,8 @@ public class KafkaReplyListener implements Runnable {
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         KafkaConsumer<String, String> consumer = new KafkaConsumer <String, String>(props);
-        LOGGER.info("consumer subscribing to topic:" + topic + " on bootstrapservers:" + bootstrapservers + " for operation:" + operation );
-        consumer.subscribe(Arrays.asList(topic));
+        LOGGER.info("consumer subscribing to topic:" + replytopic + " on bootstrapservers:" + bootstrapservers + " for operation:" + operation );
+        consumer.subscribe(Arrays.asList(replytopic));
         boolean isReplyRecordNotFoundYet = true;
         while (isReplyRecordNotFoundYet) {
             ConsumerRecords<String, String> records = consumer.poll(100);
@@ -55,6 +55,6 @@ public class KafkaReplyListener implements Runnable {
                 lraIDToReplyStatusMap.put(new String(lraidheader.value()), new String(lraOperationHeader.value()));
             }
         }
-        LOGGER.severe("consumer subscribing to topic:" + topic + "on bootstrapservers:" + bootstrapservers + " for operation:" + operation + " exiting");
+        LOGGER.severe("consumer subscribing to topic:" + replytopic + "on bootstrapservers:" + bootstrapservers + " for operation:" + operation + " exiting");
     }
 }

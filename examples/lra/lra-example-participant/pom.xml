@@ -20,20 +20,32 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
-
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>lra-example-participant</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>lra-example-participant</name>
-    <description>Helidon LRA Example Participant Service</description>
-
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>2.2.1-SNAPSHOT</version>
-        <relativePath/>
+        <version>2.3.0-SNAPSHOT</version>
+        <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
+    <groupId>io.helidon.examples.messaging.lra</groupId>
+    <artifactId>lra-example-participant</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>lra-example-participant</name>
+
+
+
+<!--    <modelVersion>4.0.0</modelVersion>-->
+<!--    <artifactId>lra-example-participant</artifactId>-->
+<!--    <version>0.0.1-SNAPSHOT</version>-->
+<!--    <name>lra-example-participant</name>-->
+<!--    <description>Helidon LRA Example Participant Service</description>-->
+
+<!--    <parent>-->
+<!--        <groupId>io.helidon.applications</groupId>-->
+<!--        <artifactId>helidon-mp</artifactId>-->
+<!--        <version>2.2.1-SNAPSHOT</version>-->
+<!--        <relativePath/>-->
+<!--    </parent>-->
 
     <properties>
         <maven.sources.skip>true</maven.sources.skip>
@@ -191,8 +203,8 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.lra</groupId>
-            <artifactId>helidon-lra-messagingclient</artifactId>
-            <version>2.0.2-SNAPSHOT</version>
+            <artifactId>helidon-lra-aq-messagingclient</artifactId>
+            <version>2.3.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

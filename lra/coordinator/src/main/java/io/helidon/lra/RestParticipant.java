@@ -35,8 +35,8 @@ public class RestParticipant extends Participant {
 
     private Client client = ClientBuilder.newBuilder().build();
 
-    public  void init(){
-        //no op
+    public  boolean init(){
+        return true;
     }
 
     String getParticipantType() {

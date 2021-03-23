@@ -50,7 +50,7 @@ public class KafkaParticipant extends Participant {
      * Eg. messaging://helidon-kafka/?channel=kafkacompletechannel&bootstrap.servers=kafkacompletechannel&topic=order-events&group.id=lra-example
      * Add KafkaReplyListener to map keyed on completeConfig.bootstrapservers + "-" + completeConfig.topic
      */
-    public void init() {
+    public boolean init() {
             if (!isInitialized) {
                 if (!isConfigInitialized) {
                     parseURIToConfig(getCompleteURI(), completeConfig = new KafkaChannelConfig());
@@ -69,6 +69,7 @@ public class KafkaParticipant extends Participant {
                 isInitialized = true;
                 LOGGER.info("Reply listeners started");
             }
+            return true;
     }
 
     private void addAndStartListener(KafkaChannelConfig config, boolean isOptional, String operation) {
@@ -91,13 +92,16 @@ public class KafkaParticipant extends Participant {
             LOGGER.fine(paramName + " : " + paramValue);
             switch (paramName)
             {
-                case "bootstrap.servers":
+                case Constants.BOOTSTRAPSERVERS:
                     channelConfig.bootstrapservers = paramValue;
                     break;
-                case "topic":
-                    channelConfig.sendtotopic = paramValue; //todo this is temp until we pass the outgoing/reply channel info into join
+                case Constants.TOPIC:
+                    channelConfig.sendtotopic = paramValue;
                     break;
-                case "groupid":
+                case Constants.REPLYTOPIC:
+                    channelConfig.replytopic = paramValue;
+                    break;
+                case Constants.GROUPID:
                     channelConfig.groupid = paramValue;
                     break;
                 default:
@@ -163,7 +167,7 @@ public class KafkaParticipant extends Participant {
     private String sendMessageAndWaitForReply(LRA lra, KafkaChannelConfig channelConfig, String operation) {
         Properties props = new Properties(); //todo get all of this from config
         props.put("bootstrap.servers", channelConfig.bootstrapservers);
-        //todo appropriate values...
+        //todo allow overrides...
         props.put("acks", "all");
         props.put("retries", 0);
         props.put("batch.size", 16384);
@@ -181,11 +185,9 @@ public class KafkaParticipant extends Participant {
         producer.close();
         KafkaReplyListener replyListener = bootstrapserversToListenerMap.get(channelConfig.bootstrapservers + "-" + channelConfig.sendtotopic);
         replyListener.lraIDToReplyStatusMap.put(lra.lraId, operation);
-//        replyListener.lraIDToReplyStatusMap.put(lra.lraId, operation);
         String replyStatus;
         do {
             replyStatus = replyListener.lraIDToReplyStatusMap.get(lra.lraId); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
-//            replyStatus = replyListener.lraIDToReplyStatusMap.get(lra.lraId); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
             LOGGER.info("Still waiting for reply from " + operation + " to topic:" + channelConfig.sendtotopic +
                     " lra.lraId:" + lra.lraId+ " bootstrapservers:" + channelConfig.bootstrapservers + " current replyStatus:" + replyStatus);
             try {

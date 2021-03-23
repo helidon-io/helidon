@@ -23,16 +23,13 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>lra-coordinator-helidon</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>lra-coordinator-helidon</name>
-    <description>LRA microservices demo</description>
-
+    <name>Helidon LRA Coordinator</name>
+    <description>Helidon LRA Coordinator</description>
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>2.0.0</version>
+        <version>2.3.0-SNAPSHOT</version>
     </parent>
-
-
     <properties>
         <maven.sources.skip>true</maven.sources.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
@@ -150,8 +147,6 @@
             </plugin>
         </plugins>
     </build>
-
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
@@ -162,18 +157,6 @@
             <artifactId>jakarta.activation-api</artifactId>
             <scope>runtime</scope>
         </dependency>
-
-
-
-
-        <dependency>
-            <groupId>org.eclipse.microprofile.lra</groupId>
-            <artifactId>microprofile-lra-api</artifactId>
-            <version>${version.microprofile.lra.api}</version>
-        </dependency>
-
-
-
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
@@ -191,34 +174,29 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.eclipse.microprofile.lra</groupId>
+            <artifactId>microprofile-lra-api</artifactId>
+            <version>${version.microprofile.lra.api}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.lra</groupId>
+            <artifactId>helidon-lra-common</artifactId>
+            <version>2.3.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.messaging</groupId>
             <artifactId>helidon-microprofile-messaging</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.messaging.aq</groupId>
             <artifactId>helidon-messaging-aq</artifactId>
-            <version>2.0.3-SNAPSHOT</version>
+            <version>2.3.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
             <!--            <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>-->
             <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
             <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.ojdbc</groupId>
-            <artifactId>osdt_core</artifactId>
-            <version>19.3.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.ojdbc</groupId>
-            <artifactId>osdt_cert</artifactId>
-            <version>19.3.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.ojdbc</groupId>
-            <artifactId>oraclepki</artifactId>
-            <version>19.3.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>

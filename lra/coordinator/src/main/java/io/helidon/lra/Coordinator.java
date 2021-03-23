@@ -64,7 +64,6 @@ public class Coordinator implements Runnable {
         LOGGER.info("Coordinator init timeout thread started");
         Config config = ConfigProvider.getConfig();
         LOGGER.info("Coordinator init config.getValue(\"lra.coordinator.url\"):" + config.getOptionalValue("lra.coordinator.url", String.class) );
-
 // todo this or lra.coordinator.url override...  coordinatorURL = "http://" + config.getValue("server.host", String.class) + ":" + config.getValue("server.port", String.class) + "/lra-coordinator/";
         LOGGER.info("Coordinator init coordinatorURL:" + coordinatorURL);
     }
@@ -335,7 +334,7 @@ public class Coordinator implements Runnable {
     }
 
     private String getParentChildDebugString(LRA lra) {
-        return (lra.isParent ? "parent" : "") + (lra.isParent && lra.isChild ? " and " : "") +
+        return lra==null?null:(lra.isParent ? "parent" : "") + (lra.isParent && lra.isChild ? " and " : "") +
                 (lra.isChild ? "child" : "") + (!lra.isParent && !lra.isChild ? "currently flat LRA" : "");
     }
 

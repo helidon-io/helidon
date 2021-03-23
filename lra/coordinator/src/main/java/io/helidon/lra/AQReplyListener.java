@@ -44,8 +44,7 @@ public class AQReplyListener implements Runnable {
                     qconn.start();
                     Queue queue = ((AQjmsSession) qsess).getQueue(owner, destination);
                     AQjmsConsumer consumer = (AQjmsConsumer) qsess.createConsumer(queue,
-                            HELIDONLRAOPERATION + " = '" + "COMPLETESUCCESS" + "'"); //todo could be success or failed depending on call
-//                            HELIDONLRAOPERATION + " = '" + operation + "SUCCESS'"); //todo use this, drop the "SEND" of operation and add "SUCCESS" or "FAIL"
+                            HELIDONLRAOPERATION + " = '" + operation + "SUCCESS" + "'"); //todo || operation + "FAIL"
                     LOGGER.info("Listening for replies from " + operation +
                             " operations on destination:" + destination + " owner:" + owner + " type:" + type);
                     Message message = consumer.receive(-1);
@@ -53,7 +52,7 @@ public class AQReplyListener implements Runnable {
                     LOGGER.info("Received reply for operation:" + operation +
                             " operations on destination:" + destination + " owner:" + owner + " type:" + type + " lraId:" + lraId + " about to commit...");
                     qsess.commit();
-                    lraIDToReplyStatusMap.put(lraId, "COMPLETESUCCESS");
+                    lraIDToReplyStatusMap.put(lraId, operation + "SUCCESS"); //todo || operation + "FAIL"
                 } catch (JMSException e) {
                     LOGGER.warning("JMSException during receive:" + e);
                 }

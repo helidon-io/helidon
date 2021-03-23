@@ -123,7 +123,7 @@ public class LRA {
                     }
                 }
             }
-            participant.init();
+            if(!participant.init()) throw new RuntimeException("unable to initialize participant:" + participant); //todo better exception/handling
             RecoveryManager.getInstance().log(participant);
             return "LRA joined/added:" + (getConditionalStringValue(participant.isListenerOnly(), "listener:", "participant:")) + participant;
         } else {

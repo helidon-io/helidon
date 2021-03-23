@@ -52,13 +52,13 @@ public abstract class Participant {
     protected boolean isInitialized = false;
     protected boolean isConfigInitialized = false;
     public static final String INIT = "INIT",
-            COMPLETESEND = "COMPLETESEND", COMPLETEREPLY = "COMPLETEREPLY",
-            COMPENSATESEND = "COMPENSATESEND", COMPENSATEREPLY = "COMPENSATEREPLY",
-            AFTERLRASEND = "AFTERLRASEND", AFTERLRAREPLY = "AFTERLRAREPLY",
-            STATUSSEND = "AFTERLRASEND", STATUSREPLY = "AFTERLRAREPLY",
-            FORGETSEND = "FORGETSEND", FORGETREPLY = "FORGETREPLY";
+            COMPLETESEND = "COMPLETESEND", COMPLETE = "COMPLETE",
+            COMPENSATESEND = "COMPENSATESEND", COMPENSATE = "COMPENSATE",
+            AFTERLRASEND = "AFTERLRASEND", AFTERLRA = "AFTERLRA",
+            STATUSSEND = "AFTERLRASEND", STATUSR = "AFTERLRA",
+            FORGETSEND = "FORGETSEND", FORGET = "FORGET";
 
-    public abstract void init();
+    public abstract boolean init();
 
     ParticipantStatus getParticipantStatus() {
         return participantStatus;
