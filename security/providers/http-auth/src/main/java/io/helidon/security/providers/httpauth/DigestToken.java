@@ -238,7 +238,8 @@ class DigestToken {
         return user.digestHa1(realm, algorithm)
                 .map(ha1 -> {
                     String digest = digestFromHa1(ha1);
-                    return MessageDigest.isEqual(response.getBytes(StandardCharsets.UTF_8), digest.getBytes(StandardCharsets.UTF_8));
+                    return MessageDigest.isEqual(response.getBytes(StandardCharsets.UTF_8),
+                            digest.getBytes(StandardCharsets.UTF_8));
                 })
                 .orElse(false);
     }
