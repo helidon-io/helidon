@@ -50,7 +50,7 @@ public class RecoveryManager  {
     private long timeSinceLastPurge = System.currentTimeMillis();
     private static Connection connection = null;
     private static RecoveryManager instance;
-    private boolean isLoggingEnabled = Boolean.valueOf(System.getProperty("lra.logging.enabled", "true");
+    private boolean isLoggingEnabled = Boolean.valueOf(System.getProperty("lra.logging.enabled", "true"));
 
     static RecoveryManager getInstance() {
         return instance;
