@@ -50,6 +50,7 @@ public class RecoveryManager  {
     private long timeSinceLastPurge = System.currentTimeMillis();
     private static Connection connection = null;
     private static RecoveryManager instance;
+    private boolean isLoggingEnabled = Boolean.valueOf(System.getProperty("lra.logging.enabled", "true");
 
     static RecoveryManager getInstance() {
         return instance;
@@ -58,6 +59,7 @@ public class RecoveryManager  {
     public void init(@Observes @Initialized(ApplicationScoped.class) Object init) throws SQLException {
         LOGGER.info("RecoveryManager init coordinatordb:" + coordinatordb);
         instance = this;
+        if(!isLoggingEnabled) return;
         dropTables();
         createTables();
         loadLRALogs();
@@ -86,6 +88,7 @@ public class RecoveryManager  {
 
 
     public void log(Participant participant) {
+        if(!isLoggingEnabled) return;
         LOGGER.info("log participant");
         //todo check if exist in map and if not
         try (Connection connection = coordinatordb.getConnection()){
