@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -34,5 +34,37 @@
         <Method name="started"/>
         <Bug pattern="DM_EXIT"/>
     </Match>
+
+    <Match>
+        <!-- Deprecated Class -->
+        <!-- Path is validated to ensure it does not break out of root directory -->
+        <Class name="io.helidon.webserver.FileSystemContentHandler"/>
+        <Method name="doHandle"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+
+    <Match>
+        <!-- Deprecated Class -->
+        <!-- From classpath -->
+        <Class name="io.helidon.webserver.ClassPathContentHandler"/>
+        <Method name="extractJarEntry"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+    <Match>
+        <!-- Deprecated Class -->
+        <!-- From classpath -->
+        <Class name="io.helidon.webserver.ClassPathContentHandler"/>
+        <Method name="extractJarEntry"/>
+        <Bug pattern="URLCONNECTION_SSRF_FD"/>
+    </Match>
+    <Match>
+        <!-- Deprecated Class -->
+        <!-- From classpath -->
+        <Class name="io.helidon.webserver.ClassPathContentHandler"/>
+        <Method name="getLastModified"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+
+
 
 </FindBugsFilter>

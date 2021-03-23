@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2019, 2021 Oracle and/or its affiliates. All rights reserved.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,4 +30,33 @@
         <Class name="io.helidon.dbclient.jdbc.JdbcStatementQuery$RowPublisher"/>
         <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
     </Match>
+
+    <Match>
+        <!-- Random used for balancing load, not for cryptology -->
+        <Class name="io.helidon.dbclient.jdbc.JdbcQueryExecutor"/>
+        <Bug pattern="PREDICTABLE_RANDOM"/>
+    </Match>
+
+    <Match>
+        <!-- Doesn't construct SQL string. It converts string to statement -->
+        <Class name="io.helidon.dbclient.jdbc.JdbcStatement"/>
+        <Method name="prepareStatement"/>
+        <Bug pattern="SQL_INJECTION_JDBC"/>
+    </Match>
+
+    <Match>
+        <!-- Doesn't construct SQL string. It converts string to statement -->
+        <Class name="io.helidon.dbclient.jdbc.JdbcStatement"/>
+        <Method name="prepareNamedStatement"/>
+        <Bug pattern="SQL_INJECTION_JDBC"/>
+    </Match>
+
+    <Match>
+        <!-- Doesn't construct SQL string. It converts string to statement -->
+        <Class name="io.helidon.dbclient.jdbc.JdbcStatement"/>
+        <Method name="prepareIndexedStatement"/>
+        <Bug pattern="SQL_INJECTION_JDBC"/>
+    </Match>
+
+
 </FindBugsFilter>

@@ -29,6 +29,10 @@
     <name>Helidon Config MP</name>
     <description>Core of the implementation of MicroProfile Config specification</description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>jakarta.annotation</groupId>
