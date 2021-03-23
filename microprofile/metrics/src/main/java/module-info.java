@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ module io.helidon.microprofile.metrics {
     requires static java.annotation;
     requires static jakarta.activation;
 
+    requires io.helidon.servicecommon.restcdi;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.config;
     requires transitive io.helidon.metrics;

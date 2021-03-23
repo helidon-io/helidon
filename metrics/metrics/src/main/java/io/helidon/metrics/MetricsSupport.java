@@ -96,7 +96,7 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  *  req.context().get(MetricRegistry.class).ifPresent(reg -> reg.counter("myCounter").inc());
  * }</pre>
  */
-public final class MetricsSupport extends HelidonRestServiceSupport<MetricsSupport, MetricsSupport.Builder> {
+public final class MetricsSupport extends HelidonRestServiceSupport {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";

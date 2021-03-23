@@ -588,6 +588,11 @@
                 <artifactId>helidon-service-common-rest</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.service-common</groupId>
+                <artifactId>helidon-service-common-rest-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- db client -->
             <dependency>
@@ -847,6 +852,11 @@
             <dependency>
                 <groupId>io.helidon.integrations.graal</groupId>
                 <artifactId>helidon-mp-graal-native-image-extension</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations</groupId>
+                <artifactId>helidon-integrations-micrometer</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- OpenAPI support -->

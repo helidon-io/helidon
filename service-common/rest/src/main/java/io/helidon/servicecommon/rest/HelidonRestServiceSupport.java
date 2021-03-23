@@ -39,18 +39,14 @@ import io.helidon.webserver.cors.CrossOriginConfig;
  *     See also the {@link Builder} information for possible additional overrides.
  * </p>
  *
- * @param <T> the concrete service support class
- * @param <B> the concrete {@code Builder} class for {@code T}
  */
-public abstract class HelidonRestServiceSupport<T extends HelidonRestServiceSupport<T, B>,
-        B extends HelidonRestServiceSupport.Builder<T, B>>
-        implements Service {
+public abstract class HelidonRestServiceSupport implements Service {
 
     private final String context;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
     private final Logger logger;
 
-    protected HelidonRestServiceSupport(Logger logger, Builder<T, B> builder, String serviceName) {
+    protected HelidonRestServiceSupport(Logger logger, Builder<?, ?> builder, String serviceName) {
         this.logger = logger;
         this.context = builder.context;
         corsEnabledServiceHelper = CorsEnabledServiceHelper.create(serviceName, builder.crossOriginConfig);
@@ -98,7 +94,7 @@ public abstract class HelidonRestServiceSupport<T extends HelidonRestServiceSupp
      * @param <T> type of the concrete service
      * @param <B> type of the concrete builder for the service
      */
-    public abstract static class Builder<T extends HelidonRestServiceSupport<T, B>, B extends Builder<T, B>>
+    public abstract static class Builder<T extends HelidonRestServiceSupport, B extends Builder<T, B>>
             implements io.helidon.common.Builder<T> {
 
         private final Class<B> builderClass;
@@ -176,7 +172,7 @@ public abstract class HelidonRestServiceSupport<T extends HelidonRestServiceSupp
          *
          * @return typed "this"
          */
-        private B me() {
+        protected B me() {
             return builderClass.cast(this);
         }
 

@@ -23,6 +23,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import io.helidon.servicecommon.restcdi.InterceptRunner;
+import io.helidon.servicecommon.restcdi.InterceptRunnerFactory;
+
 /**
  * Records information about an intercepted executable.
  * <p>
@@ -49,7 +52,7 @@ class InterceptionTargetInfo<T> {
      * @return the new instance
      */
     static <T> InterceptionTargetInfo<T> create(Executable executable) {
-        return new InterceptionTargetInfo<>(InterceptionRunnerImpl.create(executable));
+        return new InterceptionTargetInfo<>(InterceptRunnerFactory.create(executable));
     }
 
     private InterceptionTargetInfo(InterceptionRunner runner) {

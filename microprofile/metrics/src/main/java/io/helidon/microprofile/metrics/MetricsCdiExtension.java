@@ -18,7 +18,6 @@ package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -35,6 +34,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,9 +43,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.AnnotatedConstructor;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedType;
@@ -53,7 +51,6 @@ import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.DeploymentException;
-import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.inject.spi.ProcessManagedBean;
@@ -61,7 +58,6 @@ import javax.enterprise.inject.spi.ProcessProducerField;
 import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
-import javax.inject.Qualifier;
 import javax.inject.Singleton;
 import javax.interceptor.Interceptor;
 import javax.ws.rs.DELETE;
@@ -80,6 +76,8 @@ import io.helidon.metrics.MetricsSupport;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.servicecommon.restcdi.AnnotationLookupResult;
+import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
 import io.helidon.webserver.Routing;
 
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -102,18 +100,18 @@ import org.eclipse.microprofile.metrics.annotation.Metric;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
-import static io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
 import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * MetricsCdiExtension class.
  */
-public class MetricsCdiExtension implements Extension {
+public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport, MetricsSupport.Builder> {
+
     private static final Logger LOGGER = Logger.getLogger(MetricsCdiExtension.class.getName());
 
-    private static final List<Class<? extends Annotation>> METRIC_ANNOTATIONS
-            = Arrays.asList(Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class);
+    private static final Set<Class<? extends Annotation>> METRIC_ANNOTATIONS
+            = new HashSet<>(Arrays.asList(Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class));
 
     private static final List<Class<? extends Annotation>> JAX_RS_ANNOTATIONS
             = Arrays.asList(GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class);
@@ -135,23 +133,29 @@ public class MetricsCdiExtension implements Extension {
 
     private boolean restEndpointsMetricsEnabled = REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE;
 
-    private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
-
     private final Map<MetricID, AnnotatedMethod<?>> annotatedGaugeSites = new HashMap<>();
 
     private Errors.Collector errors = Errors.collector();
 
-    private final Set<Class<?>> metricsAnnotatedClasses = new HashSet<>();
-    private final Set<Class<?>> metricsAnnotatedClassesProcessed = new HashSet<>();
     private final Map<Class<?>, Set<Method>> methodsWithSyntheticSimpleTimer = new HashMap<>();
     private final Set<Class<?>> syntheticSimpleTimerClassesProcessed = new HashSet<>();
     private final Set<Method> syntheticSimpleTimersToRegister = new HashSet<>();
 
     private final Map<Executable, InterceptionTargetInfo<MetricWorkItem>> interceptInfo = new HashMap<>();
 
+    private final AtomicReference<Config> config = new AtomicReference<>();
+    private final AtomicReference<Config> metricsConfig = new AtomicReference<>();
+
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
         return (T) bm.getReference(bean, type, bm.createCreationalContext(bean));
+    }
+
+    /**
+     * Creates a new extension instance.
+     */
+    public MetricsCdiExtension() {
+        super(LOGGER, METRIC_ANNOTATIONS, MetricProducer.class, MetricsSupport::create, "metrics");
     }
 
     /**
@@ -165,14 +169,14 @@ public class MetricsCdiExtension implements Extension {
      */
     @Deprecated
     public static <E extends Member & AnnotatedElement>
-    void registerMetric(E element, Class<?> clazz, LookupResult<? extends Annotation> lookupResult) {
+    void registerMetric(E element, Class<?> clazz, AnnotationLookupResult<? extends Annotation> lookupResult) {
         registerMetricInternal(element, clazz, lookupResult);
     }
 
     static <E extends Member & AnnotatedElement> MetricInfo<?> registerMetricInternal(E element, Class<?> clazz,
-            LookupResult<? extends Annotation> lookupResult) {
+            AnnotationLookupResult<? extends Annotation> lookupResult) {
         MetricRegistry registry = getMetricRegistry();
-        Annotation annotation = lookupResult.getAnnotation();
+        Annotation annotation = lookupResult.annotation();
 
         String savedMetricName = null;
         org.eclipse.microprofile.metrics.Metric metric = null;
@@ -180,8 +184,8 @@ public class MetricsCdiExtension implements Extension {
 
         if (annotation instanceof Counted) {
             Counted counted = (Counted) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), counted.name().trim(),
-                                              counted.absolute());
+            String metricName = getMetricName(element, clazz, lookupResult.siteType(), counted.name().trim(),
+                    counted.absolute());
             String displayName = counted.displayName().trim();
             Metadata meta = Metadata.builder()
                     .withName(metricName)
@@ -191,14 +195,15 @@ public class MetricsCdiExtension implements Extension {
                     .withUnit(counted.unit().trim())
                     .reusable(counted.reusable())
                     .build();
+            registry.counter(meta, tags(counted.tags()));
             savedMetricName = metricName;
             tags = tags(counted.tags());
             metric = registry.counter(meta, tags);
             LOGGER.log(Level.FINE, () -> "Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
             Metered metered = (Metered) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), metered.name().trim(),
-                                              metered.absolute());
+            String metricName = getMetricName(element, clazz, lookupResult.siteType(), metered.name().trim(),
+                    metered.absolute());
             String displayName = metered.displayName().trim();
             Metadata meta = Metadata.builder()
                     .withName(metricName)
@@ -208,14 +213,15 @@ public class MetricsCdiExtension implements Extension {
                     .withUnit(metered.unit().trim())
                     .reusable(metered.reusable())
                     .build();
+            registry.meter(meta, tags(metered.tags()));
             savedMetricName = metricName;
             tags = tags(metered.tags());
             metric = registry.meter(meta, tags);
             LOGGER.log(Level.FINE, () -> "Registered meter " + metricName);
         } else if (annotation instanceof Timed) {
             Timed timed = (Timed) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), timed.name().trim(),
-                                              timed.absolute());
+            String metricName = getMetricName(element, clazz, lookupResult.siteType(), timed.name().trim(),
+                    timed.absolute());
             String displayName = timed.displayName().trim();
             Metadata meta = Metadata.builder()
                     .withName(metricName)
@@ -225,6 +231,7 @@ public class MetricsCdiExtension implements Extension {
                     .withUnit(timed.unit().trim())
                     .reusable(timed.reusable())
                     .build();
+            registry.timer(meta, tags(timed.tags()));
 
             savedMetricName = metricName;
             tags = tags(timed.tags());
@@ -232,8 +239,8 @@ public class MetricsCdiExtension implements Extension {
             LOGGER.log(Level.FINE, () -> "Registered timer " + metricName);
         } else if (annotation instanceof ConcurrentGauge) {
             ConcurrentGauge concurrentGauge = (ConcurrentGauge) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), concurrentGauge.name().trim(),
-                                              concurrentGauge.absolute());
+            String metricName = getMetricName(element, clazz, lookupResult.siteType(), concurrentGauge.name().trim(),
+                    concurrentGauge.absolute());
             String displayName = concurrentGauge.displayName().trim();
             Metadata meta = Metadata.builder()
                     .withName(metricName)
@@ -243,14 +250,15 @@ public class MetricsCdiExtension implements Extension {
                     .withUnit(concurrentGauge.unit().trim())
                     .reusable(concurrentGauge.reusable())
                     .build();
+            registry.concurrentGauge(meta, tags(concurrentGauge.tags()));
             savedMetricName = metricName;
             tags = tags(concurrentGauge.tags());
             metric = registry.concurrentGauge(meta, tags);
             LOGGER.log(Level.FINE, () -> "Registered concurrent gauge " + metricName);
         } else if (annotation instanceof SimplyTimed) {
             SimplyTimed simplyTimed = (SimplyTimed) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), simplyTimed.name().trim(),
-                                              simplyTimed.absolute());
+            String metricName = getMetricName(element, clazz, lookupResult.siteType(), simplyTimed.name().trim(),
+                    simplyTimed.absolute());
             String displayName = simplyTimed.displayName().trim();
             Metadata meta = Metadata.builder()
                     .withName(metricName)
@@ -260,6 +268,7 @@ public class MetricsCdiExtension implements Extension {
                     .withUnit(simplyTimed.unit().trim())
                     .reusable(simplyTimed.reusable())
                     .build();
+            registry.simpleTimer(meta, tags(simplyTimed.tags()));
             savedMetricName = metricName;
             tags = tags(simplyTimed.tags());
             metric = registry.simpleTimer(meta, tags);
@@ -270,6 +279,18 @@ public class MetricsCdiExtension implements Extension {
                     annotation.annotationType().getSimpleName(), element));
         }
         return new MetricInfo<>(new MetricID(savedMetricName, tags), metric);
+    }
+
+    @Override
+    protected <E extends Member & AnnotatedElement> void register(E element, Class<?> clazz,
+            AnnotationLookupResult<? extends Annotation> lookupResult) {
+        MetricInfo<?> metricInfo = registerMetricInternal(element, clazz, lookupResult);
+        if (element instanceof Executable) {
+            InterceptionTargetInfo<MetricWorkItem> info = interceptInfo.computeIfAbsent((Executable) element,
+                    InterceptionTargetInfo::create);
+            info.addWorkItem(lookupResult.annotation()
+                    .annotationType(), MetricWorkItem.create(metricInfo.metricID, metricInfo.metric));
+        }
     }
 
     private static Tag[] tags(String[] tagStrings) {
@@ -339,18 +360,9 @@ public class MetricsCdiExtension implements Extension {
         restEndpointsMetricsEnabled = restEndpointsMetricsEnabled();
     }
 
-    private void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
-        if (LOGGER.isLoggable(Level.FINE)) {
-            Set<Class<?>> metricsAnnotatedClassesIgnored = new HashSet<>(metricsAnnotatedClasses);
-            metricsAnnotatedClassesIgnored.removeAll(metricsAnnotatedClassesProcessed);
-            if (!metricsAnnotatedClassesIgnored.isEmpty()) {
-                LOGGER.log(Level.FINE, () ->
-                        "Classes originally found with metrics annotations that were not processed, probably "
-                                + "because they were vetoed:" + metricsAnnotatedClassesIgnored.toString());
-            }
-        }
-        metricsAnnotatedClasses.clear();
-        metricsAnnotatedClassesProcessed.clear();
+    @Override
+    protected void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
+        super.clearAnnotationInfo(adv);
         methodsWithSyntheticSimpleTimer.clear();
     }
 
@@ -366,7 +378,7 @@ public class MetricsCdiExtension implements Extension {
     private void recordMetricAnnotatedClass(@Observes
     @WithAnnotations({Counted.class, Metered.class, Timed.class, ConcurrentGauge.class,
             SimplyTimed.class}) ProcessAnnotatedType<?> pat) {
-        checkAndRecordCandidateMetricClass(pat);
+        recordConcreteNonInterceptor(pat);
     }
 
     /**
@@ -391,80 +403,6 @@ public class MetricsCdiExtension implements Extension {
         }
         LOGGER.log(Level.FINE, () -> "Accepting annotated type " + clazz.getName() + " for later bean processing");
         return true;
-    }
-
-    /**
-     * Make sure the annotated type is neither abstract nor an interceptor and stores the Java class.
-     *
-     * @param pat {@code ProcessAnnotatedType} event
-     * @return true if the annotated type should be kept for potential processing later; false otherwise
-     */
-    private boolean checkAndRecordCandidateMetricClass(ProcessAnnotatedType<?> pat) {
-        boolean result = checkCandidateMetricClass(pat);
-        if (result) {
-            metricsAnnotatedClasses.add(pat.getAnnotatedType().getJavaClass());
-        }
-        return result;
-    }
-
-    /**
-     * Observes all beans but immediately dismisses ones for which the Java class was not previously noted
-     * during {@code ProcessAnnotatedType} (which recorded only classes with metrics annotations).
-     *
-     * @param pmb event describing the managed bean being processed
-     */
-    private void registerMetrics(@Observes ProcessManagedBean<?> pmb) {
-        AnnotatedType<?> type =  pmb.getAnnotatedBeanClass();
-        Class<?> clazz = type.getJavaClass();
-        if (!metricsAnnotatedClasses.contains(clazz)) {
-            return;
-        }
-        // Recheck for Interceptor.
-        if (type.isAnnotationPresent(Interceptor.class)) {
-            LOGGER.log(Level.FINE, "Ignoring metrics defined on type " + clazz.getName()
-                    + " because a CDI portable extension added @Interceptor to it dynamically");
-            return;
-        }
-        metricsAnnotatedClassesProcessed.add(clazz);
-
-        LOGGER.log(Level.FINE, () -> "Processing annotations for " + clazz.getName());
-
-        // Process methods keeping non-private declared on this class
-        for (AnnotatedMethod<?> annotatedMethod : type.getMethods()) {
-            Method method = annotatedMethod.getJavaMember();
-
-            if (Modifier.isPrivate(annotatedMethod.getJavaMember().getModifiers())) {
-                continue;
-            }
-            METRIC_ANNOTATIONS.forEach(annotation ->
-                    MetricUtil.lookupAnnotations(type, annotatedMethod, annotation).forEach(lookupResult -> {
-                        // For methods, register the metric only on the declaring
-                        // class, not subclasses per the MP Metrics 2.0 TCK
-                        // VisibilityTimedMethodBeanTest.
-                        if (lookupResult.getType() != MetricUtil.MatchingType.METHOD
-                                || clazz.equals(method.getDeclaringClass())) {
-                            InterceptionTargetInfo<MetricWorkItem> info = interceptInfo.computeIfAbsent(method,
-                                    m -> InterceptionTargetInfo.create(method));
-                            MetricInfo<?> metricInfo = registerMetricInternal(method, clazz, lookupResult);
-                            info.addWorkItem(annotation, MetricWorkItem.create(metricInfo.metricID, metricInfo.metric));
-                        }
-                    }));
-        }
-
-        // Process constructors
-        for (AnnotatedConstructor<?> annotatedConstructor : type.getConstructors()) {
-            Constructor<?> c = annotatedConstructor.getJavaMember();
-            if (Modifier.isPrivate(c.getModifiers())) {
-                continue;
-            }
-            METRIC_ANNOTATIONS.forEach(annotation ->
-                MetricUtil.lookupAnnotations(type, annotatedConstructor, annotation).forEach(lookupResult -> {
-                        InterceptionTargetInfo<MetricWorkItem> info = interceptInfo.computeIfAbsent(c,
-                                InterceptionTargetInfo::create);
-                        MetricInfo<?> metricInfo = registerMetricInternal(c, clazz, lookupResult);
-                        info.addWorkItem(annotation, MetricWorkItem.create(metricInfo.metricID, metricInfo.metric));
-                    }));
-        }
     }
 
     private void processInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
@@ -593,23 +531,9 @@ public class MetricsCdiExtension implements Extension {
      *
      * @param ppf Producer field.
      */
-    private void recordProducerFields(@Observes ProcessProducerField<? extends org.eclipse.microprofile.metrics.Metric, ?> ppf) {
-        LOGGER.log(Level.FINE, () -> "recordProducerFields " + ppf.getBean().getBeanClass());
-        if (!MetricProducer.class.equals(ppf.getBean().getBeanClass())) {
-            Metric metric = ppf.getAnnotatedProducerField().getAnnotation(Metric.class);
-            if (metric != null) {
-                Optional<? extends Annotation> hasQualifier
-                        = ppf.getAnnotatedProducerField()
-                        .getAnnotations()
-                        .stream()
-                        .filter(annotation -> annotation.annotationType().isAnnotationPresent(Qualifier.class))
-                        .findFirst();
-                // Ignore producers with non-default qualifiers
-                if (!hasQualifier.isPresent() || hasQualifier.get() instanceof Default) {
-                    producers.put(ppf.getBean(), ppf.getAnnotatedProducerField());
-                }
-            }
-        }
+    protected void recordProducerFields(
+            @Observes ProcessProducerField<? extends org.eclipse.microprofile.metrics.Metric, ?> ppf) {
+        recordProducerField(ppf);
     }
 
     /**
@@ -618,24 +542,9 @@ public class MetricsCdiExtension implements Extension {
      *
      * @param ppm Producer method.
      */
-    private void recordProducerMethods(@Observes ProcessProducerMethod<?
-            extends org.eclipse.microprofile.metrics.Metric, ?> ppm) {
-        LOGGER.log(Level.FINE, () -> "recordProducerMethods " + ppm.getBean().getBeanClass());
-        if (!MetricProducer.class.equals(ppm.getBean().getBeanClass())) {
-            Metric metric = ppm.getAnnotatedProducerMethod().getAnnotation(Metric.class);
-            if (metric != null) {
-                Optional<? extends Annotation> hasQualifier
-                        = ppm.getAnnotatedProducerMethod()
-                        .getAnnotations()
-                        .stream()
-                        .filter(annotation -> annotation.annotationType().isAnnotationPresent(Qualifier.class))
-                        .findFirst();
-                // Ignore producers with non-default qualifiers
-                if (!hasQualifier.isPresent() || hasQualifier.get() instanceof Default) {
-                    producers.put(ppm.getBean(), ppm.getAnnotatedProducerMethod());
-                }
-            }
-        }
+    protected void recordProducerMethods(
+            @Observes ProcessProducerMethod<? extends org.eclipse.microprofile.metrics.Metric, ?> ppm) {
+        recordProducerMethod(ppm);
     }
 
     /**
@@ -655,14 +564,15 @@ public class MetricsCdiExtension implements Extension {
         }
 
         MetricRegistry registry = getMetricRegistry();
-        producers.entrySet().forEach(entry -> {
-            Metric metric = entry.getValue().getAnnotation(Metric.class);
+        producers().forEach((bean, annotatedMember) -> {
+            Metric metric = annotatedMember.getAnnotation(Metric.class);
             if (metric != null) {
-                String metricName = getMetricName(new AnnotatedElementWrapper(entry.getValue()),
-                                                  entry.getValue().getDeclaringType().getJavaClass(),
-                                                  MetricUtil.MatchingType.METHOD,
-                                                  metric.name(), metric.absolute());
-                T instance = getReference(bm, entry.getValue().getBaseType(), entry.getKey());
+                String metricName = getMetricName(new AnnotatedElementWrapper(annotatedMember),
+                        annotatedMember.getDeclaringType()
+                                .getJavaClass(),
+                        MetricUtil.MatchingType.METHOD,
+                        metric.name(), metric.absolute());
+                T instance = getReference(bm, annotatedMember.getBaseType(), bean);
                 Metadata md = Metadata.builder()
                         .withName(metricName)
                         .withDisplayName(metric.displayName())
@@ -674,7 +584,7 @@ public class MetricsCdiExtension implements Extension {
                 registry.register(md, instance);
             }
         });
-        producers.clear();
+        producers().clear();
     }
 
     private void collectSyntheticSimpleTimerMetric(@Observes ProcessManagedBean<?> pmb) {

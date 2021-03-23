@@ -34,6 +34,7 @@
     <name>Helidon Service Common Project</name>
     <modules>
         <module>rest</module>
+        <module>rest-cdi</module>
     </modules>
 
 </project>
