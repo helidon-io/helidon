@@ -111,22 +111,24 @@ public final class FileService implements Service {
 
     private void streamUpload(ServerRequest req, ServerResponse res) {
         req.content().asStream(ReadableBodyPart.class)
-                .filter(part -> "file[]".equals(part.name()))
-                .limit(1) // FIXME: Why there is no complete?
-                .flatMap(part -> part.content()
-                        .map(DataChunk::data)
-                        .flatMapIterable(Arrays::asList)
-                        .to(IoMulti.writeToFile(storage.create(part.filename()))
-                                .executor(executor)
-                                .build())
-                )
+                .forEach(part -> {
+                    if ("file[]".equals(part.name())) {
+                        part.content().map(DataChunk::data)
+                                .flatMapIterable(Arrays::asList)
+                                .to(IoMulti.writeToFile(storage.create(part.filename()))
+                                        .executor(executor)
+                                        .build());
+                    } else {
+                        // when streaming unconsumed parts needs to be drained
+                        part.drain();
+                    }
+                })
                 .onError(res::send)
                 .onComplete(() -> {
                     res.status(Http.Status.MOVED_PERMANENTLY_301);
                     res.headers().put(Http.Header.LOCATION, "/ui");
                     res.send();
-                })
-                .ignoreElements();
+                }).ignoreElement();
     }
 
 }

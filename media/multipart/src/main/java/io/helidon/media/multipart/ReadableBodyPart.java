@@ -18,6 +18,7 @@ package io.helidon.media.multipart;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.media.common.MessageBodyReadableContent;
 
 /**
@@ -38,6 +39,13 @@ public final class ReadableBodyPart implements BodyPart {
     @Override
     public MessageBodyReadableContent content() {
         return content;
+    }
+
+    /**
+     * Release all chunks and complete publisher of part's content. 
+     */
+    public void drain() {
+        this.content().forEach(DataChunk::release);
     }
 
     @Override
