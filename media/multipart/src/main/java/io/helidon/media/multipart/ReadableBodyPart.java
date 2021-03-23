@@ -42,7 +42,7 @@ public final class ReadableBodyPart implements BodyPart {
     }
 
     /**
-     * Release all chunks and complete publisher of part's content. 
+     * Release all chunks and complete publisher of part's content.
      */
     public void drain() {
         this.content().forEach(DataChunk::release);
