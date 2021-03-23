@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -238,7 +238,7 @@ class DigestToken {
         return user.digestHa1(realm, algorithm)
                 .map(ha1 -> {
                     String digest = digestFromHa1(ha1);
-                    return digest.equals(response);
+                    return MessageDigest.isEqual(response.getBytes(StandardCharsets.UTF_8), digest.getBytes(StandardCharsets.UTF_8));
                 })
                 .orElse(false);
     }
