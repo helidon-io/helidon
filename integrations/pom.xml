@@ -40,6 +40,7 @@
     </properties>
 
     <modules>
+        <module>common</module>
         <module>cdi</module>
         <module>graal</module>
         <module>db</module>
