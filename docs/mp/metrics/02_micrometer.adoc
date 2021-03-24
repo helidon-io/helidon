@@ -1,0 +1,74 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Micrometer Metrics
+:description: Helidon Micrometer integration
+:keywords: micrometer, helidon, metrics, integration, microprofile
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.integrations.micrometer/io/helidon/integrations/micrometer
+:h1Prefix: MP
+:common-page-prefix-inc: ../../shared/micrometer/common_shared.adoc
+:isMP: true
+
+
+include::{common-page-prefix-inc}[tags=intro]
+
+include::{common-page-prefix-inc}[tags=prereq]
+
+== Using Micrometer in Your Application
+Add the Micrometer `@Timed` and `@Counted` annotations to methods in your application.
+
+The examples below enhance the Helidon MP QuickStart application to track (by time and invocation count) all `GET` methods and to count all requests for a personalized greeting.
+
+=== Add Micrometer annotations
+
+[source,java]
+.Adding Micrometer annotations to JAX-RS resource `GET` methods
+----
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
+    // <1>
+    private static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
+    private static final String PERSONALIZED_GETS_COUNTER_DESCRIPTION = "Counts personalized GET operations";
+    private static final String GETS_TIMER_NAME = "allGets";
+    private static final String GETS_TIMER_DESCRIPTION = "Tracks all GET operations";
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Timed(value = GETS_TIMER_NAME, description = GETS_TIMER_DESCRIPTION, histogram = true) // <2>
+    public JsonObject getDefaultMessage() {
+        return createResponse("World");
+    }
+
+    @Path("/{name}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Counted(value = PERSONALIZED_GETS_COUNTER_NAME, description = PERSONALIZED_GETS_COUNTER_DESCRIPTION) // <3>
+    @Timed(value = GETS_TIMER_NAME, description = GETS_TIMER_DESCRIPTION, histogram = true) // <2>
+    public JsonObject getMessage(@PathParam("name") String name) {
+        return createResponse(name);
+    }
+----
+<1> Declare constants used in annotating multiple methods.
+<2> Use `@Timed` to time and count both `GET` methods.
+<3> Use `@Counted` to count the accesses to the `GET` method that returns a personalized greeting.
+
+include::{common-page-prefix-inc}[tags=overriding-intro;overriding-using-config]
+
+include::{common-page-prefix-inc}[tags=accessing-endpoint-intro]
+
+Within Helidon, each type of meter registry is paired with code that examines the incoming HTTP request and decides whether the request matches up with the associated meter registry. The first pairing that accepts the request returns the response.
