@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.logging.slf4j;
 
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.common.context.spi.DataPropagationProvider;
 
@@ -29,7 +30,7 @@ public class Slf4jMdcPropagator implements DataPropagationProvider<Map<String, S
 
     @Override
     public Map<String, String> data() {
-        return MDC.getCopyOfContextMap();
+        return Optional.ofNullable(MDC.getCopyOfContextMap()).orElseGet(Map::of);
     }
 
     @Override
