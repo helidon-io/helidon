@@ -90,6 +90,7 @@
         <version.lib.logback>1.2.3</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
+        <version.lib.micrometer>1.6.5</version.lib.micrometer>
         <version.lib.micronaut>2.2.0</version.lib.micronaut>
         <version.lib.micronaut.data>2.2.0</version.lib.micronaut.data>
         <version.lib.micronaut.sql>3.3.1</version.lib.micronaut.sql>
@@ -550,6 +551,18 @@
                 <groupId>com.oracle.database.messaging</groupId>
                 <artifactId>aqapi</artifactId>
                 <version>${version.lib.database.messaging}</version>
+            </dependency>
+
+            <!-- Micrometer related -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${version.lib.micrometer}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+                <version>${version.lib.micrometer}</version>
             </dependency>
 
             <!-- Microprofile related -->
