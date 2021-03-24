@@ -43,7 +43,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
  */
 abstract class InterceptorBase<M extends Metric> {
 
-    static final Logger LOGGER = Logger.getLogger(InterceptorBase.class.getPackageName() + ".Interceptor*");
+    private static final Logger LOGGER = Logger.getLogger(InterceptorBase.class.getName());
 
     private final Class<? extends Annotation> annotationType;
     private final Class<M> metricType;
