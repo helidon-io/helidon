@@ -17,7 +17,6 @@
 package io.helidon.microprofile.metrics;
 
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 
 import javax.interceptor.InvocationContext;
 
@@ -30,7 +29,7 @@ import javax.interceptor.InvocationContext;
  *     <ul>
  *         <li>Create an instance of a class which implements {@code InterceptorRunner}.</li>
  *         <li>From the interceptor's {@code @AroundConstruct} and {@code @AroundInvoke} methods, invoke one of the variants of
- *         the runner's {@link #run(InvocationContext, Supplier, BiConsumer) run} method. Which variant depends on whether the
+ *         the runner's {@link #run(InvocationContext, Iterable, BiConsumer) run} method. Which variant depends on whether the
  *         specific interceptor needs to operate on the work items
  *         <ul>
  *             <li>only before (e.g., to increment a counter metric), or</li>
@@ -48,7 +47,7 @@ import javax.interceptor.InvocationContext;
  *                intercepted invocation runs, and</li>
  *                <li>an after-completion {@code Consumer} of work item which performs an action on each work item after the
  *                intercepted invocation has finished, only for the "before-and-after"
- *                {@link #run(InvocationContext, Supplier, BiConsumer, BiConsumer) run} variant.</li>
+ *                {@link #run(InvocationContext, Iterable, BiConsumer, BiConsumer) run} variant.</li>
  *             </ul>
  *         </p>
  *         </li>
@@ -83,7 +82,7 @@ interface InterceptRunner {
      */
      <T> Object run(
             InvocationContext context,
-            Supplier<Iterable<T>> workItems,
+            Iterable<T> workItems,
             BiConsumer<InvocationContext, T> preInvokeHandler) throws Exception;
 
     /**
@@ -100,7 +99,7 @@ interface InterceptRunner {
      */
     <T> Object run(
             InvocationContext context,
-            Supplier<Iterable<T>> workItems,
+            Iterable<T> workItems,
             BiConsumer<InvocationContext, T> preInvokeHandler,
             BiConsumer<InvocationContext, T> completeHandler) throws Exception;
 }

@@ -88,14 +88,14 @@ abstract class InterceptorBase<M extends Metric> {
 
     @AroundConstruct
     Object aroundConstruct(InvocationContext context) throws Exception {
-        InterceptInfo<MetricWorkItem> interceptInfo = extension.interceptInfo(context.getConstructor());
-        return interceptInfo.runner().run(context, interceptInfo.workItems(annotationType), this::preInvoke);
+        InterceptionTargetInfo<MetricWorkItem> interceptionTargetInfo = extension.interceptInfo(context.getConstructor());
+        return interceptionTargetInfo.runner().run(context, interceptionTargetInfo.workItems(annotationType), this::preInvoke);
     }
 
     @AroundInvoke
     Object aroundInvoke(InvocationContext context) throws Exception {
-        InterceptInfo<MetricWorkItem> interceptInfo = extension.interceptInfo(context.getMethod());
-        return interceptInfo.runner().run(context, interceptInfo.workItems(annotationType), this::preInvoke);
+        InterceptionTargetInfo<MetricWorkItem> interceptionTargetInfo = extension.interceptInfo(context.getMethod());
+        return interceptionTargetInfo.runner().run(context, interceptionTargetInfo.workItems(annotationType), this::preInvoke);
     }
 
     void preInvoke(InvocationContext context, MetricWorkItem workItem) {

@@ -147,7 +147,7 @@ public class MetricsCdiExtension implements Extension {
     private final Set<Class<?>> syntheticSimpleTimerClassesProcessed = new HashSet<>();
     private final Set<Method> syntheticSimpleTimersToRegister = new HashSet<>();
 
-    private final Map<Executable, InterceptInfo<MetricWorkItem>> interceptInfo = new HashMap<>();
+    private final Map<Executable, InterceptionTargetInfo<MetricWorkItem>> interceptInfo = new HashMap<>();
 
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
@@ -285,7 +285,7 @@ public class MetricsCdiExtension implements Extension {
         return result.toArray(new Tag[result.size()]);
     }
 
-    InterceptInfo<MetricWorkItem> interceptInfo(Executable executable) {
+    InterceptionTargetInfo<MetricWorkItem> interceptInfo(Executable executable) {
         return interceptInfo.get(executable);
     }
 
@@ -443,8 +443,8 @@ public class MetricsCdiExtension implements Extension {
                         // VisibilityTimedMethodBeanTest.
                         if (lookupResult.getType() != MetricUtil.MatchingType.METHOD
                                 || clazz.equals(method.getDeclaringClass())) {
-                            InterceptInfo<MetricWorkItem> info = interceptInfo.computeIfAbsent(method,
-                                    m -> InterceptInfo.create(method));
+                            InterceptionTargetInfo<MetricWorkItem> info = interceptInfo.computeIfAbsent(method,
+                                    m -> InterceptionTargetInfo.create(method));
                             MetricInfo<?> metricInfo = registerMetricInternal(method, clazz, lookupResult);
                             info.addWorkItem(annotation, MetricWorkItem.create(metricInfo.metricID, metricInfo.metric));
                         }
@@ -459,8 +459,8 @@ public class MetricsCdiExtension implements Extension {
             }
             METRIC_ANNOTATIONS.forEach(annotation ->
                 MetricUtil.lookupAnnotations(type, annotatedConstructor, annotation).forEach(lookupResult -> {
-                        InterceptInfo<MetricWorkItem> info = interceptInfo.computeIfAbsent(c,
-                                InterceptInfo::create);
+                        InterceptionTargetInfo<MetricWorkItem> info = interceptInfo.computeIfAbsent(c,
+                                InterceptionTargetInfo::create);
                         MetricInfo<?> metricInfo = registerMetricInternal(c, clazz, lookupResult);
                         info.addWorkItem(annotation, MetricWorkItem.create(metricInfo.metricID, metricInfo.metric));
                     }));
@@ -544,7 +544,8 @@ public class MetricsCdiExtension implements Extension {
     }
 
     private void registerAndSaveSyntheticSimpleTimer(Method method) {
-        InterceptInfo<MetricWorkItem> info = interceptInfo.computeIfAbsent(method, m -> InterceptInfo.create(method));
+        InterceptionTargetInfo<MetricWorkItem> info = interceptInfo.computeIfAbsent(method,
+                m -> InterceptionTargetInfo.create(method));
 
         info.addWorkItem(SyntheticSimplyTimed.class,
                 MetricWorkItem.create(SYNTHETIC_SIMPLE_TIMER_METADATA, syntheticSimpleTimer(method),

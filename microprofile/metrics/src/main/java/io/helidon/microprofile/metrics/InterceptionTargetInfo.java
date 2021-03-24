@@ -22,14 +22,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
- * Records information about an intercepted method.
+ * Records information about an intercepted executable.
  * <p>
  *     Specifically:
  * <ul>
- *     <li>the work items to be updated when the corresponding method is intercepted, organized by the annotation class that
+ *     <li>the work items to be updated when the corresponding executable is intercepted, organized by the annotation class that
  *     gave rise to each work item; and</li>
  *     <li>the {@code InterceptRunner} to use in updating the work items and invoking the method or constructor.</li>
  * </ul>
@@ -37,7 +36,7 @@ import java.util.function.Supplier;
  *
  * @param <T> base type of the work items handled by the interceptor represented by this instance
  */
-class InterceptInfo<T> {
+class InterceptionTargetInfo<T> {
 
     private final InterceptRunner runner;
 
@@ -49,11 +48,11 @@ class InterceptInfo<T> {
      * @param executable the constructor or method subject to interception
      * @return the new instance
      */
-    static <T> InterceptInfo<T> create(Executable executable) {
-        return new InterceptInfo<>(InterceptRunnerImpl.create(executable));
+    static <T> InterceptionTargetInfo<T> create(Executable executable) {
+        return new InterceptionTargetInfo<>(InterceptRunnerImpl.create(executable));
     }
 
-    private InterceptInfo(InterceptRunner runner) {
+    private InterceptionTargetInfo(InterceptRunner runner) {
         this.runner = runner;
     }
 
@@ -61,12 +60,12 @@ class InterceptInfo<T> {
         return runner;
     }
 
-    Supplier<Iterable<T>> workItems(Class<? extends Annotation> annotationType) {
+    Iterable<T> workItems(Class<? extends Annotation> annotationType) {
         /*
          * Build a supplier of the iterable, because before-and-after runners will need to process the work items twice so we need
          *  to give the runner a supplier.
          */
-        return () -> workItemsByAnnotationType.get(annotationType);
+        return workItemsByAnnotationType.get(annotationType);
     }
 
     /**

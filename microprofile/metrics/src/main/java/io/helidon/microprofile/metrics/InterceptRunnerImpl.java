@@ -23,7 +23,6 @@ import java.lang.reflect.Parameter;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -66,26 +65,23 @@ class InterceptRunnerImpl implements InterceptRunner {
     @Override
     public <T> Object run(
             InvocationContext context,
-            Supplier<Iterable<T>> workItems,
+            Iterable<T> workItems,
             BiConsumer<InvocationContext, T> preInvokeHandler) throws Exception {
-        workItems.get()
-                .forEach(workItem -> preInvokeHandler.accept(context, workItem));
+        workItems.forEach(workItem -> preInvokeHandler.accept(context, workItem));
         return context.proceed();
     }
 
     @Override
     public <T> Object run(
             InvocationContext context,
-            Supplier<Iterable<T>> workItems,
+            Iterable<T> workItems,
             BiConsumer<InvocationContext, T> preInvokeHandler,
             BiConsumer<InvocationContext, T> completeHandler) throws Exception {
-        workItems.get()
-                .forEach(workItem -> preInvokeHandler.accept(context, workItem));
+        workItems.forEach(workItem -> preInvokeHandler.accept(context, workItem));
         try {
             return context.proceed();
         } finally {
-            workItems.get()
-                    .forEach(workItem -> completeHandler.accept(context, workItem));
+            workItems.forEach(workItem -> completeHandler.accept(context, workItem));
         }
     }
 
@@ -106,7 +102,7 @@ class InterceptRunnerImpl implements InterceptRunner {
         @Override
         public <T> Object run(
                 InvocationContext context,
-                Supplier<Iterable<T>> workItems,
+                Iterable<T> workItems,
                 BiConsumer<InvocationContext, T> preInvokeHandler,
                 BiConsumer<InvocationContext, T> completeHandler) throws Exception {
 
@@ -114,8 +110,7 @@ class InterceptRunnerImpl implements InterceptRunner {
             // it in the completion callback. Any other null argument would trigger an NPE from the current call stack.
             Objects.requireNonNull(completeHandler, "postInvokeHandler");
 
-            workItems.get()
-                    .forEach(workItem -> preInvokeHandler.accept(context, workItem));
+            workItems.forEach(workItem -> preInvokeHandler.accept(context, workItem));
             AsyncResponse asyncResponse = AsyncResponse.class.cast(context.getParameters()[asyncResponseSlot]);
             asyncResponse.register(FinishCallback.create(context, completeHandler, workItems));
             return context.proceed();
@@ -135,14 +130,14 @@ class InterceptRunnerImpl implements InterceptRunner {
 
         private final InvocationContext context;
         private final BiConsumer<InvocationContext, T> completeHandler;
-        private final Supplier<Iterable<T>> workItems;
+        private final Iterable<T> workItems;
 
         static <T> FinishCallback<T> create(InvocationContext context, BiConsumer<InvocationContext, T> completeHandler,
-                Supplier<Iterable<T>> workItems) {
+                Iterable<T> workItems) {
             return new FinishCallback<>(context, completeHandler, workItems);
         }
         private FinishCallback(InvocationContext context, BiConsumer<InvocationContext, T> completeHandler,
-                Supplier<Iterable<T>> workItems) {
+                Iterable<T> workItems) {
             this.context = context;
             this.completeHandler = completeHandler;
             this.workItems = workItems;
@@ -150,7 +145,7 @@ class InterceptRunnerImpl implements InterceptRunner {
 
         @Override
         public void onComplete(Throwable throwable) {
-            workItems.get().forEach(workItem -> completeHandler.accept(context, workItem));
+            workItems.forEach(workItem -> completeHandler.accept(context, workItem));
             if (throwable != null) {
                 LOGGER.log(Level.FINE, "Throwable detected by interceptor async callback", throwable);
             }
