@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2017, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -49,6 +49,15 @@
             -->
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-mp</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <!-- this library implements a secret provider and encryption provider that only makes
+            sense when security is used, not needed or used otherwise
+            -->
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
