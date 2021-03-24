@@ -27,7 +27,7 @@ import org.eclipse.microprofile.metrics.Metric;
  *
  * @param <T> type of the metric the interceptor updates
  */
-abstract class InterceptorTimedBase<T extends Metric> extends InterceptorWithPostInvoke<T> {
+abstract class InterceptorTimedBase<T extends Metric> extends MetricsInterceptorBase.WithPostComplete<T> {
 
     private long startNanos;
 

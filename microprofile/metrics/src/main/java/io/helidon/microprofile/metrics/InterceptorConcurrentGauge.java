@@ -27,7 +27,7 @@ import org.eclipse.microprofile.metrics.ConcurrentGauge;
 @org.eclipse.microprofile.metrics.annotation.ConcurrentGauge
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 11)
-final class InterceptorConcurrentGauge extends InterceptorWithPostInvoke<ConcurrentGauge> {
+final class InterceptorConcurrentGauge extends MetricsInterceptorBase.WithPostComplete<ConcurrentGauge> {
 
 
     InterceptorConcurrentGauge() {

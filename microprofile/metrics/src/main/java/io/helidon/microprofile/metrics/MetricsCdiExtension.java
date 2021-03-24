@@ -78,6 +78,7 @@ import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.servicecommon.restcdi.AnnotationLookupResult;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
+import io.helidon.servicecommon.restcdi.InterceptInfo;
 import io.helidon.webserver.Routing;
 
 import org.eclipse.microprofile.config.ConfigProvider;

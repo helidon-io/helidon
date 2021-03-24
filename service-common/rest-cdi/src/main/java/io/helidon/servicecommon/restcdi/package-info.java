@@ -15,6 +15,7 @@
  *
  */
 /**
- * General-purpose reusable code to help write CDI extensions, annotation processing, etc. for Helidon services.
+ * General-purpose reusable artifacts to help write CDI extensions, annotation processing, and interceptors for Helidon
+ * services.
  */
 package io.helidon.servicecommon.restcdi;
