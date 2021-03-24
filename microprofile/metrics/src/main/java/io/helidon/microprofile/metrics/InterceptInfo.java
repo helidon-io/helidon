@@ -70,16 +70,16 @@ class InterceptInfo<T> {
     }
 
     /**
-     * Adds a work item to this info, identifying the interceptor type that will update this work item.
-     * @param annotationClass type of the interceptor
+     * Adds a work item to this info, identifying the annotation type that led to this work item.
+     * @param annotationType type of the interceptor
      * @param workItem the newly-created workItem
      */
-    void addWorkItem(Class<? extends Annotation> annotationClass, T workItem) {
+    void addWorkItem(Class<? extends Annotation> annotationType, T workItem) {
 
         // Using a set for the actual collection subtly handles the case where a class-level and a method- or constructor-level
         // annotation both indicate the same workItem. We do not want to update the same workItem twice in that case.
 
-        Collection<T> workItems = workItemsByAnnotationType.computeIfAbsent(annotationClass, c -> new HashSet<>());
+        Collection<T> workItems = workItemsByAnnotationType.computeIfAbsent(annotationType, c -> new HashSet<>());
         workItems.add(workItem);
     }
 }
