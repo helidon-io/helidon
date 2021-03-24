@@ -19,6 +19,7 @@ package io.helidon.microprofile.metrics;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
+import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.ws.rs.Path;
 import java.util.Set;
@@ -41,6 +42,13 @@ public class VetoCdiExtension implements Extension {
         if (VETOED_RESOURCE_CLASSES.contains(resourceClass)) {
             LOGGER.log(Level.FINE, () -> "Unit test is vetoing " + resourceClass.getName());
             resourceType.veto();
+        }
+    }
+
+    private void ensureVetoedBeansAreNotProcessed(@Observes ProcessManagedBean<?> pmb) {
+        if (VETOED_RESOURCE_CLASSES.contains(pmb.getAnnotatedBeanClass().getJavaClass())) {
+            throw new RuntimeException("Unexpectedly found vetoed bean " + pmb.getAnnotatedBeanClass().getJavaClass().getName()
+                    + " in ProcessManagedBean observer");
         }
     }
 }
