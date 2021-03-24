@@ -53,15 +53,6 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <!-- this library implements a secret provider and encryption provider that only makes
-            sense when security is used, not needed or used otherwise
-            -->
-            <groupId>io.helidon.security</groupId>
-            <artifactId>helidon-security</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
             <scope>test</scope>

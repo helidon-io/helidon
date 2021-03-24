@@ -14,4 +14,23 @@
 # limitations under the License.
 #
 
-io.helidon.config.encryption.ConfigSecurityProviderService
+app:
+  # this could be loaded from k8s secrets, defined in env vars, or in system properties
+  password: "secret-password"
+
+security:
+  providers:
+    - config-vault:
+        master-password: "very much secret"
+  secrets:
+    - name: "password"
+      provider: "config-vault"
+      config:
+        value: "${app.password}"
+  encryption:
+    - name: "config-vault-default"
+      provider: "config-vault"
+    - name: "config-vault-override"
+      provider: "config-vault"
+      config:
+        password: "override"

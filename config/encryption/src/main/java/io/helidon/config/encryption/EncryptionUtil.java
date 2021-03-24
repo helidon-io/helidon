@@ -151,7 +151,17 @@ public final class EncryptionUtil {
         return encryptAesBytes(masterPassword, secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    static String encryptAesBytes(char[] masterPassword, byte[] secret) throws ConfigEncryptionException {
+    /**
+     * Encrypt using AES with GCM method, key is derived from password with random salt.
+     *
+     * @param masterPassword master password
+     * @param secret         secret to encrypt
+     * @return Encrypted value base64 encoded
+     * @throws ConfigEncryptionException If any problem with encryption occurs
+     * @deprecated this method will be removed once a separate module for encryption is created
+     */
+    @Deprecated(since = "2.2.0")
+    public static String encryptAesBytes(char[] masterPassword, byte[] secret) throws ConfigEncryptionException {
         Objects.requireNonNull(masterPassword, "Password must be provided for encryption");
         Objects.requireNonNull(secret, "Secret message must be provided to be encrypted");
 
@@ -258,7 +268,19 @@ public final class EncryptionUtil {
         return new String(decryptAesBytes(masterPassword, encryptedBase64), StandardCharsets.UTF_8);
     }
 
-    static byte[] decryptAesBytes(char[] masterPassword, String encryptedBase64) {
+    /**
+     * Decrypt using AES.
+     * Will only decrypt messages encrypted with {@link #encryptAes(char[], String)} as the algorithm used is quite custom
+     * (number of bytes of seed, of salt and approach).
+     *
+     * @param masterPassword  master password
+     * @param encryptedBase64 encrypted secret, base64 encoded
+     * @return Decrypted secret
+     * @throws ConfigEncryptionException if something bad happens during decryption (e.g. wrong password)
+     * @deprecated This method will be moved to a new module
+     */
+    @Deprecated(since = "2.2.0")
+    public static byte[] decryptAesBytes(char[] masterPassword, String encryptedBase64) {
         Objects.requireNonNull(masterPassword, "Password must be provided for encryption");
         Objects.requireNonNull(encryptedBase64, "Encrypted bytes must be provided for decryption (base64 encoded)");
 

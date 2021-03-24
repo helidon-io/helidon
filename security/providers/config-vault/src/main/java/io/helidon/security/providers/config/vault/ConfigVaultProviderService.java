@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.config.encryption;
+package io.helidon.security.providers.config.vault;
 
 import javax.annotation.Priority;
 
@@ -27,13 +27,13 @@ import io.helidon.security.spi.SecurityProviderService;
  * Do not instantiate directly.
  */
 @Priority(5000)
-public class ConfigSecurityProviderService implements SecurityProviderService {
+public class ConfigVaultProviderService implements SecurityProviderService {
     /**
      * @deprecated do not use, this should only be invoked by Java Service Loader
-     * @see io.helidon.config.encryption.ConfigSecurityProvider
+     * @see ConfigVaultProvider
      */
     @Deprecated
-    public ConfigSecurityProviderService() {
+    public ConfigVaultProviderService() {
     }
 
     @Override
@@ -43,11 +43,11 @@ public class ConfigSecurityProviderService implements SecurityProviderService {
 
     @Override
     public Class<? extends SecurityProvider> providerClass() {
-        return ConfigSecurityProvider.class;
+        return ConfigVaultProvider.class;
     }
 
     @Override
     public SecurityProvider providerInstance(Config config) {
-        return ConfigSecurityProvider.create(config);
+        return ConfigVaultProvider.create(config);
     }
 }

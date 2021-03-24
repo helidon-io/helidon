@@ -25,12 +25,9 @@ module io.helidon.config.encryption {
     requires transitive io.helidon.config;
 
     requires static io.helidon.config.mp;
-    requires static io.helidon.security;
 
     exports io.helidon.config.encryption;
 
     provides io.helidon.config.spi.ConfigFilter with io.helidon.config.encryption.EncryptionFilterService;
     provides io.helidon.config.mp.spi.MpConfigFilter with io.helidon.config.encryption.MpEncryptionFilter;
-    provides io.helidon.security.spi.SecurityProviderService
-            with io.helidon.config.encryption.ConfigSecurityProviderService;
 }

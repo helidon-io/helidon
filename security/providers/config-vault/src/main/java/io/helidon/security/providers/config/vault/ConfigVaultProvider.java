@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.config.encryption;
+package io.helidon.security.providers.config.vault;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.config.encryption.ConfigEncryptionException;
+import io.helidon.config.encryption.ConfigProperties;
+import io.helidon.config.encryption.EncryptionUtil;
 import io.helidon.security.spi.EncryptionProvider;
 import io.helidon.security.spi.ProviderConfig;
 import io.helidon.security.spi.SecretsProvider;
@@ -30,14 +35,14 @@ import io.helidon.security.spi.SecretsProvider;
  * Security provider to retrieve secrets directly from configuration and to encrypt/decrypt data
  * using config's security setup.
  */
-public class ConfigSecurityProvider implements SecretsProvider<ConfigSecurityProvider.SecretConfig>,
-                                               EncryptionProvider<ConfigSecurityProvider.EncryptionConfig> {
+public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.SecretConfig>,
+                                            EncryptionProvider<ConfigVaultProvider.EncryptionConfig> {
 
     private static final String CIPHER_TEXT_PREFIX_V2 = "helidon:2:";
 
     private final Optional<EncryptionSupport> aesEncryption;
 
-    private ConfigSecurityProvider(Builder builder) {
+    private ConfigVaultProvider(Builder builder) {
         this.aesEncryption = builder.aesEncryption();
     }
 
@@ -56,7 +61,7 @@ public class ConfigSecurityProvider implements SecretsProvider<ConfigSecurityPro
      *
      * @return new security provider
      */
-    public static ConfigSecurityProvider create() {
+    public static ConfigVaultProvider create() {
         return builder().build();
     }
 
@@ -66,7 +71,7 @@ public class ConfigSecurityProvider implements SecretsProvider<ConfigSecurityPro
      * @param config configuration of this provider
      * @return new security provider
      */
-    public static ConfigSecurityProvider create(Config config) {
+    public static ConfigVaultProvider create(Config config) {
         return builder().config(config).build();
     }
 
@@ -83,19 +88,24 @@ public class ConfigSecurityProvider implements SecretsProvider<ConfigSecurityPro
 
     @Override
     public EncryptionSupport encryption(Config config) {
-        return aesEncryption.orElseThrow(() -> new SecurityException("Encryption is not configured"));
+        return encryption(EncryptionConfig.create(config));
     }
 
     @Override
     public EncryptionSupport encryption(EncryptionConfig providerConfig) {
-        return aesEncryption.orElseThrow(() -> new SecurityException("Encryption is not configured"));
+        return providerConfig.aesEncryption()
+                .or(() -> aesEncryption)
+                .orElseThrow(() -> new SecurityException("Encryption is not configured"));
     }
 
     /**
      * Configuration of encryption. Currently has no additional configuration options.
      */
     public static class EncryptionConfig implements ProviderConfig {
-        private EncryptionConfig() {
+        private final Optional<char[]> password;
+
+        private EncryptionConfig(Optional<char[]> password) {
+            this.password = password;
         }
 
         /**
@@ -104,7 +114,45 @@ public class ConfigSecurityProvider implements SecretsProvider<ConfigSecurityPro
          * @return new instance with default configuration
          */
         public static EncryptionConfig create() {
-            return new EncryptionConfig();
+            return new EncryptionConfig(Optional.empty());
+        }
+
+        /**
+         * Create a new instance with custom password.
+         * @param password password to use
+         * @return a new instance using the custom password
+         */
+        public static EncryptionConfig create(char[] password) {
+            return new EncryptionConfig(Optional.ofNullable(password));
+        }
+
+        /**
+         * Create a new instance from config.
+         *
+         * @param config config to read password from (if any)
+         * @return a new instance configured from config
+         */
+        public static EncryptionConfig create(Config config) {
+            return new EncryptionConfig(config.get("password").asString().map(String::toCharArray));
+        }
+
+        private static EncryptionSupport encryptionSupport(char[] password) {
+            Function<byte[], Single<String>> encrypt = bytes -> {
+                return Single.just(CIPHER_TEXT_PREFIX_V2 + EncryptionUtil.encryptAesBytes(password, bytes));
+            };
+            Function<String, Single<byte[]>> decrypt = cipherText -> {
+                if (cipherText.startsWith(CIPHER_TEXT_PREFIX_V2)) {
+                    String base64 = cipherText.substring(CIPHER_TEXT_PREFIX_V2.length());
+                    return Single.just(EncryptionUtil.decryptAesBytes(password, base64));
+                } else {
+                    return Single.error(new ConfigEncryptionException("Invalid cipher text"));
+                }
+            };
+            return EncryptionSupport.create(encrypt, decrypt);
+        }
+
+        Optional<EncryptionSupport> aesEncryption() {
+            return password.map(EncryptionConfig::encryptionSupport);
         }
     }
 
@@ -169,22 +217,34 @@ public class ConfigSecurityProvider implements SecretsProvider<ConfigSecurityPro
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.config.encryption.ConfigSecurityProvider}.
+     * Fluent API builder for {@link ConfigVaultProvider}.
      */
-    public static class Builder implements io.helidon.common.Builder<ConfigSecurityProvider> {
+    public static class Builder implements io.helidon.common.Builder<ConfigVaultProvider> {
         private Config config = Config.empty();
         private Optional<char[]> masterPassword = Optional.empty();
 
         private Builder() {
         }
 
+        private static Optional<char[]> resolveMasterPassword() {
+            Map<String, String> env = System.getenv();
+            if (env.containsKey(ConfigProperties.MASTER_PASSWORD_ENV_VARIABLE)) {
+                return Optional.of(env.get(ConfigProperties.MASTER_PASSWORD_ENV_VARIABLE).toCharArray());
+            }
+            Properties properties = System.getProperties();
+            if (properties.containsKey(ConfigProperties.MASTER_PASSWORD_CONFIG_KEY)) {
+                return Optional.of(properties.getProperty(ConfigProperties.MASTER_PASSWORD_CONFIG_KEY).toCharArray());
+            }
+            return Optional.empty();
+        }
+
         @Override
-        public ConfigSecurityProvider build() {
+        public ConfigVaultProvider build() {
             this.masterPassword = masterPassword
                     .or(() -> config.get("master-password").asString().map(String::toCharArray))
-                    .or(() -> EncryptionUtil.resolveMasterPassword(false, config));
+                    .or(Builder::resolveMasterPassword);
 
-            return new ConfigSecurityProvider(this);
+            return new ConfigVaultProvider(this);
         }
 
         /**
@@ -212,20 +272,7 @@ public class ConfigSecurityProvider implements SecretsProvider<ConfigSecurityPro
         }
 
         Optional<EncryptionSupport> aesEncryption() {
-            return masterPassword.map(it -> {
-                Function<byte[], Single<String>> encrypt = bytes -> {
-                    return Single.just(CIPHER_TEXT_PREFIX_V2 + EncryptionUtil.encryptAesBytes(it, bytes));
-                };
-                Function<String, Single<byte[]>> decrypt = cipherText -> {
-                    if (cipherText.startsWith(CIPHER_TEXT_PREFIX_V2)) {
-                        String base64 = cipherText.substring(CIPHER_TEXT_PREFIX_V2.length());
-                        return Single.just(EncryptionUtil.decryptAesBytes(it, base64));
-                    } else {
-                        return Single.error(new ConfigEncryptionException("Invalid cipher text"));
-                    }
-                };
-                return EncryptionSupport.create(encrypt, decrypt);
-            });
+            return masterPassword.map(EncryptionConfig::encryptionSupport);
         }
     }
 }
