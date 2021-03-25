@@ -113,7 +113,7 @@ public abstract class RestApiBase implements RestApi {
 
         LOGGER.finest(() -> requestId + ": Invoking " + method + " on path " + path + " with bytes request");
 
-        WebClientRequestBuilder requestBuilder = webClient.method(method.name())
+        WebClientRequestBuilder requestBuilder = webClient.method(method)
                 .path(path);
         addHeaders(requestBuilder, path, request, method, requestId);
         addQueryParams(requestBuilder, path, request, method, requestId);
@@ -201,7 +201,7 @@ public abstract class RestApiBase implements RestApi {
                                                                    String path,
                                                                    ApiRequest<?> request,
                                                                    String requestId) {
-        WebClientRequestBuilder requestBuilder = webClient.method(method.name())
+        WebClientRequestBuilder requestBuilder = webClient.method(method)
                 .path(path);
         addHeaders(requestBuilder, path, request, method, requestId);
         addQueryParams(requestBuilder, path, request, method, requestId);
