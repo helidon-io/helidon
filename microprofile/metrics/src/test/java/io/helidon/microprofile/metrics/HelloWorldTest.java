@@ -38,6 +38,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,7 +69,11 @@ public class HelloWorldTest {
     @BeforeAll
     public static void initialize() {
         System.setProperty("jersey.config.server.logging.verbosity", "FINE");
-        MetricsMpServiceTest.initTest();
+    }
+
+    @AfterAll
+    public static void cleanup() {
+        MetricsMpServiceTest.wrapupTest();
     }
 
     @BeforeEach

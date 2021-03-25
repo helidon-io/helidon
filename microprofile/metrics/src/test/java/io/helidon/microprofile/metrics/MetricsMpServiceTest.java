@@ -25,7 +25,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
 
 import javax.inject.Inject;
 
@@ -36,14 +36,14 @@ import javax.inject.Inject;
 @AddBean(HelloWorldResource.class)
 public class MetricsMpServiceTest {
 
-    @BeforeAll
-    public static void initTest() {
-        initSyntheticSimpleTimerRegistry();
+    @AfterAll
+    public static void wrapupTest() {
+        cleanUpSyntheticSimpleTimerRegistry();
     }
 
-    static MetricRegistry initSyntheticSimpleTimerRegistry() {
+    static MetricRegistry cleanUpSyntheticSimpleTimerRegistry() {
         MetricRegistry result = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.BASE);
-//        result.remove(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME);
+        result.remove(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME);
         return result;
     }
 
