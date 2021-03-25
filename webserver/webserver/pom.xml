@@ -195,5 +195,11 @@
             <artifactId>helidon-config-testing</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${version.lib.junit}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

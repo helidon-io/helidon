@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.helidon.webserver.utils.SocketHttpClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -90,15 +91,22 @@ public class HttpPipelineTest {
      * @throws Exception If there are connection problems.
      */
     @Test
+    @Timeout(10)
     public void testPipelining() throws Exception {
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+            LOGGER.info("Sending initial PUT request");
             s.request(Http.Method.PUT, "/");        // reset server
+            LOGGER.info("Sending first GET request - delayed response");
             s.request(Http.Method.GET, "/");        // request_0
+            LOGGER.info("Sending second GET request");
             s.request(Http.Method.GET, "/");        // request_1
+            LOGGER.info("Receiving PUT response");
             String put = s.receive();
             assertThat(put, notNullValue());
+            LOGGER.info("Receiving first GET response");
             String get0 = s.receive();
             assertThat(get0, containsString("Response 0"));
+            LOGGER.info("Receiving second GET response");
             String get1 = s.receive();
             assertThat(get1, containsString("Response 1"));
         }
