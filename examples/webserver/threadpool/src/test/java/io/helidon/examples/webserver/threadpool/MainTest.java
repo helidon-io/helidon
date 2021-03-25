@@ -27,12 +27,14 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MainTest {
 
@@ -48,7 +50,7 @@ public class MainTest {
     }
 
     @BeforeAll
-    public static void startTheServer() throws Exception {
+    public static void startTheServer() {
 
         // Use test configuration so we can have ports allocated dynamically
         Config config = Config.builder().addSource(ConfigSources.classpath("application-test.yaml")).build();
@@ -61,54 +63,53 @@ public class MainTest {
     }
 
     @AfterAll
-    public static void stopServer() throws Exception {
+    public static void stopServer() {
         if (webServer != null) {
-            webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+            webServer.shutdown().await(10, TimeUnit.SECONDS);
         }
     }
 
     @Test
-    public void testHelloWorld() throws Exception {
-        webClient.get()
+    public void testHelloWorld() {
+
+        JsonObject jsonObject;
+        WebClientResponse response;
+
+        jsonObject = webClient.get()
                 .path("/greet")
                 .request(JsonObject.class)
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("message")))
-                .toCompletableFuture()
-                .get();
+                .await();
+        assertEquals("Hello World!", jsonObject.getString("message"));
 
-        webClient.get()
+        jsonObject = webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hello Joe!", jsonObject.getString("message")))
-                .toCompletableFuture()
-                .get();
+                .await();
+        assertEquals("Hello Joe!", jsonObject.getString("message"));
 
-        webClient.put()
+        WebClientResponse res = webClient.put()
                 .path("/greet/greeting")
                 .submit(TEST_JSON_OBJECT)
-                .thenAccept(response -> Assertions.assertEquals(204, response.status().code()))
-                .thenCompose(nothing -> webClient.get()
-                        .path("/greet/Joe")
-                        .request(JsonObject.class))
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hola Joe!", jsonObject.getString("message")))
-                .toCompletableFuture()
-                .get();
+                .await();
+        assertEquals(204, res.status().code());
 
-        webClient.get()
+        JsonObject json = webClient.get()
+                .path("/greet/Joe")
+                .request(JsonObject.class)
+                .await();
+        assertEquals("Hola Joe!", json.getString("message"));
+
+        response = webClient.get()
                 .path("/health")
                 .request()
-                .thenAccept(response -> Assertions.assertEquals(200, response.status().code()))
-                .toCompletableFuture()
-                .get();
+                .await();
+        assertEquals(200, response.status().code());
 
-        webClient.get()
+        response = webClient.get()
                 .path("/metrics")
                 .request()
-                .thenAccept(response -> Assertions.assertEquals(200, response.status().code()))
-                .toCompletableFuture()
-                .get();
+                .await();
+        assertEquals(200, response.status().code());
     }
 
 }

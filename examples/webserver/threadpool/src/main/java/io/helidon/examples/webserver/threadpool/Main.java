@@ -75,10 +75,9 @@ public final class Main {
                     ws.whenShutdown().thenRun(()
                             -> System.out.println("WEB server is DOWN. Good bye!"));
                 })
-                .exceptionally(t -> {
+                .exceptionallyAccept(t -> {
                     System.err.println("Startup failed: " + t.getMessage());
                     t.printStackTrace(System.err);
-                    return null;
                 });
 
         // Server threads are not daemon. No need to block. Just react.
