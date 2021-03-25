@@ -102,7 +102,9 @@ public final class MetricUtil {
             AnnotatedMember<?> annotatedMember,
             Class<A> annotClass) {
         List<LookupResult<A>> result = lookupAnnotations(annotatedMember, annotClass);
-        result.addAll(lookupAnnotations(annotatedType, annotClass));
+        if (result.isEmpty()) {
+            result = lookupAnnotations(annotatedType, annotClass);
+        }
         return result;
     }
 
