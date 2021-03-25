@@ -24,10 +24,16 @@ import java.util.Collections;
  * MediaSupport instances can be used with WebServer and WebClient to register readers and writer.
  * Each of these have method addMediaSupport(), which will add corresponding support.
  * </p><br>
- * Example usage:
+ * WebServer example usage:
  * <pre><code>
  * WebServer.builder()
- *          .addMediaSupport(MediaSupport)
+ *          .addMediaSupport(JsonbSupport.create())
+ *          .build();
+ * </code></pre>
+ * WebClient example usage:
+ * <pre><code>
+ * WebClient.builder()
+ *          .addMediaSupport(JacksonSupport.create())
  *          .build();
  * </code></pre>
  * If you need to register MediaSupport on the request or response, you will need to register them to

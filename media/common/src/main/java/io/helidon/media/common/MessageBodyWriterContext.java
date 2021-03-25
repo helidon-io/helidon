@@ -305,7 +305,8 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
 
             MessageBodyWriter<T> writer = (MessageBodyWriter<T>) writers.select(type, this);
             if (writer == null) {
-                throw new IllegalStateException("No writer found for type: " + type);
+                throw new IllegalStateException("No writer found for type: " + type
+                        + ". This usually occurs when the appropriate MediaSupport has not been added.");
             }
             return applyFilters(writer.write(content, type, this));
         } catch (Throwable ex) {
@@ -352,7 +353,8 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
             }
             MessageBodyStreamWriter<T> writer = (MessageBodyStreamWriter<T>) swriters.select(type, this);
             if (writer == null) {
-                throw new IllegalStateException("No stream writer found for type: " + type);
+                throw new IllegalStateException("No stream writer found for type: " + type
+                        + ". This usually occurs when the appropriate MediaSupport has not been added.");
             }
             return applyFilters(writer.write(content, type, this));
         } catch (Throwable ex) {
