@@ -2,6 +2,7 @@
 package {{package}};
 
 import io.helidon.common.LogConfig;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
@@ -33,37 +34,33 @@ public final class Main {
      * Start the server.
      * @return the created {@link WebServer} instance
      */
-    static WebServer startServer() {
+    static Single<WebServer> startServer() {
+
         // load logging configuration
         LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        // Build server with JSONP support
         WebServer server = WebServer.builder(createRouting(config))
                 .config(config.get("server"))
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 
+        Single<WebServer> webserver = server.start();
+
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
-        server.start()
-                .thenAccept(ws -> {
-                    System.out.println(
-                            "WEB server is up! http://localhost:" + ws.port() + "/greet");
-                    ws.whenShutdown().thenRun(()
-                            -> System.out.println("WEB server is DOWN. Good bye!"));
+        webserver.thenAccept(ws -> {
+                    System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");
+                    ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
                 })
-                .exceptionally(t -> {
+                .exceptionallyAccept(t -> {
                     System.err.println("Startup failed: " + t.getMessage());
                     t.printStackTrace(System.err);
-                    return null;
                 });
 
-        // Server threads are not daemon. No need to block. Just react.
-
-        return server;
+        return webserver;
     }
 
     /**
@@ -73,6 +70,7 @@ public final class Main {
      * @param config configuration of this server
      */
     private static Routing createRouting(Config config) {
+
         MetricsSupport metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
         HealthSupport health = HealthSupport.builder()

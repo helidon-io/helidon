@@ -58,18 +58,7 @@ public class FileServiceTest {
 
     @BeforeAll
     public static void startTheServer() throws Exception {
-        webServer = Main.startServer();
-
-        long timeout = 2000; // 2 seconds should be enough to start the server
-        long now = System.currentTimeMillis();
-
-        while (!webServer.isRunning()) {
-            //noinspection BusyWait
-            Thread.sleep(100);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
-            }
-        }
+        webServer = Main.startServer().await();
 
         webClient = WebClient.builder()
                              .baseUri("http://localhost:8080/api")
