@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.context.ExecutorException;
 import io.helidon.logging.common.HelidonMdc;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 
@@ -37,6 +38,11 @@ public class Slf4jMdcTest {
 
     private static final String TEST_KEY = "test";
     private static final String TEST_VALUE = "value";
+
+    @AfterEach
+    public void clearMdc() {
+        HelidonMdc.clear();
+    }
 
     @Test
     public void testMdc() {
@@ -65,11 +71,34 @@ public class Slf4jMdcTest {
         });
     }
 
+    @Test
+    public void testThreadPropagationWithEmptyMdc() {
+        Context context = Context.create();
+        ExecutorService executor = Contexts.wrap(Executors.newFixedThreadPool(1));
+
+        Contexts.runInContext(context, () -> {
+            try {
+                Boolean value = executor.submit(new TestEmptyMdc()).get();
+                assertThat(value, is(true));
+            } catch (Exception e) {
+                throw new ExecutorException("failed to execute", e);
+            }
+        });
+    }
+
     private static final class TestCallable implements Callable<String> {
 
         @Override
         public String call() {
             return MDC.get(TEST_KEY);
+        }
+    }
+
+    private static final class TestEmptyMdc implements Callable<Boolean> {
+
+        @Override
+        public Boolean call() {
+            return MDC.getCopyOfContextMap().isEmpty();
         }
     }
 
