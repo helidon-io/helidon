@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,5 +28,9 @@ public enum HttpSignHeader {
      * Creates (or validates) an "Authorization" header, that contains "Signature" as the
      * beginning of its content (the rest of the header is the same as for {@link #SIGNATURE}.
      */
-    AUTHORIZATION
+    AUTHORIZATION,
+    /**
+     * Custom provided using a {@link io.helidon.security.util.TokenHandler}.
+     */
+    CUSTOM
 }
