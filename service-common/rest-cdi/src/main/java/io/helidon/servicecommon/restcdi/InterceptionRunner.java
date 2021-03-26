@@ -66,6 +66,8 @@ import javax.interceptor.InvocationContext;
  */
 public interface InterceptionRunner {
 
+    String EXCEPTION = InterceptionRunner.class.getPackageName() + ".Exception";
+
     /**
      * Invokes the intercepted executable represented by the {@code InvocationContext}, performing the pre-invocation
      * operation on each work item.

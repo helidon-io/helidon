@@ -80,6 +80,9 @@ class InterceptionRunnerImpl implements InterceptionRunner {
         workItems.forEach(workItem -> preInvocationHandler.accept(context, workItem));
         try {
             return context.proceed();
+        } catch (Exception e) {
+            context.getContextData().put(EXCEPTION, e);
+            throw e;
         } finally {
             workItems.forEach(workItem -> postCompletionHandler.accept(context, workItem));
         }
@@ -148,6 +151,7 @@ class InterceptionRunnerImpl implements InterceptionRunner {
             workItems.forEach(workItem -> postCompletionHandler.accept(context, workItem));
             if (throwable != null) {
                 LOGGER.log(Level.FINE, "Throwable detected by interceptor async callback", throwable);
+                context.getContextData().put(EXCEPTION, throwable);
             }
         }
     }
