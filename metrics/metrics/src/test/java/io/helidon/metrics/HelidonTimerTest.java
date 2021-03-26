@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -220,5 +220,24 @@ class HelidonTimerTest {
                                                           + "# HELP application_response_time_seconds Server response time for "
                                                           + "/index.html\n"
                                                           + "application_response_time_seconds_count 200"));
+    }
+
+    @Test
+    void testNaNAvoidance() {
+        TestClock testClock = TestClock.create();
+        HelidonTimer helidonTimer = HelidonTimer.create("application", meta, testClock);
+        MetricID metricID = new MetricID("idleTimer");
+
+        JsonObjectBuilder builder = MetricImpl.JSON.createObjectBuilder();
+        helidonTimer.update(1L, TimeUnit.MILLISECONDS);
+
+        for (int i = 1; i < 48; i++) {
+            testClock.add(1L, TimeUnit.HOURS);
+            try {
+                helidonTimer.jsonData(builder, metricID);
+            } catch (Throwable t) {
+                fail("Failed after simulating " + i + " hours");
+            }
+        }
     }
 }

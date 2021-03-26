@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,11 @@ class WeightedSnapshot extends Snapshot {
 
         for (int i = 0; i < copy.length; i++) {
             this.values[i] = copy[i].value;
-            this.normWeights[i] = copy[i].weight / sumWeight;
+            /*
+             * A zero denominator could cause the resulting double to be infinity or, if the numerator is also 0,
+             * NaN. Either causes problems when formatting for JSON output. Just use 0 instead.
+             */
+            this.normWeights[i] = sumWeight != 0 ? copy[i].weight / sumWeight : 0;
         }
 
         for (int i = 1; i < copy.length; i++) {
