@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2017, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -42,6 +42,11 @@
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-key-util</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-util</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>io.helidon.security.integration</groupId>
             <artifactId>helidon-security-integration-jersey</artifactId>
