@@ -328,7 +328,7 @@ final class FeatureCatalog {
 
         addSe("io.helidon.integrations.micrometer",
                     "Micrometer",
-                    "Micrometer integration"
+                    "Micrometer integration",
                     "Micrometer");
         addMp("io.helidon.integrations.micrometer.cdi",
                 "Micrometer CDI",
