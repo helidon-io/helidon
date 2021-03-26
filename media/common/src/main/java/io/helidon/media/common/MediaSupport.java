@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020,2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import java.util.Collections;
  * Routing.builder()
  *        .get("/foo", (res, req) -&gt; {
  *            MessageBodyReadableContent content = req.content();
- *            DefaultMediaSupport.create().readers().forEach(content::registerReader);
+ *            content.registerReader(JsonbSupport.create())
  *            content.as(String.class)
  *                   .thenAccept(System.out::print);
  *        })
@@ -54,11 +54,10 @@ import java.util.Collections;
  * Routing.builder()
  *        .get("/foo", (res, req) -&gt; {
  *           MessageBodyWriterContext writerContext = res.writerContext();
- *           DefaultMediaSupport.create().writers().forEach(writerContext::registerWriter);
+ *           writerContext.registerWriter(JsonbSupport.create())
  *           res.send("Example entity");
  *        })
  * </code></pre>
- * (DefaultMediaSupport is used only to illustrate the registration)
  */
 public interface MediaSupport {
 
