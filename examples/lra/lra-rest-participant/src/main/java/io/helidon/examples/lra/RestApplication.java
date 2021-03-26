@@ -1,21 +1,26 @@
 package io.helidon.examples.lra;
 
+import io.helidon.lra.rest.*;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 import java.util.HashSet;
 import java.util.Set;
 
+
 @ApplicationScoped
-@ApplicationPath("/messaging")
-public class MessagingApplication extends Application {
+@ApplicationPath("/rest")
+public class RestApplication extends Application {
 
     @Override
     public Set<Class<?>> getClasses() {
         Set<Class<?>> s = new HashSet<>();
-        s.add(AQMessagingResource.class);
-        s.add(KafkaMessagingResource.class);
-        s.add(ATPAQAdminResource.class);
+        s.add(ClientLRARequestFilter.class);
+        s.add(ClientLRAResponseFilter.class);
+        s.add(ServerLRAFilter.class);
+        s.add(RestResource.class);
         return s;
     }
+
 }
