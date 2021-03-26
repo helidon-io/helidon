@@ -633,31 +633,16 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
 
     // register metrics with server after security and when
     // application scope is initialized
-    void registerMetrics(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
-                         BeanManager bm) {
+    @Override
+    protected Routing.Builder registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
+                         BeanManager bm, ServerCdiExtension server) {
         Set<String> vendorMetricsAdded = new HashSet<>();
         Config config = ((Config) ConfigProvider.getConfig()).get("metrics");
 
-        MetricsSupport metricsSupport = MetricsSupport.create(config);
+        Routing.Builder defaultRouting = super.registerService(adv, bm, server);
+        MetricsSupport metricsSupport = serviceSupport();
 
-        ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
-
-        ConfigValue<String> routingNameConfig = config.get("routing").asString();
-        Routing.Builder defaultRouting = server.serverRoutingBuilder();
-
-        Routing.Builder endpointRouting = defaultRouting;
-
-        if (routingNameConfig.isPresent()) {
-            String routingName = routingNameConfig.get();
-            // support for overriding this back to default routing using config
-            if (!"@default".equals(routingName)) {
-                endpointRouting = server.serverNamedRoutingBuilder(routingName);
-            }
-        }
-
-        metricsSupport.configureVendorMetrics(null, defaultRouting);
         vendorMetricsAdded.add("@default");
-        metricsSupport.configureEndpoint(endpointRouting);
 
         // now we may have additional sockets we want to add vendor metrics to
         config.get("vendor-metrics-routings")
@@ -672,6 +657,8 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
 
         // registry factory is available in global
         Contexts.globalContext().register(RegistryFactory.getInstance());
+
+        return defaultRouting;
     }
 
     private static boolean chooseRestEndpointsSetting(Config metricsConfig) {
