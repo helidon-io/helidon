@@ -32,29 +32,29 @@ import javax.ws.rs.container.CompletionCallback;
 import javax.ws.rs.container.Suspended;
 
 /**
- * A general-purpose implementation of {@link InterceptRunner}, supporting asynchronous JAX-RS endpoints as indicated by the
+ * A general-purpose implementation of {@link InterceptionRunner}, supporting asynchronous JAX-RS endpoints as indicated by the
  * presence of a {@code @Suspended AsyncResponse} parameter.
  */
-class InterceptRunnerImpl implements InterceptRunner {
+class InterceptionRunnerImpl implements InterceptionRunner {
 
     /*
      * In this impl, constructor runners and synchronous method runners are identical and have no saved context at all, so we
      * can use the same instance for all except async method runners.
      */
-    private static final InterceptRunner INSTANCE = new InterceptRunnerImpl();
+    private static final InterceptionRunner INSTANCE = new InterceptionRunnerImpl();
 
     /**
-     * Returns the appropriate {@code InterceptRunner} for the executable.
+     * Returns the appropriate {@code InterceptionRunner} for the executable.
      *
      * @param executable the {@code Constructor} or {@code Method} requiring interceptor support
-     * @return the {@code InterceptRunner}
+     * @return the {@code InterceptionRunner}
      */
-    static InterceptRunner create(Executable executable) {
+    static InterceptionRunner create(Executable executable) {
         if (executable instanceof Constructor<?>) {
             return INSTANCE;
         }
         if (executable instanceof Method) {
-            final int asyncResponseSlot = InterceptRunnerImpl.asyncResponseSlot((Method) executable);
+            final int asyncResponseSlot = InterceptionRunnerImpl.asyncResponseSlot((Method) executable);
             return asyncResponseSlot >= 0
                     ? AsyncMethodRunnerImpl.create(asyncResponseSlot)
                     : INSTANCE;
@@ -66,8 +66,8 @@ class InterceptRunnerImpl implements InterceptRunner {
     public <T> Object run(
             InvocationContext context,
             Iterable<T> workItems,
-            BiConsumer<InvocationContext, T> preInvokeHandler) throws Exception {
-        workItems.forEach(workItem -> preInvokeHandler.accept(context, workItem));
+            BiConsumer<InvocationContext, T> preInvocationHandler) throws Exception {
+        workItems.forEach(workItem -> preInvocationHandler.accept(context, workItem));
         return context.proceed();
     }
 
@@ -75,23 +75,23 @@ class InterceptRunnerImpl implements InterceptRunner {
     public <T> Object run(
             InvocationContext context,
             Iterable<T> workItems,
-            BiConsumer<InvocationContext, T> preInvokeHandler,
-            BiConsumer<InvocationContext, T> completeHandler) throws Exception {
-        workItems.forEach(workItem -> preInvokeHandler.accept(context, workItem));
+            BiConsumer<InvocationContext, T> preInvocationHandler,
+            BiConsumer<InvocationContext, T> postCompletionHandler) throws Exception {
+        workItems.forEach(workItem -> preInvocationHandler.accept(context, workItem));
         try {
             return context.proceed();
         } finally {
-            workItems.forEach(workItem -> completeHandler.accept(context, workItem));
+            workItems.forEach(workItem -> postCompletionHandler.accept(context, workItem));
         }
     }
 
     /**
-     * An {@code InterceptorRunner} which supports JAX-RS asynchronous methods.
+     * An {@code InterceptionRunner} which supports JAX-RS asynchronous methods.
      */
-    private static class AsyncMethodRunnerImpl extends InterceptRunnerImpl {
+    private static class AsyncMethodRunnerImpl extends InterceptionRunnerImpl {
         private final int asyncResponseSlot;
 
-        static InterceptRunner create(int asyncResponseSlot) {
+        static InterceptionRunner create(int asyncResponseSlot) {
             return new AsyncMethodRunnerImpl(asyncResponseSlot);
         }
 
@@ -103,16 +103,16 @@ class InterceptRunnerImpl implements InterceptRunner {
         public <T> Object run(
                 InvocationContext context,
                 Iterable<T> workItems,
-                BiConsumer<InvocationContext, T> preInvokeHandler,
-                BiConsumer<InvocationContext, T> completeHandler) throws Exception {
+                BiConsumer<InvocationContext, T> preInvocationHandler,
+                BiConsumer<InvocationContext, T> postCompletionHandler) throws Exception {
 
-            // Check the post-invoke handler now because we don't want an NPE thrown from some other call stack when we try to use
-            // it in the completion callback. Any other null argument would trigger an NPE from the current call stack.
-            Objects.requireNonNull(completeHandler, "postInvokeHandler");
+            // Check the post-completion handler now because we don't want an NPE thrown from some other call stack when we try to
+            // use it in the completion callback. Any other null argument would trigger an NPE from the current call stack.
+            Objects.requireNonNull(postCompletionHandler, "postCompletionHandler");
 
-            workItems.forEach(workItem -> preInvokeHandler.accept(context, workItem));
+            workItems.forEach(workItem -> preInvocationHandler.accept(context, workItem));
             AsyncResponse asyncResponse = AsyncResponse.class.cast(context.getParameters()[asyncResponseSlot]);
-            asyncResponse.register(FinishCallback.create(context, completeHandler, workItems));
+            asyncResponse.register(FinishCallback.create(context, postCompletionHandler, workItems));
             return context.proceed();
         }
 
@@ -129,23 +129,23 @@ class InterceptRunnerImpl implements InterceptRunner {
         private static final Logger LOGGER = Logger.getLogger(FinishCallback.class.getName());
 
         private final InvocationContext context;
-        private final BiConsumer<InvocationContext, T> completeHandler;
+        private final BiConsumer<InvocationContext, T> postCompletionHandler;
         private final Iterable<T> workItems;
 
         static <T> FinishCallback<T> create(InvocationContext context, BiConsumer<InvocationContext, T> completeHandler,
                 Iterable<T> workItems) {
             return new FinishCallback<>(context, completeHandler, workItems);
         }
-        private FinishCallback(InvocationContext context, BiConsumer<InvocationContext, T> completeHandler,
+        private FinishCallback(InvocationContext context, BiConsumer<InvocationContext, T> postCompletionHandler,
                 Iterable<T> workItems) {
             this.context = context;
-            this.completeHandler = completeHandler;
+            this.postCompletionHandler = postCompletionHandler;
             this.workItems = workItems;
         }
 
         @Override
         public void onComplete(Throwable throwable) {
-            workItems.forEach(workItem -> completeHandler.accept(context, workItem));
+            workItems.forEach(workItem -> postCompletionHandler.accept(context, workItem));
             if (throwable != null) {
                 LOGGER.log(Level.FINE, "Throwable detected by interceptor async callback", throwable);
             }

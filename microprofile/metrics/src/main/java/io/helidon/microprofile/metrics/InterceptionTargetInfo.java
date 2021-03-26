@@ -30,7 +30,7 @@ import java.util.Map;
  * <ul>
  *     <li>the work items to be updated when the corresponding executable is intercepted, organized by the annotation class that
  *     gave rise to each work item; and</li>
- *     <li>the {@code InterceptRunner} to use in updating the work items and invoking the method or constructor.</li>
+ *     <li>the {@code InterceptionRunner} to use in updating the work items and invoking the method or constructor.</li>
  * </ul>
  * </p>
  *
@@ -38,7 +38,7 @@ import java.util.Map;
  */
 class InterceptionTargetInfo<T> {
 
-    private final InterceptRunner runner;
+    private final InterceptionRunner runner;
 
     private final Map<Class<?>, Collection<T>> workItemsByAnnotationType = new HashMap<>();
 
@@ -49,14 +49,14 @@ class InterceptionTargetInfo<T> {
      * @return the new instance
      */
     static <T> InterceptionTargetInfo<T> create(Executable executable) {
-        return new InterceptionTargetInfo<>(InterceptRunnerImpl.create(executable));
+        return new InterceptionTargetInfo<>(InterceptionRunnerImpl.create(executable));
     }
 
-    private InterceptionTargetInfo(InterceptRunner runner) {
+    private InterceptionTargetInfo(InterceptionRunner runner) {
         this.runner = runner;
     }
 
-    InterceptRunner runner() {
+    InterceptionRunner runner() {
         return runner;
     }
 
