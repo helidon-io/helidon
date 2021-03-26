@@ -61,7 +61,7 @@ import javax.interceptor.InvocationContext;
  *      </ol>
  * <p>
  *     The interface requires a {@code Iterable<>} for work items because, in the before-and-after case, the runner
- *     might need to process the work items twice. In those cases, the {@code Iterable} can furnish two {@code Iterators}.
+ *     might need to process the work items twice. In those cases, the {@code Iterable} can furnish two {@code Iterator}s.
  * </p>
  */
 public interface InterceptionRunner {
@@ -72,7 +72,7 @@ public interface InterceptionRunner {
      *
      * @param context {@code InvocationContext} for the intercepted invocation
      * @param workItems the work items the interceptor will operate on
-     * @param preInvocationHandler the pre-invoke operation to perform on each work item
+     * @param preInvocationHandler the pre-invocation operation to perform on each work item
      * @param <T> type of the work items
      * @return the return value from the invoked executable
      * @throws Exception for any error thrown by the {@code Iterable} of work items or the invoked executable itself
@@ -88,7 +88,7 @@ public interface InterceptionRunner {
      *
      * @param context {@code InvocationContext} for the intercepted invocation
      * @param workItems the work items the interceptor will operate on
-     * @param preInvocationHandler the pre-invoke operation to perform on each work item
+     * @param preInvocationHandler the pre-invocation operation to perform on each work item
      * @param postCompletionHandler the post-completion operation to perform on each work item
      * @param <T> type of the work items
      * @return the return value from the invoked executable
