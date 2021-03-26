@@ -50,12 +50,18 @@ public final class Main {
     }
 
     /**
-     * Executes the example.
-     *
+     * Application main entry point.
      * @param args command line arguments.
      */
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
+        startServer();
+    }
 
+    /**
+     * Start the server.
+     * @return the created {@link WebServer} instance
+     */
+    static WebServer startServer() {
         WebServer server = WebServer.builder(createRouting())
                 .port(8080)
                 .addMediaSupport(MultiPartSupport.create())
@@ -71,5 +77,8 @@ public final class Main {
         server.whenShutdown()
                 .thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
 
+        return server;
     }
+
+
 }

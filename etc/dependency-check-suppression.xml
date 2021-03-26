@@ -114,4 +114,16 @@
 </suppress>
 
 
+<!-- Thrift is a transitive dependency of jaeger-client. This CVE is for the RPC server support
+     in thrift, and according to the jaeger-client project does not apply to the libthrift client
+     usage in jaeger-client. 
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: libthrift-0.13.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.apache\.thrift/libthrift@.*$</packageUrl>
+   <cve>CVE-2020-13949</cve>
+</suppress>
+
 </suppressions>

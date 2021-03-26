@@ -33,6 +33,7 @@
     <modules>
         <module>cdi</module>
         <module>micronaut</module>
+        <module>neo4j</module>
     </modules>
 
 </project>

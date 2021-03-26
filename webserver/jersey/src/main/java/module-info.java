@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ module io.helidon.webserver.jersey {
     requires io.helidon.common.reactive;
     requires java.logging;
     requires hk2.api;
+    requires io.netty.buffer;
 
     exports io.helidon.webserver.jersey;
 
