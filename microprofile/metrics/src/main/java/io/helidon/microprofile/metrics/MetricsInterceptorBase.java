@@ -31,7 +31,7 @@ import javax.interceptor.InvocationContext;
 
 import io.helidon.microprofile.metrics.MetricsCdiExtension.MetricWorkItem;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
-import io.helidon.servicecommon.restcdi.InterceptInfo;
+import io.helidon.servicecommon.restcdi.InterceptionTargetInfo;
 
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -105,7 +105,7 @@ abstract class MetricsInterceptorBase<M extends Metric> implements HelidonInterc
     }
 
     @Override
-    public InterceptInfo<MetricWorkItem> interceptInfo(Executable executable) {
+    public InterceptionTargetInfo<MetricWorkItem> interceptionTargetInfo(Executable executable) {
         return extension.interceptInfo(executable);
     }
 

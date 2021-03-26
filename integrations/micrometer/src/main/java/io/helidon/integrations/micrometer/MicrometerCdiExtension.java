@@ -40,7 +40,7 @@ import javax.interceptor.InterceptorBinding;
 
 import io.helidon.servicecommon.restcdi.AnnotationLookupResult;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
-import io.helidon.servicecommon.restcdi.InterceptInfo;
+import io.helidon.servicecommon.restcdi.InterceptionTargetInfo;
 
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
@@ -64,7 +64,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
 
     private final MeterRegistry meterRegistry;
 
-    private final Map<Executable, InterceptInfo<MeterWorkItem>> interceptInfo = new HashMap<>();
+    private final Map<Executable, InterceptionTargetInfo<MeterWorkItem>> interceptionTargetInfo = new HashMap<>();
 
     /**
      * Creates new extension instance.
@@ -125,8 +125,8 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
         recordProducerMethod(ppm);
     }
 
-    InterceptInfo<MeterWorkItem> interceptInfo(Executable executable) {
-        return interceptInfo.get(executable);
+    InterceptionTargetInfo<MeterWorkItem> interceptionTargetInfo(Executable executable) {
+        return interceptionTargetInfo.get(executable);
     }
 
     static class MeterWorkItem {

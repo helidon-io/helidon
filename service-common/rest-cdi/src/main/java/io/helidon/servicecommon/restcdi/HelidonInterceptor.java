@@ -47,10 +47,10 @@ public interface HelidonInterceptor<W> {
      * @throws Exception when the intercepted code throws an exception
      */
     default Object aroundConstructBase(InvocationContext context) throws Exception {
-        InterceptInfo<W> interceptInfo = interceptInfo(context.getConstructor());
-        return interceptInfo.runner().run(
+        InterceptionTargetInfo<W> interceptionTargetInfo = interceptionTargetInfo(context.getConstructor());
+        return interceptionTargetInfo.runner().run(
                 context,
-                interceptInfo.workItems(annotationType()),
+                interceptionTargetInfo.workItems(annotationType()),
                 this::preInvoke);
     }
 
@@ -86,10 +86,10 @@ public interface HelidonInterceptor<W> {
      * @throws Exception when the intercepted code throws an exception
      */
     default Object aroundInvokeBase(InvocationContext context) throws Exception {
-        InterceptInfo<W> interceptInfo = interceptInfo(context.getMethod());
-        return interceptInfo.runner().run(
+        InterceptionTargetInfo<W> interceptionTargetInfo = interceptionTargetInfo(context.getMethod());
+        return interceptionTargetInfo.runner().run(
                 context,
-                interceptInfo.workItems(annotationType()),
+                interceptionTargetInfo.workItems(annotationType()),
                 this::preInvoke);
     }
 
@@ -101,12 +101,12 @@ public interface HelidonInterceptor<W> {
     Class<? extends Annotation> annotationType();
 
     /**
-     * Returns the correct {@link InterceptInfo} for the given {@code Executable}.
+     * Returns the correct {@link InterceptionTargetInfo} for the given {@code Executable}.
      *
      * @param executable the constructor or method for which the {@code InterceptInfo} is needed
      * @return the appropriate {@code InterceptInfo}
      */
-    InterceptInfo<W> interceptInfo(Executable executable);
+    InterceptionTargetInfo<W> interceptionTargetInfo(Executable executable);
 
     /**
      * Performs whatever pre-invocation work is needed for the given context, applied to the specified work item.
@@ -133,10 +133,10 @@ public interface HelidonInterceptor<W> {
          */
         @Override
         default Object aroundConstructBase(InvocationContext context) throws Exception {
-            InterceptInfo<W> interceptInfo = interceptInfo(context.getConstructor());
-            return interceptInfo.runner().run(
+            InterceptionTargetInfo<W> interceptionTargetInfo = interceptionTargetInfo(context.getConstructor());
+            return interceptionTargetInfo.runner().run(
                     context,
-                    interceptInfo.workItems(annotationType()),
+                    interceptionTargetInfo.workItems(annotationType()),
                     this::preInvoke,
                     this::postComplete);
         }
@@ -151,10 +151,10 @@ public interface HelidonInterceptor<W> {
          */
         @Override
         default Object aroundInvokeBase(InvocationContext context) throws Exception {
-            InterceptInfo<W> interceptInfo = interceptInfo(context.getMethod());
-            return interceptInfo.runner().run(
+            InterceptionTargetInfo<W> interceptionTargetInfo = interceptionTargetInfo(context.getMethod());
+            return interceptionTargetInfo.runner().run(
                     context,
-                    interceptInfo.workItems(annotationType()),
+                    interceptionTargetInfo.workItems(annotationType()),
                     this::preInvoke,
                     this::postComplete);
         }

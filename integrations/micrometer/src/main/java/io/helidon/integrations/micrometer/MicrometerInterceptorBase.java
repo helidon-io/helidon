@@ -33,7 +33,7 @@ import javax.interceptor.InvocationContext;
 
 import io.helidon.integrations.micrometer.MicrometerCdiExtension.MeterWorkItem;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
-import io.helidon.servicecommon.restcdi.InterceptInfo;
+import io.helidon.servicecommon.restcdi.InterceptionTargetInfo;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -96,8 +96,8 @@ abstract class MicrometerInterceptorBase<M extends Meter> implements HelidonInte
     }
 
     @Override
-    public InterceptInfo<MeterWorkItem> interceptInfo(Executable executable) {
-        return extension.interceptInfo(executable);
+    public InterceptionTargetInfo<MeterWorkItem> interceptionTargetInfo(Executable executable) {
+        return extension.interceptionTargetInfo(executable);
     }
 
     @Override

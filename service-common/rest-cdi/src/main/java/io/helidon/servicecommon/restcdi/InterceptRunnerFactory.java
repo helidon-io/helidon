@@ -19,7 +19,7 @@ package io.helidon.servicecommon.restcdi;
 import java.lang.reflect.Executable;
 
 /**
- * Creates appropriate {@link InterceptRunner}.
+ * Creates appropriate {@link InterceptionRunner}.
  */
 public class InterceptRunnerFactory {
 
@@ -29,8 +29,8 @@ public class InterceptRunnerFactory {
      * @param executable the constructor or method
      * @return the {@code IntercepRunner}
      */
-    public static InterceptRunner create(Executable executable) {
-        return InterceptRunnerImpl.create(executable);
+    public static InterceptionRunner create(Executable executable) {
+        return InterceptionRunnerImpl.create(executable);
     }
 
     private InterceptRunnerFactory() {

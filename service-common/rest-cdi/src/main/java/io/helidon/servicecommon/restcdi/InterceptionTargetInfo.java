@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.microprofile.metrics;
+package io.helidon.servicecommon.restcdi;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
@@ -22,9 +22,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-
-import io.helidon.servicecommon.restcdi.InterceptRunner;
-import io.helidon.servicecommon.restcdi.InterceptRunnerFactory;
 
 /**
  * Records information about an intercepted executable.
@@ -35,11 +32,10 @@ import io.helidon.servicecommon.restcdi.InterceptRunnerFactory;
  *     gave rise to each work item; and</li>
  *     <li>the {@code InterceptionRunner} to use in updating the work items and invoking the method or constructor.</li>
  * </ul>
- * </p>
  *
  * @param <T> base type of the work items handled by the interceptor represented by this instance
  */
-class InterceptionTargetInfo<T> {
+public class InterceptionTargetInfo<T> {
 
     private final InterceptionRunner runner;
 
@@ -49,9 +45,10 @@ class InterceptionTargetInfo<T> {
      * Creates a new instance based on the provided {@code Executable}.
      *
      * @param executable the constructor or method subject to interception
+     * @param <T> the type of work items associated with the target info
      * @return the new instance
      */
-    static <T> InterceptionTargetInfo<T> create(Executable executable) {
+    public static <T> InterceptionTargetInfo<T> create(Executable executable) {
         return new InterceptionTargetInfo<>(InterceptRunnerFactory.create(executable));
     }
 
@@ -59,11 +56,21 @@ class InterceptionTargetInfo<T> {
         this.runner = runner;
     }
 
-    InterceptionRunner runner() {
+    /**
+     *
+     * @return the {@code InterceptionRunner} for this instance
+     */
+    public InterceptionRunner runner() {
         return runner;
     }
 
-    Iterable<T> workItems(Class<? extends Annotation> annotationType) {
+    /**
+     * Returns the work items for the given annotation type.
+     *
+     * @param annotationType type of annotation for which work items are requested
+     * @return the work items
+     */
+    public Iterable<T> workItems(Class<? extends Annotation> annotationType) {
         /*
          * Build a supplier of the iterable, because before-and-after runners will need to process the work items twice so we need
          *  to give the runner a supplier.
@@ -76,7 +83,7 @@ class InterceptionTargetInfo<T> {
      * @param annotationType type of the interceptor
      * @param workItem the newly-created workItem
      */
-    void addWorkItem(Class<? extends Annotation> annotationType, T workItem) {
+    public void addWorkItem(Class<? extends Annotation> annotationType, T workItem) {
 
         // Using a set for the actual collection subtly handles the case where a class-level and a method- or constructor-level
         // annotation both indicate the same workItem. We do not want to update the same workItem twice in that case.

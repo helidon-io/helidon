@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.microprofile.metrics;
+package io.helidon.servicecommon.restcdi;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;

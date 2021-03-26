@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.microprofile.metrics;
+package io.helidon.servicecommon.restcdi;
 
 import java.util.function.BiConsumer;
 
@@ -49,10 +49,8 @@ import javax.interceptor.InvocationContext;
  *                intercepted invocation has finished, only for the "before-and-after"
  *                {@link #run(InvocationContext, Iterable, BiConsumer, BiConsumer) run} variant.</li>
  *             </ul>
- *         </p>
  *         </li>
  *     </ul>
- * </p>
  * <p>
  *      The runner
  *      <ol>
@@ -61,13 +59,12 @@ import javax.interceptor.InvocationContext;
  *          <li>(if provided) invokes the post-completion consumer for all work
  *          items.</li>
  *      </ol>
- * </p>
  * <p>
  *     The interface requires a {@code Iterable<>} for work items because, in the before-and-after case, the runner
  *     might need to process the work items twice. In those cases, the {@code Iterable} can furnish two {@code Iterators}.
  * </p>
  */
-interface InterceptionRunner {
+public interface InterceptionRunner {
 
     /**
      * Invokes the intercepted executable represented by the {@code InvocationContext}, performing the pre-invocation

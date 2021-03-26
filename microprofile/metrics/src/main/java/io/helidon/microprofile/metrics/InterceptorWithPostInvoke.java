@@ -24,6 +24,7 @@ import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
 import io.helidon.microprofile.metrics.MetricsCdiExtension.MetricWorkItem;
+import io.helidon.servicecommon.restcdi.InterceptionTargetInfo;
 
 import org.eclipse.microprofile.metrics.Metric;
 
