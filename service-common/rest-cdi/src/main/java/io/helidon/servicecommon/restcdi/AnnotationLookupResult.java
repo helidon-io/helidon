@@ -74,11 +74,8 @@ public class AnnotationLookupResult<A extends Annotation> {
      */
     public static <A extends Annotation> Collection<AnnotationLookupResult<A>> lookupAnnotations(Annotated annotated,
             Class<A> annotClass) {
-        // We have to filter by annotation class ourselves, because annotatedMethod.getAnnotations(Class) delegates
-        // to the Java method. That would bypass any annotations that had been added dynamically to the configurator.
-        return annotated.getAnnotations()
+        return annotated.getAnnotations(annotClass)
                 .stream()
-                .filter(annotClass::isInstance)
                 .map(annotation -> new AnnotationLookupResult<>(AnnotationSiteType.matchingType(annotated),
                         annotClass.cast(annotation)))
                 .collect(Collectors.toList());
