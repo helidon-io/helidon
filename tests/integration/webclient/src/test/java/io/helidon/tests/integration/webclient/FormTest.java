@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import io.helidon.common.http.MediaType;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -71,7 +72,7 @@ public class FormTest extends TestParent {
                 .submit(TEST_FORM).await());
 
         assertThat(ex.getCause().getMessage(),
-                   is("No writer found for type: class io.helidon.common.http.FormParamsImpl"));
+                   startsWith("No writer found for type: class io.helidon.common.http.FormParamsImpl"));
     }
 
     @Test

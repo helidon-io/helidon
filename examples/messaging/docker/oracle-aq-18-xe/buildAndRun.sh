@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@
 CURR_DIR=$(pwd)
 TEMP_DIR=../../target
 IMAGES_DIR=${TEMP_DIR}/ora-images
-IMAGES_ZIP_URL=https://github.com/oracle/docker-images/archive/master.zip
-IMAGES_ZIP_DIR=docker-images-master/OracleDatabase/SingleInstance/dockerfiles
+COMMIT="a69fe9b08ff147bb746d16af76cc5279ea5baf7a";
+IMAGES_ZIP_URL=https://github.com/oracle/docker-images/archive/${COMMIT:0:7}.zip
+IMAGES_ZIP_DIR=docker-images-${COMMIT}/OracleDatabase/SingleInstance/dockerfiles
 ORA_DB_VERSION=18.4.0
 BASE_IMAGE_NAME=oracle/database:${ORA_DB_VERSION}-xe
 IMAGE_NAME=helidon/oracle-aq-example
@@ -33,25 +34,26 @@ if [[ "$(docker images -q ${BASE_IMAGE_NAME} 2>/dev/null)" == "" ]]; then
   echo Base image ${BASE_IMAGE_NAME} not found. Building ...
 
   # cleanup
+  mkdir -p ${TEMP_DIR}
   rm -rf ${IMAGES_DIR}
-  rm ${TEMP_DIR}/ora-images.zip
+  rm -f ${TEMP_DIR}/ora-images.zip
 
   # download official oracle docker images
   curl -LJ -o ${TEMP_DIR}/ora-images.zip ${IMAGES_ZIP_URL}
   # unzip only image for Oracle database 18.4.0
   unzip -qq ${TEMP_DIR}/ora-images.zip "${IMAGES_ZIP_DIR}/*" -d ${IMAGES_DIR}
   mv ${IMAGES_DIR}/${IMAGES_ZIP_DIR}/${ORA_DB_VERSION} ${IMAGES_DIR}/
-  mv ${IMAGES_DIR}/${IMAGES_ZIP_DIR}/buildDockerImage.sh ${IMAGES_DIR}/
+  mv ${IMAGES_DIR}/${IMAGES_ZIP_DIR}/buildContainerImage.sh ${IMAGES_DIR}/
 
   # cleanup
-  rm -rf ${IMAGES_DIR}/docker-images-master
+  rm -rf ${IMAGES_DIR}/docker-images-${COMMIT}
   rm ${TEMP_DIR}/ora-images.zip
 
   # build base image
   # can take long(15 minutes or so)
   cd ${IMAGES_DIR} || exit
-  bash ./buildDockerImage.sh -v ${ORA_DB_VERSION} -x
-  cd "${CURR_DIR}" || exit
+  bash ./buildContainerImage.sh -v ${ORA_DB_VERSION} -x || exit
+  cd ${CURR_DIR} || exit
 else
   printf "OK\n"
 fi
@@ -61,7 +63,7 @@ if [[ "$(docker images -q ${IMAGE_NAME} 2>/dev/null)" == "" ]]; then
   printf "NOK\n"
 
   echo Image ${IMAGE_NAME} not found. Building ...
-  docker build -t ${IMAGE_NAME} .
+  docker build -t ${IMAGE_NAME} . || exit
 else
   printf "OK\n"
 fi
@@ -78,7 +80,7 @@ if [[ $(docker ps -a --filter "name=^/${CONTAINER_NAME}$" --format '{{.Names}}')
     -p 1521:1521 \
     -p 5500:5500 \
     -e ORACLE_PWD=${ORACLE_PWD} \
-    ${IMAGE_NAME}
+    ${IMAGE_NAME} || exit
 else
   printf "OK\n"
   printf "%-100s" "Checking if container ${CONTAINER_NAME}  is started"
@@ -86,7 +88,7 @@ else
     printf "NOK\n"
 
     echo "Container ${CONTAINER_NAME} not started. Starting ..."
-    docker start ${CONTAINER_NAME}
+    docker start ${CONTAINER_NAME} || exit
   else
     printf "OK\n"
   fi

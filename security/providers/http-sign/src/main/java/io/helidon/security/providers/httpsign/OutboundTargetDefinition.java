@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
+import io.helidon.security.util.TokenHandler;
 
 /**
  * Configuration of outbound target to sign outgoing requests.
@@ -34,6 +36,8 @@ public final class OutboundTargetDefinition {
     private final HttpSignHeader header;
     private final byte[] hmacSharedSecret;
     private final SignedHeadersConfig signedHeadersConfig;
+    private final TokenHandler tokenHandler;
+    private final boolean backwardCompatibleEol;
 
     private OutboundTargetDefinition(Builder builder) {
         this.keyId = builder.keyId;
@@ -42,6 +46,8 @@ public final class OutboundTargetDefinition {
         this.header = builder.header;
         this.hmacSharedSecret = builder.hmacSharedSecret;
         this.signedHeadersConfig = builder.signedHeadersConfig;
+        this.tokenHandler = builder.tokenHandler;
+        this.backwardCompatibleEol = builder.backwardCompatibleEol;
 
         Objects.requireNonNull(algorithm, "Signature algorithm must not be null");
         Objects.requireNonNull(keyId, "Key id must not be null");
@@ -148,16 +154,44 @@ public final class OutboundTargetDefinition {
     }
 
     /**
+     * When header type is set to {@link io.helidon.security.providers.httpsign.HttpSignHeader#CUSTOM},
+     *  this handler will be used to create header in outbound request.
+     *
+     * @return token handler
+     */
+    public TokenHandler tokenHandler() {
+        return tokenHandler;
+    }
+
+    /**
+     * Whether to use old approach to EOL processing in signed data.
+     * The old approach (pre Helidon 3.0.0) was adding a trailing end of line, which is
+     * not aligned with the specification proposal.
+     *
+     * @return whether to use old approach (trailing EOL - {@code true}), or correct approach ({@code false}ú
+     */
+    public boolean backwardCompatibleEol() {
+        return backwardCompatibleEol;
+    }
+
+    /**
      * Fluent API builder to build {@link OutboundTargetDefinition} instances.
      * Call {@link #build()} to create a new instance.
      */
     public static final class Builder implements io.helidon.common.Builder<OutboundTargetDefinition> {
+        private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
+
         private String keyId;
         private String algorithm;
         private KeyConfig keyConfig;
         private HttpSignHeader header = HttpSignHeader.SIGNATURE;
         private byte[] hmacSharedSecret;
         private SignedHeadersConfig signedHeadersConfig = HttpSignProvider.DEFAULT_REQUIRED_HEADERS;
+        private TokenHandler tokenHandler;
+        // this is internal deprecation to make sure we switch this flag default to false for 3.0.0
+        // to be removed in 4.0.0 (most likely)
+        @Deprecated
+        private boolean backwardCompatibleEol = true;
 
         private Builder() {
         }
@@ -255,8 +289,25 @@ public final class OutboundTargetDefinition {
             return hmacSecret(secret.getBytes(StandardCharsets.UTF_8));
         }
 
+        /**
+         * Configure a token handler to create the outbound header.
+         *
+         * @param tokenHandler token handler to use
+         * @return updated builder instance
+         */
+        public Builder tokenHandler(TokenHandler tokenHandler) {
+            this.tokenHandler = tokenHandler;
+            this.header = HttpSignHeader.CUSTOM;
+            return this;
+        }
+
         @Override
         public OutboundTargetDefinition build() {
+            if (backwardCompatibleEol) {
+                LOGGER.warning("HTTP signatures is using legacy HTTP signature processing. This will not work"
+                                       + " with third party tools using the same spec and with Helidon newer than 3.0.0."
+                                       + " Please configure 'backward-compatible-eol' to false to use the correct approach.");
+            }
             return new OutboundTargetDefinition(this);
         }
 
@@ -279,7 +330,23 @@ public final class OutboundTargetDefinition {
             // last, as we configure defaults based on configuration
             config.get("algorithm").asString().ifPresent(builder::algorithm);
 
+            // backward compatibility with previous Helidon versions
+            config.get("backward-compatible-eol").asBoolean().ifPresent(this::backwardCompatibleEol);
+
             return builder;
+        }
+
+        /**
+         * Until version 3.0.0 (exclusive) there is a trailing end of line added to the signed
+         * data.
+         * When configured to {@code false}, the correct approach is used.
+         *
+         * @param backwardCompatible whether to run in backward compatible mode
+         * @return updated builder instance
+         */
+        public Builder backwardCompatibleEol(Boolean backwardCompatible) {
+            this.backwardCompatibleEol = backwardCompatible;
+            return this;
         }
     }
 }

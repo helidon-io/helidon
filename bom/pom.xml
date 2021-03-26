@@ -855,6 +855,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.integrations.common</groupId>
+                <artifactId>helidon-integrations-common-rest</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations</groupId>
                 <artifactId>helidon-integrations-micrometer</artifactId>
                 <version>${helidon.version}</version>

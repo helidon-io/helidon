@@ -103,6 +103,23 @@ public class FileServiceTest {
 
     @Test
     @Order(2)
+    public void testStreamUpload() throws IOException {
+        Path file = Files.write( Files.createTempFile(null, null), "stream bar\n".getBytes(StandardCharsets.UTF_8));
+        Path file2 = Files.write( Files.createTempFile(null, null), "stream foo\n".getBytes(StandardCharsets.UTF_8));
+        WebClientResponse response = webClient
+                .post()
+                .queryParam("stream", "true")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .submit(FileFormParams.builder()
+                                      .addFile("file[]", "streamed-foo.txt", file)
+                                      .addFile("otherPart", "streamed-foo2.txt", file2)
+                                      .build())
+                .await(2, TimeUnit.SECONDS);
+        assertThat(response.status().code(), is(301));
+    }
+
+    @Test
+    @Order(3)
     public void testList() {
         WebClientResponse response = webClient
                 .get()
@@ -117,7 +134,7 @@ public class FileServiceTest {
     }
 
     @Test
-    @Order(3)
+    @Order(4)
     public void testDownload() {
         WebClientResponse response = webClient
                 .get()
