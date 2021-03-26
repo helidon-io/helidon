@@ -79,6 +79,11 @@ public class FileStorage {
         if (!file.getParent().equals(storageDir)) {
             throw new BadRequestException("Invalid file name");
         }
+        try {
+            Files.createFile(file);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
         return file;
     }
 
