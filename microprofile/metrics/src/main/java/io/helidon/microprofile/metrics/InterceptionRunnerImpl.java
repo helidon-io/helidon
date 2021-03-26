@@ -132,9 +132,9 @@ class InterceptionRunnerImpl implements InterceptionRunner {
         private final BiConsumer<InvocationContext, T> postCompletionHandler;
         private final Iterable<T> workItems;
 
-        static <T> FinishCallback<T> create(InvocationContext context, BiConsumer<InvocationContext, T> completeHandler,
+        static <T> FinishCallback<T> create(InvocationContext context, BiConsumer<InvocationContext, T> postCompletionHandler,
                 Iterable<T> workItems) {
-            return new FinishCallback<>(context, completeHandler, workItems);
+            return new FinishCallback<>(context, postCompletionHandler, workItems);
         }
         private FinishCallback(InvocationContext context, BiConsumer<InvocationContext, T> postCompletionHandler,
                 Iterable<T> workItems) {
