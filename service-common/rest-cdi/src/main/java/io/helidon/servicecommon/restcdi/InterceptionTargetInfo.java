@@ -49,7 +49,7 @@ public class InterceptionTargetInfo<T> {
      * @return the new instance
      */
     public static <T> InterceptionTargetInfo<T> create(Executable executable) {
-        return new InterceptionTargetInfo<>(InterceptRunnerFactory.create(executable));
+        return new InterceptionTargetInfo<>(InterceptionRunnerFactory.create(executable));
     }
 
     private InterceptionTargetInfo(InterceptionRunner runner) {

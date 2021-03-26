@@ -21,7 +21,7 @@ import java.lang.reflect.Executable;
 /**
  * Creates appropriate {@link InterceptionRunner}.
  */
-public class InterceptRunnerFactory {
+public class InterceptionRunnerFactory {
 
     /**
      * Returns the appropriate {@code InterceptRunner}, depending on the {@code Executable} provider.
@@ -33,6 +33,6 @@ public class InterceptRunnerFactory {
         return InterceptionRunnerImpl.create(executable);
     }
 
-    private InterceptRunnerFactory() {
+    private InterceptionRunnerFactory() {
     }
 }
