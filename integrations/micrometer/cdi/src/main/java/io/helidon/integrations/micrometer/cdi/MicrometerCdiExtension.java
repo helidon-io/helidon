@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.integrations.micrometer;
+package io.helidon.integrations.micrometer.cdi;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -38,6 +38,7 @@ import javax.enterprise.util.AnnotationLiteral;
 import javax.enterprise.util.Nonbinding;
 import javax.interceptor.InterceptorBinding;
 
+import io.helidon.integrations.micrometer.MicrometerSupport;
 import io.helidon.servicecommon.restcdi.AnnotationLookupResult;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
 import io.helidon.servicecommon.restcdi.InterceptionTargetInfo;
@@ -81,20 +82,31 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
     void register(E element, Class<?> clazz, AnnotationLookupResult<? extends Annotation> lookupResult) {
         Annotation annotation = lookupResult.annotation();
 
+        Meter newMeter = null;
+
         if (annotation instanceof Counted) {
             Counter counter = MeterProducer.produceCounter(meterRegistry, (Counted) annotation);
             LOGGER.log(Level.FINE, () -> "Registered counter " + counter.getId().toString());
+            newMeter = counter;
         } else if (annotation instanceof Timed) {
             Timed timed = (Timed) annotation;
             if (timed.longTask()) {
                 LongTaskTimer longTaskTimer = MeterProducer.produceLongTaskTimer(meterRegistry, timed);
                 LOGGER.log(Level.FINE, () -> "Registered long task timer " + longTaskTimer.getId()
                         .toString());
+                newMeter = longTaskTimer;
             } else {
                 Timer timer = MeterProducer.produceTimer(meterRegistry, timed);
                 LOGGER.log(Level.FINE, () -> "Registered timer " + timer.getId()
                         .toString());
+                newMeter = timer;
             }
+        }
+        if (element instanceof Executable) {
+            InterceptionTargetInfo<MeterWorkItem> info = interceptionTargetInfo.computeIfAbsent((Executable) element,
+                    InterceptionTargetInfo::create);
+            info.addWorkItem(lookupResult.annotation()
+                    .annotationType(), MeterWorkItem.create(newMeter));
         }
     }
 

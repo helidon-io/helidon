@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.integrations.micrometer;
+package io.helidon.integrations.micrometer.cdi;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;

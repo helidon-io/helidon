@@ -14,27 +14,25 @@
  * limitations under the License.
  *
  */
-package io.helidon.integrations.micrometer;
 
-import javax.annotation.Priority;
-import javax.inject.Inject;
-import javax.interceptor.Interceptor;
+module io.helidon.integrations.micrometer {
 
-import io.micrometer.core.annotation.Counted;
-import io.micrometer.core.instrument.Counter;
+    requires java.logging;
 
-@Interceptor
-@Priority(Interceptor.Priority.PLATFORM_BEFORE + 8)
-final class InterceptorCounted extends MicrometerInterceptorBase<Counter> {
+    requires static java.annotation;
 
-    @Inject
-    InterceptorCounted() {
-        super(Counted.class,
-                Counter.class);
-    }
+    requires io.helidon.common.http;
+    requires io.helidon.servicecommon.rest;
+    requires io.helidon.config;
+    requires io.helidon.webserver.cors;
 
-    @Override
-    void preInvoke(Counter counter) {
-        counter.increment();
-    }
+    requires micrometer.core;
+    requires micrometer.registry.prometheus;
+    requires simpleclient;
+
+    exports io.helidon.integrations.micrometer;
+
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.integrations.micrometer to weld.core.impl, io.helidon.microprofile.cdi;
+
 }

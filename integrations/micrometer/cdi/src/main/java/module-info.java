@@ -15,7 +15,9 @@
  *
  */
 
-module io.helidon.integrations.micrometer {
+import io.helidon.integrations.micrometer.cdi.MicrometerCdiExtension;
+
+module io.helidon.integrations.micrometer.cdi {
 
     requires java.logging;
 
@@ -28,18 +30,19 @@ module io.helidon.integrations.micrometer {
 
     requires io.helidon.common.http;
     requires io.helidon.servicecommon.rest;
-    requires static io.helidon.servicecommon.restcdi;
+    requires io.helidon.servicecommon.restcdi;
     requires io.helidon.config;
     requires io.helidon.webserver.cors;
+    requires io.helidon.integrations.micrometer;
 
     requires micrometer.core;
     requires micrometer.registry.prometheus;
     requires simpleclient;
 
-    exports io.helidon.integrations.micrometer;
+    exports io.helidon.integrations.micrometer.cdi;
 
     // this is needed for CDI extensions that use non-public observer methods
     opens io.helidon.integrations.micrometer to weld.core.impl, io.helidon.microprofile.cdi;
 
-    provides javax.enterprise.inject.spi.Extension with io.helidon.integrations.micrometer.MicrometerCdiExtension;
+    provides javax.enterprise.inject.spi.Extension with MicrometerCdiExtension;
 }

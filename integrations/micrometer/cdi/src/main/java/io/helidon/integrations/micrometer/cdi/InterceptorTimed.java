@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.integrations.micrometer;
+package io.helidon.integrations.micrometer.cdi;
 
 import java.time.Duration;
 
@@ -22,7 +22,7 @@ import javax.annotation.Priority;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
 
-import io.helidon.integrations.micrometer.MicrometerCdiExtension.MeterWorkItem;
+import io.helidon.integrations.micrometer.cdi.MicrometerCdiExtension.MeterWorkItem;
 
 import io.micrometer.core.annotation.Timed;
 import io.micrometer.core.instrument.Timer;

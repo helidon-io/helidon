@@ -14,13 +14,15 @@
  * limitations under the License.
  *
  */
-package io.helidon.integrations.micrometer;
+package io.helidon.integrations.micrometer.cdi;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
+import io.helidon.integrations.micrometer.MeterRegistryFactory;
+import io.helidon.integrations.micrometer.MicrometerSupport;
 
 import io.micrometer.core.instrument.MeterRegistry;
 

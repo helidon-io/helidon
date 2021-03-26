@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.integrations.micrometer;
+package io.helidon.integrations.micrometer.cdi;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -31,7 +31,7 @@ import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
-import io.helidon.integrations.micrometer.MicrometerCdiExtension.MeterWorkItem;
+import io.helidon.integrations.micrometer.cdi.MicrometerCdiExtension.MeterWorkItem;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
 import io.helidon.servicecommon.restcdi.InterceptionTargetInfo;
 

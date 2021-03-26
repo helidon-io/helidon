@@ -326,6 +326,15 @@ final class FeatureCatalog {
                     .experimental(true)
         );
 
+        addSe("io.helidon.integrations.micrometer",
+                    "Micrometer",
+                    "Micrometer integration"
+                    "Micrometer");
+        addMp("io.helidon.integrations.micrometer.cdi",
+                "Micrometer CDI",
+                "Micrometer CDI integration",
+                "Micrometer-CDI");
+
         /*
          * Common modules
          */
