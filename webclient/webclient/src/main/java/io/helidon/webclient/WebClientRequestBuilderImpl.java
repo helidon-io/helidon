@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     static final AttributeKey<CompletableFuture<WebClientServiceResponse>> COMPLETED = AttributeKey.valueOf("completed");
     static final AttributeKey<CompletableFuture<WebClientResponse>> RESULT = AttributeKey.valueOf("result");
     static final AttributeKey<AtomicBoolean> IN_USE = AttributeKey.valueOf("inUse");
+    static final AttributeKey<AtomicBoolean> RETURN = AttributeKey.valueOf("finished");
     static final AttributeKey<WebClientResponse> RESPONSE = AttributeKey.valueOf("response");
     static final AttributeKey<ConnectionIdent> CONNECTION_IDENT = AttributeKey.valueOf("connectionIdent");
     static final AttributeKey<Long> REQUEST_ID = AttributeKey.valueOf("requestID");
@@ -210,6 +211,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             ChannelFuture connect = bootstrap.connect(uri.getHost(), uri.getPort());
             Channel channel = connect.channel();
             channel.attr(IN_USE).set(new AtomicBoolean(true));
+            channel.attr(RETURN).set(new AtomicBoolean(false));
             channel.attr(CONNECTION_IDENT).set(connectionIdent);
             channels.add(new ChannelRecord(connect));
             return connect;
@@ -535,7 +537,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                                                                 toNettyMethod(method),
                                                                 requestURI.toASCIIString(),
                                                                 headers);
-            HttpUtil.isKeepAlive(request);
+            boolean keepAlive = HttpUtil.isKeepAlive(request);
 
             requestConfiguration = RequestConfiguration.builder(uri)
                     .update(configuration)

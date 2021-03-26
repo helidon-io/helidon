@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -72,7 +73,6 @@ import io.smallrye.openapi.runtime.OpenApiStaticFile;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer.Format;
 import io.smallrye.openapi.runtime.scanner.AnnotationScannerExtension;
-import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
 import io.smallrye.openapi.runtime.scanner.OpenApiAnnotationScanner;
 import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
@@ -81,6 +81,7 @@ import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.Reference;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
+import org.jboss.jandex.IndexView;
 import org.yaml.snakeyaml.TypeDescription;
 
 import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
@@ -93,8 +94,9 @@ import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY
  * the server uses none of these builder methods and does not provide a static
  * {@code openapi} file, then the {@code /openapi} endpoint responds with a
  * nearly-empty OpenAPI document.
+ *
  */
-public class OpenAPISupport implements Service {
+public abstract class OpenAPISupport implements Service {
 
     /**
      * Default path for serving the OpenAPI document.
@@ -126,17 +128,28 @@ public class OpenAPISupport implements Service {
 
     private final String webContext;
 
-    private final OpenAPI model;
+    private OpenAPI model = null;
     private final ConcurrentMap<Format, String> cachedDocuments = new ConcurrentHashMap<>();
     private final Map<Class<?>, ExpandedTypeDescription> implsToTypes;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
 
-    private OpenAPISupport(Builder builder) {
+    /*
+     * To handle the MP case, we must defer constructing the OpenAPI in-memory model until after the server has instantiated
+     * the Application instances. By then the builder has already been used to build the OpenAPISupport object. So save the
+     * following raw materials so we can construct the model at that later time.
+     */
+    private final OpenApiConfig openApiConfig;
+    private final OpenApiStaticFile openApiStaticFile;
+    private final Supplier<List<? extends IndexView>> indexViewsSupplier;
+
+    protected OpenAPISupport(Builder<?> builder) {
         adjustTypeDescriptions(helper().types());
         implsToTypes = buildImplsToTypes(helper());
         webContext = builder.webContext();
         corsEnabledServiceHelper = CorsEnabledServiceHelper.create(FEATURE_NAME, builder.crossOriginConfig);
-        model = prepareModel(builder.openAPIConfig(), builder.staticFile(), builder.perAppFilteredIndexViews());
+        openApiConfig = builder.openAPIConfig();
+        openApiStaticFile = builder.staticFile();
+        indexViewsSupplier = builder.indexViewsSupplier();
     }
 
     @Override
@@ -155,6 +168,20 @@ public class OpenAPISupport implements Service {
         rules.get(this::registerJsonpSupport)
                 .any(webContext, corsEnabledServiceHelper.processor())
                 .get(webContext, this::prepareResponse);
+    }
+
+    /**
+     * Triggers preparation of the model from external code.
+     */
+    protected void prepareModel() {
+        model();
+    }
+
+    private synchronized OpenAPI model() {
+        if (model == null) {
+            model = prepareModel(openApiConfig, openApiStaticFile, indexViewsSupplier.get());
+        }
+        return model;
     }
 
     private void registerJsonpSupport(ServerRequest req, ServerResponse res) {
@@ -257,7 +284,8 @@ public class OpenAPISupport implements Service {
      * @throws RuntimeException in case of errors reading any existing static
      * OpenAPI document
      */
-    private OpenAPI prepareModel(OpenApiConfig config, OpenApiStaticFile staticFile, List<FilteredIndexView> filteredIndexViews) {
+    private OpenAPI prepareModel(OpenApiConfig config, OpenApiStaticFile staticFile,
+            List<? extends IndexView> filteredIndexViews) {
         try {
             synchronized (OpenApiDocument.INSTANCE) {
                 OpenApiDocument.INSTANCE.reset();
@@ -285,7 +313,7 @@ public class OpenAPISupport implements Service {
         return !config.scanDisable();
     }
 
-    private void expandModelUsingAnnotations(OpenApiConfig config, List<FilteredIndexView> filteredIndexViews) {
+    private void expandModelUsingAnnotations(OpenApiConfig config, List<? extends IndexView> filteredIndexViews) {
         if (filteredIndexViews.isEmpty() || config.scanDisable()) {
             return;
         }
@@ -344,10 +372,6 @@ public class OpenAPISupport implements Service {
      * from its underlying data
      */
     String prepareDocument(MediaType resultMediaType) throws IOException {
-        if (model == null) {
-            throw new IllegalStateException("OpenAPI model used but has not been initialized");
-        }
-
         OpenAPIMediaType matchingOpenAPIMediaType
                 = OpenAPIMediaType.byMediaType(resultMediaType)
                 .orElseGet(() -> {
@@ -374,7 +398,7 @@ public class OpenAPISupport implements Service {
 
     private String formatDocument(Format fmt) {
         StringWriter sw = new StringWriter();
-        Serializer.serialize(helper().types(), implsToTypes, model, fmt, sw);
+        Serializer.serialize(helper().types(), implsToTypes, model(), fmt, sw);
         return sw.toString();
 
     }
@@ -588,7 +612,7 @@ public class OpenAPISupport implements Service {
      *
      * @return new Builder
      */
-    public static Builder builder() {
+    public static SEOpenAPISupportBuilder builder() {
         return builderSE();
     }
 
@@ -630,22 +654,28 @@ public class OpenAPISupport implements Service {
      * Helidon SE apps and once for use from the Helidon MP-provided OpenAPI
      * service. This lets us constrain what use cases are possible from each
      * (for example, no anno processing from SE).
+     *
+     * @param <B> concrete subclass of OpenAPISupport.Builder
      */
-    public abstract static class Builder implements io.helidon.common.Builder<OpenAPISupport> {
+    public abstract static class Builder<B extends Builder<B>> implements io.helidon.common.Builder<OpenAPISupport> {
 
         /**
          * Config key to select the openapi node from Helidon config.
          */
         public static final String CONFIG_KEY = "openapi";
 
+        private final Class<B> builderClass;
+
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
         private CrossOriginConfig crossOriginConfig = null;
 
-        @Override
-        public OpenAPISupport build() {
-            validate();
-            return new OpenAPISupport(this);
+        protected Builder(Class<B> builderClass) {
+            this.builderClass = builderClass;
+        }
+
+        protected B me() {
+            return builderClass.cast(this);
         }
 
         /**
@@ -658,7 +688,7 @@ public class OpenAPISupport implements Service {
          * @exception NullPointerException if the provided {@code Config} is null
          * @return updated builder instance
          */
-        public Builder config(Config config) {
+        public B config(Config config) {
             config.get("web-context")
                     .asString()
                     .ifPresent(this::webContext);
@@ -668,7 +698,7 @@ public class OpenAPISupport implements Service {
             config.get(CORS_CONFIG_KEY)
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
-            return this;
+            return me();
         }
 
         /**
@@ -725,12 +755,12 @@ public class OpenAPISupport implements Service {
          * {@value DEFAULT_WEB_CONTEXT}
          * @return updated builder instance
          */
-        public Builder webContext(String path) {
+        public B webContext(String path) {
             if (!path.startsWith("/")) {
                 path = "/" + path;
             }
             this.webContext = Optional.of(path);
-            return this;
+            return me();
         }
 
         /**
@@ -739,10 +769,10 @@ public class OpenAPISupport implements Service {
          * @param path non-null location of the static OpenAPI document file
          * @return updated builder instance
          */
-        public Builder staticFile(String path) {
+        public B staticFile(String path) {
             Objects.requireNonNull(path, "path to static file must be non-null");
             staticFilePath = Optional.of(path);
-            return this;
+            return me();
         }
 
         /**
@@ -751,20 +781,16 @@ public class OpenAPISupport implements Service {
          * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
          * @return updated builder instance
          */
-        public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
+        public B crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
             this.crossOriginConfig = crossOriginConfig;
-            return this;
+            return me();
         }
 
-        /**
-         * Returns zero or more {@code FilteredIndexView} instances, each of which to be used in constructing an OpenAPI
-         * model that is merged with the others. This is particularly useful for supporting multiple {@code Application} instances
-         * in a single server.
-         *
-         * @return possibly empty {@code List} of {@code FilteredIndexView} objects
-         */
-        public abstract List<FilteredIndexView> perAppFilteredIndexViews();
+        protected Supplier<List<? extends IndexView>> indexViewsSupplier() {
+            // Only in MP can we have possibly multiple index views, one per app, from scanning classes (or the Jandex index).
+            return () -> Collections.emptyList();
+        }
 
         private OpenApiStaticFile getExplicitStaticFile() {
             Path path = Paths.get(staticFilePath.get());
