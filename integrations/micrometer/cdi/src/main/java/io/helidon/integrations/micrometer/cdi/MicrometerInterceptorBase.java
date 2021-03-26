@@ -33,13 +33,22 @@ import javax.interceptor.InvocationContext;
 
 import io.helidon.integrations.micrometer.cdi.MicrometerCdiExtension.MeterWorkItem;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
+import io.helidon.servicecommon.restcdi.InterceptionRunner;
 import io.helidon.servicecommon.restcdi.InterceptionTargetInfo;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 
+/**
+ * Base implementation for all Micrometer interceptors.
+ * <p>
+ *     All use the with-post-completion" semantics because some metrics are updated only when the invoked executable throws an
+ *     exception.
+ * </p>
+ * @param <M>
+ */
 @Dependent
-abstract class MicrometerInterceptorBase<M extends Meter> implements HelidonInterceptor<MeterWorkItem> {
+abstract class MicrometerInterceptorBase<M extends Meter> implements HelidonInterceptor.WithPostComplete<MeterWorkItem> {
 
     private static final Logger LOGGER = Logger.getLogger(MicrometerInterceptorBase.class.getPackageName() + ".Interceptor*");
 
@@ -102,10 +111,17 @@ abstract class MicrometerInterceptorBase<M extends Meter> implements HelidonInte
 
     @Override
     public void preInvoke(InvocationContext context, MeterWorkItem workItem) {
-        invokeVerifiedAction(context, workItem, this::preInvoke, ActionType.PREINVOKE);
+        verifyAction(context, workItem, this::preInvoke, ActionType.PREINVOKE);
     }
 
-    void invokeVerifiedAction(InvocationContext context, MeterWorkItem workItem, Consumer<M> action, ActionType actionType) {
+    @Override
+    public void postComplete(InvocationContext context, MeterWorkItem workItem) {
+        if (!workItem.isOnlyOnException() || context.getContextData().get(InterceptionRunner.EXCEPTION) != null) {
+            verifyAction(context, workItem, this::postComplete, ActionType.COMPLETE);
+        }
+    }
+
+    private void verifyAction(InvocationContext context, MeterWorkItem workItem, Consumer<M> action, ActionType actionType) {
         Meter meter = workItem.meter();
         if (registry
                 .find(meter.getId().getName())
@@ -120,32 +136,9 @@ abstract class MicrometerInterceptorBase<M extends Meter> implements HelidonInte
         action.accept(meterType.cast(meter));
     }
 
-    abstract void preInvoke(M meter);
+    void preInvoke(M meter) {
+    };
 
-    abstract static class WithPostComplete<M extends Meter> extends MicrometerInterceptorBase<M>
-            implements HelidonInterceptor.WithPostComplete<MeterWorkItem> {
+    abstract void postComplete(M meter);
 
-        WithPostComplete(Class<? extends Annotation> annotationType, Class<M> meterType) {
-            super(annotationType, meterType);
-        }
-
-        @AroundConstruct
-        @Override
-        public Object aroundConstruct(InvocationContext context) throws Exception {
-            return aroundConstructBase(context);
-        }
-
-        @AroundInvoke
-        @Override
-        public Object aroundInvoke(InvocationContext context) throws Exception {
-            return aroundInvokeBase(context);
-        }
-
-        @Override
-        public void postComplete(InvocationContext context, MeterWorkItem workItem) {
-            invokeVerifiedAction(context, workItem, this::postComplete, ActionType.COMPLETE);
-        }
-
-        abstract void postComplete(M meter);
-    }
 }

@@ -29,21 +29,17 @@ import io.micrometer.core.instrument.Timer;
 
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 8)
-final class InterceptorTimed extends MicrometerInterceptorBase.WithPostComplete<Timer> {
+final class InterceptorTimed extends MicrometerInterceptorBase<Timer> {
 
     private long startTimeNanos;
 
     InterceptorTimed() {
         super(Timed.class, Timer.class);
     }
+
     @Override
     protected void preInvoke(Timer timer) {
         startTimeNanos = System.nanoTime();
-    }
-
-    @Override
-    public void postComplete(InvocationContext context, MeterWorkItem workItem) {
-        invokeVerifiedAction(context, workItem, this::postComplete, ActionType.COMPLETE);
     }
 
     public void postComplete(Timer timer) {

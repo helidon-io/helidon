@@ -83,11 +83,13 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
         Annotation annotation = lookupResult.annotation();
 
         Meter newMeter = null;
+        boolean isOnlyOnException = false;
 
         if (annotation instanceof Counted) {
             Counter counter = MeterProducer.produceCounter(meterRegistry, (Counted) annotation);
             LOGGER.log(Level.FINE, () -> "Registered counter " + counter.getId().toString());
             newMeter = counter;
+            isOnlyOnException = ((Counted) annotation).recordFailuresOnly();
         } else if (annotation instanceof Timed) {
             Timed timed = (Timed) annotation;
             if (timed.longTask()) {
@@ -106,7 +108,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
             InterceptionTargetInfo<MeterWorkItem> info = interceptionTargetInfo.computeIfAbsent((Executable) element,
                     InterceptionTargetInfo::create);
             info.addWorkItem(lookupResult.annotation()
-                    .annotationType(), MeterWorkItem.create(newMeter));
+                    .annotationType(), MeterWorkItem.create(newMeter, isOnlyOnException));
         }
     }
 
@@ -143,17 +145,23 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
 
     static class MeterWorkItem {
         private final Meter meter;
+        private final boolean isOnlyOnException;
 
-        static <M extends Meter> MeterWorkItem create(M meter) {
-            return new MeterWorkItem(meter);
+        static <M extends Meter> MeterWorkItem create(M meter, boolean isOnlyOnException) {
+            return new MeterWorkItem(meter, isOnlyOnException);
         }
 
-        private MeterWorkItem(Meter meter) {
+        private MeterWorkItem(Meter meter, boolean isOnlyOnException) {
             this.meter = meter;
+            this.isOnlyOnException = isOnlyOnException;
         }
 
         Meter meter() {
             return meter;
+        }
+
+        boolean isOnlyOnException() {
+            return isOnlyOnException;
         }
     }
 

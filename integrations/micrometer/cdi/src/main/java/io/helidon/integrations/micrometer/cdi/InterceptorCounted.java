@@ -17,7 +17,6 @@
 package io.helidon.integrations.micrometer.cdi;
 
 import javax.annotation.Priority;
-import javax.inject.Inject;
 import javax.interceptor.Interceptor;
 
 import io.micrometer.core.annotation.Counted;
@@ -27,14 +26,13 @@ import io.micrometer.core.instrument.Counter;
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 8)
 final class InterceptorCounted extends MicrometerInterceptorBase<Counter> {
 
-    @Inject
     InterceptorCounted() {
         super(Counted.class,
                 Counter.class);
     }
 
     @Override
-    void preInvoke(Counter counter) {
+    void postComplete(Counter counter) {
         counter.increment();
     }
 }
