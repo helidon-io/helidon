@@ -157,7 +157,7 @@ abstract class MetricsInterceptorBase<M extends Metric> implements HelidonInterc
         }
 
         @Override
-        public void postComplete(InvocationContext context, MetricWorkItem workItem) {
+        public void postComplete(InvocationContext context, Throwable throwable, MetricWorkItem workItem) {
             invokeVerifiedAction(context, workItem, this::postComplete, ActionType.COMPLETE);
         }
 

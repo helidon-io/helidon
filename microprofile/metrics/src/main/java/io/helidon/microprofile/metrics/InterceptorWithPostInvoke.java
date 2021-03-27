@@ -62,7 +62,7 @@ abstract class InterceptorWithPostInvoke<T extends Metric> extends InterceptorBa
                 this::postComplete);
     }
 
-    void postComplete(InvocationContext context, MetricWorkItem workItem) {
+    void postComplete(InvocationContext context, Throwable t, MetricWorkItem workItem) {
         invokeVerifiedAction(context, workItem, this::postComplete, ActionType.COMPLETE);
     }
 
