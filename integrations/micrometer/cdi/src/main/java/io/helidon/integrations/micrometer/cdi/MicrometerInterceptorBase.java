@@ -33,7 +33,6 @@ import javax.interceptor.InvocationContext;
 
 import io.helidon.integrations.micrometer.cdi.MicrometerCdiExtension.MeterWorkItem;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
-import io.helidon.servicecommon.restcdi.InterceptionRunner;
 import io.helidon.servicecommon.restcdi.InterceptionTargetInfo;
 
 import io.micrometer.core.instrument.Meter;
@@ -115,8 +114,8 @@ abstract class MicrometerInterceptorBase<M extends Meter> implements HelidonInte
     }
 
     @Override
-    public void postComplete(InvocationContext context, MeterWorkItem workItem) {
-        if (!workItem.isOnlyOnException() || context.getContextData().get(InterceptionRunner.EXCEPTION) != null) {
+    public void postComplete(InvocationContext context, Throwable throwable, MeterWorkItem workItem) {
+        if (!workItem.isOnlyOnException() || throwable != null) {
             verifyAction(context, workItem, this::postComplete, ActionType.COMPLETE);
         }
     }
@@ -137,7 +136,7 @@ abstract class MicrometerInterceptorBase<M extends Meter> implements HelidonInte
     }
 
     void preInvoke(M meter) {
-    };
+    }
 
     abstract void postComplete(M meter);
 

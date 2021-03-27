@@ -42,7 +42,7 @@ module io.helidon.integrations.micrometer.cdi {
     exports io.helidon.integrations.micrometer.cdi;
 
     // this is needed for CDI extensions that use non-public observer methods
-    opens io.helidon.integrations.micrometer to weld.core.impl, io.helidon.microprofile.cdi;
+    opens io.helidon.integrations.micrometer.cdi to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides javax.enterprise.inject.spi.Extension with MicrometerCdiExtension;
 }
