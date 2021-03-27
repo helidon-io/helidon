@@ -16,8 +16,6 @@
  */
 package io.helidon.servicecommon.restcdi;
 
-import java.util.function.BiConsumer;
-
 import javax.interceptor.InvocationContext;
 
 /**
@@ -29,7 +27,7 @@ import javax.interceptor.InvocationContext;
  *     <ul>
  *         <li>Create an instance of a class which implements {@code InterceptionRunner}.</li>
  *         <li>From the interceptor's {@code @AroundConstruct} and {@code @AroundInvoke} methods, invoke one of the variants of
- *         the runner's {@link #run(InvocationContext, Iterable, BiConsumer) run} method. Which variant depends on whether the
+ *         the runner's {@link #run(InvocationContext, Iterable, PreInvocationHandler) run} method. Which variant depends on whether the
  *         specific interceptor needs to operate on the work items
  *         <ul>
  *             <li>only before (e.g., to increment a counter metric), or</li>
@@ -47,7 +45,7 @@ import javax.interceptor.InvocationContext;
  *                intercepted invocation runs, and</li>
  *                <li>an post-completion {@code Consumer} of work item which performs an action on each work item after the
  *                intercepted invocation has finished, only for the "before-and-after"
- *                {@link #run(InvocationContext, Iterable, BiConsumer, BiConsumer) run} variant.</li>
+ *                {@link #run(InvocationContext, Iterable, PreInvocationHandler, PostCompletionHandler) run} variant.</li>
  *             </ul>
  *         </li>
  *     </ul>
@@ -66,7 +64,40 @@ import javax.interceptor.InvocationContext;
  */
 public interface InterceptionRunner {
 
-    String EXCEPTION = InterceptionRunner.class.getPackageName() + ".Exception";
+    /**
+     * Processing before an intercepted executable is invoked.
+     *
+     * @param <T> type of the work item for the handler to process
+     */
+    @FunctionalInterface
+    interface PreInvocationHandler<T> {
+
+        /**
+         * Processing before an intercepted executable is invoked.
+         *
+         * @param context {@code InvocationContext} for calling an intercepted executable
+         * @param workItem work item for the handler to process
+         */
+        void accept(InvocationContext context, T workItem);
+    }
+
+    /**
+     * Processing after an intercepted executable has completed, successfully or not.
+     *
+     * @param <T> type of the work item for the handler to process
+     */
+    @FunctionalInterface
+    interface PostCompletionHandler<T> {
+
+        /**
+         * Processes a work item after completion (successful or failed) for calling an intercepted executable.
+         *
+         * @param context {@code InvocationContext} for the intercepted executable
+         * @param throwable any problem running the executable; null if the invocation succeeded
+         * @param workItem the work item for the handler to process
+         */
+        void accept(InvocationContext context, Throwable throwable, T workItem);
+    }
 
     /**
      * Invokes the intercepted executable represented by the {@code InvocationContext}, performing the pre-invocation
@@ -82,7 +113,7 @@ public interface InterceptionRunner {
      <T> Object run(
             InvocationContext context,
             Iterable<T> workItems,
-            BiConsumer<InvocationContext, T> preInvocationHandler) throws Exception;
+            PreInvocationHandler<T> preInvocationHandler) throws Exception;
 
     /**
      * Invokes the intercepted executable represented by the {@code InvocationContext}, performing the pre-invocation
@@ -99,6 +130,6 @@ public interface InterceptionRunner {
     <T> Object run(
             InvocationContext context,
             Iterable<T> workItems,
-            BiConsumer<InvocationContext, T> preInvocationHandler,
-            BiConsumer<InvocationContext, T> postCompletionHandler) throws Exception;
+            PreInvocationHandler<T> preInvocationHandler,
+            PostCompletionHandler<T> postCompletionHandler) throws Exception;
 }

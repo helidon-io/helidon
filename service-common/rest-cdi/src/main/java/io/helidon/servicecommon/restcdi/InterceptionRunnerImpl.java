@@ -20,9 +20,12 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
-import java.util.function.BiConsumer;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,6 +33,7 @@ import javax.interceptor.InvocationContext;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.CompletionCallback;
 import javax.ws.rs.container.Suspended;
+import javax.ws.rs.container.TimeoutHandler;
 
 /**
  * A general-purpose implementation of {@link InterceptionRunner}, supporting asynchronous JAX-RS endpoints as indicated by the
@@ -66,7 +70,7 @@ class InterceptionRunnerImpl implements InterceptionRunner {
     public <T> Object run(
             InvocationContext context,
             Iterable<T> workItems,
-            BiConsumer<InvocationContext, T> preInvocationHandler) throws Exception {
+            PreInvocationHandler<T> preInvocationHandler) throws Exception {
         workItems.forEach(workItem -> preInvocationHandler.accept(context, workItem));
         return context.proceed();
     }
@@ -75,16 +79,19 @@ class InterceptionRunnerImpl implements InterceptionRunner {
     public <T> Object run(
             InvocationContext context,
             Iterable<T> workItems,
-            BiConsumer<InvocationContext, T> preInvocationHandler,
-            BiConsumer<InvocationContext, T> postCompletionHandler) throws Exception {
+            PreInvocationHandler<T> preInvocationHandler,
+            PostCompletionHandler<T> postCompletionHandler) throws Exception {
         workItems.forEach(workItem -> preInvocationHandler.accept(context, workItem));
+        Throwable t = null;
         try {
             return context.proceed();
         } catch (Exception e) {
-            context.getContextData().put(EXCEPTION, e);
+            t = e;
             throw e;
         } finally {
-            workItems.forEach(workItem -> postCompletionHandler.accept(context, workItem));
+            for (T workItem : workItems) {
+                postCompletionHandler.accept(context, t, workItem);
+            }
         }
     }
 
@@ -106,16 +113,23 @@ class InterceptionRunnerImpl implements InterceptionRunner {
         public <T> Object run(
                 InvocationContext context,
                 Iterable<T> workItems,
-                BiConsumer<InvocationContext, T> preInvocationHandler,
-                BiConsumer<InvocationContext, T> postCompletionHandler) throws Exception {
+                PreInvocationHandler<T> preInvocationHandler,
+                PostCompletionHandler<T> postCompletionHandler) throws Exception {
 
             // Check the post-completion handler now because we don't want an NPE thrown from some other call stack when we try to
             // use it in the completion callback. Any other null argument would trigger an NPE from the current call stack.
             Objects.requireNonNull(postCompletionHandler, "postCompletionHandler");
 
             workItems.forEach(workItem -> preInvocationHandler.accept(context, workItem));
+
+            Object[] params = context.getParameters();
             AsyncResponse asyncResponse = AsyncResponse.class.cast(context.getParameters()[asyncResponseSlot]);
-            asyncResponse.register(FinishCallback.create(context, postCompletionHandler, workItems));
+            ThrowableCapturingAsyncResponse throwableCapturingAsyncResponse = new ThrowableCapturingAsyncResponse(asyncResponse);
+            params[asyncResponseSlot] = throwableCapturingAsyncResponse;
+            context.setParameters(params);
+
+            throwableCapturingAsyncResponse.register(
+                    FinishCallback.create(context, throwableCapturingAsyncResponse, postCompletionHandler, workItems));
             return context.proceed();
         }
 
@@ -127,31 +141,130 @@ class InterceptionRunnerImpl implements InterceptionRunner {
         }
     }
 
+    /**
+     * Delegating implementation of {@code AsyncResponse} which captures any exception the intercepted method passes to
+     * {@code AsyncResponse.resume}.
+     */
+    private static class ThrowableCapturingAsyncResponse implements AsyncResponse {
+
+        private final AsyncResponse delegate;
+        private Throwable throwable = null;
+
+        private ThrowableCapturingAsyncResponse(AsyncResponse delegate) {
+            this.delegate = delegate;
+        }
+
+        Throwable throwable() {
+            return throwable;
+        }
+
+        @Override
+        public boolean resume(Object response) {
+            return delegate.resume(response);
+        }
+
+        @Override
+        public boolean resume(Throwable response) {
+            throwable = response;
+            return delegate.resume(response);
+        }
+
+        @Override
+        public boolean cancel() {
+            return delegate.cancel();
+        }
+
+        @Override
+        public boolean cancel(int retryAfter) {
+            return delegate.cancel(retryAfter);
+        }
+
+        @Override
+        public boolean cancel(Date retryAfter) {
+            return delegate.cancel(retryAfter);
+        }
+
+        @Override
+        public boolean isSuspended() {
+            return delegate.isSuspended();
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return delegate.isCancelled();
+        }
+
+        @Override
+        public boolean isDone() {
+            return delegate.isDone();
+        }
+
+        @Override
+        public boolean setTimeout(long time, TimeUnit unit) {
+            return delegate.setTimeout(time, unit);
+        }
+
+        @Override
+        public void setTimeoutHandler(TimeoutHandler handler) {
+            delegate.setTimeoutHandler(handler);
+        }
+
+        @Override
+        public Collection<Class<?>> register(Class<?> callback) {
+            return delegate.register(callback);
+        }
+
+        @Override
+        public Map<Class<?>, Collection<Class<?>>> register(Class<?> callback, Class<?>... callbacks) {
+            return delegate.register(callback, callbacks);
+        }
+
+        @Override
+        public Collection<Class<?>> register(Object callback) {
+            return delegate.register(callback);
+        }
+
+        @Override
+        public Map<Class<?>, Collection<Class<?>>> register(Object callback, Object... callbacks) {
+            return delegate.register(callback, callbacks);
+        }
+    }
+
     private static class FinishCallback<T> implements CompletionCallback {
 
         private static final Logger LOGGER = Logger.getLogger(FinishCallback.class.getName());
 
         private final InvocationContext context;
-        private final BiConsumer<InvocationContext, T> postCompletionHandler;
+        private final ThrowableCapturingAsyncResponse throwableCapturingAsyncResponse;
+        private final PostCompletionHandler<T> postCompletionHandler;
         private final Iterable<T> workItems;
 
-        static <T> FinishCallback<T> create(InvocationContext context, BiConsumer<InvocationContext, T> postCompletionHandler,
+        static <T> FinishCallback<T> create(InvocationContext context,
+                ThrowableCapturingAsyncResponse throwableCapturingAsyncResponse,
+                PostCompletionHandler<T> postCompletionHandler,
                 Iterable<T> workItems) {
-            return new FinishCallback<>(context, postCompletionHandler, workItems);
+            return new FinishCallback<>(context, throwableCapturingAsyncResponse, postCompletionHandler, workItems);
         }
-        private FinishCallback(InvocationContext context, BiConsumer<InvocationContext, T> postCompletionHandler,
+        private FinishCallback(InvocationContext context,
+                ThrowableCapturingAsyncResponse throwableCapturingAsyncResponse,
+                PostCompletionHandler<T> postCompletionHandler,
                 Iterable<T> workItems) {
             this.context = context;
+            this.throwableCapturingAsyncResponse = throwableCapturingAsyncResponse;
             this.postCompletionHandler = postCompletionHandler;
             this.workItems = workItems;
         }
 
         @Override
         public void onComplete(Throwable throwable) {
-            workItems.forEach(workItem -> postCompletionHandler.accept(context, workItem));
             if (throwable != null) {
-                LOGGER.log(Level.FINE, "Throwable detected by interceptor async callback", throwable);
-                context.getContextData().put(EXCEPTION, throwable);
+                LOGGER.log(Level.FINE, "Unmapped throwable detected by interceptor async callback", throwable);
+            } else if (throwableCapturingAsyncResponse.throwable() != null) {
+                throwable = throwableCapturingAsyncResponse.throwable();
+                LOGGER.log(Level.FINE, "Mapped throwable detected by interceptor async callback", throwable);
+            }
+            for (T workItem : workItems) {
+                postCompletionHandler.accept(context, throwable, workItem);
             }
         }
     }

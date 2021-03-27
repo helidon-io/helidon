@@ -26,6 +26,10 @@
 
     <artifactId>helidon-service-common-rest-cdi</artifactId>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.service-common</groupId>

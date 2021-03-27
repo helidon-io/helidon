@@ -163,9 +163,9 @@ public interface HelidonInterceptor<W> {
          * Performs whatever post-completion work is needed for the given context, applied to the specified work item.
          *
          * @param context {@code InvocationContext} for the execution being intercepted
+         * @param throwable throwable from the intercepted method; null if the method returned normally
          * @param workItem the work item on which to operate
          */
-
-        void postComplete(InvocationContext context, W workItem);
+        void postComplete(InvocationContext context, Throwable throwable, W workItem);
     }
 }
