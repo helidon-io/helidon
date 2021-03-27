@@ -33,10 +33,6 @@
         Helidon Micrometer Integration CDI
     </description>
 
-    <properties>
-        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
