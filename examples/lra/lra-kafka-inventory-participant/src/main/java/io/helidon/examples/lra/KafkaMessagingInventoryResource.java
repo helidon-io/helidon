@@ -17,14 +17,12 @@ import java.util.Map;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
-@Path("/kafkamessaging")
+@Path("/")
 @ApplicationScoped
 public class KafkaMessagingInventoryResource {
 
     private ParticipantStatus participantStatus;
-    private boolean isCancel; //technically indicates whether to throw Exception
-    String uriToCall;
-    private Map lraStatusMap = new HashMap<String, ParticipantStatus>();
+    private int inventoryCount = 1;
 
     @Incoming("orderchannel")
     @Outgoing("inventorychannel")
@@ -32,10 +30,11 @@ public class KafkaMessagingInventoryResource {
     public Message checkInventory(KafkaMessage msg)  {
         Header lraidheader = msg.getHeaders().lastHeader(LRA_HTTP_CONTEXT_HEADER);
         System.out.println("------>KafkaMessagingInventoryResource.checkInventory  msg:" + msg +
-                " msg.getPayload():" + msg.getPayload() + " isCancel:" + isCancel + " lraidheader:" + lraidheader);
+                " msg.getPayload():" + msg.getPayload() + " inventoryCount:" + inventoryCount + " lraidheader:" + lraidheader);
         participantStatus = ParticipantStatus.Active;
-        KafkaMessage<Object, String> kafkaMessage = KafkaMessage.of(isCancel?"inventorydoesnotexist":"inventoryexists");
-            kafkaMessage.getHeaders().add("doesinventoryexist", (isCancel + "").getBytes());
+        String inventoryStatus = inventoryCount < 1 ?"inventorydoesnotexist":"inventoryexists";
+        KafkaMessage<Object, String> kafkaMessage = KafkaMessage.of(inventoryStatus);
+            kafkaMessage.getHeaders().add("inventoryStatus", (inventoryStatus).getBytes());
             return kafkaMessage;
     }
 
@@ -94,33 +93,23 @@ public class KafkaMessagingInventoryResource {
 
 
     @GET
-    @Path("/setCancel")
-    public Response setCancel() {
-        System.out.println("------>setCancel called. LRA method will throw exception (resulting in compensation if appropriate)");
-        isCancel = true;
+    @Path("/addInventory")
+    public Response addInventory() {
+        System.out.println("------>RestInventoryResource.addInventory called");
+        inventoryCount++;
         return Response.ok()
-                .entity("isCancel = true")
+                .entity("inventoryCount:" + inventoryCount)
                 .build();
     }
 
     @GET
-    @Path("/setClose")
-    public Response setClose() {
-        System.out.println("------>setClose called. LRA method will NOT throw exception (resulting in complete if appropriate)");
-        isCancel = false;
+    @Path("/removeInventory")
+    public Response removeInventory() {
+        System.out.println("------>RestInventoryResource.removeInventory called");
+        inventoryCount--;
         return Response.ok()
-                .entity("isCancel = false")
+                .entity("inventoryCount:" + inventoryCount)
                 .build();
     }
 
-    @GET
-    @Path("/setURIToCall")
-    public Response setURIToCall(@QueryParam("uri") String uri) {
-        System.out.println("setURIToCall:" + uri);
-        uriToCall = uri;
-        isCancel = false;
-        return Response.ok()
-                .entity("setURIToCall:" + uri)
-                .build();
-    }
 }

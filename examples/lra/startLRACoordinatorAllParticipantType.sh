@@ -16,6 +16,11 @@
 #
 
 java -Dlra.logging.enabled=false \
+-Dmp.messaging.connector.helidon-kafka.bootstrap.servers=localhost:9092 \
+-Dmp.messaging.connector.helidon-kafka.key.deserializer=org.apache.kafka.common.serialization.StringDeserializer \
+-Dmp.messaging.connector.helidon-kafka.value.deserializer=org.apache.kafka.common.serialization.StringDeserializer \
+-Dmp.messaging.connector.helidon-kafka.key.serializer=org.apache.kafka.common.serialization.StringSerializer \
+-Dmp.messaging.connector.helidon-kafka.value.serializer=org.apache.kafka.common.serialization.StringSerializer \
 -Doracle.ucp.jdbc.PoolDataSource.orderpdb.URL=jdbc:oracle:thin:@orderdb_tp?TNS_ADMIN=/Users/pparkins/Downloads/Wallet_ORDERDB \
 -Doracle.ucp.jdbc.PoolDataSource.orderpdb.user=orderuser \
 -Doracle.ucp.jdbc.PoolDataSource.orderpdb.password=Welcome12345 \

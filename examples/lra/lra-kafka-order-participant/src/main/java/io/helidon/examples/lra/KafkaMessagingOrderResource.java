@@ -14,7 +14,7 @@ import javax.ws.rs.*;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
-@Path("/kafkamessaging") //there are no actual Rest endpoints as the order itself is placed with a message
+@Path("/") //there are no actual Rest endpoints as the order itself is placed with a message
 @ApplicationScoped
 public class KafkaMessagingOrderResource {
 
@@ -39,11 +39,13 @@ public class KafkaMessagingOrderResource {
     @LRA(value = LRA.Type.MANDATORY, end = true)
     public Message receiveInventoryStatusForOrder(KafkaMessage msg) throws Exception {
         Header lraidheader = msg.getHeaders().lastHeader(LRA_HTTP_CONTEXT_HEADER);
-        System.out.println("------>KafkaMessagingOrderResource.receiveInventoryStatusForOrder received lraidheader:" + lraidheader);
-        if(false) throw new Exception("Intentional exception");
+        Header inventoryStatus = msg.getHeaders().lastHeader("inventoryStatus");
+        Object inventoryPayload = msg.getPayload();
+        System.out.println("------>KafkaMessagingOrderResource.receiveInventoryStatusForOrder received " +
+                "lraidheader:" + lraidheader  + "inventoryStatusHeader:" + inventoryStatus + " inventoryPayload:" + inventoryPayload);
+        if(inventoryPayload.equals("inventorydoesnotexist")) throw new Exception("intentional exception to cause cancel call as inventorydoesnotexist");
         return KafkaMessage.of("placeOrder success");
     }
-
 
     @Incoming("kafkacompletechannel")
     @Outgoing("kafkacompletereplychannel")
@@ -62,7 +64,6 @@ public class KafkaMessagingOrderResource {
         participantStatus = ParticipantStatus.Compensated;
         return KafkaMessage.of(participantStatus.toString());
     }
-
 
     @Incoming("kafkastatuschannel")
     @Outgoing("kafkastatusreplychannel")

@@ -15,10 +15,8 @@
 # limitations under the License.
 #
 
-
 java -Dlra.logging.enabled=false \
 -jar /Users/pparkins/go/src/github.com/paulparkinson/helidon/lra/coordinator/target/lra-coordinator-helidon-0.0.1-SNAPSHOT.jar
-
 
 #In order to enabled logging, simply remove -Dlra.logging.enabled=false and add the datasource information. For example...
 #-Doracle.ucp.jdbc.PoolDataSource.coordinatordb.URL=myurl \

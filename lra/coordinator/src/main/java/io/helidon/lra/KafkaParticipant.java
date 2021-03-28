@@ -41,7 +41,7 @@ public class KafkaParticipant extends Participant {
     // The Kafka specific config parsed from URIs
     private KafkaChannelConfig completeConfig, compensateConfig, afterLRAConfig, statusConfig, forgetConfig;
     // Since topics are fairly inexpensive in Kafka, currently the requirement for KafkaParticipants is a topic per channel.
-    // Ie there is not option to filter on HELIDONLRAOPERATION as there is with AQ selector option, and therefore
+    // Ie there is no option to filter on HELIDONLRAOPERATION as there is with AQ selector option, and therefore
     //  there is  a listener per bootstrapservers plus topic (bootstrapservers + "-" + topic)
     private static Map<String, KafkaReplyListener> bootstrapserversToListenerMap = new ConcurrentHashMap<>();
 
@@ -165,7 +165,7 @@ public class KafkaParticipant extends Participant {
      * @param operation The operation being sent. This will also be passed as a header.
      */
     private String sendMessageAndWaitForReply(LRA lra, KafkaChannelConfig channelConfig, String operation) {
-        Properties props = new Properties(); //todo get all of this from config
+        Properties props = new Properties();
         props.put("bootstrap.servers", channelConfig.bootstrapservers);
         //todo allow overrides...
         props.put("acks", "all");
@@ -180,7 +180,7 @@ public class KafkaParticipant extends Participant {
                 " lra.lraId:" + lra.lraId+ " bootstrapservers:" + channelConfig.bootstrapservers);
         List<Header> headers = Arrays.asList(new RecordHeader(LRA_HTTP_CONTEXT_HEADER, lra.lraId.getBytes()));
         ProducerRecord<String, String> record =
-                new ProducerRecord<>(channelConfig.sendtotopic, null, HELIDONLRAOPERATION, operation, headers); //todo partition
+                new ProducerRecord<>(channelConfig.sendtotopic, null, HELIDONLRAOPERATION, operation, headers);
         producer.send(record);
         producer.close();
         KafkaReplyListener replyListener = bootstrapserversToListenerMap.get(channelConfig.bootstrapservers + "-" + channelConfig.sendtotopic);
@@ -188,14 +188,15 @@ public class KafkaParticipant extends Participant {
         String replyStatus;
         do {
             replyStatus = replyListener.lraIDToReplyStatusMap.get(lra.lraId); //it will equal COMPLETESUCCESS or COMPLETEFAILURE eg
-            LOGGER.info("Still waiting for reply from " + operation + " to topic:" + channelConfig.sendtotopic +
-                    " lra.lraId:" + lra.lraId+ " bootstrapservers:" + channelConfig.bootstrapservers + " current replyStatus:" + replyStatus);
+            LOGGER.info("Still waiting for reply on replytopic:" + channelConfig.replytopic +  " for operation:" + operation +
+                    " to topic:" + channelConfig.sendtotopic +  " lra.lraId:" + lra.lraId +
+                    " bootstrapservers:" + channelConfig.bootstrapservers + " current replyStatus:" + replyStatus);
             try {
                 Thread.sleep(1000 * 1); //todo wait/notify
             } catch (InterruptedException e) {
                 LOGGER.warning("InterruptedException waiting for reply from topic:" + channelConfig.sendtotopic + " operation:" + operation);
             }
-        } while (replyStatus.equals(operation)); //todo timeout (add backoff and/or config retries) and return "failure" or exception
+        } while (replyStatus.equals(operation));
         LOGGER.info("Returning as replyListener for operation:" + operation + " lraID is " + replyStatus);
         return "success";
     }

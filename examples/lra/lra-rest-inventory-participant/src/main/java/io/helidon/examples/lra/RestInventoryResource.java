@@ -99,7 +99,7 @@ public class RestInventoryResource {
     @GET
     @Path("/removeInventory")
     public Response removeInventory() {
-        System.out.println("------>RestInventoryResource.addInventory called");
+        System.out.println("------>RestInventoryResource.removeInventory called");
         inventoryCount--;
         return Response.ok()
                 .entity("inventoryCount:" + inventoryCount)

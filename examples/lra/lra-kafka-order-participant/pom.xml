@@ -39,8 +39,6 @@
         <kubernetesSecretName>${project.artifactId}</kubernetesSecretName>
         <spotbugs.exclude>${project.basedir}/src/main/spotbugs/exclusions.xml</spotbugs.exclude>
     </properties>
-
-
     <build>
         <resources>
             <resource>
@@ -125,8 +123,6 @@
 
         </plugins>
     </build>
-
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
@@ -179,7 +175,5 @@
             <artifactId>javax.json.bind-api</artifactId>
             <version>1.0</version>
         </dependency>
-
     </dependencies>
-
 </project>

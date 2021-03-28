@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 
-
 java -Dlra.logging.enabled=false \
 -Dmp.messaging.connector.helidon-kafka.bootstrap.servers=localhost:9092 \
 -Dmp.messaging.connector.helidon-kafka.key.deserializer=org.apache.kafka.common.serialization.StringDeserializer \

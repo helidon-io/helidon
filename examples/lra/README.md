@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2021 Oracle and/or its affiliates.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 #Long Running Actions Examples
 
 ###This readme contains the instructions to run the 3 LRA examples
@@ -21,7 +5,7 @@
 2. Kafka Microservice LRA Participants
 3. Oracle AQ (Advanced Queuing) Microservice LRA Participants
 
-###The scenario is the same for all 3 examples:
+###The saga scenario is the same for all 3 examples:
 1. The LRA coordinator service is configured and started. 
    * In the examples `-Dlra.logging.enabled=false` is set so that a datasource is not required.
    * Logging should be turned on in production and simply requires specifying a datasource (see documentation and start scripts for examples)
@@ -43,77 +27,59 @@
 ##REST Participants Example
 
 ###Step 1 Start the LRA Coordinator
-Run `./startLRACoordinatorRestExample.sh`
+- Run `./startLRACoordinatorRestExample.sh`
 
 ###Step 2 Start two servers participants
-Open another terminal and run `java -jar lra-rest-order-participant/target/lra-rest-order-participant.jar`
-Open another terminal and run `java -jar lra-rest-inventory-participant/target/lra-rest-inventory-participant.jar`
+- Open another terminal and run `java -jar lra-rest-order-participant/target/lra-rest-order-participant.jar`
+- Open another terminal and run `java -jar lra-rest-inventory-participant/target/lra-rest-inventory-participant.jar`
 
-###Step 3 Call the order service and notice success scenario (close called on the coordinator and complete called on the participants)
-Run `curl http://localhost:8091/order/placeOrder`
+###Step 3 Call the order service and notice success scenario 
+- Run `curl http://localhost:8091/order/placeOrder`
+- Notice application and Helidon LRA debug messages indicating close called on the coordinator and complete called on the participants.
 * Note, for convenience, inventory is not actually reduced in this example
 
 ###Step 4 Reduce the inventory level on the inventory service to 0 
-Run `curl http://localhost:8092/inventory/removeInventory`
-* `curl http://localhost:8092/inventory/addInventory` can be used to add inventory back
+- Run `curl http://localhost:8092/inventory/removeInventory`
+- `curl http://localhost:8092/inventory/addInventory` can be used to add inventory back
 
 ###Step 5 Call the order service and notice failure scenario (cancel called on the coordinator and compensate called on the participants)
-Run `curl http://localhost:8091/order/placeOrder`
+-Run `curl http://localhost:8091/order/placeOrder`
+
 
 ##Kafka Participants Example
 
 ###Step 1 Install Kafka
-There are numerous ways to do this. See other examples.  todo give pointer(s)
+There are numerous ways to do this and an example docker image that is used in the Helidon Kafka messaging examples.
+If nothing else this procedure can be followed...
+- Download and unzip Kafka from http://kafka.apache.org/downloads.html
+- Run `bin/zookeeper-server-start.sh config/zookeeper.properties`
+- Run `bin/kafka-server-start.sh config/server.properties`
 
-##Create topics for application as well as LRA protocol communication for the two services...
-bin/kafka-topics.sh --create --topic requiresnew-service1-incoming-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic requiresnew-service1-outgoing-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic mandatory-service1-incoming-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic mandatory-service1-outgoing-events --bootstrap-server localhost:9092
+###Step 2 Create the Kafka topics for application and LRA protocol communication for the two services...
+- Run `./createKafkaTopics.sh <KAFKA_LOCATION>` providing the Kafka install directory.
+- For example `./createKafkaQueues.sh ~/Downloads/kafka_2.13-2.7.0`
 
-order-events
-bin/kafka-topics.sh --create --topic inventory-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic frontend-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic frontend-reply-events --bootstrap-server localhost:9092
+###Step 2 Start the LRA Coordinator
+- Run `./startLRACoordinatorKafkaExample.sh`
 
-bin/kafka-topics.sh --create --topic complete-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic complete-events-reply --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic compensate-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic compensate-events-reply --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic status-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic status-events-reply --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic afterlra-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic afterlra-events-reply --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic forget-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic forget-events-reply --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic leave-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic leave-events-reply --bootstrap-server localhost:9092
+###Step 3 Start two servers participants
+- Open another terminal and run `java -jar lra-kafka-order-participant/target/lra-kafka-order-participant.jar`
+- Open another terminal and run `java -jar lra-kafka-inventory-participant/target/lra-kafka-inventory-participant.jar`
 
-bin/kafka-topics.sh --create --topic mandatory-service2-incoming-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic mandatory-service2-outgoing-events --bootstrap-server localhost:9092
+###Step 4 Send a message (using kafka-console-producer.sh) to the order service and notice success scenario (close called on the coordinator and complete called on the participants)
+- Run ` <KAFKA_LOCATION>/bin/kafka-console-producer.sh --topic frontend-events --bootstrap-server localhost:9092
+- Provide any value and hit `enter` to send message.
+- Notice application and Helidon LRA debug messages indicating close called on the coordinator and complete called on the participants.
+* Note, for convenience, inventory is not actually reduced in this example
 
-bin/kafka-topics.sh --create --topic complete-service2-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic complete-service2-events-reply --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic compensate-service2-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic compensate-service2-events-reply --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic status-service2-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic status-service2-events-reply --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic afterlra-service2-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic afterlra-service2-events-reply --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic forget-service2-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic forget-service2-events-reply --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic leave-service2-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic leave-service2-events-reply --bootstrap-server localhost:9092
+###Step 5 Reduce the inventory level on the inventory service to 0 
+- Run `curl http://localhost:8095/inventory/removeInventory`
+- `curl http://localhost:8095/inventory/addInventory` can be used to add inventory back
 
-bin/kafka-console-producer.sh --topic requiresnew-incoming-events --bootstrap-server localhost:9092
-bin/kafka-console-producer.sh --topic order-events --bootstrap-server localhost:9092
-bin/kafka-console-producer.sh --topic frontend-events --bootstrap-server localhost:9092
+###Step 6 Call the order service and notice failure scenario (cancel called on the coordinator and compensate called on the participants)
+-Run `curl http://localhost:8091/order/placeOrder`
 
-java -jar lra-kafka-participant/target/lra-kafka-participant.jar
-java -Dserver.port=8092 -jar lra-kafka-participant2/target/lra-kafka-participant2.jar
-
-
-#AQ Participants...
+#AQ Participants Example
 
 
 ##AQ without propagation (single DB)
@@ -129,3 +95,9 @@ curl localhost:8091/setupLRA
 
 Different participant types can be involved in the same LRA, however, 
 examples currently only exhibit/describe  LRAs with participants of all one type (ie all REST, all Kafka, or all AQ)
+
+
+#Mixed Participant Types
+It is also possible to modify the samples to have a mix of different participant types.
+All participants are already configured to start on different ports (8080, 8091, 8092, 8094, 8095, 8097, 8098) so there should be no conflict, etc. 
+In order to do so the coordinator simply needs to be provided the appropriate configurations by combining the values specified in the relevant startLRACoordinator*.sh 

@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @ApplicationScoped
-@ApplicationPath("/messaging")
+@ApplicationPath("/order")
 public class MessagingApplication extends Application {
 
     @Override
