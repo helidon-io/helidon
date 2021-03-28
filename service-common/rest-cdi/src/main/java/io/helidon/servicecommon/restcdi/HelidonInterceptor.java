@@ -37,8 +37,8 @@ import javax.interceptor.InvocationContext;
 public interface HelidonInterceptor<W> {
 
     /**
-     * Invokes the implementation's {@code preInvocation} logic for a constructor, once for each work item associated with this
-     * constructor and the annotation type this interceptor handles.
+     * Invokes the implementation's {@code preInvocation} logic for a constructor, once for each work item associated with the
+     * constructor.
      *
      * @param context {@code InvocationContext}
      * @return any value returned by the intercepted {@code Executable}
@@ -55,9 +55,9 @@ public interface HelidonInterceptor<W> {
     /**
      * Invoked during the intercepted constructor invocation.
      * <p>
-     *     Typically, concrete implementations bear the {@code @AroundConstruct} annotation and simply delegate to
-     *     {@linkplain #aroundConstruction(InvocationContext) aroundConstructBase}. (Annotating the interface method is not
-     *     sufficient.)
+     *     Typically, concrete implementations should extend {@link Base} which implements this method with
+     *     {@code @AroundConstruct}. Annotation processing for {@code @AroundConstruct} does not recognize the annotation on a
+     *     {@code default} method implementation defined on the interface.
      * </p>
      * @param context the invocation context for the intercepted call
      * @return the value returned from the intercepted constructor
@@ -67,7 +67,7 @@ public interface HelidonInterceptor<W> {
 
     /**
      * Invokes the implementation's {@linkplain #preInvocation(InvocationContext, Object) preInvocation} logic for a method, once
-     * for each work item associated with this constructor and the annotation type this interceptor handles.
+     * for each work item associated with the method.
      *
      * @param context {@code InvocationContext}
      * @return any value returned by the intercepted {@code Executable}
@@ -83,9 +83,9 @@ public interface HelidonInterceptor<W> {
     /**
      * Invoked during the intercepted method invocation.
      * <p>
-     *     Typically, concrete implementations bear the {@code @AroundInvoke} annotation and simply delegate to
-     *     {@linkplain #aroundInvocation(InvocationContext) aroundInvokeBase}. (Annotating the interface method is not
-     *     sufficient.)
+     *     Typically, concrete implementations should extend {@link Base} which implements this method with
+     *     {@code @AroundInvoke}. Annotation processing for {@code @AroundInvoke} does not recognize the annotation on a
+     *     {@code default} method implementation defined on the interface.
      * </p>
      * @param context the invocation context for the intercepted call
      * @return the value returned from the intercepted method
@@ -97,7 +97,7 @@ public interface HelidonInterceptor<W> {
      * Returns the work items the specific interceptor instance should process.
      *
      * @param executable the specific {@code Executable} being intercepted
-     * @return the work items of this interceptor's type that are pertinent to the specified {@code Executable}
+     * @return the work items pertinent to the specified {@code Executable}
      */
     Iterable<W> workItems(Executable executable);
 
@@ -112,8 +112,9 @@ public interface HelidonInterceptor<W> {
     /**
      * {@code HelidonInterceptor} implementation providing as much logic as possible.
      * <p>
-     *     The two methods implemented here cannot be {@code default} methods on the interface because the
-     *     {@code @AroundConstruct} and {@code @AroundInvoke} annotations are not recognized on {@code default} interface methods.
+     *     The two methods implemented here cannot be {@code default} methods on the interface because annotation processing
+     *     for {@code @AroundConstruct} and {@code @AroundInvoke} does not recognize their placement on {@code default} interface
+     *     methods.
      * </p>
      * @param <W> type of work items processed by the interceptor implementation
      */
@@ -135,8 +136,7 @@ public interface HelidonInterceptor<W> {
     /**
      * Common behavior among interceptors with both pre-invocation and post-completion behavior.
      * <p>
-     *     Implementing classes can extend {@link Base} for symmetry with {@code HelidonInterceptor} (it provides no
-     *     concrete logic) or implement this interface directly.
+     *     Implementing classes should extend {@link HelidonInterceptor} to inherit the provided behavior.
      * </p>
      *
      * @param <W> type of the work item processed during interception
@@ -145,7 +145,7 @@ public interface HelidonInterceptor<W> {
 
         /**
          * Invokes the implementation's {@code preInvocation} and {@code postCompletion} logic for a constructor, once for each
-         * work item associated with this constructor and the annotation type this interceptor handles.
+         * work item associated with the constructor.
          *
          * @param context {@code InvocationContext}
          * @return any value returned by the intercepted {@code Executable}
@@ -163,7 +163,7 @@ public interface HelidonInterceptor<W> {
 
         /**
          * Invokes the implementation's {@code preInvocation} and {@code postCompletion} logic for a constructor, once for each
-         * work item associated with this constructor and the annotation type this interceptor handles.
+         * work item associated with the method.
          *
          * @param context {@code InvocationContext}
          * @return any value returned by the intercepted {@code Executable}

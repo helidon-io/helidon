@@ -142,8 +142,8 @@ class InterceptionRunnerImpl implements InterceptionRunner {
     }
 
     /**
-     * Delegating implementation of {@code AsyncResponse} which captures any exception the intercepted method passes to
-     * {@code AsyncResponse.resume}.
+     * A delegating implementation of {@code AsyncResponse} which wraps an {@code AsyncResponse}, capturing any exception the
+     * intercepted method passes to {@code AsyncResponse.resume}.
      */
     private static class ThrowableCapturingAsyncResponse implements AsyncResponse {
 

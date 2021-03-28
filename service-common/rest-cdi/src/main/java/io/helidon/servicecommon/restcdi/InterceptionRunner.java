@@ -40,7 +40,8 @@ import javax.interceptor.InvocationContext;
  *         <p>
  *             The interceptor passes the {@code run} method:
  *             <ul>
- *                <li>a {@code Supplier<Iterable<>>} of the work items,</li>
+ *                <li>the {@code InvocationContext} for the executable being intercepted,</li>
+ *                <li>an {@code Iterable<>} of the work items,</li>
  *                <li>a pre-invocation {@code Consumer} of work item which performs an action on each work item before the
  *                intercepted invocation runs, and</li>
  *                <li>an post-completion {@code Consumer} of work item which performs an action on each work item after the
@@ -58,7 +59,7 @@ import javax.interceptor.InvocationContext;
  *          items.</li>
  *      </ol>
  * <p>
- *     The interface requires a {@code Iterable<>} for work items because, in the before-and-after case, the runner
+ *     The interface requires an {@code Iterable<>} for work items because, in the before-and-after case, the runner
  *     might need to process the work items twice. In those cases, the {@code Iterable} can furnish two {@code Iterator}s.
  * </p>
  */
