@@ -34,54 +34,8 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-mp</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.media</groupId>
-            <artifactId>helidon-media-jsonp</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.messaging</groupId>
-            <artifactId>helidon-microprofile-messaging</artifactId>
-            <version>2.3.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.messaging.aq</groupId>
-            <artifactId>helidon-messaging-aq</artifactId>
-            <version>2.3.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.messaging.kafka</groupId>
-            <artifactId>helidon-messaging-kafka</artifactId>
-            <version>2.3.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.lra</groupId>
-            <artifactId>helidon-lra-restclient</artifactId>
-            <version>2.3.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.lra</groupId>
-            <artifactId>helidon-lra-common</artifactId>
+            <artifactId>helidon-lra-aq-messagingclient</artifactId>
             <version>2.3.0-SNAPSHOT</version>
         </dependency>
     </dependencies>

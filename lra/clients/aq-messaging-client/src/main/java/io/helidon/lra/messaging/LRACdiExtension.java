@@ -85,8 +85,8 @@ public class LRACdiExtension implements Extension {
                 method.getMethod().getAnnotation(Status.class) == null &&
                 method.getMethod().getAnnotation(Forget.class) == null &&
                 method.getMethod().getAnnotation(Leave.class) == null;
-        LOGGER.info("beforeMethodInvocation method:" + method.getMethod().getName() +
-                " message:" + message +  "isNotAnnotatedWithLRA:" + isNotAnnotatedWithLRA);
+        LOGGER.fine("beforeMethodInvocation method:" + method.getMethod().getName() +
+                " message:" + message +  "isAnnotatedWithLRA:" + !isNotAnnotatedWithLRA);
         if (isNotAnnotatedWithLRA) return 0;
         if (!(message instanceof Message)) {
             LOGGER.warning("LRACdiExtension.beforeMethodInvocation !(message instanceof Message) returning");
@@ -111,7 +111,7 @@ public class LRACdiExtension implements Extension {
      */
     long afterMethodInvocation(MessagingMethod method, Object message) {
         try {
-            LOGGER.info("afterMethodInvocation method:" + method.getMethod().getName() + " message:" + message);
+            LOGGER.fine("afterMethodInvocation method:" + method.getMethod().getName() + " message:" + message);
             ServerLRAMessagingFilter serverLRAMessagingFilter = serverToLRAMessageFilterMap.get(method);
             if (serverLRAMessagingFilter == null) return 0;
             serverLRAMessagingFilter.afterMethodInvocation(method, message, false);
@@ -147,7 +147,6 @@ public class LRACdiExtension implements Extension {
     }
 
     private void showMessageProperties(String hookname, MessagingMethod method, Object o) {
-        if (true) return;
         try {
             if (o instanceof AqMessage) {
                 LOGGER.fine("LRACdiExtension." + hookname + " method:" + method.getMethod().getName() + " HELIDONLRAOPERATION:" +

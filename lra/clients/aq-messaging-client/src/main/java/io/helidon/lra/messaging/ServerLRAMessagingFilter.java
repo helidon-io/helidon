@@ -149,7 +149,6 @@ public class ServerLRAMessagingFilter {
             if (cancel0n.length != 0) {
                 messagingRequestContext.setProperty(CANCEL_ON_PROP, cancel0n);
             }
-
             if (transactional.timeLimit() != 0) {
                 timeout = Duration.of(transactional.timeLimit(), transactional.timeUnit()).toMillis();
             }
@@ -165,7 +164,6 @@ public class ServerLRAMessagingFilter {
             } catch (URISyntaxException e) {
                 String msg = String.format("header %s contains an invalid URL %s",
                         LRA_HTTP_CONTEXT_HEADER, Current.getLast(headers.get(LRA_HTTP_CONTEXT_HEADER)));
-
                 abortWith(messagingRequestContext, null, Response.Status.PRECONDITION_FAILED.getStatusCode(),
                         msg, null);
                 return;
@@ -194,7 +192,7 @@ public class ServerLRAMessagingFilter {
                     abortWith(messagingRequestContext, incommingLRA.toASCIIString(),
                             Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                             e.getMessage(), progress);
-                    return; // the error will be handled or reported via the response filter
+                    return;
                 }
             }
         }
@@ -228,7 +226,6 @@ public class ServerLRAMessagingFilter {
                 return;
             }
         }
-
         switch (type) {
             case MANDATORY:
                 if (isTxInvalid(messagingRequestContext, type, incommingLRA, true, progress)) {
@@ -332,7 +329,7 @@ public class ServerLRAMessagingFilter {
                             toURI(terminateURIs.get(LEAVE)),
                             toURI(terminateURIs.get(AFTER)),
                             toURI(terminateURIs.get(STATUS)),
-                            "compensatorData"); //todo compensatorData
+                            "");
                     progress = updateProgress(progress, ProgressStep.Joined, null);
                     headers.putSingle(LRA_HTTP_RECOVERY_HEADER,
                             START_END_QUOTES_PATTERN.matcher(recoveryUrl.toASCIIString()).replaceAll(""));
@@ -341,19 +338,16 @@ public class ServerLRAMessagingFilter {
                     abortWith(messagingRequestContext, lraId.toASCIIString(),
                             e.getResponse().getStatus(),
                             String.format("%s: %s", e.getClass().getSimpleName(), e.getMessage()), progress);
-                    // the failure plus any previous actions (such as leave and start requests) will be reported via the response filter
                 } catch (URISyntaxException e) {
-                    progress = updateProgress(progress, ProgressStep.JoinFailed, e.getMessage()); // one or more of the participant end points was invalid
+                    progress = updateProgress(progress, ProgressStep.JoinFailed, e.getMessage());
                     abortWith(messagingRequestContext, lraId.toASCIIString(),
                             Response.Status.BAD_REQUEST.getStatusCode(),
                             String.format("%s %s: %s", lraId, e.getClass().getSimpleName(), e.getMessage()), progress);
-                    // the failure plus any previous actions (such as leave and start requests) will be reported via the response filter
                 } catch (ProcessingException e) {
-                    progress = updateProgress(progress, ProgressStep.JoinFailed, e.getMessage()); // a remote coordinator was unavailable
+                    progress = updateProgress(progress, ProgressStep.JoinFailed, e.getMessage());
                     abortWith(messagingRequestContext, lraId.toASCIIString(),
                             Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                             String.format("%s %s,", e.getClass().getSimpleName(), e.getMessage()), progress);
-                    // the failure plus any previous actions (such as leave and start requests) will be reported via the response filter
                 }
             } else if (requiresActiveLRA && lraClient.getStatus(lraId) != LRAStatus.Active) {
                 Current.clearContext(headers);
@@ -364,7 +358,6 @@ public class ServerLRAMessagingFilter {
                     abortWith(messagingRequestContext, lraId.toASCIIString(),
                             Response.Status.PRECONDITION_FAILED.getStatusCode(),
                             "LRA should have been active: ", progress);
-                    // any previous actions (such as leave and start requests) will be reported via the response filter
                 }
             }
         }
@@ -379,9 +372,12 @@ public class ServerLRAMessagingFilter {
     }
 
     public void afterMethodInvocation(MessagingMethod method, Object message, boolean isError) {
-        if (message != null && true) { //(message instanceof OutgoingJmsMessage || message instanceof KafkaMessage)) { //todo OutgoingJmsMessage
-            if (method.getMethod().getAnnotation(Complete.class) != null) {
-                LOGGER.info("Complete reply is " + "COMPLETESUCCESS");
+        if (message != null && true) {
+            if (method.getMethod().getAnnotation(LRA.class) != null) {
+                LOGGER.info("LRA outgoing app call");
+                messagingRequestContext.addMessageProperty(LRA_HTTP_CONTEXT_HEADER, lraClient.getCurrent().toString());
+            } else if (method.getMethod().getAnnotation(Complete.class) != null) {
+                LOGGER.info("Complete reply is " + (isError ? "COMPLETEFAIL" : "COMPLETESUCCESS"));
                 messagingRequestContext.addMessageProperty("HELIDONLRAOPERATION", isError ? "COMPLETEFAIL" : "COMPLETESUCCESS");
             } else if (method.getMethod().getAnnotation(Compensate.class) != null) {
                 LOGGER.info("Compensate reply is " + "COMPENSATESUCCESS");
@@ -667,22 +663,15 @@ public class ServerLRAMessagingFilter {
             );
             annotationToURLMap.put(lraRelatedAnnotationName, url);
         } else if (connector.equals("helidon-kafka")) {
-            //todo if outgoingchannelValue !=null
-            LOGGER.info("config.getValue(MP_MESSAGING_OUTGOING_PREFIX + channelValue + \".topic\", String.class):" + config.getValue(MP_MESSAGING_OUTGOING_PREFIX + outgoingchannelValue + ".topic", String.class));
-            LOGGER.info("config.getValue(MP_MESSAGING_OUTGOING_PREFIX + channelValue + \".topic\", String.class):" + config.getValue(MP_MESSAGING_OUTGOING_PREFIX + outgoingchannelValue + ".topic", String.class));
-            LOGGER.info("config.getValue(MP_MESSAGING_OUTGOING_PREFIX + channelValue + \".topic\", String.class):" + config.getValue(MP_MESSAGING_OUTGOING_PREFIX + outgoingchannelValue + ".topic", String.class));
-            LOGGER.info("config.getValue(MP_MESSAGING_OUTGOING_PREFIX + channelValue + \".topic\", String.class):" + config.getValue(MP_MESSAGING_OUTGOING_PREFIX + outgoingchannelValue + ".topic", String.class));
-            LOGGER.info("config.getValue(MP_MESSAGING_OUTGOING_PREFIX + channelValue + \".topic\", String.class):" + config.getValue(MP_MESSAGING_OUTGOING_PREFIX + outgoingchannelValue + ".topic", String.class));
-            LOGGER.info("config.getValue(MP_MESSAGING_OUTGOING_PREFIX + channelValue + \".topic\", String.class):" + config.getValue(MP_MESSAGING_OUTGOING_PREFIX + outgoingchannelValue + ".topic", String.class));
-            LOGGER.info("config.getValue(MP_MESSAGING_OUTGOING_PREFIX + channelValue + \".topic\", String.class):" + config.getValue(MP_MESSAGING_OUTGOING_PREFIX + outgoingchannelValue + ".topic", String.class));
-            LOGGER.info("config.getValue(MP_MESSAGING_OUTGOING_PREFIX + channelValue + \".topic\", String.class):" + config.getValue(MP_MESSAGING_OUTGOING_PREFIX + outgoingchannelValue + ".topic", String.class));
+            //todo gate with if outgoingchannelValue !=null
+            LOGGER.fine("config.getValue(MP_MESSAGING_OUTGOING_PREFIX + channelValue + \".topic\", String.class):" +
+                    config.getValue(MP_MESSAGING_OUTGOING_PREFIX + outgoingchannelValue + ".topic", String.class));
             url = String.format("%s%s?%s=%s&%s=%s&%s=%s&%s=%s&%s=%s", "messaging://", connector,
                     Constants.CHANNEL, channelValue,
                     Constants.BOOTSTRAPSERVERS, config.getValue(MP_MESSAGING_INCOMING_PREFIX + channelValue + ".bootstrap.servers", String.class),
                     Constants.TOPIC, config.getValue(MP_MESSAGING_INCOMING_PREFIX + channelValue + ".topic", String.class),
                     Constants.GROUPID, config.getOptionalValue(MP_MESSAGING_INCOMING_PREFIX + channelValue + ".group.id", String.class),
                     Constants.REPLYTOPIC, config.getValue(MP_MESSAGING_OUTGOING_PREFIX + outgoingchannelValue + ".topic", String.class)
-//           todo                 "replyfromtopic", config.getValue(MP_MESSAGING_OUTGOING_PREFIX + channelValue + ".topic", String.class), //this comes from config
             );
             annotationToURLMap.put(lraRelatedAnnotationName, url);
         } else {

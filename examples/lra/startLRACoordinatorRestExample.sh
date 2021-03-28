@@ -1,5 +1,6 @@
+#!/bin/bash
 #
-# Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +15,12 @@
 # limitations under the License.
 #
 
-# Microprofile server properties
-server.port=8080
-server.host=0.0.0.0
 
-# DB USED TO LOG LRA RECORDS....
-oracle.ucp.jdbc.PoolDataSource.coordinatordb.URL=xxxxx
-oracle.ucp.jdbc.PoolDataSource.coordinatordb.user=xxxxx
-oracle.ucp.jdbc.PoolDataSource.coordinatordb.password=xxxxx
-oracle.ucp.jdbc.PoolDataSource.coordinatordb.connectionFactoryClassName=oracle.jdbc.pool.OracleDataSource
-oracle.ucp.jdbc.PoolDataSource.coordinatordb.inactiveConnectionTimeout=60
+java -Dlra.logging.enabled=false \
+-jar /Users/pparkins/go/src/github.com/paulparkinson/helidon/lra/coordinator/target/lra-coordinator-helidon-0.0.1-SNAPSHOT.jar
+
+
+#In order to enabled logging, simply remove -Dlra.logging.enabled=false and add the datasource information. For example...
+#-Doracle.ucp.jdbc.PoolDataSource.coordinatordb.URL=myurl \
+#-Doracle.ucp.jdbc.PoolDataSource.coordinatordb.user=myuser \
+#-Doracle.ucp.jdbc.PoolDataSource.coordinatordb.password=mypassword \

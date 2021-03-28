@@ -31,24 +31,32 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT
 public class MessagingRequestContext {
     private static final Logger LOGGER = Logger.getLogger(MessagingRequestContext.class.getName());
     Map properties = new HashMap<>();
-    MultivaluedMap<String, String> multivaluedMap = new MultivaluedHashMap<String, String>();
+    MultivaluedMap<String, String> headersMap = new MultivaluedHashMap<String, String>();
     Map<String, String> messagePropertiesMap = new HashMap<>();
 
+    /**
+     * Note that LRA_HTTP_CONTEXT_HEADER is added to both the message property for the LRA calls (complete, compensate, etc.)
+     * as well as the headersMap for join call to coordinator
+     * @param message
+     */
     public MessagingRequestContext(Message message) {
         if (message instanceof JmsMessage) {
             javax.jms.Message jmsMessage = ((JmsMessage) message).getJmsMessage();
             try {
-                addMessageProperty(LRA_HTTP_CONTEXT_HEADER, jmsMessage.getStringProperty(LRA_HTTP_CONTEXT_HEADER));
+                String lraProperty = jmsMessage.getStringProperty(LRA_HTTP_CONTEXT_HEADER);
+                LOGGER.fine("incoming LRA_HTTP_CONTEXT_HEADER message property:" + lraProperty);
+                addMessageProperty(LRA_HTTP_CONTEXT_HEADER, lraProperty);
+                headersMap.putSingle(LRA_HTTP_CONTEXT_HEADER, lraProperty);
             } catch (JMSException e) {
                 e.printStackTrace();
             }
         } else if (message instanceof KafkaMessage) {
             KafkaMessage kafkaMessage = (KafkaMessage) message;
             Header header = kafkaMessage.getHeaders().lastHeader(LRA_HTTP_CONTEXT_HEADER);
-            LOGGER.info("incoming LRA_HTTP_CONTEXT_HEADER header:" + header);
+            LOGGER.fine("incoming LRA_HTTP_CONTEXT_HEADER header:" + header);
             if (header != null) {
-                LOGGER.info("incoming LRA_HTTP_CONTEXT_HEADER header:" + new String(header.value()));
                 addMessageProperty(LRA_HTTP_CONTEXT_HEADER, new String(header.value()));
+                headersMap.putSingle(LRA_HTTP_CONTEXT_HEADER, new String(header.value()));
             }
         }
     }
@@ -67,15 +75,15 @@ public class MessagingRequestContext {
     }
 
     MultivaluedMap<String, String> getHeaders() {
-        return multivaluedMap;
+        return headersMap;
     }
 
     void removeHeader(Object key) {
-        multivaluedMap.remove(key);
+        headersMap.remove(key);
     }
 
     void add(String key, String value) {
-        multivaluedMap.add(key, value);
+        headersMap.add(key, value);
     }
 
     void addMessageProperty(String key, String value) {
@@ -92,17 +100,16 @@ public class MessagingRequestContext {
         if (message instanceof KafkaMessage) {
             KafkaMessage kafkaMessage = (KafkaMessage) message;
             messagePropertiesMap.forEach((propertyName, value) -> {
-                LOGGER.info("set KafkaMessage MessageProperties for reply property:" + propertyName + " value:" + value);
+                LOGGER.fine("set KafkaMessage MessageProperties for reply property:" + propertyName + " value:" + value);
                 kafkaMessage.getHeaders().add(propertyName, value.getBytes());
-                LOGGER.info("set Kafka MessageProperties for reply property:" + propertyName + " value:" + value);
             });
         } else {
             OutgoingJmsMessage jmsMessage = (OutgoingJmsMessage) message;
             jmsMessage.addPostProcessor(m -> messagePropertiesMap.forEach((propertyName, value1) -> {
                 Object value = value1;
                 try {
+                    LOGGER.fine("set JmsMessage MessageProperties for reply property:" + propertyName + " value:" + value);
                     m.setStringProperty(propertyName, "" + value);
-                    LOGGER.info("set JmsMessage MessageProperties for reply property:" + propertyName + " value:" + value);
                 } catch (JMSException e) {
                     LOGGER.warning("JMSException in setJMSMessageProperties:" + e);
                 }

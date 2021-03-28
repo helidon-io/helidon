@@ -35,9 +35,12 @@
     </description>
 
     <modules>
-        <module>lra-rest-participant</module>
-        <module>lra-kafka-participant</module>
-        <module>lra-aq-participant</module>
+        <module>lra-rest-order-participant</module>
+        <module>lra-rest-inventory-participant</module>
+        <module>lra-kafka-order-participant</module>
+        <module>lra-kafka-inventory-participant</module>
+        <module>lra-aq-order-participant</module>
+        <module>lra-aq-inventory-participant</module>
         <module>lra-aq-util</module>
     </modules>
 </project>
