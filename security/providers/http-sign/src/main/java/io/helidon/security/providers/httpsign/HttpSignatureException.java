@@ -20,11 +20,11 @@ package io.helidon.security.providers.httpsign;
  * Exception from HTTP signatures provider.
  */
 public class HttpSignatureException extends SecurityException {
-    HttpSignatureException(String message) {
+    public HttpSignatureException(String message) {
         super(message);
     }
 
-    HttpSignatureException(Exception e) {
+    public HttpSignatureException(Exception e) {
         super(e);
     }
 }

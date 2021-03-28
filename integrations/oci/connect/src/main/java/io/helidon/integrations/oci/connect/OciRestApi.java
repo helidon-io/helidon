@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -33,22 +32,14 @@ import java.util.logging.Logger;
 import javax.json.JsonObject;
 
 import io.helidon.common.Version;
-import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.pki.KeyConfig;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.ApiRequest;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.common.rest.RestApiBase;
 import io.helidon.security.Security;
-import io.helidon.security.providers.common.OutboundConfig;
-import io.helidon.security.providers.common.OutboundTarget;
-import io.helidon.security.providers.httpsign.HttpSignProvider;
-import io.helidon.security.providers.httpsign.OutboundTargetDefinition;
-import io.helidon.security.providers.httpsign.SignedHeadersConfig;
-import io.helidon.security.util.TokenHandler;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
@@ -59,38 +50,17 @@ import io.helidon.webclient.security.WebClientSecurity;
  */
 public class OciRestApi extends RestApiBase {
     private static final Logger LOGGER = Logger.getLogger(OciRestApi.class.getName());
-    private static final SignedHeadersConfig SIGNED_HEADERS = SignedHeadersConfig.builder()
-            .defaultConfig(SignedHeadersConfig.HeadersConfig
-                                   .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET, "host")))
-            .config("put", SignedHeadersConfig.HeadersConfig
-                    .create(List.of(SignedHeadersConfig.REQUEST_TARGET,
-                                    "host",
-                                    "date"),
-                            List.of(
-                                    "x-content-sha256",
-                                    "content-type",
-                                    "content-length")))
-            .config("post", SignedHeadersConfig.HeadersConfig
-                    .create(List.of(SignedHeadersConfig.REQUEST_TARGET,
-                                    "host",
-                                    "date"),
-                            List.of(
-                                    "x-content-sha256",
-                                    "content-type",
-                                    "content-length")))
-            .build();
-
-    private static final SignedHeadersConfig OBJECT_STORAGE_UPLOAD_SIGNED_HEADERS = SignedHeadersConfig.builder()
-            .defaultConfig(SignedHeadersConfig.HeadersConfig
-                                   .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET, "host")))
-            .build();
 
     private final BiFunction<String, String, String> formatFunction;
+    private final OciOutboundSecurityProvider outboundProvider;
+    private final OciConfigProvider configProvider;
 
     private OciRestApi(Builder builder) {
         super(builder);
 
         this.formatFunction = builder.formatFunction;
+        this.outboundProvider = builder.outboundProvider;
+        this.configProvider = builder.ociConfigProvider;
     }
 
     /**
@@ -119,6 +89,22 @@ public class OciRestApi extends RestApiBase {
      */
     public static OciRestApi create(Config config) {
         return builder().config(config).build();
+    }
+
+    private static ConfigType guessConfigType() {
+        // attempt to guess what config type this is, let's start from the most "obscure" one and
+        // end with local environment
+        if (OciResourcePrincipal.isAvailable()) {
+            LOGGER.fine("OCI Resource Principal configuration is available.");
+            return ConfigType.RESOURCE_PRINCIPAL;
+        }
+        if (OciInstancePrincipal.isAvailable()) {
+            LOGGER.fine("OCI Instance Principal configuration is available.");
+            return ConfigType.INSTANCE_PRINCIPAL;
+        }
+
+        LOGGER.fine("Using OCI Profile based configuration, as neither resource nor instance principal is available");
+        return ConfigType.OCI_PROFILE;
     }
 
     @Override
@@ -309,6 +295,12 @@ public class OciRestApi extends RestApiBase {
         }
     }
 
+    public enum ConfigType {
+        INSTANCE_PRINCIPAL,
+        RESOURCE_PRINCIPAL,
+        OCI_PROFILE
+    }
+
     /**
      * Fluent API builder for {@link io.helidon.integrations.oci.connect.OciRestApi}.
      * <p>
@@ -336,10 +328,13 @@ public class OciRestApi extends RestApiBase {
         private static final String DEFAULT_SCHEME = "https";
         private static final String DEFAULT_DOMAIN = "oraclecloud.com";
 
-        private OciProfileConfig profileConfig;
+        private ConfigType configType = guessConfigType();
+
+        private OciConfigProvider ociConfigProvider;
         private BiFunction<String, String, String> formatFunction;
         private String scheme = DEFAULT_SCHEME;
         private String domain = DEFAULT_DOMAIN;
+        private OciOutboundSecurityProvider outboundProvider;
 
         private Builder() {
         }
@@ -352,10 +347,34 @@ public class OciRestApi extends RestApiBase {
          */
         public Builder config(Config config) {
             super.config(config);
-            config.get("config-profile").ifExists(it -> ociProfileConfig(OciProfileConfig.create(it)));
+
             config.get("scheme").asString().ifPresent(this::scheme);
             config.get("domain").asString().ifPresent(this::domain);
 
+            Config configProviderConfig = config.get("config");
+
+            Config instancePrincipal = configProviderConfig.get("instance-principal");
+            Config resourcePrincipal = configProviderConfig.get("resource-principal");
+            Config profileConfig = configProviderConfig.get("oci-profile");
+
+            if (instancePrincipal.exists() && instancePrincipal.get("enabled").asBoolean().orElse(true)) {
+                // use instance principal
+                configType = ConfigType.INSTANCE_PRINCIPAL;
+            } else if (resourcePrincipal.exists() && resourcePrincipal.get("enabled").asBoolean().orElse(true)) {
+                // use resource principal
+                configType = ConfigType.RESOURCE_PRINCIPAL;
+            }
+            if (profileConfig.exists() && profileConfig.get("enabled").asBoolean().orElse(true)) {
+                // use config profile
+                configType = ConfigType.OCI_PROFILE;
+                configProvider(OciProfileConfig.create(profileConfig));
+            }
+
+            return this;
+        }
+
+        public Builder configType(ConfigType configType) {
+            this.configType = configType;
             return this;
         }
 
@@ -384,31 +403,44 @@ public class OciRestApi extends RestApiBase {
         }
 
         /**
-         * Profile configuration to use.
+         * Cloud connectivity configuration to use.
          *
-         * @param profileConfig profile config
+         * @param ociConfigProvider profile config, such as {@link io.helidon.integrations.oci.connect.OciProfileConfig}
          * @return updated builder
          */
-        public Builder ociProfileConfig(OciProfileConfig profileConfig) {
-            this.profileConfig = profileConfig;
+        public Builder configProvider(OciConfigProvider ociConfigProvider) {
+            this.ociConfigProvider = ociConfigProvider;
             return this;
         }
 
         @Override
         protected void preBuild() {
             super.preBuild();
-            if (profileConfig == null) {
-                ociProfileConfig(OciProfileConfig.create());
+            if (ociConfigProvider == null) {
+                LOGGER.finest("Config provider is not configured explicitly. Config type: " + configType);
+                switch (configType) {
+                case INSTANCE_PRINCIPAL:
+                    configProvider(OciInstancePrincipal.create());
+                    break;
+                case RESOURCE_PRINCIPAL:
+                    configProvider(OciResourcePrincipal.create());
+                    break;
+                case OCI_PROFILE:
+                    configProvider(OciProfileConfig.create());
+                    break;
+                }
             }
 
             String scheme = this.scheme;
-            String region = this.profileConfig.region();
-            String domain = this.domain;
+            String region = this.ociConfigProvider.region();
+            String domain = this.ociConfigProvider.domain().orElse(this.domain);
 
             formatFunction = (format, hostPrefix) -> String.format(format, scheme, hostPrefix, region, domain);
 
+            this.outboundProvider = OciOutboundSecurityProvider.create(ociConfigProvider.signatureData());
+
             // this must happen only once
-            webClientSecurity(profileConfig);
+            webClientSecurity();
         }
 
         @Override
@@ -416,90 +448,15 @@ public class OciRestApi extends RestApiBase {
             return new OciRestApi(this);
         }
 
-        private OutboundTarget outboundTargetUpload(OciProfileConfig profile) {
-            return OutboundTarget.builder("oci-object-storage")
-                    .customObject(OutboundTargetDefinition.class,
-                                  buildSignatureTargetStorageUpload(profile))
-                    .addMethod("PUT")
-                    .addHost("objectstorage.*")
-                    .addHost("*")
-                    .addPath("/n/.+/b/.+/o/.+")
-                    .build();
-        }
-
-        private OutboundTarget outboundTargetFull(OciProfileConfig profile) {
-            return OutboundTarget.builder("oci")
-                    .customObject(OutboundTargetDefinition.class,
-                                  buildSignatureTargetFull(profile))
-                    .addHost("*")
-                    .build();
-        }
-
-        private OutboundTargetDefinition buildSignatureTargetStorageUpload(OciProfileConfig profile) {
-            TokenHandler outboundTokenHandler = TokenHandler.builder()
-                    .tokenPrefix("Signature version=\"1\",")
-                    .tokenHeader("Authorization")
-                    .build();
-
-            String keyId = profile.tenancyOcid()
-                    + "/" + profile.userOcid()
-                    + "/" + profile.keyFingerprint();
-
-            return OutboundTargetDefinition.builder(keyId)
-                    .privateKeyConfig(KeyConfig.pemBuilder()
-                                              .key(Resource.create("private key from profile", profile.privateKey()))
-                                              .build())
-                    .algorithm("rsa-sha256")
-                    .signedHeaders(OBJECT_STORAGE_UPLOAD_SIGNED_HEADERS)
-                    .tokenHandler(outboundTokenHandler)
-                    .backwardCompatibleEol(false)
-                    .build();
-        }
-
-        private OutboundTargetDefinition buildSignatureTargetFull(OciProfileConfig profile) {
-            TokenHandler outboundTokenHandler = TokenHandler.builder()
-                    .tokenPrefix("Signature version=\"1\",")
-                    .tokenHeader("Authorization")
-                    .build();
-
-            String keyId = profile.tenancyOcid()
-                    + "/" + profile.userOcid()
-                    + "/" + profile.keyFingerprint();
-
-            return OutboundTargetDefinition.builder(keyId)
-                    .privateKeyConfig(KeyConfig.pemBuilder()
-                                              .key(Resource.create("private key from profile", profile.privateKey()))
-                                              .build())
-                    .algorithm("rsa-sha256")
-                    .signedHeaders(SIGNED_HEADERS)
-                    .tokenHandler(outboundTokenHandler)
-                    .backwardCompatibleEol(false)
-                    .build();
-        }
-
-        private void webClientSecurity(OciProfileConfig ociProfile) {
-            HttpSignProvider provider = HttpSignProvider.builder()
-                    .backwardCompatibleEol(false)
-                    .outbound(outboundConfig(ociProfile))
-                    .build();
-
+        private void webClientSecurity() {
             Security security = Security.builder()
-                    .addOutboundSecurityProvider(provider)
+                    .addOutboundSecurityProvider(outboundProvider)
                     .build();
 
             super.webClientBuilder(builder -> {
                 builder.addHeader("opc-client-info", "Helidon/" + Version.VERSION);
                 builder.addService(WebClientSecurity.create(security));
             });
-
         }
-
-        private OutboundConfig outboundConfig(OciProfileConfig profile) {
-            return OutboundConfig.builder()
-                    .addTarget(outboundTargetUpload(profile))
-                    .addTarget(outboundTargetFull(profile))
-                    .build();
-        }
-
     }
 }

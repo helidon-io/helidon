@@ -91,11 +91,11 @@ public final class SignedHeadersConfig {
         return new Builder().defaultConfig(HeadersConfig.create());
     }
 
-    List<String> headers(String method, Map<String, List<String>> transportHeaders) {
+    public List<String> headers(String method, Map<String, List<String>> transportHeaders) {
         return methodConfigs.getOrDefault(method, defaultConfig).getHeaders(transportHeaders);
     }
 
-    List<String> headers(String method) {
+    public List<String> headers(String method) {
         return new ArrayList<>(methodConfigs.getOrDefault(method, defaultConfig).always);
     }
 

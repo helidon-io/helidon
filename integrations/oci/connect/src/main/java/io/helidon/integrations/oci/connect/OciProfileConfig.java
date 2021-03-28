@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.interfaces.RSAPrivateKey;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,18 +28,21 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
+import io.helidon.common.configurable.Resource;
+import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 
 /**
  * OCI configuration required to connect to a service over REST API.
  */
-public class OciProfileConfig {
+public class OciProfileConfig implements OciConfigProvider {
     private final String userOcid;
     private final String tenancyOcid;
     private final String keyFingerprint;
     private final String region;
     private final String privateKey;
     private final Map<String, String> fullConfig;
+    private final OciSignatureData signatureData;
 
     private OciProfileConfig(Builder builder) {
         this.userOcid = builder.userOcid;
@@ -47,6 +51,7 @@ public class OciProfileConfig {
         this.region = builder.region;
         this.privateKey = builder.privateKey;
         this.fullConfig = Map.copyOf(builder.fullConfig);
+        this.signatureData = builder.signatureData;
     }
 
     /**
@@ -76,6 +81,11 @@ public class OciProfileConfig {
      */
     public static OciProfileConfig create(Config config) {
         return builder().config(config).build();
+    }
+
+    @Override
+    public OciSignatureData signatureData() {
+        return signatureData;
     }
 
     /**
@@ -112,6 +122,7 @@ public class OciProfileConfig {
      *
      * @return OCI region, such as {@code eu-frankfurt-1}
      */
+    @Override
     public String region() {
         return region;
     }
@@ -159,14 +170,29 @@ public class OciProfileConfig {
         private String keyFingerprint;
         private String region;
         private String privateKey;
+        private OciSignatureData signatureData;
+        private RSAPrivateKey rsaPrivateKey;
 
         private Builder() {
         }
 
         @Override
         public OciProfileConfig build() {
+            if (rsaPrivateKey == null) {
+                this.rsaPrivateKey = KeyConfig.pemBuilder()
+                        .key(Resource.create("PEM encoded private key from profile", privateKey))
+                        .build()
+                        .privateKey()
+                        .map(RSAPrivateKey.class::cast)
+                        .orElseThrow(() -> new OciApiException("Could not load private key from PEM encoded"));
+            }
 
             validate().checkValid();
+
+            signatureData = OciSignatureData.create(tenancyOcid
+                                                            + "/" + userOcid
+                                                            + "/" + keyFingerprint,
+                                                    rsaPrivateKey);
 
             return new OciProfileConfig(this);
         }
@@ -180,8 +206,8 @@ public class OciProfileConfig {
         public Builder config(Config config) {
             config.asMap().ifPresent(this.fullConfig::putAll);
 
-            String profile = config.get("config-profile").asString().orElse(DEFAULT_PROFILE);
-            config.get("config-file").as(Path.class)
+            String profile = config.get("profile-name").asString().orElse(DEFAULT_PROFILE);
+            config.get("profile-file").as(Path.class)
                     .ifPresentOrElse(value -> fromOciConfig(value, profile), () -> {
                         // config-file is not present, let's see if we can load defaults
                         if (config.get("config-file-enabled").asBoolean().orElse(true)) {
@@ -259,6 +285,12 @@ public class OciProfileConfig {
         public Builder privateKey(String privateKey) {
             this.privateKey = privateKey;
             this.fullConfig.put("key-pem", privateKey);
+
+            return this;
+        }
+
+        public Builder privateKey(RSAPrivateKey privateKey) {
+            this.rsaPrivateKey = privateKey;
 
             return this;
         }
@@ -465,8 +497,9 @@ public class OciProfileConfig {
                 collector.fatal("\"region\" key not defined. It should contain the OCI region");
             }
 
-            if (privateKey == null) {
-                collector.fatal("\"key_file\" key not defined. It should provide location of the private key PEM file");
+            if (privateKey == null && rsaPrivateKey == null) {
+                collector.fatal("\"key_file\" key not defined. It should provide location of the private key PEM file,"
+                                        + "or an RSA private key should be explicitly configured");
             }
 
             return collector.collect();
