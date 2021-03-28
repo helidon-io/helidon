@@ -25,7 +25,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,7 +49,6 @@ import io.helidon.security.providers.httpsign.HttpSignProvider;
 import io.helidon.security.providers.httpsign.OutboundTargetDefinition;
 import io.helidon.security.providers.httpsign.SignedHeadersConfig;
 import io.helidon.security.util.TokenHandler;
-import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
@@ -80,17 +79,18 @@ public class OciRestApi extends RestApiBase {
                                     "content-type",
                                     "content-length")))
             .build();
+
     private static final SignedHeadersConfig OBJECT_STORAGE_UPLOAD_SIGNED_HEADERS = SignedHeadersConfig.builder()
             .defaultConfig(SignedHeadersConfig.HeadersConfig
                                    .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET, "host")))
             .build();
 
-    private final Function<String, String> hostFunction;
+    private final BiFunction<String, String, String> formatFunction;
 
     private OciRestApi(Builder builder) {
         super(builder);
 
-        this.hostFunction = builder.hostFunction;
+        this.formatFunction = builder.formatFunction;
     }
 
     /**
@@ -129,7 +129,7 @@ public class OciRestApi extends RestApiBase {
                                               WebClientResponse response,
                                               Throwable it) {
         String messagePrefix = "Failed to " + method + " on path " + path + " " + response.status().code() + " " + response;
-        OciRestException.Builder errorBuilder = OciRestException.ociBuilder()
+        OciRestException.Builder errorBuilder = OciRestException.builder()
                 .cause(it)
                 .requestId(requestId)
                 .headers(response.headers())
@@ -148,7 +148,7 @@ public class OciRestApi extends RestApiBase {
                                   WebClientResponse response) {
 
         String messagePrefix = "Failed to " + method + " on path " + path + " " + response.status().code();
-        OciRestException.Builder errorBuilder = OciRestException.ociBuilder()
+        OciRestException.Builder errorBuilder = OciRestException.builder()
                 .requestId(requestId)
                 .headers(response.headers())
                 .status(response.status());
@@ -166,7 +166,7 @@ public class OciRestApi extends RestApiBase {
                                   WebClientResponse response,
                                   String entity) {
         String messagePrefix = "Failed to " + method + " on path " + path + " " + response.status().code();
-        OciRestException.Builder errorBuilder = OciRestException.ociBuilder()
+        OciRestException.Builder errorBuilder = OciRestException.builder()
                 .requestId(requestId)
                 .headers(response.headers())
                 .status(response.status());
@@ -185,8 +185,8 @@ public class OciRestApi extends RestApiBase {
                                   WebClientResponse response,
                                   JsonObject json) {
 
-        String messagePrefix = "Failed to " + method + " on path " + path + " " + response.status().code();
-        OciRestException.Builder errorBuilder = OciRestException.ociBuilder()
+        String messagePrefix = "Failed to " + method + " on path " + path + " " + response.status();
+        OciRestException.Builder errorBuilder = OciRestException.builder()
                 .requestId(requestId)
                 .headers(response.headers())
                 .status(response.status());
@@ -278,7 +278,7 @@ public class OciRestApi extends RestApiBase {
         if (request instanceof OciRequestBase) {
             OciRequestBase<?> ociRequest = (OciRequestBase<?>) request;
             ociRequest.retryToken().ifPresent(it -> requestBuilder.headers().add("opc-retry-token", it));
-            Optional<String> maybeAddress = ociRequest.address();
+            Optional<String> maybeAddress = ociRequest.endpoint();
             URI ociUri;
 
             if (maybeAddress.isPresent()) {
@@ -286,7 +286,8 @@ public class OciRestApi extends RestApiBase {
                 requestBuilder.uri(address);
                 ociUri = URI.create(address);
             } else {
-                String address = hostFunction.apply(ociRequest.hostPrefix());
+                String prefix = ociRequest.hostPrefix();
+                String address = formatFunction.apply(ociRequest.hostFormat(), prefix);
                 requestBuilder.uri(address);
                 ociUri = URI.create(address);
             }
@@ -310,15 +311,35 @@ public class OciRestApi extends RestApiBase {
 
     /**
      * Fluent API builder for {@link io.helidon.integrations.oci.connect.OciRestApi}.
+     * <p>
+     * The final host of each endpoint is computed based on a format provided by each request (usually the
+     * same format for a certain area, such as Vault, ObjectStorage etc.), and a prefix also received with each
+     * request.
+     * <p>
+     * The template {@code %s://%s.%s.%s} would resolve into
+     * {@code ${scheme}://${hostPrefix}.${region}.oci.${domain}}.
+     * <p>
+     * Let's consider the following configuration:
+     * <ul>
+     *     <li>{@code scheme}: {@value #DEFAULT_DOMAIN}</li>
+     *     <li>{@code hostPrefix}: {@code vaults}</li>
+     *     <li>{@code region}: {@code eu-frankfurt-1}</li>
+     *     <li>{@code domain}: {@value #DEFAULT_DOMAIN}</li>
+     * </ul>
+     * we would get {@code https://vaults.eu-frankfurt-1.oraclecloud.com} as the endpoint.
+     *
+     * In case we need to connect to a local docker image, or a testing environment, an explicit
+     * address can be configured for each domain specific API, or parts of the template can be modified
+     * if the final address matches the expected structure.
      */
     public static class Builder extends RestApi.Builder<Builder, OciRestApi> {
-        private static final String DEFAULT_HOST_FORMAT = "https://%s.%s.oci.oraclecloud.com";
+        private static final String DEFAULT_SCHEME = "https";
+        private static final String DEFAULT_DOMAIN = "oraclecloud.com";
 
-        // host is constructed as https:// + prefix + . + region + .oci.oraclecloud.com
-        private String hostTemplate = DEFAULT_HOST_FORMAT;
         private OciProfileConfig profileConfig;
-        private WebClient webClient;
-        private Function<String, String> hostFunction;
+        private BiFunction<String, String, String> formatFunction;
+        private String scheme = DEFAULT_SCHEME;
+        private String domain = DEFAULT_DOMAIN;
 
         private Builder() {
         }
@@ -329,29 +350,36 @@ public class OciRestApi extends RestApiBase {
          * @param config config located on the node of OCI configuration
          * @return updated builder
          */
-        // TODO add fault tolerance configuration - at least retry - to the default REST API.
         public Builder config(Config config) {
             super.config(config);
             config.get("config-profile").ifExists(it -> ociProfileConfig(OciProfileConfig.create(it)));
-            config.get("host-format").asString().ifPresent(this::hostFormat);
+            config.get("scheme").asString().ifPresent(this::scheme);
+            config.get("domain").asString().ifPresent(this::domain);
 
             return this;
         }
 
         /**
-         * Host template defaults to {@value DEFAULT_HOST_FORMAT}.
-         * <p>
-         * This can be updated through this method or through configuration, such as when connecting
-         * to testing environments.
-         * <p>
-         * The first parameter to the format is {@link #hostPrefix}, second is region obtained
-         * from {@link OciProfileConfig#region()}.
+         * Scheme to use when constructing endpoint address.
+         * Defaults to {@value #DEFAULT_SCHEME}.
          *
-         * @param format format of host including the scheme
+         * @param scheme scheme to use (most likely either {@code http} or {@code https}
          * @return updated builder
          */
-        public Builder hostFormat(String format) {
-            this.hostTemplate = format;
+        public Builder scheme(String scheme) {
+            this.scheme = scheme;
+            return this;
+        }
+
+        /**
+         * Domain to use when constructing endpoint address.
+         * Defaults to {@value #DEFAULT_DOMAIN}.
+         *
+         * @param domain domain to use
+         * @return updated builder
+         */
+        public Builder domain(String domain) {
+            this.domain = domain;
             return this;
         }
 
@@ -373,7 +401,11 @@ public class OciRestApi extends RestApiBase {
                 ociProfileConfig(OciProfileConfig.create());
             }
 
-            hostFunction = hostPrefix -> String.format(hostTemplate, hostPrefix, profileConfig.region());
+            String scheme = this.scheme;
+            String region = this.profileConfig.region();
+            String domain = this.domain;
+
+            formatFunction = (format, hostPrefix) -> String.format(format, scheme, hostPrefix, region, domain);
 
             // this must happen only once
             webClientSecurity(profileConfig);
@@ -420,6 +452,7 @@ public class OciRestApi extends RestApiBase {
                     .algorithm("rsa-sha256")
                     .signedHeaders(OBJECT_STORAGE_UPLOAD_SIGNED_HEADERS)
                     .tokenHandler(outboundTokenHandler)
+                    .backwardCompatibleEol(false)
                     .build();
         }
 
@@ -440,11 +473,13 @@ public class OciRestApi extends RestApiBase {
                     .algorithm("rsa-sha256")
                     .signedHeaders(SIGNED_HEADERS)
                     .tokenHandler(outboundTokenHandler)
+                    .backwardCompatibleEol(false)
                     .build();
         }
 
         private void webClientSecurity(OciProfileConfig ociProfile) {
             HttpSignProvider provider = HttpSignProvider.builder()
+                    .backwardCompatibleEol(false)
                     .outbound(outboundConfig(ociProfile))
                     .build();
 

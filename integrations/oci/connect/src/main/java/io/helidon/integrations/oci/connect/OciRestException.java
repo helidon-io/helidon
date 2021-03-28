@@ -20,6 +20,9 @@ import java.util.Optional;
 
 import io.helidon.integrations.common.rest.ApiRestException;
 
+/**
+ * Exception used when OCI REST call returned and we have HTTP status and headers, and possibly an entity.
+ */
 public class OciRestException extends ApiRestException {
     private final String errorCode;
     private final String errorMessage;
@@ -31,18 +34,36 @@ public class OciRestException extends ApiRestException {
         this.errorMessage = builder.errorMessage;
     }
 
-    public static Builder ociBuilder() {
+    /**
+     * Create a new builder for this exception.
+     *
+     * @return a new builder
+     */
+    public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * OCI error code (if present in response).
+     *
+     * @return OCI error code
+     */
     public Optional<String> ociCode() {
         return Optional.ofNullable(errorCode);
     }
 
+    /**
+     * OCI error message (if present in response).
+     *
+     * @return OCI error message
+     */
     public Optional<String> ociMessage() {
         return Optional.ofNullable(errorMessage);
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.integrations.oci.connect.OciRestException}.
+     */
     public static class Builder extends BaseBuilder<Builder> implements io.helidon.common.Builder<OciRestException> {
         private String errorCode;
         private String errorMessage;
@@ -55,11 +76,23 @@ public class OciRestException extends ApiRestException {
             return new OciRestException(this);
         }
 
+        /**
+         * OCI specific error code.
+         *
+         * @param errorCode OCI error code
+         * @return updated builder
+         */
         public Builder errorCode(String errorCode) {
             this.errorCode = errorCode;
             return this;
         }
 
+        /**
+         * OCI specific error message.
+         *
+         * @param errorMessage OCI error message
+         * @return updated builder
+         */
         public Builder errorMessage(String errorMessage) {
             this.errorMessage = errorMessage;
             return this;

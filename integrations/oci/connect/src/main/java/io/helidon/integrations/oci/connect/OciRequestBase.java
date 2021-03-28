@@ -35,9 +35,10 @@ public abstract class OciRequestBase<T extends OciRequestBase<T>> extends ApiJso
             .appendInstant(3)
             .toFormatter();
 
+    private String hostFormat;
     private String retryToken;
     private String hostPrefix;
-    private String address;
+    private String endpoint;
 
     protected OciRequestBase() {
     }
@@ -68,14 +69,28 @@ public abstract class OciRequestBase<T extends OciRequestBase<T>> extends ApiJso
     }
 
     /**
-     * Override the base address to use for OCI.
+     * Host format to use.
+     * Domain specific APIs must define a host format for each request.
      *
-     * @param address full address to override the default
+     * @param hostFormat host format
+     * @return updated request
+     */
+    public T hostFormat(String hostFormat) {
+        if (this.hostFormat == null) {
+            this.hostFormat = hostFormat;
+        }
+        return me();
+    }
+
+    /**
+     * Override the endpoint to use for this request.
+     *
+     * @param endpoint full endpoint to override the default
      * @return updated builder
      */
-    public T address(String address) {
-        if (this.address == null) {
-            this.address = address;
+    public T endpoint(String endpoint) {
+        if (this.endpoint == null) {
+            this.endpoint = endpoint;
         }
         return me();
     }
@@ -98,11 +113,23 @@ public abstract class OciRequestBase<T extends OciRequestBase<T>> extends ApiJso
         return hostPrefix;
     }
 
-    Optional<String> address() {
-        return Optional.ofNullable(address);
+    /**
+     * Endpoint (if configured).
+     *
+     * @return configured endpoint or empty
+     */
+    public Optional<String> endpoint() {
+        return Optional.ofNullable(endpoint);
     }
 
     Optional<String> retryToken() {
         return Optional.ofNullable(retryToken);
+    }
+
+    String hostFormat() {
+        if (hostFormat == null) {
+            throw new OciApiException("Host format must be defined to resolve OCI address");
+        }
+        return hostFormat;
     }
 }

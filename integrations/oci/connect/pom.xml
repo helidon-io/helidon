@@ -43,10 +43,10 @@
             <groupId>io.helidon.fault-tolerance</groupId>
             <artifactId>helidon-fault-tolerance</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.helidon.integrations.common</groupId>-->
-<!--            <artifactId>helidon-integrations-common-rest</artifactId>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>io.helidon.integrations.common</groupId>
+            <artifactId>helidon-integrations-common-rest</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient</artifactId>

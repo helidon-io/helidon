@@ -1,0 +1,7 @@
+# The values are read from
+# ~/helidon/conf/examples.yaml
+# or you can just update them here
+oci:
+  metrics:
+    compartment-ocid: "${oci.properties.compartment-ocid}"
+

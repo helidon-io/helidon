@@ -22,6 +22,7 @@ import javax.json.JsonObject;
 
 import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.integrations.oci.connect.OciApiException;
 import io.helidon.integrations.oci.connect.OciRequestBase;
 
 /**
@@ -35,6 +36,8 @@ public final class Decrypt {
      * Request object. Can be configured with additional headers, query parameters etc.
      */
     public static final class Request extends OciRequestBase<Request> {
+
+        private String keyId;
 
         private Request() {
         }
@@ -69,6 +72,7 @@ public final class Decrypt {
          * @return updated request
          */
         public Request keyId(String keyOcid) {
+            this.keyId = keyOcid;
             return add("keyId", keyOcid);
         }
 
@@ -109,6 +113,13 @@ public final class Decrypt {
          */
         public Request keyVersionId(String versionOcid) {
             return add("keyVersionId", versionOcid);
+        }
+
+        String keyId() {
+            if (keyId == null) {
+                throw new OciApiException("Encrypt.Request keyId must be defined");
+            }
+            return keyId;
         }
     }
 

@@ -16,7 +16,6 @@
 
 package io.helidon.integrations.oci.telemetry;
 
-import java.net.URI;
 import java.util.function.Consumer;
 
 import io.helidon.common.reactive.Single;
@@ -38,7 +37,7 @@ public interface OciMetrics {
     /**
      * Host format of API server.
      */
-    String API_HOST_FORMAT = "https://%s.%s.oraclecloud.com";
+    String API_HOST_FORMAT = "%s://%s.%s.%s";
 
     /**
      * Create a new fluent API builder for OCI metrics.
@@ -91,11 +90,11 @@ public interface OciMetrics {
     Single<PostMetricData.Response> postMetricData(PostMetricData.Request request);
 
     class Builder implements io.helidon.common.Builder<OciMetrics> {
-        private final OciRestApi.Builder accessBuilder = OciRestApi.builder()
-                .hostPrefix(API_HOST_PREFIX)
-                .hostFormat(API_HOST_FORMAT);
+        private final OciRestApi.Builder accessBuilder = OciRestApi.builder();
 
         private String apiVersion = API_VERSION;
+        private String hostPrefix = API_HOST_PREFIX;
+        private String endpoint;
 
         private Builder() {
         }
@@ -114,10 +113,19 @@ public interface OciMetrics {
          */
         public Builder config(Config config) {
             accessBuilder.config(config);
-            config.get("metrics.base-uri").as(URI.class).ifPresent(accessBuilder::baseUri);
-            config.get("metrics.host-format").asString().ifPresent(accessBuilder::hostFormat);
-            config.get("metrics.host-prefix").asString().ifPresent(accessBuilder::hostPrefix);
+            config.get("metrics.host-prefix").asString().ifPresent(this::hostPrefix);
+            config.get("metrics.endpoint").asString().ifPresent(this::endpoint);
             config.get("metrics.api-version").asString().ifPresent(this::apiVersion);
+            return this;
+        }
+
+        public Builder hostPrefix(String prefix) {
+            this.hostPrefix = prefix;
+            return this;
+        }
+
+        public Builder endpoint(String endpoint) {
+            this.endpoint = endpoint;
             return this;
         }
 
@@ -143,6 +151,14 @@ public interface OciMetrics {
 
         OciRestApi restAccess() {
             return accessBuilder.build();
+        }
+
+        String hostPrefix() {
+            return hostPrefix;
+        }
+
+        String endpoint() {
+            return endpoint;
         }
     }
 }

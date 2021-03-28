@@ -46,6 +46,10 @@ public class GetSecretBundle {
             return new Request();
         }
 
+        public static Request create(String secretId) {
+            return builder().secretId(secretId);
+        }
+
         /**
          * Secret OCID.
          * Required.

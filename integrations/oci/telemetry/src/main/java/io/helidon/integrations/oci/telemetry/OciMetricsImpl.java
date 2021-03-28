@@ -16,25 +16,46 @@
 
 package io.helidon.integrations.oci.telemetry;
 
+import java.util.Optional;
+
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
+import io.helidon.integrations.oci.connect.OciRequestBase;
 import io.helidon.integrations.oci.connect.OciRestApi;
 
 class OciMetricsImpl implements OciMetrics {
     private final String apiVersion;
     private final OciRestApi restAccess;
+    private final String hostPrefix;
+    private final Optional<String> endpoint;
 
     OciMetricsImpl(Builder builder) {
         this.restAccess = builder.restAccess();
         this.apiVersion = builder.apiVersion();
+        this.hostPrefix = builder.hostPrefix();
+        this.endpoint = Optional.ofNullable(builder.endpoint());
     }
 
     @Override
     public Single<PostMetricData.Response> postMetricData(PostMetricData.Request request) {
         String apiPath = "/" + apiVersion + "/metrics";
 
-        return restAccess.invokeWithResponse(Http.Method.POST, apiPath,
-                                             request.hostPrefix(OciMetrics.API_HOST_PREFIX),
+        metrics(request);
+
+        return restAccess.invokeWithResponse(Http.Method.POST,
+                                             apiPath,
+                                             request,
                                              PostMetricData.Response.builder());
+    }
+
+    private void metrics(OciRequestBase<?> request) {
+        if (request.endpoint().isPresent()) {
+            return;
+        }
+
+        endpoint.ifPresent(request::endpoint);
+
+        request.hostFormat(OciMetrics.API_HOST_FORMAT)
+                .hostPrefix(hostPrefix);
     }
 }

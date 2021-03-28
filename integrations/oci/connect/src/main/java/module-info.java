@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * Classes needed for OCI to connect to service API.
+ */
 module io.helidon.integrations.oci.connect {
     requires java.logging;
 
@@ -27,4 +31,7 @@ module io.helidon.integrations.oci.connect {
     requires io.helidon.security.util;
     requires io.helidon.webclient;
     requires io.helidon.webclient.security;
+    requires io.helidon.integrations.common.rest;
+
+    exports io.helidon.integrations.oci.connect;
 }

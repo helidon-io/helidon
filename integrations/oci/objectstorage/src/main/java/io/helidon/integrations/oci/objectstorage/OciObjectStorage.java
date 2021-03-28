@@ -16,7 +16,6 @@
 
 package io.helidon.integrations.oci.objectstorage;
 
-import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.function.Consumer;
@@ -36,12 +35,12 @@ public interface OciObjectStorage {
     /**
      * Host name prefix.
      */
-    String HOST_PREFIX = "objectstorage";
+    String API_HOST_PREFIX = "objectstorage";
 
     /**
      * Host format of API server.
      */
-    String API_HOST_FORMAT = "https://%s.%s.oraclecloud.com";
+    String API_HOST_FORMAT = "%s://%s.%s.%s";
 
     /**
      * Create a new fluent API builder for OCI metrics.
@@ -107,12 +106,12 @@ public interface OciObjectStorage {
     Single<RenameObject.Response> renameObject(RenameObject.Request request);
 
     class Builder implements io.helidon.common.Builder<OciObjectStorage> {
-        private final OciRestApi.Builder accessBuilder = OciRestApi.builder()
-                .hostFormat(API_HOST_FORMAT)
-                .hostPrefix(HOST_PREFIX);
+        private final OciRestApi.Builder accessBuilder = OciRestApi.builder();
 
         private String apiVersion = API_VERSION;
+        private String hostPrefix = API_HOST_PREFIX;
         private String namespace;
+        private String endpoint;
 
         private Builder() {
         }
@@ -131,11 +130,20 @@ public interface OciObjectStorage {
          */
         public Builder config(Config config) {
             accessBuilder.config(config);
-            config.get("objectstorage.base-uri").as(URI.class).ifPresent(accessBuilder::baseUri);
-            config.get("objectstorage.host-format").asString().ifPresent(accessBuilder::hostFormat);
-            config.get("objectstorage.host-prefix").asString().ifPresent(accessBuilder::hostPrefix);
+            config.get("objectstorage.host-prefix").asString().ifPresent(this::hostPrefix);
+            config.get("objectstorage.endpoint").asString().ifPresent(this::endpoint);
             config.get("objectstorage.api-version").asString().ifPresent(this::apiVersion);
             config.get("objectstorage.namespace").asString().ifPresent(this::namespace);
+            return this;
+        }
+
+        public Builder hostPrefix(String prefix) {
+            this.hostPrefix = prefix;
+            return this;
+        }
+
+        public Builder endpoint(String endpoint) {
+            this.endpoint = endpoint;
             return this;
         }
 
@@ -173,6 +181,14 @@ public interface OciObjectStorage {
 
         Optional<String> namespace() {
             return Optional.ofNullable(namespace);
+        }
+
+        String hostPrefix() {
+            return hostPrefix;
+        }
+
+        String endpoint() {
+            return endpoint;
         }
     }
 }

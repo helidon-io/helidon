@@ -104,11 +104,13 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
         private final String keyOcid;
         private final String algorithm;
         private final Optional<String> keyVersionOcid;
+        private final Optional<String> cryptographicEndpoint;
 
         private OciVaultDigestConfig(Builder builder) {
             this.keyOcid = builder.keyOcid;
             this.algorithm = builder.algorithm;
             this.keyVersionOcid = Optional.ofNullable(builder.keyVersionOcid);
+            this.cryptographicEndpoint = Optional.ofNullable(builder.cryptographicEndpoint);
         }
 
         public static Builder builder() {
@@ -125,6 +127,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
                     .algorithm(algorithm);
 
             keyVersionOcid.ifPresent(request::keyVersionId);
+            cryptographicEndpoint.ifPresent(request::endpoint);
 
             return request;
         }
@@ -135,6 +138,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
                     .algorithm(algorithm);
 
             keyVersionOcid.ifPresent(request::keyVersionId);
+            cryptographicEndpoint.ifPresent(request::endpoint);
 
             return request;
         }
@@ -145,6 +149,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
             private String keyOcid;
             private String algorithm = Sign.Request.ALGORITHM_SHA_256_RSA_PKCS_PSS;
             private String keyVersionOcid;
+            private String cryptographicEndpoint;
 
             private Builder() {
             }
@@ -161,6 +166,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
                 config.get(CONFIG_KEY_KEY_OCID).asString().ifPresent(this::keyOcid);
                 config.get("key-version-ocid").asString().ifPresent(this::keyVersionOcid);
                 config.get("algorithm").asString().ifPresent(this::algorithm);
+                config.get("cryptographic-endpoint").asString().ifPresent(this::cryptographicEndpoint);
 
                 return this;
             }
@@ -179,6 +185,11 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
                 this.keyVersionOcid = keyVersionOcid;
                 return this;
             }
+
+            public Builder cryptographicEndpoint(String cryptographicEndpoint) {
+                this.cryptographicEndpoint = cryptographicEndpoint;
+                return this;
+            }
         }
     }
 
@@ -187,12 +198,14 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
         private final Optional<String> keyVersionId;
         private final Optional<String> algorithm;
         private final Optional<String> context;
+        private final Optional<String> cryptographicEndpoint;
 
         private OciVaultEncryptionConfig(Builder builder) {
             this.keyId = builder.keyId;
             this.keyVersionId = Optional.ofNullable(builder.keyVersionId);
             this.algorithm = Optional.ofNullable(builder.algorithm);
             this.context = Optional.ofNullable(builder.context);
+            this.cryptographicEndpoint = Optional.ofNullable(builder.cryptographicEndpoint);
         }
 
         public static Builder builder() {
@@ -210,6 +223,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
             keyVersionId.ifPresent(builder::keyVersionId);
             algorithm.ifPresent(builder::algorithm);
             context.ifPresent(builder::context);
+            cryptographicEndpoint.ifPresent(builder::endpoint);
 
             return builder;
         }
@@ -221,6 +235,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
             keyVersionId.ifPresent(builder::keyVersionId);
             algorithm.ifPresent(builder::algorithm);
             context.ifPresent(builder::context);
+            cryptographicEndpoint.ifPresent(builder::endpoint);
 
             return builder;
         }
@@ -228,10 +243,11 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
         public static class Builder implements io.helidon.common.Builder<OciVaultEncryptionConfig> {
             private static final String CONFIG_KEY_KEY_ID = "key-ocid";
 
-            public String keyId;
-            public String keyVersionId;
-            public String algorithm;
-            public String context;
+            private String keyId;
+            private String keyVersionId;
+            private String algorithm;
+            private String context;
+            private String cryptographicEndpoint;
 
             private Builder() {
             }
@@ -249,6 +265,12 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
                 config.get("key-version-ocid").asString().ifPresent(this::keyVersionId);
                 config.get("algorithm").asString().ifPresent(this::algorithm);
                 config.get("context").asString().ifPresent(this::context);
+                config.get("cryptographic-endpoint").asString().ifPresent(this::cryptographicEndpoint);
+                return this;
+            }
+
+            public Builder cryptographicEndpoint(String endpoint) {
+                this.cryptographicEndpoint = endpoint;
                 return this;
             }
 

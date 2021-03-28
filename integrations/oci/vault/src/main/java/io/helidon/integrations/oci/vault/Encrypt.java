@@ -22,6 +22,7 @@ import javax.json.JsonObject;
 
 import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.integrations.oci.connect.OciApiException;
 import io.helidon.integrations.oci.connect.OciRequestBase;
 
 /**
@@ -47,6 +48,8 @@ public final class Encrypt {
          * {@value} algorithm.
          */
         public static final String ALGORITHM_RSA_OAEP_SHA_256 = "RSA_OAEP_SHA_256";
+
+        private String keyId;
 
         private Request() {
         }
@@ -83,6 +86,7 @@ public final class Encrypt {
          * @return updated request
          */
         public Request keyId(String keyOcid) {
+            this.keyId = keyOcid;
             return add("keyId", keyOcid);
         }
 
@@ -122,6 +126,13 @@ public final class Encrypt {
          */
         public Request keyVersionId(String versionOcid) {
             return add("keyVersionId", versionOcid);
+        }
+
+        String keyId() {
+            if (keyId == null) {
+                throw new OciApiException("Encrypt.Request keyId must be defined");
+            }
+            return keyId;
         }
     }
 

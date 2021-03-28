@@ -20,6 +20,7 @@ import javax.json.JsonObject;
 
 import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.integrations.oci.connect.OciApiException;
 import io.helidon.integrations.oci.connect.OciRequestBase;
 
 /**
@@ -85,6 +86,7 @@ public final class Sign {
          * Digest of a message.
          */
         public static final String MESSAGE_TYPE_DIGEST = "DIGEST";
+        private String keyId;
 
         private Request() {
         }
@@ -122,6 +124,7 @@ public final class Sign {
          * @return updated request
          */
         public Request keyId(String keyOcid) {
+            this.keyId = keyOcid;
             return add("keyId", keyOcid);
         }
 
@@ -162,6 +165,13 @@ public final class Sign {
          */
         public Request keyVersionId(String versionOcid) {
             return add("keyVersionId", versionOcid);
+        }
+
+        String keyId() {
+            if (keyId == null) {
+                throw new OciApiException("Encrypt.Request keyId must be defined");
+            }
+            return keyId;
         }
     }
 

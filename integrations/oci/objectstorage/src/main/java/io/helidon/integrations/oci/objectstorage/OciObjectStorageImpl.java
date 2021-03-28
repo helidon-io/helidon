@@ -25,21 +25,28 @@ import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.connect.OciApiException;
+import io.helidon.integrations.oci.connect.OciRequestBase;
 import io.helidon.integrations.oci.connect.OciRestApi;
 
 class OciObjectStorageImpl implements OciObjectStorage {
     private final OciRestApi restApi;
     private final Optional<String> defaultNamespace;
+    private final String hostPrefix;
+    private final Optional<String> endpoint;
 
     OciObjectStorageImpl(Builder builder) {
-        restApi = builder.restApi();
-        defaultNamespace = builder.namespace();
+        this.restApi = builder.restApi();
+        this.defaultNamespace = builder.namespace();
+        this.hostPrefix = builder.hostPrefix();
+        this.endpoint = Optional.ofNullable(builder.endpoint());
     }
 
     @Override
     public Single<ApiOptionalResponse<GetObject.Response>> getObject(GetObject.Request request) {
         String namespace = namespace(request);
         String apiPath = "/n/" + namespace + "/b/" + request.bucket() + "/o/" + request.objectName();
+
+        objectStorage(request);
 
         return restApi
                 .getPublisher(apiPath, request, ApiOptionalResponse.<Multi<DataChunk>, GetObject.Response>apiResponseBuilder()
@@ -51,7 +58,8 @@ class OciObjectStorageImpl implements OciObjectStorage {
         String namespace = namespace(request);
         String apiPath = "/n/" + namespace + "/b/" + request.bucket() + "/o/" + request.objectName();
 
-        request.addHeader("content-length", String.valueOf(request.contentLength()));
+        request.addHeader("Content-Length", String.valueOf(request.contentLength()));
+        objectStorage(request);
 
         return restApi.invokeBytesRequest(Http.Method.PUT, apiPath, request, publisher, PutObject.Response.builder());
     }
@@ -61,6 +69,8 @@ class OciObjectStorageImpl implements OciObjectStorage {
         String namespace = namespace(request);
         String apiPath = "/n/" + namespace + "/b/" + request.bucket() + "/o/" + request.objectName();
 
+        objectStorage(request);
+
         return restApi.delete(apiPath, request, DeleteObject.Response.builder());
     }
 
@@ -68,6 +78,8 @@ class OciObjectStorageImpl implements OciObjectStorage {
     public Single<RenameObject.Response> renameObject(RenameObject.Request request) {
         String namespace = namespace(request);
         String apiPath = "/n/" + namespace + "/b/" + request.bucket() + "/actions/renameObject";
+
+        objectStorage(request);
 
         return restApi.post(apiPath, request, RenameObject.Response.builder());
     }
@@ -77,5 +89,16 @@ class OciObjectStorageImpl implements OciObjectStorage {
                 .or(() -> defaultNamespace)
                 .orElseThrow(() -> new OciApiException("Namespace must be defined for Object Storage requests either "
                                                                + "in configuration of Object Storage, or on request."));
+    }
+
+    private void objectStorage(OciRequestBase<?> request) {
+        if (request.endpoint().isPresent()) {
+            return;
+        }
+
+        endpoint.ifPresent(request::endpoint);
+
+        request.hostFormat(OciObjectStorage.API_HOST_FORMAT)
+                .hostPrefix(hostPrefix);
     }
 }
