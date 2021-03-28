@@ -78,7 +78,6 @@ import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.servicecommon.restcdi.AnnotationLookupResult;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
-import io.helidon.servicecommon.restcdi.InterceptionTargetInfo;
 import io.helidon.webserver.Routing;
 
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -142,10 +141,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
     private final Set<Class<?>> syntheticSimpleTimerClassesProcessed = new HashSet<>();
     private final Set<Method> syntheticSimpleTimersToRegister = new HashSet<>();
 
-    private final Map<Executable, InterceptionTargetInfo<MetricWorkItem>> interceptInfo = new HashMap<>();
-
     private final AtomicReference<Config> config = new AtomicReference<>();
     private final AtomicReference<Config> metricsConfig = new AtomicReference<>();
+
+    private final WorkItemsManager<MetricWorkItem> workItemsManager = WorkItemsManager.create();
 
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
@@ -287,10 +286,8 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
             AnnotationLookupResult<? extends Annotation> lookupResult) {
         MetricInfo<?> metricInfo = registerMetricInternal(element, clazz, lookupResult);
         if (element instanceof Executable) {
-            InterceptionTargetInfo<MetricWorkItem> info = interceptInfo.computeIfAbsent((Executable) element,
-                    InterceptionTargetInfo::create);
-            info.addWorkItem(lookupResult.annotation()
-                    .annotationType(), MetricWorkItem.create(metricInfo.metricID, metricInfo.metric));
+            workItemsManager.put((Executable) element, lookupResult.annotation().annotationType(),
+                    MetricWorkItem.create(metricInfo.metricID, metricInfo.metric));
         }
     }
 
@@ -307,8 +304,8 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
         return result.toArray(new Tag[result.size()]);
     }
 
-    InterceptionTargetInfo<MetricWorkItem> interceptInfo(Executable executable) {
-        return interceptInfo.get(executable);
+    Iterable<MetricWorkItem> workItems(Executable executable, Class<? extends Annotation> annotationType) {
+        return workItemsManager.workItems(executable, annotationType);
     }
 
     /**
@@ -483,10 +480,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
     }
 
     private void registerAndSaveSyntheticSimpleTimer(Method method) {
-        InterceptionTargetInfo<MetricWorkItem> info = interceptInfo.computeIfAbsent(method,
-                m -> InterceptionTargetInfo.create(method));
-
-        info.addWorkItem(SyntheticSimplyTimed.class,
+        workItemsManager.put(method, SyntheticSimplyTimed.class,
                 MetricWorkItem.create(SYNTHETIC_SIMPLE_TIMER_METADATA, syntheticSimpleTimer(method),
                         syntheticSimpleTimerMetricTags(method)));
     }

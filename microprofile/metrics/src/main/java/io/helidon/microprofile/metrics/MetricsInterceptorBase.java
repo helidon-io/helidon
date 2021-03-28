@@ -31,7 +31,6 @@ import javax.interceptor.InvocationContext;
 
 import io.helidon.microprofile.metrics.MetricsCdiExtension.MetricWorkItem;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
-import io.helidon.servicecommon.restcdi.InterceptionTargetInfo;
 
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -83,18 +82,13 @@ abstract class MetricsInterceptorBase<M extends Metric> implements HelidonInterc
     @AroundConstruct
     @Override
     public Object aroundConstruct(InvocationContext context) throws Exception {
-        return aroundConstructBase(context);
+        return aroundConstruction(context);
     }
 
     @AroundInvoke
     @Override
     public Object aroundInvoke(InvocationContext context) throws Exception {
-        return aroundInvokeBase(context);
-    }
-
-    @Override
-    public Class<? extends Annotation> annotationType() {
-        return annotationType;
+        return aroundInvocation(context);
     }
 
     Map<MetricID, Metric> metricsForVerification() {
@@ -105,12 +99,12 @@ abstract class MetricsInterceptorBase<M extends Metric> implements HelidonInterc
     }
 
     @Override
-    public InterceptionTargetInfo<MetricWorkItem> interceptionTargetInfo(Executable executable) {
-        return extension.interceptInfo(executable);
+    public Iterable<MetricWorkItem> workItems(Executable executable) {
+        return extension.workItems(executable, annotationType);
     }
 
     @Override
-    public void preInvoke(InvocationContext context, MetricWorkItem workItem) {
+    public void preInvocation(InvocationContext context, MetricWorkItem workItem) {
         invokeVerifiedAction(context, workItem, this::preInvoke, ActionType.PREINVOKE);
     }
 
@@ -137,27 +131,27 @@ abstract class MetricsInterceptorBase<M extends Metric> implements HelidonInterc
      * </p>
      * @param <T> type of metrics the interceptor handles
      */
-    abstract static class WithPostComplete<T extends Metric> extends MetricsInterceptorBase<T>
-            implements HelidonInterceptor.WithPostComplete<MetricWorkItem> {
+    abstract static class WithPostCompletion<T extends Metric> extends MetricsInterceptorBase<T>
+            implements HelidonInterceptor.WithPostCompletion<MetricWorkItem> {
 
-        WithPostComplete(Class<? extends Annotation> annotationType, Class<T> metricType) {
+        WithPostCompletion(Class<? extends Annotation> annotationType, Class<T> metricType) {
             super(annotationType, metricType);
         }
 
         @AroundConstruct
         @Override
         public Object aroundConstruct(InvocationContext context) throws Exception {
-            return aroundConstructBase(context);
+            return aroundConstruction(context);
         }
 
         @AroundInvoke
         @Override
         public Object aroundInvoke(InvocationContext context) throws Exception {
-            return aroundInvokeBase(context);
+            return aroundInvocation(context);
         }
 
         @Override
-        public void postComplete(InvocationContext context, Throwable throwable, MetricWorkItem workItem) {
+        public void postCompletion(InvocationContext context, Throwable throwable, MetricWorkItem workItem) {
             invokeVerifiedAction(context, workItem, this::postComplete, ActionType.COMPLETE);
         }
 

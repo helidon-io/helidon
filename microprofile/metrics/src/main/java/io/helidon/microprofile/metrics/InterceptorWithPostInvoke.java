@@ -19,12 +19,10 @@ package io.helidon.microprofile.metrics;
 import java.lang.annotation.Annotation;
 
 import javax.inject.Inject;
-import javax.interceptor.AroundConstruct;
-import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
 import io.helidon.microprofile.metrics.MetricsCdiExtension.MetricWorkItem;
-import io.helidon.servicecommon.restcdi.InterceptionTargetInfo;
+import io.helidon.servicecommon.restcdi.HelidonInterceptor;
 
 import org.eclipse.microprofile.metrics.Metric;
 
@@ -37,7 +35,8 @@ import org.eclipse.microprofile.metrics.Metric;
  * </p>
  * @param <T> type of metrics the interceptor handles
  */
-abstract class InterceptorWithPostInvoke<T extends Metric> extends InterceptorBase<T> {
+abstract class InterceptorWithPostInvoke<T extends Metric> extends InterceptorBase<T>
+        implements HelidonInterceptor.WithPostCompletion<MetricWorkItem> {
 
     @Inject
     private MetricsCdiExtension extension;
@@ -46,23 +45,8 @@ abstract class InterceptorWithPostInvoke<T extends Metric> extends InterceptorBa
         super(annotationType, metricType);
     }
 
-    @AroundConstruct
-    Object aroundConstruct(InvocationContext context) throws Exception {
-        InterceptionTargetInfo<MetricWorkItem> interceptionTargetInfo = extension.interceptInfo(context.getConstructor());
-        return interceptionTargetInfo.runner().run(context, interceptionTargetInfo.workItems(annotationType()), this::preInvoke,
-                this::postComplete);
-    }
-
-
     @Override
-    @AroundInvoke
-    Object aroundInvoke(InvocationContext context) throws Exception {
-        InterceptionTargetInfo<MetricWorkItem> interceptionTargetInfo = extension.interceptInfo(context.getMethod());
-        return interceptionTargetInfo.runner().run(context, interceptionTargetInfo.workItems(annotationType()), this::preInvoke,
-                this::postComplete);
-    }
-
-    void postComplete(InvocationContext context, Throwable t, MetricWorkItem workItem) {
+    public void postCompletion(InvocationContext context, Throwable t, MetricWorkItem workItem) {
         invokeVerifiedAction(context, workItem, this::postComplete, ActionType.COMPLETE);
     }
 
