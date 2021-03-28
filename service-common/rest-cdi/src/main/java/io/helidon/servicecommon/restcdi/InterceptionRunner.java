@@ -62,7 +62,7 @@ import javax.interceptor.InvocationContext;
  *     might need to process the work items twice. In those cases, the {@code Iterable} can furnish two {@code Iterator}s.
  * </p>
  */
-public interface InterceptionRunner {
+interface InterceptionRunner {
 
     /**
      * Processing before an intercepted executable is invoked.

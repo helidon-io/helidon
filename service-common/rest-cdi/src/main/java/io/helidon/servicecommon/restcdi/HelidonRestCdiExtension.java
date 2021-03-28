@@ -19,8 +19,10 @@ package io.helidon.servicecommon.restcdi;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -323,6 +325,37 @@ public abstract class HelidonRestCdiExtension<
 
     protected T serviceSupport() {
         return serviceSupport;
+    }
+
+    /**
+     * Manages a very simple multi-map of {@code Executable} to {@code Class<? extends Annotation>} to a {@code Set} of typed
+     * work items.
+     *
+     * @param <W> type of work items managed
+     */
+    protected static class WorkItemsManager<W> {
+
+        public static <W>  WorkItemsManager<W> create() {
+            return new WorkItemsManager<>();
+        }
+
+        private WorkItemsManager() {
+        }
+
+        private final Map<Executable, Map<Class<? extends Annotation>, Set<W>>> workItemsByExecutable = new HashMap<>();
+
+        public void put(Executable executable, Class<? extends Annotation> annotationType, W workItem) {
+            workItemsByExecutable
+                    .computeIfAbsent(executable, e -> new HashMap<>())
+                    .computeIfAbsent(annotationType, t -> new HashSet<>())
+                    .add(workItem);
+        }
+
+        public Iterable<W> workItems(Executable executable, Class<? extends Annotation> annotationType) {
+            return workItemsByExecutable
+                    .getOrDefault(executable, Collections.emptyMap())
+                    .getOrDefault(annotationType, Collections.emptySet());
+        }
     }
 
     /**
