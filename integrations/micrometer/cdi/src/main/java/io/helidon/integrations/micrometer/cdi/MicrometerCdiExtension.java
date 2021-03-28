@@ -21,9 +21,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,7 +39,6 @@ import javax.interceptor.InterceptorBinding;
 import io.helidon.integrations.micrometer.MicrometerSupport;
 import io.helidon.servicecommon.restcdi.AnnotationLookupResult;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
-import io.helidon.servicecommon.restcdi.InterceptionTargetInfo;
 
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
@@ -65,7 +62,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
 
     private final MeterRegistry meterRegistry;
 
-    private final Map<Executable, InterceptionTargetInfo<MeterWorkItem>> interceptionTargetInfo = new HashMap<>();
+    private final WorkItemsManager<MeterWorkItem> workItemsManager = WorkItemsManager.create();
 
     /**
      * Creates new extension instance.
@@ -105,9 +102,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
             }
         }
         if (element instanceof Executable) {
-            InterceptionTargetInfo<MeterWorkItem> info = interceptionTargetInfo.computeIfAbsent((Executable) element,
-                    InterceptionTargetInfo::create);
-            info.addWorkItem(lookupResult.annotation()
+            workItemsManager.put((Executable) element, lookupResult.annotation()
                     .annotationType(), MeterWorkItem.create(newMeter, isOnlyOnException));
         }
     }
@@ -139,8 +134,8 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
         recordProducerMethod(ppm);
     }
 
-    InterceptionTargetInfo<MeterWorkItem> interceptionTargetInfo(Executable executable) {
-        return interceptionTargetInfo.get(executable);
+    Iterable<MeterWorkItem> workItems(Executable executable, Class<? extends Annotation> annotationType) {
+        return workItemsManager.workItems(executable, annotationType);
     }
 
     static class MeterWorkItem {

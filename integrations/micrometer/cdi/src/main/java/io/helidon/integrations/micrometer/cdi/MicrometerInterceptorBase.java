@@ -27,13 +27,10 @@ import java.util.logging.Logger;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
-import javax.interceptor.AroundConstruct;
-import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
 import io.helidon.integrations.micrometer.cdi.MicrometerCdiExtension.MeterWorkItem;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
-import io.helidon.servicecommon.restcdi.InterceptionTargetInfo;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -41,13 +38,15 @@ import io.micrometer.core.instrument.MeterRegistry;
 /**
  * Base implementation for all Micrometer interceptors.
  * <p>
- *     All use the with-post-completion" semantics because some metrics are updated only when the invoked executable throws an
- *     exception.
+ *     Both interceptors use the with-post-completion" semantics; {@code Timed} needs to update the metric only after the
+ *     method has completed, and {@code Counted} might use update-only-on-failure, which of course it does not know until
+ *     completion.
  * </p>
  * @param <M>
  */
 @Dependent
-abstract class MicrometerInterceptorBase<M extends Meter> implements HelidonInterceptor.WithPostComplete<MeterWorkItem> {
+abstract class MicrometerInterceptorBase<M extends Meter> extends HelidonInterceptor.Base<MeterWorkItem>
+        implements HelidonInterceptor.WithPostCompletion<MeterWorkItem> {
 
     private static final Logger LOGGER = Logger.getLogger(MicrometerInterceptorBase.class.getPackageName() + ".Interceptor*");
 
@@ -87,34 +86,17 @@ abstract class MicrometerInterceptorBase<M extends Meter> implements HelidonInte
     }
 
     @Override
-    public Class<? extends Annotation> annotationType() {
-        return annotationType;
-    }
-
-    @AroundConstruct
-    @Override
-    public Object aroundConstruct(InvocationContext context) throws Exception {
-        return aroundConstructBase(context);
-    }
-
-    @AroundInvoke
-    @Override
-    public Object aroundInvoke(InvocationContext context) throws Exception {
-        return aroundInvokeBase(context);
+    public Iterable<MeterWorkItem> workItems(Executable executable) {
+        return extension.workItems(executable, annotationType);
     }
 
     @Override
-    public InterceptionTargetInfo<MeterWorkItem> interceptionTargetInfo(Executable executable) {
-        return extension.interceptionTargetInfo(executable);
-    }
-
-    @Override
-    public void preInvoke(InvocationContext context, MeterWorkItem workItem) {
+    public void preInvocation(InvocationContext context, MeterWorkItem workItem) {
         verifyAction(context, workItem, this::preInvoke, ActionType.PREINVOKE);
     }
 
     @Override
-    public void postComplete(InvocationContext context, Throwable throwable, MeterWorkItem workItem) {
+    public void postCompletion(InvocationContext context, Throwable throwable, MeterWorkItem workItem) {
         if (!workItem.isOnlyOnException() || throwable != null) {
             verifyAction(context, workItem, this::postComplete, ActionType.COMPLETE);
         }
@@ -131,7 +113,7 @@ abstract class MicrometerInterceptorBase<M extends Meter> implements HelidonInte
         LOGGER.log(Level.FINEST, () -> String.format(
                 "%s (%s) is accepting %s %s for processing on %s triggered by @%s",
                 getClass().getSimpleName(), actionType, workItem.meter().getClass().getSimpleName(), workItem.meter().getId(),
-                context.getMethod() != null ? context.getMethod() : context.getConstructor(), annotationType().getSimpleName()));
+                context.getMethod() != null ? context.getMethod() : context.getConstructor(), annotationType.getSimpleName()));
         action.accept(meterType.cast(meter));
     }
 
