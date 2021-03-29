@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,16 @@ import javax.inject.Inject;
 public class RequestTestQualifier {
 
     @Inject
-    TenantContext tenantContext;
+    private TenantContext tenantContext;
 
+    /**
+     * A test method.
+     *
+     * @return tenant id
+     * @throws Exception if error occurs
+     */
     public String test() throws Exception {
         String tenantId = tenantContext.getTenantId();
-        System.out.println("Tenant Context: " + tenantId);
         if (tenantId == null) {
             throw new IllegalTenantException("No tenant context");
         }

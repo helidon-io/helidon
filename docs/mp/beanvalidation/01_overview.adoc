@@ -1,0 +1,64 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Bean Validation Introduction
+:h1Prefix: MP
+:pagename: bean-validation-introduction
+:description: Bean Validation Introduction
+:keywords: helidon, webserver, bean validation, validation
+:bean-validation-spec-url: https://projects.eclipse.org/projects/ee4j.bean-validation
+
+Helidon supports Bean Validation via its integration with JAX-RS/Jersey. The
+{bean-validation-spec-url}[Jakarta Bean
+Validation specification] defines an API to validate Java beans.
+Bean Validation is supported in REST resource classes as well as in
+regular application beans.
+
+== Validation Example in Helidon MP
+
+The following example shows a simple resource method annotated with `@POST` whose
+parameter must be _not null_ and _valid_. Validating a parameter in this case implies
+making sure that any constraint annotations in the `Greeting` class are satisfied.
+The resource method shall never be called if the validation fails, with a 400
+(Bad Request) status code returned instead.
+
+[source,java]
+----
+@Path("helloworld")
+public class HelloWorld {
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void post(@NotNull @Valid Greeting greeting) {
+        // ...
+    }
+}
+----
+
+Validation typically requires an additional dependency from Jersey in your pom:
+
+[source, xml]
+----
+<dependency>
+  <groupId>org.glassfish.jersey.ext</groupId>
+  <artifactId>jersey-bean-validation</artifactId>
+</dependency>
+----
+
+If defined as a parent pom in your project, the version for this dependency
+is inherited from the Helidon application pom.

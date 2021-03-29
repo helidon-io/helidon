@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 
@@ -53,6 +52,7 @@ import org.jboss.jandex.IndexView;
 import org.jboss.jandex.Indexer;
 
 import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 /**
  * Portable extension to allow construction of a Jandex index (to pass to
@@ -72,6 +72,7 @@ public class OpenApiCdiExtension implements Extension {
 
     private org.eclipse.microprofile.config.Config mpConfig;
     private Config config;
+    private MPOpenAPISupport openApiSupport;
 
     /**
      * Creates a new instance of the index builder.
@@ -104,19 +105,20 @@ public class OpenApiCdiExtension implements Extension {
     }
 
     void registerOpenApi(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object event) {
-        try {
-            Config openapiNode = config.get(OpenAPISupport.Builder.CONFIG_KEY);
-            OpenAPISupport openApiSupport = new MPOpenAPIBuilder()
-                    .config(mpConfig)
-                    .indexView(indexView())
-                    .config(openapiNode)
-                    .build();
+        Config openapiNode = config.get(OpenAPISupport.Builder.CONFIG_KEY);
+        openApiSupport = new MPOpenAPIBuilder()
+                .config(mpConfig)
+                .singleIndexViewSupplier(this::indexView)
+                .config(openapiNode)
+                .build();
 
-            openApiSupport.configureEndpoint(
-                    RoutingBuilders.create(openapiNode).routingBuilder());
-        } catch (IOException e) {
-            throw new DeploymentException("Failed to obtain index view", e);
-        }
+        openApiSupport
+                .configureEndpoint(RoutingBuilders.create(openapiNode).routingBuilder());
+    }
+
+    // Must run after the server has created the Application instances.
+    void buildModel(@Observes @Priority(PLATFORM_AFTER + 100 + 10) @Initialized(ApplicationScoped.class) Object event) {
+        openApiSupport.prepareModel();
     }
 
     /**
@@ -139,11 +141,14 @@ public class OpenApiCdiExtension implements Extension {
      * annotated classes for endpoints.
      *
      * @return {@code IndexView} describing discovered classes
-     * @throws java.io.IOException in case of error reading an existing index file or
-     * reading class bytecode from the classpath
      */
-    public IndexView indexView() throws IOException {
-        return indexURLCount > 0 ? existingIndexFileReader() : indexFromHarvestedClasses();
+    public IndexView indexView() {
+        try {
+            return indexURLCount > 0 ? existingIndexFileReader() : indexFromHarvestedClasses();
+        } catch (IOException e) {
+            // wrap so we can use this method in a reference
+            throw new RuntimeException(e);
+        }
     }
 
     /**

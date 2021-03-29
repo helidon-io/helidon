@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -387,34 +388,48 @@ class BareResponseImpl implements BareResponse {
     }
 
     private ChannelFuture sendData(DataChunk data) {
-            LOGGER.finest(() -> log("Sending data chunk"));
+        LOGGER.finest(() -> log("Sending data chunk"));
 
-            DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
-
-            LOGGER.finest(() -> log("Sending data chunk on event loop thread."));
-
-            ChannelFuture channelFuture;
-            if (data.flush()) {
-                channelFuture = ctx.writeAndFlush(httpContent);
+        DefaultHttpContent httpContent;
+        if (data.isBackedBy(ByteBuf.class)) {
+            // DefaultHttpContent will call release, we retain to also call ours
+            ByteBuf[] byteBufs = data.data(ByteBuf.class);
+            if (byteBufs.length == 1) {
+                httpContent = new DefaultHttpContent(byteBufs[0].retain());
             } else {
-                channelFuture = ctx.write(httpContent);
+                for (ByteBuf byteBuf : byteBufs) {
+                    byteBuf.retain();
+                }
+                httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(byteBufs));
             }
+        } else {
+            httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
+        }
 
-            return channelFuture
-                    .addListener(future -> {
-                        data.writeFuture().ifPresent(writeFuture -> {
-                            // Complete write future based con channel future
-                            if (future.isSuccess()) {
-                                writeFuture.complete(data);
-                            } else {
-                                writeFuture.completeExceptionally(future.cause());
-                            }
-                        });
-                        data.release();
-                        LOGGER.finest(() -> log("Data chunk sent with result: " + future.isSuccess()));
-                    })
-                    .addListener(completeOnFailureListener("Failure when sending a content!"))
-                    .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+        LOGGER.finest(() -> log("Sending data chunk on event loop thread."));
+
+        ChannelFuture channelFuture;
+        if (data.flush()) {
+            channelFuture = ctx.writeAndFlush(httpContent);
+        } else {
+            channelFuture = ctx.write(httpContent);
+        }
+
+        return channelFuture
+                .addListener(future -> {
+                    data.writeFuture().ifPresent(writeFuture -> {
+                        // Complete write future based con channel future
+                        if (future.isSuccess()) {
+                            writeFuture.complete(data);
+                        } else {
+                            writeFuture.completeExceptionally(future.cause());
+                        }
+                    });
+                    data.release();
+                    LOGGER.finest(() -> log("Data chunk sent with result: " + future.isSuccess()));
+                })
+                .addListener(completeOnFailureListener("Failure when sending a content!"))
+                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
     }
 
     private String log(String s) {

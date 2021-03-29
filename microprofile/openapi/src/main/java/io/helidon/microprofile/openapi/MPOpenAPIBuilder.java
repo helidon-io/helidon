@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019,2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,15 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.inject.spi.Unmanaged;
 import javax.ws.rs.core.Application;
 
 import io.helidon.microprofile.server.JaxRsApplication;
@@ -43,12 +45,23 @@ import org.jboss.jandex.IndexView;
 /**
  * Fluent builder for OpenAPISupport in Helidon MP.
  */
-public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
+public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuilder> {
+
+    private static final Logger LOGGER = Logger.getLogger(MPOpenAPIBuilder.class.getName());
 
     private Optional<OpenApiConfig> openAPIConfig;
-    private Optional<IndexView> indexView;
-    private List<FilteredIndexView> perAppFilteredIndexViews = null;
+
+    /*
+     * Provided by the OpenAPI CDI extension for retrieving a single IndexView of all scanned types for the single-app or
+     * synthetic app cases.
+     */
+    private Supplier<? extends IndexView> singleIndexViewSupplier = null;
+
     private Config mpConfig;
+
+    protected MPOpenAPIBuilder() {
+        super(MPOpenAPIBuilder.class);
+    }
 
     @Override
     public OpenApiConfig openAPIConfig() {
@@ -56,11 +69,10 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
     }
 
     @Override
-    public synchronized List<FilteredIndexView> perAppFilteredIndexViews() {
-        if (perAppFilteredIndexViews == null) {
-            perAppFilteredIndexViews = buildPerAppFilteredIndexViews();
-        }
-        return perAppFilteredIndexViews;
+    public MPOpenAPISupport build() {
+        MPOpenAPISupport result = new MPOpenAPISupport(this);
+        validate();
+        return result;
     }
 
     /**
@@ -84,12 +96,6 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
 
     private List<FilteredIndexView> buildPerAppFilteredIndexViews() {
         /*
-         * There are two cases that return a default filtered index view. Don't create it yet, just declare a supplier for it.
-         */
-        Supplier<List<FilteredIndexView>> defaultResultSupplier = () -> List.of(new FilteredIndexView(indexView.get(),
-                openAPIConfig.get()));
-
-        /*
          * Some JaxRsApplication instances might have an application instance already associated with them. Others might not in
          * which case we'll try to instantiate them ourselves (unless they are synthetic apps or lack no-args constructors).
          *
@@ -111,7 +117,7 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
              * Use normal scanning with a FilteredIndexView containing no class restrictions (beyond what might already be in
              * the configuration).
              */
-            return defaultResultSupplier.get();
+            return List.of(new FilteredIndexView(singleIndexViewSupplier.get(), openAPIConfig.get()));
         }
         return appClassesToScan.stream()
                 .map(this::appRelatedClassesToFilteredIndexView)
@@ -125,9 +131,9 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
     /**
      * Returns the classes that should be scanned for the given JAX-RS application.
      * <p>
-     *     If there is already a pre-existing {@code Application} instance for the JAX-RS application, then
-     *     use it to invoke {@code getClasses} and {@code getSingletons}. Otherwise use CDI to create
-     *     an unmanaged instance of the {@code Application}, then invoke those methods, then dispose of the unmanaged instance.
+     *     This should always run after the server has instantiated the {@code Application}
+     *     instance for each JAX-RS application, so we just
+     *     use it to invoke {@code getClasses} and {@code getSingletons}.
      * </p>
      * @param jaxRsApplication
      * @return Set of classes to be scanned for annotations related to OpenAPI
@@ -145,15 +151,8 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
         if (app != null) {
             result.addAll(classesToScanForAppInstance(app));
         } else {
-            Unmanaged<? extends Application> unmanagedApp = new Unmanaged<>(appClass);
-            Unmanaged.UnmanagedInstance<? extends Application> unmanagedInstance = unmanagedApp.newInstance();
-            app = unmanagedInstance.produce()
-                    .inject()
-                    .postConstruct()
-                    .get();
-            result.addAll(classesToScanForAppInstance(app));
-            unmanagedInstance.preDestroy()
-                    .dispose();
+            LOGGER.log(Level.WARNING, String.format("Expected application instance not created yet for %s",
+                    appClass.getName()));
         }
         return result;
     }
@@ -183,7 +182,7 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
                 .map(Class::getName)
                 .forEach(scanClasses::add);
 
-        FilteredIndexView result = new FilteredIndexView(indexView.get(), openAPIFilteringConfig);
+        FilteredIndexView result = new FilteredIndexView(singleIndexViewSupplier.get(), openAPIFilteringConfig);
         return result;
     }
 
@@ -205,23 +204,23 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
         return this;
     }
 
-    /**
-     * Sets the IndexView instance to be passed to the smallrye OpenApi impl for
-     * annotation analysis.
-     *
-     * @param indexView {@link IndexView} instance containing endpoint classes
-     * @return updated builder instance
-     */
-    public MPOpenAPIBuilder indexView(IndexView indexView) {
-        this.indexView = Optional.of(indexView);
+    MPOpenAPIBuilder singleIndexViewSupplier(Supplier<? extends IndexView> singleIndexViewSupplier) {
+        this.singleIndexViewSupplier = singleIndexViewSupplier;
         return this;
     }
 
     @Override
+    protected Supplier<List<? extends IndexView>> indexViewsSupplier() {
+        return () -> buildPerAppFilteredIndexViews();
+    }
+
+    @Override
     public void validate() throws IllegalStateException {
+        super.validate();
         if (!openAPIConfig.isPresent()) {
             throw new IllegalStateException("OpenApiConfig has not been set in MPBuilder");
         }
+        Objects.requireNonNull(singleIndexViewSupplier, "singleIndexViewSupplier must be set but was not");
     }
 
 }

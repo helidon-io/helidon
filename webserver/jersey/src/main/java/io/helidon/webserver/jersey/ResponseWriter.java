@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,83 +18,43 @@ package io.helidon.webserver.jersey;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import javax.ws.rs.core.MediaType;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.MultiFromOutputStream;
-import io.helidon.webserver.ConnectionClosedException;
+import io.helidon.webserver.ByteBufDataChunk;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 
 /**
- * The ResponseWriter.
+ * Implementation of Jersey's SPI to write responses. The Webserver's class
+ * {@code BareResponseImpl} will subscribe to the publisher of {@code DataChunk}'s
+ * created by this class. All buffers created by this class are allocated
+ * from Netty's pool.
  */
 class ResponseWriter implements ContainerResponseWriter {
-
     private static final Logger LOGGER = Logger.getLogger(ResponseWriter.class.getName());
-
-    private final MultiFromOutputStream publisher = new MultiFromOutputStream() {
-        @Override
-        public void write(byte[] b) throws IOException {
-            try {
-                super.write(b);
-            } catch (ConnectionClosedException e) {
-                throw new IOException("Cannot publish more bytes due to a connection close.", e);
-            }
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            try {
-                super.write(b, off, len);
-            } catch (ConnectionClosedException e) {
-                throw new IOException("Cannot publish more bytes due to a connection close.", e);
-            }
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            try {
-                super.write(b);
-            } catch (ConnectionClosedException e) {
-                throw new IOException("Cannot publish more bytes due to a connection close.", e);
-            }
-        }
-
-        @Override
-        public void close() throws IOException {
-            try {
-                super.close();
-            } catch (ConnectionClosedException e) {
-                throw new IOException("Cannot close the connection because it's already closed.", e);
-            }
-        }
-
-        @Override
-        public void flush() throws IOException {
-            try {
-                super.flush();
-            } catch (ConnectionClosedException e) {
-                throw new IOException("Cannot flush on the connection because it's closed.", e);
-            }
-        }
-    };
 
     private final ServerResponse res;
     private final ServerRequest req;
     private final CompletableFuture<Void> whenHandleFinishes;
+    private DataChunkOutputStream publisher;
 
     ResponseWriter(ServerResponse res, ServerRequest req, CompletableFuture<Void> whenHandleFinishes) {
         this.res = res;
@@ -105,19 +65,14 @@ class ResponseWriter implements ContainerResponseWriter {
     @Override
     public OutputStream writeResponseStatusAndHeaders(long contentLength, ContainerResponse context)
             throws ContainerException {
-
-        //
-        // TODO also check that nothing was written an nothing was read
-        //
         if (context.getStatus() == 404 && contentLength == 0) {
             whenHandleFinishes.thenRun(() -> {
                 LOGGER.finer("Skipping the handling and forwarding to downstream WebServer filters.");
-
                 req.next();
             });
             return new OutputStream() {
                 @Override
-                public void write(int b) throws IOException {
+                public void write(int b) {
                     // noop
                 }
             };
@@ -133,9 +88,14 @@ class ResponseWriter implements ContainerResponseWriter {
             res.headers().put(entry.getKey(), entry.getValue());
         }
 
-        res.send(publisher
-                .map(byteBuffer -> DataChunk.create(doFlush(context, byteBuffer), true, byteBuffer)));
-
+        //
+        // Calling ServerResponse.send(publisher) will result in a synchronous subscription
+        // to the supplied publisher. Thus, the publisher/outputstream returned by this method
+        // is ready to immediately accept writes.
+        //
+        publisher = new DataChunkOutputStream();
+        publisher.autoFlush(MediaType.SERVER_SENT_EVENTS_TYPE.isCompatible(context.getMediaType()));
+        res.send(publisher);
         return publisher;
     }
 
@@ -156,11 +116,13 @@ class ResponseWriter implements ContainerResponseWriter {
     public void commit() {
         try {
             // Jersey doesn't close the OutputStream when there is no entity
-            // as such the publisher needs to be closed from here ...
-            // it is assumed it's possible to close the publisher, the OutputStream, multiple times
-            publisher.close();
+            // so the publisher needs to be closed from here. It is
+            // assumed it's possible to close the publisher multiple times.
+            if (publisher != null) {
+                publisher.close();
+            }
         } catch (IOException e) {
-            // based on implementation of 'close', this never happens
+            // Based on implementation of 'close', this never happens
             throw new IllegalStateException("Unexpected IO Exception received!", e);
         }
     }
@@ -168,7 +130,6 @@ class ResponseWriter implements ContainerResponseWriter {
     @Override
     public void failure(Throwable error) {
         LOGGER.finer(() -> "Jersey handling finished with an exception; message: " + error.getMessage());
-
         req.next(error);
     }
 
@@ -178,18 +139,185 @@ class ResponseWriter implements ContainerResponseWriter {
         return false;
     }
 
-    /**
-     * Flush buffer if using SSE or if an empty buffer is received for writing. See
-     * {@link io.helidon.common.reactive.MultiFromOutputStream#flush()}.
-     * Manual flushing is required to support
-     * {@link javax.ws.rs.core.StreamingOutput} in MP.
-     *
-     * @param context The container response.
-     * @param byteBuffer The byte buffer to write.
-     * @return Outcome of test.
-     */
-    private static boolean doFlush(ContainerResponse context, ByteBuffer byteBuffer) {
-        return MediaType.SERVER_SENT_EVENTS_TYPE.isCompatible(context.getMediaType())
-                || byteBuffer.hasArray() && byteBuffer.array().length == 0;
+    private static class DataChunkOutputStream extends OutputStream
+            implements Flow.Publisher<DataChunk>, Flow.Subscription {
+
+        private static final int BYTEBUF_DEFAULT_SIZE = 4096;
+        private static final long CANCEL = Long.MIN_VALUE;
+        private static final long ERROR = CANCEL + 1;
+        private static final long WAIT = -1;
+        private static final ByteBuf ZERO_BUF = Unpooled.buffer(0);
+
+        private byte[] oneByteArray;
+        private ByteBuf byteBuf;
+        private ByteBuf byteBufRef;
+        private boolean autoFlush;
+        private volatile Flow.Subscriber<? super DataChunk> downstream;
+        private volatile Semaphore sema;
+        private final AtomicLong requested = new AtomicLong();
+
+        public void autoFlush(boolean autoFlush) {
+            this.autoFlush = autoFlush;
+        }
+
+        // -- OutputStream -----------------------------------------------------
+
+        @Override
+        public void write(int b) throws IOException {
+            if (oneByteArray == null) {
+                oneByteArray = new byte[1];
+            }
+            oneByteArray[0] = (byte) b;
+            write(oneByteArray, 0, 1);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            while (len > 0) {
+                if (byteBuf == null) {
+                    awaitRequest();
+                    byteBuf = PooledByteBufAllocator.DEFAULT.buffer(BYTEBUF_DEFAULT_SIZE);
+                    byteBufRef = byteBuf;
+                }
+
+                int rem = Math.min(byteBuf.writableBytes(), len);
+                byteBuf.writeBytes(b, off, rem);
+                off += rem;
+                len -= rem;
+                if (byteBuf.writableBytes() == 0) {
+                    publish(autoFlush, byteBuf);
+                    byteBuf = null;
+                }
+            }
+        }
+
+        @Override
+        public void flush() throws IOException {
+            if (byteBuf == null) {
+                awaitRequest();
+                publish(true, ZERO_BUF);
+            } else {
+                byteBuf = null;
+                publish(true, byteBufRef);
+                byteBufRef = null;
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (byteBuf != null) {
+                flush();
+            }
+
+            long r = error();
+            if (r == CANCEL) {
+                return;
+            }
+            requested.set(CANCEL);
+
+            awaitDownstream();
+            downstream.onComplete();
+        }
+
+        // -- Flow.Publisher --------------------------------------------------
+
+        @Override
+        public void subscribe(Flow.Subscriber<? super DataChunk> sub) {
+            sub.onSubscribe(this);
+            downstream = sub;
+            if (sema != null) {
+                // Assert: someone entered awaitDownstream
+                sema.release();
+            }
+        }
+
+        // -- Subscription ----------------------------------------------------
+
+        @Override
+        public void cancel() {
+            long r = requested.getAndSet(CANCEL);
+            if (r == WAIT) {
+                sema.release();
+            }
+        }
+
+        @Override
+        public void request(long n) {
+            if (n <= 0) {
+                long req = requested.getAndUpdate(r -> r != CANCEL ? ERROR : r);
+                if (req == WAIT) {
+                    sema.release();
+                }
+                return;
+            }
+
+            long req = requested.getAndUpdate(r -> r == WAIT ? n - 1
+                    : r < 0 ? r : Long.MAX_VALUE - n > r ? r + n : Long.MAX_VALUE);
+            if (req == WAIT) {
+                sema.release();
+            }
+        }
+
+        // -- Private methods -------------------------------------------------
+
+        private void publish(boolean doFlush, ByteBuf buf) {
+            DataChunk d = ByteBufDataChunk.create(doFlush, true, buf::release, buf);
+            if (requested.get() >= 0) {
+                awaitDownstream();
+                downstream.onNext(d);
+            } else {
+                d.release();
+                error();
+            }
+        }
+
+        private long error() {
+            long r = requested.get();
+            if (r == ERROR) {
+                r = requested.getAndSet(CANCEL);
+                if (r == ERROR) {
+                    r = CANCEL;
+                    awaitDownstream();
+                    downstream.onError(new IllegalArgumentException("Bad request is not allowed"));
+                }
+            }
+            return r;
+        }
+
+        private void awaitDownstream() {
+            // Assert: all potentially concurrent accesses to downstream are guarded by awaitDownstream
+            if (downstream == null) {
+                // Assert: acquireRequest was never called, so sema == null
+                Semaphore tmp = new Semaphore(0);
+                sema = tmp;
+                // Assert: requested != WAIT
+                if (downstream == null) {
+                    tmp.acquireUninterruptibly();
+                }
+            }
+        }
+
+        private void awaitRequest() throws IOException {
+            // Assert: all downstream.onNext are guarded by awaitRequest; ensures backpressure is enforced
+            if (requested.get() == 0 && sema == null) {
+                Semaphore tmp = new Semaphore(0);
+                sema = tmp;
+            }
+            // Assert: r+1 > 0 means r is not MAX_VALUE, and not CANCEL or ERROR
+            long req = requested.updateAndGet(r -> r + 1 > 0 ? r - 1 : r);
+            while (req == WAIT) {
+                sema.acquireUninterruptibly();
+                req = requested.get();
+            }
+
+            if (req == ERROR) {
+                error();
+                req = CANCEL;
+            }
+
+            if (req == CANCEL) {
+                throw new IOException("Bad news: the stream has been closed");
+            }
+        }
     }
 }
