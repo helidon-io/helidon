@@ -85,7 +85,7 @@ public class LRACdiExtension implements Extension {
                 method.getMethod().getAnnotation(Status.class) == null &&
                 method.getMethod().getAnnotation(Forget.class) == null &&
                 method.getMethod().getAnnotation(Leave.class) == null;
-        LOGGER.fine("beforeMethodInvocation method:" + method.getMethod().getName() +
+        LOGGER.info("beforeMethodInvocation method:" + method.getMethod().getName() +
                 " message:" + message +  "isAnnotatedWithLRA:" + !isNotAnnotatedWithLRA);
         if (isNotAnnotatedWithLRA) return 0;
         if (!(message instanceof Message)) {

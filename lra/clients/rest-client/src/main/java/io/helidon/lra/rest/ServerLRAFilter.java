@@ -368,8 +368,8 @@ public class ServerLRAFilter implements ContainerRequestFilter, ContainerRespons
 
                     progress = updateProgress(progress, ProgressStep.Joined, null);
 
-                    headers.putSingle(LRA_HTTP_RECOVERY_HEADER,
-                            START_END_QUOTES_PATTERN.matcher(recoveryUrl.toASCIIString()).replaceAll(""));
+//                    headers.putSingle(LRA_HTTP_RECOVERY_HEADER,
+//                            START_END_QUOTES_PATTERN.matcher(recoveryUrl.toASCIIString()).replaceAll(""));
                 } catch (WebApplicationException e) {
                     progress = updateProgress(progress, ProgressStep.JoinFailed, e.getMessage());
                     abortWith(containerRequestContext, lraId.toASCIIString(),

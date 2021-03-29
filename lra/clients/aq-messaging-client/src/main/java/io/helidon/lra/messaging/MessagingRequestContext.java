@@ -58,9 +58,9 @@ public class MessagingRequestContext {
         } else if (message instanceof KafkaMessage) {
             KafkaMessage kafkaMessage = (KafkaMessage) message;
             Header header = kafkaMessage.getHeaders().lastHeader(LRA_HTTP_CONTEXT_HEADER);
-            lraId = new String(header.value());
             LOGGER.fine("incoming LRA_HTTP_CONTEXT_HEADER header:" + header);
             if (header != null) {
+                lraId = new String(header.value());
                 addMessageProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
                 headersMap.putSingle(LRA_HTTP_CONTEXT_HEADER, lraId);
                 addMessageProperty(LRA_HTTP_RECOVERY_HEADER, lraId);

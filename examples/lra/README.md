@@ -24,7 +24,7 @@
 10. As the inventory does not exist, an exception is thrown from the Order service and an implicit `cancel` call is made on the coordinator.
 11. The coordinator as a result calls `compensate` and `afterLRA` methods on the participants (Order and Inventory service). 
 
-##REST Participants Example
+#REST Participants Example
 
 ###Step 1 Start the LRA Coordinator
 - Run `./startLRACoordinatorRestExample.sh`
@@ -46,14 +46,13 @@
 -Run `curl http://localhost:8091/order/placeOrder`
 
 
-##Kafka Participants Example
+#Kafka Participants Example
 
-##Install, and run configured Kafka docker image
-- Run `./kafkaRun.sh`
-    - To stop the container when done testing `Ctrl+c`
-    - If you already have a Kafka instance you can instead add the topics in `./docker/kafka/init_topics.sh`
-- Open another terminal and run `./kafkaProduce.sh`  (you can specify a topic-name arg but it defaults to frontend for this example)
-- Open another terminal and run `./kafkaConsume.sh` (you can specify a topic-name arg but defaults to frontend-reply for this example)
+###Step 1 Install and run Kafka and create the topics for application and LRA protocol communication for the two services...
+- Download and unzip Kafka from http://kafka.apache.org/downloads.html
+- Run `bin/zookeeper-server-start.sh config/zookeeper.properties`
+- Run `bin/kafka-server-start.sh config/server.properties`
+- Run `./createKafkaTopics.sh <KAFKA_LOCATION>` providing the Kafka install directory. For example `./createKafkaQueues.sh ~/Downloads/kafka_2.13-2.7.0`
 
 ###Step 2 Start the LRA Coordinator
 - Run `./startLRACoordinatorKafkaExample.sh`
@@ -63,22 +62,16 @@
 - Open another terminal and run `java -jar lra-kafka-inventory-participant/target/lra-kafka-inventory-participant.jar`
 
 ###Step 4 Send a message (using kafka-console-producer.sh) to the order service and notice success scenario (close called on the coordinator and complete called on the participants)
-- Run ` <KAFKA_LOCATION>/bin/kafka-console-producer.sh --topic frontend-events --bootstrap-server localhost:9092
+- Run `<KAFKA_LOCATION>/bin/kafka-console-producer.sh --topic frontend --bootstrap-server localhost:9092`
 - Provide any value and hit `enter` to send message.
 - Notice application and Helidon LRA debug messages indicating close called on the coordinator and complete called on the participants.
-* Note, for convenience, inventory is not actually reduced in this example
+- Note, for convenience, inventory is not actually reduced in this example
 
-###Step 5 Send a message (using kafka-console-producer.sh) to the order service and notice success scenario (close called on the coordinator and complete called on the participants)
-- Run ` <KAFKA_LOCATION>/bin/kafka-console-producer.sh --topic frontend-events --bootstrap-server localhost:9092
-- Provide any value and hit `enter` to send message.
-- Notice application and Helidon LRA debug messages indicating close called on the coordinator and complete called on the participants.
-* Note, for convenience, inventory is not actually reduced in this example
-
-###Step 6 Reduce the inventory level on the inventory service to 0 
+###Step 5 Reduce the inventory level on the inventory service to 0 
 - Run `curl http://localhost:8095/inventory/removeInventory`
 - `curl http://localhost:8095/inventory/addInventory` can be used to add inventory back
 
-###Step 7 Call the order service and notice failure scenario (cancel called on the coordinator and compensate called on the participants)
+###Step 6 Call the order service and notice failure scenario (cancel called on the coordinator and compensate called on the participants)
 -Run `curl http://localhost:8091/order/placeOrder`
 
 
