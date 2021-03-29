@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,14 +160,14 @@ public class MessagingHealthTest {
         return client.get()
                 .path("/health")
                 .submit()
-                .await(500, TimeUnit.MILLISECONDS)
+                .await(5, TimeUnit.SECONDS)
                 .content()
                 .as(JsonObject.class)
                 .await(500, TimeUnit.MILLISECONDS)
                 .getValue("/checks")
                 .asJsonArray().stream()
-                .filter(check -> check.asJsonObject().getString("name").equals(checkName))
                 .map(JsonValue::asJsonObject)
+                .filter(check -> check.getString("name").equals(checkName))
                 .findFirst()
                 .orElseThrow(() -> new AssertionFailedError("Health check 'messaging' is missing!"));
     }
