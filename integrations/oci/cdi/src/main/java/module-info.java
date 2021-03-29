@@ -23,6 +23,7 @@ module io.helidon.integrations.oci.cdi {
     requires io.helidon.integrations.oci.connect;
     requires io.helidon.common.serviceloader;
     requires io.helidon.microprofile.cdi;
+    requires jakarta.inject.api;
 
     exports io.helidon.integrations.oci.cdi;
 

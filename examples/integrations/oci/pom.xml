@@ -35,6 +35,7 @@
     <modules>
         <module>metrics-reactive</module>
         <module>objectstorage-reactive</module>
+        <module>objectstorage-cdi</module>
         <module>vault-reactive</module>
         <module>vault-cdi</module>
     </modules>

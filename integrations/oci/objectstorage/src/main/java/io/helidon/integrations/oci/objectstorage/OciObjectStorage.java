@@ -106,18 +106,22 @@ public interface OciObjectStorage {
     Single<RenameObject.Response> renameObject(RenameObject.Request request);
 
     class Builder implements io.helidon.common.Builder<OciObjectStorage> {
-        private final OciRestApi.Builder accessBuilder = OciRestApi.builder();
+        private final OciRestApi.Builder apiBuilder = OciRestApi.builder();
 
         private String apiVersion = API_VERSION;
         private String hostPrefix = API_HOST_PREFIX;
         private String namespace;
         private String endpoint;
+        private OciRestApi restApi;
 
         private Builder() {
         }
 
         @Override
         public OciObjectStorage build() {
+            if (restApi == null) {
+                restApi = apiBuilder.build();
+            }
             return new OciObjectStorageImpl(this);
         }
 
@@ -129,11 +133,16 @@ public interface OciObjectStorage {
          * @return updated metrics builder
          */
         public Builder config(Config config) {
-            accessBuilder.config(config);
+            apiBuilder.config(config);
             config.get("objectstorage.host-prefix").asString().ifPresent(this::hostPrefix);
             config.get("objectstorage.endpoint").asString().ifPresent(this::endpoint);
             config.get("objectstorage.api-version").asString().ifPresent(this::apiVersion);
             config.get("objectstorage.namespace").asString().ifPresent(this::namespace);
+            return this;
+        }
+
+        public Builder restApi(OciRestApi restApi) {
+            this.restApi = restApi;
             return this;
         }
 
@@ -171,12 +180,12 @@ public interface OciObjectStorage {
          * @return updated metrics builder
          */
         public Builder updateRestApi(Consumer<OciRestApi.Builder> builderConsumer) {
-            builderConsumer.accept(accessBuilder);
+            builderConsumer.accept(apiBuilder);
             return this;
         }
 
         OciRestApi restApi() {
-            return accessBuilder.build();
+            return restApi;
         }
 
         Optional<String> namespace() {

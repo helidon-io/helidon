@@ -14,7 +14,7 @@ public class OciConfigInstancePrincipal extends OciConfigPrincipalBase implement
     private final String region;
     private final String tenancyId;
 
-    public OciConfigInstancePrincipal(Builder builder) {
+    private OciConfigInstancePrincipal(Builder builder) {
         super(builder);
 
         this.region = null;

@@ -1,3 +1,5 @@
+import io.helidon.integrations.oci.vault.blocking.OciBlockingVaultInjectionProvider;
+
 module io.helidon.integrations.oci.vault.blocking {
     requires io.helidon.integrations.oci.connect;
     requires io.helidon.integrations.oci.vault;
@@ -7,5 +9,5 @@ module io.helidon.integrations.oci.vault.blocking {
     exports io.helidon.integrations.oci.vault.blocking;
 
     provides io.helidon.integrations.oci.connect.spi.InjectionProvider
-        with io.helidon.integrations.oci.vault.blocking.OciVaultInjectionProvider;
+        with OciBlockingVaultInjectionProvider;
 }

@@ -1,1 +1,1 @@
-io.helidon.integrations.oci.vault.blocking.OciVaultInjectionProvider
+io.helidon.integrations.oci.vault.blocking.OciBlockingVaultInjectionProvider

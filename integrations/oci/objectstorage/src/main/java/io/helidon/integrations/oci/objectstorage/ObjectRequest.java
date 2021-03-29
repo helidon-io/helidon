@@ -26,7 +26,7 @@ import io.helidon.integrations.oci.connect.OciRequestBase;
  *
  * @param <T> type of the subclass
  */
-class ObjectRequest<T extends ObjectRequest<T>> extends OciRequestBase<T> {
+public abstract class ObjectRequest<T extends ObjectRequest<T>> extends OciRequestBase<T> {
     private String namespace;
     private String bucket;
     private String objectName;

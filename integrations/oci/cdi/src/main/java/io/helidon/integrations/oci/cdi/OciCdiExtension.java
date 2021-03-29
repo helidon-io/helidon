@@ -24,6 +24,7 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.Extension;
+import javax.inject.Singleton;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
@@ -41,8 +42,8 @@ public class OciCdiExtension implements Extension {
     void registerProducers(@Observes AfterBeanDiscovery abd) {
         abd.addBean()
                 .types(OciRestApi.class)
-                .beanClass(OciCdiExtension.class)
-                .scope(ApplicationScoped.class)
+                .beanClass(OciRestApi.class)
+                .scope(Singleton.class)
                 .createWith(ignored -> OciRestApi.create(config));
 
         List<InjectionProvider> providers = HelidonServiceLoader
@@ -50,7 +51,7 @@ public class OciCdiExtension implements Extension {
                 .build()
                 .asList();
 
-        for (InjectionProvider provider : providers) {
+        for (InjectionProvider<?> provider : providers) {
             abd.addBean()
                     .types(provider.types())
                     .beanClass(OciCdiExtension.class)

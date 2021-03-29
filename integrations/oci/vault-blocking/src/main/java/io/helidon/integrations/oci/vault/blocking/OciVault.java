@@ -13,6 +13,9 @@ import io.helidon.integrations.oci.vault.Secret;
 import io.helidon.integrations.oci.vault.Sign;
 import io.helidon.integrations.oci.vault.Verify;
 
+/**
+ * Blocking OCI Vault API.
+ */
 public interface OciVault {
     /**
      * Gets information about the specified secret.

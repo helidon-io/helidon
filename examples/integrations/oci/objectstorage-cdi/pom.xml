@@ -29,12 +29,12 @@
     </parent>
 
     <groupId>io.helidon.examples.integrations.oci</groupId>
-    <artifactId>helidon-examples-integrations-oci-vault-cdi</artifactId>
-    <name>Helidon Examples Integration OCI Object Storage CDI</name>
-    <description>CDI integration with OCI Object Storage.</description>
+    <artifactId>helidon-examples-integrations-oci-objectstorage-cdi</artifactId>
+    <name>Helidon Examples Integration OCI Vault CDI</name>
+    <description>CDI integration with OCI Vault.</description>
 
     <properties>
-        <mainClass>io.helidon.examples.integrations.oci.vault.cdi.VaultCdiMain</mainClass>
+        <mainClass>io.helidon.examples.integrations.oci.objectstorage.cdi.ObjectStorageCdiMain</mainClass>
     </properties>
 
     <dependencies>
@@ -48,7 +48,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-vault-blocking</artifactId>
+            <artifactId>helidon-integrations-oci-objectstorage-blocking</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

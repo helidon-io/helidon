@@ -1,0 +1,11 @@
+# The values are read from
+# ~/helidon/conf/examples.yaml
+# or you can just update them here
+
+server:
+  port: 8080
+
+oci:
+  objectstorage:
+    namespace: "${oci.properties.objectstorage-namespace}"
+    bucket: "${oci.properties.objectstorage-bucket}"

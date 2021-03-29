@@ -7,7 +7,7 @@ import io.helidon.config.Config;
 import io.helidon.integrations.oci.connect.OciRestApi;
 import io.helidon.integrations.oci.connect.spi.InjectionProvider;
 
-public class OciVaultInjectionProvider implements InjectionProvider<OciVault> {
+public class OciBlockingVaultInjectionProvider implements InjectionProvider<OciVault> {
     @Override
     public Set<Type> types() {
         return Set.of(OciVault.class);

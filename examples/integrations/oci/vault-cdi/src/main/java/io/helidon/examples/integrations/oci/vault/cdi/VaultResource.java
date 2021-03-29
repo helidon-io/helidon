@@ -1,11 +1,25 @@
 package io.helidon.examples.integrations.oci.vault.cdi;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+
 import javax.inject.Inject;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 
 import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.integrations.oci.vault.CreateSecret;
+import io.helidon.integrations.oci.vault.Decrypt;
+import io.helidon.integrations.oci.vault.DeleteSecret;
 import io.helidon.integrations.oci.vault.Encrypt;
+import io.helidon.integrations.oci.vault.GetSecretBundle;
+import io.helidon.integrations.oci.vault.Sign;
+import io.helidon.integrations.oci.vault.Verify;
 import io.helidon.integrations.oci.vault.blocking.OciVault;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -35,6 +49,7 @@ public class VaultResource {
         this.signatureKeyOcid = signatureKeyOcid;
     }
 
+    @GET
     @Path("/encrypt/{text}")
     public String encrypt(@PathParam("text") String secret) {
         return vault.encrypt(Encrypt.Request.builder()
@@ -42,101 +57,81 @@ public class VaultResource {
                                      .data(Base64Value.create(secret)))
                 .cipherText();
     }
-/*
-    @Override
-    public void update(Routing.Rules rules) {
-        rules.get("/encrypt/{text:.*}", this::encrypt)
-                .get("/decrypt/{text:.*}", this::decrypt)
-                .get("/sign/{text}", this::sign)
-                .get("/verify/{text}/{signature:.*}", this::verify)
-                .get("/secret/{id}", this::getSecret)
-                .post("/secret/{name}", Handler.create(String.class, this::createSecret))
-                .delete("/secret/{id}", this::deleteSecret);
+
+    @GET
+    @Path("/decrypt/{text: .*}")
+    public String decrypt(@PathParam("text") String cipherText) {
+        return vault.decrypt(Decrypt.Request.builder()
+                                     .keyId(encryptionKeyOcid)
+                                     .cipherText(cipherText))
+                .decrypted()
+                .toDecodedString();
     }
 
-    private void getSecret(ServerRequest req, ServerResponse res) {
-        vault.getSecretBundle(GetSecretBundle.Request.create(req.path().param("id")))
-                .forSingle(apiResponse -> {
-                    Optional<GetSecretBundle.Response> entity = apiResponse.entity();
-                    if (entity.isEmpty()) {
-                        res.status(Http.Status.NOT_FOUND_404).send();
-                    } else {
-                        GetSecretBundle.Response response = entity.get();
-                        res.send(response.secretString().orElse(""));
-                    }
-                })
-                .exceptionally(res::send);
-
+    @GET
+    @Path("/sign/{text}")
+    public String sign(@PathParam("text") String dataToSign) {
+        return vault.sign(Sign.Request.builder()
+                                  .keyId(signatureKeyOcid)
+                                  .algorithm(Sign.Request.ALGORITHM_SHA_224_RSA_PKCS_PSS)
+                                  .message(Base64Value.create(dataToSign)))
+                .signature()
+                .toBase64();
     }
 
-    private void deleteSecret(ServerRequest req, ServerResponse res) {
+    @GET
+    @Path("/sign/{text}/{signature: .*}")
+    public String verify(@PathParam("text") String dataToVerify,
+                         @PathParam("signature") String signature) {
+        boolean valid = vault.verify(Verify.Request.builder()
+                                             .keyId(signatureKeyOcid)
+                                             .message(Base64Value.create(dataToVerify))
+                                             .algorithm(Sign.Request.ALGORITHM_SHA_224_RSA_PKCS_PSS)
+                                             .signature(Base64Value.createFromEncoded(signature)))
+                .isValid();
+
+        return valid ? "Signature valid" : "Signature not valid";
+    }
+
+    @GET
+    @Path("/secret/{id}")
+    public String getSecret(@PathParam("id") String secretOcid) {
+        Optional<GetSecretBundle.Response> response = vault.getSecretBundle(GetSecretBundle.Request.builder()
+                                                                                    .secretId(secretOcid))
+                .entity();
+
+        if (response.isEmpty()) {
+            throw new NotFoundException("Secret with id " + secretOcid + " does not exist");
+        }
+
+        return response.get().secretString().orElse("");
+    }
+
+    @DELETE
+    @Path("/secret/{id}")
+    public String deleteSecret(@PathParam("id") String secretOcid) {
         // has to be for quite a long period of time - did not work with less than 30 days
         Instant deleteTime = Instant.now().plus(30, ChronoUnit.DAYS);
 
         vault.deleteSecret(DeleteSecret.Request.builder()
-                                   .secretId(req.path().param("id"))
-                                   .timeOfDeletion(deleteTime))
-                .forSingle(it -> res.status(it.status()).send())
-                .exceptionally(res::send);
+                                   .secretId(secretOcid)
+                                   .timeOfDeletion(deleteTime));
 
+        return "Secret " + secretOcid + " was deleted";
     }
 
-    private void createSecret(ServerRequest req, ServerResponse res, String secretText) {
-        vault.createSecret(CreateSecret.Request.builder()
-                                   .secretContent(CreateSecret.SecretContent.create(secretText))
-                                   .vaultId(vaultOcid)
-                                   .compartmentId(compartmentOcid)
-                                   .encryptionKeyId(encryptionKeyOcid)
-                                   .secretName(req.path().param("name")))
-                .map(CreateSecret.Response::secret)
-                .map(Secret::id)
-                .forSingle(res::send)
-                .exceptionally(res::send);
-    }
+    @POST
+    @Path("/secret/{name}")
+    public String createSecret(@PathParam("name") String name,
+                               String secretText) {
+        return vault.createSecret(CreateSecret.Request.builder()
+                                          .secretName(name)
+                                          .secretContent(CreateSecret.SecretContent.create(secretText))
+                                          .vaultId(vaultOcid)
+                                          .compartmentId(compartmentOcid)
+                                          .encryptionKeyId(encryptionKeyOcid))
+                .secret()
+                .id();
 
-    private void verify(ServerRequest req, ServerResponse res) {
-        String text = req.path().param("text");
-        String signature = req.path().param("signature");
-
-        vault.verify(Verify.Request.builder()
-                             .keyId(signatureKeyOcid)
-                             .algorithm(Sign.Request.ALGORITHM_SHA_224_RSA_PKCS_PSS)
-                             .message(Base64Value.create(text))
-                             .signature(Base64Value.createFromEncoded(signature)))
-                .map(Verify.Response::isValid)
-                .map(it -> it ? "Signature Valid" : "Signature Invalid")
-                .forSingle(res::send)
-                .exceptionally(res::send);
     }
-
-    private void sign(ServerRequest req, ServerResponse res) {
-        vault.sign(Sign.Request.builder()
-                           .keyId(signatureKeyOcid)
-                           .algorithm(Sign.Request.ALGORITHM_SHA_224_RSA_PKCS_PSS)
-                           .message(Base64Value.create(req.path().param("text"))))
-                .map(Sign.Response::signature)
-                .map(Base64Value::toBase64)
-                .forSingle(res::send)
-                .exceptionally(res::send);
-    }
-
-    private void encrypt(ServerRequest req, ServerResponse res) {
-        vault.encrypt(Encrypt.Request.builder()
-                              .keyId(encryptionKeyOcid)
-                              .data(Base64Value.create(req.path().param("text"))))
-                .map(Encrypt.Response::cipherText)
-                .forSingle(res::send)
-                .exceptionally(res::send);
-    }
-
-    private void decrypt(ServerRequest req, ServerResponse res) {
-        vault.decrypt(Decrypt.Request.builder()
-                              .keyId(encryptionKeyOcid)
-                              .cipherText(req.path().param("text")))
-                .map(Decrypt.Response::decrypted)
-                .map(Base64Value::toDecodedString)
-                .forSingle(res::send)
-                .exceptionally(res::send);
-    }
- */
 }
