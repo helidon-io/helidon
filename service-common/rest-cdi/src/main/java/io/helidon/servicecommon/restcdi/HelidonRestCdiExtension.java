@@ -73,9 +73,19 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  *     builder are both type parameters to this class.
  * </p>
  * <p>
- *     Each concrete implementation is responsible for "registering" whatever artifact - "registrant" - it manages in the
- *     {@link #register(Member, Class, AnnotationLookupResult)}  register} method . (For the metrics CDI extension, for example,
- *     these registrants are metrics.)
+ *     Each concrete implementation should:
+ *     <ul>
+ *         <li>Invoke {@link #recordConcreteNonInterceptor} for each class which bears an annotation of interest to the
+ *         extension, often from a {@code ProcessAnnotatedType} observer method.</li>
+ *         <li>Invoke {@link #recordProducerField(ProcessProducerField)} for component-specific producer fields, often from
+ *         a {@code ProcessProducerField} observer.</li>
+ *         <li>Invoke {@link #recordProducerMethod(ProcessProducerMethod)} for component-specific producer methods,
+ *         often from a {@code ProcessProducerMethod} observer.</li>
+ *         <li>Implement {@link #register(Member, Class, AnnotationLookupResult)} which this base class invokes to notify the
+ *         implementation class of each annotation site on a type that was reported by the extension but not vetoed by some
+ *         other extension. Each extension can interpret "register" however it needs to. Metrics, for example, creates
+ *         metrics and registers them with the appropriate metrics registry.</li>
+ *     </ul>
  * </p>
  *
  * @param <T> concrete type of {@code HelidonRestServiceSupport} used
