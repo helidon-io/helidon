@@ -537,7 +537,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                                                                 toNettyMethod(method),
                                                                 requestURI.toASCIIString(),
                                                                 headers);
-            HttpUtil.isKeepAlive(request);
+            boolean keepAlive = HttpUtil.isKeepAlive(request);
 
             requestConfiguration = RequestConfiguration.builder(uri)
                     .update(configuration)

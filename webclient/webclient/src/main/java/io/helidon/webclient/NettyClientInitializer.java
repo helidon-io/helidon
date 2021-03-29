@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,7 +119,8 @@ class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
             if (evt instanceof IdleStateEvent) {
-                if (ctx.channel().attr(IN_USE).get().compareAndSet(false, true)) {
+                if (ctx.channel().hasAttr(IN_USE)
+                        && ctx.channel().attr(IN_USE).get().compareAndSet(false, true)) {
                     ctx.close();
                 }
             }
@@ -128,11 +129,13 @@ class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
 
         @Override
         public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-            Channel channel = ctx.channel();
-            WebClientRequestBuilderImpl.ConnectionIdent key = channel.attr(CONNECTION_IDENT).get();
-            LOGGER.finest(() -> "Channel closed -> " + channel.hashCode());
-            if (key != null) {
-                WebClientRequestBuilderImpl.removeChannelFromCache(key, channel);
+            if (ctx.channel().hasAttr(CONNECTION_IDENT)) {
+                Channel channel = ctx.channel();
+                WebClientRequestBuilderImpl.ConnectionIdent key = channel.attr(CONNECTION_IDENT).get();
+                LOGGER.finest(() -> "Channel closed -> " + channel.hashCode());
+                if (key != null) {
+                    WebClientRequestBuilderImpl.removeChannelFromCache(key, channel);
+                }
             }
             super.channelInactive(ctx);
         }
