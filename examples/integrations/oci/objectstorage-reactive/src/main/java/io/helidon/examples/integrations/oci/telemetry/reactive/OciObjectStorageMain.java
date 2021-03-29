@@ -14,46 +14,39 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.oci.vault.reactive;
+package io.helidon.examples.integrations.oci.telemetry.reactive;
 
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
-import io.helidon.integrations.oci.vault.OciVault;
+import io.helidon.integrations.oci.objectstorage.OciObjectStorage;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
 
-public class OciVaultMain {
+public class OciObjectStorageMain {
     public static void main(String[] args) {
         LogConfig.configureRuntime();
-
         // as I cannot share my configuration of OCI, let's combine the configuration
         // from my home directory with the one compiled into the jar
         // when running this example, you can either update the application.yaml in resources directory
         // or use the same approach
         Config config = buildConfig();
 
-        Config vaultConfig = config.get("oci.vault");
-        // the following three parameters are required
-        String vaultOcid = vaultConfig.get("vault-ocid").asString().get();
-        String compartmentOcid = vaultConfig.get("compartment-ocid").asString().get();
-        String encryptionKey = vaultConfig.get("encryption-key-ocid").asString().get();
-        String signatureKey = vaultConfig.get("signature-key-ocid").asString().get();
+        Config ociConfig = config.get("oci");
 
         // this requires OCI configuration in the usual place
         // ~/.oci/config
-        OciVault ociVault = OciVault.create(config.get("oci"));
+        OciObjectStorage ociObjectStorage = OciObjectStorage.create(ociConfig);
+
+        // the following parameters are required
+        String bucketName = ociConfig.get("objectstorage").get("bucket").asString().get();
 
         WebServer.builder()
                 .config(config.get("server"))
                 .routing(Routing.builder()
-                                 .register("/vault", new VaultService(ociVault,
-                                                                      vaultOcid,
-                                                                      compartmentOcid,
-                                                                      encryptionKey,
-                                                                      signatureKey)))
+                                 .register("/files", new ObjectStorageService(ociObjectStorage, bucketName)))
                 .build()
                 .start()
                 .await();

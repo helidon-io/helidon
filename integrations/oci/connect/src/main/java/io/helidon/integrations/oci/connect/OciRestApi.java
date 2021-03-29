@@ -24,6 +24,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.concurrent.Flow;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -32,6 +33,7 @@ import java.util.logging.Logger;
 import javax.json.JsonObject;
 
 import io.helidon.common.Version;
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Single;
@@ -94,17 +96,67 @@ public class OciRestApi extends RestApiBase {
     private static ConfigType guessConfigType() {
         // attempt to guess what config type this is, let's start from the most "obscure" one and
         // end with local environment
-        if (OciResourcePrincipal.isAvailable()) {
+        if (OciConfigResourcePrincipal.isAvailable()) {
             LOGGER.fine("OCI Resource Principal configuration is available.");
             return ConfigType.RESOURCE_PRINCIPAL;
         }
-        if (OciInstancePrincipal.isAvailable()) {
+        if (OciConfigInstancePrincipal.isAvailable()) {
             LOGGER.fine("OCI Instance Principal configuration is available.");
             return ConfigType.INSTANCE_PRINCIPAL;
         }
 
         LOGGER.fine("Using OCI Profile based configuration, as neither resource nor instance principal is available");
         return ConfigType.OCI_PROFILE;
+    }
+
+    @Override
+    protected Supplier<Single<WebClientResponse>> responseSupplier(Http.RequestMethod method,
+                                                                   String path,
+                                                                   ApiRequest<?> request,
+                                                                   String requestId) {
+        Supplier<Single<WebClientResponse>> originalSupplier = super.responseSupplier(method, path, request, requestId);
+
+        return wrapSupplierInSecurityRetry(originalSupplier);
+    }
+
+    @Override
+    protected Supplier<Single<WebClientResponse>> requestBytesPayload(String path,
+                                                                      ApiRequest<?> request,
+                                                                      Http.RequestMethod method,
+                                                                      String requestId,
+                                                                      WebClientRequestBuilder requestBuilder,
+                                                                      Flow.Publisher<DataChunk> publisher) {
+        Supplier<Single<WebClientResponse>> originalSupplier = super
+                .requestBytesPayload(path, request, method, requestId, requestBuilder, publisher);
+
+        return wrapSupplierInSecurityRetry(originalSupplier);
+    }
+
+    private Supplier<Single<WebClientResponse>> wrapSupplierInSecurityRetry(Supplier<Single<WebClientResponse>> originalSupplier) {
+        // to handle timed-out token(s) when using instance or resource identity, we need to retry in case we get 401
+        // and the token refreshes successfully
+        return () -> {
+            OciSignatureData ociSignatureData = configProvider.signatureData();
+
+            return originalSupplier.get()
+                    .flatMapSingle(clientResponse -> {
+                        if (clientResponse.status() == Http.Status.UNAUTHORIZED_401) {
+                            // maybe this is an timed-out token
+                            return configProvider.refresh()
+                                    .flatMapSingle(newSignatureData -> {
+                                        if (newSignatureData == ociSignatureData) {
+                                            // no change in signature data, just return
+                                            return Single.just(clientResponse);
+                                        } else {
+                                            // signature data modified, let's retry
+                                            return originalSupplier.get();
+                                        }
+                                    });
+                        } else {
+                            return Single.just(clientResponse);
+                        }
+                    });
+        };
     }
 
     @Override
@@ -367,7 +419,7 @@ public class OciRestApi extends RestApiBase {
             if (profileConfig.exists() && profileConfig.get("enabled").asBoolean().orElse(true)) {
                 // use config profile
                 configType = ConfigType.OCI_PROFILE;
-                configProvider(OciProfileConfig.create(profileConfig));
+                configProvider(OciConfigProfile.create(profileConfig));
             }
 
             return this;
@@ -405,7 +457,7 @@ public class OciRestApi extends RestApiBase {
         /**
          * Cloud connectivity configuration to use.
          *
-         * @param ociConfigProvider profile config, such as {@link io.helidon.integrations.oci.connect.OciProfileConfig}
+         * @param ociConfigProvider profile config, such as {@link OciConfigProfile}
          * @return updated builder
          */
         public Builder configProvider(OciConfigProvider ociConfigProvider) {
@@ -420,13 +472,13 @@ public class OciRestApi extends RestApiBase {
                 LOGGER.finest("Config provider is not configured explicitly. Config type: " + configType);
                 switch (configType) {
                 case INSTANCE_PRINCIPAL:
-                    configProvider(OciInstancePrincipal.create());
+                    configProvider(OciConfigInstancePrincipal.create());
                     break;
                 case RESOURCE_PRINCIPAL:
-                    configProvider(OciResourcePrincipal.create());
+                    configProvider(OciConfigResourcePrincipal.create());
                     break;
                 case OCI_PROFILE:
-                    configProvider(OciProfileConfig.create());
+                    configProvider(OciConfigProfile.create());
                     break;
                 }
             }

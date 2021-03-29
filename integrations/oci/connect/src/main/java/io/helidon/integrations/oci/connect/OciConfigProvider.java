@@ -5,19 +5,45 @@ import java.util.Optional;
 import io.helidon.common.reactive.Single;
 
 public interface OciConfigProvider {
+    /**
+     * Get the current signature data.
+     *
+     * @return current signature data
+     */
     OciSignatureData signatureData();
+
+    /**
+     * Current OCI region.
+     *
+     * @return OCI region, such as {@code eu-frankfurt-1}
+     */
     String region();
 
+    /**
+     * OCID of the tenancy.
+     *
+     * @return tenancy OCID
+     */
+    String tenancyOcid();
+
+    /**
+     * OCI domain to use. If not available REST API will use the default or configured domain to
+     * call REST services.
+     *
+     * @return current OCI domain if avialable
+     */
     default Optional<String> domain() {
         return Optional.empty();
     }
+
     /**
      * Refresh may be used for providers that can be reloaded.
      * The method is called when an invocation fails (for the first time) with a 401 exception.
      *
-     * @return future with true if the refresh was successful (e.g. data changed)
+     * @return future with signature data, if no refresh was done, the instance will be the same as when
+     *  {@link #signatureData()} was called.
      */
-    default Single<Boolean> refresh() {
-        return Single.just(false);
+    default Single<OciSignatureData> refresh() {
+        return Single.just(signatureData());
     }
 }

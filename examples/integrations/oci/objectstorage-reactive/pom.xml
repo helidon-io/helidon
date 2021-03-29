@@ -33,6 +33,10 @@
     <name>Helidon Examples Integration OCI Object Storage Reactive</name>
     <description>Reactive integration with OCI Object Storage.</description>
 
+    <properties>
+        <mainClass>io.helidon.examples.integrations.oci.telemetry.reactive.OciObjectStorageMain</mainClass>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
@@ -47,4 +51,18 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

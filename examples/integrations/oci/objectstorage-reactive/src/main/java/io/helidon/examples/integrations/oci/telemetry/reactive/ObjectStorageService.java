@@ -1,4 +1,4 @@
-package io.helidon.integrations.oci.objectstorage.reactive;
+package io.helidon.examples.integrations.oci.telemetry.reactive;
 
 import java.util.Optional;
 import java.util.OptionalLong;

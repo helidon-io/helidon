@@ -35,7 +35,7 @@ import io.helidon.config.Config;
 /**
  * OCI configuration required to connect to a service over REST API.
  */
-public class OciProfileConfig implements OciConfigProvider {
+public class OciConfigProfile implements OciConfigProvider {
     private final String userOcid;
     private final String tenancyOcid;
     private final String keyFingerprint;
@@ -44,7 +44,7 @@ public class OciProfileConfig implements OciConfigProvider {
     private final Map<String, String> fullConfig;
     private final OciSignatureData signatureData;
 
-    private OciProfileConfig(Builder builder) {
+    private OciConfigProfile(Builder builder) {
         this.userOcid = builder.userOcid;
         this.tenancyOcid = builder.tenancyOcid;
         this.keyFingerprint = builder.keyFingerprint;
@@ -60,7 +60,7 @@ public class OciProfileConfig implements OciConfigProvider {
      *
      * @return a new configuration loaded from default location
      */
-    public static OciProfileConfig create() {
+    public static OciConfigProfile create() {
         return builder().fromOciConfig().build();
     }
 
@@ -79,7 +79,7 @@ public class OciProfileConfig implements OciConfigProvider {
      * @param config configuration
      * @return a new profile configuration
      */
-    public static OciProfileConfig create(Config config) {
+    public static OciConfigProfile create(Config config) {
         return builder().config(config).build();
     }
 
@@ -97,11 +97,13 @@ public class OciProfileConfig implements OciConfigProvider {
         return userOcid;
     }
 
+
     /**
      * OCID of the tenancy. Uses key {@code tenancy} in OCI config file and in config.
      *
      * @return tenancy OCID
      */
+    @Override
     public String tenancyOcid() {
         return tenancyOcid;
     }
@@ -157,9 +159,9 @@ public class OciProfileConfig implements OciConfigProvider {
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.integrations.oci.connect.OciProfileConfig}.
+     * Fluent API builder for {@link OciConfigProfile}.
      */
-    public static class Builder implements io.helidon.common.Builder<OciProfileConfig> {
+    public static class Builder implements io.helidon.common.Builder<OciConfigProfile> {
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
         private static final String DEFAULT_PROFILE = "DEFAULT";
 
@@ -177,7 +179,7 @@ public class OciProfileConfig implements OciConfigProvider {
         }
 
         @Override
-        public OciProfileConfig build() {
+        public OciConfigProfile build() {
             if (rsaPrivateKey == null) {
                 this.rsaPrivateKey = KeyConfig.pemBuilder()
                         .key(Resource.create("PEM encoded private key from profile", privateKey))
@@ -194,7 +196,7 @@ public class OciProfileConfig implements OciConfigProvider {
                                                             + "/" + keyFingerprint,
                                                     rsaPrivateKey);
 
-            return new OciProfileConfig(this);
+            return new OciConfigProfile(this);
         }
 
         /**

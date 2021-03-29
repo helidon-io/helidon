@@ -4,7 +4,7 @@ import java.util.Map;
 
 import io.helidon.common.reactive.Single;
 
-public class OciResourcePrincipal implements OciConfigProvider {
+public class OciConfigResourcePrincipal implements OciConfigProvider {
     private static final String OCI_RESOURCE_PRINCIPAL_VERSION = "OCI_RESOURCE_PRINCIPAL_VERSION";
     private static final String RP_VERSION_2_2 = "2.2";
     private static final String OCI_RESOURCE_PRINCIPAL_RPST = "OCI_RESOURCE_PRINCIPAL_RPST";
@@ -29,7 +29,7 @@ public class OciResourcePrincipal implements OciConfigProvider {
                 && env.containsKey(OCI_RESOURCE_PRINCIPAL_REGION_ENV_VAR_NAME);
     }
 
-    public static OciResourcePrincipal create() {
+    public static OciConfigResourcePrincipal create() {
         return null;
     }
 
@@ -44,7 +44,12 @@ public class OciResourcePrincipal implements OciConfigProvider {
     }
 
     @Override
-    public Single<Boolean> refresh() {
+    public String tenancyOcid() {
+        return null;
+    }
+
+    @Override
+    public Single<OciSignatureData> refresh() {
         return OciConfigProvider.super.refresh();
     }
 }

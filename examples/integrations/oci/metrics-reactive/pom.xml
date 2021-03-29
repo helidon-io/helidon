@@ -28,6 +28,10 @@
         <relativePath>../../../../applications/se/pom.xml</relativePath>
     </parent>
 
+    <properties>
+        <mainClass>io.helidon.examples.integrations.oci.telemetry.reactive.OciMetricsMain</mainClass>
+    </properties>
+
     <groupId>io.helidon.examples.integrations.oci</groupId>
     <artifactId>helidon-examples-integrations-oci-metrics-reactive</artifactId>
     <name>Helidon Examples Integration OCI Metrics Reactive</name>
@@ -47,4 +51,18 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

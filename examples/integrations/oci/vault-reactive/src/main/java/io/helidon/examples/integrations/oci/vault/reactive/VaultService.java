@@ -1,4 +1,4 @@
-package io.helidon.integrations.oci.vault.reactive;
+package io.helidon.examples.integrations.oci.vault.reactive;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

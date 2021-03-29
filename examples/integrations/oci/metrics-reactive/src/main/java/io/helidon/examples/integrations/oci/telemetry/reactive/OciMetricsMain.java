@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.oci.objectstorage.reactive;
+package io.helidon.examples.integrations.oci.telemetry.reactive;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

@@ -10,13 +10,10 @@ import java.security.interfaces.RSAPrivateKey;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,8 +27,6 @@ import io.helidon.security.providers.httpsign.SignedHeadersConfig;
 class OciHttpSignature {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
     private static final Logger LOGGER = Logger.getLogger(OciHttpSignature.class.getName());
-    private static final List<String> DEFAULT_HEADERS = List.of("date");
-    private static final byte[] EMPTY_BYTES = new byte[0];
     private static final String ALGORITHM = "rsa-sha256";
 
     private final String keyId;
@@ -63,45 +58,6 @@ class OciHttpSignature {
                 + "algorithm=\"" + ALGORITHM + "\","
                 + "headers=\"" + String.join(" ", headers) + "\","
                 + "signature=\"" + base64Signature + "\"";
-    }
-
-    String getKeyId() {
-        return keyId;
-    }
-
-    String getAlgorithm() {
-        return ALGORITHM;
-    }
-
-    List<String> getHeaders() {
-        return Collections.unmodifiableList(headers);
-    }
-
-    String getBase64Signature() {
-        return base64Signature;
-    }
-
-    Optional<String> validate() {
-        List<String> problems = new ArrayList<>();
-
-        if (null == keyId) {
-            problems.add("keyId is a mandatory signature header component");
-        }
-        if (null == base64Signature) {
-            problems.add("signature is a mandatory signature header component");
-        }
-
-        try {
-            this.signatureBytes = Base64.getDecoder().decode(base64Signature);
-        } catch (Exception e) {
-            LOGGER.log(Level.FINEST, "Cannot get bytes from base64: " + base64Signature, e);
-            problems.add("cannot get bytes from base64 encoded signature: " + e.getMessage());
-        }
-
-        if (problems.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of("HttpSignature is not valid. Problems: " + String.join(", ", problems));
     }
 
     private byte[] signRsaSha256(SecurityEnvironment env, RSAPrivateKey privateKey, Map<String, List<String>> newHeaders) {

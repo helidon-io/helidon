@@ -34,7 +34,7 @@
     <description>Reactive integration with OCI Vault.</description>
 
     <properties>
-        <mainClass>io.helidon.integrations.oci.vault.reactive.OciVaultMain</mainClass>
+        <mainClass>io.helidon.examples.integrations.oci.vault.reactive.OciVaultMain</mainClass>
     </properties>
 
     <dependencies>
