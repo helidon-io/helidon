@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,27 +54,33 @@ class HttpSignature {
     private final String keyId;
     private final String algorithm;
     private final List<String> headers;
+    // Backward compatibility with Helidon versions until 3.0.0
+    // the signed string contained a trailing new line
+    private final boolean backwardCompatibleEol;
     private String base64Signature;
 
     private byte[] signatureBytes;
 
-    HttpSignature(String keyId, String algorithm, List<String> headers) {
+    HttpSignature(String keyId, String algorithm, List<String> headers, boolean backwardCompatibleEol) {
         this.keyId = keyId;
         this.algorithm = algorithm;
         this.headers = headers;
+        this.backwardCompatibleEol = backwardCompatibleEol;
     }
 
-    private HttpSignature(String header, String keyId,
+    private HttpSignature(String keyId,
                           String algorithm,
                           List<String> headers,
-                          String base64Signature) {
+                          String base64Signature,
+                          boolean backwardCompatibleEol) {
         this.keyId = keyId;
         this.algorithm = algorithm;
         this.headers = headers;
         this.base64Signature = base64Signature;
+        this.backwardCompatibleEol = backwardCompatibleEol;
     }
 
-    static HttpSignature fromHeader(String header) {
+    static HttpSignature fromHeader(String header, boolean backwardCompatibleEol) {
         /*keyId="rsa-key-1",algorithm="rsa-sha256",
                 headers="(request-target) host date digest content-length",
                 signature="Base64(RSA-SHA256(signing string))"*/
@@ -92,18 +99,18 @@ class HttpSignature {
             int c = header.indexOf(',', b);
             int eq = header.indexOf('=', b);
             if (eq == -1) {
-                return new HttpSignature(header, keyId, algorithm, headers, signature);
+                return new HttpSignature(keyId, algorithm, headers, signature, backwardCompatibleEol);
             }
             if (eq > c) {
                 b = c + 1;
             }
             int qb = header.indexOf('"', eq);
             if (qb == -1) {
-                return new HttpSignature(header, keyId, algorithm, headers, signature);
+                return new HttpSignature(keyId, algorithm, headers, signature, backwardCompatibleEol);
             }
             int qe = header.indexOf('"', qb + 1);
             if (qe == -1) {
-                return new HttpSignature(header, keyId, algorithm, headers, signature);
+                return new HttpSignature(keyId, algorithm, headers, signature, backwardCompatibleEol);
             }
 
             String name = header.substring(b, eq).trim();
@@ -128,19 +135,21 @@ class HttpSignature {
             }
             b = qe + 1;
             if (b >= header.length()) {
-                return new HttpSignature(header, keyId, algorithm, headers, signature);
+                return new HttpSignature(keyId, algorithm, headers, signature, backwardCompatibleEol);
             }
         }
     }
 
     static HttpSignature sign(SecurityEnvironment env,
                               OutboundTargetDefinition outboundDefinition,
-                              Map<String, List<String>> newHeaders) {
+                              Map<String, List<String>> newHeaders,
+                              boolean backwardCompatibleEol) {
 
         HttpSignature signature = new HttpSignature(outboundDefinition.keyId(),
                                                     outboundDefinition.algorithm(),
                                                     outboundDefinition.signedHeadersConfig()
-                                                            .headers(env.method(), env.headers()));
+                                                            .headers(env.method(), env.headers()),
+                                                    backwardCompatibleEol);
 
         // validate algorithm is OK
         //let's try to validate the signature
@@ -259,9 +268,9 @@ class HttpSignature {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
             signature.initSign(keyConfig.privateKey().orElseThrow(() ->
-                                                                             new HttpSignatureException(
-                                                                                     "Private key is required, yet not "
-                                                                                             + "configured")));
+                                                                          new HttpSignatureException(
+                                                                                  "Private key is required, yet not "
+                                                                                          + "configured")));
             signature.update(getBytesToSign(env, newHeaders));
             return signature.sign();
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
@@ -331,18 +340,15 @@ class HttpSignature {
     }
 
     String getSignedString(Map<String, List<String>> newHeaders, SecurityEnvironment env) {
-        StringBuilder toSign = new StringBuilder();
         Map<String, List<String>> requestHeaders = env.headers();
+        List<String> linesToSign = new LinkedList<>();
 
         for (String header : this.headers) {
             if ("(request-target)".equals(header)) {
                 //special case
-                toSign.append(header)
-                        .append(": ")
-                        .append(env.method().toLowerCase())
-                        .append(" ")
-                        .append(env.path().orElse("/"))
-                        .append('\n');
+                linesToSign.add(header
+                                        + ": " + env.method().toLowerCase()
+                                        + " " + env.path().orElse("/"));
             } else {
                 List<String> headerValues = requestHeaders.get(header);
                 if (null == headerValues && null == newHeaders) {
@@ -372,15 +378,22 @@ class HttpSignature {
                     }
                 }
 
-                toSign.append(header)
-                        .append(": ")
-                        .append(String.join(" ", headerValues))
-                        .append('\n');
+                linesToSign.add(header + ": " + String.join(" ", headerValues));
             }
         }
 
-        LOGGER.finest(() -> "Data to sign: " + toSign);
+        // 2.3.  Signature String Construction
+        // If value is not the last value then append an ASCII newline `\n`.
+        String toSign = String.join("\n", linesToSign);
 
-        return toSign.toString();
+        if (backwardCompatibleEol) {
+            toSign = toSign + "\n";
+        }
+
+        if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.finest("Data to sign: " + toSign);
+        }
+
+        return toSign;
     }
 }

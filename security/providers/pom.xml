@@ -42,5 +42,6 @@
         <module>oidc</module>
         <module>idcs-mapper</module>
         <module>oidc-common</module>
+        <module>config-vault</module>
     </modules>
 </project>

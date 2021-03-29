@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,18 +146,33 @@ public final class EncryptionUtil {
      * @throws ConfigEncryptionException If any problem with encryption occurs
      */
     public static String encryptAes(char[] masterPassword, String secret) throws ConfigEncryptionException {
+        Objects.requireNonNull(secret, "Secret message must be provided to be encrypted");
+
+        return encryptAesBytes(masterPassword, secret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Encrypt using AES with GCM method, key is derived from password with random salt.
+     *
+     * @param masterPassword master password
+     * @param secret         secret to encrypt
+     * @return Encrypted value base64 encoded
+     * @throws ConfigEncryptionException If any problem with encryption occurs
+     * @deprecated this method will be removed once a separate module for encryption is created
+     */
+    @Deprecated(since = "2.2.0")
+    public static String encryptAesBytes(char[] masterPassword, byte[] secret) throws ConfigEncryptionException {
         Objects.requireNonNull(masterPassword, "Password must be provided for encryption");
         Objects.requireNonNull(secret, "Secret message must be provided to be encrypted");
 
         byte[] salt = SECURE_RANDOM.generateSeed(SALT_LENGTH);
         byte[] nonce = SECURE_RANDOM.generateSeed(NONCE_LENGTH);
-        byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
 
         Cipher cipher = cipher(masterPassword, salt, nonce, Cipher.ENCRYPT_MODE);
         // encrypt
         byte[] encryptedMessageBytes;
         try {
-            encryptedMessageBytes = cipher.doFinal(secretBytes);
+            encryptedMessageBytes = cipher.doFinal(secret);
         } catch (Exception e) {
             throw new ConfigEncryptionException("Failed to encrypt", e);
         }
@@ -250,6 +265,22 @@ public final class EncryptionUtil {
      * @throws ConfigEncryptionException if something bad happens during decryption (e.g. wrong password)
      */
     public static String decryptAes(char[] masterPassword, String encryptedBase64) throws ConfigEncryptionException {
+        return new String(decryptAesBytes(masterPassword, encryptedBase64), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Decrypt using AES.
+     * Will only decrypt messages encrypted with {@link #encryptAes(char[], String)} as the algorithm used is quite custom
+     * (number of bytes of seed, of salt and approach).
+     *
+     * @param masterPassword  master password
+     * @param encryptedBase64 encrypted secret, base64 encoded
+     * @return Decrypted secret
+     * @throws ConfigEncryptionException if something bad happens during decryption (e.g. wrong password)
+     * @deprecated This method will be moved to a new module
+     */
+    @Deprecated(since = "2.2.0")
+    public static byte[] decryptAesBytes(char[] masterPassword, String encryptedBase64) {
         Objects.requireNonNull(masterPassword, "Password must be provided for encryption");
         Objects.requireNonNull(encryptedBase64, "Encrypted bytes must be provided for decryption (base64 encoded)");
 
@@ -275,10 +306,10 @@ public final class EncryptionUtil {
             byte[] originalBytes = new byte[decryptedBytes.length];
             System.arraycopy(decryptedBytes, 0, originalBytes, 0, originalBytes.length);
 
-            return new String(originalBytes, StandardCharsets.UTF_8);
+            return originalBytes;
         } catch (Throwable e) {
             throw new ConfigEncryptionException("Failed to decrypt value using AES. Returning clear text value as is: "
-                                                    + encryptedBase64, e);
+                                                        + encryptedBase64, e);
         }
     }
 
