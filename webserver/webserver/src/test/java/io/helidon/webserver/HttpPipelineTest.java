@@ -109,6 +109,7 @@ public class HttpPipelineTest {
             LOGGER.info("Receiving second GET response");
             String get1 = s.receive();
             assertThat(get1, containsString("Response 1"));
+            LOGGER.info("testPipelining completed successfully");
         }
     }
 }
