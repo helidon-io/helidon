@@ -861,6 +861,66 @@
                 <artifactId>helidon-integrations-common-rest</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault</groupId>
+                <artifactId>helidon-integrations-vault</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.auths</groupId>
+                <artifactId>helidon-integrations-vault-auths-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.sys</groupId>
+                <artifactId>helidon-integrations-vault-sys</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.secrets</groupId>
+                <artifactId>helidon-integrations-vault-secrets-cubbyhole</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.secrets</groupId>
+                <artifactId>helidon-integrations-vault-secrets-kv1</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.secrets</groupId>
+                <artifactId>helidon-integrations-vault-secrets-kv2</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.secrets</groupId>
+                <artifactId>helidon-integrations-vault-secrets-database</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.secrets</groupId>
+                <artifactId>helidon-integrations-vault-secrets-pki</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.secrets</groupId>
+                <artifactId>helidon-integrations-vault-secrets-transit</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.auths</groupId>
+                <artifactId>helidon-integrations-vault-auths-token</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.auths</groupId>
+                <artifactId>helidon-integrations-vault-auths-k8s</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.auths</groupId>
+                <artifactId>helidon-integrations-vault-auths-approle</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- OpenAPI support -->
             <dependency>
                 <groupId>io.helidon.openapi</groupId>
