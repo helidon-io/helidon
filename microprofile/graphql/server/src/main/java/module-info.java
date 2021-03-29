@@ -19,7 +19,7 @@ import io.helidon.microprofile.graphql.server.GraphQlCdiExtension;
 /**
  * GraphQL microprofile server module.
  */
-module helidon.microprofile.graphql.server {
+module io.helidon.microprofile.graphql.server {
     requires java.logging;
     requires java.desktop;
 
