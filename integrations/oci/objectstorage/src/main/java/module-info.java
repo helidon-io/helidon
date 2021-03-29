@@ -23,4 +23,7 @@ module io.helidon.integrations.oci.objectstorage {
     requires io.helidon.config;
 
     exports io.helidon.integrations.oci.objectstorage;
+
+    provides io.helidon.integrations.oci.connect.spi.InjectionProvider
+            with io.helidon.integrations.oci.objectstorage.OciObjectStorageInjectionProvider;
 }
