@@ -16,12 +16,12 @@
 #
 
 java -Dlra.logging.enabled=false \
--Doracle.ucp.jdbc.PoolDataSource.orderpdb.URL=jdbc:oracle:thin:@orderdb_tp?TNS_ADMIN=/Users/pparkins/Downloads/Wallet_ORDERDB \
--Doracle.ucp.jdbc.PoolDataSource.orderpdb.user=orderuser \
--Doracle.ucp.jdbc.PoolDataSource.orderpdb.password=Welcome12345 \
--Doracle.ucp.jdbc.PoolDataSource.orderpdb.connectionFactoryClassName=oracle.jdbc.pool.OracleDataSource \
+-Doracle.ucp.jdbc.PoolDataSource.lrapdb.URL=jdbc:oracle:thin:@localhost:1521:XE \
+-Doracle.ucp.jdbc.PoolDataSource.lrapdb.user=frank \
+-Doracle.ucp.jdbc.PoolDataSource.lrapdb.password=frank \
+-Doracle.ucp.jdbc.PoolDataSource.lrapdb.connectionFactoryClassName=oracle.jdbc.pool.OracleDataSource \
 -Dmp.messaging.connector.helidon-aq.acknowledge-mode=CLIENT_ACKNOWLEDGE \
--Dmp.messaging.connector.helidon-aq.data-source=orderpdb \
+-Dmp.messaging.connector.helidon-aq.data-source=lrapdb \
 -jar /Users/pparkins/go/src/github.com/paulparkinson/helidon/lra/coordinator/target/lra-coordinator-helidon-0.0.1-SNAPSHOT.jar
 
 #In order to enabled logging, simply remove -Dlra.logging.enabled=false and add the datasource information. For example...

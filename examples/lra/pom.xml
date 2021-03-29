@@ -41,6 +41,6 @@
         <module>lra-kafka-inventory-participant</module>
         <module>lra-aq-order-participant</module>
         <module>lra-aq-inventory-participant</module>
-        <module>lra-aq-util</module>
+<!--        <module>lra-aq-util</module>-->
     </modules>
 </project>

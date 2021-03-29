@@ -331,8 +331,8 @@ public class ServerLRAMessagingFilter {
                             toURI(terminateURIs.get(STATUS)),
                             "");
                     progress = updateProgress(progress, ProgressStep.Joined, null);
-                    headers.putSingle(LRA_HTTP_RECOVERY_HEADER,
-                            START_END_QUOTES_PATTERN.matcher(recoveryUrl.toASCIIString()).replaceAll(""));
+//                    headers.putSingle(LRA_HTTP_RECOVERY_HEADER,
+//                            START_END_QUOTES_PATTERN.matcher(recoveryUrl.toASCIIString()).replaceAll(""));
                 } catch (WebApplicationException e) {
                     progress = updateProgress(progress, ProgressStep.JoinFailed, e.getMessage());
                     abortWith(messagingRequestContext, lraId.toASCIIString(),
@@ -374,8 +374,9 @@ public class ServerLRAMessagingFilter {
     public void afterMethodInvocation(MessagingMethod method, Object message, boolean isError) {
         if (message != null && true) {
             if (method.getMethod().getAnnotation(LRA.class) != null) {
-                LOGGER.info("LRA outgoing app call");
-                messagingRequestContext.addMessageProperty(LRA_HTTP_CONTEXT_HEADER, lraClient.getCurrent().toString());
+                LOGGER.info("LRA outgoing app call lraClient.getCurrent():" + lraClient.getCurrent());
+                if (lraClient.getCurrent() != null)
+                    messagingRequestContext.addMessageProperty(LRA_HTTP_CONTEXT_HEADER, lraClient.getCurrent().toString());
             } else if (method.getMethod().getAnnotation(Complete.class) != null) {
                 LOGGER.info("Complete reply is " + (isError ? "COMPLETEFAIL" : "COMPLETESUCCESS"));
                 messagingRequestContext.addMessageProperty("HELIDONLRAOPERATION", isError ? "COMPLETEFAIL" : "COMPLETESUCCESS");
@@ -567,7 +568,7 @@ public class ServerLRAMessagingFilter {
         String clientId = method.getDeclaringClass().getName() + "#" + method.getName();
 
         try {
-            URI lra = lraClient.startLRA(parentLRA, clientId, timeout, ChronoUnit.MILLIS, false);
+            URI lra = lraClient.startLRA(parentLRA, clientId, timeout, ChronoUnit.MILLIS);
             updateProgress(progress, ProgressStep.Started, null);
             return lra;
         } catch (WebApplicationException e) {
@@ -654,9 +655,14 @@ public class ServerLRAMessagingFilter {
         String connector = config.getValue(MP_MESSAGING_INCOMING_PREFIX + channelValue + ".connector", String.class);
         //channel is for information/debug purposes only
         if (connector.equals("helidon-aq")) {
-            url = String.format("%s%s?%s=%s&%s=%s&%s=%s", "messaging://", connector,
+            String destinationValue = config.getValue(MP_MESSAGING_INCOMING_PREFIX + channelValue + ".destination", String.class);
+            if (destinationValue.indexOf(".") == -1) throw new WebApplicationException("AQ destination value must be fully qualified name such as myschema.myqueue");
+            String owner = destinationValue.substring(0, destinationValue.indexOf(".") );
+            String destination = destinationValue.substring(destinationValue.indexOf(".") + 1);
+            url = String.format("%s%s?%s=%s&%s=%s&%s=%s&%s=%s", "messaging://", connector,
                     "channel", channelValue,
-                    "destination", config.getValue(MP_MESSAGING_INCOMING_PREFIX + channelValue + ".destination", String.class),
+                    "owner", owner,
+                    "destination", destination,
                     "type", config.getValue(MP_MESSAGING_INCOMING_PREFIX + channelValue + ".type", String.class)
 //                            "ispropagation", config.getValue(MP_MESSAGING_INCOMING_PREFIX + channelValue + ".destination", String.class)
                     //  this is determined by config for now if true than coordinator should send via topic instead of queue

@@ -18,58 +18,68 @@ package io.helidon.examples.lra;
 import io.helidon.messaging.connectors.aq.*;
 import io.helidon.messaging.connectors.jms.JmsMessage;
 import io.helidon.messaging.connectors.kafka.KafkaMessage;
-import oracle.jms.AQjmsConstants;
+import oracle.jms.AQjmsFactory;
 import oracle.jms.AQjmsSession;
 import org.eclipse.microprofile.lra.annotation.*;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 import org.eclipse.microprofile.lra.annotation.ws.rs.Leave;
-import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.jms.*;
+import javax.sql.DataSource;
 import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.HashMap;
-import java.util.Map;
 
-@Path("/aqmessaging")
+import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
+
+@Path("/") //there are no actual Rest endpoints as the order itself is placed with a message
 @ApplicationScoped
 public class AQMessagingOrderResource {
 
-    private ParticipantStatus participantStatus = ParticipantStatus.Active;
-    private boolean isCancel; //technically indicates whether to throw Exception
-    private String uriToCall;
-    private Map lraStatusMap = new HashMap<String, ParticipantStatus>();
+    @Inject
+    @Named("lrapdb")
+    private DataSource lrapdb;
 
-    @Incoming("order-requiresnew")
-//    @Outgoing("inventory")
-    @LRA(value = LRA.Type.REQUIRES_NEW)
-    public void requiresNew(AqMessage<String> msg) throws Exception {
-        System.out.println("------>AQMessagingOrderResource.requiresNew msg.getPayload():" + msg.getPayload() +
-                " msg.getDbConnection():" + msg.getDbConnection());
-        if (isCancel) throw new Exception("requiresNew throws intentional exception as isCancel is true");
-//        return () -> "requiresNew success";
+    private ParticipantStatus participantStatus = ParticipantStatus.Active;
+
+    @Incoming("frontendchannel")
+    @Outgoing("orderchannel")
+    @LRA(value = LRA.Type.REQUIRES_NEW, end = false)
+    public Message placeOrder(AqMessage<String> msg) throws Exception {
+        System.out.println("------>AQMessagingOrderResource.placeOrder received. " +
+                "Will send message to inventory service to check availability." + " msg.getPayload():" + msg.getPayload() +
+                " msg.getDbConnection():" + msg.getDbConnection()); //this is where the JDBC connection would be used to insert order, etc.
+        participantStatus = ParticipantStatus.Active;
+        return JmsMessage.of(participantStatus.toString());
     }
 
-//    @Incoming("order-required")
-//    @Outgoing("inventory")
+    @Incoming("inventorychannel")
+    @Outgoing("frontendreplychannel")
     @LRA(value = LRA.Type.MANDATORY)
-    public Message required(AqMessage<String> msg) throws Exception {
-        System.out.println("------>AQMessagingOrderResource.required msg.getPayload():" + msg.getPayload() +
-                " msg.getDbConnection():" + msg.getDbConnection());
-        if (isCancel) throw new Exception("required throws intentional exception as isCancel is true");
-        return () -> "required success";
+    public Message receiveInventoryStatusForOrder(AqMessage<String> msg) throws Exception {
+        String methodName = "receiveInventoryStatusForOrder";
+        String lraidheader = displayLRAId(msg, methodName);
+        System.out.println("------>AQMessagingOrderResource.receiveInventoryStatusForOrder msg.getPayload():" + msg.getPayload() +
+                " msg.getDbConnection():" + msg.getDbConnection()); //this is where the JDBC connection would be used to update order, shipping, etc.
+        String inventoryStatus = msg.getJmsMessage().getStringProperty("inventoryStatus");
+        String inventoryPayload = msg.getPayload();
+        System.out.println("------>KafkaMessagingOrderResource." + methodName + " received " +
+                "lraidheader:" + lraidheader  + "inventoryStatusHeader:" + inventoryStatus + " inventoryPayload:" + inventoryPayload);
+        if(inventoryPayload.equals("inventorydoesnotexist")) throw new Error("intentional exception to cause cancel call as inventorydoesnotexist");
+        return JmsMessage.of("placeOrder success");
     }
 
     @Incoming("completechannel")
     @Outgoing("completereplychannel")
     @Complete
     public Message completeMethod(AqMessage<String> msg) throws Exception {
-        System.out.println("------>AQMessagingOrderResource.complete");
-        String lraID = getLRAID(msg);
+        displayLRAId(msg, "complete");
         participantStatus = ParticipantStatus.Completed;
         return JmsMessage.builder(participantStatus.toString()).build();
     }
@@ -78,8 +88,7 @@ public class AQMessagingOrderResource {
     @Outgoing("compensatereplychannel")
     @Compensate
     public Message compensateMethod(AqMessage<String> msg) throws Exception {
-        System.out.println("------>AQMessagingOrderResource.compensate");
-        String lraID = getLRAID(msg);
+        displayLRAId(msg, "complensate");
         participantStatus = ParticipantStatus.Compensated;
         return JmsMessage.of(participantStatus.toString());
     }
@@ -88,8 +97,7 @@ public class AQMessagingOrderResource {
     @Outgoing("afterlrareplychannel")
     @AfterLRA
     public Message afterLRAMethod(AqMessage<String> msg) throws Exception {
-        System.out.println("------>AQMessagingOrderResource.afterLRA");
-        String lraID = getLRAID(msg);
+        displayLRAId(msg, "afterLRA");
         return JmsMessage.of(participantStatus.toString());
     }
 
@@ -97,8 +105,7 @@ public class AQMessagingOrderResource {
     @Outgoing("forgetreplychannel")
     @Forget
     public Message forgetLRAMethod(AqMessage<String> msg) throws Exception {
-        System.out.println("------>AQMessagingOrderResource.forget");
-        String lraID = getLRAID(msg);
+        displayLRAId(msg, "forget");
         return JmsMessage.of(participantStatus.toString());
     }
 
@@ -106,56 +113,47 @@ public class AQMessagingOrderResource {
     @Outgoing("leavereplychannel")
     @Leave
     public Message leaveLRAMethod(AqMessage<String> msg) throws Exception {
-        System.out.println("------>AQMessagingOrderResource.leave");
-        String lraID = getLRAID(msg);
+        displayLRAId(msg, "leave");
         return JmsMessage.of(participantStatus.toString());
     }
 
     //no status method as AQ is guaranteed delivery
 
-    private String getLRAID(AqMessage<String> msg) {
-        return "testid";
+    private String  displayLRAId(AqMessage<String> msg, String methodName) {
+        String lraidheader = null;
+        try {
+            lraidheader = msg.getJmsMessage().getStringProperty(LRA_HTTP_CONTEXT_HEADER);
+        } catch (JMSException e) {
+            e.printStackTrace();
+        }
+        System.out.println("------>AQMessagingOrderResource." + methodName + " received " +
+                "lraidheader:" + lraidheader);
+        return lraidheader;
     }
 
 
-    //methods to set complete/compensate action if/as result of throwing exception
-
-    private String getResponse(String lraType, Object payload) throws Exception {
-        System.out.println("------>AQMessagingOrderResource.getResponse lraType:" + lraType + " msg.getPayload():" + payload + " isCancel:" + isCancel);
-        participantStatus = ParticipantStatus.Active;
-        if(isCancel) throw new Exception("Intentional exceptio");
-        else return "success";
-    }
 
 
+    @Path("/placeOrder")
     @GET
-    @Path("/setCancel")
-    public Response setCancel() {
-        System.out.println("setCancel called. LRA method will throw exception (resulting in compensation if appropriate)");
-        isCancel = true;
-        return Response.ok()
-                .entity("isCancel = true")
-                .build();
-    }
-
-    @GET
-    @Path("/setClose")
-    public Response setClose() {
-        System.out.println("setClose called. LRA method will NOT throw exception (resulting in complete if appropriate)");
-        isCancel = false;
-        return Response.ok()
-                .entity("isCancel = false")
-                .build();
-    }
-
-    @GET
-    @Path("/setURIToCall")
-    public Response setURIToCall(@QueryParam("uri") String uri) {
-        System.out.println("setURIToCall:" + uri);
-        uriToCall = uri;
-        isCancel = false;
-        return Response.ok()
-                .entity("setURIToCall:" + uri)
-                .build();
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response placeOrder() throws JMSException {
+        QueueSession session;
+        QueueConnectionFactory q_cf = AQjmsFactory.getQueueConnectionFactory(lrapdb);
+        try (QueueConnection q_conn = q_cf.createQueueConnection()){
+            System.out.println("------>AQMessagingOrderResource.placeOrder send order message...");
+            session = q_conn.createQueueSession(true, Session.CLIENT_ACKNOWLEDGE);
+            Queue queue = ((AQjmsSession) session).getQueue("frank", "FRONTENDQUEUE");
+            System.out.println(" about to sendTestMessageToQueue to queue:" + queue);
+            MessageProducer producer = session.createProducer(queue);
+            TextMessage objmsg = session.createTextMessage();
+            objmsg.setStringProperty("placeOrder", "order66");
+            producer.send(objmsg);
+            session.commit();
+            System.out.println("------>AQMessagingOrderResource.placeOrder send order complete. Check logs or reply queue for outcome.");
+            return Response.ok()
+                    .entity("placeOrder request complete.  Check logs or reply queue for outcome.")
+                    .build();
+        }
     }
 }

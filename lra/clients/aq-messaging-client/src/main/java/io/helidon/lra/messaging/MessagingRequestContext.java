@@ -27,12 +27,14 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
+import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
 
 public class MessagingRequestContext {
     private static final Logger LOGGER = Logger.getLogger(MessagingRequestContext.class.getName());
     Map properties = new HashMap<>();
     MultivaluedMap<String, String> headersMap = new MultivaluedHashMap<String, String>();
     Map<String, String> messagePropertiesMap = new HashMap<>();
+    String lraId;
 
     /**
      * Note that LRA_HTTP_CONTEXT_HEADER is added to both the message property for the LRA calls (complete, compensate, etc.)
@@ -43,20 +45,26 @@ public class MessagingRequestContext {
         if (message instanceof JmsMessage) {
             javax.jms.Message jmsMessage = ((JmsMessage) message).getJmsMessage();
             try {
-                String lraProperty = jmsMessage.getStringProperty(LRA_HTTP_CONTEXT_HEADER);
-                LOGGER.fine("incoming LRA_HTTP_CONTEXT_HEADER message property:" + lraProperty);
-                addMessageProperty(LRA_HTTP_CONTEXT_HEADER, lraProperty);
-                headersMap.putSingle(LRA_HTTP_CONTEXT_HEADER, lraProperty);
+                lraId = jmsMessage.getStringProperty(LRA_HTTP_CONTEXT_HEADER);
+                LOGGER.fine("incoming LRA_HTTP_CONTEXT_HEADER message property:" + lraId);
+                if(lraId==null || lraId.trim().equals("")) return;
+                addMessageProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
+                headersMap.putSingle(LRA_HTTP_CONTEXT_HEADER, lraId);
+                addMessageProperty(LRA_HTTP_RECOVERY_HEADER, lraId);
+                headersMap.putSingle(LRA_HTTP_RECOVERY_HEADER, lraId);
             } catch (JMSException e) {
                 e.printStackTrace();
             }
         } else if (message instanceof KafkaMessage) {
             KafkaMessage kafkaMessage = (KafkaMessage) message;
             Header header = kafkaMessage.getHeaders().lastHeader(LRA_HTTP_CONTEXT_HEADER);
+            lraId = new String(header.value());
             LOGGER.fine("incoming LRA_HTTP_CONTEXT_HEADER header:" + header);
             if (header != null) {
-                addMessageProperty(LRA_HTTP_CONTEXT_HEADER, new String(header.value()));
-                headersMap.putSingle(LRA_HTTP_CONTEXT_HEADER, new String(header.value()));
+                addMessageProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
+                headersMap.putSingle(LRA_HTTP_CONTEXT_HEADER, lraId);
+                addMessageProperty(LRA_HTTP_RECOVERY_HEADER, lraId);
+                headersMap.putSingle(LRA_HTTP_RECOVERY_HEADER, lraId);
             }
         }
     }

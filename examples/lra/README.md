@@ -48,16 +48,12 @@
 
 ##Kafka Participants Example
 
-###Step 1 Install Kafka
-There are numerous ways to do this and an example docker image that is used in the Helidon Kafka messaging examples.
-If nothing else this procedure can be followed...
-- Download and unzip Kafka from http://kafka.apache.org/downloads.html
-- Run `bin/zookeeper-server-start.sh config/zookeeper.properties`
-- Run `bin/kafka-server-start.sh config/server.properties`
-
-###Step 2 Create the Kafka topics for application and LRA protocol communication for the two services...
-- Run `./createKafkaTopics.sh <KAFKA_LOCATION>` providing the Kafka install directory.
-- For example `./createKafkaQueues.sh ~/Downloads/kafka_2.13-2.7.0`
+##Install, and run configured Kafka docker image
+- Run `./kafkaRun.sh`
+    - To stop the container when done testing `Ctrl+c`
+    - If you already have a Kafka instance you can instead add the topics in `./docker/kafka/init_topics.sh`
+- Open another terminal and run `./kafkaProduce.sh`  (you can specify a topic-name arg but it defaults to frontend for this example)
+- Open another terminal and run `./kafkaConsume.sh` (you can specify a topic-name arg but defaults to frontend-reply for this example)
 
 ###Step 2 Start the LRA Coordinator
 - Run `./startLRACoordinatorKafkaExample.sh`
@@ -72,32 +68,64 @@ If nothing else this procedure can be followed...
 - Notice application and Helidon LRA debug messages indicating close called on the coordinator and complete called on the participants.
 * Note, for convenience, inventory is not actually reduced in this example
 
-###Step 5 Reduce the inventory level on the inventory service to 0 
+###Step 5 Send a message (using kafka-console-producer.sh) to the order service and notice success scenario (close called on the coordinator and complete called on the participants)
+- Run ` <KAFKA_LOCATION>/bin/kafka-console-producer.sh --topic frontend-events --bootstrap-server localhost:9092
+- Provide any value and hit `enter` to send message.
+- Notice application and Helidon LRA debug messages indicating close called on the coordinator and complete called on the participants.
+* Note, for convenience, inventory is not actually reduced in this example
+
+###Step 6 Reduce the inventory level on the inventory service to 0 
 - Run `curl http://localhost:8095/inventory/removeInventory`
 - `curl http://localhost:8095/inventory/addInventory` can be used to add inventory back
 
-###Step 6 Call the order service and notice failure scenario (cancel called on the coordinator and compensate called on the participants)
+###Step 7 Call the order service and notice failure scenario (cancel called on the coordinator and compensate called on the participants)
 -Run `curl http://localhost:8091/order/placeOrder`
+
 
 #AQ Participants Example
 
+##Step 1 Install, and run configured Oracle docker image
+```bash
+cd ./docker/oracle-aq-18-xe
+./buildAndRun.sh
+```
+To stop the container after done with testing:
+```bash
+cd ./docker/oracle-aq-18-xe
+./stopAndClean.sh
+```
+- If you already have an Oracle database you can instead:
+    - Run the ./docker/oracle-aq-18-xe/init.sql file located in this directory against it.
+    - Modify the url, user, and password in the datasource defined in the following config files and run `mvn clean install` again: 
+        - ./lra-aq-order-participant/src/main/resources/META-INF/microprofile-config.properties
+        - ./lra-aq-inventory-participant/src/main/resources/META-INF/microprofile-config.properties
+        - ./startLRACoordinatorAQExample.sh
 
-##AQ without propagation (single DB)
+###Step 2 Start the LRA Coordinator
+- Run `./startLRACoordinatorAQExample.sh`
 
-##Install Oracle 
-There are numerous ways to do this. See other examples. todo give pointer(s)
+###Step 3 Start two servers participants
+- Open another terminal and run `java -jar lra-aq-order-participant/target/lra-aq-order-participant.jar`
+- Open another terminal and run `java -jar lra-aq-inventory-participant/target/lra-aq-inventory-participant.jar`
 
-##AQ with propagation
-curl localhost:8091/setupLRA
+###Step 4 Send a message to the order service and notice success scenario (close called on the coordinator and complete called on the participants)
+-Run `curl http://localhost:8097/order/placeOrder`
 
+###Step 5 Reduce the inventory level on the inventory service to 0 
+- Run `curl http://localhost:8098/inventory/removeInventory`
+- `curl http://localhost:8098/inventory/addInventory` can be used to add inventory back
 
+###Step 6 Call the order service and notice failure scenario (cancel called on the coordinator and compensate called on the participants)
+-Run `curl http://localhost:8097/order/placeOrder`
 
-
-Different participant types can be involved in the same LRA, however, 
-examples currently only exhibit/describe  LRAs with participants of all one type (ie all REST, all Kafka, or all AQ)
 
 
 #Mixed Participant Types
 It is also possible to modify the samples to have a mix of different participant types.
-All participants are already configured to start on different ports (8080, 8091, 8092, 8094, 8095, 8097, 8098) so there should be no conflict, etc. 
+All participants are already configured to start on different ports (8080, 8091, 8092, 8094, 8095, 8097, 8098 (and 8099 for AQ util) so there should be no conflict, etc. 
 In order to do so the coordinator simply needs to be provided the appropriate configurations by combining the values specified in the relevant startLRACoordinator*.sh 
+
+
+#AQ with propagation
+
+Refer to https://github.com/oracle/microservices-datadriven

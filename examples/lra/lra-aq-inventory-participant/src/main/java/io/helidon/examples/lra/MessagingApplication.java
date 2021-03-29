@@ -7,13 +7,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 @ApplicationScoped
-@ApplicationPath("/messaging")
+@ApplicationPath("/inventory")
 public class MessagingApplication extends Application {
 
     @Override
     public Set<Class<?>> getClasses() {
         Set<Class<?>> s = new HashSet<>();
-        s.add(AQMessagingResource.class);
+        s.add(AQMessagingInventoryResource.class);
         return s;
     }
 }

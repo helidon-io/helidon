@@ -616,7 +616,7 @@ public class ServerLRAFilter implements ContainerRequestFilter, ContainerRespons
         String clientId = method.getDeclaringClass().getName() + "#" + method.getName();
 
         try {
-            URI lra = lraClient.startLRA(parentLRA, clientId, timeout, ChronoUnit.MILLIS, false);
+            URI lra = lraClient.startLRA(parentLRA, clientId, timeout, ChronoUnit.MILLIS);
             updateProgress(progress, ProgressStep.Started, null);
             return lra;
         } catch (WebApplicationException e) {

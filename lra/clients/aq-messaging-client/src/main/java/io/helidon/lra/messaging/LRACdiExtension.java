@@ -134,10 +134,11 @@ public class LRACdiExtension implements Extension {
     long onMethodInvocationFailure(MessagingMethod method, Message<?> message, Throwable throwable) {
         try {
             serverToLRAMessageFilterMap.get(method).setCancel();
-            LOGGER.fine("LRACdiExtension.onMethodInvocationFailure " +
+            LOGGER.info("LRACdiExtension.onMethodInvocationFailure " +
                     "method = " + method + ", message = " + message + ", t = " + throwable);
             ServerLRAMessagingFilter serverLRAMessagingFilter = serverToLRAMessageFilterMap.get(method);
             if (serverLRAMessagingFilter == null) return 0;
+            serverLRAMessagingFilter.setCancel();
             serverLRAMessagingFilter.afterMethodInvocation(method, message, true);
             showMessageProperties("onMethodInvocationFailure" , method, message);
             return 0;

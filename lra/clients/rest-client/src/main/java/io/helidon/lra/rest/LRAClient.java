@@ -91,10 +91,6 @@ public class LRAClient implements Closeable {
     }
 
     public URI startLRA(URI parentLRA, String clientID, Long timeout, ChronoUnit unit) throws WebApplicationException {
-        return startLRA(parentLRA, clientID, timeout, unit, true);
-    }
-
-    public URI startLRA(URI parentLRA, String clientID, Long timeout, ChronoUnit unit, boolean verbose) throws WebApplicationException {
         Client client = null;
         Response response = null;
         URI lra;
@@ -412,6 +408,8 @@ public class LRAClient implements Closeable {
             String recoveryUrl = null;
             try {
                 recoveryUrl = response.getHeaderString(LRA_HTTP_RECOVERY_HEADER);
+                LOGGER.info("recoveryUrl:" + recoveryUrl);
+                if (recoveryUrl == null) return null;
                 String url = URLDecoder.decode(recoveryUrl, StandardCharsets.UTF_8.name());
                 return new URI(url);
             } catch (URISyntaxException | UnsupportedEncodingException e) {

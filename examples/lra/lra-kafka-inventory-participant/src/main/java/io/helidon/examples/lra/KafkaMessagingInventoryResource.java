@@ -28,7 +28,7 @@ public class KafkaMessagingInventoryResource {
     @Outgoing("inventorychannel")
     @LRA(value = LRA.Type.MANDATORY, end = false)
     public Message checkInventory(KafkaMessage msg)  {
-        Header lraidheader = msg.getHeaders().lastHeader(LRA_HTTP_CONTEXT_HEADER);
+        Header lraidheader = displayLRAId(msg, "checkInventory");
         System.out.println("------>KafkaMessagingInventoryResource.checkInventory  msg:" + msg +
                 " msg.getPayload():" + msg.getPayload() + " inventoryCount:" + inventoryCount + " lraidheader:" + lraidheader);
         participantStatus = ParticipantStatus.Active;
@@ -42,7 +42,7 @@ public class KafkaMessagingInventoryResource {
     @Outgoing("kafkacompletereplychannel")
     @Complete
     public Message completeMethod(KafkaMessage msg)  {
-        System.out.println("------>KafkaMessagingInventoryResource.complete msg:" + msg);
+        displayLRAId(msg, "complete");
         participantStatus = ParticipantStatus.Completed;
         return KafkaMessage.of(participantStatus.toString());
     }
@@ -51,7 +51,7 @@ public class KafkaMessagingInventoryResource {
     @Outgoing("kafkacompensatereplychannel")
     @Compensate
     public Message compensateMethod(KafkaMessage msg) throws Exception {
-        System.out.println("------>KafkaMessagingInventoryResource.compensate msg:" + msg);
+        displayLRAId(msg, "compensate");
         participantStatus = ParticipantStatus.Compensated;
         return KafkaMessage.of(participantStatus.toString());
     }
@@ -61,7 +61,7 @@ public class KafkaMessagingInventoryResource {
     @Outgoing("kafkastatusreplychannel")
     @Status
     public Message statusMethod(KafkaMessage msg) throws Exception {
-        System.out.println("------>KafkaMessagingInventoryResource.status msg:" + msg);
+        displayLRAId(msg, "statusMethod");
         return KafkaMessage.of(participantStatus.toString());
     }
 
@@ -69,7 +69,7 @@ public class KafkaMessagingInventoryResource {
     @Outgoing("kafkaafterlrareplychannel")
     @AfterLRA
     public Message afterLRAMethod(KafkaMessage msg) throws Exception {
-        System.out.println("------>KafkaMessagingInventoryResource.afterLRA msg:" + msg);
+        displayLRAId(msg, "afterLRA");
         return KafkaMessage.of(participantStatus.toString());
     }
 
@@ -77,7 +77,7 @@ public class KafkaMessagingInventoryResource {
     @Outgoing("kafkaforgetreplychannel")
     @Forget
     public Message forgetLRAMethod(KafkaMessage msg) throws Exception {
-        System.out.println("------>KafkaMessagingInventoryResource.forget msg:" + msg);
+        displayLRAId(msg, "forget");
         return KafkaMessage.of(participantStatus.toString());
     }
 
@@ -85,12 +85,16 @@ public class KafkaMessagingInventoryResource {
     @Outgoing("kafkaleavereplychannel")
     @Leave
     public Message leaveLRAMethod(KafkaMessage msg) throws Exception {
-        System.out.println("------>KafkaMessagingInventoryResource.forget");
+        displayLRAId(msg, "leave");
         return KafkaMessage.of(participantStatus.toString());
     }
 
-    //methods to set complete/compensate action if/as result of throwing exception
-
+    private Header displayLRAId(KafkaMessage msg, String methodName) {
+        Header lraidheader = msg.getHeaders().lastHeader(LRA_HTTP_CONTEXT_HEADER);
+        System.out.println("------>KafkaMessagingOrderResource." + methodName + " received " +
+                "lraidheader:" + lraidheader);
+        return lraidheader;
+    }
 
     @GET
     @Path("/addInventory")

@@ -38,10 +38,11 @@ public class KafkaMessagingOrderResource {
     @Outgoing("frontendreplychannel")
     @LRA(value = LRA.Type.MANDATORY, end = true)
     public Message receiveInventoryStatusForOrder(KafkaMessage msg) throws Exception {
-        Header lraidheader = msg.getHeaders().lastHeader(LRA_HTTP_CONTEXT_HEADER);
+        String methodName = "receiveInventoryStatusForOrder";
+        Header lraidheader = displayLRAId(msg, methodName);
         Header inventoryStatus = msg.getHeaders().lastHeader("inventoryStatus");
         Object inventoryPayload = msg.getPayload();
-        System.out.println("------>KafkaMessagingOrderResource.receiveInventoryStatusForOrder received " +
+        System.out.println("------>KafkaMessagingOrderResource." + methodName + " received " +
                 "lraidheader:" + lraidheader  + "inventoryStatusHeader:" + inventoryStatus + " inventoryPayload:" + inventoryPayload);
         if(inventoryPayload.equals("inventorydoesnotexist")) throw new Exception("intentional exception to cause cancel call as inventorydoesnotexist");
         return KafkaMessage.of("placeOrder success");
@@ -51,7 +52,7 @@ public class KafkaMessagingOrderResource {
     @Outgoing("kafkacompletereplychannel")
     @Complete
     public Message completeMethod(KafkaMessage msg) throws Exception {
-        System.out.println("------>KafkaMessagingOrderResource.complete msg:" + msg);
+        displayLRAId(msg, "complete");
         participantStatus = ParticipantStatus.Completed;
         return KafkaMessage.of(participantStatus.toString());
     }
@@ -60,7 +61,7 @@ public class KafkaMessagingOrderResource {
     @Outgoing("kafkacompensatereplychannel")
     @Compensate
     public Message compensateMethod(KafkaMessage msg) throws Exception {
-        System.out.println("------>KafkaMessagingOrderResource.compensate msg:" + msg);
+        displayLRAId(msg, "compensate");
         participantStatus = ParticipantStatus.Compensated;
         return KafkaMessage.of(participantStatus.toString());
     }
@@ -69,7 +70,7 @@ public class KafkaMessagingOrderResource {
     @Outgoing("kafkastatusreplychannel")
     @Status
     public Message statusMethod(KafkaMessage msg) throws Exception {
-        System.out.println("------>KafkaMessagingOrderResource.status msg:" + msg);
+        displayLRAId(msg, "status");
         return KafkaMessage.of(participantStatus.toString());
     }
 
@@ -77,7 +78,7 @@ public class KafkaMessagingOrderResource {
     @Outgoing("kafkaafterlrareplychannel")
     @AfterLRA
     public Message afterLRAMethod(KafkaMessage msg) throws Exception {
-        System.out.println("------>KafkaMessagingOrderResource.afterLRA msg:" + msg);
+        displayLRAId(msg, "afterLRA");
         return KafkaMessage.of(participantStatus.toString());
     }
 
@@ -85,7 +86,7 @@ public class KafkaMessagingOrderResource {
     @Outgoing("kafkaforgetreplychannel")
     @Forget
     public Message forgetLRAMethod(KafkaMessage msg) throws Exception {
-        System.out.println("------>KafkaMessagingOrderResource.forget msg:" + msg);
+        displayLRAId(msg, "forget");
         return KafkaMessage.of(participantStatus.toString());
     }
 
@@ -93,8 +94,15 @@ public class KafkaMessagingOrderResource {
     @Outgoing("kafkaleavereplychannel")
     @Leave
     public Message leaveLRAMethod(KafkaMessage msg) throws Exception {
-        System.out.println("------>KafkaMessagingOrderResource.forget");
+        displayLRAId(msg, "leave");
         return KafkaMessage.of(participantStatus.toString());
+    }
+
+    private Header displayLRAId(KafkaMessage msg, String methodName) {
+        Header lraidheader = msg.getHeaders().lastHeader(LRA_HTTP_CONTEXT_HEADER);
+        System.out.println("------>KafkaMessagingOrderResource." + methodName + " received " +
+                "lraidheader:" + lraidheader);
+        return lraidheader;
     }
 
 }

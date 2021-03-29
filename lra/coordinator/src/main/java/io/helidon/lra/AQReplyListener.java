@@ -26,10 +26,10 @@ public class AQReplyListener implements Runnable {
 
     public AQReplyListener(DataSource aqParticipantDB, AQChannelConfig channelConfig, String operation) throws JMSException {
         this.operation = operation;
-        this.type = "queue"; // channelConfig.type; todo for AQ we need to either have it configured our try both topic and queue in order to support topic-to-queue
-        this.destination = "HELIDONLRAQUEUE"; // + "REPLY" channelConfig.destination; todo get from config
-        this.owner = "ORDERUSER"; // todo get from config
-        if(type.equals("topic") )topicConnectionFactory = AQjmsFactory.getTopicConnectionFactory(aqParticipantDB);
+        this.type = channelConfig.type;
+        this.destination = channelConfig.destination;
+        this.owner = channelConfig.owner;
+        if(type.equals("topic") ) topicConnectionFactory = AQjmsFactory.getTopicConnectionFactory(aqParticipantDB);
         else queueConnectionFactory = AQjmsFactory.getQueueConnectionFactory(aqParticipantDB);
         LOGGER.info("ReplyListener created for operation:" + operation + " channelConfig:" + channelConfig);
     }
