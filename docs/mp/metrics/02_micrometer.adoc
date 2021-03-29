@@ -67,6 +67,19 @@ import io.micrometer.core.annotation.Timed;
 <2> Use `@Timed` to time and count both `GET` methods.
 <3> Use `@Counted` to count the accesses to the `GET` method that returns a personalized greeting.
 
+=== Using the Helidon-provided Micrometer `MeterRegistry` from Code
+
+In addition to annotating your methods, you can create, look up, and update metrics explicitly in your code.
+
+Add the following injection to a bean:
+[source,java]
+.Inject the `MeterRegistry`
+----
+@Inject
+private MeterRegistry registry;
+----
+Helidon automatically injects a reference to the `MeterRegistry` it manages into your code. Your code can use the normal Micrometer API with this registry to create, find, update, and even delete meters.
+
 include::{common-page-prefix-inc}[tags=overriding-intro;overriding-using-config]
 
 include::{common-page-prefix-inc}[tags=accessing-endpoint-intro]

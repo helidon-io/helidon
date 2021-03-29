@@ -34,7 +34,7 @@ responds to the HTTP request.
 
 ifdef::isSE[]
 * The `MicrometerSupport` class: A convenience class for enrolling Micrometer meter registries your application
-creates explicitly or for selecting which built-in Micrometer meter registries to
+creates explicitly or for selecting which built-in Micrometer meter registries
 to use.
 endif::isSE[]
 ifdef::isMP[]
@@ -55,7 +55,12 @@ Declare the following dependency in your project:
 ----
 <dependency>
     <groupId>io.helidon.integrations</groupId>
+ifdef::isSE[]
     <artifactId>helidon-integrations-micrometer</artifactId>
+endif::isSE[]
+ifdef::isMP[]
+    <artifactId>helidon-integrations-micrometer-cdi</artifactId>
+endif::isMP[]
 </dependency>
 ----
 
