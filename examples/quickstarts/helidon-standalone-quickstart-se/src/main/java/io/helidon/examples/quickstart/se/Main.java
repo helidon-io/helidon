@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.examples.quickstart.se;
 
 import io.helidon.common.LogConfig;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
@@ -48,43 +49,39 @@ public final class Main {
      * Start the server.
      * @return the created {@link WebServer} instance
      */
-    static WebServer startServer() {
+    static Single<WebServer> startServer() {
+
         // load logging configuration
         LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        // Get webserver config from the "server" section of application.yaml and register JSON support
         WebServer server = WebServer.builder(createRouting(config))
                 .config(config.get("server"))
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 
+        Single<WebServer> webserver = server.start();
+
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
-        server.start()
-            .thenAccept(ws -> {
-                System.out.println(
-                        "WEB server is up! http://localhost:" + ws.port() + "/greet");
-                ws.whenShutdown().thenRun(()
-                    -> System.out.println("WEB server is DOWN. Good bye!"));
+        webserver.thenAccept(ws -> {
+                    System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");
+                    ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
                 })
-            .exceptionally(t -> {
-                System.err.println("Startup failed: " + t.getMessage());
-                t.printStackTrace(System.err);
-                return null;
-            });
+                .exceptionallyAccept(t -> {
+                    System.err.println("Startup failed: " + t.getMessage());
+                    t.printStackTrace(System.err);
+                });
 
-        // Server threads are not daemon. No need to block. Just react.
-
-        return server;
+        return webserver;
     }
 
     /**
      * Creates new {@link Routing}.
      *
-     * @return routing configured with a health check, and a service
+     * @return routing configured with JSON support, a health check, and a service
      * @param config configuration of this server
      */
     private static Routing createRouting(Config config) {

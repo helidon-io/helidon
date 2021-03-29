@@ -107,5 +107,6 @@ for native image.
 |✅ |{nbsp} |Metrics |{nbsp}
 |✅ |gRPC Client |gRPC Client |Since GraalVM 21.0.0
 |✅ |{nbsp} |Metrics |{nbsp}
+|✅ |Scheduling |Scheduling |{nbsp}
 |===
 

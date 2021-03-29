@@ -146,6 +146,13 @@ final class FeatureCatalog {
               "Jersey",
               "WebServer integration with Jersey",
               "WebServer", "Jersey");
+        add("io.helidon.scheduling",
+                FeatureDescriptor.builder()
+                        .flavor(HelidonFlavor.SE)
+                        .name("Scheduling")
+                        .description("Scheduling of periodical tasks")
+                        .path("Scheduling")
+                        .nativeSupported(true));
         add("io.helidon.webserver.tyrus",
             FeatureDescriptor.builder()
                     .flavor(HelidonFlavor.SE)
@@ -323,6 +330,16 @@ final class FeatureCatalog {
                     .description("Micronaut Data integration")
                     .path("CDI", "Micronaut", "Data")
                     .flavor(HelidonFlavor.MP)
+                    .experimental(true)
+        );
+
+        add("io.helidon.microprofile.scheduling",
+            FeatureDescriptor.builder()
+                    .name("Scheduling")
+                    .description("Task scheduling")
+                    .path("Scheduling")
+                    .flavor(HelidonFlavor.MP)
+                    .nativeSupported(true)
                     .experimental(true)
         );
 
