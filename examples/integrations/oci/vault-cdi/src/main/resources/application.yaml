@@ -1,0 +1,15 @@
+# The values are read from
+# ~/helidon/conf/examples.yaml
+# or you can just update them here
+
+server:
+  port: 8080
+
+oci:
+  vault:
+    # Vault OCID (the vault you want to use for this example
+    vault-ocid: "${oci.properties.vault-ocid}"
+    compartment-ocid: "${oci.properties.compartment-ocid}"
+    encryption-key-ocid: "${oci.properties.vault-key-ocid}"
+    signature-key-ocid: "${oci.properties.vault-rsa-key-ocid}"
+    cryptographic-endpoint: "${oci.properties.cryptographic-endpoint}"

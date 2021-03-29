@@ -20,24 +20,20 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.integrations</groupId>
-        <artifactId>helidon-integrations-project</artifactId>
+        <groupId>io.helidon.integrations.oci</groupId>
+        <artifactId>helidon-integrations-oci-project</artifactId>
         <version>2.3.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>io.helidon.integrations.oci</groupId>
-    <artifactId>helidon-integrations-oci-project</artifactId>
-    <name>Helidon Integrations OCI Project</name>
+    <artifactId>helidon-integrations-oci-vault-blocking</artifactId>
+    <name>Helidon Integrations OCI Vault Blocking</name>
 
-    <description>OCI integrations</description>
-    <packaging>pom</packaging>
+    <description>Blocking/Synchronous OCI Vault Support</description>
 
-    <modules>
-        <module>connect</module>
-        <module>telemetry</module>
-        <module>objectstorage</module>
-        <module>vault</module>
-        <module>vault-blocking</module>
-        <module>cdi</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.integrations.oci</groupId>
+            <artifactId>helidon-integrations-oci-vault</artifactId>
+        </dependency>
+    </dependencies>
 </project>

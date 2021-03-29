@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-/**
- * Integration with OCI Vault REST API including the KMS encryption and digest support.
- */
-module io.helidon.integrations.oci.vault {
-    requires io.helidon.security;
-    requires io.helidon.common.reactive;
+module io.helidon.integrations.oci.cdi {
+    requires java.logging;
+
+    requires jakarta.enterprise.cdi.api;
+
+    requires io.helidon.config;
     requires io.helidon.integrations.oci.connect;
-    requires java.json;
-    requires io.helidon.common.http;
-    requires io.helidon.integrations.common.rest;
+    requires io.helidon.common.serviceloader;
+    requires io.helidon.microprofile.cdi;
 
-    exports io.helidon.integrations.oci.vault;
+    exports io.helidon.integrations.oci.cdi;
 
-    provides io.helidon.security.spi.SecurityProviderService
-            with io.helidon.integrations.oci.vault.OciVaultSecurityService;
+    uses io.helidon.integrations.oci.connect.spi.InjectionProvider;
 
-    provides io.helidon.integrations.oci.connect.spi.InjectionProvider
-            with io.helidon.integrations.oci.vault.OciVaultInjectionProvider;
+    provides javax.enterprise.inject.spi.Extension
+            with io.helidon.integrations.oci.cdi.OciCdiExtension;
 }

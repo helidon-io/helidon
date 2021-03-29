@@ -34,4 +34,5 @@ module io.helidon.integrations.oci.connect {
     requires io.helidon.integrations.common.rest;
 
     exports io.helidon.integrations.oci.connect;
+    exports io.helidon.integrations.oci.connect.spi;
 }
