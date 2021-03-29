@@ -21,7 +21,7 @@ java -Dlra.logging.enabled=false \
 -Dmp.messaging.connector.helidon-kafka.value.deserializer=org.apache.kafka.common.serialization.StringDeserializer \
 -Dmp.messaging.connector.helidon-kafka.key.serializer=org.apache.kafka.common.serialization.StringSerializer \
 -Dmp.messaging.connector.helidon-kafka.value.serializer=org.apache.kafka.common.serialization.StringSerializer \
--jar /Users/pparkins/go/src/github.com/paulparkinson/helidon/lra/coordinator/target/lra-coordinator-helidon-0.0.1-SNAPSHOT.jar
+-jar ../../lra/coordinator/target/lra-coordinator-helidon-2.3.0-SNAPSHOT.jar
 
 #In order to enabled logging, simply remove -Dlra.logging.enabled=false and add the datasource information. For example...
 #-Doracle.ucp.jdbc.PoolDataSource.coordinatordb.URL=myurl \

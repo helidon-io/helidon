@@ -22,7 +22,7 @@ java -Dlra.logging.enabled=false \
 -Doracle.ucp.jdbc.PoolDataSource.lrapdb.connectionFactoryClassName=oracle.jdbc.pool.OracleDataSource \
 -Dmp.messaging.connector.helidon-aq.acknowledge-mode=CLIENT_ACKNOWLEDGE \
 -Dmp.messaging.connector.helidon-aq.data-source=lrapdb \
--jar /Users/pparkins/go/src/github.com/paulparkinson/helidon/lra/coordinator/target/lra-coordinator-helidon-0.0.1-SNAPSHOT.jar
+-jar ../../lra/coordinator/target/lra-coordinator-helidon-2.3.0-SNAPSHOT.jar
 
 #In order to enabled logging, simply remove -Dlra.logging.enabled=false and add the datasource information. For example...
 #-Doracle.ucp.jdbc.PoolDataSource.coordinatordb.URL=myurl \
