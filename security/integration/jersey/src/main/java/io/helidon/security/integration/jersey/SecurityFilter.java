@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -276,9 +276,10 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     }
 
     private SecurityDefinition securityForClass(Class<?> theClass, SecurityDefinition parent) {
-        Authenticated atn = theClass.getAnnotation(Authenticated.class);
-        Authorized atz = theClass.getAnnotation(Authorized.class);
-        Audited audited = theClass.getAnnotation(Audited.class);
+        Class<?> realClass = getRealClass(theClass);
+        Authenticated atn = realClass.getAnnotation(Authenticated.class);
+        Authorized atz = realClass.getAnnotation(Authorized.class);
+        Audited audited = realClass.getAnnotation(Audited.class);
 
         // as sometimes we may want to prevent calls to authorization provider unless
         // explicitly invoked by developer
@@ -294,9 +295,9 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         }
 
         Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap = new HashMap<>();
-        addCustomAnnotations(customAnnotsMap, theClass);
+        addCustomAnnotations(customAnnotsMap, realClass);
 
-        SecurityLevel securityLevel = SecurityLevel.create(theClass.getName())
+        SecurityLevel securityLevel = SecurityLevel.create(realClass.getName())
                 .withClassAnnotations(customAnnotsMap)
                 .build();
         definition.getSecurityLevels().add(securityLevel);
@@ -305,15 +306,29 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             AnnotationAnalyzer.AnalyzerResponse analyzerResponse;
 
             if (null == parent) {
-                analyzerResponse = analyzer.analyze(theClass);
+                analyzerResponse = analyzer.analyze(realClass);
             } else {
-                analyzerResponse = analyzer.analyze(theClass, parent.analyzerResponse(analyzer));
+                analyzerResponse = analyzer.analyze(realClass, parent.analyzerResponse(analyzer));
             }
 
             definition.analyzerResponse(analyzer, analyzerResponse);
         }
 
         return definition;
+    }
+
+    /**
+     * Returns the real class of this object, skipping proxies.
+     *
+     * @param object The object.
+     * @return Its class.
+     */
+    private Class<?> getRealClass(Class<?> object) {
+        Class<?> result = object;
+        while (result.isSynthetic()) {
+            result = result.getSuperclass();
+        }
+        return result;
     }
 
     private SecurityDefinition getMethodSecurity(InvokedResource invokedResource,
@@ -326,8 +341,9 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         // and abstract classes implemented by the definition method.
 
         // Jersey model does not have a 'definition class', so we have to find it from a handler class
-        Class<?> definitionClass = invokedResource.definitionClass()
+        Class<?> obtainedClass = invokedResource.definitionClass()
                 .orElseThrow(() -> new SecurityException("Got definition method, cannot get definition class"));
+        Class<?> definitionClass = getRealClass(obtainedClass);
 
         if (definitionClass.getAnnotation(Path.class) == null) {
             // this is a sub-resource
