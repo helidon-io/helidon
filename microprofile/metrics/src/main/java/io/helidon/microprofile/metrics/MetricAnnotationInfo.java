@@ -119,7 +119,8 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                     Counted::reusable,
                     Counted::unit,
                     Counted::tags,
-                    MetricRegistry::counter),
+                    MetricRegistry::counter,
+                    MetricType.COUNTER),
             Metered.class, new MetricAnnotationInfo<>(
                     Metered.class,
                     Metered::name,
@@ -129,7 +130,8 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                     Metered::reusable,
                     Metered::unit,
                     Metered::tags,
-                    MetricRegistry::meter),
+                    MetricRegistry::meter,
+                    MetricType.METERED),
             Timed.class, new MetricAnnotationInfo<>(
                     Timed.class,
                     Timed::name,
@@ -139,7 +141,8 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                     Timed::reusable,
                     Timed::unit,
                     Timed::tags,
-                    MetricRegistry::timer),
+                    MetricRegistry::timer,
+                    MetricType.TIMER),
             ConcurrentGauge.class, new MetricAnnotationInfo<>(
                     ConcurrentGauge.class,
                     ConcurrentGauge::name,
@@ -149,7 +152,8 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                     ConcurrentGauge::reusable,
                     ConcurrentGauge::unit,
                     ConcurrentGauge::tags,
-                    MetricRegistry::concurrentGauge),
+                    MetricRegistry::concurrentGauge,
+                    MetricType.CONCURRENT_GAUGE),
             SimplyTimed.class, new MetricAnnotationInfo<>(
                     SimplyTimed.class,
                     SimplyTimed::name,
@@ -159,7 +163,8 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                     SimplyTimed::reusable,
                     SimplyTimed::unit,
                     SimplyTimed::tags,
-                    MetricRegistry::simpleTimer)
+                    MetricRegistry::simpleTimer,
+                    MetricType.SIMPLE_TIMER)
     );
 
     private final Class<A> annotationClass;
@@ -171,6 +176,7 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
     private final Function<A, String> annotationUnitsFunction;
     private final Function<A, String[]> annotationTagsFunction;
     private final Registration<T> registerFunction;
+    private final MetricType metricType;
 
 
     MetricAnnotationInfo(
@@ -182,7 +188,8 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
             Function<A, Boolean> annotationReusableFunction,
             Function<A, String> annotationUnitsFunction,
             Function<A, String[]> annotationTagsFunction,
-            Registration<T> registerFunction) {
+            Registration<T> registerFunction,
+            MetricType metricType) {
         this.annotationClass = annotationClass;
         this.annotationNameFunction = annotationNameFunction;
         this.annotationAbsoluteFunction = annotationAbsoluteFunction;
@@ -192,6 +199,7 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
         this.annotationUnitsFunction = annotationUnitsFunction;
         this.annotationTagsFunction = annotationTagsFunction;
         this.registerFunction = registerFunction;
+        this.metricType = metricType;
     }
 
     static Tag[] tags(String[] tagStrings) {
@@ -247,33 +255,9 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
         return tags(annotationTagsFunction.apply(annotationClass.cast(a)));
     }
 
-//    boolean absolute(AnnotatedElement ae) {
-//        return absolute(ae.getAnnotation(annotationClass));
-//    }
-//
-//    String displayName(AnnotatedElement ae) {
-//        return annotationDisplayNameFunction.apply(ae.getAnnotation(annotationClass));
-//    }
-
-//    String description(AnnotatedElement ae) {
-//        return annotationDescriptorFunction.apply(ae.getAnnotation(annotationClass));
-//    }
-
-//    boolean reusable(AnnotatedElement ae) {
-//        return annotationReusableFunction.apply(ae.getAnnotation(annotationClass));
-//    }
-//
-//    String unit(AnnotatedElement ae) {
-//        return annotationUnitsFunction.apply(ae.getAnnotation(annotationClass));
-//    }
-//
-//    Tag[] tags(AnnotatedElement ae) {
-//        return tags(annotationTagsFunction.apply(ae.getAnnotation(annotationClass)));
-//    }
-
-//    T register(MetricRegistry registry, Metadata metadata, AnnotatedElement ae) {
-//        return registerFunction.register(registry, metadata, tags(ae));
-//    }
+    MetricType metricType() {
+        return metricType;
+    }
 
     @FunctionalInterface
     interface Registration<T> {

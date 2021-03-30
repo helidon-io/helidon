@@ -34,13 +34,17 @@ public class TestMetricTypeCoverage {
 
         Set<MetricType> found = new HashSet<>();
         Set<MetricType> typesToCheck = new HashSet<>(Arrays.asList(MetricType.values()));
-        typesToCheck.remove(MetricType.INVALID);
-        typesToCheck.remove(MetricType.GAUGE);
+
+
+        // We do not use the general anno processing for gauges. There is no annotation for histogram.
+         typesToCheck.removeAll(Set.of(MetricType.INVALID, MetricType.GAUGE, MetricType.HISTOGRAM));
 
 
         for (MetricType type : typesToCheck) {
-            if (!MetricAnnotationInfo.ANNOTATION_TYPE_TO_INFO.containsKey(type)) {
-                found.add(type);
+            for (MetricAnnotationInfo<?, ?> info : MetricAnnotationInfo.ANNOTATION_TYPE_TO_INFO.values()) {
+                if (info.metricType().equals(type)) {
+                    found.add(type);
+                }
             }
         }
         typesToCheck.removeAll(found);
