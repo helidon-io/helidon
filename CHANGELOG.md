@@ -7,6 +7,26 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [2.2.2]
+
+2.2.2 is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### Compatibility
+
+2.2.2 is API compatible with 2.2.0.
+
+### CHANGES    
+
+- WebClient: keep-alive minor improvements [2882](https://github.com/oracle/helidon/pull/2882)
+- WebClient: Keep alive default value changed to true [2775](https://github.com/oracle/helidon/pull/2775) 
+- Security: Obtain the actual class when instance is injected by the CDI [2897](https://github.com/oracle/helidon/pull/2897)
+- MicroProfile Server: Remove standard output. [2780](https://github.com/oracle/helidon/pull/2780)
+- Metrics: Avoid NaN values causing problems in metrics output [2812](https://github.com/oracle/helidon/pull/2812)
+- Logging: Slf4j MDC context propagation with null MDC map fixed [2861](https://github.com/oracle/helidon/pull/2861)
+- JAX-RS: Use one of Jersey's implementations of PropertiesDelegate [2756](https://github.com/oracle/helidon/pull/2756)
+- Fault Tolerance: New RequestScopeHelper class to track request scopes across threads [2856](https://github.com/oracle/helidon/pull/2856)
+- Dependencies: Upgrade Netty to 4.1.59.Final [2793](https://github.com/oracle/helidon/pull/2793)
+
 ## [2.2.1]
 
 2.2.1 is a bugfix release of Helidon. It contains bug fixes, performance fixes and dependency upgrades.
@@ -1233,6 +1253,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.2.2]: https://github.com/oracle/helidon/compare/2.2.1...2.2.2
 [2.2.1]: https://github.com/oracle/helidon/compare/2.2.0...2.2.1
 [2.2.0]: https://github.com/oracle/helidon/compare/2.1.0...2.2.0
 [2.1.0]: https://github.com/oracle/helidon/compare/2.0.2...2.1.0
