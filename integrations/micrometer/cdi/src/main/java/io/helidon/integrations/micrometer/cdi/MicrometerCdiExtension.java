@@ -17,18 +17,18 @@
 package io.helidon.integrations.micrometer.cdi;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Member;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
+import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.ProcessProducerField;
 import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.enterprise.inject.spi.WithAnnotations;
@@ -37,7 +37,6 @@ import javax.enterprise.util.Nonbinding;
 import javax.interceptor.InterceptorBinding;
 
 import io.helidon.integrations.micrometer.MicrometerSupport;
-import io.helidon.servicecommon.restcdi.AnnotationLookupResult;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
 
 import io.micrometer.core.annotation.Counted;
@@ -75,36 +74,50 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
     }
 
     @Override
-    protected <E extends Member & AnnotatedElement>
-    void register(E element, Class<?> clazz, AnnotationLookupResult<? extends Annotation> lookupResult) {
-        Annotation annotation = lookupResult.annotation();
+    protected void processManagedBean(ProcessManagedBean<?> pmb) {
 
-        Meter newMeter = null;
-        boolean isOnlyOnException = false;
+        Class<?> clazz = pmb.getAnnotatedBeanClass().getJavaClass();
 
-        if (annotation instanceof Counted) {
-            Counter counter = MeterProducer.produceCounter(meterRegistry, (Counted) annotation);
-            LOGGER.log(Level.FINE, () -> "Registered counter " + counter.getId().toString());
-            newMeter = counter;
-            isOnlyOnException = ((Counted) annotation).recordFailuresOnly();
-        } else if (annotation instanceof Timed) {
-            Timed timed = (Timed) annotation;
-            if (timed.longTask()) {
-                LongTaskTimer longTaskTimer = MeterProducer.produceLongTaskTimer(meterRegistry, timed);
-                LOGGER.log(Level.FINE, () -> "Registered long task timer " + longTaskTimer.getId()
-                        .toString());
-                newMeter = longTaskTimer;
-            } else {
-                Timer timer = MeterProducer.produceTimer(meterRegistry, timed);
-                LOGGER.log(Level.FINE, () -> "Registered timer " + timer.getId()
-                        .toString());
-                newMeter = timer;
-            }
-        }
-        if (element instanceof Executable) {
-            workItemsManager.put((Executable) element, lookupResult.annotation()
-                    .annotationType(), MeterWorkItem.create(newMeter, isOnlyOnException));
-        }
+        Stream.of(pmb.getAnnotatedBeanClass().getMethods(),
+                  pmb.getAnnotatedBeanClass().getConstructors())
+                .flatMap(Set::stream)
+                // For executables, register the object only on the declaring
+                // class, not subclasses in alignment with the MP Metrics 2.0 TCK
+                // VisibilityTimedMethodBeanTest.
+                .filter(annotatedCallable -> clazz.equals(annotatedCallable.getDeclaringType().getJavaClass()))
+                .forEach(annotatedCallable ->
+                        Stream.of(Counted.class, Timed.class)
+                                .flatMap(annotationType -> annotatedCallable.getAnnotations(annotationType).stream())
+                                    .forEach(annotation -> {
+
+                                        Meter newMeter;
+                                        boolean isOnlyOnException = false;
+
+                                        if (annotation instanceof Counted) {
+                                            Counter counter = MeterProducer.produceCounter(meterRegistry, (Counted) annotation);
+                                            LOGGER.log(Level.FINE, () -> "Registered counter " + counter.getId()
+                                                    .toString());
+                                            newMeter = counter;
+                                            isOnlyOnException = ((Counted) annotation).recordFailuresOnly();
+                                        } else {
+                                            Timed timed = (Timed) annotation;
+                                            if (timed.longTask()) {
+                                                LongTaskTimer longTaskTimer =
+                                                        MeterProducer.produceLongTaskTimer(meterRegistry, timed);
+                                                LOGGER.log(Level.FINE, () -> "Registered long task timer " + longTaskTimer.getId()
+                                                        .toString());
+                                                newMeter = longTaskTimer;
+                                            } else {
+                                                Timer timer = MeterProducer.produceTimer(meterRegistry, timed);
+                                                LOGGER.log(Level.FINE, () -> "Registered timer " + timer.getId()
+                                                        .toString());
+                                                newMeter = timer;
+                                            }
+                                        }
+                                        workItemsManager.put(Executable.class.cast(annotatedCallable.getJavaMember()),
+                                                annotation.annotationType(),
+                                                MeterWorkItem.create(newMeter, isOnlyOnException));
+                                    }));
     }
 
     /**

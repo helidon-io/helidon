@@ -17,10 +17,7 @@
 package io.helidon.servicecommon.restcdi;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,9 +34,7 @@ import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.AnnotatedConstructor;
 import javax.enterprise.inject.spi.AnnotatedMember;
-import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
@@ -58,7 +53,6 @@ import io.helidon.webserver.Routing;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
-import static io.helidon.servicecommon.restcdi.AnnotationLookupResult.lookupAnnotation;
 import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
@@ -81,12 +75,11 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  *         a {@code ProcessProducerField} observer.</li>
  *         <li>Invoke {@link #recordProducerMethod(ProcessProducerMethod)} for component-specific producer methods,
  *         often from a {@code ProcessProducerMethod} observer.</li>
- *         <li>Implement {@link #register(Member, Class, AnnotationLookupResult)} which this base class invokes to notify the
+ *         <li>Implement {@link #processManagedBean(ProcessManagedBean)} which this base class invokes to notify the
  *         implementation class of each annotation site on a type that was reported by the extension but not vetoed by some
  *         other extension. Each extension can interpret "register" however it needs to. Metrics, for example, creates
  *         metrics and registers them with the appropriate metrics registry.</li>
  *     </ul>
- * </p>
  *
  * @param <T> concrete type of {@code HelidonRestServiceSupport} used
  * @param <B> Builder for the concrete type of {@code }HelidonRestServiceSupport}
@@ -99,7 +92,7 @@ public abstract class HelidonRestCdiExtension<
 
     private final Set<Class<?>> annotatedClasses = new HashSet<>();
     private final Set<Class<?>> annotatedClassesProcessed = new HashSet<>();
-    private final Set<Class<? extends Annotation>> annotations;
+    private final Set<Class<? extends Annotation>> annotationTypes;
 
     private final Logger logger;
     private final Class<?> ownProducer;
@@ -112,19 +105,19 @@ public abstract class HelidonRestCdiExtension<
      * Common initialization for concrete implementations.
      *
      * @param logger                Logger instance to use for logging messages
-     * @param annotations           set of annotations this extension handles
+     * @param annotationTypes       set of annotation types this extension handles
      * @param ownProducer           type of producer class used in creating beans needed by the extension
      * @param serviceSupportFactory function from config to the corresponding SE-style service support object
      * @param configPrefix          prefix for retrieving config related to this extension
      */
     protected HelidonRestCdiExtension(
             Logger logger,
-            Set<Class<? extends Annotation>> annotations,
+            Set<Class<? extends Annotation>> annotationTypes,
             Class<?> ownProducer,
             Function<Config, T> serviceSupportFactory,
             String configPrefix) {
         this.logger = logger;
-        this.annotations = annotations;
+        this.annotationTypes = annotationTypes;
         this.ownProducer = ownProducer; // class containing producers provided by this module
         this.serviceSupportFactory = serviceSupportFactory;
         this.configPrefix = configPrefix;
@@ -182,59 +175,20 @@ public abstract class HelidonRestCdiExtension<
 
         logger.log(Level.FINE, () -> "Processing annotations for " + clazz.getName());
 
-        // Process methods keeping non-private declared on this class
-        for (AnnotatedMethod<?> annotatedMethod : type.getMethods()) {
-            if (Modifier.isPrivate(annotatedMethod.getJavaMember()
-                    .getModifiers())) {
-                continue;
-            }
-            annotations.forEach(annotation -> {
-                for (AnnotationLookupResult<? extends Annotation> lookupResult : AnnotationLookupResult.lookupAnnotations(
-                        type, annotatedMethod, annotation)) {
-                    // For methods, register the object only on the declaring
-                    // class, not subclasses per the MP Metrics 2.0 TCK
-                    // VisibilityTimedMethodBeanTest.
-                    if (lookupResult.siteType() != AnnotationSiteType.METHOD
-                            || clazz.equals(annotatedMethod.getJavaMember()
-                            .getDeclaringClass())) {
-                        register(annotatedMethod.getJavaMember(), clazz, lookupResult);
-                    }
-                }
-            });
-        }
-
-        // Process constructors
-        for (AnnotatedConstructor<?> annotatedConstructor : type.getConstructors()) {
-            Constructor<?> c = annotatedConstructor.getJavaMember();
-            if (Modifier.isPrivate(c.getModifiers())) {
-                continue;
-            }
-            annotations.forEach(annotation -> {
-                AnnotationLookupResult<? extends Annotation> lookupResult
-                        = lookupAnnotation(c, annotation, clazz);
-                if (lookupResult != null) {
-                    register(c, clazz, lookupResult);
-                }
-            });
-        }
-    }
+        processManagedBean(pmb);
+   }
 
     /**
-     * Registers an object based on an annotation site.
+     * Registers a managed bean that survived vetoing.
      * <p>
      * The meaning of "register" varies among the concrete implementations. At this point, this base implementation has managed
      * the annotation processing in a general way (e.g., only non-vetoed beans survive) and now delegates to the concrete
-     * implementations to actually respond appropriately to the annotation site. The implementation can return a
-     * value for later use in the concrete class.
+     * implementations to actually respond appropriately to the bean and whichever of its members are annotated.
      * </p>
      *
-     * @param element      the Element hosting the annotation
-     * @param clazz        the class on which the hosting Element appears
-     * @param lookupResult result of looking up an annotation on an element, its class, and its ancestor classes
-     * @param <E>          type of method or field or constructor
+     * @param processManagedBean      the managed bean, with at least one annotation of interest to the extension
      */
-    protected abstract <E extends Member & AnnotatedElement>
-    void register(E element, Class<?> clazz, AnnotationLookupResult<? extends Annotation> lookupResult);
+    protected abstract void processManagedBean(ProcessManagedBean<?> processManagedBean);
 
     /**
      * Checks to make sure the annotated type is not abstract and is not an interceptor.

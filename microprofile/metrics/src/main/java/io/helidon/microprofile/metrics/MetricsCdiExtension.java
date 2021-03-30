@@ -37,6 +37,7 @@ import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
@@ -75,8 +76,8 @@ import io.helidon.config.ConfigValue;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.servicecommon.restcdi.AnnotationLookupResult;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
 import io.helidon.webserver.Routing;
 
@@ -169,14 +170,14 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
      */
     @Deprecated
     public static <E extends Member & AnnotatedElement>
-    void registerMetric(E element, Class<?> clazz, AnnotationLookupResult<? extends Annotation> lookupResult) {
+    void registerMetric(E element, Class<?> clazz, LookupResult<? extends Annotation> lookupResult) {
         registerMetricInternal(element, clazz, lookupResult);
     }
 
     static <E extends Member & AnnotatedElement> MetricInfo<?> registerMetricInternal(E element, Class<?> clazz,
-            AnnotationLookupResult<? extends Annotation> lookupResult) {
+            LookupResult<? extends Annotation> lookupResult) {
         MetricRegistry registry = getMetricRegistry();
-        Annotation annotation = lookupResult.annotation();
+        Annotation annotation = lookupResult.getAnnotation();
 
         String savedMetricName = null;
         org.eclipse.microprofile.metrics.Metric metric = null;
@@ -184,7 +185,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
 
         if (annotation instanceof Counted) {
             Counted counted = (Counted) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.siteType(), counted.name().trim(),
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), counted.name().trim(),
                     counted.absolute());
             String displayName = counted.displayName().trim();
             Metadata meta = Metadata.builder()
@@ -202,7 +203,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
             LOGGER.log(Level.FINE, () -> "Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
             Metered metered = (Metered) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.siteType(), metered.name().trim(),
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), metered.name().trim(),
                     metered.absolute());
             String displayName = metered.displayName().trim();
             Metadata meta = Metadata.builder()
@@ -220,7 +221,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
             LOGGER.log(Level.FINE, () -> "Registered meter " + metricName);
         } else if (annotation instanceof Timed) {
             Timed timed = (Timed) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.siteType(), timed.name().trim(),
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), timed.name().trim(),
                     timed.absolute());
             String displayName = timed.displayName().trim();
             Metadata meta = Metadata.builder()
@@ -239,7 +240,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
             LOGGER.log(Level.FINE, () -> "Registered timer " + metricName);
         } else if (annotation instanceof ConcurrentGauge) {
             ConcurrentGauge concurrentGauge = (ConcurrentGauge) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.siteType(), concurrentGauge.name().trim(),
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), concurrentGauge.name().trim(),
                     concurrentGauge.absolute());
             String displayName = concurrentGauge.displayName().trim();
             Metadata meta = Metadata.builder()
@@ -257,7 +258,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
             LOGGER.log(Level.FINE, () -> "Registered concurrent gauge " + metricName);
         } else if (annotation instanceof SimplyTimed) {
             SimplyTimed simplyTimed = (SimplyTimed) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.siteType(), simplyTimed.name().trim(),
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), simplyTimed.name().trim(),
                     simplyTimed.absolute());
             String displayName = simplyTimed.displayName().trim();
             Metadata meta = Metadata.builder()
@@ -282,13 +283,25 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
     }
 
     @Override
-    protected <E extends Member & AnnotatedElement> void register(E element, Class<?> clazz,
-            AnnotationLookupResult<? extends Annotation> lookupResult) {
-        MetricInfo<?> metricInfo = registerMetricInternal(element, clazz, lookupResult);
-        if (element instanceof Executable) {
-            workItemsManager.put((Executable) element, lookupResult.annotation().annotationType(),
-                    MetricWorkItem.create(metricInfo.metricID, metricInfo.metric));
-        }
+    protected void processManagedBean(ProcessManagedBean<?> pmb) {
+
+        AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
+        Class<?> clazz = type.getJavaClass();
+
+        Stream.of(type.getMethods(),
+                  type.getConstructors())
+                .flatMap(Set::stream)
+                .filter(annotatedCallable -> !Modifier.isPrivate(annotatedCallable.getJavaMember().getModifiers()))
+                .filter(annotatedCallable -> type.equals(annotatedCallable.getDeclaringType()))
+                .forEach(annotatedCallable ->
+                    METRIC_ANNOTATIONS.forEach(annotation ->
+                            MetricUtil.lookupAnnotations(type, annotatedCallable, annotation).forEach(lookupResult -> {
+                                Executable executable = Executable.class.cast(annotatedCallable.getJavaMember());
+                                MetricInfo<?> metricInfo = registerMetricInternal(executable, clazz, lookupResult);
+                                workItemsManager.put(executable, lookupResult.getAnnotation().annotationType(),
+                                        MetricWorkItem.create(metricInfo.metricID, metricInfo.metric));
+                            })));
+
     }
 
     private static Tag[] tags(String[] tagStrings) {
