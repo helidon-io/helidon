@@ -31,7 +31,7 @@ public class CoordinatorURLResourceProvider implements ResourceProvider {
     @Override
     public Object lookup(ArquillianResource arquillianResource, Annotation... annotations) {
         try {
-            return URI.create("http://localhost:8080/").toURL();
+            return URI.create("http://localhost:8070/").toURL();
         } catch (MalformedURLException e) {
             return null;
         }
