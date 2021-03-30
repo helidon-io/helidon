@@ -223,10 +223,6 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
         return ae.getAnnotation(annotationClass);
     }
 
-//    String name(AnnotatedElement ae) {
-//        return name(ae.getAnnotation(annotationClass));
-//    }
-
     String name(Annotation a) {
         return annotationNameFunction.apply(annotationClass.cast(a));
     }
