@@ -76,8 +76,8 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  *         <li>Invoke {@link #recordProducerMethod(ProcessProducerMethod)} for component-specific producer methods,
  *         often from a {@code ProcessProducerMethod} observer.</li>
  *         <li>Implement {@link #processManagedBean(ProcessManagedBean)} which this base class invokes to notify the
- *         implementation class of each annotation site on a type that was reported by the extension but not vetoed by some
- *         other extension. Each extension can interpret "register" however it needs to. Metrics, for example, creates
+ *         implementation class of each managed bean type that was reported by the concrete extension but not vetoed by some
+ *         other extension. Each extension can interpret "process" however it needs to. Metrics, for example, creates
  *         metrics and registers them with the appropriate metrics registry.</li>
  *     </ul>
  *
@@ -157,7 +157,7 @@ public abstract class HelidonRestCdiExtension<
      *
      * @param pmb event describing the managed bean being processed
      */
-    protected void registerObjects(@Observes ProcessManagedBean<?> pmb) {
+    protected void observeManagedBeans(@Observes ProcessManagedBean<?> pmb) {
         AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
         Class<?> clazz = type.getJavaClass();
         if (!annotatedClasses.contains(clazz)) {
@@ -179,9 +179,9 @@ public abstract class HelidonRestCdiExtension<
    }
 
     /**
-     * Registers a managed bean that survived vetoing.
+     * Deals with a managed bean that survived vetoing, provided by concrete extension implementations.
      * <p>
-     * The meaning of "register" varies among the concrete implementations. At this point, this base implementation has managed
+     * The meaning of "process" varies among the concrete implementations. At this point, this base implementation has managed
      * the annotation processing in a general way (e.g., only non-vetoed beans survive) and now delegates to the concrete
      * implementations to actually respond appropriately to the bean and whichever of its members are annotated.
      * </p>
@@ -215,7 +215,7 @@ public abstract class HelidonRestCdiExtension<
     }
 
     /**
-     * Make sure the annotated type is neither abstract nor an interceptor and stores the Java class.
+     * Records the Java class underlying an annotated type that is neither abstract nor an interceptor.
      *
      * @param pat {@code ProcessAnnotatedType} event
      * @return true if the annotated type should be kept for potential processing later; false otherwise
@@ -228,7 +228,6 @@ public abstract class HelidonRestCdiExtension<
         }
         return result;
     }
-
 
     /**
      * Records a producer field defined by the application. Ignores producers with non-default qualifiers and library producers.
