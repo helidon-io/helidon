@@ -377,6 +377,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
         // register the metric registry and factory to be available to all
         rules.any(new MetricsContextHandler(app, rf));
 
+        configureVendorMetrics(null, rules);
+
         // routing to root of metrics
         rules.get(context(), (req, res) -> getMultiple(req, res, base, app, vendor))
                 .options(context(), (req, res) -> optionsMultiple(req, res, base, app, vendor));

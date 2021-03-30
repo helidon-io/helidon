@@ -554,7 +554,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
         Routing.Builder defaultRouting = super.registerService(adv, bm, server);
         MetricsSupport metricsSupport = serviceSupport();
 
-        metricsSupport.configureVendorMetrics(null, defaultRouting);
         vendorMetricsAdded.add("@default");
 
         // now we may have additional sockets we want to add vendor metrics to
