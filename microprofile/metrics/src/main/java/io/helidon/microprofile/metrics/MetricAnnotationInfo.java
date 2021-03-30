@@ -62,25 +62,24 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                 Class<?> clazz,
                 MatchingType matchingType) {
             MetricAnnotationInfo<?, ?> info = ANNOTATION_TYPE_TO_INFO.get(annotation.annotationType());
-            if (info != null && info.annotationClass().isInstance(annotation)) {
-                MetricAnnotationInfo<A, T> typedInfo = (MetricAnnotationInfo<A, T>) info;
-
-                String metricName = MetricUtil.getMetricName(annotatedElement, clazz, matchingType, typedInfo.name(annotation),
-                        typedInfo.absolute(annotation));
-                String candidateDisplayName = typedInfo.displayName(annotation);
-                Metadata metadata = Metadata.builder()
-                        .withName(metricName)
-                        .withDisplayName(candidateDisplayName.isEmpty() ? metricName : candidateDisplayName)
-                        .withDescription(typedInfo.description(annotation)
-                                .trim())
-                        .withType(ANNOTATION_TYPE_TO_METRIC_TYPE.get(annotation.annotationType()))
-                        .withUnit(typedInfo.unit(annotation)
-                                .trim())
-                        .reusable(typedInfo.reusable(annotation))
-                        .build();
-                return new RegistrationPrep<>(metricName, metadata, typedInfo.tags(annotation), typedInfo.registerFunction);
+            if (info == null || !info.annotationClass().isInstance(annotation)) {
+                return null;
             }
-            return null;
+
+            String metricName = MetricUtil.getMetricName(annotatedElement, clazz, matchingType, info.name(annotation),
+                    info.absolute(annotation));
+            String candidateDisplayName = info.displayName(annotation);
+            Metadata metadata = Metadata.builder()
+                    .withName(metricName)
+                    .withDisplayName(candidateDisplayName.isEmpty() ? metricName : candidateDisplayName)
+                    .withDescription(info.description(annotation)
+                            .trim())
+                    .withType(ANNOTATION_TYPE_TO_METRIC_TYPE.get(annotation.annotationType()))
+                    .withUnit(info.unit(annotation)
+                            .trim())
+                    .reusable(info.reusable(annotation))
+                    .build();
+            return new RegistrationPrep<>(metricName, metadata, info.tags(annotation), info.registerFunction);
         }
 
         private RegistrationPrep(String metricName, Metadata metadata, Tag[] tags, Registration<T> registration) {
@@ -220,32 +219,32 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
 //        return name(ae.getAnnotation(annotationClass));
 //    }
 
-    String name(A a) {
-        return annotationNameFunction.apply(a);
+    String name(Annotation a) {
+        return annotationNameFunction.apply(annotationClass.cast(a));
     }
 
-    boolean absolute(A a) {
-        return annotationAbsoluteFunction.apply(a);
+    boolean absolute(Annotation a) {
+        return annotationAbsoluteFunction.apply(annotationClass.cast(a));
     }
 
-    String displayName(A a) {
-        return annotationDisplayNameFunction.apply(a);
+    String displayName(Annotation a) {
+        return annotationDisplayNameFunction.apply(annotationClass.cast(a));
     }
 
-    String description(A a) {
-        return annotationDescriptorFunction.apply(a);
+    String description(Annotation a) {
+        return annotationDescriptorFunction.apply(annotationClass.cast(a));
     }
 
-    boolean reusable(A a) {
-        return annotationReusableFunction.apply(a);
+    boolean reusable(Annotation a) {
+        return annotationReusableFunction.apply(annotationClass.cast(a));
     }
 
-    String unit(A a) {
-        return annotationUnitsFunction.apply(a);
+    String unit(Annotation a) {
+        return annotationUnitsFunction.apply(annotationClass.cast(a));
     }
 
-    Tag[] tags(A a) {
-        return tags(annotationTagsFunction.apply(a));
+    Tag[] tags(Annotation a) {
+        return tags(annotationTagsFunction.apply(annotationClass.cast(a)));
     }
 
 //    boolean absolute(AnnotatedElement ae) {
