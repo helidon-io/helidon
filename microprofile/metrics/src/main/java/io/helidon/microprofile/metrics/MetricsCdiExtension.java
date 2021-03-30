@@ -76,6 +76,7 @@ import io.helidon.config.ConfigValue;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.microprofile.metrics.MetricAnnotationInfo.RegistrationPrep;
 import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
@@ -179,107 +180,9 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
         MetricRegistry registry = getMetricRegistry();
         Annotation annotation = lookupResult.getAnnotation();
 
-        String savedMetricName = null;
-        org.eclipse.microprofile.metrics.Metric metric = null;
-        Tag[] tags = null;
-
-        if (annotation instanceof Counted) {
-            Counted counted = (Counted) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), counted.name().trim(),
-                    counted.absolute());
-            String displayName = counted.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(counted.description().trim())
-                    .withType(MetricType.COUNTER)
-                    .withUnit(counted.unit().trim())
-                    .reusable(counted.reusable())
-                    .build();
-            registry.counter(meta, tags(counted.tags()));
-            savedMetricName = metricName;
-            tags = tags(counted.tags());
-            metric = registry.counter(meta, tags);
-            LOGGER.log(Level.FINE, () -> "Registered counter " + metricName);
-        } else if (annotation instanceof Metered) {
-            Metered metered = (Metered) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), metered.name().trim(),
-                    metered.absolute());
-            String displayName = metered.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(metered.description().trim())
-                    .withType(MetricType.METERED)
-                    .withUnit(metered.unit().trim())
-                    .reusable(metered.reusable())
-                    .build();
-            registry.meter(meta, tags(metered.tags()));
-            savedMetricName = metricName;
-            tags = tags(metered.tags());
-            metric = registry.meter(meta, tags);
-            LOGGER.log(Level.FINE, () -> "Registered meter " + metricName);
-        } else if (annotation instanceof Timed) {
-            Timed timed = (Timed) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), timed.name().trim(),
-                    timed.absolute());
-            String displayName = timed.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(timed.description().trim())
-                    .withType(MetricType.TIMER)
-                    .withUnit(timed.unit().trim())
-                    .reusable(timed.reusable())
-                    .build();
-            registry.timer(meta, tags(timed.tags()));
-
-            savedMetricName = metricName;
-            tags = tags(timed.tags());
-            metric = registry.timer(meta, tags);
-            LOGGER.log(Level.FINE, () -> "Registered timer " + metricName);
-        } else if (annotation instanceof ConcurrentGauge) {
-            ConcurrentGauge concurrentGauge = (ConcurrentGauge) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), concurrentGauge.name().trim(),
-                    concurrentGauge.absolute());
-            String displayName = concurrentGauge.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(concurrentGauge.description().trim())
-                    .withType(MetricType.CONCURRENT_GAUGE)
-                    .withUnit(concurrentGauge.unit().trim())
-                    .reusable(concurrentGauge.reusable())
-                    .build();
-            registry.concurrentGauge(meta, tags(concurrentGauge.tags()));
-            savedMetricName = metricName;
-            tags = tags(concurrentGauge.tags());
-            metric = registry.concurrentGauge(meta, tags);
-            LOGGER.log(Level.FINE, () -> "Registered concurrent gauge " + metricName);
-        } else if (annotation instanceof SimplyTimed) {
-            SimplyTimed simplyTimed = (SimplyTimed) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), simplyTimed.name().trim(),
-                    simplyTimed.absolute());
-            String displayName = simplyTimed.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(simplyTimed.description().trim())
-                    .withType(MetricType.SIMPLE_TIMER)
-                    .withUnit(simplyTimed.unit().trim())
-                    .reusable(simplyTimed.reusable())
-                    .build();
-            registry.simpleTimer(meta, tags(simplyTimed.tags()));
-            savedMetricName = metricName;
-            tags = tags(simplyTimed.tags());
-            metric = registry.simpleTimer(meta, tags);
-            LOGGER.log(Level.FINE, () -> "Registered simple timer " + metricName);
-        }
-        if (savedMetricName == null || metric == null || tags == null) {
-            throw new IllegalArgumentException(String.format("Cannot map annotation %s on %s to metric type",
-                    annotation.annotationType().getSimpleName(), element));
-        }
-        return new MetricInfo<>(new MetricID(savedMetricName, tags), metric);
+        RegistrationPrep<?> registrationPrep = RegistrationPrep.create(annotation, element, clazz, lookupResult.getType());
+        org.eclipse.microprofile.metrics.Metric metric = registrationPrep.register(registry);
+        return new MetricInfo<>(new MetricID(registrationPrep.metricName(), registrationPrep.tags()), metric);
     }
 
     @Override
