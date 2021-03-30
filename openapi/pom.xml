@@ -38,6 +38,7 @@
     <properties>
         <openapi-interfaces-dir>${project.build.directory}/extracted-sources/openapi-interfaces</openapi-interfaces-dir>
         <openapi-impls-dir>${project.build.directory}/extracted-sources/openapi-impls</openapi-impls-dir>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <build>

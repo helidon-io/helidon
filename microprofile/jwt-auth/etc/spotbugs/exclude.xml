@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,4 +29,24 @@
          -->
         <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"/>
     </Match>
+
+    <Match>
+        <!-- Path comes from code/config -->
+        <Class name="io.helidon.microprofile.jwt.auth.JwtAuthProvider$Builder" />
+        <Method name="loadJwkKeysFromLocation" />
+        <Bug pattern="URLCONNECTION_SSRF_FD" />
+    </Match>
+    <Match>
+        <!-- Path comes from code/config -->
+        <Class name="io.helidon.microprofile.jwt.auth.JwtAuthProvider$Builder" />
+        <Method name="locateStream" />
+        <Bug pattern="URLCONNECTION_SSRF_FD" />
+    </Match>
+    <Match>
+        <!-- Path comes from code/config -->
+        <Class name="io.helidon.microprofile.jwt.auth.JwtAuthProvider$Builder" />
+        <Method name="locatePath" />
+        <Bug pattern="PATH_TRAVERSAL_IN" />
+    </Match>
+
 </FindBugsFilter>
