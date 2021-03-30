@@ -32,8 +32,8 @@
         <dependency>
             <groupId>org.eclipse.microprofile.lra</groupId>
             <artifactId>microprofile-lra-tck</artifactId>
-            <version>1.0-SNAPSHOT</version>
-<!--            <version>1.0-RC2</version>-->
+<!--            <version>1.0-SNAPSHOT</version> -->
+            <version>1.0-RC2</version>
         </dependency>
     </dependencies>
 
