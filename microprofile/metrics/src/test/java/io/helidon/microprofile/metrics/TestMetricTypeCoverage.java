@@ -16,6 +16,7 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,13 +32,18 @@ public class TestMetricTypeCoverage {
     @Test
     public void ensureAllMetricTypesHandled() {
 
-        Set<MetricType> missing = new HashSet<>();
+        Set<MetricType> found = new HashSet<>();
+        Set<MetricType> typesToCheck = new HashSet<>(Arrays.asList(MetricType.values()));
+        typesToCheck.remove(MetricType.INVALID);
+        typesToCheck.remove(MetricType.GAUGE);
 
-        for (MetricType type : MetricType.values()) {
+
+        for (MetricType type : typesToCheck) {
             if (!MetricAnnotationInfo.ANNOTATION_TYPE_TO_INFO.containsKey(type)) {
-                missing.add(type);
+                found.add(type);
             }
         }
-        assertThat("MetricTypes not handled", missing, is(empty()));
+        typesToCheck.removeAll(found);
+        assertThat("MetricTypes not handled", typesToCheck, is(empty()));
     }
 }
