@@ -354,8 +354,7 @@ public final class MetricUtil {
         return RegistryProducer.getDefaultRegistry();
     }
 
-    static <E extends Member /* & AnnotatedElement*/>
-    String getElementName(E element, Class<?> clazz) {
+    static String getElementName(Member element, Class<?> clazz) {
         return element instanceof Constructor ? clazz.getSimpleName() : element.getName();
     }
 
