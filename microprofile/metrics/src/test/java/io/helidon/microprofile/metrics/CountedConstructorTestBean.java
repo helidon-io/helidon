@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,20 @@
  */
 package io.helidon.microprofile.metrics;
 
-import javax.enterprise.util.AnnotationLiteral;
+import org.eclipse.microprofile.metrics.annotation.Counted;
 
-/**
- * Implementation of the synthetic {@code REST.request} {@code SimpleTimer} metric {@link SyntheticSimplyTimed}.
- */
-class LiteralSyntheticSimplyTimed extends AnnotationLiteral<SyntheticSimplyTimed> implements SyntheticSimplyTimed {
+public class CountedConstructorTestBean {
 
-    private static final long serialVersionUID = 1L;
+    static final String CONSTRUCTOR_COUNTER = "ctorCounted";
 
-    private static final LiteralSyntheticSimplyTimed INSTANCE = new LiteralSyntheticSimplyTimed();
+    private int count = 0;
 
-    static LiteralSyntheticSimplyTimed getInstance() {
-        return INSTANCE;
+    @Counted(name = CONSTRUCTOR_COUNTER)
+    public CountedConstructorTestBean() {
+
     }
 
-    private LiteralSyntheticSimplyTimed() {
+    public void inc() {
+        count++;
     }
 }

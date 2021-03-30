@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package io.helidon.microprofile.metrics;
 
-import javax.annotation.Priority;
-import javax.inject.Inject;
-import javax.interceptor.Interceptor;
-import javax.interceptor.InvocationContext;
+import java.util.concurrent.TimeUnit;
 
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import javax.annotation.Priority;
+import javax.interceptor.Interceptor;
+
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
@@ -31,21 +30,14 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 @Timed
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 10)
-final class InterceptorTimed extends InterceptorBase<Timer, Timed> {
+final class InterceptorTimed extends InterceptorTimedBase<Timer> {
 
-    @Inject
-    InterceptorTimed(MetricRegistry registry) {
-        super(registry,
-              Timed.class,
-              Timed::name,
-              Timed::tags,
-              Timed::absolute,
-              "timer",
-              Timer.class);
+    InterceptorTimed() {
+        super(Timed.class, Timer.class);
     }
 
     @Override
-    protected Object prepareAndInvoke(Timer timer, Timed annotation, InvocationContext context) throws Exception {
-        return timer.time(context::proceed);
+    void postComplete(Timer metric) {
+        metric.update(durationNanoseconds(), TimeUnit.NANOSECONDS);
     }
 }
