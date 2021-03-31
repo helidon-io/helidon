@@ -82,7 +82,7 @@ public class TestClient {
     /**
      * Creates new {@link TestClient} instance with specified routing.
      *
-     * @param routing      a routing to test
+     * @param routing a routing to test
      * @param mediaContext media context
      * @return new instance
      * @throws NullPointerException if routing parameter is null
@@ -94,15 +94,15 @@ public class TestClient {
     /**
      * Creates new {@link TestClient} instance with specified routing.
      *
-     * @param routing      a routing to test
+     * @param routing a routing to test
      * @param mediaSupport media support
      * @return new instance
      * @throws NullPointerException if routing parameter is null
      */
     public static TestClient create(Routing routing, MediaSupport mediaSupport) {
         MediaContext mediaContext = MediaContext.builder()
-                                                .addMediaSupport(mediaSupport)
-                                                .build();
+                .addMediaSupport(mediaSupport)
+                .build();
         return create(routing, mediaContext);
     }
 
@@ -130,15 +130,15 @@ public class TestClient {
     /**
      * Returns response as soon as it has composed headers.
      *
-     * @param method    an HTTP method
-     * @param version   an HTTP version
-     * @param path      a URI path
-     * @param headers   HTTP headers
+     * @param method an HTTP method
+     * @param version an HTTP version
+     * @param path a URI path
+     * @param headers HTTP headers
      * @param publisher a request body publisher
      * @return new response instance as soon as headers are composed
      * @throws InterruptedException if thread is interrupted
-     * @throws RuntimeException     if response is not composed but throws exception
-     * @throws TimeoutException     if request timeouts
+     * @throws RuntimeException if response is not composed but throws exception
+     * @throws TimeoutException if request timeouts
      */
     TestResponse call(Http.RequestMethod method,
                       Http.Version version,
