@@ -108,7 +108,7 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 /**
  * MetricsCdiExtension class.
  */
-public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport, MetricsSupport.Builder> {
+public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport> {
 
     private static final Logger LOGGER = Logger.getLogger(MetricsCdiExtension.class.getName());
 

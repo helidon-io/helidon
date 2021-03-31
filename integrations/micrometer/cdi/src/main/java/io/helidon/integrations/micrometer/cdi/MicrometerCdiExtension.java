@@ -52,9 +52,7 @@ import io.micrometer.core.instrument.Timer;
 /**
  * CDI extension for handling Micrometer artifacts.
  */
-public class MicrometerCdiExtension extends HelidonRestCdiExtension<
-        MicrometerSupport,
-        MicrometerSupport.Builder> {
+public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSupport> {
 
     private static final Logger LOGGER = Logger.getLogger(MicrometerCdiExtension.class.getName());
 

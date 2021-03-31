@@ -78,11 +78,8 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  *     </ul>
  *
  * @param <T> concrete type of {@code HelidonRestServiceSupport} used
- * @param <B> Builder for the concrete type of {@code }HelidonRestServiceSupport}
  */
-public abstract class HelidonRestCdiExtension<
-        T extends HelidonRestServiceSupport,
-        B extends HelidonRestServiceSupport.Builder<T, B>> implements Extension {
+public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSupport> implements Extension {
 
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 
