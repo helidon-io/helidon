@@ -24,6 +24,7 @@ import java.security.cert.X509Certificate;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
@@ -57,13 +58,15 @@ import io.netty.util.concurrent.Future;
  */
 class HttpInitializer extends ChannelInitializer<SocketChannel> {
     private static final Logger LOGGER = Logger.getLogger(HttpInitializer.class.getName());
-    static final AttributeKey<String> CERTIFICATE_NAME = AttributeKey.valueOf("certificate_name");
+    static final AttributeKey<String> CLIENT_CERTIFICATE_NAME = AttributeKey.valueOf("client_certificate_name");
+    static final AttributeKey<X509Certificate> CLIENT_CERTIFICATE = AttributeKey.valueOf("client_certificate");
+    static final AttributeKey<Certificate[]> CLIENT_CERTIFICATE_CHAIN = AttributeKey.valueOf("client_certificate_chain");
 
-    private final SslContext sslContext;
     private final NettyWebServer webServer;
     private final SocketConfiguration soConfig;
     private final Routing routing;
     private final AtomicBoolean clearLock = new AtomicBoolean();
+    private final AtomicReference<SslContext> sslContext;
 
     /**
      * Reference queue that collects ReferenceHoldingQueue's when they become
@@ -85,7 +88,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
                     NettyWebServer webServer) {
         this.soConfig = soConfig;
         this.routing = routing;
-        this.sslContext = sslContext;
+        this.sslContext = new AtomicReference<>(sslContext);
         this.webServer = webServer;
     }
 
@@ -131,6 +134,23 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         });
     }
 
+    void updateSslContext(String socketName, SslContext context) {
+        if (sslContext.get() == null) {
+            if (context != null) {
+                throw new IllegalStateException("TLS was not configured on the socket " + socketName + " before. Could not be "
+                                                        + "enabled at runtime.");
+            }
+            //Do not set anything
+        } else if (context == null) {
+            //Disabling TLS context is not possible at runtime
+            throw new IllegalStateException("TLS was configured on the socket " + socketName + " before. Could not be "
+                                                    + "disabled at runtime.");
+        } else {
+            sslContext.set(context);
+        }
+
+    }
+
     /**
      * Initializes pipeline for new socket channel.
      *
@@ -141,8 +161,9 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         final ChannelPipeline p = ch.pipeline();
 
         SSLEngine sslEngine = null;
-        if (sslContext != null) {
-            SslHandler sslHandler = sslContext.newHandler(ch.alloc());
+        SslContext context = sslContext.get();
+        if (context != null) {
+            SslHandler sslHandler = context.newHandler(ch.alloc());
             sslEngine = sslHandler.engine();
             p.addLast(sslHandler);
             sslHandler.handshakeFuture().addListener(future -> obtainClientCN(future, ch, sslHandler));
@@ -195,8 +216,8 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     /**
      * Sets {@code CERTIFICATE_NAME} in socket channel.
      *
-     * @param future future passed to listener
-     * @param ch the socket channel
+     * @param future     future passed to listener
+     * @param ch         the socket channel
      * @param sslHandler the SSL handler
      */
     private void obtainClientCN(Future<? super Channel> future, SocketChannel ch, SslHandler sslHandler) {
@@ -217,7 +238,9 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
                             tmpName = tmpName.substring(0, end);
                         }
                     }
-                    ch.attr(CERTIFICATE_NAME).set(tmpName);
+                    ch.attr(CLIENT_CERTIFICATE_NAME).set(tmpName);
+                    ch.attr(CLIENT_CERTIFICATE).set(cert);
+                    ch.attr(CLIENT_CERTIFICATE_CHAIN).set(peerCertificates);
                 }
             } catch (SSLPeerUnverifiedException ignored) {
                 //User not authenticated. Client authentication probably set to OPTIONAL or NONE

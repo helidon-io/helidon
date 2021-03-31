@@ -144,6 +144,27 @@ public interface WebServer {
     int port(String socketName);
 
     /**
+     * Update TLS configuration of the default socket {@link WebServer#DEFAULT_SOCKET_NAME}.
+     *
+     * If the socket has not been https and now the TLS is being configured, an exception will be thrown.
+     * If the socket has been https and the new configuration is disabling TLS on the socket, an exception will be thrown.
+     *
+     * @param tls new TLS configuration
+     */
+    void updateTls(WebServerTls tls);
+
+    /**
+     * Update TLS configuration of the named socket.
+     *
+     * If the socket has not been https and now the TLS is being configured, an exception will be thrown.
+     * If the socket has been https and the new configuration is disabling TLS on the socket, an exception will be thrown.
+     *
+     * @param tls new TLS configuration
+     * @param socketName specific named socket name
+     */
+    void updateTls(WebServerTls tls, String socketName);
+
+    /**
      * Creates a new instance from a provided configuration and a routing.
      *
      * @param configurationBuilder a server configuration builder that will be built as a first step
