@@ -21,10 +21,10 @@
 :keywords: micrometer, helidon, metrics, integration
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.integrations.micrometer/io/helidon/integrations/micrometer
 :h1Prefix: SE
-:common-page-prefix-inc: ../../shared/micrometer/common_shared.adoc
+:common-page-prefix-inc: ../../shared/metrics/micrometer_shared.adoc
 :isSE: true
 
-include::{common-page-prefix-inc}[tags=intro;!intro-mp-specific]
+include::{common-page-prefix-inc}[tags=intro]
 
 include::{common-page-prefix-inc}[tags=prereq]
 

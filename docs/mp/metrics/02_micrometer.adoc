@@ -21,7 +21,7 @@
 :keywords: micrometer, helidon, metrics, integration, microprofile
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.integrations.micrometer/io/helidon/integrations/micrometer
 :h1Prefix: MP
-:common-page-prefix-inc: ../../shared/micrometer/common_shared.adoc
+:common-page-prefix-inc: ../../shared/metrics/micrometer_shared.adoc
 :isMP: true
 
 
