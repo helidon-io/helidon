@@ -191,6 +191,14 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
         AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
         Class<?> clazz = type.getJavaClass();
 
+        // Check for Interceptor. We have already checked developer-provided beans, but other extensions might have supplied
+        // additional beans that we have not checked yet.
+        if (type.isAnnotationPresent(Interceptor.class)) {
+            LOGGER.log(Level.FINE, "Ignoring objects defined on type " + clazz.getName()
+                    + " because a CDI portable extension added @Interceptor to it dynamically");
+            return;
+        }
+
         Stream.of(type.getMethods(),
                   type.getConstructors())
                 .flatMap(Set::stream)

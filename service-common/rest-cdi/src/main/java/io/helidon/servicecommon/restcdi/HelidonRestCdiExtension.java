@@ -151,13 +151,6 @@ public abstract class HelidonRestCdiExtension<
         if (!annotatedClasses.contains(clazz)) {
             return;
         }
-        // Check for Interceptor. We have already checked developer-provided beans, but other extensions might have supplied
-        // additional beans that we have not checked yet.
-        if (type.isAnnotationPresent(Interceptor.class)) {
-            logger.log(Level.FINE, "Ignoring objects defined on type " + clazz.getName()
-                    + " because a CDI portable extension added @Interceptor to it dynamically");
-            return;
-        }
 
         annotatedClassesProcessed.add(clazz);
 

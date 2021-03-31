@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
@@ -34,6 +35,7 @@ import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.util.AnnotationLiteral;
 import javax.enterprise.util.Nonbinding;
+import javax.interceptor.Interceptor;
 import javax.interceptor.InterceptorBinding;
 
 import io.helidon.integrations.micrometer.MicrometerSupport;
@@ -74,7 +76,16 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
     @Override
     protected void processManagedBean(ProcessManagedBean<?> pmb) {
 
+        AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
         Class<?> clazz = pmb.getAnnotatedBeanClass().getJavaClass();
+
+        // Check for Interceptor. We have already checked developer-provided beans, but other extensions might have supplied
+        // additional beans that we have not checked yet.
+        if (type.isAnnotationPresent(Interceptor.class)) {
+            LOGGER.log(Level.FINE, "Ignoring objects defined on type " + clazz.getName()
+                    + " because a CDI portable extension added @Interceptor to it dynamically");
+            return;
+        }
 
         Stream.of(pmb.getAnnotatedBeanClass().getMethods(),
                   pmb.getAnnotatedBeanClass().getConstructors())
