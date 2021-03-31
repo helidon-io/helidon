@@ -24,7 +24,6 @@ import java.security.cert.X509Certificate;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
@@ -66,7 +65,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     private final SocketConfiguration soConfig;
     private final Routing routing;
     private final AtomicBoolean clearLock = new AtomicBoolean();
-    private final AtomicReference<SslContext> sslContext;
+    private volatile SslContext sslContext;
 
     /**
      * Reference queue that collects ReferenceHoldingQueue's when they become
@@ -88,7 +87,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
                     NettyWebServer webServer) {
         this.soConfig = soConfig;
         this.routing = routing;
-        this.sslContext = new AtomicReference<>(sslContext);
+        this.sslContext = sslContext;
         this.webServer = webServer;
     }
 
@@ -135,7 +134,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     }
 
     void updateSslContext(String socketName, SslContext context) {
-        if (sslContext.get() == null) {
+        if (sslContext == null) {
             if (context != null) {
                 throw new IllegalStateException("TLS was not configured on the socket " + socketName + " before. Could not be "
                                                         + "enabled at runtime.");
@@ -146,7 +145,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
             throw new IllegalStateException("TLS was configured on the socket " + socketName + " before. Could not be "
                                                     + "disabled at runtime.");
         } else {
-            sslContext.set(context);
+            sslContext = context;
         }
 
     }
@@ -161,7 +160,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         final ChannelPipeline p = ch.pipeline();
 
         SSLEngine sslEngine = null;
-        SslContext context = sslContext.get();
+        SslContext context = sslContext;
         if (context != null) {
             SslHandler sslHandler = context.newHandler(ch.alloc());
             sslEngine = sslHandler.engine();
