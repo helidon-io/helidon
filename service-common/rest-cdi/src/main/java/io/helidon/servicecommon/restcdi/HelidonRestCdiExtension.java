@@ -108,14 +108,6 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
         this.configPrefix = configPrefix;
     }
 
-    protected Set<Class<?>> annotatedClasses() {
-        return annotatedClasses;
-    }
-
-    protected Set<Class<?>> annotatedClassesProcessed() {
-        return annotatedClassesProcessed;
-    }
-
     /**
      * Cleans up any data structures created during annotation processing but which are not needed once the CDI container has
      * started.
@@ -124,8 +116,8 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
      */
     protected void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
         if (logger.isLoggable(Level.FINE)) {
-            Set<Class<?>> annotatedClassesIgnored = new HashSet<>(annotatedClasses());
-            annotatedClassesIgnored.removeAll(annotatedClassesProcessed());
+            Set<Class<?>> annotatedClassesIgnored = new HashSet<>(annotatedClasses);
+            annotatedClassesIgnored.removeAll(annotatedClassesProcessed);
             if (!annotatedClassesIgnored.isEmpty()) {
                 logger.log(Level.FINE, () ->
                         "Classes originally found with selected annotations that were not processed, probably "
@@ -151,7 +143,7 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
 
         annotatedClassesProcessed.add(clazz);
 
-        logger.log(Level.FINE, () -> "Processing annotations for " + clazz.getName());
+        logger.log(Level.FINE, () -> "Processing managed bean " + clazz.getName());
 
         processManagedBean(pmb);
    }
