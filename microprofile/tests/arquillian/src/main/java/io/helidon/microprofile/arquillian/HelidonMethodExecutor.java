@@ -17,9 +17,11 @@
 package io.helidon.microprofile.arquillian;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -32,6 +34,9 @@ import org.jboss.arquillian.test.spi.TestMethodExecutor;
 import org.jboss.arquillian.test.spi.TestResult;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TestName;
+import org.junit.runner.Description;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 
@@ -64,6 +69,7 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
             Method method = testMethodExecutor.getMethod();
             LOGGER.info("Invoking '" + method + "' on " + instance);
             enricher.enrich(instance);
+            jUnitTestNameRule(testMethodExecutor);
             invokeBefore(instance);
             testMethodExecutor.invoke(enricher.resolve(method));
             invokeAfter(instance);
@@ -73,6 +79,29 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
             controller.deactivate();
         }
         return TestResult.passed();
+    }
+
+    private void jUnitTestNameRule(TestMethodExecutor testMethodExecutor) {
+        Object instance = testMethodExecutor.getInstance();
+        AtomicReference<Class<?>> clazz = new AtomicReference<>(instance.getClass());
+
+        Stream.generate(() -> clazz.getAndUpdate(old -> old == null ? null : old.getSuperclass()))
+                .takeWhile(Objects::nonNull)
+                .map(Class::getDeclaredFields)
+                .flatMap(Stream::of)
+                .filter(f -> f.getAnnotation(Rule.class) != null)
+                .filter(f -> TestName.class.isAssignableFrom(f.getType()))
+                .forEach(rethrow(f -> {
+                    Object testName = f.get(instance);
+                    if(testName != null){
+                        Field nameField = TestName.class.getDeclaredField("name");
+                        nameField.setAccessible(true);
+                        nameField.set(testName, 
+                                Description.createTestDescription(
+                                        instance.getClass(), 
+                                        testMethodExecutor.getMethod().getName()).getMethodName());
+                    }
+                }));
     }
 
     /**
@@ -109,12 +138,21 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
                 .map(Class::getDeclaredMethods)
                 .flatMap(Stream::of)
                 .filter(m -> m.getAnnotation(annotClass) != null)
-                .forEach(m -> {
-                    try {
-                        m.invoke(object);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+                .forEach(rethrow(m -> m.invoke(object)));
+    }
+
+    static <T> Consumer<? super T> rethrow(ThrowingConsumer<T> consumer) {
+        return t -> {
+            try {
+                consumer.accept(t);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
+    @FunctionalInterface
+    interface ThrowingConsumer<T> {
+        void accept(T item) throws Throwable;
     }
 }

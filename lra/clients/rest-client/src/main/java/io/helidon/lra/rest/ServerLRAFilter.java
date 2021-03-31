@@ -108,7 +108,7 @@ public class ServerLRAFilter implements ContainerRequestFilter, ContainerRespons
         Optional<String> lraParticipantURL = config.getOptionalValue("lra.participant.url", String.class);
         LOGGER.fine("lra.participant.url:" + lraParticipantURL);
         String path = !lraParticipantURL.isEmpty()? lraParticipantURL.get():
-                "http://" + config.getOptionalValue("server.host", String.class).get() + ":" + config.getOptionalValue("server.port", String.class);
+                "http://" + config.getOptionalValue("server.host", String.class).get() + ":" + config.getOptionalValue("server.port", String.class).get();
         path += containerRequestContext.getUriInfo().getBaseUri().getPath();
         try {
             baseUri = new URI(path);
