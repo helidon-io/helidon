@@ -69,12 +69,8 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * <p>
  *     Each concrete implementation should:
  *     <ul>
- *         <li>Invoke {@link #recordConcreteNonInterceptor} for each class which bears an annotation of interest to the
+ *         <li>Invoke {@link #recordAnnotatedType} for each class which bears an annotation of interest to the
  *         extension, often from a {@code ProcessAnnotatedType} observer method.</li>
- *         <li>Invoke {@link #recordProducerField(ProcessProducerField)} for component-specific producer fields, often from
- *         a {@code ProcessProducerField} observer.</li>
- *         <li>Invoke {@link #recordProducerMethod(ProcessProducerMethod)} for component-specific producer methods,
- *         often from a {@code ProcessProducerMethod} observer.</li>
  *         <li>Implement {@link #processManagedBean(ProcessManagedBean)} which this base class invokes to notify the
  *         implementation class of each managed bean type that was reported by the concrete extension but not vetoed by some
  *         other extension. Each extension can interpret "process" however it needs to. Metrics, for example, creates
@@ -92,10 +88,8 @@ public abstract class HelidonRestCdiExtension<
 
     private final Set<Class<?>> annotatedClasses = new HashSet<>();
     private final Set<Class<?>> annotatedClassesProcessed = new HashSet<>();
-    private final Set<Class<? extends Annotation>> annotationTypes;
 
     private final Logger logger;
-    private final Class<?> ownProducer;
     private final Function<Config, T> serviceSupportFactory;
     private final String configPrefix;
 
@@ -105,20 +99,14 @@ public abstract class HelidonRestCdiExtension<
      * Common initialization for concrete implementations.
      *
      * @param logger                Logger instance to use for logging messages
-     * @param annotationTypes       set of annotation types this extension handles
-     * @param ownProducer           type of producer class used in creating beans needed by the extension
      * @param serviceSupportFactory function from config to the corresponding SE-style service support object
      * @param configPrefix          prefix for retrieving config related to this extension
      */
     protected HelidonRestCdiExtension(
             Logger logger,
-            Set<Class<? extends Annotation>> annotationTypes,
-            Class<?> ownProducer,
             Function<Config, T> serviceSupportFactory,
             String configPrefix) {
         this.logger = logger;
-        this.annotationTypes = annotationTypes;
-        this.ownProducer = ownProducer; // class containing producers provided by this module
         this.serviceSupportFactory = serviceSupportFactory;
         this.configPrefix = configPrefix;
     }
@@ -215,18 +203,20 @@ public abstract class HelidonRestCdiExtension<
     }
 
     /**
-     * Records the Java class underlying an annotated type that is neither abstract nor an interceptor.
+     * Records the Java class underlying an annotated type.
      *
      * @param pat {@code ProcessAnnotatedType} event
-     * @return true if the annotated type should be kept for potential processing later; false otherwise
      */
-    protected boolean recordConcreteNonInterceptor(ProcessAnnotatedType<?> pat) {
-        boolean result = isConcreteNonInterceptor(pat);
-        if (result) {
-            annotatedClasses.add(pat.getAnnotatedType()
+    protected void recordAnnotatedType(ProcessAnnotatedType<?> pat) {
+        annotatedClasses.add(pat.getAnnotatedType()
                     .getJavaClass());
-        }
-        return result;
+    }
+
+    protected boolean isOwnProducerOrNonDefaultQualified(Bean<?> bean, Class<?> ownProducerClass) {
+        return ownProducerClass.equals(bean.getBeanClass())
+                || bean.getQualifiers()
+                        .stream()
+                        .noneMatch(Default.class::isInstance);
     }
 
     /**
@@ -331,11 +321,6 @@ public abstract class HelidonRestCdiExtension<
      */
     private void recordProducerMember(String logPrefix, AnnotatedMember<?> member, Bean<?> bean) {
         logger.log(Level.FINE, () -> logPrefix + " " + bean.getBeanClass());
-        if (!ownProducer.equals(bean.getBeanClass())) {
-            if (bean.getQualifiers().stream()
-                    .anyMatch(Default.class::isInstance)) {
-                producers.put(bean, member);
-            }
-        }
+        producers.put(bean, member);
     }
 }

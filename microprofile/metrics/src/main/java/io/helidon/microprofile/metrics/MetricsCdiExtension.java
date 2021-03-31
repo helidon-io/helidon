@@ -157,7 +157,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
      * Creates a new extension instance.
      */
     public MetricsCdiExtension() {
-        super(LOGGER, METRIC_ANNOTATIONS, MetricProducer.class, MetricsSupport::create, "metrics");
+        super(LOGGER, MetricsSupport::create, "metrics");
     }
 
     /**
@@ -292,7 +292,9 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
     private void recordMetricAnnotatedClass(@Observes
     @WithAnnotations({Counted.class, Metered.class, Timed.class, ConcurrentGauge.class,
             SimplyTimed.class}) ProcessAnnotatedType<?> pat) {
-        recordConcreteNonInterceptor(pat);
+        if (isConcreteNonInterceptor(pat)) {
+            recordAnnotatedType(pat);
+        }
     }
 
     /**
@@ -444,7 +446,9 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
      */
     protected void recordProducerFields(
             @Observes ProcessProducerField<? extends org.eclipse.microprofile.metrics.Metric, ?> ppf) {
-        recordProducerField(ppf);
+        if (!isOwnProducerOrNonDefaultQualified(ppf.getBean(), MetricProducer.class)) {
+            recordProducerField(ppf);
+        }
     }
 
     /**
@@ -455,7 +459,9 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport,
      */
     protected void recordProducerMethods(
             @Observes ProcessProducerMethod<? extends org.eclipse.microprofile.metrics.Metric, ?> ppm) {
-        recordProducerMethod(ppm);
+        if (!isOwnProducerOrNonDefaultQualified(ppm.getBean(), MetricProducer.class)) {
+            recordProducerMethod(ppm);
+        }
     }
 
     /**

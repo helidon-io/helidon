@@ -67,9 +67,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
      * Creates new extension instance.
      */
     public MicrometerCdiExtension() {
-        super(LOGGER, Set.of(Counted.class, Timed.class), MeterProducer.class, config ->
-                        MeterRegistryProducer.getMicrometerSupport(),
-                "micrometer");
+        super(LOGGER, config -> MeterRegistryProducer.getMicrometerSupport(), "micrometer");
         meterRegistry = MeterRegistryProducer.getMeterRegistry();
     }
 
@@ -140,11 +138,15 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
     }
 
     protected void recordProducerFields(@Observes ProcessProducerField<? extends Meter, ?> ppf) {
-        recordProducerField(ppf);
+        if (!isOwnProducerOrNonDefaultQualified(ppf.getBean(), MeterProducer.class)) {
+            recordProducerField(ppf);
+        }
     }
 
     protected void recordProducerMethods(@Observes ProcessProducerMethod<? extends Meter, ?> ppm) {
-        recordProducerMethod(ppm);
+        if (!isOwnProducerOrNonDefaultQualified(ppm.getBean(), MeterProducer.class)) {
+            recordProducerMethod(ppm);
+        }
     }
 
     Iterable<MeterWorkItem> workItems(Executable executable, Class<? extends Annotation> annotationType) {
@@ -219,7 +221,9 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<
      */
     private void recordMetricAnnotatedClass(@Observes
     @WithAnnotations({Counted.class, Timed.class}) ProcessAnnotatedType<?> pat) {
-        recordConcreteNonInterceptor(pat);
+        if (isConcreteNonInterceptor(pat)) {
+            recordAnnotatedType(pat);
+        }
     }
 
     static final class InterceptorBindingLiteral extends AnnotationLiteral<InterceptorBinding> implements InterceptorBinding {
