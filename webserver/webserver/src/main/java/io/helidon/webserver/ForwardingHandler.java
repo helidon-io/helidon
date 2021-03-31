@@ -173,7 +173,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             // publisher is ready for collection, we have access to queue by calling its
             // acquire method. We shall also attempt to release queue on completion of
             // bareResponse below.
-            IndirectReference<HttpRequestScopedPublisher, DataChunkHoldingQueue> publisherPh =
+            IndirectReference<HttpRequestScopedPublisher, DataChunkHoldingQueue> publisherRef =
                     new IndirectReference<>(publisher, queues, queue);
 
             // Set up read strategy for channel based on consumer demand
@@ -249,7 +249,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                             // we try to do it here if possible to reduce memory usage,
                             // especially for keep-alive connections
                             if (queue.release()) {
-                                publisherPh.acquire();      // clears reference to other
+                                publisherRef.acquire();      // clears reference to other
                             }
 
                             // Enables next response to proceed (HTTP pipelining)
