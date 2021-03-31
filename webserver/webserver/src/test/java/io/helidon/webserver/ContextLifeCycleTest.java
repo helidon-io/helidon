@@ -37,7 +37,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests that {@link ServerRequest#context()} is returned by {@link Contexts#context()} throughout the request
  * life-cycle.
  */
-public class ContextLifeCycleTest {
+class ContextLifeCycleTest {
 
     private static String contextId() {
         return Contexts.context().map(Context::id).orElse(null);
