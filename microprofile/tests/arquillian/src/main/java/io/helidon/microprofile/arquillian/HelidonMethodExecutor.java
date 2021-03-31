@@ -18,6 +18,8 @@ package io.helidon.microprofile.arquillian;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -100,8 +102,12 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
      * @param annotClass Annotation to look for.
      */
     private static void invokeAnnotated(Object object, Class<? extends Annotation> annotClass) {
-        Class<?> clazz = object.getClass();
-        Stream.of(clazz.getDeclaredMethods())
+        AtomicReference<Class<?>> clazz = new AtomicReference<>(object.getClass());
+
+        Stream.generate(() -> clazz.getAndUpdate(old -> old == null ? null : old.getSuperclass()))
+                .takeWhile(Objects::nonNull)
+                .map(Class::getDeclaredMethods)
+                .flatMap(Stream::of)
                 .filter(m -> m.getAnnotation(annotClass) != null)
                 .forEach(m -> {
                     try {
