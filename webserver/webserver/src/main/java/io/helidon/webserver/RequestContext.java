@@ -60,7 +60,7 @@ class RequestContext {
 
     void runInScope(Runnable runnable) {
         Contexts.runInContext(scope, () -> {
-            LOGGER.finest(() -> String.format("Running in context %s", scope.id()));
+            LOGGER.finest(() -> "Running in context " + scope.id());
             runnable.run();
         });
     }
