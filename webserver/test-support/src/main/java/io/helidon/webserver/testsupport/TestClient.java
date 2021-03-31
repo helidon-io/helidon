@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.ReadOnlyParameters;
@@ -39,7 +41,6 @@ import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.webserver.BareRequest;
 import io.helidon.webserver.BareResponse;
-import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 
 /**
@@ -52,20 +53,17 @@ public class TestClient {
 
     private final Routing routing;
     private final MediaContext mediaContext;
-    private final Handler mockingHandler;
 
     /**
      * Create new instance.
      *
      * @param routing a routing to create client
-     * @param mockingHandler a handler representing mocking
      * @throws NullPointerException if routing parameter is null
      */
-    private TestClient(Routing routing, MediaContext mediaContext, Handler mockingHandler) {
+    private TestClient(Routing routing, MediaContext mediaContext) {
         Objects.requireNonNull(routing, "Parameter 'routing' is null!");
         this.routing = routing;
         this.mediaContext = mediaContext;
-        this.mockingHandler = mockingHandler;
     }
 
     /**
@@ -84,27 +82,27 @@ public class TestClient {
     /**
      * Creates new {@link TestClient} instance with specified routing.
      *
-     * @param routing a routing to test
+     * @param routing      a routing to test
      * @param mediaContext media context
      * @return new instance
      * @throws NullPointerException if routing parameter is null
      */
     public static TestClient create(Routing routing, MediaContext mediaContext) {
-        return new TestClient(routing, mediaContext, null);
+        return new TestClient(routing, mediaContext);
     }
 
     /**
      * Creates new {@link TestClient} instance with specified routing.
      *
-     * @param routing a routing to test
+     * @param routing      a routing to test
      * @param mediaSupport media support
      * @return new instance
      * @throws NullPointerException if routing parameter is null
      */
     public static TestClient create(Routing routing, MediaSupport mediaSupport) {
         MediaContext mediaContext = MediaContext.builder()
-                .addMediaSupport(mediaSupport)
-                .build();
+                                                .addMediaSupport(mediaSupport)
+                                                .build();
         return create(routing, mediaContext);
     }
 
@@ -116,7 +114,7 @@ public class TestClient {
      * @throws NullPointerException if routing parameter is null
      */
     public static TestClient create(Routing routing) {
-        return new TestClient(routing, null, null);
+        return new TestClient(routing, null);
     }
 
     /**
@@ -132,24 +130,25 @@ public class TestClient {
     /**
      * Returns response as soon as it has composed headers.
      *
-     * @param method an HTTP method
-     * @param version an HTTP version
-     * @param path a URI path
-     * @param headers HTTP headers
+     * @param method    an HTTP method
+     * @param version   an HTTP version
+     * @param path      a URI path
+     * @param headers   HTTP headers
      * @param publisher a request body publisher
      * @return new response instance as soon as headers are composed
      * @throws InterruptedException if thread is interrupted
-     * @throws RuntimeException if response is not composed but throws exception
-     * @throws TimeoutException if request timeouts
+     * @throws RuntimeException     if response is not composed but throws exception
+     * @throws TimeoutException     if request timeouts
      */
     TestResponse call(Http.RequestMethod method,
                       Http.Version version,
                       URI path,
                       Map<String, List<String>> headers,
                       Flow.Publisher<DataChunk> publisher) throws InterruptedException, TimeoutException {
-        TestBareRequest req = new TestBareRequest(method, version, path, headers, publisher, mediaContext);
-        TestBareResponse res = new TestBareResponse(req.webServer);
-        routing.route(req, res);
+        TestWebServer webServer = new TestWebServer(mediaContext);
+        TestBareRequest req = new TestBareRequest(method, version, path, headers, publisher, webServer);
+        TestBareResponse res = new TestBareResponse(webServer);
+        Contexts.runInContext(Context.create(webServer.context()), () -> routing.route(req, res));
         try {
             return res.responseFuture.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (ExecutionException ee) {
@@ -175,17 +174,15 @@ public class TestClient {
                         URI path,
                         Map<String, List<String>> headers,
                         Flow.Publisher<DataChunk> publisher,
-                        MediaContext mediaContext) {
-            Objects.requireNonNull(method, "Parameter 'method' is null!");
-            Objects.requireNonNull(version, "Parameter 'version' is null!");
-            Objects.requireNonNull(path, "Parameter 'path' is null!");
-            webServer = new TestWebServer(mediaContext);
-            this.method = method;
-            this.version = version;
-            this.path = path;
+                        TestWebServer webServer) {
+
+            this.webServer = Objects.requireNonNull(webServer, "webServer 'webServer' is null!");
+            this.method = Objects.requireNonNull(method, "Parameter 'method' is null!");
+            this.version = Objects.requireNonNull(version, "Parameter 'version' is null!");
+            this.path = Objects.requireNonNull(path, "Parameter 'path' is null!");
             this.headers = new ReadOnlyParameters(headers).toMap();
             if (publisher == null) {
-                this.publisher = Single.<DataChunk>empty();
+                this.publisher = Single.empty();
             } else {
                 this.publisher = publisher;
             }
