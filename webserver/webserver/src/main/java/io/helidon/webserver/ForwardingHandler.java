@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.webserver.ByteBufRequestChunk.DataChunkHoldingQueue;
 import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
@@ -125,7 +126,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             return;
         }
 
-        if (requestContext.publisher().hasRequests()) {
+        if (requestContext.hasRequests()) {
             ctx.channel().read();
         }
     }
@@ -162,22 +163,22 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
             // Context, publisher and DataChunk queue for this request/response
             DataChunkHoldingQueue queue = new DataChunkHoldingQueue();
-            requestContext = new RequestContext(new HttpRequestScopedPublisher(queue), request);
+            HttpRequestScopedPublisher publisher = new HttpRequestScopedPublisher(queue);
+            requestContext = new RequestContext(publisher, request, Context.create(webServer.context()));
 
             // Closure local variables that cache mutable instance variables
             RequestContext requestContextRef = requestContext;
-            HttpRequestScopedPublisher publisherRef = requestContextRef.publisher();
 
             // Creates an indirect reference between publisher and queue so that when
             // publisher is ready for collection, we have access to queue by calling its
             // acquire method. We shall also attempt to release queue on completion of
             // bareResponse below.
             IndirectReference<HttpRequestScopedPublisher, DataChunkHoldingQueue> publisherPh =
-                    new IndirectReference<>(publisherRef, queues, queue);
+                    new IndirectReference<>(publisher, queues, queue);
 
             // Set up read strategy for channel based on consumer demand
-            publisherRef.onRequest((n, demand) -> {
-                if (publisherRef.isUnbounded()) {
+            publisher.onRequest((n, demand) -> {
+                if (publisher.isUnbounded()) {
                     LOGGER.finest("Netty autoread: true");
                     ctx.channel().config().setAutoRead(true);
                 } else {
@@ -185,7 +186,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     ctx.channel().config().setAutoRead(false);
                 }
 
-                if (publisherRef.hasRequests()) {
+                if (publisher.hasRequests()) {
                     LOGGER.finest("Requesting next chunks from Netty.");
                     ctx.channel().read();
                 } else {
@@ -199,8 +200,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             // If a problem with the request URI, return 400 response
             BareRequestImpl bareRequest;
             try {
-                bareRequest = new BareRequestImpl((HttpRequest) msg, requestContextRef.publisher(),
-                        webServer, ctx, sslEngine, requestId);
+                bareRequest = new BareRequestImpl((HttpRequest) msg, publisher, webServer, ctx, sslEngine, requestId);
             } catch (IllegalArgumentException e) {
                 send400BadRequest(ctx, e.getMessage());
                 return;
@@ -234,7 +234,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
             // Create response and handler for its completion
             BareResponseImpl bareResponse =
-                    new BareResponseImpl(ctx, request, publisherRef::isCompleted, prevRequestFuture, requestId);
+                    new BareResponseImpl(ctx, request, publisher::isCompleted, prevRequestFuture, requestId);
             prevRequestFuture = new CompletableFuture<>();
             CompletableFuture<?> thisResp = prevRequestFuture;
             bareResponse.whenCompleted()
@@ -243,7 +243,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                             requestContextRef.responseCompleted(true);
 
                             // Consume and release any buffers in publisher
-                            publisherRef.clearAndRelease();
+                            publisher.clearAndRelease();
 
                             // Cleanup for these queues is done in HttpInitializer, but
                             // we try to do it here if possible to reduce memory usage,
@@ -261,7 +261,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
             // If a problem during routing, return 400 response
             try {
-                routing.route(bareRequest, bareResponse);
+                requestContext.runInScope(() -> routing.route(bareRequest, bareResponse));
             } catch (IllegalArgumentException e) {
                 send400BadRequest(ctx, e.getMessage());
                 return;
@@ -315,10 +315,10 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                             ignorePayload = true;
                             send413PayloadTooLarge(ctx);
                         } else {
-                            requestContext.publisher().emit(content);
+                            requestContext.emit(content);
                         }
                     } else {
-                        requestContext.publisher().emit(content);
+                        requestContext.emit(content);
                     }
                 }
             }
@@ -326,7 +326,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             if (msg instanceof LastHttpContent) {
                 if (!isWebSocketUpgrade) {
                     lastContent = true;
-                    requestContext.publisher().complete();
+                    requestContext.complete();
                     requestContext = null; // just to be sure that current http req/res session doesn't interfere with other ones
                 }
             } else if (!content.isReadable()) {
@@ -343,7 +343,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             }
             // Simply forward raw bytebuf to Tyrus for processing
             LOGGER.finest(() -> "Received ByteBuf of WebSockets connection" + msg);
-            requestContext.publisher().emit((ByteBuf) msg);
+            requestContext.emit((ByteBuf) msg);
         }
     }
 
@@ -444,7 +444,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
      */
     private void failPublisher(Throwable cause) {
         if (requestContext != null) {
-            requestContext.publisher().fail(cause);
+            requestContext.fail(cause);
         }
     }
 }
