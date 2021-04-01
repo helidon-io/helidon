@@ -133,21 +133,11 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         });
     }
 
-    void updateSslContext(String socketName, SslContext context) {
+    void updateSslContext(SslContext context) {
         if (sslContext == null) {
-            if (context != null) {
-                throw new IllegalStateException("TLS was not configured on the socket " + socketName + " before. Could not be "
-                                                        + "enabled at runtime.");
-            }
-            //Do not set anything
-        } else if (context == null) {
-            //Disabling TLS context is not possible at runtime
-            throw new IllegalStateException("TLS was configured on the socket " + socketName + " before. Could not be "
-                                                    + "disabled at runtime.");
-        } else {
-            sslContext = context;
+            throw new IllegalStateException("Current TLS context is not set, update not allowed");
         }
-
+        sslContext = context;
     }
 
     /**

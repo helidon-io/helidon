@@ -433,10 +433,16 @@ class NettyWebServer implements WebServer {
 
     @Override
     public void updateTls(WebServerTls tls, String socketName) {
-        SslContext context = createSslContext(tls.sslContext(), new HashSet<>(tls.enabledTlsProtocols()), tls.clientAuth());
-        Optional.ofNullable(initializers.get(socketName))
-                .orElseThrow(() -> new IllegalStateException("Unknown socket name: " + socketName))
-                .updateSslContext(socketName, context);
+        HttpInitializer httpInitializer = initializers.get(socketName);
+        if (httpInitializer == null) {
+            throw new IllegalStateException("Unknown socket name: " + socketName);
+        } else {
+            if (!tls.enabled()) {
+                throw new IllegalStateException("Tls could not be updated. WebServerTls is required to be enabled");
+            }
+            SslContext context = createSslContext(tls.sslContext(), new HashSet<>(tls.enabledTlsProtocols()), tls.clientAuth());
+            httpInitializer.updateSslContext(context);
+        }
     }
 
     private Transport acquireTransport() {
