@@ -30,6 +30,10 @@ module io.helidon.integrations.vault.auths.approle {
 
     provides io.helidon.integrations.vault.spi.AuthMethodProvider
             with io.helidon.integrations.vault.auths.approle.AppRoleAuthProvider;
+
     provides io.helidon.integrations.vault.spi.VaultAuth
             with io.helidon.integrations.vault.auths.approle.AppRoleVaultAuth;
+
+    provides io.helidon.integrations.vault.spi.InjectionProvider
+            with io.helidon.integrations.vault.auths.approle.AppRoleAuthProvider;
 }

@@ -212,12 +212,12 @@ public final class PkiRole {
          * Currently, rsa and ec are supported, or when signing CSRs any can be specified to allow keys of either type and with any
          * bit size (subject to > 1024 bits for RSA keys).
          * <p>
-         * Defaults to {@value PkiSecrets#KEY_TYPE_RSA}.
+         * Defaults to {@value PkiSecretsRx#KEY_TYPE_RSA}.
          *
          * @param keyType key type
          * @return updated request
-         * @see io.helidon.integrations.vault.secrets.pki.PkiSecrets#KEY_TYPE_RSA
-         * @see io.helidon.integrations.vault.secrets.pki.PkiSecrets#KEY_TYPE_EC
+         * @see PkiSecretsRx#KEY_TYPE_RSA
+         * @see PkiSecretsRx#KEY_TYPE_EC
          */
         public Request keyType(String keyType) {
             return add("key_type", keyType);

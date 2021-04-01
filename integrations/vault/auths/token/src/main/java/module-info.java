@@ -30,6 +30,10 @@ module io.helidon.integrations.vault.auths.token {
 
     provides io.helidon.integrations.vault.spi.AuthMethodProvider
             with io.helidon.integrations.vault.auths.token.TokenAuthProvider;
+
     provides io.helidon.integrations.vault.spi.VaultAuth
             with io.helidon.integrations.vault.auths.token.TokenVaultAuth;
+
+    provides io.helidon.integrations.vault.spi.InjectionProvider
+            with io.helidon.integrations.vault.auths.token.TokenAuthProvider;
 }

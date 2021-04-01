@@ -20,18 +20,18 @@ import java.util.Map;
 
 import io.helidon.common.http.Http;
 import io.helidon.integrations.vault.secrets.kv2.Kv2Secret;
-import io.helidon.integrations.vault.secrets.kv2.Kv2Secrets;
-import io.helidon.integrations.vault.sys.Sys;
+import io.helidon.integrations.vault.secrets.kv2.Kv2SecretsRx;
+import io.helidon.integrations.vault.sys.SysRx;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 class Kv2Service implements Service {
-    private final Sys sys;
-    private final Kv2Secrets secrets;
+    private final SysRx sys;
+    private final Kv2SecretsRx secrets;
 
-    Kv2Service(Sys sys, Kv2Secrets secrets) {
+    Kv2Service(SysRx sys, Kv2SecretsRx secrets) {
         this.sys = sys;
         this.secrets = secrets;
     }

@@ -27,10 +27,10 @@ import io.helidon.integrations.vault.secrets.transit.Encrypt;
 import io.helidon.integrations.vault.secrets.transit.EncryptBatch;
 import io.helidon.integrations.vault.secrets.transit.Hmac;
 import io.helidon.integrations.vault.secrets.transit.Sign;
-import io.helidon.integrations.vault.secrets.transit.TransitSecrets;
+import io.helidon.integrations.vault.secrets.transit.TransitSecretsRx;
 import io.helidon.integrations.vault.secrets.transit.UpdateKeyConfig;
 import io.helidon.integrations.vault.secrets.transit.Verify;
-import io.helidon.integrations.vault.sys.Sys;
+import io.helidon.integrations.vault.sys.SysRx;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -40,10 +40,10 @@ class TransitService implements Service {
     private static final String ENCRYPTION_KEY = "encryption-key";
     private static final String SIGNATURE_KEY = "signature-key";
     private static final Base64Value SECRET_STRING = Base64Value.create("Hello World");
-    private final Sys sys;
-    private final TransitSecrets secrets;
+    private final SysRx sys;
+    private final TransitSecretsRx secrets;
 
-    TransitService(Sys sys, TransitSecrets secrets) {
+    TransitService(SysRx sys, TransitSecretsRx secrets) {
         this.sys = sys;
         this.secrets = secrets;
     }
@@ -64,13 +64,13 @@ class TransitService implements Service {
     }
 
     private void enableEngine(ServerRequest req, ServerResponse res) {
-        sys.enableEngine(TransitSecrets.ENGINE)
+        sys.enableEngine(TransitSecretsRx.ENGINE)
                 .thenAccept(ignored -> res.send("Transit Secret engine enabled"))
                 .exceptionally(res::send);
     }
 
     private void disableEngine(ServerRequest req, ServerResponse res) {
-        sys.disableEngine(TransitSecrets.ENGINE)
+        sys.disableEngine(TransitSecretsRx.ENGINE)
                 .thenAccept(ignored -> res.send("Transit Secret engine disabled"))
                 .exceptionally(res::send);
     }
@@ -103,7 +103,7 @@ class TransitService implements Service {
 
         secrets.decrypt(Decrypt.Request.builder()
                                 .encryptionKeyName(ENCRYPTION_KEY)
-                                .data(encrypted))
+                                .cipherText(encrypted))
                 .forSingle(response -> res.send(String.valueOf(response.decrypted().toDecodedString())))
                 .exceptionally(res::send);
     }
@@ -114,7 +114,7 @@ class TransitService implements Service {
         secrets.encrypt(Encrypt.Request.builder()
                                 .encryptionKeyName(ENCRYPTION_KEY)
                                 .data(Base64Value.create(secret)))
-                .forSingle(response -> res.send(response.encrypted().encrypted()))
+                .forSingle(response -> res.send(response.encrypted().cipherText()))
                 .exceptionally(res::send);
     }
 
@@ -170,8 +170,8 @@ class TransitService implements Service {
                 .map(EncryptBatch.Response::batchResult)
                 .flatMapSingle(batchResult -> {
                     for (Encrypt.Encrypted encrypted : batchResult) {
-                        System.out.println("Encrypted: " + encrypted.encrypted());
-                        decryptRequest.addBatch(DecryptBatch.Batch.create(encrypted.encrypted()));
+                        System.out.println("Encrypted: " + encrypted.cipherText());
+                        decryptRequest.addBatch(DecryptBatch.Batch.create(encrypted.cipherText()));
                     }
                     return secrets.decrypt(decryptRequest);
                 })

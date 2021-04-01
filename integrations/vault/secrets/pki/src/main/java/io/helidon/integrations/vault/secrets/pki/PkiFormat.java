@@ -30,7 +30,7 @@ public enum PkiFormat {
     DER("der"),
     /**
      * PEM with private key (for
-     * {@link io.helidon.integrations.vault.secrets.pki.PkiSecrets#issueCertificate(String, String, PkiCertificateRequest, PkiFormat)}.
+     * {@link PkiSecretsRx#issueCertificate(String, String, PkiCertificateRequest, PkiFormat)}.
      * When used, the certificate response is bundled with private key.
      */
     PEM_BUNDLE("pem_bundle");

@@ -22,11 +22,11 @@ import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.CompletionAwaitable;
 import io.helidon.config.Config;
 import io.helidon.integrations.vault.Vault;
-import io.helidon.integrations.vault.secrets.cubbyhole.CubbyholeSecrets;
-import io.helidon.integrations.vault.secrets.kv1.Kv1Secrets;
-import io.helidon.integrations.vault.secrets.kv2.Kv2Secrets;
-import io.helidon.integrations.vault.secrets.transit.TransitSecrets;
-import io.helidon.integrations.vault.sys.Sys;
+import io.helidon.integrations.vault.secrets.cubbyhole.CubbyholeSecretsRx;
+import io.helidon.integrations.vault.secrets.kv1.Kv1SecretsRx;
+import io.helidon.integrations.vault.secrets.kv2.Kv2SecretsRx;
+import io.helidon.integrations.vault.secrets.transit.TransitSecretsRx;
+import io.helidon.integrations.vault.sys.SysRx;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -70,16 +70,16 @@ public class ReactiveVaultMain {
         We do not need to block here for our examples, as the server started below will keep the process running
          */
 
-        Sys sys = tokenVault.sys(Sys.API);
+        SysRx sys = tokenVault.sys(SysRx.API);
         // we use await for webserver, as we do not care if we block the main thread - it is not used
         // for anything
         WebServer webServer = WebServer.builder()
                 .config(config.get("server"))
                 .routing(Routing.builder()
-                                 .register("/cubbyhole", new CubbyholeService(sys, tokenVault.secrets(CubbyholeSecrets.ENGINE)))
-                                 .register("/kv1", new Kv1Service(sys, tokenVault.secrets(Kv1Secrets.ENGINE)))
-                                 .register("/kv2", new Kv2Service(sys, tokenVault.secrets(Kv2Secrets.ENGINE)))
-                                 .register("/transit", new TransitService(sys, tokenVault.secrets(TransitSecrets.ENGINE))))
+                                 .register("/cubbyhole", new CubbyholeService(sys, tokenVault.secrets(CubbyholeSecretsRx.ENGINE)))
+                                 .register("/kv1", new Kv1Service(sys, tokenVault.secrets(Kv1SecretsRx.ENGINE)))
+                                 .register("/kv2", new Kv2Service(sys, tokenVault.secrets(Kv2SecretsRx.ENGINE)))
+                                 .register("/transit", new TransitService(sys, tokenVault.secrets(TransitSecretsRx.ENGINE))))
                 .build()
                 .start()
                 .await();

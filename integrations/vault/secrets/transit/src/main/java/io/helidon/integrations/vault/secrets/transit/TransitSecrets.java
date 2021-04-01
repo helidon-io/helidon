@@ -16,8 +16,6 @@
 
 package io.helidon.integrations.vault.secrets.transit;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Secrets;
 import io.helidon.integrations.vault.VaultOptionalResponse;
@@ -26,14 +24,9 @@ import io.helidon.integrations.vault.VaultOptionalResponse;
  * API operations for Vault's Transit Secrets Engine.
  */
 public interface TransitSecrets extends Secrets {
-    /**
-     * Transit Secrets engine.
-     * <p>
-     * Documentation:
-     * <a href="https://www.vaultproject.io/docs/secrets/transit">https://www.vaultproject.io/docs/secrets/transit</a>
-     */
-    Engine<TransitSecrets> ENGINE = Engine.create(TransitSecrets.class, "transit", "transit");
-
+    static TransitSecrets create(TransitSecretsRx reactive) {
+        return new TransitSecretsImpl(reactive);
+    }
     /**
      * List available keys.
      *
@@ -41,7 +34,7 @@ public interface TransitSecrets extends Secrets {
      * @return multi with all available encryption keys
      */
     @Override
-    Single<VaultOptionalResponse<ListSecrets.Response>> list(ListSecrets.Request request);
+    VaultOptionalResponse<ListSecrets.Response> list(ListSecrets.Request request);
 
     /**
      * Creates a new named encryption key of the specified type.
@@ -49,7 +42,7 @@ public interface TransitSecrets extends Secrets {
      * @param request create key request
      * @return future with response
      */
-    Single<CreateKey.Response> createKey(CreateKey.Request request);
+    CreateKey.Response createKey(CreateKey.Request request);
 
     /**
      * Delete a named ecryption key.
@@ -60,7 +53,7 @@ public interface TransitSecrets extends Secrets {
      * @param request delete key request
      * @return future with response
      */
-    Single<DeleteKey.Response> deleteKey(DeleteKey.Request request);
+    DeleteKey.Response deleteKey(DeleteKey.Request request);
 
     /**
      * Tune configuration of a key.
@@ -69,7 +62,7 @@ public interface TransitSecrets extends Secrets {
      * @return future with response
      * @see io.helidon.integrations.vault.secrets.transit.UpdateKeyConfig.Request#allowDeletion(boolean)
      */
-    Single<UpdateKeyConfig.Response> updateKeyConfig(UpdateKeyConfig.Request request);
+    UpdateKeyConfig.Response updateKeyConfig(UpdateKeyConfig.Request request);
 
     /**
      * Encrypts the provided plaintext using the named key. This path supports the create and update policy
@@ -80,7 +73,7 @@ public interface TransitSecrets extends Secrets {
      * @param request encrypt request
      * @return future with response
      */
-    Single<Encrypt.Response> encrypt(Encrypt.Request request);
+    Encrypt.Response encrypt(Encrypt.Request request);
 
     /**
      * Encrypts the provided batch of plaintext strings using the named key. This path supports the create and
@@ -92,7 +85,7 @@ public interface TransitSecrets extends Secrets {
      * @param request encrypt request
      * @return future with response
      */
-    Single<EncryptBatch.Response> encrypt(EncryptBatch.Request request);
+    EncryptBatch.Response encrypt(EncryptBatch.Request request);
 
     /**
      * Decrypts the provided ciphertext using the named key.
@@ -100,7 +93,7 @@ public interface TransitSecrets extends Secrets {
      * @param request decrypt request
      * @return future with response
      */
-    Single<Decrypt.Response> decrypt(Decrypt.Request request);
+    Decrypt.Response decrypt(Decrypt.Request request);
 
     /**
      * Decrypts the provided batch of ciphertext strings using the named key.
@@ -108,13 +101,13 @@ public interface TransitSecrets extends Secrets {
      * @param request decrypt request
      * @return future with response
      */
-    Single<DecryptBatch.Response> decrypt(DecryptBatch.Request request);
+    DecryptBatch.Response decrypt(DecryptBatch.Request request);
 
     /**
      * Hmac of a message.
      * Equivalent of a signature when using symmetric keys.
      */
-    Single<Hmac.Response> hmac(Hmac.Request request);
+    Hmac.Response hmac(Hmac.Request request);
 
     /**
      * Sign a message.
@@ -122,7 +115,7 @@ public interface TransitSecrets extends Secrets {
      * @param request signature request
      * @return signature response
      */
-    Single<Sign.Response> sign(Sign.Request request);
+    Sign.Response sign(Sign.Request request);
 
     /**
      * Verify a message signature.
@@ -130,5 +123,5 @@ public interface TransitSecrets extends Secrets {
      * @param request verification request
      * @return verification response
      */
-    Single<Verify.Response> verify(Verify.Request request);
+    Verify.Response verify(Verify.Request request);
 }

@@ -16,41 +16,35 @@
 
 package io.helidon.integrations.vault.auths.token;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.integrations.vault.AuthMethod;
-
 /**
  * Token authentication method API.
  *
- * See <a href="https://www.vaultproject.io/api-docs/auth/token">https://www.vaultproject.io/api-docs/auth/token</a>
+ * All methods block the current thread. This implementation is not suitable for reactive programming.
+ * Use {@link io.helidon.integrations.vault.auths.token.TokenAuthRx} in reactive code.
  */
 public interface TokenAuth {
     /**
-     * Token authentication method.
-     * <p>
-     * Documentation:
-     * <a href="https://www.vaultproject.io/api-docs/auth/token">https://www.vaultproject.io/api-docs/auth/token</a>
-     */
-    AuthMethod<TokenAuth> AUTH_METHOD = AuthMethod.create(TokenAuth.class, "token", "token");
-
-    /**
      * Service token type.
      */
-    String TYPE_SERVICE = "service";
+    String TYPE_SERVICE = TokenAuthRx.TYPE_SERVICE;
     /**
      * Batch token type.
      */
-    String TYPE_BATCH = "batch";
+    String TYPE_BATCH = TokenAuthRx.TYPE_BATCH;
     /**
      * Default token type.
      */
-    String TYPE_DEFAULT = "default";
+    String TYPE_DEFAULT = TokenAuthRx.TYPE_DEFAULT;
+
+    static TokenAuth create(TokenAuthRx reactive) {
+        return new TokenAuthImpl(reactive);
+    }
 
     /**
      * Create a new child token with default configuration.
      * @return a new token
      */
-    default Single<CreateToken.Response> createToken() {
+    default CreateToken.Response createToken() {
         return createToken(CreateToken.Request.builder());
     }
 
@@ -58,7 +52,7 @@ public interface TokenAuth {
      * Create a new orphan token with default configuration.
      * @return a new token
      */
-    default Single<CreateToken.Response> createOrphan() {
+    default CreateToken.Response createOrphan() {
         return createToken(CreateToken.Request.builder()
                                    .noParent(true));
     }
@@ -69,7 +63,7 @@ public interface TokenAuth {
      * @param request token request
      * @return a new token
      */
-    Single<CreateToken.Response> createToken(CreateToken.Request request);
+    CreateToken.Response createToken(CreateToken.Request request);
 
     /**
      * Renews a lease associated with a token. This is used to prevent the expiration of a token, and the automatic revocation
@@ -78,7 +72,7 @@ public interface TokenAuth {
      * @param request with token to renew
      * @return a new token
      */
-    Single<RenewToken.Response> renew(RenewToken.Request request);
+    RenewToken.Response renew(RenewToken.Request request);
 
     /**
      * Revokes a token and all child tokens. When the token is revoked, all dynamic secrets generated with it are also revoked.
@@ -86,7 +80,7 @@ public interface TokenAuth {
      * @param request with token to revoke
      * @return when revocation finishes
      */
-    Single<RevokeToken.Response> revoke(RevokeToken.Request request);
+    RevokeToken.Response revoke(RevokeToken.Request request);
 
     /**
      * Creates (or replaces) the named role. Roles enforce specific behavior when creating tokens that allow token
@@ -97,7 +91,7 @@ public interface TokenAuth {
      * @param request token role request
      * @return when creation finishes
      */
-    Single<CreateTokenRole.Response> createTokenRole(CreateTokenRole.Request request);
+    CreateTokenRole.Response createTokenRole(CreateTokenRole.Request request);
 
     /**
      * Delete a named token role.
@@ -105,7 +99,7 @@ public interface TokenAuth {
      * @param request with name of the role
      * @return when deleted
      */
-    Single<DeleteTokenRole.Response> deleteTokenRole(DeleteTokenRole.Request request);
+    DeleteTokenRole.Response deleteTokenRole(DeleteTokenRole.Request request);
 
     /**
      * Revokes a token and orphans all child tokens. When the token is revoked, all dynamic secrets generated with it are also
@@ -116,5 +110,5 @@ public interface TokenAuth {
      * @param request with token to revoke
      * @return when revocation finishes
      */
-    Single<RevokeAndOrphanToken.Response> revokeAndOrphan(RevokeAndOrphanToken.Request request);
+    RevokeAndOrphanToken.Response revokeAndOrphan(RevokeAndOrphanToken.Request request);
 }

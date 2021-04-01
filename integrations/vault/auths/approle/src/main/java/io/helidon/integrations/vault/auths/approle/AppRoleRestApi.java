@@ -33,7 +33,7 @@ class AppRoleRestApi extends VaultRestApi {
 
     private final AtomicReference<VaultTokenBase> currentToken = new AtomicReference<>();
 
-    private final AppRoleAuth auth;
+    private final AppRoleAuthRx auth;
     private final String appRoleId;
     private final String secretId;
 
@@ -75,7 +75,7 @@ class AppRoleRestApi extends VaultRestApi {
     }
 
     static class Builder extends VaultRestApi.BuilderBase<Builder> {
-        private AppRoleAuth auth;
+        private AppRoleAuthRx auth;
         private VaultTokenBase token;
         private String secretId;
         private String appRoleId;
@@ -83,7 +83,7 @@ class AppRoleRestApi extends VaultRestApi {
         private Builder() {
         }
 
-        public Builder auth(AppRoleAuth auth) {
+        public Builder auth(AppRoleAuthRx auth) {
             this.auth = auth;
             return this;
         }

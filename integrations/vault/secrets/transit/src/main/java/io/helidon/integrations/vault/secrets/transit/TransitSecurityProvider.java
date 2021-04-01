@@ -31,10 +31,10 @@ import io.helidon.security.spi.ProviderConfig;
 
 public class TransitSecurityProvider implements EncryptionProvider<TransitSecurityProvider.TransitEncryptionConfig>,
                                                 DigestProvider<TransitSecurityProvider.TransitDigestConfig> {
-    private final TransitSecrets transit;
+    private final TransitSecretsRx transit;
 
     TransitSecurityProvider(Vault vault) {
-        this.transit = vault.secrets(TransitSecrets.ENGINE);
+        this.transit = vault.secrets(TransitSecretsRx.ENGINE);
     }
 
     @Override
@@ -47,10 +47,10 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
         Function<byte[], Single<String>> encrypt = bytes -> transit.encrypt(providerConfig.encryptionRequest()
                                                                                     .data(Base64Value.create(bytes)))
                 .map(Encrypt.Response::encrypted)
-                .map(Encrypt.Encrypted::encrypted);
+                .map(Encrypt.Encrypted::cipherText);
 
         Function<String, Single<byte[]>> decrypt = encrypted -> transit.decrypt(providerConfig.decryptionRequest()
-                                                                                        .data(encrypted))
+                                                                                        .cipherText(encrypted))
                 .map(Decrypt.Response::decrypted)
                 .map(Base64Value::toBytes);
 

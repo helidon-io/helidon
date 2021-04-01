@@ -82,7 +82,7 @@ class VaultImpl implements Vault {
     }
 
     @Override
-    public <T extends Secrets> T secrets(Engine<T> engine) {
+    public <T extends SecretsRx> T secrets(Engine<T> engine) {
         return findEngineProvider(engine)
                 .map(it -> it.createSecrets(config, restAccess, it.supportedEngine().defaultMount()))
                 .orElseThrow(() -> new IllegalArgumentException("There is no provider available for engine "
@@ -91,7 +91,7 @@ class VaultImpl implements Vault {
     }
 
     @Override
-    public <T extends Secrets> T secrets(Engine<T> engine, String mount) {
+    public <T extends SecretsRx> T secrets(Engine<T> engine, String mount) {
         return findEngineProvider(engine)
                 .map(it -> it.createSecrets(config, restAccess, mount))
                 .orElseThrow(() -> new IllegalArgumentException("There is no provider available for engine "
@@ -148,12 +148,12 @@ class VaultImpl implements Vault {
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends Secrets> Optional<SecretsEngineProvider<T>> findEngineProvider(Engine<T> engine) {
+    private <T extends SecretsRx> Optional<SecretsEngineProvider<T>> findEngineProvider(Engine<T> engine) {
         for (SecretsEngineProvider<?> engineProvider : ENGINES.get()) {
             Engine<?> supportedEngine = engineProvider.supportedEngine();
             if (supportedEngine.version().equals(engine.version())
                     && supportedEngine.type().equals(engine.type())
-                    && (engine.secretsType() == Secrets.class)
+                    && (engine.secretsType() == SecretsRx.class)
                     || engine.secretsType().equals(supportedEngine.secretsType())) {
                 return Optional.of((SecretsEngineProvider<T>) engineProvider);
             }

@@ -33,4 +33,7 @@ module io.helidon.integrations.vault.secrets.kv {
 
     provides io.helidon.security.spi.SecurityProviderService
             with io.helidon.integrations.vault.secrets.kv2.Kv2SecurityService;
+
+    provides io.helidon.integrations.vault.spi.InjectionProvider
+            with io.helidon.integrations.vault.secrets.kv2.Kv2EngineProvider;
 }

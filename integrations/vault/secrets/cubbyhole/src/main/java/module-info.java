@@ -22,9 +22,19 @@ module io.helidon.integrations.vault.secrets.cubbyhole {
 
     requires io.helidon.integrations.vault;
     requires io.helidon.integrations.common.rest;
+    requires io.helidon.security;
 
     exports io.helidon.integrations.vault.secrets.cubbyhole;
 
+    // Implementation of service for Vault Secret Engine
     provides io.helidon.integrations.vault.spi.SecretsEngineProvider
             with io.helidon.integrations.vault.secrets.cubbyhole.CubbyholeEngineProvider;
+
+    // Implementation of service to support injection (such as CDI)
+    provides io.helidon.integrations.vault.spi.InjectionProvider
+            with io.helidon.integrations.vault.secrets.cubbyhole.CubbyholeEngineProvider;
+
+    // Implementation of service to support secrets in Helidon Security
+    provides io.helidon.security.spi.SecurityProviderService
+            with io.helidon.integrations.vault.secrets.cubbyhole.CubbyholeSecurityService;
 }

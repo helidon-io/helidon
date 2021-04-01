@@ -19,18 +19,18 @@ package io.helidon.examples.integrations.vault.hcp.reactive;
 import java.util.Map;
 
 import io.helidon.common.http.Http;
-import io.helidon.integrations.vault.secrets.kv1.Kv1Secrets;
-import io.helidon.integrations.vault.sys.Sys;
+import io.helidon.integrations.vault.secrets.kv1.Kv1SecretsRx;
+import io.helidon.integrations.vault.sys.SysRx;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 class Kv1Service implements Service {
-    private final Sys sys;
-    private final Kv1Secrets secrets;
+    private final SysRx sys;
+    private final Kv1SecretsRx secrets;
 
-    Kv1Service(Sys sys, Kv1Secrets secrets) {
+    Kv1Service(SysRx sys, Kv1SecretsRx secrets) {
         this.sys = sys;
         this.secrets = secrets;
     }
@@ -45,13 +45,13 @@ class Kv1Service implements Service {
     }
 
     private void disableEngine(ServerRequest req, ServerResponse res) {
-        sys.disableEngine(Kv1Secrets.ENGINE)
+        sys.disableEngine(Kv1SecretsRx.ENGINE)
                 .thenAccept(ignored -> res.send("KV1 Secret engine disabled"))
                 .exceptionally(res::send);
     }
 
     private void enableEngine(ServerRequest req, ServerResponse res) {
-        sys.enableEngine(Kv1Secrets.ENGINE)
+        sys.enableEngine(Kv1SecretsRx.ENGINE)
                 .thenAccept(ignored -> res.send("KV1 Secret engine enabled"))
                 .exceptionally(res::send);
     }

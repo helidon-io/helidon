@@ -64,7 +64,7 @@ public class Login {
 
         /**
          * Role ID of the AppRole.
-         * This is the ID, not the name. Use {@link AppRoleAuth#readRoleId(String)} or UI to obtain the id.
+         * This is the ID, not the name. Use {@link AppRoleAuthRx#readRoleId(String)} or UI to obtain the id.
          *
          * @param roleId role ID
          * @return updated request

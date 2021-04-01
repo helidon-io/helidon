@@ -25,10 +25,10 @@ import io.helidon.integrations.common.rest.ApiResponse;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.auths.k8s.ConfigureK8s;
 import io.helidon.integrations.vault.auths.k8s.CreateRole;
-import io.helidon.integrations.vault.auths.k8s.K8sAuth;
+import io.helidon.integrations.vault.auths.k8s.K8sAuthRx;
 import io.helidon.integrations.vault.secrets.kv2.Kv2Secret;
-import io.helidon.integrations.vault.secrets.kv2.Kv2Secrets;
-import io.helidon.integrations.vault.sys.Sys;
+import io.helidon.integrations.vault.secrets.kv2.Kv2SecretsRx;
+import io.helidon.integrations.vault.sys.SysRx;
 
 class K8sExample {
     private static final String SECRET_PATH = "k8s/example/secret";
@@ -37,13 +37,13 @@ class K8sExample {
     private final Vault tokenVault;
     private final String k8sAddress;
     private final Config config;
-    private final Sys sys;
+    private final SysRx sys;
 
     private Vault k8sVault;
 
     K8sExample(Vault tokenVault, Config config) {
         this.tokenVault = tokenVault;
-        this.sys = tokenVault.sys(Sys.API);
+        this.sys = tokenVault.sys(SysRx.API);
         this.k8sAddress = config.get("cluster-address").asString().get();
         this.config = config;
     }
@@ -61,7 +61,7 @@ class K8sExample {
     }
 
     private Single<ApiResponse> workWithSecrets() {
-        Kv2Secrets secrets = k8sVault.secrets(Kv2Secrets.ENGINE);
+        Kv2SecretsRx secrets = k8sVault.secrets(Kv2SecretsRx.ENGINE);
 
         return secrets.create(SECRET_PATH, Map.of("secret-key", "secretValue",
                                                   "secret-user", "username"))
@@ -79,18 +79,18 @@ class K8sExample {
 
     private Single<ApiResponse> disableK8sAuth() {
         return sys.deletePolicy(POLICY_NAME)
-                .flatMapSingle(ignored -> sys.disableAuth(K8sAuth.AUTH_METHOD.defaultPath()));
+                .flatMapSingle(ignored -> sys.disableAuth(K8sAuthRx.AUTH_METHOD.defaultPath()));
     }
 
     private Single<ApiResponse> enableK8sAuth() {
         // enable the method
-        return sys.enableAuth(K8sAuth.AUTH_METHOD)
+        return sys.enableAuth(K8sAuthRx.AUTH_METHOD)
                 // add policy
                 .flatMapSingle(ignored -> sys.createPolicy(POLICY_NAME, VaultPolicy.POLICY))
-                .flatMapSingle(ignored -> tokenVault.auth(K8sAuth.AUTH_METHOD)
+                .flatMapSingle(ignored -> tokenVault.auth(K8sAuthRx.AUTH_METHOD)
                         .configure(ConfigureK8s.Request.builder()
                                            .address(k8sAddress)))
-                .flatMapSingle(ignored -> tokenVault.auth(K8sAuth.AUTH_METHOD)
+                .flatMapSingle(ignored -> tokenVault.auth(K8sAuthRx.AUTH_METHOD)
                         // this must be the same role name as is defined in application.yaml
                         .createRole(CreateRole.Request.builder()
                                             .roleName("my-role")

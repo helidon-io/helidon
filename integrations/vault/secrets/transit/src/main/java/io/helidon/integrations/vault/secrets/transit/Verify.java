@@ -66,7 +66,7 @@ public final class Verify {
          * Specifies the signature output from the /transit/sign function. Either this must be supplied or hmac must be supplied.
          *
          * @param signature signature string as provided by
-         * {@link TransitSecrets#sign(io.helidon.integrations.vault.secrets.transit.Sign.Request)}
+         * {@link TransitSecretsRx#sign(io.helidon.integrations.vault.secrets.transit.Sign.Request)}
          * @return updated request
          */
         public Request signature(String signature) {

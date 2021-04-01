@@ -24,13 +24,13 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.ApiResponse;
 import io.helidon.integrations.vault.Vault;
-import io.helidon.integrations.vault.auths.approle.AppRoleAuth;
+import io.helidon.integrations.vault.auths.approle.AppRoleAuthRx;
 import io.helidon.integrations.vault.auths.approle.AppRoleVaultAuth;
 import io.helidon.integrations.vault.auths.approle.CreateAppRole;
 import io.helidon.integrations.vault.auths.approle.GenerateSecretId;
 import io.helidon.integrations.vault.secrets.kv2.Kv2Secret;
-import io.helidon.integrations.vault.secrets.kv2.Kv2Secrets;
-import io.helidon.integrations.vault.sys.Sys;
+import io.helidon.integrations.vault.secrets.kv2.Kv2SecretsRx;
+import io.helidon.integrations.vault.sys.SysRx;
 
 class AppRoleExample {
     private static final String SECRET_PATH = "approle/example/secret";
@@ -39,7 +39,7 @@ class AppRoleExample {
 
     private final Vault tokenVault;
     private final Config config;
-    private final Sys sys;
+    private final SysRx sys;
 
     private Vault appRoleVault;
 
@@ -47,7 +47,7 @@ class AppRoleExample {
         this.tokenVault = tokenVault;
         this.config = config;
 
-        this.sys = tokenVault.sys(Sys.API);
+        this.sys = tokenVault.sys(SysRx.API);
     }
 
     public Single<String> run() {
@@ -63,7 +63,7 @@ class AppRoleExample {
     }
 
     private Single<ApiResponse> workWithSecrets() {
-        Kv2Secrets secrets = appRoleVault.secrets(Kv2Secrets.ENGINE);
+        Kv2SecretsRx secrets = appRoleVault.secrets(Kv2SecretsRx.ENGINE);
 
         return secrets.create(SECRET_PATH, Map.of("secret-key", "secretValue",
                                                   "secret-user", "username"))
@@ -80,8 +80,11 @@ class AppRoleExample {
     }
 
     private Single<ApiResponse> disableAppRoleAuth() {
+        if (1 == 1) {
+            return Single.empty();
+        }
         return sys.deletePolicy(POLICY_NAME)
-                .flatMapSingle(ignored -> sys.disableAuth(AppRoleAuth.AUTH_METHOD.defaultPath()));
+                .flatMapSingle(ignored -> sys.disableAuth(AppRoleAuthRx.AUTH_METHOD.defaultPath()));
     }
 
     private Single<String> enableAppRoleAuth() {
@@ -89,24 +92,26 @@ class AppRoleExample {
         AtomicReference<String> secretId = new AtomicReference<>();
 
         // enable the method
-        return sys.enableAuth(AppRoleAuth.AUTH_METHOD)
+        return sys.enableAuth(AppRoleAuthRx.AUTH_METHOD)
                 // add policy
                 .flatMapSingle(ignored -> sys.createPolicy(POLICY_NAME, VaultPolicy.POLICY))
-                .flatMapSingle(ignored -> tokenVault.auth(AppRoleAuth.AUTH_METHOD)
+                .flatMapSingle(ignored -> tokenVault.auth(AppRoleAuthRx.AUTH_METHOD)
                         .createAppRole(CreateAppRole.Request.builder()
                                                .roleName(ROLE_NAME)
                                                .addTokenPolicy(POLICY_NAME)
                                                .tokenExplicitMaxTtl(Duration.ofMinutes(1))))
-                .flatMapSingle(ignored -> tokenVault.auth(AppRoleAuth.AUTH_METHOD)
+                .flatMapSingle(ignored -> tokenVault.auth(AppRoleAuthRx.AUTH_METHOD)
                         .readRoleId(ROLE_NAME))
                 .peek(it -> it.ifPresent(roleId::set))
-                .flatMapSingle(ignored -> tokenVault.auth(AppRoleAuth.AUTH_METHOD)
+                .flatMapSingle(ignored -> tokenVault.auth(AppRoleAuthRx.AUTH_METHOD)
                         .generateSecretId(GenerateSecretId.Request.builder()
                                                   .roleName(ROLE_NAME)
                                                   .addMetadata("name", "helidon")))
                 .map(GenerateSecretId.Response::secretId)
                 .peek(secretId::set)
                 .peek(ignored -> {
+                    System.out.println("roleId: " + roleId.get());
+                    System.out.println("secretId: " + secretId.get());
                     appRoleVault = Vault.builder()
                             .config(config)
                             .addVaultAuth(AppRoleVaultAuth.builder()

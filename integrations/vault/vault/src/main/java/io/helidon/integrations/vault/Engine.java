@@ -24,7 +24,7 @@ import java.util.Optional;
  *
  * @param <T> type of the {@link io.helidon.integrations.vault.Secret} provided by the engine
  */
-public interface Engine<T extends Secrets> {
+public interface Engine<T extends SecretsRx> {
     /**
      * Create a new versioned engine.
      *
@@ -35,7 +35,7 @@ public interface Engine<T extends Secrets> {
      * @param <T> type of secrets
      * @return a new engine
      */
-    static <T extends Secrets> Engine<T> create(Class<T> secrets, String type, String defaultMount, String version) {
+    static <T extends SecretsRx> Engine<T> create(Class<T> secrets, String type, String defaultMount, String version) {
         return EngineImpl.create(secrets, type, defaultMount, version);
     }
 
@@ -48,7 +48,7 @@ public interface Engine<T extends Secrets> {
      * @param <T> type of secrets
      * @return a new engine
      */
-    static <T extends Secrets> Engine<T> create(Class<T> secrets, String type, String defaultMount) {
+    static <T extends SecretsRx> Engine<T> create(Class<T> secrets, String type, String defaultMount) {
         return EngineImpl.create(secrets, type, defaultMount);
     }
 
@@ -67,7 +67,7 @@ public interface Engine<T extends Secrets> {
     Optional<String> version();
 
     /**
-     * Implementation class of the {@link io.helidon.integrations.vault.Secrets} of this engine.
+     * Implementation class of the {@link SecretsRx} of this engine.
      *
      * @return secrets class
      * @see io.helidon.integrations.vault.Vault#secrets(Engine)

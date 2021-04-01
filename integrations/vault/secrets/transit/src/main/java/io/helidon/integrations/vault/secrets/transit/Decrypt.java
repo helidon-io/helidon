@@ -57,7 +57,7 @@ public final class Decrypt {
          * @param value value to encrypt
          * @return updated request
          */
-        public Request data(String value) {
+        public Request cipherText(String value) {
             return add("ciphertext", value);
         }
 

@@ -19,18 +19,18 @@ package io.helidon.examples.integrations.vault.hcp.reactive;
 import java.util.Map;
 
 import io.helidon.common.http.Http;
-import io.helidon.integrations.vault.secrets.cubbyhole.CubbyholeSecrets;
-import io.helidon.integrations.vault.sys.Sys;
+import io.helidon.integrations.vault.secrets.cubbyhole.CubbyholeSecretsRx;
+import io.helidon.integrations.vault.sys.SysRx;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 class CubbyholeService implements Service {
-    private final Sys sys;
-    private final CubbyholeSecrets secrets;
+    private final SysRx sys;
+    private final CubbyholeSecretsRx secrets;
 
-    CubbyholeService(Sys sys, CubbyholeSecrets secrets) {
+    CubbyholeService(SysRx sys, CubbyholeSecretsRx secrets) {
         this.sys = sys;
         this.secrets = secrets;
     }

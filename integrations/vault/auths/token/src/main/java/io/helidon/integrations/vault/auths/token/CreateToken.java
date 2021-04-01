@@ -145,12 +145,12 @@ public final class CreateToken {
         }
 
         /**
-         * Choose token type. Defaults to {@value TokenAuth#TYPE_SERVICE}.
+         * Choose token type. Defaults to {@value TokenAuthRx#TYPE_SERVICE}.
          *
          * @param type token type
          * @return updated request
-         * @see io.helidon.integrations.vault.auths.token.TokenAuth#TYPE_SERVICE
-         * @see io.helidon.integrations.vault.auths.token.TokenAuth#TYPE_BATCH
+         * @see TokenAuthRx#TYPE_SERVICE
+         * @see TokenAuthRx#TYPE_BATCH
          */
         public Request type(String type) {
             return add("type", type);

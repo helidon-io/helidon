@@ -16,22 +16,54 @@
 
 package io.helidon.integrations.vault.auths.k8s;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.AuthMethod;
 import io.helidon.integrations.vault.spi.AuthMethodProvider;
+import io.helidon.integrations.vault.spi.InjectionProvider;
 
 /**
  * Java Service Loader implementation for Vault authentication method based on Kubernetes.
  */
-public class K8sAuthProvider implements AuthMethodProvider<K8sAuth> {
+public class K8sAuthProvider implements AuthMethodProvider<K8sAuthRx>,
+                                        InjectionProvider {
+    private static final List<InjectionType<?>> INJECTABLES;
+
+    static {
+        List<InjectionType<?>> injectables = new LinkedList<>();
+
+        injectables.add(InjectionType.create(K8sAuthRx.class,
+                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
+                                                     .map(it -> vault.auth(K8sAuthRx.AUTH_METHOD, it))
+                                                     .orElseGet(() -> vault.auth(K8sAuthRx.AUTH_METHOD))));
+
+        injectables.add(InjectionType.create(K8sAuth.class,
+                                             (vault, config, instanceConfig) -> {
+                                                 K8sAuthRx rx = instanceConfig.vaultPath()
+                                                         .map(it -> vault.auth(K8sAuthRx.AUTH_METHOD, it))
+                                                         .orElseGet(() -> vault.auth(K8sAuthRx.AUTH_METHOD));
+
+                                                 return new K8sAuthImpl(rx);
+                                             }));
+
+        INJECTABLES = List.copyOf(injectables);
+    }
+    
     @Override
-    public AuthMethod<K8sAuth> supportedMethod() {
-        return K8sAuth.AUTH_METHOD;
+    public AuthMethod<K8sAuthRx> supportedMethod() {
+        return K8sAuthRx.AUTH_METHOD;
     }
 
     @Override
-    public K8sAuth createAuth(Config config, RestApi restApi, String path) {
-        return new K8sAuthImpl(restApi, path);
+    public K8sAuthRx createAuth(Config config, RestApi restApi, String path) {
+        return new K8sAuthRxImpl(restApi, path);
+    }
+
+    @Override
+    public List<InjectionType<?>> injectables() {
+        return INJECTABLES;
     }
 }

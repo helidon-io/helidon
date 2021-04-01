@@ -25,4 +25,7 @@ module io.helidon.integrations.vault.sys {
 
     provides io.helidon.integrations.vault.spi.SysProvider
             with io.helidon.integrations.vault.sys.SysProvider;
+
+    provides io.helidon.integrations.vault.spi.InjectionProvider
+            with io.helidon.integrations.vault.sys.SysProvider;
 }

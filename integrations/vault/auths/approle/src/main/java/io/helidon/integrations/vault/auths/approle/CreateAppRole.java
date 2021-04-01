@@ -188,7 +188,7 @@ public class CreateAppRole {
     /**
      * Create AppRole response.
      *
-     * @see io.helidon.integrations.vault.auths.approle.AppRoleAuth#createAppRole(io.helidon.integrations.vault.auths.approle.CreateAppRole.Request)
+     * @see AppRoleAuthRx#createAppRole(io.helidon.integrations.vault.auths.approle.CreateAppRole.Request)
      */
     public static final class Response extends ApiResponse {
         // we could use a single response object for all responses without entity

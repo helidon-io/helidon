@@ -27,4 +27,7 @@ module io.helidon.integrations.vault.secrets.database {
 
     provides io.helidon.integrations.vault.spi.SecretsEngineProvider
             with io.helidon.integrations.vault.secrets.database.DbEngineProvider;
+
+    provides io.helidon.integrations.vault.spi.InjectionProvider
+            with io.helidon.integrations.vault.secrets.database.DbEngineProvider;
 }

@@ -18,9 +18,6 @@ package io.helidon.integrations.vault;
 
 import java.util.List;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.integrations.common.rest.ApiOptionalResponse;
-
 /**
  * All engines provide an implementation of this interface with specific methods for these engines.
  *
@@ -33,10 +30,11 @@ public interface Secrets {
      *
      * @return secrets available
      */
-    default Single<List<String>> list() {
+    default List<String> list() {
         return list(ListSecrets.Request.create())
-                .map(ApiOptionalResponse::entity)
-                .map(it -> it.map(ListSecrets.Response::paths).orElseGet(List::of));
+                .entity()
+                .map(ListSecrets.Response::paths)
+                .orElseGet(List::of);
     }
 
     /**
@@ -46,10 +44,11 @@ public interface Secrets {
      * @param path path to find secrets in
      * @return secrets available
      */
-    default Single<List<String>> list(String path) {
+    default List<String> list(String path) {
         return list(ListSecrets.Request.create(path))
-                .map(ApiOptionalResponse::entity)
-                .map(it -> it.map(ListSecrets.Response::paths).orElseGet(List::of));
+                .entity()
+                .map(ListSecrets.Response::paths)
+                .orElseGet(List::of);
     }
 
     /**
@@ -58,5 +57,5 @@ public interface Secrets {
      * @param request request
      * @return future with response
      */
-    Single<VaultOptionalResponse<ListSecrets.Response>> list(ListSecrets.Request request);
+    VaultOptionalResponse<ListSecrets.Response> list(ListSecrets.Request request);
 }

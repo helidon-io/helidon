@@ -16,34 +16,29 @@
 
 package io.helidon.integrations.vault.auths.k8s;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.integrations.vault.AuthMethod;
-
 /**
  * Kubernetes authentication method API.
  *
- * See <a href="https://www.vaultproject.io/docs/auth/kubernetes">https://www.vaultproject.io/docs/auth/kubernetes</a>.
- * When used to authenticate against a Vault from a k8s pod, there is no need to use this API directly.
+ * All methods block the current thread. This implementation is not suitable for reactive programming.
+ * Use {@link io.helidon.integrations.vault.auths.k8s.K8sAuthRx} in reactive code.
  */
 public interface K8sAuth {
     /**
-     * Kubernetes authentication method.
-     */
-    AuthMethod<K8sAuth> AUTH_METHOD = AuthMethod.create(K8sAuth.class, "kubernetes", "kubernetes");
-
-    /**
      * Service token type.
      */
-    String TYPE_SERVICE = "service";
+    String TYPE_SERVICE = K8sAuthRx.TYPE_SERVICE;
     /**
      * Batch token type.
      */
-    String TYPE_BATCH = "batch";
+    String TYPE_BATCH = K8sAuthRx.TYPE_BATCH;
     /**
      * Default token type.
      */
-    String TYPE_DEFAULT = "default";
+    String TYPE_DEFAULT = K8sAuthRx.TYPE_DEFAULT;
 
+    static K8sAuth create(K8sAuthRx reactive) {
+        return new K8sAuthImpl(reactive);
+    }
     /**
      * Registers a role in the auth method. Role types have specific entities that can perform login operations against this
      * endpoint. Constraints specific to the role type must be set on the role. These are applied to the authenticated entities
@@ -52,7 +47,7 @@ public interface K8sAuth {
      * @param request create role request
      * @return when the role is created
      */
-    Single<CreateRole.Response> createRole(CreateRole.Request request);
+    CreateRole.Response createRole(CreateRole.Request request);
 
     /**
      * Deletes the previously registered role.
@@ -60,7 +55,7 @@ public interface K8sAuth {
      * @param request delete role request
      * @return when the role is deleted
      */
-    Single<DeleteRole.Response> deleteRole(DeleteRole.Request request);
+    DeleteRole.Response deleteRole(DeleteRole.Request request);
 
     /**
      * Fetch a token. This endpoint takes a signed JSON Web Token (JWT) and a role name for some entity. It verifies the JWT
@@ -69,7 +64,7 @@ public interface K8sAuth {
      * @param request login request
      * @return login response
      */
-    Single<Login.Response> login(Login.Request request);
+    Login.Response login(Login.Request request);
 
     /**
      * Configure this authentication method.
@@ -89,5 +84,5 @@ public interface K8sAuth {
      * @param request request to configure
      * @return when configured
      */
-    Single<ConfigureK8s.Response> configure(ConfigureK8s.Request request);
+    ConfigureK8s.Response configure(ConfigureK8s.Request request);
 }
