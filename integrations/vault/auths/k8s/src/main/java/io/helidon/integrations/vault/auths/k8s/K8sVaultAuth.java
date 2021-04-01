@@ -125,7 +125,7 @@ public class K8sVaultAuth implements VaultAuth {
                                        vaultBuilder.webClientUpdater().accept(webclient);
                                    })
                                    .faultTolerance(vaultBuilder.ftHandler())
-                                   .auth(loginVault.auth(K8sAuth.AUTH_METHOD))
+                                   .auth(loginVault.auth(K8sAuthRx.AUTH_METHOD))
                                    .roleName(roleName)
                                    .jwtToken(jwtToken)
                                    .build());

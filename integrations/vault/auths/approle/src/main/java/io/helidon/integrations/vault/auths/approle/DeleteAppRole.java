@@ -48,7 +48,7 @@ public final class DeleteAppRole {
     /**
      * Delete AppRole response.
      *
-     * @see io.helidon.integrations.vault.auths.approle.AppRoleAuth#deleteAppRole(io.helidon.integrations.vault.auths.approle.DeleteAppRole.Request)
+     * @see AppRoleAuthRx#deleteAppRole(io.helidon.integrations.vault.auths.approle.DeleteAppRole.Request)
      */
     public static final class Response extends ApiResponse {
         // we could use a single response object for all responses without entity

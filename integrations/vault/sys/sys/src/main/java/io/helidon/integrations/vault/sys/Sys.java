@@ -16,16 +16,30 @@
 
 package io.helidon.integrations.vault.sys;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.integrations.vault.AuthMethod;
 import io.helidon.integrations.vault.Engine;
-import io.helidon.integrations.vault.SysApi;
 
+/**
+ * Blocking APIs for Sys operations on Vault. Methods block the calling thread.
+ * DO NOT use this API in reactive environment, always use {@link io.helidon.integrations.vault.sys.SysRx}.
+ * <p>
+ * This class is intended for use in blocking environments, such as CDI (where it can be injected)
+ *  or in blocking server environment, where it can be obtained through {@link #create(SysRx)}.
+ *
+ */
 public interface Sys {
     /**
-     * The API of this sys implementation.
+     * Create a new instance of blocking Vault Sys operations from the reactive instance.
+     * Handle with caution, as all methods on the returned instance block the calling thread, and as such
+     * are NOT SUITABLE FOR REACTIVE usage.
+     *
+     * @param reactiveSys reactive vault Sys operations, as obtained from
+     * {@link io.helidon.integrations.vault.Vault#sys(io.helidon.integrations.vault.SysApi)}
+     * @return a new blocking Sys API
      */
-    SysApi<Sys> API = SysApi.create(Sys.class);
+    static Sys create(SysRx reactiveSys) {
+        return new SysImpl(reactiveSys);
+    }
 
     /**
      * Enable (mount) a secret engine on a default path.
@@ -33,7 +47,7 @@ public interface Sys {
      * @param engine engine to enable
      * @return when the engine is enabled
      */
-    default Single<EnableEngine.Response> enableEngine(Engine<?> engine) {
+    default EnableEngine.Response enableEngine(Engine<?> engine) {
         return enableEngine(EnableEngine.Request.builder().engine(engine));
     }
 
@@ -43,14 +57,14 @@ public interface Sys {
      * @param request request for mount operation
      * @return when the engine is enabled
      */
-    Single<EnableEngine.Response> enableEngine(EnableEngine.Request request);
+    EnableEngine.Response enableEngine(EnableEngine.Request request);
 
     /**
      * Disable (unmount) a secret engine from default path.
      * @param engine to disable
      * @return when the engine is disabled
      */
-    default Single<DisableEngine.Response> disableEngine(Engine<?> engine) {
+    default DisableEngine.Response disableEngine(Engine<?> engine) {
         return disableEngine(DisableEngine.Request.builder()
                                      .engine(engine));
     }
@@ -60,12 +74,12 @@ public interface Sys {
      * @param path mount path
      * @return when the engine is disabled
      */
-    default Single<DisableEngine.Response> disableEngine(String path) {
+    default DisableEngine.Response disableEngine(String path) {
         return disableEngine(DisableEngine.Request.builder()
                                      .path(path));
     }
 
-    Single<DisableEngine.Response> disableEngine(DisableEngine.Request request);
+    DisableEngine.Response disableEngine(DisableEngine.Request request);
 
     /**
      * Enable an authentication method on default path.
@@ -73,7 +87,7 @@ public interface Sys {
      * @param authMethod authentication method to enable
      * @return when the method is enabled
      */
-    default Single<EnableAuth.Response> enableAuth(AuthMethod<?> authMethod) {
+    default EnableAuth.Response enableAuth(AuthMethod<?> authMethod) {
         return enableAuth(EnableAuth.Request.builder()
                                   .auth(authMethod));
     }
@@ -84,7 +98,7 @@ public interface Sys {
      * @param request mount request
      * @return when the method is enabled
      */
-    Single<EnableAuth.Response> enableAuth(EnableAuth.Request request);
+    EnableAuth.Response enableAuth(EnableAuth.Request request);
 
     /**
      * Disable an authentication method.
@@ -92,12 +106,12 @@ public interface Sys {
      * @param path path of the method
      * @return when method is disabled
      */
-    default Single<DisableAuth.Response> disableAuth(String path) {
+    default DisableAuth.Response disableAuth(String path) {
         return disableAuth(DisableAuth.Request.builder()
                                    .path(path));
     }
 
-    Single<DisableAuth.Response> disableAuth(DisableAuth.Request request);
+    DisableAuth.Response disableAuth(DisableAuth.Request request);
 
     /**
      * Create a policy.
@@ -106,11 +120,11 @@ public interface Sys {
      * @param policy policy document
      * @return when policy is created
      */
-    default Single<CreatePolicy.Response> createPolicy(String name, String policy) {
+    default CreatePolicy.Response createPolicy(String name, String policy) {
         return createPolicy(CreatePolicy.Request.create(name, policy));
     }
 
-    Single<CreatePolicy.Response> createPolicy(CreatePolicy.Request request);
+    CreatePolicy.Response createPolicy(CreatePolicy.Request request);
 
     /**
      * Delete a policy.
@@ -118,9 +132,9 @@ public interface Sys {
      * @param name name of the policy
      * @return when policy is deleted
      */
-    default Single<DeletePolicy.Response> deletePolicy(String name) {
+    default DeletePolicy.Response deletePolicy(String name) {
         return deletePolicy(DeletePolicy.Request.create(name));
     }
 
-    Single<DeletePolicy.Response> deletePolicy(DeletePolicy.Request request);
+    DeletePolicy.Response deletePolicy(DeletePolicy.Request request);
 }

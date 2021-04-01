@@ -172,7 +172,7 @@ public final class Encrypt {
             this.keyVersion = json.getInt("key_version");
         }
 
-        public String encrypted() {
+        public String cipherText() {
             return encrypted;
         }
 

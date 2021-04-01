@@ -31,7 +31,7 @@ import io.helidon.integrations.vault.VaultResponse;
 
 /**
  * Generate secret ID request and response.
- * @see io.helidon.integrations.vault.auths.approle.AppRoleAuth#generateSecretId(io.helidon.integrations.vault.auths.approle.GenerateSecretId.Request)
+ * @see AppRoleAuthRx#generateSecretId(io.helidon.integrations.vault.auths.approle.GenerateSecretId.Request)
  */
 public final class GenerateSecretId {
     private GenerateSecretId() {

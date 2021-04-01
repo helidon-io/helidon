@@ -21,7 +21,7 @@ import io.helidon.integrations.vault.Secret;
 /**
  * KV secret for version 2.
  *
- * @see Kv2Secrets#ENGINE
+ * @see Kv2SecretsRx#ENGINE
  */
 public interface Kv2Secret extends Secret {
     /**

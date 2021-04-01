@@ -1,0 +1,21 @@
+server.port: 8080
+
+vault:
+  default:
+    address: "http://localhost:8200"
+    token: "myroot"
+    auth:
+      app-role:
+        enabled: false
+      token:
+        enabled: true
+  app-role:
+    address: "http://localhost:8200"
+    auth:
+      app-role:
+        enabled: true
+        # These properties are defined in ~/helidon/conf/examples.yaml
+        role-id: "${vault.properties.app-role.role-id}"
+        secret-id: "${vault.properties.app-role.secret-id}"
+    token:
+      enabled: false

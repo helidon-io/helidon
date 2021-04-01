@@ -55,7 +55,7 @@ public class DestroySecretId {
     /**
      * Destroy Secret ID response.
      *
-     * @see io.helidon.integrations.vault.auths.approle.AppRoleAuth#destroySecretId(DestroySecretId.Request)
+     * @see AppRoleAuthRx#destroySecretId(DestroySecretId.Request)
      */
     public static final class Response extends ApiResponse {
         // we could use a single response object for all responses without entity

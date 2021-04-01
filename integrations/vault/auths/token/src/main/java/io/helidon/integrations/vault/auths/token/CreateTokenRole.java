@@ -196,9 +196,9 @@ public final class CreateTokenRole {
          *
          * @param type type of token
          * @return updated request
-         * @see io.helidon.integrations.vault.auths.token.TokenAuth#TYPE_SERVICE
-         * @see io.helidon.integrations.vault.auths.token.TokenAuth#TYPE_BATCH
-         * @see io.helidon.integrations.vault.auths.token.TokenAuth#TYPE_DEFAULT
+         * @see TokenAuthRx#TYPE_SERVICE
+         * @see TokenAuthRx#TYPE_BATCH
+         * @see TokenAuthRx#TYPE_DEFAULT
          */
         public Request tokenType(String type) {
             return add("token_type", type);

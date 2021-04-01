@@ -27,9 +27,12 @@ module io.helidon.integrations.vault.auths.k8s {
 
     exports io.helidon.integrations.vault.auths.k8s;
 
-    provides io.helidon.integrations.vault.spi.VaultAuth with
-            io.helidon.integrations.vault.auths.k8s.K8sVaultAuth;
+    provides io.helidon.integrations.vault.spi.VaultAuth
+            with io.helidon.integrations.vault.auths.k8s.K8sVaultAuth;
 
-    provides io.helidon.integrations.vault.spi.AuthMethodProvider with
-            io.helidon.integrations.vault.auths.k8s.K8sAuthProvider;
+    provides io.helidon.integrations.vault.spi.AuthMethodProvider
+            with io.helidon.integrations.vault.auths.k8s.K8sAuthProvider;
+
+    provides io.helidon.integrations.vault.spi.InjectionProvider
+            with io.helidon.integrations.vault.auths.k8s.K8sAuthProvider;
 }

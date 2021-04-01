@@ -29,4 +29,7 @@ module io.helidon.integrations.vault.secrets.pki {
 
     provides io.helidon.integrations.vault.spi.SecretsEngineProvider
             with io.helidon.integrations.vault.secrets.pki.PkiEngineProvider;
+
+    provides io.helidon.integrations.vault.spi.InjectionProvider
+            with io.helidon.integrations.vault.secrets.pki.PkiEngineProvider;
 }

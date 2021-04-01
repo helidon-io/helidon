@@ -34,5 +34,6 @@
 
     <modules>
         <module>hcp-reactive</module>
+        <module>hcp-cdi</module>
     </modules>
 </project>

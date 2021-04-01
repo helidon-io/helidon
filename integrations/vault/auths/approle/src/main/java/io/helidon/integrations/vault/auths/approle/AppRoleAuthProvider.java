@@ -16,22 +16,54 @@
 
 package io.helidon.integrations.vault.auths.approle;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.AuthMethod;
 import io.helidon.integrations.vault.spi.AuthMethodProvider;
+import io.helidon.integrations.vault.spi.InjectionProvider;
 
 /**
  * Java Service Loader implementation for AppRole authentication method.
  */
-public class AppRoleAuthProvider implements AuthMethodProvider<AppRoleAuth> {
-    @Override
-    public AuthMethod<AppRoleAuth> supportedMethod() {
-        return AppRoleAuth.AUTH_METHOD;
+public class AppRoleAuthProvider implements AuthMethodProvider<AppRoleAuthRx>,
+                                            InjectionProvider {
+    private static final List<InjectionType<?>> INJECTABLES;
+
+    static {
+        List<InjectionType<?>> injectables = new LinkedList<>();
+
+        injectables.add(InjectionType.create(AppRoleAuthRx.class,
+                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
+                                                     .map(it -> vault.auth(AppRoleAuthRx.AUTH_METHOD, it))
+                                                     .orElseGet(() -> vault.auth(AppRoleAuthRx.AUTH_METHOD))));
+
+        injectables.add(InjectionType.create(AppRoleAuth.class,
+                                             (vault, config, instanceConfig) -> {
+                                                 AppRoleAuthRx rx = instanceConfig.vaultPath()
+                                                         .map(it -> vault.auth(AppRoleAuthRx.AUTH_METHOD, it))
+                                                         .orElseGet(() -> vault.auth(AppRoleAuthRx.AUTH_METHOD));
+
+                                                 return new AppRoleAuthImpl(rx);
+                                             }));
+
+        INJECTABLES = List.copyOf(injectables);
     }
 
     @Override
-    public AppRoleAuth createAuth(Config config, RestApi restApi, String path) {
-        return new AppRoleAuthImpl(restApi, path);
+    public AuthMethod<AppRoleAuthRx> supportedMethod() {
+        return AppRoleAuthRx.AUTH_METHOD;
+    }
+
+    @Override
+    public AppRoleAuthRx createAuth(Config config, RestApi restApi, String path) {
+        return new AppRoleAuthRxImpl(restApi, path);
+    }
+
+    @Override
+    public List<InjectionType<?>> injectables() {
+        return INJECTABLES;
     }
 }

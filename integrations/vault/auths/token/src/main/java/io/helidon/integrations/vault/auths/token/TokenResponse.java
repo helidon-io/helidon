@@ -114,8 +114,8 @@ public abstract class TokenResponse extends VaultResponse {
      *
      * @return token type
      *
-     * @see TokenAuth#TYPE_SERVICE
-     * @see TokenAuth#TYPE_BATCH
+     * @see TokenAuthRx#TYPE_SERVICE
+     * @see TokenAuthRx#TYPE_BATCH
      */
     public String tokenType() {
         return tokenType;

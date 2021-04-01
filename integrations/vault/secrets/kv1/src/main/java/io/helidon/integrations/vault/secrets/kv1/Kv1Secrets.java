@@ -20,40 +20,29 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.Secret;
 import io.helidon.integrations.vault.Secrets;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 
 /**
  * Secrets for KV version 1 secrets engine.
- *
- * @see #ENGINE
- * @see io.helidon.integrations.vault.Vault#secrets(io.helidon.integrations.vault.Engine)
+ * All methods block the current thread. This implementation is not suitable for reactive programming.
+ * Use {@link io.helidon.integrations.vault.secrets.kv1.Kv1SecretsRx} in reactive code.
  */
 public interface Kv1Secrets extends Secrets {
-    /**
-     * KV (Key/Value) secrets engine version 1.
-     * <p>
-     * Documentation:
-     * <a href="https://www.vaultproject.io/docs/secrets/kv/kv-v1">https://www.vaultproject.io/docs/secrets/kv/kv-v1</a>
-     */
-    Engine<Kv1Secrets> ENGINE = Engine.create(Kv1Secrets.class, "kv", "kv1", "1");
-
     /**
      * Get a secret.
      *
      * @param path relative to the mount point, no leading slash
      * @return the secret if exists
      */
-    default Single<Optional<Secret>> get(String path) {
+    default Optional<Secret> get(String path) {
         return get(GetKv1.Request.create(path))
-                .map(VaultOptionalResponse::entity)
-                .map(it -> it.map(Function.identity()));
+                .entity()
+                .map(Function.identity());
     }
 
-    Single<VaultOptionalResponse<GetKv1.Response>> get(GetKv1.Request request);
+    VaultOptionalResponse<GetKv1.Response> get(GetKv1.Request request);
 
     /**
      * Create a new secret on the defined path.
@@ -61,13 +50,13 @@ public interface Kv1Secrets extends Secrets {
      * @param path relative to the mount point, no leading slash
      * @param newSecretValues values to use in the new secret
      */
-    default Single<CreateKv1.Response> create(String path, Map<String, String> newSecretValues) {
+    default CreateKv1.Response create(String path, Map<String, String> newSecretValues) {
         return create(CreateKv1.Request.builder()
                               .path(path)
                               .secretValues(newSecretValues));
     }
 
-    Single<CreateKv1.Response> create(CreateKv1.Request request);
+    CreateKv1.Response create(CreateKv1.Request request);
 
     /**
      * Update a secret on the defined path. The new values replace existing values.
@@ -75,23 +64,23 @@ public interface Kv1Secrets extends Secrets {
      * @param path relative to the mount point, no leading slash
      * @param newValues new values of the secret
      */
-    default Single<UpdateKv1.Response> update(String path, Map<String, String> newValues) {
+    default UpdateKv1.Response update(String path, Map<String, String> newValues) {
         return update(UpdateKv1.Request.builder()
                               .path(path)
                               .secretValues(newValues));
     }
 
-    Single<UpdateKv1.Response> update(UpdateKv1.Request request);
+    UpdateKv1.Response update(UpdateKv1.Request request);
 
     /**
      * Delete the secret.
      *
      * @param path relative to the mount point, no leading slash
      */
-    default Single<DeleteKv1.Response> delete(String path) {
+    default DeleteKv1.Response delete(String path) {
         return delete(DeleteKv1.Request.builder()
                               .path(path));
     }
 
-    Single<DeleteKv1.Response> delete(DeleteKv1.Request request);
+    DeleteKv1.Response delete(DeleteKv1.Request request);
 }

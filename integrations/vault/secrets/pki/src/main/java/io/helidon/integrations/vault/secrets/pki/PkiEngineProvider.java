@@ -16,22 +16,55 @@
 
 package io.helidon.integrations.vault.secrets.pki;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Engine;
+import io.helidon.integrations.vault.spi.InjectionProvider;
 import io.helidon.integrations.vault.spi.SecretsEngineProvider;
 
 /**
  * Java Service Loader service for PKI Secrets engine for Vault integration.
  */
-public class PkiEngineProvider implements SecretsEngineProvider<PkiSecrets> {
-    @Override
-    public Engine<PkiSecrets> supportedEngine() {
-        return PkiSecrets.ENGINE;
+public class PkiEngineProvider implements SecretsEngineProvider<PkiSecretsRx>,
+                                          InjectionProvider {
+
+    private static final List<InjectionType<?>> INJECTABLES;
+
+    static {
+        List<InjectionType<?>> injectables = new LinkedList<>();
+
+        injectables.add(InjectionType.create(PkiSecretsRx.class,
+                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
+                                                     .map(it -> vault.secrets(PkiSecretsRx.ENGINE, it))
+                                                     .orElseGet(() -> vault.secrets(PkiSecretsRx.ENGINE))));
+
+        injectables.add(InjectionType.create(PkiSecrets.class,
+                                             (vault, config, instanceConfig) -> {
+                                                 PkiSecretsRx rx = instanceConfig.vaultPath()
+                                                         .map(it -> vault.secrets(PkiSecretsRx.ENGINE, it))
+                                                         .orElseGet(() -> vault.secrets(PkiSecretsRx.ENGINE));
+
+                                                 return new PkiSecretsImpl(rx);
+                                             }));
+
+        INJECTABLES = List.copyOf(injectables);
     }
 
     @Override
-    public PkiSecrets createSecrets(Config config, RestApi restApi, String mount) {
-        return new PkiSecretsImpl(restApi, mount);
+    public Engine<PkiSecretsRx> supportedEngine() {
+        return PkiSecretsRx.ENGINE;
+    }
+
+    @Override
+    public PkiSecretsRx createSecrets(Config config, RestApi restApi, String mount) {
+        return new PkiSecretsRxImpl(restApi, mount);
+    }
+
+    @Override
+    public List<InjectionType<?>> injectables() {
+        return INJECTABLES;
     }
 }

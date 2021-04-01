@@ -69,22 +69,22 @@ public interface Vault {
      * Get access to secrets using the provided engine, using the default mount point of that engine.
      *
      * @param engine engine to use, such as {@code Kv2Secrets#ENGINE}
-     * @param <T> type of the {@link io.helidon.integrations.vault.Secrets} the engine supports,
+     * @param <T> type of the {@link SecretsRx} the engine supports,
      *           such as {@code io.helidon.integrations.vault.Kv2Secrets}
-     * @return instance of {@link io.helidon.integrations.vault.Secrets} specific to the used engine
+     * @return instance of {@link SecretsRx} specific to the used engine
      */
-    <T extends Secrets> T secrets(Engine<T> engine);
+    <T extends SecretsRx> T secrets(Engine<T> engine);
 
     /**
      * Get access to secrets using the provided engine, using a custom mount point.
      *
      * @param engine engine to use, such as {@code Kv2Secrets#ENGINE}
      * @param mount mount point for the engine (such as when the same engine is configured more than once in the Vault)
-     * @param <T> type of the {@link Secrets} the engine supports,
+     * @param <T> type of the {@link SecretsRx} the engine supports,
      *           such as {@code Kv2Secrets}
-     * @return instance of {@link io.helidon.integrations.vault.Secrets} specific to the used engine
+     * @return instance of {@link SecretsRx} specific to the used engine
      */
-    <T extends Secrets> T secrets(Engine<T> engine, String mount);
+    <T extends SecretsRx> T secrets(Engine<T> engine, String mount);
 
     /**
      * Get access to authentication method.

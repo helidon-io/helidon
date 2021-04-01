@@ -16,22 +16,54 @@
 
 package io.helidon.integrations.vault.secrets.transit;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Engine;
+import io.helidon.integrations.vault.spi.InjectionProvider;
 import io.helidon.integrations.vault.spi.SecretsEngineProvider;
 
 /**
  * Java Service Loader service for Transit engine.
  */
-public class TransitEngineProvider implements SecretsEngineProvider<TransitSecrets> {
+public class TransitEngineProvider implements SecretsEngineProvider<TransitSecretsRx>,
+                                              InjectionProvider {
+    private static final List<InjectionType<?>> INJECTABLES;
+
+    static {
+        List<InjectionType<?>> injectables = new LinkedList<>();
+
+        injectables.add(InjectionType.create(TransitSecretsRx.class,
+                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
+                                                     .map(it -> vault.secrets(TransitSecretsRx.ENGINE, it))
+                                                     .orElseGet(() -> vault.secrets(TransitSecretsRx.ENGINE))));
+
+        injectables.add(InjectionType.create(TransitSecrets.class,
+                                             (vault, config, instanceConfig) -> {
+                                                 TransitSecretsRx rx = instanceConfig.vaultPath()
+                                                         .map(it -> vault.secrets(TransitSecretsRx.ENGINE, it))
+                                                         .orElseGet(() -> vault.secrets(TransitSecretsRx.ENGINE));
+
+                                                 return new TransitSecretsImpl(rx);
+                                             }));
+
+        INJECTABLES = List.copyOf(injectables);
+    }
+    
     @Override
-    public Engine<TransitSecrets> supportedEngine() {
-        return TransitSecrets.ENGINE;
+    public Engine<TransitSecretsRx> supportedEngine() {
+        return TransitSecretsRx.ENGINE;
     }
 
     @Override
-    public TransitSecrets createSecrets(Config config, RestApi restAccess, String mount) {
-        return new TransitSecretsImpl(restAccess, mount);
+    public TransitSecretsRx createSecrets(Config config, RestApi restAccess, String mount) {
+        return new TransitSecretsRxImpl(restAccess, mount);
+    }
+
+    @Override
+    public List<InjectionType<?>> injectables() {
+        return INJECTABLES;
     }
 }

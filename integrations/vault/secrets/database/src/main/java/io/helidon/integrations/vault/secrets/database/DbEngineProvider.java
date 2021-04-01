@@ -16,22 +16,54 @@
 
 package io.helidon.integrations.vault.secrets.database;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.spi.SecretsEngineProvider;
 
 /**
- * Service for {@link DbSecrets#ENGINE}.
+ * Service for {@link DbSecretsRx#ENGINE}.
  */
-public class DbEngineProvider implements SecretsEngineProvider<DbSecrets> {
-    @Override
-    public Engine<DbSecrets> supportedEngine() {
-        return DbSecrets.ENGINE;
+public class DbEngineProvider implements SecretsEngineProvider<DbSecretsRx>,
+                                         io.helidon.integrations.vault.spi.InjectionProvider {
+
+    private static final List<InjectionType<?>> INJECTABLES;
+
+    static {
+        List<InjectionType<?>> injectables = new LinkedList<>();
+
+        injectables.add(InjectionType.create(DbSecretsRx.class,
+                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
+                                                     .map(it -> vault.secrets(DbSecretsRx.ENGINE, it))
+                                                     .orElseGet(() -> vault.secrets(DbSecretsRx.ENGINE))));
+
+        injectables.add(InjectionType.create(DbSecrets.class,
+                                             (vault, config, instanceConfig) -> {
+                                                 DbSecretsRx rx = instanceConfig.vaultPath()
+                                                         .map(it -> vault.secrets(DbSecretsRx.ENGINE, it))
+                                                         .orElseGet(() -> vault.secrets(DbSecretsRx.ENGINE));
+
+                                                 return new DbSecretsImpl(rx);
+                                             }));
+
+        INJECTABLES = List.copyOf(injectables);
     }
 
     @Override
-    public DbSecrets createSecrets(Config config, RestApi restApi, String mount) {
-        return new DbSecretsImpl(restApi, mount);
+    public Engine<DbSecretsRx> supportedEngine() {
+        return DbSecretsRx.ENGINE;
+    }
+
+    @Override
+    public DbSecretsRx createSecrets(Config config, RestApi restApi, String mount) {
+        return new DbSecretsRxImpl(restApi, mount);
+    }
+
+    @Override
+    public List<InjectionType<?>> injectables() {
+        return INJECTABLES;
     }
 }

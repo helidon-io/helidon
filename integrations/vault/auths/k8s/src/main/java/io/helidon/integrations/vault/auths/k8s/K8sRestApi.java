@@ -29,7 +29,7 @@ import io.helidon.webclient.WebClientRequestBuilder;
 class K8sRestApi extends VaultRestApi {
     private final AtomicReference<VaultTokenBase> currentToken = new AtomicReference<>();
 
-    private final K8sAuth auth;
+    private final K8sAuthRx auth;
     private final String roleName;
     private final String jwtToken;
 
@@ -71,7 +71,7 @@ class K8sRestApi extends VaultRestApi {
     }
 
     static class Builder extends VaultRestApi.BuilderBase<Builder> {
-        private K8sAuth auth;
+        private K8sAuthRx auth;
         private String roleName;
         private String jwtToken;
         private VaultTokenBase token;
@@ -84,7 +84,7 @@ class K8sRestApi extends VaultRestApi {
             return this;
         }
 
-        public Builder auth(K8sAuth auth) {
+        public Builder auth(K8sAuthRx auth) {
             this.auth = auth;
             return this;
         }

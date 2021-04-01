@@ -18,19 +18,17 @@ package io.helidon.integrations.vault.auths.approle;
 
 import java.util.Optional;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.integrations.vault.AuthMethod;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 
 /**
  * Vault authentication method for AppRole.
+ * All methods block the current thread. This implementation is not suitable for reactive programming.
+ * Use {@link io.helidon.integrations.vault.auths.approle.AppRoleAuthRx} in reactive code.
  */
 public interface AppRoleAuth {
-    /**
-     * Authentication method.
-     */
-    AuthMethod<AppRoleAuth> AUTH_METHOD = AuthMethod.create(AppRoleAuth.class, "approle", "approle");
-
+    static AppRoleAuth create(AppRoleAuthRx reactive) {
+        return new AppRoleAuthImpl(reactive);
+    }
     /**
      * Creates a new AppRole or updates an existing AppRole. There
      * can be one or more constraints enabled on the role. It is required to have at least one of them enabled while creating
@@ -39,7 +37,7 @@ public interface AppRoleAuth {
      * @param appRoleRequest Create AppRole request
      * @return when the AppRole gets created
      */
-    Single<CreateAppRole.Response> createAppRole(CreateAppRole.Request appRoleRequest);
+    CreateAppRole.Response createAppRole(CreateAppRole.Request appRoleRequest);
 
     /**
      * Deletes an existing AppRole from the method with full control of request.
@@ -47,7 +45,7 @@ public interface AppRoleAuth {
      * @param request delete AppRole request
      * @return when the AppRole gets deleted
      */
-    Single<DeleteAppRole.Response> deleteAppRole(DeleteAppRole.Request request);
+    DeleteAppRole.Response deleteAppRole(DeleteAppRole.Request request);
 
     /**
      * Reads the RoleID of an existing AppRole.
@@ -56,9 +54,10 @@ public interface AppRoleAuth {
      * @return role ID
      * @see #readRoleId(io.helidon.integrations.vault.auths.approle.ReadRoleId.Request)
      */
-    default Single<Optional<String>> readRoleId(String appRole) {
+    default Optional<String> readRoleId(String appRole) {
         return readRoleId(ReadRoleId.Request.create(appRole))
-                .map(it -> it.entity().map(ReadRoleId.Response::roleId));
+                .entity()
+                .map(ReadRoleId.Response::roleId);
     }
 
     /**
@@ -67,7 +66,7 @@ public interface AppRoleAuth {
      * @param request request with name of the AppRole
      * @return role ID
      */
-    Single<VaultOptionalResponse<ReadRoleId.Response>> readRoleId(ReadRoleId.Request request);
+    VaultOptionalResponse<ReadRoleId.Response> readRoleId(ReadRoleId.Request request);
 
     /**
      * Generates and issues a new SecretID on an existing AppRole. Similar to tokens, the response will also contain a
@@ -77,7 +76,7 @@ public interface AppRoleAuth {
      * @param request generate secret ID request
      * @return a new secret id response
      */
-    Single<GenerateSecretId.Response> generateSecretId(GenerateSecretId.Request request);
+    GenerateSecretId.Response generateSecretId(GenerateSecretId.Request request);
 
     /**
      * Destroy an AppRole secret ID.
@@ -85,7 +84,7 @@ public interface AppRoleAuth {
      * @param request destroy secret ID request
      * @return when the id gets destroyed
      */
-    Single<DestroySecretId.Response> destroySecretId(DestroySecretId.Request request);
+    DestroySecretId.Response destroySecretId(DestroySecretId.Request request);
 
     /**
      * Issues a Vault token based on the presented credentials.
@@ -93,5 +92,5 @@ public interface AppRoleAuth {
      * @param request login request
      * @return Login response (with Vault token)
      */
-    Single<Login.Response> login(Login.Request request);
+    Login.Response login(Login.Request request);
 }

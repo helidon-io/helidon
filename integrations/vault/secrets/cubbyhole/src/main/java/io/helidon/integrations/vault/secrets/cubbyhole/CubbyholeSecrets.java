@@ -20,8 +20,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.Secret;
 import io.helidon.integrations.vault.Secrets;
 import io.helidon.integrations.vault.VaultOptionalResponse;
@@ -30,30 +28,28 @@ import io.helidon.integrations.vault.VaultRestException;
 /**
  * Cubbyhole engine secrets API.
  * Cubbyhole secrets are scoped to the current token and are not visible by other users.
+ * This is a blocking API that blocks the current thread for each method. DO NOT USE IN REACTIVE CODE.
  *
- * @see io.helidon.integrations.vault.Vault#secrets(io.helidon.integrations.vault.Engine)
+ * @see io.helidon.integrations.vault.secrets.cubbyhole.CubbyholeSecretsRx
  */
 public interface CubbyholeSecrets extends Secrets {
-    /**
-     * Cubbyhole (token scoped) secrets engine.
-     * <p>
-     * Documentation:
-     * <a href="https://www.vaultproject.io/docs/secrets/cubbyhole">https://www.vaultproject.io/docs/secrets/cubbyhole</a>
-     */
-    Engine<CubbyholeSecrets> ENGINE = Engine.create(CubbyholeSecrets.class, "cubbyhole", "cubbyhole");
-
-    default Single<Optional<Secret>> get(String path) {
-        return get(GetCubbyhole.Request.builder().path(path))
-                .map(it -> it.entity().map(Function.identity()));
+    static CubbyholeSecrets create(CubbyholeSecretsRx reactiveSecrets) {
+        return new CubbyholeSecretsImpl(reactiveSecrets);
     }
 
-    default Single<CreateCubbyhole.Response> create(String path, Map<String, String> values) {
+    default Optional<Secret> get(String path) {
+        return get(GetCubbyhole.Request.builder().path(path))
+                .entity()
+                .map(Function.identity());
+    }
+
+    default CreateCubbyhole.Response create(String path, Map<String, String> values) {
         return create(CreateCubbyhole.Request.builder()
                               .path(path)
                               .secretValues(values));
     }
 
-    default Single<DeleteCubbyhole.Response> delete(String path) {
+    default DeleteCubbyhole.Response delete(String path) {
         return delete(DeleteCubbyhole.Request.builder()
                               .path(path));
     }
@@ -64,14 +60,14 @@ public interface CubbyholeSecrets extends Secrets {
      * @param request get cubbyhole request
      * @return the secret if exists
      */
-    Single<VaultOptionalResponse<GetCubbyhole.Response>> get(GetCubbyhole.Request request);
+    VaultOptionalResponse<GetCubbyhole.Response> get(GetCubbyhole.Request request);
 
     /**
      * Create a new secret on the defined path.
      *
      * @param request create cubbyhole request
      */
-    Single<CreateCubbyhole.Response> create(CreateCubbyhole.Request request) throws VaultRestException;
+    CreateCubbyhole.Response create(CreateCubbyhole.Request request) throws VaultRestException;
 
     /**
      * Update a secret on the defined path. The new values replace existing values.
@@ -79,12 +75,12 @@ public interface CubbyholeSecrets extends Secrets {
      * @param request update request (same as create request)
      * @throws io.helidon.integrations.vault.VaultRestException in case the secret does not exist or the API call fails
      */
-    Single<UpdateCubbyhole.Response> update(UpdateCubbyhole.Request request);
+    UpdateCubbyhole.Response update(UpdateCubbyhole.Request request);
 
     /**
      * Delete the secret.
      *
      * @param request delete request
      */
-    Single<DeleteCubbyhole.Response> delete(DeleteCubbyhole.Request request);
+    DeleteCubbyhole.Response delete(DeleteCubbyhole.Request request);
 }

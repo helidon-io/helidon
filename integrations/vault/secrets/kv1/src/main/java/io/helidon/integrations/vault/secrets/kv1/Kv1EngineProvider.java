@@ -16,22 +16,53 @@
 
 package io.helidon.integrations.vault.secrets.kv1;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Engine;
+import io.helidon.integrations.vault.spi.InjectionProvider;
 import io.helidon.integrations.vault.spi.SecretsEngineProvider;
 
 /**
  * Java Service Loader service for this engine.
  */
-public class Kv1EngineProvider implements SecretsEngineProvider<Kv1Secrets> {
+public class Kv1EngineProvider implements SecretsEngineProvider<Kv1SecretsRx>,
+                                          InjectionProvider {
+    private static final List<InjectionType<?>> INJECTABLES;
+
+    static {
+        List<InjectionType<?>> injectables = new LinkedList<>();
+
+        injectables.add(InjectionType.create(Kv1SecretsRx.class,
+                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
+                                                     .map(it -> vault.secrets(Kv1SecretsRx.ENGINE, it))
+                                                     .orElseGet(() -> vault.secrets(Kv1SecretsRx.ENGINE))));
+
+        injectables.add(InjectionType.create(Kv1Secrets.class,
+                                             (vault, config, instanceConfig) -> {
+                                                 Kv1SecretsRx rx = instanceConfig.vaultPath()
+                                                         .map(it -> vault.secrets(Kv1SecretsRx.ENGINE, it))
+                                                         .orElseGet(() -> vault.secrets(Kv1SecretsRx.ENGINE));
+
+                                                 return new Kv1SecretsImpl(rx);
+                                             }));
+
+        INJECTABLES = List.copyOf(injectables);
+    }
     @Override
-    public Engine<Kv1Secrets> supportedEngine() {
-        return Kv1Secrets.ENGINE;
+    public Engine<Kv1SecretsRx> supportedEngine() {
+        return Kv1SecretsRx.ENGINE;
     }
 
     @Override
-    public Kv1Secrets createSecrets(Config config, RestApi restAccess, String mount) {
-        return new Kv1SecretsImpl(restAccess, mount);
+    public Kv1SecretsRx createSecrets(Config config, RestApi restAccess, String mount) {
+        return new Kv1SecretsRxImpl(restAccess, mount);
+    }
+
+    @Override
+    public List<InjectionType<?>> injectables() {
+        return INJECTABLES;
     }
 }

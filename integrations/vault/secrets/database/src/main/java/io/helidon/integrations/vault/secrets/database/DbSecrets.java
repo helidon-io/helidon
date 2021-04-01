@@ -19,8 +19,6 @@ package io.helidon.integrations.vault.secrets.database;
 import java.util.Optional;
 import java.util.function.Function;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Secrets;
 import io.helidon.integrations.vault.VaultOptionalResponse;
@@ -28,17 +26,13 @@ import io.helidon.integrations.vault.VaultOptionalResponse;
 /**
  * Database secrets engine API.
  * <p>
- * Documentation:
- * <a href="https://www.vaultproject.io/docs/secrets/databases">https://www.vaultproject.io/docs/secrets/databases</a>
+ *  All methods block the current thread. This implementation is not suitable for reactive programming.
+ * Use {@link io.helidon.integrations.vault.secrets.database.DbSecretsRx} in reactive code.
  */
 public interface DbSecrets extends Secrets {
-    /**
-     * Database secrets engine.
-     * <p>
-     * Documentation:
-     * <a href="https://www.vaultproject.io/docs/secrets/databases">https://www.vaultproject.io/docs/secrets/databases</a>
-     */
-    Engine<DbSecrets> ENGINE = Engine.create(DbSecrets.class, "database", "database");
+    static DbSecrets create(DbSecretsRx reactive) {
+        return new DbSecretsImpl(reactive);
+    }
 
     /**
      * List database connections.
@@ -47,7 +41,7 @@ public interface DbSecrets extends Secrets {
      * @return role names
      */
     @Override
-    Single<VaultOptionalResponse<ListSecrets.Response>> list(ListSecrets.Request request);
+    VaultOptionalResponse<ListSecrets.Response> list(ListSecrets.Request request);
 
     /**
      * Get credentials from the {@code /creds} endpoint.
@@ -55,13 +49,14 @@ public interface DbSecrets extends Secrets {
      * @param name name of the credentials
      * @return credentials
      */
-    default Single<Optional<DbCredentials>> get(String name) {
+    default Optional<DbCredentials> get(String name) {
         return get(DbGet.Request.builder()
                            .name(name))
-                .map(it -> it.entity().map(Function.identity()));
+                .entity()
+                .map(Function.identity());
     }
 
-    Single<VaultOptionalResponse<DbGet.Response>> get(DbGet.Request request);
+    VaultOptionalResponse<DbGet.Response> get(DbGet.Request request);
 
     /**
      * Create or update a role definition.
@@ -69,15 +64,15 @@ public interface DbSecrets extends Secrets {
      * @param request role request
      * @return when the role is created
      */
-    Single<DbCreateRole.Response> createRole(DbCreateRole.Request request);
+    DbCreateRole.Response createRole(DbCreateRole.Request request);
 
     /**
      * Configure a database.
      *
-     * @param dbRequest configuration options - see specific database types
+     * @param request configuration options - see specific database types
      * @return when the database is configured
      */
-    Single<DbConfigure.Response> configure(DbConfigure.Request<?> dbRequest);
+    DbConfigure.Response configure(DbConfigure.Request<?> request);
 
     /**
      * Delete a database configuration.
@@ -85,12 +80,12 @@ public interface DbSecrets extends Secrets {
      * @param name name of the database configuration
      * @return when the database configuration is deleted
      */
-    default Single<DbDelete.Response> delete(String name) {
+    default DbDelete.Response delete(String name) {
         return delete(DbDelete.Request.builder()
                               .name(name));
     }
 
-    Single<DbDelete.Response> delete(DbDelete.Request request);
+    DbDelete.Response delete(DbDelete.Request request);
 
     /**
      * Delete a database role.
@@ -98,10 +93,10 @@ public interface DbSecrets extends Secrets {
      * @param name name of the role
      * @return when the role is deleted
      */
-    default Single<DbDeleteRole.Response> deleteRole(String name) {
+    default DbDeleteRole.Response deleteRole(String name) {
         return deleteRole(DbDeleteRole.Request.builder()
                                   .name(name));
     }
 
-    Single<DbDeleteRole.Response> deleteRole(DbDeleteRole.Request request);
+    DbDeleteRole.Response deleteRole(DbDeleteRole.Request request);
 }

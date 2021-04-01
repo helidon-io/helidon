@@ -16,22 +16,55 @@
 
 package io.helidon.integrations.vault.auths.token;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.AuthMethod;
 import io.helidon.integrations.vault.spi.AuthMethodProvider;
+import io.helidon.integrations.vault.spi.InjectionProvider;
 
 /**
  * Java Service Loader service for Token Authentication method support.
  */
-public class TokenAuthProvider implements AuthMethodProvider<TokenAuth> {
-    @Override
-    public AuthMethod<TokenAuth> supportedMethod() {
-        return TokenAuth.AUTH_METHOD;
+public class TokenAuthProvider implements AuthMethodProvider<TokenAuthRx>,
+                                          InjectionProvider {
+
+    private static final List<InjectionType<?>> INJECTABLES;
+
+    static {
+        List<InjectionType<?>> injectables = new LinkedList<>();
+
+        injectables.add(InjectionType.create(TokenAuthRx.class,
+                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
+                                                     .map(it -> vault.auth(TokenAuthRx.AUTH_METHOD, it))
+                                                     .orElseGet(() -> vault.auth(TokenAuthRx.AUTH_METHOD))));
+
+        injectables.add(InjectionType.create(TokenAuth.class,
+                                             (vault, config, instanceConfig) -> {
+                                                 TokenAuthRx rx = instanceConfig.vaultPath()
+                                                         .map(it -> vault.auth(TokenAuthRx.AUTH_METHOD, it))
+                                                         .orElseGet(() -> vault.auth(TokenAuthRx.AUTH_METHOD));
+
+                                                 return new TokenAuthImpl(rx);
+                                             }));
+
+        INJECTABLES = List.copyOf(injectables);
     }
 
     @Override
-    public TokenAuth createAuth(Config config, RestApi restApi, String path) {
-        return new TokenAuthImpl(restApi, path);
+    public AuthMethod<TokenAuthRx> supportedMethod() {
+        return TokenAuthRx.AUTH_METHOD;
+    }
+
+    @Override
+    public TokenAuthRx createAuth(Config config, RestApi restApi, String path) {
+        return new TokenAuthRxImpl(restApi, path);
+    }
+
+    @Override
+    public List<InjectionType<?>> injectables() {
+        return INJECTABLES;
     }
 }

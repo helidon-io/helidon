@@ -28,9 +28,9 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * A builder for {@link io.helidon.integrations.vault.sys.Sys#enableEngine(io.helidon.integrations.vault.sys.EnableEngine.Request)}
+ * A builder for {@link SysRx#enableEngine(io.helidon.integrations.vault.sys.EnableEngine.Request)}
  * , and
- * {@link io.helidon.integrations.vault.sys.Sys#enableAuth(io.helidon.integrations.vault.sys.EnableAuth.Request)} methods.
+ * {@link SysRx#enableAuth(io.helidon.integrations.vault.sys.EnableAuth.Request)} methods.
  */
 abstract class MountRequest<T extends MountRequest<T>> extends VaultRequest<T> {
     private final Config config = new Config();

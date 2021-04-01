@@ -66,7 +66,7 @@ public class AppRoleVaultAuth implements VaultAuth {
             return Optional.empty();
         }
         Optional<String> maybeAppRoleId = Optional.ofNullable(this.appRoleId)
-                .or(() -> config.get("app-role.role-id")
+                .or(() -> config.get("auth.app-role.role-id")
                         .asString()
                         .asOptional());
 
@@ -77,7 +77,7 @@ public class AppRoleVaultAuth implements VaultAuth {
 
         String appRoleId = maybeAppRoleId.get();
         String secretId = Optional.ofNullable(this.secretId)
-                .or(() -> config.get("app-role.secret-id")
+                .or(() -> config.get("auth.app-role.secret-id")
                         .asString()
                         .asOptional())
                 .orElseThrow(() -> new VaultApiException("AppRole ID is defined (" + appRoleId + "), but secret id is not. "
@@ -102,7 +102,7 @@ public class AppRoleVaultAuth implements VaultAuth {
 
         Vault loginVault = loginVaultBuilder.build();
 
-        AppRoleAuth auth = loginVault.auth(AppRoleAuth.AUTH_METHOD);
+        AppRoleAuthRx auth = loginVault.auth(AppRoleAuthRx.AUTH_METHOD);
 
         LOGGER.info("Authenticated Vault " + address + " using AppRole, roleId \"" + appRoleId + "\"");
         return Optional.of(AppRoleRestApi.appRoleBuilder()
@@ -142,4 +142,5 @@ public class AppRoleVaultAuth implements VaultAuth {
             return this;
         }
     }
+
 }

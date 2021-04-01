@@ -22,9 +22,18 @@ module io.helidon.integrations.vault.secrets.kvone {
 
     requires io.helidon.integrations.vault;
     requires io.helidon.integrations.common.rest;
+    requires io.helidon.security;
 
     exports io.helidon.integrations.vault.secrets.kv1;
 
     provides io.helidon.integrations.vault.spi.SecretsEngineProvider
             with io.helidon.integrations.vault.secrets.kv1.Kv1EngineProvider;
+
+    // Implementation of service to support injection (such as CDI)
+    provides io.helidon.integrations.vault.spi.InjectionProvider
+            with io.helidon.integrations.vault.secrets.kv1.Kv1EngineProvider;
+
+    // Implementation of service to support secrets in Helidon Security
+    provides io.helidon.security.spi.SecurityProviderService
+            with io.helidon.integrations.vault.secrets.kv1.Kv1SecurityService;
 }

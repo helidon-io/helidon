@@ -21,8 +21,6 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Optional;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Secrets;
 import io.helidon.integrations.vault.VaultOptionalResponse;
@@ -32,37 +30,33 @@ import io.helidon.integrations.vault.VaultOptionalResponse;
  */
 public interface PkiSecrets extends Secrets {
     /**
-     * PKI secrets engine.
-     * <p>
-     * Documentation:
-     * <a href="https://www.vaultproject.io/api-docs/secret/pki">https://www.vaultproject.io/api-docs/secret/pki</a>
-     */
-    Engine<PkiSecrets> ENGINE = Engine.create(PkiSecrets.class, "pki", "pki");
-    /**
      * RSA algorithm for keys.
      */
-    String KEY_TYPE_RSA = "rsa";
+    String KEY_TYPE_RSA = PkiSecretsRx.KEY_TYPE_RSA;
     /**
      * EC (Elliptic curve) algorithm for keys.
      */
-    String KEY_TYPE_EC = "ec";
+    String KEY_TYPE_EC = PkiSecretsRx.KEY_TYPE_EC;
 
+    static PkiSecrets create(PkiSecretsRx reactive) {
+        return new PkiSecretsImpl(reactive);
+    }
     /**
      * List certificate serial numbers.
      * @param request request, path is ignored
      * @return serial numbers of certificates
      */
     @Override
-    Single<VaultOptionalResponse<ListSecrets.Response>> list(ListSecrets.Request request);
+    VaultOptionalResponse<ListSecrets.Response> list(ListSecrets.Request request);
 
     /**
      * Certification authority certificate.
      *
      * @return certificate of the CA
      */
-    default Single<X509Certificate> caCertificate() {
+    default X509Certificate caCertificate() {
         return caCertificate(CaCertificateGet.Request.builder())
-                .map(CaCertificateGet.Response::toCertificate);
+                .toCertificate();
     }
 
     /**
@@ -71,10 +65,10 @@ public interface PkiSecrets extends Secrets {
      * @param format format to use, either {@code DER} or {@code PEM} format are supported
      * @return CA certificate bytes
      */
-    default Single<byte[]> caCertificate(PkiFormat format) {
+    default byte[] caCertificate(PkiFormat format) {
         return caCertificate(CaCertificateGet.Request.builder()
                                      .format(format))
-                .map(CaCertificateGet.Response::toBytes);
+                .toBytes();
     }
 
     /**
@@ -84,7 +78,7 @@ public interface PkiSecrets extends Secrets {
      *                configured
      * @return CA certificate bytes
      */
-    Single<CaCertificateGet.Response> caCertificate(CaCertificateGet.Request request);
+    CaCertificateGet.Response caCertificate(CaCertificateGet.Request request);
 
     /**
      * Certificate with the defined serial id.
@@ -92,11 +86,11 @@ public interface PkiSecrets extends Secrets {
      * @param serialNumber serial number of the certificate
      * @return certificate, if not found, an exception is returned
      */
-    default Single<Optional<X509Certificate>> certificate(String serialNumber) {
+    default Optional<X509Certificate> certificate(String serialNumber) {
         return certificate(CertificateGet.Request.builder()
                                    .serialNumber(serialNumber))
-                .map(VaultOptionalResponse::entity)
-                .map(it -> it.map(CertificateGet.Response::toCertificate));
+                .entity()
+                .map(CertificateGet.Response::toCertificate);
     }
 
     /**
@@ -106,24 +100,24 @@ public interface PkiSecrets extends Secrets {
      * @param format format - must be {@link io.helidon.integrations.vault.secrets.pki.PkiFormat#PEM}
      * @return certificate bytes in {@code PEM} format
      */
-    default Single<Optional<byte[]>> certificate(String serialNumber, PkiFormat format) {
+    default Optional<byte[]> certificate(String serialNumber, PkiFormat format) {
         return certificate(CertificateGet.Request.builder()
                                    .serialNumber(serialNumber)
                                    .format(format))
-                .map(VaultOptionalResponse::entity)
-                .map(it -> it.map(CertificateGet.Response::toBytes));
+                .entity()
+                .map(CertificateGet.Response::toBytes);
     }
 
-    Single<VaultOptionalResponse<CertificateGet.Response>> certificate(CertificateGet.Request request);
+    VaultOptionalResponse<CertificateGet.Response> certificate(CertificateGet.Request request);
 
     /**
      * Certificate revocation list.
      *
      * @return revoke list
      */
-    default Single<X509CRL> crl() {
+    default X509CRL crl() {
         return crl(CrlGet.Request.builder())
-                .map(CrlGet.Response::toCrl);
+                .toCrl();
     }
 
     /**
@@ -132,13 +126,13 @@ public interface PkiSecrets extends Secrets {
      * @param format to choose between {@code PEM} and {@code DER} encoding of the list
      * @return CRL bytes
      */
-    default Single<byte[]> crl(PkiFormat format) {
+    default byte[] crl(PkiFormat format) {
         return crl(CrlGet.Request.builder()
                            .format(format))
-                .map(CrlGet.Response::toBytes);
+                .toBytes();
     }
 
-    Single<CrlGet.Response> crl(CrlGet.Request request);
+    CrlGet.Response crl(CrlGet.Request request);
 
     /**
      * Issue a new certificate returning raw data.
@@ -152,7 +146,7 @@ public interface PkiSecrets extends Secrets {
      * @param request configuration of the new certificate
      * @return certificate response with bytes of returned certificates
      */
-    Single<IssueCertificate.Response> issueCertificate(IssueCertificate.Request request);
+    IssueCertificate.Response issueCertificate(IssueCertificate.Request request);
 
     /**
      * This endpoint signs a new certificate based upon the provided CSR and the supplied parameters, subject to the
@@ -161,20 +155,20 @@ public interface PkiSecrets extends Secrets {
      * @param request sign CSR request
      * @return a new certificate
      */
-    Single<SignCsr.Response> signCertificateRequest(SignCsr.Request request);
+    SignCsr.Response signCertificateRequest(SignCsr.Request request);
 
     /**
      * Revoke a certificate by its serial number.
      * @param serialNumber serial number of the certificate to revoke
      * @return revocation instant
      */
-    default Single<Instant> revokeCertificate(String serialNumber) {
+    default Instant revokeCertificate(String serialNumber) {
         return revokeCertificate(RevokeCertificate.Request.builder()
                                          .serialNumber(serialNumber))
-                .map(RevokeCertificate.Response::revocationTime);
+                .revocationTime();
     }
 
-    Single<RevokeCertificate.Response> revokeCertificate(RevokeCertificate.Request request);
+    RevokeCertificate.Response revokeCertificate(RevokeCertificate.Request request);
 
     /**
      * Generate a self signed root certificate.
@@ -185,25 +179,29 @@ public interface PkiSecrets extends Secrets {
      * @param commonName the common name (cn) of the certificate
      * @return when request finishes
      */
-    default Single<GenerateSelfSignedRoot.Response> generateSelfSignedRoot(String commonName) {
+    default GenerateSelfSignedRoot.Response generateSelfSignedRoot(String commonName) {
         return generateSelfSignedRoot(GenerateSelfSignedRoot.Request.builder()
                                               .commonName(commonName));
     }
 
-    Single<GenerateSelfSignedRoot.Response> generateSelfSignedRoot(GenerateSelfSignedRoot.Request request);
+    GenerateSelfSignedRoot.Response generateSelfSignedRoot(GenerateSelfSignedRoot.Request request);
 
     /**
      * This endpoint creates or updates the role definition.
-     * Note that the {@link PkiRole.Request#addAllowedDomain(String)},
-     * {@link PkiRole.Request#allowSubDomains(boolean)}, {@link PkiRole.Request#allowGlobDomains(boolean)}, and
-     * {@link PkiRole.Request#allowAnyName(boolean)} are additive; between these options, and across multiple roles,  nearly any
+     * Note that the {@link io.helidon.integrations.vault.secrets.pki.PkiRole.Request#addAllowedDomain(String)},
+     * {@link io.helidon.integrations.vault.secrets.pki.PkiRole.Request#allowSubDomains(boolean)},
+     * {@link io.helidon.integrations.vault.secrets.pki.PkiRole.Request#allowGlobDomains(boolean)}, and
+     * {@link io.helidon.integrations.vault.secrets.pki.PkiRole.Request#allowAnyName(boolean)} are additive; between these
+     * options, and across multiple roles,  nearly any
      * issuing policy can be accommodated.
-     * {@link PkiRole.Request#serverFlag(boolean)}, {@link PkiRole.Request#clientFlag(boolean)},
-     * and {@link PkiRole.Request#codeSigningFlag(boolean)} are additive as well. If a client
+     * {@link io.helidon.integrations.vault.secrets.pki.PkiRole.Request#serverFlag(boolean)},
+     * {@link io.helidon.integrations.vault.secrets.pki.PkiRole.Request#clientFlag(boolean)},
+     * and {@link io.helidon.integrations.vault.secrets.pki.PkiRole.Request#codeSigningFlag(boolean)} are additive as well. If
+     * a client
      * requests a certificate that is not allowed by the CN policy in the role, the request is denied.
      *
      * @param request request modifying the role
      * @return when request finishes
      */
-    Single<PkiRole.Response> createOrUpdateRole(PkiRole.Request request);
+    PkiRole.Response createOrUpdateRole(PkiRole.Request request);
 }

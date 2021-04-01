@@ -19,14 +19,14 @@ package io.helidon.integrations.vault.spi;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Engine;
-import io.helidon.integrations.vault.Secrets;
+import io.helidon.integrations.vault.SecretsRx;
 
 /**
  * A Java Service Loader SPI to support additional secret engines of Vault.
  *
  * @param <T> type of the secrets supported by this provider
  */
-public interface SecretsEngineProvider<T extends Secrets> {
+public interface SecretsEngineProvider<T extends SecretsRx> {
     /**
      * Supported engine by this provider.
      *

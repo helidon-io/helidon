@@ -16,21 +16,40 @@
 
 package io.helidon.integrations.vault.sys;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.SysApi;
+import io.helidon.integrations.vault.spi.InjectionProvider;
 
 /**
- * Java Service Loader service implementation for {@link io.helidon.integrations.vault.sys.Sys}.
+ * Java Service Loader service implementation for {@link SysRx}.
  */
-public class SysProvider implements io.helidon.integrations.vault.spi.SysProvider<Sys> {
-    @Override
-    public SysApi<Sys> supportedApi() {
-        return Sys.API;
+public class SysProvider implements io.helidon.integrations.vault.spi.SysProvider<SysRx>, InjectionProvider {
+    private static final List<InjectionType<?>> INJECTABLES = new LinkedList<>();
+
+    static {
+        INJECTABLES.add(InjectionType.create(SysRx.class, (vault, vaultConfig, instanceConfig) -> vault.sys(SysRx.API)));
+        INJECTABLES.add(InjectionType.create(Sys.class, (vault, vaultConfig, instanceConfig) -> {
+            SysRx sys = vault.sys(SysRx.API);
+            return new SysImpl(sys);
+        }));
     }
 
     @Override
-    public Sys createSys(Config config, RestApi restAccess) {
-        return new SysImpl(restAccess);
+    public SysApi<SysRx> supportedApi() {
+        return SysRx.API;
+    }
+
+    @Override
+    public SysRx createSys(Config config, RestApi restAccess) {
+        return new SysRxImpl(restAccess);
+    }
+
+    @Override
+    public List<InjectionType<?>> injectables() {
+        return INJECTABLES;
     }
 }

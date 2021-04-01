@@ -32,10 +32,10 @@ import io.helidon.security.spi.SecretsProvider;
  * Use this class only with Helidon Security on the classpath.
  */
 public class Kv2SecurityProvider implements SecretsProvider<Kv2SecurityProvider.Kv2SecretConfig> {
-    private final Kv2Secrets secrets;
+    private final Kv2SecretsRx secrets;
 
     Kv2SecurityProvider(Vault vault) {
-        this.secrets = vault.secrets(Kv2Secrets.ENGINE);
+        this.secrets = vault.secrets(Kv2SecretsRx.ENGINE);
     }
 
     @Override
