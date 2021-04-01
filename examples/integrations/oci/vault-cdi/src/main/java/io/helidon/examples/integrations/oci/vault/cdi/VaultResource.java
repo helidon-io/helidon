@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -18,9 +19,9 @@ import io.helidon.integrations.oci.vault.Decrypt;
 import io.helidon.integrations.oci.vault.DeleteSecret;
 import io.helidon.integrations.oci.vault.Encrypt;
 import io.helidon.integrations.oci.vault.GetSecretBundle;
+import io.helidon.integrations.oci.vault.OciVault;
 import io.helidon.integrations.oci.vault.Sign;
 import io.helidon.integrations.oci.vault.Verify;
-import io.helidon.integrations.oci.vault.blocking.OciVault;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -33,14 +34,14 @@ public class VaultResource {
     private final String signatureKeyOcid;
 
     @Inject
-    VaultResource(OciVault vault,
-                  @ConfigProperty(name = "oci.vault.vault-ocid")
+    VaultResource(@Named("custom") OciVault vault,
+                  @ConfigProperty(name = "app.vault.vault-ocid")
                           String vaultOcid,
-                  @ConfigProperty(name = "oci.vault.compartment-ocid")
+                  @ConfigProperty(name = "app.vault.compartment-ocid")
                           String compartmentOcid,
-                  @ConfigProperty(name = "oci.vault.encryption-key-ocid")
+                  @ConfigProperty(name = "app.vault.encryption-key-ocid")
                           String encryptionKeyOcid,
-                  @ConfigProperty(name = "oci.vault.signature-key-ocid")
+                  @ConfigProperty(name = "app.vault.signature-key-ocid")
                           String signatureKeyOcid) {
         this.vault = vault;
         this.vaultOcid = vaultOcid;

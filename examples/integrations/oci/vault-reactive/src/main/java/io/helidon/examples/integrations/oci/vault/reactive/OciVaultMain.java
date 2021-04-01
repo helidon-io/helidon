@@ -18,7 +18,7 @@ package io.helidon.examples.integrations.oci.vault.reactive;
 
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
-import io.helidon.integrations.oci.vault.OciVault;
+import io.helidon.integrations.oci.vault.OciVaultRx;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -44,7 +44,7 @@ public class OciVaultMain {
 
         // this requires OCI configuration in the usual place
         // ~/.oci/config
-        OciVault ociVault = OciVault.create(config.get("oci"));
+        OciVaultRx ociVault = OciVaultRx.create(config.get("oci"));
 
         WebServer.builder()
                 .config(config.get("server"))

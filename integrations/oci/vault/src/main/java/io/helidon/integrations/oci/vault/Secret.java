@@ -26,7 +26,7 @@ import io.helidon.integrations.oci.connect.OciResponseParser;
 /**
  * A secret obtained from the vault. This object does not contain the actual secret content,
  *  please see
- *  {@link io.helidon.integrations.oci.vault.OciVault#getSecretBundle(io.helidon.integrations.oci.vault.GetSecretBundle.Request)}
+ *  {@link OciVaultRx#getSecretBundle(io.helidon.integrations.oci.vault.GetSecretBundle.Request)}
  *  to obtain secret content.
  */
 public class Secret extends OciResponseParser {

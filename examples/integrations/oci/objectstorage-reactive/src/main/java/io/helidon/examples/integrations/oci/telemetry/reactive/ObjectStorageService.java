@@ -6,8 +6,8 @@ import java.util.OptionalLong;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.integrations.oci.objectstorage.DeleteObject;
-import io.helidon.integrations.oci.objectstorage.GetObject;
-import io.helidon.integrations.oci.objectstorage.OciObjectStorage;
+import io.helidon.integrations.oci.objectstorage.GetObjectRx;
+import io.helidon.integrations.oci.objectstorage.OciObjectStorageRx;
 import io.helidon.integrations.oci.objectstorage.PutObject;
 import io.helidon.integrations.oci.objectstorage.RenameObject;
 import io.helidon.webserver.Routing;
@@ -16,10 +16,10 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 class ObjectStorageService implements Service {
-    private final OciObjectStorage objectStorage;
+    private final OciObjectStorageRx objectStorage;
     private final String bucketName;
 
-    ObjectStorageService(OciObjectStorage objectStorage, String bucketName) {
+    ObjectStorageService(OciObjectStorageRx objectStorage, String bucketName) {
         this.objectStorage = objectStorage;
         this.bucketName = bucketName;
     }
@@ -80,15 +80,15 @@ class ObjectStorageService implements Service {
     private void download(ServerRequest req, ServerResponse res) {
         String objectName = req.path().param("file-name");
 
-        objectStorage.getObject(GetObject.Request.builder()
+        objectStorage.getObject(GetObjectRx.Request.builder()
                                         .bucket(bucketName)
                                         .objectName(objectName))
                 .forSingle(apiResponse -> {
-                    Optional<GetObject.Response> entity = apiResponse.entity();
+                    Optional<GetObjectRx.Response> entity = apiResponse.entity();
                     if (entity.isEmpty()) {
                         res.status(Http.Status.NOT_FOUND_404).send();
                     } else {
-                        GetObject.Response response = entity.get();
+                        GetObjectRx.Response response = entity.get();
                         // copy the content length header to response
                         apiResponse.headers()
                                 .first(Http.Header.CONTENT_LENGTH)

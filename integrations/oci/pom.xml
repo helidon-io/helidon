@@ -36,9 +36,7 @@
         <module>connect</module>
         <module>telemetry</module>
         <module>objectstorage</module>
-        <module>objectstorage-blocking</module>
         <module>vault</module>
-        <module>vault-blocking</module>
         <module>cdi</module>
     </modules>
 </project>

@@ -18,7 +18,7 @@ package io.helidon.examples.integrations.oci.telemetry.reactive;
 
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
-import io.helidon.integrations.oci.objectstorage.OciObjectStorage;
+import io.helidon.integrations.oci.objectstorage.OciObjectStorageRx;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -38,7 +38,7 @@ public class OciObjectStorageMain {
 
         // this requires OCI configuration in the usual place
         // ~/.oci/config
-        OciObjectStorage ociObjectStorage = OciObjectStorage.create(ociConfig);
+        OciObjectStorageRx ociObjectStorage = OciObjectStorageRx.create(ociConfig);
 
         // the following parameters are required
         String bucketName = ociConfig.get("objectstorage").get("bucket").asString().get();

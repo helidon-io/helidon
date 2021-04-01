@@ -48,7 +48,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-vault-blocking</artifactId>
+            <artifactId>helidon-integrations-oci-vault</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

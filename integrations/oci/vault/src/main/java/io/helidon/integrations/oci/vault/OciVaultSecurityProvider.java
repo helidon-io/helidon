@@ -33,9 +33,9 @@ import io.helidon.security.spi.SecretsProvider;
 public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurityProvider.OciVaultSecretConfig>,
                                                  EncryptionProvider<OciVaultSecurityProvider.OciVaultEncryptionConfig>,
                                                  DigestProvider<OciVaultSecurityProvider.OciVaultDigestConfig> {
-    private final OciVault ociVault;
+    private final OciVaultRx ociVault;
 
-    OciVaultSecurityProvider(OciVault ociVault) {
+    OciVaultSecurityProvider(OciVaultRx ociVault) {
         this.ociVault = ociVault;
     }
 

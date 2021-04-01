@@ -16,24 +16,34 @@
 
 package io.helidon.integrations.oci.objectstorage;
 
-import java.lang.reflect.Type;
-import java.util.Set;
+import java.util.LinkedList;
+import java.util.List;
 
-import io.helidon.config.Config;
-import io.helidon.integrations.oci.connect.OciRestApi;
 import io.helidon.integrations.oci.connect.spi.InjectionProvider;
 
-public class OciObjectStorageInjectionProvider implements InjectionProvider<OciObjectStorage> {
-    @Override
-    public Set<Type> types() {
-        return Set.of(OciObjectStorage.class);
+public class OciObjectStorageInjectionProvider implements InjectionProvider {
+    private static final List<InjectionType<?>> INJECTABLES;
+
+    static {
+        List<InjectionType<?>> injectables = new LinkedList<>();
+
+        injectables.add(InjectionType.create(OciObjectStorageRx.class,
+                                             (restApi, config) -> OciObjectStorageRx.builder()
+                                                     .restApi(restApi)
+                                                     .config(config)
+                                                     .build()));
+
+        injectables.add(InjectionType.create(OciObjectStorage.class,
+                                             (restApi, config) -> OciObjectStorage.create(OciObjectStorageRx.builder()
+                                                                                          .restApi(restApi)
+                                                                                          .config(config)
+                                                                                          .build())));
+
+        INJECTABLES = List.copyOf(injectables);
     }
 
     @Override
-    public OciObjectStorage createInstance(OciRestApi restApi, Config ociConfig) {
-        return OciObjectStorage.builder()
-                .restApi(restApi)
-                .config(ociConfig)
-                .build();
+    public List<InjectionType<?>> injectables() {
+        return INJECTABLES;
     }
 }

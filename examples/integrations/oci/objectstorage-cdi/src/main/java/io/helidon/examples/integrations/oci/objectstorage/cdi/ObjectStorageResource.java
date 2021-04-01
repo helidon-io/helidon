@@ -20,9 +20,9 @@ import io.helidon.common.http.Http;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.objectstorage.DeleteObject;
 import io.helidon.integrations.oci.objectstorage.GetObject;
+import io.helidon.integrations.oci.objectstorage.GetObjectRx;
+import io.helidon.integrations.oci.objectstorage.OciObjectStorage;
 import io.helidon.integrations.oci.objectstorage.PutObject;
-import io.helidon.integrations.oci.objectstorage.blocking.BlockingGetObject;
-import io.helidon.integrations.oci.objectstorage.blocking.OciObjectStorage;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -42,16 +42,16 @@ public class ObjectStorageResource {
     @GET
     @Path("/file/{file-name}")
     public Response download(@PathParam("file-name") String fileName) {
-        ApiOptionalResponse<BlockingGetObject.Response> ociResponse = objectStorage.getObject(GetObject.Request.builder()
+        ApiOptionalResponse<GetObject.Response> ociResponse = objectStorage.getObject(GetObjectRx.Request.builder()
                                                                                                       .bucket(bucketName)
                                                                                                       .objectName(fileName));
-        Optional<BlockingGetObject.Response> entity = ociResponse.entity();
+        Optional<GetObject.Response> entity = ociResponse.entity();
 
         if (entity.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
-        BlockingGetObject.Response response = entity.get();
+        GetObject.Response response = entity.get();
 
         StreamingOutput stream = output -> response.writeTo(Channels.newChannel(output));
 

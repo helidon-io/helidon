@@ -16,89 +16,40 @@
 
 package io.helidon.integrations.oci.objectstorage;
 
-import java.util.Optional;
-import java.util.concurrent.Flow;
+import java.nio.channels.ReadableByteChannel;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Multi;
-import io.helidon.common.reactive.Single;
+import io.helidon.common.reactive.IoMulti;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
-import io.helidon.integrations.oci.connect.OciApiException;
-import io.helidon.integrations.oci.connect.OciRequestBase;
-import io.helidon.integrations.oci.connect.OciRestApi;
 
 class OciObjectStorageImpl implements OciObjectStorage {
-    private final OciRestApi restApi;
-    private final Optional<String> defaultNamespace;
-    private final String hostPrefix;
-    private final Optional<String> endpoint;
+    private final OciObjectStorageRx delegate;
 
-    OciObjectStorageImpl(Builder builder) {
-        this.restApi = builder.restApi();
-        this.defaultNamespace = builder.namespace();
-        this.hostPrefix = builder.hostPrefix();
-        this.endpoint = Optional.ofNullable(builder.endpoint());
+    OciObjectStorageImpl(OciObjectStorageRx delegate) {
+        this.delegate = delegate;
     }
 
     @Override
-    public Single<ApiOptionalResponse<GetObject.Response>> getObject(GetObject.Request request) {
-        String namespace = namespace(request);
-        String apiPath = "/n/" + namespace + "/b/" + request.bucket() + "/o/" + request.objectName();
-
-        objectStorage(request);
-
-        return restApi
-                .getPublisher(apiPath, request, ApiOptionalResponse.<Multi<DataChunk>, GetObject.Response>apiResponseBuilder()
-                        .entityProcessor(GetObject.Response::create));
+    public ApiOptionalResponse<GetObject.Response> getObject(GetObjectRx.Request request) {
+        return delegate.getObject(request).await()
+                .map(reactiveResponse -> GetObject.Response.create(reactiveResponse.bytePublisher()));
     }
 
     @Override
-    public Single<PutObject.Response> putObject(PutObject.Request request, Flow.Publisher<DataChunk> publisher) {
-        String namespace = namespace(request);
-        String apiPath = "/n/" + namespace + "/b/" + request.bucket() + "/o/" + request.objectName();
-
-        request.addHeader("Content-Length", String.valueOf(request.contentLength()));
-        objectStorage(request);
-
-        return restApi.invokeBytesRequest(Http.Method.PUT, apiPath, request, publisher, PutObject.Response.builder());
+    public PutObject.Response putObject(PutObject.Request request, ReadableByteChannel channel) {
+        return delegate.putObject(request, IoMulti.multiFromByteChannel(channel).map(DataChunk::create))
+                .await();
     }
 
     @Override
-    public Single<DeleteObject.Response> deleteObject(DeleteObject.Request request) {
-        String namespace = namespace(request);
-        String apiPath = "/n/" + namespace + "/b/" + request.bucket() + "/o/" + request.objectName();
-
-        objectStorage(request);
-
-        return restApi.delete(apiPath, request, DeleteObject.Response.builder());
+    public DeleteObject.Response deleteObject(DeleteObject.Request request) {
+        return delegate.deleteObject(request)
+                .await();
     }
 
     @Override
-    public Single<RenameObject.Response> renameObject(RenameObject.Request request) {
-        String namespace = namespace(request);
-        String apiPath = "/n/" + namespace + "/b/" + request.bucket() + "/actions/renameObject";
-
-        objectStorage(request);
-
-        return restApi.post(apiPath, request, RenameObject.Response.builder());
-    }
-
-    private String namespace(ObjectRequest<?> request) {
-        return request.namespace()
-                .or(() -> defaultNamespace)
-                .orElseThrow(() -> new OciApiException("Namespace must be defined for Object Storage requests either "
-                                                               + "in configuration of Object Storage, or on request."));
-    }
-
-    private void objectStorage(OciRequestBase<?> request) {
-        if (request.endpoint().isPresent()) {
-            return;
-        }
-
-        endpoint.ifPresent(request::endpoint);
-
-        request.hostFormat(OciObjectStorage.API_HOST_FORMAT)
-                .hostPrefix(hostPrefix);
+    public RenameObject.Response renameObject(RenameObject.Request request) {
+        return delegate.renameObject(request)
+                .await();
     }
 }

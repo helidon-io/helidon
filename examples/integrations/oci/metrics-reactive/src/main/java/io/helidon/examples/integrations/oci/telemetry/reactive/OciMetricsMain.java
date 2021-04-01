@@ -22,7 +22,7 @@ import java.time.temporal.ChronoUnit;
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.ApiEntityResponse;
-import io.helidon.integrations.oci.telemetry.OciMetrics;
+import io.helidon.integrations.oci.telemetry.OciMetricsRx;
 import io.helidon.integrations.oci.telemetry.PostMetricData;
 
 import static io.helidon.config.ConfigSources.classpath;
@@ -40,7 +40,7 @@ public class OciMetricsMain {
         // or use the same approach
         Config config = buildConfig();
 
-        OciMetrics metrics = OciMetrics.create(config.get("oci"));
+        OciMetricsRx metrics = OciMetricsRx.create(config.get("oci"));
 
         String compartmentId = config.get("oci.metrics.compartment-ocid").asString().get();
 

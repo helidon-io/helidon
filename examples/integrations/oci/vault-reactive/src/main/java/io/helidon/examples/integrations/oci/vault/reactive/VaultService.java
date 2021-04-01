@@ -11,7 +11,7 @@ import io.helidon.integrations.oci.vault.Decrypt;
 import io.helidon.integrations.oci.vault.DeleteSecret;
 import io.helidon.integrations.oci.vault.Encrypt;
 import io.helidon.integrations.oci.vault.GetSecretBundle;
-import io.helidon.integrations.oci.vault.OciVault;
+import io.helidon.integrations.oci.vault.OciVaultRx;
 import io.helidon.integrations.oci.vault.Secret;
 import io.helidon.integrations.oci.vault.Sign;
 import io.helidon.integrations.oci.vault.Verify;
@@ -22,13 +22,13 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 class VaultService implements Service {
-    private final OciVault vault;
+    private final OciVaultRx vault;
     private final String vaultOcid;
     private final String compartmentOcid;
     private final String encryptionKeyOcid;
     private final String signatureKeyOcid;
 
-    VaultService(OciVault vault,
+    VaultService(OciVaultRx vault,
                  String vaultOcid,
                  String compartmentOcid,
                  String encryptionKeyOcid,

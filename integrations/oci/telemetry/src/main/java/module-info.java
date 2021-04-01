@@ -15,11 +15,17 @@
  */
 
 module io.helidon.integrations.oci.telemetry {
-    requires io.helidon.common.reactive;
     requires java.json;
+
+    requires io.helidon.common.reactive;
     requires io.helidon.integrations.common.rest;
     requires io.helidon.integrations.oci.connect;
     requires io.helidon.common.http;
     requires io.helidon.common;
     requires io.helidon.config;
+
+    exports io.helidon.integrations.oci.telemetry;
+
+    provides io.helidon.integrations.oci.connect.spi.InjectionProvider
+            with io.helidon.integrations.oci.telemetry.OciTelemetryInjectionProvider;
 }

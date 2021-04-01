@@ -16,59 +16,16 @@
 
 package io.helidon.integrations.oci.objectstorage;
 
-import java.util.Optional;
-import java.util.concurrent.Flow;
-import java.util.function.Consumer;
+import java.nio.channels.ReadableByteChannel;
 
-import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.Single;
-import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
-import io.helidon.integrations.oci.connect.OciRestApi;
 
+/**
+ * Blocking OCI Vault API.
+ */
 public interface OciObjectStorage {
-    /**
-     * Version of Secret API supported by this client.
-     */
-    String API_VERSION = "20160918";
-
-    /**
-     * Host name prefix.
-     */
-    String API_HOST_PREFIX = "objectstorage";
-
-    /**
-     * Host format of API server.
-     */
-    String API_HOST_FORMAT = "%s://%s.%s.%s";
-
-    /**
-     * Create a new fluent API builder for OCI metrics.
-     *
-     * @return a new builder
-     */
-    static Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * Create OCI metrics using the default {@link io.helidon.integrations.oci.connect.OciRestApi}.
-     *
-     * @return OCI metrics instance connecting based on {@code DEFAULT} profile
-     */
-    static OciObjectStorage create() {
-        return builder().build();
-    }
-
-    /**
-     * Create OCI metrics based on configuration.
-     *
-     * @param config configuration on the node of OCI configuration
-     * @return OCI metrics instance configured from the configuration
-     * @see io.helidon.integrations.oci.objectstorage.OciObjectStorage.Builder#config(io.helidon.config.Config)
-     */
-    static OciObjectStorage create(Config config) {
-        return builder().config(config).build();
+    static OciObjectStorage create(OciObjectStorageRx reactive) {
+        return new OciObjectStorageImpl(reactive);
     }
 
     /**
@@ -77,24 +34,24 @@ public interface OciObjectStorage {
      * @param request get object request
      * @return future with response or error
      */
-    Single<ApiOptionalResponse<GetObject.Response>> getObject(GetObject.Request request);
+    ApiOptionalResponse<GetObject.Response> getObject(GetObjectRx.Request request);
 
     /**
      * Creates a new object or overwrites an existing object with the same name. The maximum object size allowed by PutObject
      * is 50 GiB.
      *
      * @param request put object request
-     * @param publisher publisher of object's data
+     * @param channel to read data from
      * @return future with response or error
      */
-    Single<PutObject.Response> putObject(PutObject.Request request, Flow.Publisher<DataChunk> publisher);
+    PutObject.Response putObject(PutObject.Request request, ReadableByteChannel channel);
 
     /**
      * Deletes an object.
      * @param request delete object request
      * @return future with response or error
      */
-    Single<DeleteObject.Response> deleteObject(DeleteObject.Request request);
+    DeleteObject.Response deleteObject(DeleteObject.Request request);
 
     /**
      * Rename an object in the given Object Storage namespace.
@@ -103,101 +60,5 @@ public interface OciObjectStorage {
      * @param request rename object request
      * @return future with response or error
      */
-    Single<RenameObject.Response> renameObject(RenameObject.Request request);
-
-    class Builder implements io.helidon.common.Builder<OciObjectStorage> {
-        private final OciRestApi.Builder apiBuilder = OciRestApi.builder();
-
-        private String apiVersion = API_VERSION;
-        private String hostPrefix = API_HOST_PREFIX;
-        private String namespace;
-        private String endpoint;
-        private OciRestApi restApi;
-
-        private Builder() {
-        }
-
-        @Override
-        public OciObjectStorage build() {
-            if (restApi == null) {
-                restApi = apiBuilder.build();
-            }
-            return new OciObjectStorageImpl(this);
-        }
-
-        /**
-         * Update from configuration. The configuration must be located on the {@code OCI} root configuration
-         * node.
-         *
-         * @param config configuration
-         * @return updated metrics builder
-         */
-        public Builder config(Config config) {
-            apiBuilder.config(config);
-            config.get("objectstorage.host-prefix").asString().ifPresent(this::hostPrefix);
-            config.get("objectstorage.endpoint").asString().ifPresent(this::endpoint);
-            config.get("objectstorage.api-version").asString().ifPresent(this::apiVersion);
-            config.get("objectstorage.namespace").asString().ifPresent(this::namespace);
-            return this;
-        }
-
-        public Builder restApi(OciRestApi restApi) {
-            this.restApi = restApi;
-            return this;
-        }
-
-        public Builder hostPrefix(String prefix) {
-            this.hostPrefix = prefix;
-            return this;
-        }
-
-        public Builder endpoint(String endpoint) {
-            this.endpoint = endpoint;
-            return this;
-        }
-
-        public Builder namespace(String namespace) {
-            this.namespace = namespace;
-            return this;
-        }
-
-        /**
-         * API version is ignored in this version of OCI Object Storage API, as the
-         * URI does not include it.
-         *
-         * @param apiVersion API version
-         * @return updated builder
-         */
-        public Builder apiVersion(String apiVersion) {
-            this.apiVersion = apiVersion;
-            return this;
-        }
-
-        /**
-         * Update the rest access builder to modify defaults.
-         *
-         * @param builderConsumer consumer of the builder
-         * @return updated metrics builder
-         */
-        public Builder updateRestApi(Consumer<OciRestApi.Builder> builderConsumer) {
-            builderConsumer.accept(apiBuilder);
-            return this;
-        }
-
-        OciRestApi restApi() {
-            return restApi;
-        }
-
-        Optional<String> namespace() {
-            return Optional.ofNullable(namespace);
-        }
-
-        String hostPrefix() {
-            return hostPrefix;
-        }
-
-        String endpoint() {
-            return endpoint;
-        }
-    }
+    RenameObject.Response renameObject(RenameObject.Request request);
 }

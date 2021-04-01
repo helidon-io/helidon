@@ -17,31 +17,50 @@
 package io.helidon.integrations.oci.objectstorage;
 
 import java.nio.ByteBuffer;
-import java.nio.channels.WritableByteChannel;
+import java.util.Optional;
 
-import io.helidon.common.reactive.IoMulti;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
 import io.helidon.integrations.oci.connect.OciResponseParser;
 
-public final class GetObject {
-    private GetObject() {
+public final class GetObjectRx {
+    private GetObjectRx() {
+    }
+
+    public static class Request extends ObjectRequest<Request> {
+        private Request() {
+        }
+
+        public static Request builder() {
+            return new Request();
+        }
+
+        @Override
+        public Optional<JsonObject> toJson(JsonBuilderFactory factory) {
+            return Optional.empty();
+        }
     }
 
     public static class Response extends OciResponseParser {
-        private final Multi<ByteBuffer> publisher;
+        private final Multi<DataChunk> publisher;
 
-        private Response(Multi<ByteBuffer> publisher) {
+        private Response(Multi<DataChunk> publisher) {
             this.publisher = publisher;
         }
 
-        static Response create(Multi<ByteBuffer> publisher) {
+        public static Response create(Multi<DataChunk> publisher) {
             return new Response(publisher);
         }
 
-        public void writeTo(WritableByteChannel channel) {
-            publisher.to(IoMulti.multiToByteChannel(channel))
-                    .await();
+        public Multi<DataChunk> publisher() {
+            return publisher;
         }
 
+        public Multi<ByteBuffer> bytePublisher() {
+            return publisher.flatMap(it -> Multi.just(it.data()));
+        }
     }
 }
