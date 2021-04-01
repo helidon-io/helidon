@@ -34,7 +34,7 @@
     <description>Reactive integration with OCI Object Storage.</description>
 
     <properties>
-        <mainClass>io.helidon.examples.integrations.oci.telemetry.reactive.OciObjectStorageMain</mainClass>
+        <mainClass>io.helidon.examples.integrations.oci.objecstorage.reactive.OciObjectStorageMain</mainClass>
     </properties>
 
     <dependencies>

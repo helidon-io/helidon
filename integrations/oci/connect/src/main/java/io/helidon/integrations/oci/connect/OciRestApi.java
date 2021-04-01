@@ -126,6 +126,7 @@ public class OciRestApi extends RestApiBase {
                                                                       String requestId,
                                                                       WebClientRequestBuilder requestBuilder,
                                                                       Flow.Publisher<DataChunk> publisher) {
+        requestBuilder.disableChunked();
         Supplier<Single<WebClientResponse>> originalSupplier = super
                 .requestBytesPayload(path, request, method, requestId, requestBuilder, publisher);
 

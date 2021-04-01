@@ -19,11 +19,13 @@ module io.helidon.integrations.oci.objectstorage {
     requires java.json;
     requires io.helidon.common.http;
     requires io.helidon.common.reactive;
-    requires io.helidon.integrations.oci.connect;
+    requires transitive io.helidon.integrations.oci.connect;
     requires io.helidon.config;
 
     exports io.helidon.integrations.oci.objectstorage;
 
     provides io.helidon.integrations.oci.connect.spi.InjectionProvider
             with io.helidon.integrations.oci.objectstorage.OciObjectStorageInjectionProvider;
+
+    opens io.helidon.integrations.oci.objectstorage to weld.core.impl, io.helidon.microprofile.cdi;
 }

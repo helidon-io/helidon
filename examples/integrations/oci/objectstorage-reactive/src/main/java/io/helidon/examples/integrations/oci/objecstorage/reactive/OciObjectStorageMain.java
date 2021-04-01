@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.integrations.oci.telemetry.reactive;
+package io.helidon.examples.integrations.oci.objecstorage.reactive;
 
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;

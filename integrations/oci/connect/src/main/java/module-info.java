@@ -24,15 +24,17 @@ module io.helidon.integrations.oci.connect {
     requires io.helidon.config;
     requires io.helidon.security;
     requires java.json;
-    requires io.helidon.common.http;
+    requires transitive io.helidon.common.http;
     requires io.helidon.common.pki;
     requires io.helidon.security.providers.common;
     requires io.helidon.security.providers.httpsign;
     requires io.helidon.security.util;
     requires io.helidon.webclient;
     requires io.helidon.webclient.security;
-    requires io.helidon.integrations.common.rest;
+    requires transitive io.helidon.integrations.common.rest;
 
     exports io.helidon.integrations.oci.connect;
     exports io.helidon.integrations.oci.connect.spi;
+
+    opens io.helidon.integrations.oci.connect to weld.core.impl, io.helidon.microprofile.cdi;
 }

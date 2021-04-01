@@ -31,4 +31,6 @@ module io.helidon.integrations.oci.cdi {
 
     provides javax.enterprise.inject.spi.Extension
             with io.helidon.integrations.oci.cdi.OciCdiExtension;
+
+    opens io.helidon.integrations.oci.cdi to weld.core.impl, io.helidon.microprofile.cdi;
 }

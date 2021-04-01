@@ -19,7 +19,7 @@ module io.helidon.integrations.oci.telemetry {
 
     requires io.helidon.common.reactive;
     requires io.helidon.integrations.common.rest;
-    requires io.helidon.integrations.oci.connect;
+    requires transitive io.helidon.integrations.oci.connect;
     requires io.helidon.common.http;
     requires io.helidon.common;
     requires io.helidon.config;
@@ -28,4 +28,6 @@ module io.helidon.integrations.oci.telemetry {
 
     provides io.helidon.integrations.oci.connect.spi.InjectionProvider
             with io.helidon.integrations.oci.telemetry.OciTelemetryInjectionProvider;
+
+    opens io.helidon.integrations.oci.telemetry to weld.core.impl, io.helidon.microprofile.cdi;
 }

@@ -23,7 +23,7 @@ module io.helidon.integrations.oci.vault {
     requires io.helidon.integrations.oci.connect;
     requires java.json;
     requires io.helidon.common.http;
-    requires io.helidon.integrations.common.rest;
+    requires transitive io.helidon.integrations.common.rest;
 
     exports io.helidon.integrations.oci.vault;
 
@@ -32,4 +32,6 @@ module io.helidon.integrations.oci.vault {
 
     provides io.helidon.integrations.oci.connect.spi.InjectionProvider
             with io.helidon.integrations.oci.vault.OciVaultInjectionProvider;
+
+    opens io.helidon.integrations.oci.vault to weld.core.impl, io.helidon.microprofile.cdi;
 }
