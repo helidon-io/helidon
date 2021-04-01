@@ -19,7 +19,12 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ## [2.2.2]
 
-2.2.2 is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+2.2.2 is a bugfix release of Helidon. In addition to fixing various bugs it contains a security
+fix for an issue concerning the use of security annotations (such as @Denyall, @RolesAllowed)
+on JAX-RS Applications and sub-resource locators that are discovered by CDI. See issue
+[2903](https://github.com/oracle/helidon/issues/2903) for more details.
+
+This upgrade is recommended for all users of Helidon 2.
 
 ### Compatibility
 
