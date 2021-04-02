@@ -18,6 +18,7 @@ package io.helidon.servicecommon.restcdi;
 
 import java.lang.reflect.Executable;
 
+import javax.enterprise.context.Dependent;
 import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
@@ -118,6 +119,7 @@ public interface HelidonInterceptor<W> {
      * </p>
      * @param <W> type of work items processed by the interceptor implementation
      */
+    @Dependent
     abstract class Base<W> implements HelidonInterceptor<W> {
 
         @AroundConstruct

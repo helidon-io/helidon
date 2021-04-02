@@ -23,10 +23,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
-import javax.interceptor.AroundConstruct;
-import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
 import io.helidon.microprofile.metrics.MetricsCdiExtension.MetricWorkItem;
@@ -44,10 +41,9 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
  * </p>
  * @param <M> type of metrics the interceptor handles
  */
-@Dependent
-abstract class MetricsInterceptorBase<M extends Metric> implements HelidonInterceptor<MetricWorkItem> {
+abstract class MetricsInterceptorBase<M extends Metric> extends HelidonInterceptor.Base<MetricWorkItem> {
 
-    static final Logger LOGGER = Logger.getLogger(MetricsInterceptorBase.class.getPackageName() + ".Interceptor*");
+    static final Logger LOGGER = Logger.getLogger(MetricsInterceptorBase.class.getName());
 
     private final Class<? extends Annotation> annotationType;
     private final Class<M> metricType;
@@ -77,18 +73,6 @@ abstract class MetricsInterceptorBase<M extends Metric> implements HelidonInterc
     MetricsInterceptorBase(Class<? extends Annotation> annotationType, Class<M> metricType) {
         this.annotationType = annotationType;
         this.metricType = metricType;
-    }
-
-    @AroundConstruct
-    @Override
-    public Object aroundConstruct(InvocationContext context) throws Exception {
-        return aroundConstruction(context);
-    }
-
-    @AroundInvoke
-    @Override
-    public Object aroundInvoke(InvocationContext context) throws Exception {
-        return aroundInvocation(context);
     }
 
     Map<MetricID, Metric> metricsForVerification() {
@@ -136,18 +120,6 @@ abstract class MetricsInterceptorBase<M extends Metric> implements HelidonInterc
 
         WithPostCompletion(Class<? extends Annotation> annotationType, Class<T> metricType) {
             super(annotationType, metricType);
-        }
-
-        @AroundConstruct
-        @Override
-        public Object aroundConstruct(InvocationContext context) throws Exception {
-            return aroundConstruction(context);
-        }
-
-        @AroundInvoke
-        @Override
-        public Object aroundInvoke(InvocationContext context) throws Exception {
-            return aroundInvocation(context);
         }
 
         @Override

@@ -25,7 +25,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.interceptor.InvocationContext;
 
@@ -44,7 +43,6 @@ import io.micrometer.core.instrument.MeterRegistry;
  * </p>
  * @param <M>
  */
-@Dependent
 abstract class MicrometerInterceptorBase<M extends Meter> extends HelidonInterceptor.Base<MeterWorkItem>
         implements HelidonInterceptor.WithPostCompletion<MeterWorkItem> {
 
