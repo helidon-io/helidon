@@ -104,6 +104,9 @@ public interface HelidonInterceptor<W> {
 
     /**
      * Performs whatever pre-invocation work is needed for the given context, applied to the specified work item.
+     * <p>
+     *     If the pre-invocation handler throws an exception, any other pre-invocation
+     * </p>
      *
      * @param context {@code InvocationContext} for the execution being intercepted
      * @param workItem the work item on which to operate

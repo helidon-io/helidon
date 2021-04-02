@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,6 +41,10 @@ import javax.ws.rs.container.TimeoutHandler;
  * presence of a {@code @Suspended AsyncResponse} parameter.
  */
 class InterceptionRunnerImpl implements InterceptionRunner {
+
+    private static final Logger LOGGER = Logger.getLogger(InterceptionRunnerImpl.class.getName());
+    private static final String POST_INVOCATION_HANDLER_FAILURE = "Interceptor post-invocation handler failed; continuing";
+    private static final String ERROR_DURING_INTERCEPTION = "Error during interception";
 
     /*
      * In this impl, constructor runners and synchronous method runners are identical and have no saved context at all, so we
@@ -82,17 +87,27 @@ class InterceptionRunnerImpl implements InterceptionRunner {
             PreInvocationHandler<T> preInvocationHandler,
             PostCompletionHandler<T> postCompletionHandler) throws Exception {
         workItems.forEach(workItem -> preInvocationHandler.accept(context, workItem));
-        Throwable t = null;
+
+        Object result = null;
+        Exception exceptionFromContextProceed = null;
+        Exception escapingException;
+
         try {
-            return context.proceed();
+            result = context.proceed();
         } catch (Exception e) {
-            t = e;
-            throw e;
+            exceptionFromContextProceed = e;
         } finally {
-            for (T workItem : workItems) {
-                postCompletionHandler.accept(context, t, workItem);
-            }
+            escapingException = processPostInvocationHandlers(context,
+                    exceptionFromContextProceed,
+                    workItems,
+                    postCompletionHandler,
+                    RuntimeException::new);
         }
+        if (escapingException != null) {
+            LOGGER.log(Level.WARNING, ERROR_DURING_INTERCEPTION, escapingException);
+            throw escapingException;
+        }
+        return result;
     }
 
     /**
@@ -263,10 +278,40 @@ class InterceptionRunnerImpl implements InterceptionRunner {
                 throwable = throwableCapturingAsyncResponse.throwable();
                 LOGGER.log(Level.FINE, "Mapped throwable detected by interceptor async callback", throwable);
             }
-            for (T workItem : workItems) {
-                postCompletionHandler.accept(context, throwable, workItem);
+            Throwable reportingThrowable = processPostInvocationHandlers(context,
+                    throwable,
+                    workItems,
+                    postCompletionHandler,
+                    RuntimeException::new);
+            if (reportingThrowable != null) {
+                LOGGER.log(Level.WARNING, POST_INVOCATION_HANDLER_FAILURE, reportingThrowable);
             }
         }
+    }
+
+    // Invokes the post-completion handler for each work item. Adds any exceptions from running the handler
+    // as suppressed exceptions on either (1) the exception/throwable from context.proceed, or (2) a new umbrella exception.
+    //
+    // Because synchronous runners deal with exceptions and async with throwables, we have to parameterize this
+    // and provide a factory for creating a new umbrella exception if we need one.
+    private static <T, X extends Throwable> X processPostInvocationHandlers(InvocationContext context,
+            X fromContextProceed,
+            Iterable<T> workItems,
+            PostCompletionHandler<T> postCompletionHandler,
+            Function<String, ? extends X> factory) {
+        X escaping = fromContextProceed;
+        for (T workItem : workItems) {
+            try {
+                // Pass the original problem, if any, to the handler.
+                postCompletionHandler.accept(context, fromContextProceed, workItem);
+            } catch (Exception handlerException) {
+                if (escaping == null) {
+                    escaping = factory.apply("Exception(s) invoking post-completion handler(s)");
+                }
+                escaping.addSuppressed(handlerException);
+            }
+        }
+        return escaping;
     }
 
     private static int asyncResponseSlot(Method interceptedMethod) {
