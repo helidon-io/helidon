@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
+
+import io.helidon.metrics.WeightedSnapshot.DerivedSample;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -239,11 +241,26 @@ abstract class MetricImpl implements HelidonMetric {
 
     public abstract String prometheusValue();
 
+    String registryType() {
+        return registryType;
+    }
+
+    // temporary compatibility with HelidonTimer usage.
+    protected final void prometheusQuantile(StringBuilder sb,
+                                            String tags,
+                                            Units units,
+                                            String nameUnits,
+                                            String quantile,
+                                            Supplier<Double> valueSupplier) {
+        prometheusQuantile(sb, tags, units, nameUnits, quantile, valueSupplier.get(), "");
+    }
+
     protected final void prometheusQuantile(StringBuilder sb,
                                             String tags,
                                             Units units, String nameUnits,
                                             String quantile,
-                                            Supplier<Double> value) {
+                                            double value,
+                                            String label) {
         // application:file_sizes_bytes{quantile="0.5"} 4201
         String quantileTag = "quantile=\"" + quantile + "\"";
         if (tags.isEmpty()) {
@@ -255,8 +272,86 @@ abstract class MetricImpl implements HelidonMetric {
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
-                .append(units.convert(value.get()))
+                .append(units.convert(value));
+        if (!label.isBlank()) {
+            sb.append(" # ").append(label);
+        }
+        sb.append("\n");
+    }
+
+    protected final void prometheusQuantile(StringBuilder sb,
+            PrometheusName name,
+            Units units,
+            String quantile,
+            DerivedSample sample) {
+        prometheusQuantile(sb, name, units, quantile, sample.value(), sample.label());
+    }
+
+    protected final void prometheusQuantile(StringBuilder sb,
+            PrometheusName name,
+            Units units,
+            String quantile,
+            double value,
+            String label) {
+        // application:file_sizes_bytes{quantile="0.5"} 4201
+        String quantileTag = "quantile=\"" + quantile + "\"";
+        String tags = name.prometheusTags();
+        if (name.prometheusTags().isEmpty()) {
+            tags = "{" + quantileTag + "}";
+        } else {
+            tags = tags.substring(0, tags.length() - 1) + "," + quantileTag + "}";
+        }
+
+        sb.append(name.nameUnits())
+                .append(tags)
+                .append(" ")
+                .append(units.convert(value));
+        if (!label.isBlank()) {
+            sb.append(" # ").append(label);
+        }
+        sb.append("\n");
+    }
+
+    void appendPrometheusElement(StringBuilder sb,
+            PrometheusName name,
+            String statName,
+            boolean withHelpType,
+            String typeName,
+            DerivedSample sample) {
+        appendPrometheusElement(sb, name, () -> name.nameStatUnits(statName), withHelpType, typeName, sample.value(),
+                sample.label());
+    }
+
+    void appendPrometheusElement(StringBuilder sb,
+            PrometheusName name,
+            String statName,
+            boolean withHelpType,
+            String typeName,
+            WeightedSnapshot.WeightedSample sample) {
+        appendPrometheusElement(sb, name, () -> name.nameStatUnits(statName), withHelpType, typeName, sample.getValue(),
+                sample.label());
+    }
+
+    void appendPrometheusElement(StringBuilder sb,
+            PrometheusName name,
+            Supplier<String> nameToUse,
+            boolean withHelpType,
+            String typeName,
+            Object value,
+            String label
+            ) {
+        if (withHelpType) {
+            prometheusType(sb, name.nameUnits(), typeName);
+        }
+        sb.append(nameToUse.get())
+                .append(" ")
+                .append(name.units().convert(value))
+                .append(prometheusLabel(label))
                 .append("\n");
+    }
+
+    String prometheusLabel(String label) {
+        return label.isBlank() ? "" : " # " + label;
     }
 
     final String prometheusNameWithUnits(String name, Optional<String> unit) {
@@ -267,7 +362,7 @@ abstract class MetricImpl implements HelidonMetric {
         return prometheusClean(name, registryType + "_");
     }
 
-    private String prometheusClean(String name, String prefix) {
+    private static String prometheusClean(String name, String prefix) {
         name = name.replaceAll("[^a-zA-Z0-9_]", "_");
 
         //Scope is always specified at the start of the metric name.

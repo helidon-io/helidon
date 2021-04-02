@@ -38,10 +38,11 @@ import org.eclipse.microprofile.metrics.Snapshot;
 /**
  * A statistical snapshot of a {@link WeightedSnapshot}.
  */
-class WeightedSnapshot extends Snapshot {
+class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
 
     private static final Charset UTF_8 = Charset.forName("UTF-8");
-    private final long[] values;
+    private final WeightedSample[] copy;
+    private long[] values = null;
     private final double[] normWeights;
     private final double[] quantiles;
     /**
@@ -50,11 +51,10 @@ class WeightedSnapshot extends Snapshot {
      * @param values an unordered set of values in the reservoir
      */
     WeightedSnapshot(Collection<WeightedSample> values) {
-        final WeightedSample[] copy = values.toArray(new WeightedSample[] {});
+        copy = values.toArray(new WeightedSample[] {});
 
-        Arrays.sort(copy, Comparator.comparingLong(o -> o.value));
+        Arrays.sort(copy, Comparator.comparing(WeightedSample::getValue));
 
-        this.values = new long[copy.length];
         this.normWeights = new double[copy.length];
         this.quantiles = new double[copy.length];
 
@@ -64,7 +64,6 @@ class WeightedSnapshot extends Snapshot {
         }
 
         for (int i = 0; i < copy.length; i++) {
-            this.values[i] = copy[i].value;
             /*
              * A zero denominator could cause the resulting double to be infinity or, if the numerator is also 0,
              * NaN. Either causes problems when formatting for JSON output. Just use 0 instead.
@@ -85,12 +84,22 @@ class WeightedSnapshot extends Snapshot {
      */
     @Override
     public double getValue(double quantile) {
+        return value(quantile).value;
+    }
+
+    @Override
+    public DerivedSample value(double quantile) {
+        int posx = slot(quantile);
+        return posx == -1 ? DerivedSample.ZERO : new DerivedSample(copy[posx].value, copy[posx].label());
+    }
+
+    int slot(double quantile) {
         if ((quantile < 0.0) || (quantile > 1.0) || Double.isNaN(quantile)) {
             throw new IllegalArgumentException(quantile + " is not in [0..1]");
         }
 
-        if (values.length == 0) {
-            return 0.0;
+        if (copy.length == 0) {
+            return -1;
         }
 
         int posx = Arrays.binarySearch(quantiles, quantile);
@@ -99,14 +108,14 @@ class WeightedSnapshot extends Snapshot {
         }
 
         if (posx < 1) {
-            return values[0];
+            return 0;
         }
 
-        if (posx >= values.length) {
-            return values[values.length - 1];
+        if (posx >= copy.length) {
+            return copy.length - 1;
         }
 
-        return values[(int) posx];
+        return posx;
     }
 
     /**
@@ -116,7 +125,7 @@ class WeightedSnapshot extends Snapshot {
      */
     @Override
     public int size() {
-        return values.length;
+        return copy.length;
     }
 
     /**
@@ -126,8 +135,49 @@ class WeightedSnapshot extends Snapshot {
      */
     @Override
     public long[] getValues() {
-        return Arrays.copyOf(values, values.length);
+
+        if (values == null) {
+            long[] result = new long[copy.length];
+
+            int i = 0;
+            for (WeightedSample sample : copy) {
+                result[i++] = sample.value;
+            }
+            values = result;
+        }
+        return values;
     }
+
+    @Override
+    public DerivedSample median() {
+        return value(0.5);
+    }
+
+    @Override
+    public DerivedSample sample75thPercentile() {
+        return value(0.75);
+    }
+
+    @Override
+    public DerivedSample sample95thPercentile() {
+        return value(0.95);
+    }
+
+    @Override
+    public DerivedSample sample98thPercentile() {
+        return value(0.98);
+    }
+
+    @Override
+    public DerivedSample sample99thPercentile() {
+        return value(0.99);
+    }
+
+    @Override
+    public DerivedSample sample999thPercentile() {
+        return value(0.999);
+    }
+
 
     /**
      * Returns the highest value in the snapshot.
@@ -136,10 +186,12 @@ class WeightedSnapshot extends Snapshot {
      */
     @Override
     public long getMax() {
-        if (values.length == 0) {
-            return 0;
-        }
-        return values[values.length - 1];
+        return max().value;
+    }
+
+    @Override
+    public WeightedSample max() {
+        return copy.length == 0 ? WeightedSample.ZERO : copy[copy.length - 1];
     }
 
     /**
@@ -149,10 +201,12 @@ class WeightedSnapshot extends Snapshot {
      */
     @Override
     public long getMin() {
-        if (values.length == 0) {
-            return 0;
-        }
-        return values[0];
+        return min().value;
+    }
+
+    @Override
+    public WeightedSample min() {
+        return copy.length == 0 ? WeightedSample.ZERO : copy[0];
     }
 
     /**
@@ -162,15 +216,21 @@ class WeightedSnapshot extends Snapshot {
      */
     @Override
     public double getMean() {
-        if (values.length == 0) {
-            return 0;
+        return mean().value;
+    }
+
+    @Override
+    public DerivedSample mean() {
+        if (copy.length == 0) {
+            return DerivedSample.ZERO;
         }
 
         double sum = 0;
-        for (int i = 0; i < values.length; i++) {
-            sum += values[i] * normWeights[i];
+        for (int i = 0; i < copy.length; i++) {
+            sum += copy[i].value * normWeights[i];
         }
-        return sum;
+
+        return new DerivedSample(sum, copy[copy.length / 2].label());
     }
 
     /**
@@ -180,21 +240,27 @@ class WeightedSnapshot extends Snapshot {
      */
     @Override
     public double getStdDev() {
+        return stdDev().value;
+    }
+
+    @Override
+    public DerivedSample stdDev() {
         // two-pass algorithm for variance, avoids numeric overflow
 
-        if (values.length <= 1) {
-            return 0;
+        if (copy.length <= 1) {
+            return DerivedSample.ZERO;
         }
 
-        final double mean = getMean();
+
+        final double mean = mean().value;
         double variance = 0;
 
-        for (int i = 0; i < values.length; i++) {
-            final double diff = values[i] - mean;
+        for (int i = 0; i < copy.length; i++) {
+            final double diff = copy[i].value - mean;
             variance += normWeights[i] * diff * diff;
         }
 
-        return Math.sqrt(variance);
+        return new DerivedSample(Math.sqrt(variance));
     }
 
     /**
@@ -202,12 +268,11 @@ class WeightedSnapshot extends Snapshot {
      *
      * @param output an output stream
      */
-    @Override
     public void dump(OutputStream output) {
         final PrintWriter out = new PrintWriter(new OutputStreamWriter(output, UTF_8));
         try {
-            for (long value : values) {
-                out.printf("%d%n", value);
+            for (WeightedSample sample : copy) {
+                out.printf("%d,%l,%s%n", sample.value, sample.weight, sample.label());
             }
         } finally {
             out.close();
@@ -215,15 +280,39 @@ class WeightedSnapshot extends Snapshot {
     }
 
     /**
-     * A single sample item with value and its weights for {@link WeightedSnapshot}.
+     * A sample with a label.
      */
-    static class WeightedSample {
+    static class LabeledSample {
+        private final String label;
+
+        LabeledSample(String label) {
+            this.label = label;
+        }
+
+        String label() {
+            return label;
+        }
+    }
+
+    /**
+     * Labeled sample with a recorded value.
+     */
+    static class WeightedSample extends LabeledSample {
+
+        static final WeightedSample ZERO = new WeightedSample(0, 1.0, "");
+
         private final long value;
         private final double weight;
 
-        WeightedSample(long value, double weight) {
+
+        WeightedSample(long value, double weight, String label) {
+            super(label);
             this.value = value;
             this.weight = weight;
+        }
+
+        WeightedSample(long value) {
+            this(value, 1.0, "");
         }
 
         long getValue() {
@@ -232,6 +321,29 @@ class WeightedSnapshot extends Snapshot {
 
         double getWeight() {
             return weight;
+        }
+    }
+
+    /**
+     * A labeled sample with a derived value.
+     */
+    static class DerivedSample extends LabeledSample {
+
+        static final DerivedSample ZERO = new DerivedSample(0.0, "");
+
+        private final double value;
+
+        DerivedSample(double value, String label) {
+            super(label);
+            this.value = value;
+        }
+
+        DerivedSample(double value) {
+            this(value, "");
+        }
+
+        double value() {
+            return value;
         }
     }
 }
