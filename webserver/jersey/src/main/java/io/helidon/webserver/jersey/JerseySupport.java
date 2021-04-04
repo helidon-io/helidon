@@ -103,7 +103,7 @@ public class JerseySupport implements Service {
 
     private final ApplicationHandler appHandler;
     private final ExecutorService service;
-    private final JerseyHandler handler = new JerseyHandler();
+    private final JerseyHandler handler;
     private final HelidonJerseyContainer container;
     private final Thread serviceShutdownHook;
 
@@ -138,7 +138,7 @@ public class JerseySupport implements Service {
             // use the one provided
             builder.resourceConfig.register(AsyncExecutorProvider.create(builder.asyncExecutorService));
         }
-
+        this.handler = new JerseyHandler(builder.resourceConfig);
         this.appHandler = new ApplicationHandler(builder.resourceConfig, new ServerBinder(executorService));
         this.container = new HelidonJerseyContainer(appHandler, builder.resourceConfig);
 
@@ -235,6 +235,12 @@ public class JerseySupport implements Service {
      * for example.
      */
     private class JerseyHandler implements Handler {
+        
+        private final ResourceConfig resourceConfig;
+
+        public JerseyHandler(final ResourceConfig resourceConfig) {
+            this.resourceConfig = resourceConfig;
+        }
 
         @Override
         public void accept(ServerRequest req, ServerResponse res) {
@@ -261,7 +267,7 @@ public class JerseySupport implements Service {
                                                                    req.method().name(),
                                                                    new WebServerSecurityContext(),
                                                                    new MapPropertiesDelegate(),
-                                                                   null);
+                                                                    resourceConfig);
             // set headers
             req.headers().toMap().forEach(requestContext::headers);
 
