@@ -235,10 +235,10 @@ public class JerseySupport implements Service {
      * for example.
      */
     private class JerseyHandler implements Handler {
-        
+
         private final ResourceConfig resourceConfig;
 
-        public JerseyHandler(final ResourceConfig resourceConfig) {
+        JerseyHandler(final ResourceConfig resourceConfig) {
             this.resourceConfig = resourceConfig;
         }
 
