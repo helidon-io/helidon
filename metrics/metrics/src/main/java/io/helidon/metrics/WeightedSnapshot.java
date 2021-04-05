@@ -230,7 +230,32 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
             sum += copy[i].value * normWeights[i];
         }
 
-        return new DerivedSample(sum, copy[copy.length / 2].label());
+        // Choose a close-by sample's label for the label on the mean.
+        return new DerivedSample(sum, copy[slotNear(values, sum)].label());
+    }
+
+    static int slotNear(long[] values, double value) {
+        int slot = Arrays.binarySearch(values, (long) value);
+        if (slot >= 0) {
+            // Exact match.
+            return slot;
+        }
+        // No exact match.
+
+        // If the value would appear past the end of the array, the closest is the last element.
+        if (-slot - 1 == values.length) {
+            return values.length - 1;
+        }
+        // If the value would appear before the beginning of the array, the closest is the first element.
+        if (slot == -1) {
+            return 0;
+        }
+        int higherSlot = -slot - 1;
+
+        // Ties go to the lower slot but this is not part of the published contract.
+        return (values[higherSlot] - value < value - values[higherSlot - 1])
+                ? higherSlot
+                : higherSlot - 1;
     }
 
     /**
