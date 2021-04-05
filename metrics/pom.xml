@@ -32,5 +32,6 @@
     <modules>
         <module>metrics</module>
         <module>prometheus</module>
+        <module>trace-exemplar</module>
     </modules>
 </project>

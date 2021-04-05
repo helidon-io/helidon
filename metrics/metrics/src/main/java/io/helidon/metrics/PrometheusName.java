@@ -27,26 +27,32 @@ class PrometheusName {
 
     private final String prometheusTags;
 
+    private final MetricImpl metricImpl;
+    private final MetricID metricID;
     private final String prometheusNameWithUnits;
     private final String prometheusName;
     private final String prometheusUnit;
     private final Units units;
 
     static PrometheusName create(MetricImpl metricImpl, MetricID metricID) {
-        return new PrometheusName(metricImpl, metricID);
+        return new PrometheusName(metricImpl, metricID, metricImpl.getUnits());
     }
 
-    private PrometheusName(MetricImpl metricImpl, MetricID metricID) {
-        prometheusName = metricImpl.registryType() + "_" + metricID.getName();
+    static PrometheusName create(MetricImpl metricImpl, MetricID metricID, Units units) {
+        return new PrometheusName(metricImpl, metricID, units);
+    }
+
+    private PrometheusName(MetricImpl metricImpl, MetricID metricID, Units units) {
+        this.metricImpl = metricImpl;
+        this.metricID = metricID;
+        this.units = units;
+        prometheusName = MetricImpl.prometheusClean(metricID.getName(), metricImpl.registryType() + "_");
         this.prometheusTags = metricImpl.prometheusTags(metricID.getTags());
-        prometheusUnit = metricImpl.getUnits()
+        prometheusNameWithUnits = nameUnits(units);
+
+        prometheusUnit = units
                 .getPrometheusUnit()
                 .orElse("");
-
-        prometheusNameWithUnits = metricImpl.prometheusNameWithUnits(metricID.getName(), metricImpl.getUnits()
-                .getPrometheusUnit());
-
-        units = metricImpl.getUnits();
     }
 
     Units units() {
@@ -62,6 +68,10 @@ class PrometheusName {
         return prometheusNameWithUnits;
     }
 
+    String nameUnits(Units units) {
+        return metricImpl.prometheusNameWithUnits(metricID.getName(), units.getPrometheusUnit());
+    }
+
     /**
      * Returns the Prometheus metric name (registry type + metric name) + statistic type + units.
      *
@@ -69,7 +79,11 @@ class PrometheusName {
      * @return name with stat name with units
      */
     String nameStatUnits(String statName) {
-        return prometheusName + "_" + statName + "_" + prometheusUnit;
+        return nameStat(statName) + "_" + prometheusUnit;
+    }
+
+    String nameStat(String statName) {
+        return prometheusName + "_" + statName;
     }
 
     /**

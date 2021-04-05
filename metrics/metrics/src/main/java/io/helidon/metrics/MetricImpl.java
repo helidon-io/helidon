@@ -245,40 +245,6 @@ abstract class MetricImpl implements HelidonMetric {
         return registryType;
     }
 
-    // temporary compatibility with HelidonTimer usage.
-    protected final void prometheusQuantile(StringBuilder sb,
-                                            String tags,
-                                            Units units,
-                                            String nameUnits,
-                                            String quantile,
-                                            Supplier<Double> valueSupplier) {
-        prometheusQuantile(sb, tags, units, nameUnits, quantile, valueSupplier.get(), "");
-    }
-
-    protected final void prometheusQuantile(StringBuilder sb,
-                                            String tags,
-                                            Units units, String nameUnits,
-                                            String quantile,
-                                            double value,
-                                            String label) {
-        // application:file_sizes_bytes{quantile="0.5"} 4201
-        String quantileTag = "quantile=\"" + quantile + "\"";
-        if (tags.isEmpty()) {
-            tags = "{" + quantileTag + "}";
-        } else {
-            tags = tags.substring(0, tags.length() - 1) + "," + quantileTag + "}";
-        }
-
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(units.convert(value));
-        if (!label.isBlank()) {
-            sb.append(" # ").append(label);
-        }
-        sb.append("\n");
-    }
-
     protected final void prometheusQuantile(StringBuilder sb,
             PrometheusName name,
             Units units,
@@ -318,7 +284,7 @@ abstract class MetricImpl implements HelidonMetric {
             boolean withHelpType,
             String typeName,
             DerivedSample sample) {
-        appendPrometheusElement(sb, name, () -> name.nameStatUnits(statName), withHelpType, typeName, sample.value(),
+        appendPrometheusElement(sb, name.units(), () -> name.nameStatUnits(statName), withHelpType, typeName, sample.value(),
                 sample.label());
     }
 
@@ -328,26 +294,74 @@ abstract class MetricImpl implements HelidonMetric {
             boolean withHelpType,
             String typeName,
             WeightedSnapshot.WeightedSample sample) {
-        appendPrometheusElement(sb, name, () -> name.nameStatUnits(statName), withHelpType, typeName, sample.getValue(),
+        appendPrometheusElement(sb, name.units(), () -> name.nameStatUnits(statName), withHelpType, typeName, sample.getValue(),
                 sample.label());
     }
 
-    void appendPrometheusElement(StringBuilder sb,
-            PrometheusName name,
+    private void appendPrometheusElement(StringBuilder sb,
+            Units units,
             Supplier<String> nameToUse,
             boolean withHelpType,
             String typeName,
             Object value,
-            String label
-            ) {
+            String label) {
         if (withHelpType) {
-            prometheusType(sb, name.nameUnits(), typeName);
+            prometheusType(sb, nameToUse.get(), typeName);
         }
         sb.append(nameToUse.get())
                 .append(" ")
-                .append(name.units().convert(value))
+                .append(units.convert(value))
                 .append(prometheusLabel(label))
                 .append("\n");
+    }
+
+    void appendPrometheusHistogramElements(StringBuilder sb, MetricID metricID,
+            boolean withHelpType, long count, DisplayableLabeledSnapshot snap) {
+        PrometheusName name = PrometheusName.create(this, metricID);
+        appendPrometheusHistogramElements(sb, name, withHelpType, count, snap);
+    }
+
+    void appendPrometheusHistogramElements(StringBuilder sb, PrometheusName name,
+            boolean withHelpType, long count, DisplayableLabeledSnapshot snap) {
+
+        // # TYPE application:file_sizes_mean_bytes gauge
+        // application:file_sizes_mean_bytes 4738.231
+        appendPrometheusElement(sb, name, "mean",  withHelpType, "gauge", snap.mean());
+
+        // # TYPE application:file_sizes_max_bytes gauge
+        // application:file_sizes_max_bytes 31716
+        appendPrometheusElement(sb, name, "max", withHelpType, "gauge", snap.max());
+
+        // # TYPE application:file_sizes_min_bytes gauge
+        // application:file_sizes_min_bytes 180
+        appendPrometheusElement(sb, name, "min", withHelpType, "gauge", snap.min());
+
+        // # TYPE application:file_sizes_stddev_bytes gauge
+        // application:file_sizes_stddev_bytes 1054.7343037063602
+        appendPrometheusElement(sb, name, "stddev", withHelpType, "gauge", snap.stdDev());
+
+        // # TYPE application:file_sizes_bytes summary
+        // # HELP application:file_sizes_bytes Users file size
+        // application:file_sizes_bytes_count 2037
+
+        if (withHelpType) {
+            prometheusType(sb, name.nameUnits(), "summary");
+            prometheusHelp(sb, name.nameUnits());
+        }
+        sb.append(name.nameUnitsSuffixTags("count"))
+                .append(" ")
+                .append(count)
+                .append('\n');
+
+        // application:file_sizes_bytes{quantile="0.5"} 4201
+        // for each supported quantile
+        prometheusQuantile(sb, name, getUnits(), "0.5", snap.median());
+        prometheusQuantile(sb, name, getUnits(), "0.75", snap.sample75thPercentile());
+        prometheusQuantile(sb, name, getUnits(), "0.95", snap.sample95thPercentile());
+        prometheusQuantile(sb, name, getUnits(), "0.98", snap.sample98thPercentile());
+        prometheusQuantile(sb, name, getUnits(), "0.99", snap.sample99thPercentile());
+        prometheusQuantile(sb, name, getUnits(), "0.999", snap.sample999thPercentile());
+
     }
 
     String prometheusLabel(String label) {
@@ -362,7 +376,7 @@ abstract class MetricImpl implements HelidonMetric {
         return prometheusClean(name, registryType + "_");
     }
 
-    private static String prometheusClean(String name, String prefix) {
+    static String prometheusClean(String name, String prefix) {
         name = name.replaceAll("[^a-zA-Z0-9_]", "_");
 
         //Scope is always specified at the start of the metric name.

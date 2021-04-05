@@ -69,53 +69,15 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         return delegate.getSnapshot();
     }
 
-    @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
-        Units units = getUnits();
-
-        DisplayableLabeledSnapshot snap = delegate instanceof HistogramImpl
+    DisplayableLabeledSnapshot snapshot() {
+        return (delegate instanceof HistogramImpl)
                 ? ((HistogramImpl) delegate).snapshot()
                 : WrappedSnapshot.create(delegate.getSnapshot());
+    }
 
-        PrometheusName name = PrometheusName.create(this, metricID);
-
-        // # TYPE application:file_sizes_mean_bytes gauge
-        // application:file_sizes_mean_bytes 4738.231
-        appendPrometheusElement(sb, name, "mean",  withHelpType, "gauge", snap.mean());
-
-        // # TYPE application:file_sizes_max_bytes gauge
-        // application:file_sizes_max_bytes 31716
-        appendPrometheusElement(sb, name, "max", withHelpType, "gauge", snap.max());
-
-        // # TYPE application:file_sizes_min_bytes gauge
-        // application:file_sizes_min_bytes 180
-        appendPrometheusElement(sb, name, "min", withHelpType, "gauge", snap.min());
-
-        // # TYPE application:file_sizes_stddev_bytes gauge
-        // application:file_sizes_stddev_bytes 1054.7343037063602
-        appendPrometheusElement(sb, name, "stddev", withHelpType, "gauge", snap.stdDev());
-
-        // # TYPE application:file_sizes_bytes summary
-        // # HELP application:file_sizes_bytes Users file size
-        // application:file_sizes_bytes_count 2037
-
-        if (withHelpType) {
-            prometheusType(sb, name.nameUnits(), "summary");
-            prometheusHelp(sb, name.nameUnits());
-        }
-        sb.append(name.nameUnitsSuffixTags("count"))
-                .append(" ")
-                .append(getCount())
-                .append('\n');
-
-        // application:file_sizes_bytes{quantile="0.5"} 4201
-        // for each supported quantile
-        prometheusQuantile(sb, name, units, "0.5", snap.median());
-        prometheusQuantile(sb, name, units, "0.75", snap.sample75thPercentile());
-        prometheusQuantile(sb, name, units, "0.95", snap.sample95thPercentile());
-        prometheusQuantile(sb, name, units, "0.98", snap.sample98thPercentile());
-        prometheusQuantile(sb, name, units, "0.99", snap.sample99thPercentile());
-        prometheusQuantile(sb, name, units, "0.999", snap.sample999thPercentile());
+    @Override
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
+        appendPrometheusHistogramElements(sb, metricID, withHelpType, getCount(), snapshot());
     }
 
     @Override
