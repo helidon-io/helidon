@@ -29,6 +29,10 @@
     <name>Helidon Common Configurable</name>
     <artifactId>helidon-common-configurable</artifactId>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>

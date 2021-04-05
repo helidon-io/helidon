@@ -29,6 +29,10 @@
     <name>Helidon Config MP</name>
     <description>Core of the implementation of MicroProfile Config specification</description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>jakarta.annotation</groupId>
@@ -49,6 +53,10 @@
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
             <artifactId>microprofile-config-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

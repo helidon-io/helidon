@@ -32,6 +32,10 @@
         Microprofile Health implementation - health checks supported OOTB
     </description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.health</groupId>

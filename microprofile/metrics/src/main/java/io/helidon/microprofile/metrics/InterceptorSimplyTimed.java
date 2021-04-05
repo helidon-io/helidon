@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,8 @@
 package io.helidon.microprofile.metrics;
 
 import javax.annotation.Priority;
-import javax.inject.Inject;
 import javax.interceptor.Interceptor;
-import javax.interceptor.InvocationContext;
 
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 
 /**
@@ -36,21 +32,10 @@ import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 @SimplyTimed
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 10)
-final class InterceptorSimplyTimed extends InterceptorBase<SimpleTimer, SimplyTimed> {
+final class InterceptorSimplyTimed extends InterceptorSimplyTimedBase {
 
-    @Inject
-    InterceptorSimplyTimed(MetricRegistry registry) {
-        super(registry,
-                SimplyTimed.class,
-                SimplyTimed::name,
-                SimplyTimed::tags,
-                SimplyTimed::absolute,
-                "simpletimer",
-                SimpleTimer.class);
+    InterceptorSimplyTimed() {
+        super(SimplyTimed.class);
     }
 
-    @Override
-    protected Object prepareAndInvoke(SimpleTimer simpleTimer, SimplyTimed annotation, InvocationContext context) throws Exception {
-        return simpleTimer.time(context::proceed);
-    }
 }

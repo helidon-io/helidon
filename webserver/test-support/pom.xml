@@ -29,6 +29,10 @@
     <artifactId>helidon-webserver-test-support</artifactId>
     <name>Helidon WebServer Test Support</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>

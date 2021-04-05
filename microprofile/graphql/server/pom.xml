@@ -28,6 +28,11 @@
     <name>Helidon Microprofile GraphQL Server</name>
     <description>The Microprofile GraphQL Server implementation</description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
+
     <dependencies>
         <dependency>
             <groupId>org.eclipse.microprofile.graphql</groupId>

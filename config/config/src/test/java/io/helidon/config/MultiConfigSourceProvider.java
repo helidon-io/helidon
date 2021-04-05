@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,9 @@ import java.util.Set;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.ConfigSourceProvider;
 
-import org.junit.Assert;
-
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class MultiConfigSourceProvider implements ConfigSourceProvider {
 
@@ -39,7 +38,7 @@ public class MultiConfigSourceProvider implements ConfigSourceProvider {
 
     @Override
     public ConfigSource create(String type, Config metaConfig) {
-        Assert.fail("This should never be called. This should be tested as multi-source only.");
+        fail("This should never be called. This should be tested as multi-source only.");
         return ConfigSources.empty();
     }
 

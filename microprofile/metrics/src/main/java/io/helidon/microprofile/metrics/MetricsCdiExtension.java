@@ -19,6 +19,7 @@ package io.helidon.microprofile.metrics;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -30,8 +31,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,7 +64,6 @@ import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 import javax.interceptor.Interceptor;
-import javax.interceptor.InvocationContext;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HEAD;
@@ -69,8 +71,6 @@ import javax.ws.rs.OPTIONS;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 
 import io.helidon.common.Errors;
 import io.helidon.common.context.Contexts;
@@ -104,7 +104,6 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import static io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
-import static io.helidon.microprofile.metrics.MetricUtil.lookupAnnotation;
 import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
@@ -134,6 +133,8 @@ public class MetricsCdiExtension implements Extension {
             .notReusable()
             .build();
 
+    private boolean restEndpointsMetricsEnabled = REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE;
+
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 
     private final Map<MetricID, AnnotatedMethod<?>> annotatedGaugeSites = new HashMap<>();
@@ -145,7 +146,8 @@ public class MetricsCdiExtension implements Extension {
     private final Map<Class<?>, Set<Method>> methodsWithSyntheticSimpleTimer = new HashMap<>();
     private final Set<Class<?>> syntheticSimpleTimerClassesProcessed = new HashSet<>();
     private final Set<Method> syntheticSimpleTimersToRegister = new HashSet<>();
-    private final Map<Method, AsyncResponseInfo> asyncSyntheticSimpleTimerInfo = new HashMap<>();
+
+    private final Map<Executable, InterceptionTargetInfo<MetricWorkItem>> interceptInfo = new HashMap<>();
 
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
@@ -164,8 +166,17 @@ public class MetricsCdiExtension implements Extension {
     @Deprecated
     public static <E extends Member & AnnotatedElement>
     void registerMetric(E element, Class<?> clazz, LookupResult<? extends Annotation> lookupResult) {
+        registerMetricInternal(element, clazz, lookupResult);
+    }
+
+    static <E extends Member & AnnotatedElement> MetricInfo<?> registerMetricInternal(E element, Class<?> clazz,
+            LookupResult<? extends Annotation> lookupResult) {
         MetricRegistry registry = getMetricRegistry();
         Annotation annotation = lookupResult.getAnnotation();
+
+        String savedMetricName = null;
+        org.eclipse.microprofile.metrics.Metric metric = null;
+        Tag[] tags = null;
 
         if (annotation instanceof Counted) {
             Counted counted = (Counted) annotation;
@@ -180,7 +191,9 @@ public class MetricsCdiExtension implements Extension {
                     .withUnit(counted.unit().trim())
                     .reusable(counted.reusable())
                     .build();
-            registry.counter(meta, tags(counted.tags()));
+            savedMetricName = metricName;
+            tags = tags(counted.tags());
+            metric = registry.counter(meta, tags);
             LOGGER.log(Level.FINE, () -> "Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
             Metered metered = (Metered) annotation;
@@ -195,7 +208,9 @@ public class MetricsCdiExtension implements Extension {
                     .withUnit(metered.unit().trim())
                     .reusable(metered.reusable())
                     .build();
-            registry.meter(meta, tags(metered.tags()));
+            savedMetricName = metricName;
+            tags = tags(metered.tags());
+            metric = registry.meter(meta, tags);
             LOGGER.log(Level.FINE, () -> "Registered meter " + metricName);
         } else if (annotation instanceof Timed) {
             Timed timed = (Timed) annotation;
@@ -210,7 +225,10 @@ public class MetricsCdiExtension implements Extension {
                     .withUnit(timed.unit().trim())
                     .reusable(timed.reusable())
                     .build();
-            registry.timer(meta, tags(timed.tags()));
+
+            savedMetricName = metricName;
+            tags = tags(timed.tags());
+            metric = registry.timer(meta, tags);
             LOGGER.log(Level.FINE, () -> "Registered timer " + metricName);
         } else if (annotation instanceof ConcurrentGauge) {
             ConcurrentGauge concurrentGauge = (ConcurrentGauge) annotation;
@@ -225,7 +243,9 @@ public class MetricsCdiExtension implements Extension {
                     .withUnit(concurrentGauge.unit().trim())
                     .reusable(concurrentGauge.reusable())
                     .build();
-            registry.concurrentGauge(meta, tags(concurrentGauge.tags()));
+            savedMetricName = metricName;
+            tags = tags(concurrentGauge.tags());
+            metric = registry.concurrentGauge(meta, tags);
             LOGGER.log(Level.FINE, () -> "Registered concurrent gauge " + metricName);
         } else if (annotation instanceof SimplyTimed) {
             SimplyTimed simplyTimed = (SimplyTimed) annotation;
@@ -240,9 +260,16 @@ public class MetricsCdiExtension implements Extension {
                     .withUnit(simplyTimed.unit().trim())
                     .reusable(simplyTimed.reusable())
                     .build();
-            registry.simpleTimer(meta, tags(simplyTimed.tags()));
+            savedMetricName = metricName;
+            tags = tags(simplyTimed.tags());
+            metric = registry.simpleTimer(meta, tags);
             LOGGER.log(Level.FINE, () -> "Registered simple timer " + metricName);
         }
+        if (savedMetricName == null || metric == null || tags == null) {
+            throw new IllegalArgumentException(String.format("Cannot map annotation %s on %s to metric type",
+                    annotation.annotationType().getSimpleName(), element));
+        }
+        return new MetricInfo<>(new MetricID(savedMetricName, tags), metric);
     }
 
     private static Tag[] tags(String[] tagStrings) {
@@ -258,12 +285,8 @@ public class MetricsCdiExtension implements Extension {
         return result.toArray(new Tag[result.size()]);
     }
 
-    static String[] tags(Tag[] tags) {
-        final List<String> result = new ArrayList<>();
-        for (int i = 0; i < tags.length; i++) {
-            result.add(tags[i].getTagName() + "=" + tags[i].getTagValue());
-        }
-        return result.toArray(new String[0]);
+    InterceptionTargetInfo<MetricWorkItem> interceptInfo(Executable executable) {
+        return interceptInfo.get(executable);
     }
 
     /**
@@ -313,15 +336,7 @@ public class MetricsCdiExtension implements Extension {
         discovery.addAnnotatedType(InterceptorSyntheticSimplyTimed.class, InterceptorSyntheticSimplyTimed.class.getSimpleName());
         discovery.addAnnotatedType(SyntheticSimplyTimed.class, SyntheticSimplyTimed.class.getSimpleName());
 
-        // Config might disable the MP synthetic SimpleTimer feature for JAX-RS endpoints.
-        // For efficiency, prepare to consult config only once rather than from each interceptor instance.
-        discovery.addAnnotatedType(RestEndpointMetricsInfo.class, RestEndpointMetricsInfo.class.getSimpleName());
-
-        asyncSyntheticSimpleTimerInfo.clear();
-    }
-
-    Map<Method, AsyncResponseInfo> asyncResponseInfo() {
-        return asyncSyntheticSimpleTimerInfo;
+        restEndpointsMetricsEnabled = restEndpointsMetricsEnabled();
     }
 
     private void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
@@ -374,7 +389,7 @@ public class MetricsCdiExtension implements Extension {
                     + (annotatedType.isAnnotationPresent(Interceptor.class) ? "interceptor " : ""));
             return false;
         }
-        LOGGER.log(Level.FINE, () -> "Accepting " + clazz.getName() + " for later bean processing");
+        LOGGER.log(Level.FINE, () -> "Accepting annotated type " + clazz.getName() + " for later bean processing");
         return true;
     }
 
@@ -416,37 +431,39 @@ public class MetricsCdiExtension implements Extension {
 
         // Process methods keeping non-private declared on this class
         for (AnnotatedMethod<?> annotatedMethod : type.getMethods()) {
+            Method method = annotatedMethod.getJavaMember();
+
             if (Modifier.isPrivate(annotatedMethod.getJavaMember().getModifiers())) {
                 continue;
             }
-            METRIC_ANNOTATIONS.forEach(annotation -> {
-                for (LookupResult<? extends Annotation> lookupResult : MetricUtil.lookupAnnotations(
-                        type, annotatedMethod, annotation)) {
-                    // For methods, register the metric only on the declaring
-                    // class, not subclasses per the MP Metrics 2.0 TCK
-                    // VisibilityTimedMethodBeanTest.
-                    if (lookupResult.getType() != MetricUtil.MatchingType.METHOD
-                            || clazz.equals(annotatedMethod.getJavaMember()
-                            .getDeclaringClass())) {
-                        registerMetric(annotatedMethod.getJavaMember(), clazz, lookupResult);
-                    }
-                }
-            });
+            METRIC_ANNOTATIONS.forEach(annotation ->
+                    MetricUtil.lookupAnnotations(type, annotatedMethod, annotation).forEach(lookupResult -> {
+                        // For methods, register the metric only on the declaring
+                        // class, not subclasses per the MP Metrics 2.0 TCK
+                        // VisibilityTimedMethodBeanTest.
+                        if (lookupResult.getType() != MetricUtil.MatchingType.METHOD
+                                || clazz.equals(method.getDeclaringClass())) {
+                            InterceptionTargetInfo<MetricWorkItem> info = interceptInfo.computeIfAbsent(method,
+                                    m -> InterceptionTargetInfo.create(method));
+                            MetricInfo<?> metricInfo = registerMetricInternal(method, clazz, lookupResult);
+                            info.addWorkItem(annotation, MetricWorkItem.create(metricInfo.metricID, metricInfo.metric));
+                        }
+                    }));
         }
 
         // Process constructors
         for (AnnotatedConstructor<?> annotatedConstructor : type.getConstructors()) {
-            Constructor c = annotatedConstructor.getJavaMember();
+            Constructor<?> c = annotatedConstructor.getJavaMember();
             if (Modifier.isPrivate(c.getModifiers())) {
                 continue;
             }
-            METRIC_ANNOTATIONS.forEach(annotation -> {
-                LookupResult<? extends Annotation> lookupResult
-                        = lookupAnnotation(c, annotation, clazz);
-                if (lookupResult != null) {
-                    registerMetric(c, clazz, lookupResult);
-                }
-            });
+            METRIC_ANNOTATIONS.forEach(annotation ->
+                MetricUtil.lookupAnnotations(type, annotatedConstructor, annotation).forEach(lookupResult -> {
+                        InterceptionTargetInfo<MetricWorkItem> info = interceptInfo.computeIfAbsent(c,
+                                InterceptionTargetInfo::create);
+                        MetricInfo<?> metricInfo = registerMetricInternal(c, clazz, lookupResult);
+                        info.addWorkItem(annotation, MetricWorkItem.create(metricInfo.metricID, metricInfo.metric));
+                    }));
         }
     }
 
@@ -472,12 +489,12 @@ public class MetricsCdiExtension implements Extension {
         /// Ignore abstract classes or interceptors. Make sure synthetic SimpleTimer creation is enabled, and if so record the
         // class and JAX-RS methods to use in later bean processing.
         if (!checkCandidateMetricClass(pat)
-                || !restEndpointsMetricEnabledFromConfig()) {
+                || !restEndpointsMetricsEnabled) {
             return;
         }
 
         LOGGER.log(Level.FINE,
-                () -> "Processing SyntheticSimplyTimed annotation for " + pat.getAnnotatedType()
+                () -> "Processing @SyntheticSimplyTimed annotation for " + pat.getAnnotatedType()
                         .getJavaClass()
                         .getName());
 
@@ -490,19 +507,18 @@ public class MetricsCdiExtension implements Extension {
         // Process methods keeping non-private declared on this class
         configurator.filterMethods(method -> !Modifier.isPrivate(method.getJavaMember()
                                                                          .getModifiers()))
-                .forEach(method ->
+                .forEach(annotatedMethodConfigurator ->
                         JAX_RS_ANNOTATIONS.forEach(jaxRsAnnotation -> {
-                            AnnotatedMethod<?> annotatedMethod = method.getAnnotated();
+                            AnnotatedMethod<?> annotatedMethod = annotatedMethodConfigurator.getAnnotated();
                             if (annotatedMethod.isAnnotationPresent(jaxRsAnnotation)) {
                                 Method m = annotatedMethod.getJavaMember();
                                 // For methods, add the SyntheticSimplyTimed annotation only on the declaring
                                 // class, not subclasses.
                                 if (clazz.equals(m.getDeclaringClass())) {
-                                    LOGGER.log(Level.FINE, () -> String.format("Adding @SyntheticSimplyTimed to %s#%s", clazz.getName(),
-                                            m.getName()));
 
-                                    // Add the synthetic annotation to this method's configurator and record this Java method.
-                                    method.add(LiteralSyntheticSimplyTimed.getInstance());
+                                    LOGGER.log(Level.FINE, () -> String.format("Adding @SyntheticSimplyTimed to %s",
+                                            m.toString()));
+                                    annotatedMethodConfigurator.add(SyntheticSimplyTimed.Literal.getInstance());
                                     methodsToRecord.add(m);
                                 }
                             }
@@ -527,23 +543,13 @@ public class MetricsCdiExtension implements Extension {
                 .simpleTimer(SYNTHETIC_SIMPLE_TIMER_METADATA, syntheticSimpleTimerMetricTags(method));
     }
 
-    private SimpleTimer registerAndSaveAsyncSyntheticSimpleTimer(Method method) {
-        SimpleTimer result = syntheticSimpleTimer(method);
-        asyncSyntheticSimpleTimerInfo.computeIfAbsent(method, this::asyncResponse);
-        return result;
-    }
+    private void registerAndSaveSyntheticSimpleTimer(Method method) {
+        InterceptionTargetInfo<MetricWorkItem> info = interceptInfo.computeIfAbsent(method,
+                m -> InterceptionTargetInfo.create(method));
 
-    private AsyncResponseInfo asyncResponse(Method m) {
-        int candidateAsyncResponseParameterSlot = 0;
-
-        for (Parameter p : m.getParameters()) {
-            if (AsyncResponse.class.isAssignableFrom(p.getType()) && p.getAnnotation(Suspended.class) != null) {
-                return new AsyncResponseInfo(candidateAsyncResponseParameterSlot);
-            }
-            candidateAsyncResponseParameterSlot++;
-
-        }
-        return null;
+        info.addWorkItem(SyntheticSimplyTimed.class,
+                MetricWorkItem.create(SYNTHETIC_SIMPLE_TIMER_METADATA, syntheticSimpleTimer(method),
+                        syntheticSimpleTimerMetricTags(method)));
     }
 
     /**
@@ -684,8 +690,12 @@ public class MetricsCdiExtension implements Extension {
         syntheticSimpleTimersToRegister.addAll(methodsWithSyntheticSimpleTimer.get(clazz));
     }
 
-    private void registerSyntheticSimpleTimerMetrics(@Observes @RuntimeStart Object event) {
-        syntheticSimpleTimersToRegister.forEach(this::registerAndSaveAsyncSyntheticSimpleTimer);
+    private void runtimeStart(@Observes @RuntimeStart Object event) {
+        registerSyntheticSimpleTimerMetrics();
+    }
+
+    private void registerSyntheticSimpleTimerMetrics() {
+        syntheticSimpleTimersToRegister.forEach(this::registerAndSaveSyntheticSimpleTimer);
         if (LOGGER.isLoggable(Level.FINE)) {
             Set<Class<?>> syntheticSimpleTimerAnnotatedClassesIgnored = new HashSet<>(methodsWithSyntheticSimpleTimer.keySet());
             syntheticSimpleTimerAnnotatedClassesIgnored.removeAll(syntheticSimpleTimerClassesProcessed);
@@ -699,12 +709,10 @@ public class MetricsCdiExtension implements Extension {
         syntheticSimpleTimersToRegister.clear();
     }
 
-    boolean restEndpointsMetricEnabledFromConfig() {
+    boolean restEndpointsMetricsEnabled() {
         try {
-            return ((Config) (ConfigProvider.getConfig()))
-                    .get("metrics")
-                    .get(REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME)
-                    .asBoolean().orElse(REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE);
+            return chooseRestEndpointsSetting(((Config) (ConfigProvider.getConfig()))
+                    .get("metrics"));
         } catch (Throwable t) {
             LOGGER.log(Level.WARNING, "Error looking up config setting for enabling REST endpoints SimpleTimer metrics;"
                     + " reporting 'false'", t);
@@ -761,11 +769,11 @@ public class MetricsCdiExtension implements Extension {
         boolean result = explicitRestEndpointsSetting.orElse(REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE);
         if (explicitRestEndpointsSetting.isPresent()) {
             LOGGER.log(Level.FINE, () -> String.format(
-                    "Support for MP REST.reqeust metric and annotation handling explicitly set to %b in configuration",
+                    "Support for MP REST.request metric and annotation handling explicitly set to %b in configuration",
                     explicitRestEndpointsSetting.get()));
         } else {
             LOGGER.log(Level.FINE, () -> String.format(
-                    "Support for MP REST.reqeust metric and annotation handling explicitly defaulted to %b",
+                    "Support for MP REST.request metric and annotation handling defaulted to %b",
                     REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE));
         }
         return result;
@@ -792,7 +800,7 @@ public class MetricsCdiExtension implements Extension {
         AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
         Class<?> clazz = type.getJavaClass();
 
-        LOGGER.log(Level.FINE, () -> "recordAnnoatedGaugeSite for class " + clazz);
+        LOGGER.log(Level.FINE, () -> "recordAnnotatedGaugeSite for class " + clazz);
         LOGGER.log(Level.FINE, () -> "Processing annotations for " + clazz.getName());
 
         // Register metrics based on annotations
@@ -964,27 +972,64 @@ public class MetricsCdiExtension implements Extension {
         }
     }
 
-    /**
-     * A {@code AsyncResponse} parameter annotated with {@code Suspended} in a JAX-RS method subject to inferred
-     * {@code SimplyTimed} behavior.
-     */
-    static class AsyncResponseInfo {
+    static class MetricWorkItem {
 
-        // which parameter slot in the method the AsyncResponse is
-        private final int parameterSlot;
+        private final MetricID metricID;
+        private final org.eclipse.microprofile.metrics.Metric metric;
 
-        AsyncResponseInfo(int parameterSlot) {
-            this.parameterSlot = parameterSlot;
+        static <T extends org.eclipse.microprofile.metrics.Metric> MetricWorkItem create(
+                Metadata metadata, org.eclipse.microprofile.metrics.Metric metric, Tag... tags) {
+            MetricID metricID = new MetricID(metadata.getName(), tags);
+            return new MetricWorkItem(metricID, metric);
         }
 
-        /**
-         * Returns the {@code AsyncResponse} argument object in the given invocation.
-         *
-         * @param context the {@code InvocationContext} representing the call with an {@code AsyncResponse} parameter
-         * @return the {@code AsyncResponse} instance
-         */
-        AsyncResponse asyncResponse(InvocationContext context) {
-            return AsyncResponse.class.cast(context.getParameters()[parameterSlot]);
+        static <T extends org.eclipse.microprofile.metrics.Metric> MetricWorkItem create(MetricID metricID,
+                org.eclipse.microprofile.metrics.Metric metric) {
+            return new MetricWorkItem(metricID, metric);
+        }
+
+        private MetricWorkItem(MetricID metricID, org.eclipse.microprofile.metrics.Metric metric) {
+            this.metricID = metricID;
+            this.metric = metric;
+        }
+
+        MetricID metricID() {
+            return metricID;
+        }
+
+        org.eclipse.microprofile.metrics.Metric metric() {
+            return metric;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            MetricWorkItem that = (MetricWorkItem) o;
+            return metricID.equals(that.metricID) && metric.equals(that.metric);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(metricID, metric);
+        }
+
+        @Override
+        public String toString() {
+            return new StringJoiner(", " + System.lineSeparator(), MetricWorkItem.class.getSimpleName() + "[", "]")
+                    .add("metricID=" + metricID)
+                    .add("metric=" + metric)
+                    .toString();
+        }
+    }
+
+    private static class MetricInfo<T extends org.eclipse.microprofile.metrics.Metric> {
+        private final MetricID metricID;
+        private final T metric;
+
+        MetricInfo(MetricID metricID, T metric) {
+            this.metricID = metricID;
+            this.metric = metric;
         }
     }
 }
