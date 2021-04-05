@@ -171,15 +171,15 @@ public class VaultCdiExtension implements Extension {
     }
 
     private void addVault(AfterBeanDiscovery event) {
-        event.addBean(new QualifiedBean<>(io.helidon.integrations.vault.Vault.class,
-                                          io.helidon.integrations.vault.Vault.class,
+        event.addBean(new QualifiedBean<>(Vault.class,
+                                          Vault.class,
                                           () -> {
                                               if (config.get("default").exists()) {
-                                                  return io.helidon.integrations.vault.Vault.builder()
+                                                  return Vault.builder()
                                                           .config(config.get("default"))
                                                           .build();
                                               } else {
-                                                  return io.helidon.integrations.vault.Vault.builder()
+                                                  return Vault.builder()
                                                           .config(config)
                                                           .build();
                                               }
