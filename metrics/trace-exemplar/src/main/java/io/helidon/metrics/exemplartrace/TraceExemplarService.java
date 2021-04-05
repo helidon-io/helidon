@@ -16,11 +16,11 @@
  */
 package io.helidon.metrics.exemplartrace;
 
+import java.util.function.Supplier;
+
 import io.helidon.common.context.Contexts;
 import io.helidon.metrics.ExemplarService;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
-
-import java.util.function.Supplier;
 
 public class TraceExemplarService implements ExemplarService {
     @Override
