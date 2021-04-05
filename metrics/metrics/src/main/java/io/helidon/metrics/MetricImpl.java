@@ -26,6 +26,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -35,7 +37,7 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
-import io.helidon.metrics.WeightedSnapshot.DerivedSample;
+import io.helidon.metrics.LabeledSample.Derived;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -47,6 +49,10 @@ import org.eclipse.microprofile.metrics.Tag;
  */
 abstract class MetricImpl implements HelidonMetric {
     static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+    private static final Logger LOGGER = Logger.getLogger(MetricImpl.class.getName());
+
+    private static final int EXEMPLAR_MAX_LENGTH = 128;
 
     private static final Pattern DOUBLE_UNDERSCORE = Pattern.compile("__");
     private static final Pattern COLON_UNDERSCORE = Pattern.compile(":_");
@@ -249,8 +255,8 @@ abstract class MetricImpl implements HelidonMetric {
             PrometheusName name,
             Units units,
             String quantile,
-            DerivedSample sample) {
-        prometheusQuantile(sb, name, units, quantile, sample.value(), sample.label());
+            Derived sample) {
+        prometheusQuantile(sb, name, units, quantile, sample.value(), sample.label(), sample.timestamp());
     }
 
     protected final void prometheusQuantile(StringBuilder sb,
@@ -258,7 +264,8 @@ abstract class MetricImpl implements HelidonMetric {
             Units units,
             String quantile,
             double value,
-            String label) {
+            String label,
+            long timestamp) {
         // application:file_sizes_bytes{quantile="0.5"} 4201
         String quantileTag = "quantile=\"" + quantile + "\"";
         String tags = name.prometheusTags();
@@ -273,7 +280,7 @@ abstract class MetricImpl implements HelidonMetric {
                 .append(" ")
                 .append(units.convert(value));
         if (!label.isBlank()) {
-            sb.append(" # ").append(label);
+            sb.append(prometheusExemplar(label, value, timestamp));
         }
         sb.append("\n");
     }
@@ -282,20 +289,9 @@ abstract class MetricImpl implements HelidonMetric {
             PrometheusName name,
             String statName,
             boolean withHelpType,
-            String typeName,
-            DerivedSample sample) {
-        appendPrometheusElement(sb, name.units(), () -> name.nameStatUnits(statName), withHelpType, typeName, sample.value(),
-                sample.label());
-    }
-
-    void appendPrometheusElement(StringBuilder sb,
-            PrometheusName name,
-            String statName,
-            boolean withHelpType,
-            String typeName,
-            WeightedSnapshot.WeightedSample sample) {
-        appendPrometheusElement(sb, name.units(), () -> name.nameStatUnits(statName), withHelpType, typeName, sample.getValue(),
-                sample.label());
+            String typeNme,
+            LabeledSample<?> sample) {
+        appendPrometheusElement(sb, name.units(), () -> name.nameStatUnits(statName), withHelpType, typeNme, sample);
     }
 
     private void appendPrometheusElement(StringBuilder sb,
@@ -303,15 +299,15 @@ abstract class MetricImpl implements HelidonMetric {
             Supplier<String> nameToUse,
             boolean withHelpType,
             String typeName,
-            Object value,
-            String label) {
+            LabeledSample<?> sample) {
         if (withHelpType) {
             prometheusType(sb, nameToUse.get(), typeName);
         }
+        Object convertedValue = units.convert(sample.value());
         sb.append(nameToUse.get())
                 .append(" ")
-                .append(units.convert(value))
-                .append(prometheusLabel(label))
+                .append(convertedValue)
+                .append(prometheusExemplar(sample.label(), convertedValue, sample.timestamp()))
                 .append("\n");
     }
 
@@ -364,8 +360,17 @@ abstract class MetricImpl implements HelidonMetric {
 
     }
 
-    String prometheusLabel(String label) {
-        return label.isBlank() ? "" : " # " + label;
+    String prometheusExemplar(String label, Object value, long timestamp) {
+        if (label.isBlank()) {
+            return "";
+        }
+        String exemplar = String.format(" # {trace_id=\"%s\"} %s %f", label, value, timestamp / 1000.0);
+        if (exemplar.length() <= EXEMPLAR_MAX_LENGTH) {
+            return exemplar;
+        }
+        LOGGER.log(Level.WARNING, String.format("Exemplar string exceeds the maximum length(%d); suppressing '%s'",
+                exemplar.length(), exemplar));
+        return "";
     }
 
     final String prometheusNameWithUnits(String name, Optional<String> unit) {

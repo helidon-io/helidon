@@ -16,27 +16,29 @@
  */
 package io.helidon.metrics;
 
-import io.helidon.metrics.WeightedSnapshot.DerivedSample;
+import io.helidon.metrics.LabeledSample.Derived;
 import io.helidon.metrics.WeightedSnapshot.WeightedSample;
 
 import org.eclipse.microprofile.metrics.Snapshot;
+
+import static io.helidon.metrics.LabeledSample.derived;
 
 class WrappedSnapshot implements DisplayableLabeledSnapshot {
 
     private final Snapshot delegate;
 
     private final WeightedSample[] samples;
-    private final WeightedSnapshot.DerivedSample median;
+    private final Derived median;
     private final WeightedSample max;
     private final WeightedSample min;
-    private final WeightedSnapshot.DerivedSample mean;
-    private final DerivedSample stdDev;
+    private final Derived mean;
+    private final Derived stdDev;
 
-    private final WeightedSnapshot.DerivedSample sample75th;
-    private final WeightedSnapshot.DerivedSample sample95th;
-    private final DerivedSample sample98th;
-    private final WeightedSnapshot.DerivedSample sample99th;
-    private final DerivedSample sample999th;
+    private final Derived sample75th;
+    private final Derived sample95th;
+    private final Derived sample98th;
+    private final Derived sample99th;
+    private final Derived sample999th;
 
     static WrappedSnapshot create(Snapshot delegate) {
         return new WrappedSnapshot(delegate);
@@ -54,51 +56,51 @@ class WrappedSnapshot implements DisplayableLabeledSnapshot {
 
         // We cannot get to the weight of each sample to create a faithful array of WeightedSamples for each original sample,
         // so we pre-store the typical calculations.
-        median = new DerivedSample(delegate.getMedian());
+        median = derived(delegate.getMedian());
         max = new WeightedSample(delegate.getMax());
         min = new WeightedSample(delegate.getMin());
-        mean = new WeightedSnapshot.DerivedSample(delegate.getMean());
-        stdDev = new DerivedSample(delegate.getStdDev());
+        mean = derived(delegate.getMean());
+        stdDev = derived(delegate.getStdDev());
 
-        sample75th = new WeightedSnapshot.DerivedSample(delegate.get75thPercentile());
-        sample95th = new WeightedSnapshot.DerivedSample(delegate.get95thPercentile());
-        sample98th = new DerivedSample(delegate.get98thPercentile());
-        sample99th = new WeightedSnapshot.DerivedSample(delegate.get99thPercentile());
-        sample999th = new DerivedSample(delegate.get999thPercentile());
+        sample75th = derived(delegate.get75thPercentile());
+        sample95th = derived(delegate.get95thPercentile());
+        sample98th = derived(delegate.get98thPercentile());
+        sample99th = derived(delegate.get99thPercentile());
+        sample999th = derived(delegate.get999thPercentile());
     }
 
     @Override
-    public DerivedSample value(double quantile) {
-        return new DerivedSample(delegate.getValue(quantile));
+    public Derived value(double quantile) {
+        return derived(delegate.getValue(quantile));
     }
 
     @Override
-    public WeightedSnapshot.DerivedSample median() {
+    public Derived median() {
         return median;
     }
 
     @Override
-    public DerivedSample sample75thPercentile() {
+    public Derived sample75thPercentile() {
         return sample75th;
     }
 
     @Override
-    public DerivedSample sample95thPercentile() {
+    public Derived sample95thPercentile() {
         return sample95th;
     }
 
     @Override
-    public DerivedSample sample98thPercentile() {
+    public Derived sample98thPercentile() {
         return sample98th;
     }
 
     @Override
-    public DerivedSample sample99thPercentile() {
+    public Derived sample99thPercentile() {
         return sample99th;
     }
 
     @Override
-    public DerivedSample sample999thPercentile() {
+    public Derived sample999thPercentile() {
         return sample999th;
     }
 
@@ -108,7 +110,7 @@ class WrappedSnapshot implements DisplayableLabeledSnapshot {
     }
 
     @Override
-    public DerivedSample mean() {
+    public Derived mean() {
         return mean;
     }
 
@@ -118,7 +120,7 @@ class WrappedSnapshot implements DisplayableLabeledSnapshot {
     }
 
     @Override
-    public DerivedSample stdDev() {
+    public Derived stdDev() {
         return stdDev;
     }
 }

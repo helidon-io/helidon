@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,26 @@ final class HelidonCounter extends MetricImpl implements Counter {
     }
 
     @Override
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
+        String nameWithUnits = prometheusNameWithUnits(metricID);
+        if (withHelpType) {
+            prometheusType(sb, nameWithUnits, metadata().getType());
+            prometheusHelp(sb, nameWithUnits);
+        }
+        sb.append(nameWithUnits)
+                .append(prometheusTags(metricID.getTags()))
+                .append(" ")
+                .append(prometheusValue());
+        if (delegate instanceof CounterImpl) {
+            CounterSample sample = ((CounterImpl) delegate).counterSample;
+            if (sample != null) {
+                sb.append(prometheusExemplar(sample.label(), sample.value(), sample.timestamp()));
+            }
+        }
+        sb.append('\n');
+    }
+
+    @Override
     public String prometheusValue() {
         return Long.toString(getCount());
     }
@@ -79,14 +99,17 @@ final class HelidonCounter extends MetricImpl implements Counter {
     private static class CounterImpl implements Counter {
         private final LongAdder adder = new LongAdder();
 
+        private CounterSample counterSample = null;
+
         @Override
         public void inc() {
-            adder.increment();
+            inc(1);
         }
 
         @Override
         public void inc(long n) {
             adder.add(n);
+            counterSample = new CounterSample(n);
         }
 
         @Override
@@ -135,5 +158,12 @@ final class HelidonCounter extends MetricImpl implements Counter {
                 + "delegate=" + delegate + ","
                 + "metadata=" + metadata()
                 + '}';
+    }
+
+    private static class CounterSample extends LabeledSample<Long> {
+
+        CounterSample(long value) {
+            super(value, ExemplarServiceManager.exemplar());
+        }
     }
 }

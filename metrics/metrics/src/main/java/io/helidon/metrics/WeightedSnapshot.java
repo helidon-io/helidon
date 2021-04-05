@@ -26,6 +26,8 @@ import java.util.Comparator;
 
 import org.eclipse.microprofile.metrics.Snapshot;
 
+import static io.helidon.metrics.LabeledSample.derived;
+
 /*
  * This class is heavily inspired by:
  * WeightedSnapshot
@@ -84,13 +86,13 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
      */
     @Override
     public double getValue(double quantile) {
-        return value(quantile).value;
+        return value(quantile).value();
     }
 
     @Override
-    public DerivedSample value(double quantile) {
+    public LabeledSample.Derived value(double quantile) {
         int posx = slot(quantile);
-        return posx == -1 ? DerivedSample.ZERO : new DerivedSample(copy[posx].value, copy[posx].label());
+        return posx == -1 ? LabeledSample.Derived.ZERO : derived(copy[posx].value(), copy[posx].label());
     }
 
     int slot(double quantile) {
@@ -141,7 +143,7 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
 
             int i = 0;
             for (WeightedSample sample : copy) {
-                result[i++] = sample.value;
+                result[i++] = sample.value();
             }
             values = result;
         }
@@ -149,32 +151,32 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
     }
 
     @Override
-    public DerivedSample median() {
+    public LabeledSample.Derived median() {
         return value(0.5);
     }
 
     @Override
-    public DerivedSample sample75thPercentile() {
+    public LabeledSample.Derived sample75thPercentile() {
         return value(0.75);
     }
 
     @Override
-    public DerivedSample sample95thPercentile() {
+    public LabeledSample.Derived sample95thPercentile() {
         return value(0.95);
     }
 
     @Override
-    public DerivedSample sample98thPercentile() {
+    public LabeledSample.Derived sample98thPercentile() {
         return value(0.98);
     }
 
     @Override
-    public DerivedSample sample99thPercentile() {
+    public LabeledSample.Derived sample99thPercentile() {
         return value(0.99);
     }
 
     @Override
-    public DerivedSample sample999thPercentile() {
+    public LabeledSample.Derived sample999thPercentile() {
         return value(0.999);
     }
 
@@ -186,7 +188,7 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
      */
     @Override
     public long getMax() {
-        return max().value;
+        return max().value();
     }
 
     @Override
@@ -201,7 +203,7 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
      */
     @Override
     public long getMin() {
-        return min().value;
+        return min().value();
     }
 
     @Override
@@ -216,26 +218,33 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
      */
     @Override
     public double getMean() {
-        return mean().value;
+        return mean().value();
     }
 
     @Override
-    public DerivedSample mean() {
+    public LabeledSample.Derived mean() {
         if (copy.length == 0) {
-            return DerivedSample.ZERO;
+            return LabeledSample.Derived.ZERO;
         }
 
         double sum = 0;
         for (int i = 0; i < copy.length; i++) {
-            sum += copy[i].value * normWeights[i];
+            sum += copy[i].value() * normWeights[i];
         }
 
         // Choose a close-by sample's label for the label on the mean.
-        return new DerivedSample(sum, copy[slotNear(values, sum)].label());
+        int slot = slotNear(sum);
+        return derived(sum, copy[slot].label(), copy[slot].timestamp());
     }
 
-    static int slotNear(long[] values, double value) {
-        int slot = Arrays.binarySearch(values, (long) value);
+    int slotNear(double value) {
+        return slotNear(derived(value), copy);
+    }
+
+    static int slotNear(LabeledSample<?> target, LabeledSample<?>[] values) {
+        int slot = Arrays.binarySearch(values, 0, values.length, target,
+                Comparator.comparingDouble(s -> s.value().doubleValue()));
+
         if (slot >= 0) {
             // Exact match.
             return slot;
@@ -252,8 +261,11 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
         }
         int higherSlot = -slot - 1;
 
+        Number value = target.value();
+
         // Ties go to the lower slot but this is not part of the published contract.
-        return (values[higherSlot] - value < value - values[higherSlot - 1])
+        return (values[higherSlot]).value().doubleValue() - value.doubleValue()
+                < value.doubleValue() - values[higherSlot - 1].value().doubleValue()
                 ? higherSlot
                 : higherSlot - 1;
     }
@@ -265,27 +277,27 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
      */
     @Override
     public double getStdDev() {
-        return stdDev().value;
+        return stdDev().value();
     }
 
     @Override
-    public DerivedSample stdDev() {
+    public LabeledSample.Derived stdDev() {
         // two-pass algorithm for variance, avoids numeric overflow
 
         if (copy.length <= 1) {
-            return DerivedSample.ZERO;
+            return LabeledSample.Derived.ZERO;
         }
 
 
-        final double mean = mean().value;
+        final double mean = mean().value();
         double variance = 0;
 
         for (int i = 0; i < copy.length; i++) {
-            final double diff = copy[i].value - mean;
+            final double diff = copy[i].value() - mean;
             variance += normWeights[i] * diff * diff;
         }
 
-        return new DerivedSample(Math.sqrt(variance));
+        return derived(Math.sqrt(variance));
     }
 
     /**
@@ -297,7 +309,7 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
         final PrintWriter out = new PrintWriter(new OutputStreamWriter(output, UTF_8));
         try {
             for (WeightedSample sample : copy) {
-                out.printf("%d,%l,%s%n", sample.value, sample.weight, sample.label());
+                out.printf("%d,%l,%s%n", sample.value(), sample.weight, sample.label());
             }
         } finally {
             out.close();
@@ -305,43 +317,29 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
     }
 
     /**
-     * A sample with a label.
+     * Labeled sample with a weight.
      */
-    static class LabeledSample {
-        private final String label;
-
-        LabeledSample(String label) {
-            this.label = label;
-        }
-
-        String label() {
-            return label;
-        }
-    }
-
-    /**
-     * Labeled sample with a recorded value.
-     */
-    static class WeightedSample extends LabeledSample {
+    static class WeightedSample extends LabeledSample<Long> {
 
         static final WeightedSample ZERO = new WeightedSample(0, 1.0, "");
 
-        private final long value;
         private final double weight;
 
-
-        WeightedSample(long value, double weight, String label) {
-            super(label);
-            this.value = value;
+        WeightedSample(long value, double weight, long timestamp, String label) {
+            super(value, label, timestamp);
             this.weight = weight;
         }
 
+        WeightedSample(long value, double weight, String label) {
+            this(value, weight, System.currentTimeMillis(), label);
+        }
+
         WeightedSample(long value) {
-            this(value, 1.0, "");
+            this(value, 1.0, System.currentTimeMillis(), "");
         }
 
         long getValue() {
-            return value;
+            return value();
         }
 
         double getWeight() {
@@ -349,26 +347,4 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
         }
     }
 
-    /**
-     * A labeled sample with a derived value.
-     */
-    static class DerivedSample extends LabeledSample {
-
-        static final DerivedSample ZERO = new DerivedSample(0.0, "");
-
-        private final double value;
-
-        DerivedSample(double value, String label) {
-            super(label);
-            this.value = value;
-        }
-
-        DerivedSample(double value) {
-            this(value, "");
-        }
-
-        double value() {
-            return value;
-        }
-    }
 }

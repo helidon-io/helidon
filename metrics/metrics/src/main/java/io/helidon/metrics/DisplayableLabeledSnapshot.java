@@ -16,7 +16,7 @@
  */
 package io.helidon.metrics;
 
-import io.helidon.metrics.WeightedSnapshot.DerivedSample;
+import io.helidon.metrics.LabeledSample.Derived;
 import io.helidon.metrics.WeightedSnapshot.WeightedSample;
 
 /**
@@ -24,27 +24,27 @@ import io.helidon.metrics.WeightedSnapshot.WeightedSample;
  */
 interface DisplayableLabeledSnapshot {
 
-    DerivedSample value(double quantile);
+    Derived value(double quantile);
 
-    DerivedSample median();
+    Derived median();
 
     WeightedSample max();
 
     WeightedSample min();
 
-    DerivedSample mean();
+    Derived mean();
 
-    DerivedSample stdDev();
+    Derived stdDev();
 
-    DerivedSample sample75thPercentile();
+    Derived sample75thPercentile();
 
-    DerivedSample sample95thPercentile();
+    Derived sample95thPercentile();
 
-    DerivedSample sample98thPercentile();
+    Derived sample98thPercentile();
 
-    DerivedSample sample99thPercentile();
+    Derived sample99thPercentile();
 
-    DerivedSample sample999thPercentile();
+    Derived sample999thPercentile();
 
 
 
