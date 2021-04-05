@@ -25,6 +25,9 @@ import io.helidon.tracing.jersey.client.internal.TracingContext;
 public class TraceExemplarService implements ExemplarService {
     @Override
     public Supplier<String> labelSupplier() {
-        return () -> Contexts.context().get().get(TracingContext.class).get().tracer().activeSpan().context().toTraceId();
+        return () -> Contexts.context()
+                .flatMap(c -> c.get(TracingContext.class))
+                .map(tc -> tc.tracer().activeSpan().context().toTraceId())
+                .orElse("");
     }
 }
