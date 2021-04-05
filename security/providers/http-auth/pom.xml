@@ -33,6 +33,10 @@
         HTTP basic and digest authentication provider
     </description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.security.providers</groupId>

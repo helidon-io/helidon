@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,64 @@
 
 package io.helidon.webserver;
 
+import java.util.logging.Logger;
+
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpRequest;
 
 /**
- * The RequestContext POJO holds single HTTP request associated objects.
+ * The request context.
  */
 class RequestContext {
 
+    private static final Logger LOGGER = Logger.getLogger(RequestContext.class.getName());
+
     private final HttpRequestScopedPublisher publisher;
     private final HttpRequest request;
+    private final Context scope;
     private volatile boolean responseCompleted;
 
-    RequestContext(HttpRequestScopedPublisher publisher, HttpRequest request) {
+    RequestContext(HttpRequestScopedPublisher publisher, HttpRequest request, Context scope) {
         this.publisher = publisher;
         this.request = request;
-    }
-
-    HttpRequestScopedPublisher publisher() {
-        return publisher;
+        this.scope = scope;
     }
 
     HttpRequest request() {
         return request;
     }
 
-    public void responseCompleted(boolean responseCompleted) {
+    void emit(ByteBuf data) {
+        runInScope(() -> publisher.emit(data));
+    }
+
+    void fail(Throwable throwable) {
+        runInScope(() -> publisher.fail(throwable));
+    }
+
+    void complete() {
+        runInScope(publisher::complete);
+    }
+
+    void runInScope(Runnable runnable) {
+        Contexts.runInContext(scope, () -> {
+            LOGGER.finest(() -> "Running in context " + scope.id());
+            runnable.run();
+        });
+    }
+
+    boolean hasRequests() {
+        return publisher.hasRequests();
+    }
+
+    void responseCompleted(boolean responseCompleted) {
         this.responseCompleted = responseCompleted;
     }
 
-    public boolean responseCompleted() {
+    boolean responseCompleted() {
         return responseCompleted;
     }
 }

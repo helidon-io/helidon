@@ -1,7 +1,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -115,43 +115,52 @@ client_secret=${CLEAR=known_password}
 ----
 
 * *Meta Configuration* +
-You can configure the Config using Helidon SE Config meta configuration feature.
-When used, the {spec-name} uses a single configuration source - Helidon SE Config configured
-from meta configuration.
+You can configure the Config using Helidon MP Config meta configuration feature.
+This is a Helidon specific feature available since version 2.3.0.
+
+When used, the {spec-name} uses configuration sources and flags configured in the meta configuration file.
 
 The meta-config allows configuration of config sources and other configuration options,
-including retry policies and polling strategies.
+including addition of discovered sources and converters.
 
-If a file named `meta-config.yaml`, or `meta-config.properties` is in the current directory or
-on the classpath and there is no explicit setup of `Config` in the code, the configuration will
+If a file named `mp-meta-config.yaml`, or `mp-meta-config.properties` is in the current directory or
+on the classpath, and there is no explicit setup of configuration in the code, the configuration will
 be loaded from the `meta-config` file.
+The location of the file can be overridden using system property `io.helidon.config.mp.meta-config`,
+    or environment variable `HELIDON_MP_META_CONFIG`
 
 [source,yaml]
 .Example of a YAML meta configuration file:
 ----
+add-discovered-sources: true <1>
+add-discovered-converters: false <2>
+add-default-sources: false <3>
+
 sources:
-  - type: "system-properties" <1>
-  - type: "environment-variables" <2>
-  - type: "file"
-    properties:
-      optional: true
-      path: "mp-config.yaml" <3>
-  - type: "classpath"
-    properties:
-      optional: true
-      resource: application.yaml <4>
-  - type: "classpath"
-      multi-source: true
-    properties:
-      resource: "META-INF/microprofile-config.properties" <5>
+  - type: "environment-variables" <4>
+  - type: "system-properties" <5>
+  - type: "properties" <6>
+    path: "/conf/prod.properties" <7>
+    ordinal: 50 <8>
+    optional: true <9>
+  - type: "yaml"  <10>
+    classpath: "META-INF/database.yaml" <11>
+
 ----
 
-<1> Loads the environment variables config source.
-<2> Loads the system variables config source.
-<3> Loads the file config source from `mp-config.yaml` that is optional.
-<4> Loads the file config source from `application.yaml` that is optional.
-<5> Loads the classpath resource config source for  `microprofile-config.properties` that is the default configuration source of Microprofile application and is mandatory.
+<1> If configured to `true`, config sources discovered through service loader will be added
+<2> If configured to `true`, converters discovered through service loader will be added
+<3> If configured to `true`, default config sources (system properties, environment variables, and `META-INF/microprofile-config.properties) will be added
+<4> Loads the environment variables config source.
+<5> Loads the system properties config source.
+<6> Loads a properties file
+<7> Location of the file: `/conf/prod.properties` on the file system
+<8> Custom ordinal, if not defined, the value defined in the file, or default value is used
+<9> The file is optional (if not optional and no file is found, the bootstrap fails)
+<10> Loads a YAML file
+<11> Location of the file: `META-INF/database.yaml` on the classpath
 
+For backward compatibility, we will support usage of Helidon SE meta-configuration until version 3.0.0. Using this approach causes behavior that is not compatible with {spec-name} specification.
 
 == Guides
 

@@ -34,6 +34,7 @@
         <oci.objectstorage.compartmentId/>
         <oci.objectstorage.namespaceName/>
         <oci.objectstorage.region/>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <build>

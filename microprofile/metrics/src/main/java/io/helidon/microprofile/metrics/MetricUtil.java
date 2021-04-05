@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.microprofile.metrics;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -98,9 +99,9 @@ public final class MetricUtil {
 
     static <A extends Annotation> List<LookupResult<A>> lookupAnnotations(
             AnnotatedType<?> annotatedType,
-            AnnotatedMethod<?> annotatedMethod,
+            AnnotatedMember<?> annotatedMember,
             Class<A> annotClass) {
-        List<LookupResult<A>> result = lookupAnnotations(annotatedMethod, annotClass);
+        List<LookupResult<A>> result = lookupAnnotations(annotatedMember, annotClass);
         if (result.isEmpty()) {
             result = lookupAnnotations(annotatedType, annotClass);
         }
@@ -303,7 +304,7 @@ public final class MetricUtil {
 
     private static MatchingType matchingType(Annotated annotated) {
         return annotated instanceof AnnotatedMember
-                ? (((AnnotatedMember) annotated).getJavaMember() instanceof Method
+                ? (((AnnotatedMember) annotated).getJavaMember() instanceof Executable
                     ? MatchingType.METHOD : MatchingType.CLASS)
                 : MatchingType.CLASS;
     }

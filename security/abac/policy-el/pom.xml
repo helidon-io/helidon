@@ -33,6 +33,10 @@
         Expression executor support for Expression Language.
     </description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.security.abac</groupId>

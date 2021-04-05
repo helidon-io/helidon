@@ -31,6 +31,10 @@
     <artifactId>helidon-grpc-server</artifactId>
     <name>Helidon gRPC Server</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.grpc</groupId>

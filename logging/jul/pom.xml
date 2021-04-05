@@ -27,6 +27,10 @@
     <artifactId>helidon-logging-jul</artifactId>
     <name>Helidon Java Util Logging Integration</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>

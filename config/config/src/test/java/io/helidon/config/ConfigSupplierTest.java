@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
-import org.junit.Ignore;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.ConfigTest.waitForAssert;
@@ -188,7 +188,7 @@ public class ConfigSupplierTest {
                       is(ConfigValues.simpleValue("NEW item 1")));
     }
 
-    @Ignore
+    @Disabled
     @Test
     // TODO cause of intermittent test failures:
     /*

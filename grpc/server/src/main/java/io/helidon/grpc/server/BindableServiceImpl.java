@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerServiceDefinition;
+import io.grpc.protobuf.ProtoFileDescriptorSupplier;
 import io.grpc.stub.StreamObserver;
 
 /**
@@ -72,8 +73,14 @@ class BindableServiceImpl implements BindableService {
     @SuppressWarnings("unchecked")
     @Override
     public ServerServiceDefinition bindService() {
-        ServerServiceDefinition.Builder builder = ServerServiceDefinition.builder(descriptor.name());
+        io.grpc.ServiceDescriptor.Builder serviceDescriptorBuilder = io.grpc.ServiceDescriptor.newBuilder(descriptor.name());
+        if (descriptor.proto() != null) {
+            serviceDescriptorBuilder.setSchemaDescriptor((ProtoFileDescriptorSupplier) descriptor::proto);
+        }
+        descriptor.methods()
+                .forEach(method -> serviceDescriptorBuilder.addMethod(method.descriptor()));
 
+        ServerServiceDefinition.Builder builder = ServerServiceDefinition.builder(serviceDescriptorBuilder.build());
         descriptor.methods()
                 .forEach(method -> builder.addMethod(method.descriptor(), wrapCallHandler(method)));
 
