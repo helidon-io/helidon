@@ -15,17 +15,12 @@
 #
 
 server:
-  port: 8854
+  port: 0
   host: 0.0.0.0
 
 tracing:
   service: "todo:back"
   host: "zipkin"
-
-cassandra:
-  port: 9142
-  servers:
-    - host: 127.0.0.1
 
 security:
   providers:

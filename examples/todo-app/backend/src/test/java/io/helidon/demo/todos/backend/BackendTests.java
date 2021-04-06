@@ -20,6 +20,7 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.microprofile.server.Server;
 import io.helidon.webclient.WebClient;
@@ -35,6 +36,7 @@ import javax.json.JsonObject;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.List;
+import java.util.Properties;
 
 import static io.helidon.config.ConfigSources.classpath;
 
@@ -42,16 +44,18 @@ public class BackendTests {
 
     private static WebClient client;
     private static Server server;
+    private final static String CASSANDRA_HOST = "127.0.0.1";
 
     @BeforeAll
     public static void init() throws IOException {
+        Properties cassandraProperties = initCassandra();
+
         Config config = Config.builder()
                 .sources(List.of(
-                        classpath("test-application.yaml")
+                        classpath("test-application.yaml"),
+                        ConfigSources.create(cassandraProperties)
                 ))
                 .build();
-
-        initCassandra(config);
 
         server = Server.builder()
                 .config(config)
@@ -71,16 +75,17 @@ public class BackendTests {
         server.stop();
     }
 
-    private static void initCassandra(Config config) throws IOException {
-        EmbeddedCassandraServerHelper.startEmbeddedCassandra(20000L);
+    private static Properties initCassandra() throws IOException {
+        EmbeddedCassandraServerHelper.startEmbeddedCassandra(EmbeddedCassandraServerHelper.CASSANDRA_RNDPORT_YML_FILE, 20000L);
+        Properties prop = new Properties();
+        prop.put("cassandra.port", EmbeddedCassandraServerHelper.getNativeTransportPort());
+        prop.put("cassandra.servers.host.host", CASSANDRA_HOST);
 
-        Cluster.Builder clusterBuilder = Cluster.builder().withoutMetrics();
-        config.get("cassandra").get("servers").asList(Config.class).get().forEach(serverConfig -> {
-            clusterBuilder.addContactPoints(
-                    serverConfig.get("host").asString().get());
-        });
-        config.get("cassandra").get("port").asInt().ifPresent(clusterBuilder::withPort);
-        Cluster cluster = clusterBuilder.build();
+        Cluster cluster  = Cluster.builder()
+                .withoutMetrics()
+                .addContactPoint(CASSANDRA_HOST)
+                .withPort(EmbeddedCassandraServerHelper.getNativeTransportPort())
+                .build();
 
         Session session = cluster.connect();
         session.execute("CREATE KEYSPACE backend WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 1};");
@@ -89,6 +94,8 @@ public class BackendTests {
 
         session.close();
         cluster.close();
+
+        return prop;
     }
 
     @Test

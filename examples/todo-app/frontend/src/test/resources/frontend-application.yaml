@@ -17,10 +17,7 @@
 env: docker
 
 webserver:
-  port: 8080
-
-services:
-  backend.endpoint: "http://127.0.0.1:8854"
+  port: 0
 
 security:
   providers:

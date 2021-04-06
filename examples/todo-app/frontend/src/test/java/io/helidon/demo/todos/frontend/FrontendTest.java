@@ -18,6 +18,7 @@ package io.helidon.demo.todos.frontend;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
@@ -46,7 +47,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Base64;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static io.helidon.config.ConfigSources.classpath;
 
@@ -118,11 +121,17 @@ public class FrontendTest {
 
     private static void startBackendServer() {
         serverBackend = WebServer.builder(createRouting())
-                .port(8854)
+                .port(0)
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 
         serverBackend.start();
+
+        try {
+            TimeUnit.SECONDS.sleep(5);
+        } catch (InterruptedException ie) {
+            ie.printStackTrace();
+        }
     }
 
     private static Routing createRouting() {
@@ -134,9 +143,12 @@ public class FrontendTest {
     }
 
     private static void startFrontendServer() {
+        Properties prop = new Properties();
+        prop.put("services.backend.endpoint", "http://127.0.0.1:" + serverBackend.port());
         Config config = Config.builder()
                 .sources(List.of(
-                        classpath("frontend-application.yaml")
+                        classpath("frontend-application.yaml"),
+                        ConfigSources.create(prop)
                 ))
                 .build();
         Client client = ClientBuilder.newClient();
