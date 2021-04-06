@@ -12,12 +12,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *  
+ *
  */
 
 package io.helidon.microprofile.server;
 
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -25,66 +24,38 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class AsyncResourceTest extends Application {
-    private static Client client;
+@HelidonTest
+@AddBean(AsyncResourceTest.TestResource.class)
+public class AsyncResourceTest {
 
-    @BeforeAll
-    static void initClass() {
-        client = ClientBuilder.newClient();
-    }
-
-    @AfterAll
-    static void destroyClass() {
-        client.close();
+    @Test
+    void asyncResourceGet(WebTarget target) {
+        String getResponse = target.path("/asyncGet").request().get(String.class);
+        assertThat(getResponse, is(equalTo("testResponseGet")));
     }
 
     @Test
-    void asyncResource() {
-        Server server = Server.builder()
-                .addApplication("/async-app", new TestApp())
-                .build();
-
-        server.start();
-
-        try {
-            WebTarget target = client.target("http://localhost:" + server.port());
-
-            String getResponse = target.path("/async-app/asyncGet").request().get(String.class);
-            assertThat(getResponse, is(equalTo("testResponseGet")));
-
-            String putResponse = target.path("/async-app/asyncPut").request().put(Entity.text(""), String.class);
-            assertThat(putResponse, is(equalTo("testResponsePut")));
-        } finally {
-            server.stop();
-        }
-    }
-
-    private final class TestApp extends Application {
-
-        @Override
-        public Set<Object> getSingletons() {
-            return Set.of(new TestResource());
-        }
+    void asyncResourcePut(WebTarget target) {
+        String putResponse = target.path("/asyncPut").request().put(Entity.text(""), String.class);
+        assertThat(putResponse, is(equalTo("testResponsePut")));
     }
 
     @Path("/")
-    public static final class TestResource {
+    public static class TestResource {
 
         @GET
         @Path("asyncGet")
@@ -92,7 +63,7 @@ public class AsyncResourceTest extends Application {
         public CompletionStage<String> foo() {
             return CompletableFuture.completedStage("testResponseGet");
         }
-        
+
         @PUT
         @Path("asyncPut")
         public CompletionStage<Response> bar() {
