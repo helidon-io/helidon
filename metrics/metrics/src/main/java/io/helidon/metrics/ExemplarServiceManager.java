@@ -17,15 +17,14 @@
 package io.helidon.metrics;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.ServiceLoader;
-import java.util.StringJoiner;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
-
-import io.helidon.common.LazyValue;
 
 /**
  * Loads the {@link ExemplarService} instance (if any) with the most urgent priority.
@@ -34,46 +33,43 @@ class ExemplarServiceManager {
 
     private static final Logger LOGGER = Logger.getLogger(ExemplarServiceManager.class.getName());
 
-    private static final LazyValue<Supplier<String>> EXEMPLAR_SUPPLIER =
-            LazyValue.create(ExemplarServiceManager::chooseExemplarSupplier);
+    private static final List<ExemplarService> EXEMPLAR_SERVICES = collectExemplarServices();
+
+    private static final Supplier<String> EXEMPLAR_SUPPLIER = EXEMPLAR_SERVICES.isEmpty()
+            ? () -> ""
+            : () -> EXEMPLAR_SERVICES.stream()
+                        .map(ExemplarService::label)
+                        .collect(Collectors.joining(",", "{", "}"));
 
     private ExemplarServiceManager() {
     }
 
     /**
-     * Returns the current exemplar string (e.g., trace ID).
+     * Returns the current exemplar label (e.g., trace ID).
      *
      * @return exemplar string provided by the highest-priority service instance
      */
-    static String exemplar() {
-        return EXEMPLAR_SUPPLIER.get().get();
+    static String exemplarLabel() {
+        return EXEMPLAR_SUPPLIER.get();
     }
 
-    private static Supplier<String> chooseExemplarSupplier() {
-        StringJoiner joiner = LOGGER.isLoggable(Level.FINE) ? new StringJoiner(",", "[", "]") : null;
-        ExemplarService exemplarService =
+    private static List<ExemplarService> collectExemplarServices() {
+        List<ExemplarService> exemplarServices =
             ServiceLoader.load(ExemplarService.class)
                 .stream()
-                .peek(provider -> {
-                    if (joiner != null) {
-                        joiner.add(String.format("%s(priority %d)", provider.type().getName(), priorityValue(provider)));
-                    }
-                })
-                .min(Comparator.comparing(ExemplarServiceManager::priorityValue))
+                .sorted(Comparator.comparing(ExemplarServiceManager::priorityValue))
                 .map(ServiceLoader.Provider::get)
-                .orElse(new DefaultExemplarService());
-        if (joiner != null) {
-            LOGGER.log(Level.FINE, String.format("Candidate ExemplarSupports: %s, using %s", joiner.toString(),
-                    exemplarService.getClass().getName()));
+                .collect(Collectors.toList());
+
+        if (!exemplarServices.isEmpty()) {
+            LOGGER.log(Level.INFO, "Using metrics ExemplarServices " + exemplarServices.toString());
         }
 
-        return exemplarService.labelSupplier();
+        return exemplarServices;
     }
 
     private static int priorityValue(ServiceLoader.Provider<ExemplarService> exemplarSupportProvider) {
         Priority p = exemplarSupportProvider.type().getAnnotation(Priority.class);
         return p == null ? ExemplarService.DEFAULT_PRIORITY : p.value();
     }
-
-
 }

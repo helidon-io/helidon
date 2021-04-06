@@ -68,19 +68,22 @@ final class HelidonCounter extends MetricImpl implements Counter {
 
     @Override
     public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
-        String nameWithUnits = prometheusNameWithUnits(metricID);
+        prometheusData(sb, metricID, withHelpType, prometheusNameWithUnits(metricID));
+    }
+
+    void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType, String prometheusName) {
         if (withHelpType) {
-            prometheusType(sb, nameWithUnits, metadata().getType());
-            prometheusHelp(sb, nameWithUnits);
+            prometheusType(sb, prometheusName, metadata().getType());
+            prometheusHelp(sb, prometheusName);
         }
-        sb.append(nameWithUnits)
+        sb.append(prometheusName)
                 .append(prometheusTags(metricID.getTags()))
                 .append(" ")
                 .append(prometheusValue());
         if (delegate instanceof CounterImpl) {
-            CounterSample sample = ((CounterImpl) delegate).counterSample;
+            Sample.Labeled sample = ((CounterImpl) delegate).sample;
             if (sample != null) {
-                sb.append(prometheusExemplar(sample.label(), sample.value(), sample.timestamp()));
+                sb.append(prometheusExemplar(sample));
             }
         }
         sb.append('\n');
@@ -99,7 +102,7 @@ final class HelidonCounter extends MetricImpl implements Counter {
     private static class CounterImpl implements Counter {
         private final LongAdder adder = new LongAdder();
 
-        private CounterSample counterSample = null;
+        private Sample.Labeled sample = null;
 
         @Override
         public void inc() {
@@ -109,7 +112,7 @@ final class HelidonCounter extends MetricImpl implements Counter {
         @Override
         public void inc(long n) {
             adder.add(n);
-            counterSample = new CounterSample(n);
+            sample = Sample.labeled(n);
         }
 
         @Override
@@ -158,12 +161,5 @@ final class HelidonCounter extends MetricImpl implements Counter {
                 + "delegate=" + delegate + ","
                 + "metadata=" + metadata()
                 + '}';
-    }
-
-    private static class CounterSample extends LabeledSample<Long> {
-
-        CounterSample(long value) {
-            super(value, ExemplarServiceManager.exemplar());
-        }
     }
 }

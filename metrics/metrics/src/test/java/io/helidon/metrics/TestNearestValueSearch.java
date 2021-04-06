@@ -16,11 +16,10 @@
  */
 package io.helidon.metrics;
 
-import io.helidon.metrics.LabeledSample.Derived;
 import io.helidon.metrics.WeightedSnapshot.WeightedSample;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.metrics.LabeledSample.derived;
+import static io.helidon.metrics.Sample.derived;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 

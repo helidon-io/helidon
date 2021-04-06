@@ -37,7 +37,7 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
-import io.helidon.metrics.LabeledSample.Derived;
+import io.helidon.metrics.Sample.Derived;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -255,17 +255,7 @@ abstract class MetricImpl implements HelidonMetric {
             PrometheusName name,
             Units units,
             String quantile,
-            Derived sample) {
-        prometheusQuantile(sb, name, units, quantile, sample.value(), sample.label(), sample.timestamp());
-    }
-
-    protected final void prometheusQuantile(StringBuilder sb,
-            PrometheusName name,
-            Units units,
-            String quantile,
-            double value,
-            String label,
-            long timestamp) {
+            Derived derived) {
         // application:file_sizes_bytes{quantile="0.5"} 4201
         String quantileTag = "quantile=\"" + quantile + "\"";
         String tags = name.prometheusTags();
@@ -278,10 +268,8 @@ abstract class MetricImpl implements HelidonMetric {
         sb.append(name.nameUnits())
                 .append(tags)
                 .append(" ")
-                .append(units.convert(value));
-        if (!label.isBlank()) {
-            sb.append(prometheusExemplar(label, value, timestamp));
-        }
+                .append(units.convert(derived.value()));
+        sb.append(prometheusExemplar(derived.sample(), units));
         sb.append("\n");
     }
 
@@ -289,9 +277,20 @@ abstract class MetricImpl implements HelidonMetric {
             PrometheusName name,
             String statName,
             boolean withHelpType,
-            String typeNme,
-            LabeledSample<?> sample) {
-        appendPrometheusElement(sb, name.units(), () -> name.nameStatUnits(statName), withHelpType, typeNme, sample);
+            String typeName,
+            Derived derived) {
+        appendPrometheusElement(sb, name.units(), () -> name.nameStatUnits(statName), withHelpType, typeName, derived.value(),
+                derived.sample());
+    }
+
+    void appendPrometheusElement(StringBuilder sb,
+            PrometheusName name,
+            String statName,
+            boolean withHelpType,
+            String typeName,
+            Sample.Labeled sample) {
+        appendPrometheusElement(sb, name.units(), () -> name.nameStatUnits(statName), withHelpType, typeName, sample.value(),
+                sample);
     }
 
     private void appendPrometheusElement(StringBuilder sb,
@@ -299,15 +298,16 @@ abstract class MetricImpl implements HelidonMetric {
             Supplier<String> nameToUse,
             boolean withHelpType,
             String typeName,
-            LabeledSample<?> sample) {
+            double value,
+            Sample.Labeled sample) {
         if (withHelpType) {
             prometheusType(sb, nameToUse.get(), typeName);
         }
-        Object convertedValue = units.convert(sample.value());
+        Object convertedValue = units.convert(value);
         sb.append(nameToUse.get())
                 .append(" ")
                 .append(convertedValue)
-                .append(prometheusExemplar(sample.label(), convertedValue, sample.timestamp()))
+                .append(prometheusExemplar(sample, units))
                 .append("\n");
     }
 
@@ -360,11 +360,21 @@ abstract class MetricImpl implements HelidonMetric {
 
     }
 
-    String prometheusExemplar(String label, Object value, long timestamp) {
-        if (label.isBlank()) {
+    String prometheusExemplar(Sample.Labeled sample) {
+        return prometheusExemplar(sample, getUnits());
+    }
+
+    String prometheusExemplar(Sample.Labeled sample, Units units) {
+        return sample == null ? "" : prometheusExemplar(units.convert(sample.value()), sample);
+    }
+
+    String prometheusExemplar(Object value, Sample.Labeled sample) {
+        if (sample == null || sample.label().isBlank()) {
             return "";
         }
-        String exemplar = String.format(" # {trace_id=\"%s\"} %s %f", label, value, timestamp / 1000.0);
+        // The loaded service provides the entire label, including enclosing braces. For example, {trace_id=xxx}.
+        String exemplar = String.format(" # %s %s %f", sample.label(), value,
+                sample.timestamp() / 1000.0);
         if (exemplar.length() <= EXEMPLAR_MAX_LENGTH) {
             return exemplar;
         }

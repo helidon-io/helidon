@@ -24,9 +24,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 
+import io.helidon.metrics.Sample.Derived;
+import io.helidon.metrics.Sample.Labeled;
+
 import org.eclipse.microprofile.metrics.Snapshot;
 
-import static io.helidon.metrics.LabeledSample.derived;
+import static io.helidon.metrics.Sample.derived;
 
 /*
  * This class is heavily inspired by:
@@ -90,9 +93,9 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
     }
 
     @Override
-    public LabeledSample.Derived value(double quantile) {
+    public Derived value(double quantile) {
         int posx = slot(quantile);
-        return posx == -1 ? LabeledSample.Derived.ZERO : derived(copy[posx].value(), copy[posx].label());
+        return posx == -1 ? Derived.ZERO : derived(copy[posx].value(), copy[posx]);
     }
 
     int slot(double quantile) {
@@ -151,32 +154,32 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
     }
 
     @Override
-    public LabeledSample.Derived median() {
+    public Derived median() {
         return value(0.5);
     }
 
     @Override
-    public LabeledSample.Derived sample75thPercentile() {
+    public Derived sample75thPercentile() {
         return value(0.75);
     }
 
     @Override
-    public LabeledSample.Derived sample95thPercentile() {
+    public Derived sample95thPercentile() {
         return value(0.95);
     }
 
     @Override
-    public LabeledSample.Derived sample98thPercentile() {
+    public Derived sample98thPercentile() {
         return value(0.98);
     }
 
     @Override
-    public LabeledSample.Derived sample99thPercentile() {
+    public Derived sample99thPercentile() {
         return value(0.99);
     }
 
     @Override
-    public LabeledSample.Derived sample999thPercentile() {
+    public Derived sample999thPercentile() {
         return value(0.999);
     }
 
@@ -222,9 +225,9 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
     }
 
     @Override
-    public LabeledSample.Derived mean() {
+    public Derived mean() {
         if (copy.length == 0) {
-            return LabeledSample.Derived.ZERO;
+            return Derived.ZERO;
         }
 
         double sum = 0;
@@ -234,16 +237,16 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
 
         // Choose a close-by sample's label for the label on the mean.
         int slot = slotNear(sum);
-        return derived(sum, copy[slot].label(), copy[slot].timestamp());
+        return derived(sum, copy[slot]);
     }
 
     int slotNear(double value) {
         return slotNear(derived(value), copy);
     }
 
-    static int slotNear(LabeledSample<?> target, LabeledSample<?>[] values) {
-        int slot = Arrays.binarySearch(values, 0, values.length, target,
-                Comparator.comparingDouble(s -> s.value().doubleValue()));
+    static int slotNear(Sample target, Sample[] values) {
+        int slot = Arrays.binarySearch(values, target,
+                Comparator.comparingDouble(Sample::doubleValue));
 
         if (slot >= 0) {
             // Exact match.
@@ -261,11 +264,11 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
         }
         int higherSlot = -slot - 1;
 
-        Number value = target.value();
+        double value = target.doubleValue();
 
         // Ties go to the lower slot but this is not part of the published contract.
-        return (values[higherSlot]).value().doubleValue() - value.doubleValue()
-                < value.doubleValue() - values[higherSlot - 1].value().doubleValue()
+        return (values[higherSlot]).doubleValue() - value
+                < value - values[higherSlot - 1].doubleValue()
                 ? higherSlot
                 : higherSlot - 1;
     }
@@ -281,11 +284,11 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
     }
 
     @Override
-    public LabeledSample.Derived stdDev() {
+    public Derived stdDev() {
         // two-pass algorithm for variance, avoids numeric overflow
 
         if (copy.length <= 1) {
-            return LabeledSample.Derived.ZERO;
+            return Derived.ZERO;
         }
 
 
@@ -319,11 +322,12 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
     /**
      * Labeled sample with a weight.
      */
-    static class WeightedSample extends LabeledSample<Long> {
+    static class WeightedSample extends Labeled.Impl {
 
         static final WeightedSample ZERO = new WeightedSample(0, 1.0, "");
 
         private final double weight;
+
 
         WeightedSample(long value, double weight, long timestamp, String label) {
             super(value, label, timestamp);

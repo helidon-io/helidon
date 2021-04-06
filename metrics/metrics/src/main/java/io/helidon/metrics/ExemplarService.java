@@ -16,8 +16,6 @@
  */
 package io.helidon.metrics;
 
-import java.util.function.Supplier;
-
 /**
  * Behavior for supporting exemplars in metrics histograms.
  */
@@ -34,5 +32,5 @@ public interface ExemplarService {
      *
      * @return the label
      */
-    Supplier<String> labelSupplier();
+    String label();
 }

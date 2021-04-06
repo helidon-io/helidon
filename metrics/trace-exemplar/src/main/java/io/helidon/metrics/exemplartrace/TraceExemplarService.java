@@ -16,18 +16,16 @@
  */
 package io.helidon.metrics.exemplartrace;
 
-import java.util.function.Supplier;
-
 import io.helidon.common.context.Contexts;
 import io.helidon.metrics.ExemplarService;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
 
 public class TraceExemplarService implements ExemplarService {
     @Override
-    public Supplier<String> labelSupplier() {
-        return () -> Contexts.context()
+    public String label() {
+        return Contexts.context()
                 .flatMap(c -> c.get(TracingContext.class))
-                .map(tc -> tc.tracer().activeSpan().context().toTraceId())
+                .map(tc -> "trace_id=\"" + tc.tracer().activeSpan().context().toTraceId() + "\"")
                 .orElse("");
     }
 }

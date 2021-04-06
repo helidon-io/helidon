@@ -16,21 +16,22 @@
  */
 package io.helidon.metrics;
 
-import io.helidon.metrics.LabeledSample.Derived;
-import io.helidon.metrics.WeightedSnapshot.WeightedSample;
+import io.helidon.metrics.Sample.Derived;
+import io.helidon.metrics.Sample.Labeled;
 
 import org.eclipse.microprofile.metrics.Snapshot;
 
-import static io.helidon.metrics.LabeledSample.derived;
+import static io.helidon.metrics.Sample.derived;
+import static io.helidon.metrics.Sample.labeled;
 
 class WrappedSnapshot implements DisplayableLabeledSnapshot {
 
     private final Snapshot delegate;
 
-    private final WeightedSample[] samples;
+    private final Labeled[] samples;
     private final Derived median;
-    private final WeightedSample max;
-    private final WeightedSample min;
+    private final Labeled max;
+    private final Labeled min;
     private final Derived mean;
     private final Derived stdDev;
 
@@ -48,17 +49,17 @@ class WrappedSnapshot implements DisplayableLabeledSnapshot {
         this.delegate = delegate;
 
         long[] values = delegate.getValues();
-        samples = new WeightedSample[values.length];
+        samples = new Labeled[values.length];
 
         for (int i = 0; i < values.length; i++) {
-            samples[i] = new WeightedSample(values[i]);
+            samples[i] = labeled(values[i]);
         }
 
-        // We cannot get to the weight of each sample to create a faithful array of WeightedSamples for each original sample,
+        // We cannot access the weight of each sample to create a faithful array of WeightedSamples for each original sample,
         // so we pre-store the typical calculations.
         median = derived(delegate.getMedian());
-        max = new WeightedSample(delegate.getMax());
-        min = new WeightedSample(delegate.getMin());
+        max = labeled(delegate.getMax());
+        min = labeled(delegate.getMin());
         mean = derived(delegate.getMean());
         stdDev = derived(delegate.getStdDev());
 
@@ -105,7 +106,7 @@ class WrappedSnapshot implements DisplayableLabeledSnapshot {
     }
 
     @Override
-    public WeightedSample max() {
+    public Labeled max() {
         return max;
     }
 
@@ -115,7 +116,7 @@ class WrappedSnapshot implements DisplayableLabeledSnapshot {
     }
 
     @Override
-    public WeightedSample min() {
+    public Labeled min() {
         return min;
     }
 

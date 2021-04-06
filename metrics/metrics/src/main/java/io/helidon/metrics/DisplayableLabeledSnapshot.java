@@ -16,8 +16,8 @@
  */
 package io.helidon.metrics;
 
-import io.helidon.metrics.LabeledSample.Derived;
-import io.helidon.metrics.WeightedSnapshot.WeightedSample;
+import io.helidon.metrics.Sample.Derived;
+import io.helidon.metrics.Sample.Labeled;
 
 /**
  * Internal interface prescribing minimum behavior of a snapshot needed to produce output.
@@ -28,9 +28,9 @@ interface DisplayableLabeledSnapshot {
 
     Derived median();
 
-    WeightedSample max();
+    Labeled max();
 
-    WeightedSample min();
+    Labeled min();
 
     Derived mean();
 
@@ -45,7 +45,4 @@ interface DisplayableLabeledSnapshot {
     Derived sample99thPercentile();
 
     Derived sample999thPercentile();
-
-
-
 }

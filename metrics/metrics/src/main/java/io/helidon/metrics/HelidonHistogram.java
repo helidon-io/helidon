@@ -130,12 +130,12 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         @Override
         public void update(long value) {
             counter.increment();
-            reservoir.update(value, ExemplarServiceManager.exemplar());
+            reservoir.update(value, ExemplarServiceManager.exemplarLabel());
         }
 
         public void update(long value, long timestamp) {
             counter.increment();
-            reservoir.update(value, timestamp, ExemplarServiceManager.exemplar());
+            reservoir.update(value, timestamp, ExemplarServiceManager.exemplarLabel());
         }
 
         @Override
