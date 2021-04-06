@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -272,18 +272,17 @@ public class HelidonReflectionFeature implements Feature {
             TypeSignature typeDescriptor = typeDescriptorSupplier.get();
             return getSimpleType(context, typeDescriptor);
         }
-        ClassRefTypeSignature refType = (ClassRefTypeSignature) typeSignature;
-        List<TypeArgument> typeArguments = refType.getTypeArguments();
-        if (typeArguments.size() != 1) {
-            return getSimpleType(context, typeSignature);
-        }
 
-        TypeArgument typeArgument = typeArguments.get(0);
-        ReferenceTypeSignature ref = typeArgument.getTypeSignature();
-        if (ref == null) {
-            return Object.class;
+        if (typeSignature instanceof ClassRefTypeSignature) {
+            ClassRefTypeSignature refType = (ClassRefTypeSignature) typeSignature;
+            List<TypeArgument> typeArguments = refType.getTypeArguments();
+            if (typeArguments.size() == 1) {
+                TypeArgument typeArgument = typeArguments.get(0);
+                ReferenceTypeSignature ref = typeArgument.getTypeSignature();
+                return getSimpleType(context, ref);
+            }
         }
-        return getSimpleType(context, ref);
+        return getSimpleType(context, typeSignature);
     }
 
     private Class<?> getSimpleType(BeforeAnalysisContext context, TypeSignature typeSignature) {
