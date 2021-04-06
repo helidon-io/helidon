@@ -147,7 +147,8 @@ public interface WebServer {
      * Update the TLS configuration of the default socket {@link WebServer#DEFAULT_SOCKET_NAME}.
      *
      * @param tls new TLS configuration
-     * @throws IllegalStateException if the new tls is not enabled or currently set tls is null
+     * @throws IllegalStateException if {@link WebServerTls#enabled()} returns {@code false} or
+     * if {@link SocketConfiguration#ssl()} returns {@code null}
      */
     void updateTls(WebServerTls tls);
 
@@ -156,7 +157,8 @@ public interface WebServer {
      *
      * @param tls new TLS configuration
      * @param socketName specific named socket name
-     * @throws IllegalStateException if the new tls is not enabled or currently set tls is null
+     * @throws IllegalStateException if {@link WebServerTls#enabled()} returns {@code false} or
+     * if {@link SocketConfiguration#ssl()} returns {@code null}
      */
     void updateTls(WebServerTls tls, String socketName);
 
