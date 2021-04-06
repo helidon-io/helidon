@@ -72,5 +72,10 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-test-support</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
