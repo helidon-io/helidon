@@ -205,8 +205,8 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     /**
      * Sets {@code CERTIFICATE_NAME} in socket channel.
      *
-     * @param future     future passed to listener
-     * @param ch         the socket channel
+     * @param future future passed to listener
+     * @param ch the socket channel
      * @param sslHandler the SSL handler
      */
     private void obtainClientCN(Future<? super Channel> future, SocketChannel ch, SslHandler sslHandler) {
