@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,5 +173,11 @@ public class JaxRsResource {
     @Path("/queryparam2")
     public String queryParam(@QueryParam("boolean") Boolean booleanParam) {
         return String.valueOf(booleanParam);
+    }
+
+    @GET
+    @Path("/queryparam3")
+    public String queryParam(@QueryParam("int") int intParam) {
+        return String.valueOf(intParam);
     }
 }

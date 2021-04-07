@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -191,8 +191,9 @@ public final class Mp1Main {
         // + JSON-B
         invoke(collector, "Rest client JSON-B", "json-b", aBean::restClientJsonB);
         // + query params
-        invoke(collector, "Rest client Query param long", "1020", () -> aBean.restClientQuery(1020L));
-        invoke(collector, "Rest client Query param boolean", "true", () -> aBean.restClientQuery(true));
+        invoke(collector, "Rest client Query param Long", "1020", () -> aBean.restClientQuery(1020L));
+        invoke(collector, "Rest client Query param Boolean", "true", () -> aBean.restClientQuery(true));
+        invoke(collector, "Rest client Query param int", "123", () -> aBean.restClientQuery(123));
 
         // Message from rest client, originating in BeanClass.BeanType
         invoke(collector, "Rest client bean type", "Properties message", aBean::restClientBeanType);
