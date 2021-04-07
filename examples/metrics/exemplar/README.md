@@ -1,13 +1,24 @@
-# Helidon Quickstart SE Example
+# Helidon Metrics Exemplar SE Example
 
-This project implements a simple Hello World REST service using Helidon SE.
+This project implements a simple Hello World REST service using Helidon SE and demonstrates the 
+optional metrics exemplar support.
+
+## Start Zipkin (optional)
+If you do not start Zipkin, the example app will still function correctly but it will log a warning 
+when it cannot contact the Zipkin server to report the tracing spans. Even so, the metrics output 
+will contain valid exemplars.
+
+With Docker:
+```bash
+docker run --name zipkin -d -p 9411:9411 openzipkin/zipkin
+```
 
 ## Build and run
 
 With JDK11+
 ```bash
 mvn package
-java -jar target/helidon-quickstart-se.jar
+java -jar target/helidon-examples-metrics-exemplar.jar
 ```
 
 ## Exercise the application
@@ -23,143 +34,35 @@ curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http:
 
 curl -X GET http://localhost:8080/greet/Jose
 {"message":"Hola Jose!"}
+
+curl -X GET http://localhost:8080/greet          
+{"message":"Hola World!"}
 ```
 
-## Try health and metrics
+## Retrieve application metrics
 
 ```
-curl -s -X GET http://localhost:8080/health
-{"outcome":"UP",...
+# Prometheus format with exemplars
+
+curl -s -X GET http://localhost:8080/metrics/application
+# TYPE application_counterForPersonalizedGreetings_total counter
+# HELP application_counterForPersonalizedGreetings_total 
+application_counterForPersonalizedGreetings_total 2 # {trace_id="78e61eed351f4c9d"} 1 1617812495.016000
 . . .
-
-# Prometheus Format
-curl -s -X GET http://localhost:8080/metrics
-# TYPE base:gc_g1_young_generation_count gauge
-. . .
-
-# JSON Format
-curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
-{"base":...
-. . .
-
+# TYPE application_timerForGets_mean_seconds gauge
+application_timerForGets_mean_seconds 0.005772598385062112 # {trace_id="b22f13c37ba8b879"} 0.001563945 1617812578.687000
+# TYPE application_timerForGets_max_seconds gauge
+application_timerForGets_max_seconds 0.028018165 # {trace_id="a1b127002725143c"} 0.028018165 1617812467.524000
 ```
+The examplars contain `trace_id` values tying them to specific samples.
+Note that the exemplar for the counter refers to the most recent update to the counter. 
 
-## Build the Docker Image
+For the timer, the value for the `max` is exactly the same as the value for its exemplar, 
+because the `max` value has to come from at least one sample. 
+In contrast, Helidon calculates the `mean` value from possibly multiple samples. The exemplar for 
+`mean` is a sample with value as close as that of other samples to the mean. 
 
-```
-docker build -t helidon-quickstart-se .
-```
-
-## Start the application with Docker
-
-```
-docker run --rm -p 8080:8080 helidon-quickstart-se:latest
-```
-
-Exercise the application as described above
-
-## Deploy the application to Kubernetes
-
-```
-kubectl cluster-info                # Verify which cluster
-kubectl get pods                    # Verify connectivity to cluster
-kubectl create -f app.yaml   # Deply application
-kubectl get service helidon-quickstart-se  # Get service info
-```
-
-## Build a native image with GraalVM
-
-GraalVM allows you to compile your programs ahead-of-time into a native
- executable. See https://www.graalvm.org/docs/reference-manual/aot-compilation/
- for more information.
-
-You can build a native executable in 2 different ways:
-* With a local installation of GraalVM
-* Using Docker
-
-### Local build
-
-Download Graal VM at https://www.graalvm.org/downloads. We recommend
-version `20.1.0` or later.
-
-```
-# Setup the environment
-export GRAALVM_HOME=/path
-# build the native executable
-mvn package -Pnative-image
-```
-
-You can also put the Graal VM `bin` directory in your PATH, or pass
- `-DgraalVMHome=/path` to the Maven command.
-
-See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plugin#goal-native-image
- for more information.
-
-Start the application:
-
-```
-./target/helidon-quickstart-se
-```
-
-### Multi-stage Docker build
-
-Build the "native" Docker Image
-
-```
-docker build -t helidon-quickstart-se-native -f Dockerfile.native .
-```
-
-Start the application:
-
-```
-docker run --rm -p 8080:8080 helidon-quickstart-se-native:latest
-```
-
-## Build a Java Runtime Image using jlink
-
-You can build a custom Java Runtime Image (JRI) containing the application jars and the JDK modules 
-on which they depend. This image also:
-
-* Enables Class Data Sharing by default to reduce startup time. 
-* Contains a customized `start` script to simplify CDS usage and support debug and test modes. 
- 
-You can build a custom JRI in two different ways:
-* Local
-* Using Docker
-
-
-### Local build
-
-```
-# build the JRI
-mvn package -Pjlink-image
-```
-
-See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plugin#goal-jlink-image
- for more information.
-
-Start the application:
-
-```
-./target/helidon-quickstart-se-jri/bin/start
-```
-
-### Multi-stage Docker build
-
-Build the JRI as a Docker Image
-
-```
-docker build -t helidon-quickstart-se-jri -f Dockerfile.jlink .
-```
-
-Start the application:
-
-```
-docker run --rm -p 8080:8080 helidon-quickstart-se-jri:latest
-```
-
-See the start script help:
-
-```
-docker run --rm helidon-quickstart-se-jri:latest --help
-```
+## Browse the Zipkin traces
+If you started the Zipkin server, visit `http://localhost:9411` and click `Run Query` to see all 
+the spans your Helidon application reported to Zipkin.
+You can compare the trace IDs in the Zipkin display to those in the metrics output.
