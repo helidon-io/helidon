@@ -18,7 +18,7 @@
  * Quickstart demo application
  * <p>
  * Start with {@link io.helidon.examples.metrics.exemplar.Main} class.
- *
+ * </p>
  * @see io.helidon.examples.metrics.exemplar.Main
  */
 package io.helidon.examples.metrics.exemplar;

@@ -57,7 +57,7 @@ link:https://www.merriam-webster.com/dictionary/exemplar[_exemplar_] - one that 
 -- Merriam-Webster Dictionary
 --
 
-When you add the `helidon-metrics-trace-exemplar` dependency--and one for either Zipkin or Jaeger--to your application, Helidon automatically records a label and timestamp with each histogram and simple timer sample and with each counter update. Helidon adds the label, sample value, and timestamp to the OpenMetrics output returned from the Helidon metrics endpoint (`/metrics` unless you set it up otherwise).
+When you add the `helidon-metrics-trace-exemplar` dependency--and one for either Zipkin or Jaeger--to your application, Helidon automatically records a sample (label, value, and timestamp) with each update to a histogram, simple timer, or counter. Helidon adds the label, value, and timestamp to the OpenMetrics output returned from the Helidon metrics endpoint (`/metrics` unless you set it up otherwise).
 
 .Exemplar output - `Timer`
 [listing]

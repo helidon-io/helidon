@@ -22,7 +22,7 @@ package io.helidon.metrics;
 public interface ExemplarService {
 
     /**
-     * Defayult priority for an {@code ExemplarService} found by the service loader without an explicit {@code @Priority}
+     * Default priority for an {@code ExemplarService} found by the service loader without an explicit {@code @Priority}
      * annotation.
      */
     int DEFAULT_PRIORITY = 1000;
