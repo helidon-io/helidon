@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MainTest {
 
@@ -107,8 +108,22 @@ public class MainTest {
     }
 
     @Test
-    public void testMetrics() throws IOException {
+    public void testMetrics() {
         WebClientResponse response;
+
+        String get = webClient.get()
+                .path("/greet")
+                .request(String.class)
+                .await();
+
+        assertTrue(get.contains("Hello World!"));
+
+        get = webClient.get()
+                .path("/greet/Joe")
+                .request(String.class)
+                .await();
+
+        assertTrue(get.contains("Hello Joe!"));
 
         String openMetricsOutput = webClient.get()
                 .path("/metrics/application")
@@ -121,23 +136,22 @@ public class MainTest {
 
         List<String> expected = List.of(">> skip to timer total >>",
                 "# TYPE application_" + GreetService.TIMER_FOR_GETS + "_mean_seconds gauge",
-                "application_" + GreetService.TIMER_FOR_GETS + "_mean_seconds [0123456789\\.]+",
+                valueMatcher("mean"),
                 ">> end of output >>");
         assertLinesMatch(expected, returnedLines, GreetService.TIMER_FOR_GETS + "_mean_seconds TYPE and value");
 
         expected = List.of(">> skip to max >>",
                 "# TYPE application_" + GreetService.TIMER_FOR_GETS + "_max_seconds gauge",
-                "application_" + GreetService.TIMER_FOR_GETS + "_max_seconds [01234567890\\.]+",
+                valueMatcher("max"),
                 ">> end of output >>");
         assertLinesMatch(expected, returnedLines, GreetService.TIMER_FOR_GETS + "_max_seconds TYPE and value");
 
-        /*
-        # TYPE application_timerForGets_mean_seconds gauge
-application_timerForGets_mean_seconds 0.0
-# TYPE application_timerForGets_max_seconds gauge
-application_timerForGets_max_seconds 0.0
+    }
 
-         */
+    private static String valueMatcher(String statName) {
+        // application_timerForGets_mean_seconds 0.010275403147594316 # {trace_id="cfd13196e6a9fb0c"} 0.002189822 1617799841.963000
+        return "application_" + GreetService.TIMER_FOR_GETS
+                + "_" + statName + "_seconds [\\d\\.]+ # \\{trace_id=\"[^\"]+\"\\} [\\d\\.]+ [\\d\\.]+";
     }
 
 }

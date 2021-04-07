@@ -59,8 +59,8 @@ public final class Main {
         Config config = Config.create();
 
         WebServer server = WebServer.builder()
+                .tracer(TracerBuilder.create(config.get("tracing")))
                 .routing(createRouting(config))
-                .tracer(TracerBuilder.create(config.get("tracing")).build())
                 .config(config.get("server"))
                 .addMediaSupport(JsonpSupport.create())
                 .build();

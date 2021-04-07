@@ -81,7 +81,7 @@ public class GreetService implements Service {
         MetricRegistry registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
         Metadata metadata = Metadata.builder()
                 .withName(TIMER_FOR_GETS)
-                .withUnit(MetricUnits.SECONDS)
+                .withUnit(MetricUnits.NANOSECONDS)
                 .withType(MetricType.TIMER)
                 .build();
         timerForGets = registry.timer(metadata);
