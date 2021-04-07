@@ -18,14 +18,14 @@ package io.helidon.metrics.exemplartrace;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.metrics.ExemplarService;
-import io.helidon.tracing.jersey.client.internal.TracingContext;
+import io.opentracing.SpanContext;
 
 public class TraceExemplarService implements ExemplarService {
     @Override
     public String label() {
         return Contexts.context()
-                .flatMap(c -> c.get(TracingContext.class))
-                .map(tc -> "trace_id=\"" + tc.tracer().activeSpan().context().toTraceId() + "\"")
+                .flatMap(c -> c.get(SpanContext.class))
+                .map(sc -> "trace_id=\"" + sc.toTraceId() + "\"")
                 .orElse("");
     }
 }

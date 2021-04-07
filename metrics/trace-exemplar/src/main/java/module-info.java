@@ -18,6 +18,6 @@ module io.helidon.metrics.traceexemplar {
 
     requires io.helidon.metrics;
     requires io.helidon.common.context;
-    requires io.helidon.tracing.jersey.client;
+    requires io.opentracing.api;
 
 }
