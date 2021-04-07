@@ -126,4 +126,15 @@
    <cve>CVE-2020-13949</cve>
 </suppress>
 
+<!-- The Neo4j java driver contains a shaded copy of a couple of Netty artifacts.
+     This CVE is against netty-codec-http2 which is not included in the Neo4j driver.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: neo4j-java-driver-4.2.4.jar (shaded: io.netty:netty-transport:4.1.60.Final)
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.netty/netty\-.*@.*$</packageUrl>
+   <cve>CVE-2021-21409</cve>
+</suppress>
+
 </suppressions>
