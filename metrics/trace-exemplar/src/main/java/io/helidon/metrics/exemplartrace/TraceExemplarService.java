@@ -18,6 +18,7 @@ package io.helidon.metrics.exemplartrace;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.metrics.ExemplarService;
+
 import io.opentracing.SpanContext;
 
 public class TraceExemplarService implements ExemplarService {

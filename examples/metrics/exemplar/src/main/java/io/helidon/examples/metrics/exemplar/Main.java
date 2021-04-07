@@ -25,8 +25,6 @@ import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
-import java.net.URI;
-
 /**
  * The application main class.
  */
