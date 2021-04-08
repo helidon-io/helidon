@@ -16,6 +16,8 @@
 
 package io.helidon.webserver;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -23,7 +25,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
@@ -60,6 +61,7 @@ class BareResponseImpl implements BareResponse {
 
     // See HttpConversionUtil.ExtensionHeaderNames
     private static final String HTTP_2_HEADER_PREFIX = "x-http2";
+    private static final String HTTP_2_STREAM_ID = "x-http2-stream-id";
     private static final SocketClosedException CLOSED = new SocketClosedException("Response channel is closed!");
 
     private final boolean keepAlive;
@@ -70,6 +72,7 @@ class BareResponseImpl implements BareResponse {
     private final CompletableFuture<BareResponse> headersFuture;
     private final BooleanSupplier requestContentConsumed;
     private final long requestId;
+    private final String http2StreamId;
     private final HttpHeaders requestHeaders;
     private final ChannelFuture channelClosedFuture;
     private final GenericFutureListener<? extends Future<? super Void>> channelClosedListener;
@@ -104,6 +107,13 @@ class BareResponseImpl implements BareResponse {
         this.keepAlive = HttpUtil.isKeepAlive(request);
         this.requestHeaders = request.headers();
         this.prevRequestChunk = prevRequestChunk;
+        this.http2StreamId = requestHeaders.get(HTTP_2_STREAM_ID);
+
+        // No need to pipeline responses with HTTP/2 - multiplexing allowed
+        if (http2StreamId != null) {
+            this.prevRequestChunk = null;        // don't wait for previous pipelined request
+            LOGGER.fine(() -> log("Multiplexing allowed with HTTP/2 keep-alive: %s", keepAlive));
+        }
 
         // We need to keep this listener so we can remove it when this response completes. If we don't, we leak
         // while the channel remains open since each response adds a new listener that references 'this'.
@@ -182,7 +192,8 @@ class BareResponseImpl implements BareResponse {
 
         // Content length optimization attempt
         if (!lengthOptimization) {
-            LOGGER.finest(() -> log("Writing headers: " + status));
+            LOGGER.fine(() -> String.format("[BareResponseImpl: %s, Channel: %s] Writing headers %s",
+                    System.identityHashCode(this), System.identityHashCode(ctx.channel()), status));
             initWriteResponse();
         }
     }
@@ -212,7 +223,7 @@ class BareResponseImpl implements BareResponse {
         if (throwable == null) {
             responseFuture.complete(this);
         } else {
-            LOGGER.log(Level.FINER, throwable, () -> log("Response completion failed!"));
+            LOGGER.finer(() -> log("Response completion failed %s", throwable));
             internallyClosed.set(true);
             responseFuture.completeExceptionally(throwable);
         }
@@ -248,7 +259,7 @@ class BareResponseImpl implements BareResponse {
 
             if (!requestContentConsumed.getAsBoolean()) {
                 // the request content wasn't read, close the connection once the content is fully written.
-                LOGGER.finer(() -> log("Request content not fully read; trying to keep the connection; keep-alive: true"));
+                LOGGER.finer(() -> log("Request content not fully read with keep-alive: true", ctx));
 
                 // if content is not consumed, we need to trigger next chunk read in order to not get stuck forever; the
                 // connection will be closed in the ForwardingHandler in case there is more than just small amount of data
@@ -256,8 +267,7 @@ class BareResponseImpl implements BareResponse {
             }
 
         } else {
-            LOGGER.finest(() -> log("Closing with an empty buffer; keep-alive: " + keepAlive));
-
+            LOGGER.finest(() -> log("Closing with an empty buffer; keep-alive: false", ctx));
             writeLastContent(throwable, ChannelFutureListener.CLOSE);
         }
     }
@@ -288,22 +298,32 @@ class BareResponseImpl implements BareResponse {
             initWriteResponse();
         }
 
-        LastHttpContent lastHttpContent = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER);
-
-        if (chunked) {
-            if (throwable != null) {
-                lastHttpContent.trailingHeaders()
-                        .set(Response.STREAM_STATUS, 500)
-                        .set(Response.STREAM_RESULT, throwable);
-                LOGGER.log(Level.SEVERE, throwable, () -> log("Upstream error while sending response."));
+        // Writing an empty buffer in HTTP/2 response may result in "stream no longer exist"
+        // error. With HTTP/2, we complete the response without writing an empty buffer.
+        if (http2StreamId != null) {
+            ctx.flush();        // flushes the pipeline
+            ChannelFuture success = ctx.channel().newSucceededFuture();
+            try {
+                completeOnSuccessListener(throwable).operationComplete(success);
+                closeAction.operationComplete(success);
+            } catch (Exception e) {
+                LOGGER.severe(() -> log("Error while writing last content: %s", e));
             }
-
+        } else {
+            LastHttpContent lastHttpContent = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER);
+            if (chunked) {
+                if (throwable != null) {
+                    lastHttpContent.trailingHeaders()
+                            .set(Response.STREAM_STATUS, 500)
+                            .set(Response.STREAM_RESULT, throwable);
+                    LOGGER.severe(() -> log("Upstream error while sending response: %s", throwable));
+                }
+            }
+            ctx.writeAndFlush(lastHttpContent)
+                    .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
+                    .addListener(completeOnSuccessListener(throwable))
+                    .addListener(closeAction);
         }
-
-        ctx.writeAndFlush(lastHttpContent)
-                .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
-                .addListener(completeOnSuccessListener(throwable))
-                .addListener(closeAction);
     }
 
     private GenericFutureListener<Future<? super Void>> completeOnFailureListener(String message) {
@@ -318,7 +338,7 @@ class BareResponseImpl implements BareResponse {
         return future -> {
             if (future.isSuccess()) {
                 completeResponseFuture(throwable);
-                LOGGER.finest(() -> log("Last http message flushed."));
+                LOGGER.finest(() -> log("Last http message flushed", ctx));
             }
         };
     }
@@ -406,7 +426,7 @@ class BareResponseImpl implements BareResponse {
             httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
         }
 
-        LOGGER.finest(() -> log("Sending data chunk on event loop thread."));
+        LOGGER.finest(() -> log("Sending data chunk on event loop thread", ctx));
 
         ChannelFuture channelFuture;
         if (data.flush()) {
@@ -426,15 +446,12 @@ class BareResponseImpl implements BareResponse {
                         }
                     });
                     data.release();
-                    LOGGER.finest(() -> log("Data chunk sent with result: " + future.isSuccess()));
+                    LOGGER.finest(() -> log("Data chunk sent with result: %s", future.isSuccess()));
                 })
                 .addListener(completeOnFailureListener("Failure when sending a content!"))
                 .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
     }
 
-    private String log(String s) {
-        return "(reqID: " + requestId + ") " + s;
-    }
 
     @Override
     public void onError(Throwable thr) {
@@ -467,5 +484,21 @@ class BareResponseImpl implements BareResponse {
     @Override
     public long requestId() {
         return requestId;
+    }
+
+    /**
+     * Log message formatter for this class.
+     *
+     * @param template template suffix.
+     * @param params template suffix params.
+     * @return string to log.
+     */
+    private String log(String template, Object... params) {
+        List<Object> list = new ArrayList<>(params.length + 3);
+        list.add(System.identityHashCode(this));
+        list.add(ctx != null ? System.identityHashCode(ctx.channel()) : "N/A");
+        list.add(http2StreamId != null ? http2StreamId : "N/A");
+        list.addAll(Arrays.asList(params));
+        return String.format("[Response: %s, Channel: %s, StreamID: %s] " + template, list.toArray());
     }
 }
