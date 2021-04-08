@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,24 +20,24 @@
 :h1Prefix: SE
 :description: Helidon Reactive WebServer Jackson support
 :keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
+:feature-name: Jackson Support
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
-== Jackson Support
-The WebServer supports
-https://github.com/FasterXML/jackson#jackson-project-home-github[Jackson].
-When this support is enabled, Java objects will be serialized to and
-deserialized from JSON automatically using Jackson.
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
-=== Maven Coordinates
-
-Declare the following dependency in your project:
-
-[source,xml,subs="verbatim,attributes"]
+[source,xml]
 ----
 <dependency>
     <groupId>io.helidon.media</groupId>
     <artifactId>helidon-media-jackson</artifactId>
 </dependency>
 ----
+
+== Jackson Support
+The WebServer supports
+https://github.com/FasterXML/jackson#jackson-project-home-github[Jackson].
+When this support is enabled, Java objects will be serialized to and
+deserialized from JSON automatically using Jackson.
 
 === Usage
 To enable Jackson support, first create and register a

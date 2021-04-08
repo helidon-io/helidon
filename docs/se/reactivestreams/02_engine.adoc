@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 :h1Prefix: SE
 :description: Dependency-less reactive operators
 :keywords: helidon, reactive, streams, multi, single
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: Reactive Engine
 
-==  Helidon Reactive Engine
-include::../../shared/reactivestreams/02_engine.adoc[lines=21..]
+include::../../shared/reactivestreams/02_engine.adoc[]

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,6 +20,22 @@
 :h1Prefix: SE
 :description: Helidon Security introduction
 :keywords: helidon, security
+:feature-name: Security
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+
+Helidon Security provides authentication, authroization and auditing for your Helidon application.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.security</groupId>
+    <artifactId>helidon-security</artifactId>
+</dependency>
+----
+
+== Overview
 
 Helidon Security provides the following features
 
@@ -168,17 +184,4 @@ Security security = Security.builder()
                 .addProvider()
                 .config(config)
                 .build();
-----
-
-== Maven Coordinates
-
-You need to declare the following dependency in your project:
-
-[source,xml]
-.Maven Dependency
-----
-<dependency>
-    <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security</artifactId>
-</dependency>
 ----
