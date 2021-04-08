@@ -655,6 +655,11 @@
                     <artifactId>helidon-maven-plugin</artifactId>
                     <version>${version.plugin.helidon-build-tools}</version>
                 </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-copyright-plugin</artifactId>
+                    <version>${version.plugin.helidon-build-tools}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -1290,24 +1295,11 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.glassfish.copyright</groupId>
-                        <artifactId>glassfish-copyright-maven-plugin</artifactId>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-copyright-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>print-copyright</id>
-                                <goals>
-                                    <goal>copyright</goal>
-                                </goals>
-                                <phase>validate</phase>
-                                <configuration>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>check-copyright</id>
+                                <id>copyright</id>
                                 <goals>
                                     <goal>check</goal>
                                 </goals>
@@ -1317,6 +1309,7 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                                     <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
                                     <!--suppress UnresolvedMavenProperty -->
                                     <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
+                                    <failOnError>true</failOnError>
                                 </configuration>
                             </execution>
                         </executions>
