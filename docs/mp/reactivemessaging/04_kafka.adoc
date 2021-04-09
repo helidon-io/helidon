@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,22 +22,22 @@
 :description: Reactive Messaging support for Kafka in Helidon MP
 :keywords: helidon, mp, messaging, kafka
 :h1Prefix: MP
+:feature-name: Reactive Kafka Connector
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:microprofile-bundle: false
 
-== Reactive Kafka Connector
-Connecting streams to Kafka with Reactive Messaging couldn't be easier.
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
-.Dependencies needed:
 ----
-<dependency>
-    <groupId>io.helidon.microprofile.messaging</groupId>
-    <artifactId>helidon-microprofile-messaging</artifactId>
-</dependency>
 <dependency>
     <groupId>io.helidon.messaging.kafka</groupId>
     <artifactId>helidon-messaging-kafka</artifactId>
 </dependency>
 ----
+
+== Reactive Kafka Connector
+Connecting streams to Kafka with Reactive Messaging couldn't be easier.
 
 [source,yaml]
 .Example of connector config:

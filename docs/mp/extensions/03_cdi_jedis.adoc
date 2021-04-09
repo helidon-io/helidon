@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,14 +29,14 @@
 :jedis-project-url: https://github.com/xetorthio/jedis
 :commons-pool-baseobjectpoolconfig-api-url: https://commons.apache.org/proper/commons-pool/apidocs/org/apache/commons/pool2/impl/BaseObjectPoolConfig.html
 :commons-pool-genericobjectpoolconfig-api-url: https://commons.apache.org/proper/commons-pool/apidocs/org/apache/commons/pool2/impl/GenericObjectPoolConfig.html
+:feature-name: Jedis Support
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 This link:{cdi-extension-api-url}[CDI portable extension] provides support for
  injecting link:{jedis-project-url}[Jedis clients] in your Helidon
  MicroProfile applications.
 
-== Prerequisites
-
-Declare the following dependency in your project:
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
 ----

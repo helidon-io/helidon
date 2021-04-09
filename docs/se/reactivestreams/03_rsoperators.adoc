@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 :spec-name: MicroProfile Reactive Streams Operators
 :description: {spec-name} support in Helidon SE
 :keywords: helidon, se, microprofile, reactivestreams
+:feature-name: Reactive Streams
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
-== Reactive Streams Operators
-include::../../shared/reactivestreams/03_rsoperators.adoc[lines=21..]
+include::../../shared/reactivestreams/03_rsoperators.adoc[]

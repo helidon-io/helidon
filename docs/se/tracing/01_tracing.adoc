@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,7 +19,19 @@
 = Tracing
 :h1Prefix: SE
 :description: Helidon Tracing Support
-= :keywords: helidon, tracing
+:feature-name: Tracing
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:keywords: helidon, tracing
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.tracing</groupId>
+    <artifactId>helidon-tracing</artifactId>
+</dependency>
+----
 
 == Tracing Support
 Helidon includes support for tracing through the `https://opentracing.io/[OpenTracing]` APIs.
@@ -29,19 +41,7 @@ Support for specific tracers is abstracted. Your application can depend on
 the abstraction layer and provide a specific tracer implementation as a Java
 `ServiceLoader` service.
 
-
 == Configuring Tracing with Helidon SE
-
-Declare the following dependency in your project to use the tracer abstraction:
-
-[source,xml]
-.Tracer Abstraction
-----
-<dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing</artifactId>
-</dependency>
-----
 
 === Configuring Tracing with WebServer
 

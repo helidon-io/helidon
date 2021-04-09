@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -35,10 +35,24 @@
 :config-table-methods-column-header: Method
 :cors-config-table-exclude-keys:
 :common-page-prefix-inc: ../../shared/cors/common_shared.adoc
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: CORS
 
 Every Helidon SE application explicitly creates routing rules that govern how Helidon delivers each incoming
  request to the code that needs to respond. The Helidon CORS SE API provides a simple way to include CORS into
  the routing rules that you construct for your application.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+// tag::actual-cors-dependency[]
+[source,xml,subs="attributes+"]
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-cors</artifactId>
+</dependency>
+----
+// end::actual-cors-dependency[]
 
 == Understanding the Helidon SE CORS API
 
@@ -67,26 +81,10 @@ endpoint code for the resource.
 
 To add CORS support to your Helidon SE application:
 
-. Determine the type of cross origin sharing you want to allow for each endpoint in your
+1. Determine the type of cross origin sharing you want to allow for each endpoint in your
 application.
-. {blank}
-+
---
-Add a dependency on the Helidon {helidon-variant} CORS artifact to your Maven `pom.xml` file.
-
-include::{common-page-prefix-inc}[tag=add-cors-dependency]
-
-// tag::actual-cors-dependency[]
-[source,xml,subs="attributes+"]
-----
-<dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-cors</artifactId>
-</dependency>
-----
-// end::actual-cors-dependency[]
---
-. Modify how your application constructs routing rules so they include CORS as described in the following sections.
+2. Add a dependency on the Helidon {helidon-variant} CORS <<Maven Coordinates, artifact>> to your Maven `pom.xml` file.
+3. Modify how your application constructs routing rules so they include CORS as described in the following sections.
 
 == Adding CORS Support in Your Helidon SE Application [[adding-cors-support]]
 Because Helidon SE does not use annotation processing to identify endpoints, you need to

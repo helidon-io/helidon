@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,16 +21,15 @@
 :pagename: grpc-microprofile-clients
 :description: Building Helidon gRPC MicroProfile Clients
 :keywords: helidon, grpc, microprofile, micro-profile
+:feature-name: gRPC MicroProfile Clients
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:microprofile-bundle: false
 
 Building Java gRPC clients using the Helidon MP gRPC APIs is very simple and removes a lot of the boiler plate code typically
 associated to more traditional approaches to writing gRPC Java clients. At it simplest a gRPC Java client can be written using
 nothing more than a suitably annotated interface.
 
-
-== Maven Coordinates
-
-The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
-should declare dependency management for Helidon applications. Then declare the following dependency in your project:
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
 ----
