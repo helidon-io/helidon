@@ -20,4 +20,5 @@ module io.helidon.metrics.traceexemplar {
     requires io.helidon.common.context;
     requires io.opentracing.api;
 
+    provides io.helidon.metrics.ExemplarService with io.helidon.metrics.exemplartrace.TraceExemplarService;
 }
