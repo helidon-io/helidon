@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -160,3 +160,31 @@ client-trust-all:
         resource:
           resource-path: "client-no-ca/client.p12"
 
+server-second-valid:
+  tls:
+    client-auth: "REQUIRE"
+    trust:
+      keystore:
+        passphrase: "password"
+        trust-store: true
+        resource:
+          resource-path: "second-valid/server.p12"
+    private-key:
+      keystore:
+        passphrase: "password"
+        resource:
+          resource-path: "second-valid/server.p12"
+
+client-second-valid:
+  tls:
+    server:
+      keystore:
+        passphrase: "password"
+        trust-store: true
+        resource:
+          resource-path: "second-valid/client.p12"
+    client:
+      keystore:
+        passphrase: "password"
+        resource:
+          resource-path: "second-valid/client.p12"
