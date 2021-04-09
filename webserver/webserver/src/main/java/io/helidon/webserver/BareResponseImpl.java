@@ -25,7 +25,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
@@ -299,28 +298,39 @@ class BareResponseImpl implements BareResponse {
             initWriteResponse();
         }
 
-        LastHttpContent lastHttpContent = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER);
-
-        if (chunked) {
-            if (throwable != null) {
-                lastHttpContent.trailingHeaders()
-                        .set(Response.STREAM_STATUS, 500)
-                        .set(Response.STREAM_RESULT, throwable);
-                LOGGER.log(Level.SEVERE, throwable, () -> log("Upstream error while sending response."));
+        // Writing an empty buffer in HTTP/2 response may result in "stream no longer exist"
+        // error. With HTTP/2, we complete the response without writing an empty buffer.
+        if (http2StreamId != null) {
+            ctx.flush();        // flushes the pipeline
+            ChannelFuture success = ctx.channel().newSucceededFuture();
+            try {
+                completeOnSuccessListener(throwable).operationComplete(success);
+                closeAction.operationComplete(success);
+            } catch (Exception e) {
+                LOGGER.severe(() -> log("Error while writing last content: %s", e));
             }
-
+        } else {
+            LastHttpContent lastHttpContent = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER);
+            if (chunked) {
+                if (throwable != null) {
+                    lastHttpContent.trailingHeaders()
+                            .set(Response.STREAM_STATUS, 500)
+                            .set(Response.STREAM_RESULT, throwable);
+                    LOGGER.severe(() -> log("Upstream error while sending response: %s", throwable));
+                }
+            }
+            ctx.writeAndFlush(lastHttpContent)
+                    .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
+                    .addListener(completeOnSuccessListener(throwable))
+                    .addListener(closeAction);
         }
-
-        ctx.writeAndFlush(lastHttpContent)
-                .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
-                .addListener(completeOnSuccessListener(throwable))
-                .addListener(closeAction);
     }
 
     private GenericFutureListener<Future<? super Void>> completeOnFailureListener(String message) {
         return future -> {
             if (!future.isSuccess()) {
                 completeResponseFuture(new IllegalStateException(message, future.cause()));
+                LOGGER.finest(() -> log("Failure listener: " + future.cause()));
             }
         };
     }

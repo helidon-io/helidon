@@ -17,7 +17,6 @@
 package io.helidon.webserver;
 
 import java.lang.ref.ReferenceQueue;
-import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,6 +52,7 @@ import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
+import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
 
 import static io.helidon.webserver.HttpInitializer.CERTIFICATE_NAME;
@@ -369,8 +369,8 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         LOGGER.fine(() -> log("Exception caught: %s", ctx, cause.toString()));
 
         // We ignore stream resets (RST_STREAM) from HTTP/2
-        if ((cause instanceof SocketException || cause instanceof Http2Exception.StreamException)
-                && cause.toString().contains("reset")) {
+        if (cause instanceof Http2Exception.StreamException
+                && ((Http2Exception.StreamException) cause).error() == Http2Error.CANCEL) {
             return;     // no action
         }
 
