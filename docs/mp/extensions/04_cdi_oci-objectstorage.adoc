@@ -30,9 +30,7 @@ This link:{cdi-extension-api-url}[CDI portable extension] provides support for
  injecting an link:{oci-objstore-url}[Oracle Cloud Infrastructure Object Storage client]
  in your Helidon MicroProfile applications.
 
-== Prerequisites
-
-Declare the following dependency in your project:
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
 ----
