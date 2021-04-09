@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@
 :cdi-extension-api-url: https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi
 :oci-objstore-url: https://docs.cloud.oracle.com/iaas/Content/Object/Concepts/objectstorageoverview.htm
 :oci-javasdk-url: https://docs.cloud.oracle.com/iaas/Content/API/SDKDocs/javasdk.htm
+:feature-name: OCI Object Storage Support
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 This link:{cdi-extension-api-url}[CDI portable extension] provides support for
  injecting an link:{oci-objstore-url}[Oracle Cloud Infrastructure Object Storage client]
