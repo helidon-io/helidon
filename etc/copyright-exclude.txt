@@ -47,3 +47,7 @@ src/main/java/org/jboss/weld/bean/proxy/ProxyFactory.java
 etc/THIRD_PARTY_LICENSES.xml
 etc/HELIDON_THIRD_PARTY_LICENSES.xml
 etc/dependency-check-suppression.xml
+#
+# Exclude all service loader files, as these are just a list of classes
+#
+META-INF/services/
