@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -399,7 +399,7 @@ otherwise Helidon will generate an error during startup as shown below.  This is
 [source,bash]
 .Build then start the application and you will see the following output:
 ----
-Exception in thread "main" io.helidon.config.ConfigException: Cannot load cipherText from mandatory source FileConfig[missing-file]. File `missing-file` not found.
+Exception in thread "main" io.helidon.config.ConfigException: Cannot load data from mandatory source FileConfig[missing-file]. File `missing-file` not found.
 ----
 
 To fix this, use the `optional` method as shown below, then rerun the test.
@@ -850,7 +850,7 @@ kubectl create configmap helidon-configmap --from-file config-file.properties
 kubectl get configmap helidon-configmap -o yaml
 ...
 apiVersion: v1
-cipherText:
+data:
   config-file.properties: |   // <1>
     app.greeting=HelloFromConfigFile   // <2>
 kind: ConfigMap
