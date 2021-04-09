@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,24 @@ pipeline {
         stage('checkstyle'){
           steps {
             sh './etc/scripts/checkstyle.sh'
+          }
+        }
+        stage('integration-tests') {
+          stages {
+            stage('test-vault') {
+              agent {
+                kubernetes {
+                  inheritFrom 'k8s-slave'
+                  yamlFile 'etc/pods/vault.yaml'
+                  yamlMergeStrategy merge()
+                }
+              }
+              steps {
+                sh './etc/scripts/test-integ-vault.sh'
+                archiveArtifacts artifacts: "tests/integration/**/target/failsafe-reports/*.txt"
+                junit testResults: 'tests/integration/**/target/failsafe-reports/*.xml'
+              }
+            }
           }
         }
       }

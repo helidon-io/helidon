@@ -17,9 +17,12 @@
 module io.helidon.integrations.vault.cdi {
     requires java.logging;
 
-    requires jakarta.enterprise.cdi.api;
-    requires io.helidon.integrations.vault;
     requires jakarta.inject.api;
+    requires jakarta.enterprise.cdi.api;
+
+    requires microprofile.config.api;
+
+    requires io.helidon.integrations.vault;
     requires io.helidon.common.serviceloader;
     requires io.helidon.microprofile.cdi;
 
