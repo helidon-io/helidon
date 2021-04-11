@@ -49,20 +49,20 @@ public class JdbcStatementParserTest {
     
     /**
      * Test simple SQL statement with parameters.
-     * Parameters contain both letters and numbers in proper order.
+     * Parameters names follow the same rules for identifiers defined in Section 4.4.1 of the JPA 2.0 specification
      */
     @Test
     void testStatementWithParameters() {
         String stmtIn =
                 "SELECT t.*, 'first' FROM table t\r\n" +
-                "  WHERE name = :n4m3\n" +
+                "  WHERE name = :my_n4m3\n" +
                 "   AND age > :ag3";
         String stmtExp =
                 "SELECT t.*, 'first' FROM table t\r\n" +
                 "  WHERE name = ?\n" +
                 "   AND age > ?";
         List<String> namesExp = new ArrayList<>(2);
-        namesExp.add("n4m3");
+        namesExp.add("my_n4m3");
         namesExp.add("ag3");
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();

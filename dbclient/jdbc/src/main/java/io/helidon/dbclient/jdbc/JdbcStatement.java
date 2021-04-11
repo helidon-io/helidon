@@ -208,16 +208,16 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          * Character classes used in state machine.
          */
         private enum CharClass {
-            LETTER,       // Letter (any unicode letter)
-            NUMBER,       // Number (any unicode digit)
-            LF,           // Line feed / new line (\n), terminates line alone or in CR LF sequence
-            CR,           // Carriage return (\r), terminates line in CR LF sequence
-            APOSTROPHE,   // Single quote ('), begins string in SQL
-            STAR,         // Star (*), part of multiline comment beginning "/*" and ending "*/" sequence
-            DASH,         // Dash (-), part of single line comment beginning sequence "--"
-            SLASH,        // Slash (/), part of multiline comment beginning "/*" and ending "*/" sequence
-            COLON,        // Colon (:), begins named parameter
-            OTHER;        // Other characters
+            IDENTIFIER_START,   // Any character for which the method Character.isJavaIdentifierStart returns true
+            IDENTIFIER_PART,    // Any character for which the method Character.isJavaIdentifierPart returns true
+            LF,                 // Line feed / new line (\n), terminates line alone or in CR LF sequence
+            CR,                 // Carriage return (\r), terminates line in CR LF sequence
+            APOSTROPHE,         // Single quote ('), begins string in SQL
+            STAR,               // Star (*), part of multiline comment beginning "/*" and ending "*/" sequence
+            DASH,               // Dash (-), part of single line comment beginning sequence "--"
+            SLASH,              // Slash (/), part of multiline comment beginning "/*" and ending "*/" sequence
+            COLON,              // Colon (:), begins named parameter
+            OTHER;              // Other characters
 
             /**
              * Returns character class corresponding to provided character.
@@ -235,9 +235,9 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                     case '/': return SLASH;
                     case ':': return COLON;
                     default:
-                        return Character.isLetter(c)
-                                ? LETTER
-                                : (Character.isDigit(c) ? NUMBER : OTHER);
+                        return Character.isJavaIdentifierStart(c)
+                                ? IDENTIFIER_START
+                                : (Character.isJavaIdentifierPart(c) ? IDENTIFIER_PART : OTHER);
                 }
             }
 
@@ -263,8 +263,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
             private static final State[][] TRANSITION = {
                 // Transitions from STATEMENT state
                 {
-                    STATEMENT,           // LETTER: regular part of the statement, keep processing it
-                    STATEMENT,           // NUMBER: regular part of the statement, keep processing it
+                    STATEMENT,           // IDENTIFIER_START: regular part of the statement, keep processing it
+                    STATEMENT,           // IDENTIFIER_PART: regular part of the statement, keep processing it
                     STATEMENT,           // LF: regular part of the statement, keep processing it
                     STATEMENT,           // CR: regular part of the statement, keep processing it
                     STRING,              // APOSTROPHE: beginning of SQL string processing, switch to STRING state
@@ -278,8 +278,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                 },
                 // Transitions from STRING state
                 {
-                    STRING,              // LETTER: regular part of the SQL string, keep processing it
-                    STRING,              // NUMBER: regular part of the SQL string, keep processing it
+                    STRING,              // IDENTIFIER_START: regular part of the SQL string, keep processing it
+                    STRING,              // IDENTIFIER_PART: regular part of the SQL string, keep processing it
                     STRING,              // LF: regular part of the SQL string, keep processing it
                     STRING,              // CR: regular part of the SQL string, keep processing it
                     STATEMENT,           // APOSTROPHE: end of SQL string processing, go back to STATEMENT state
@@ -291,8 +291,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                 },
                 // Transitions from COLON state
                 {
-                    PARAMETER,           // LETTER: first character of named parameter, switch to PARAMETER state
-                    STATEMENT,           // NUMBER: can't be first character of named parameter, go back to STATEMENT state
+                    PARAMETER,           // IDENTIFIER_START: first character of named parameter, switch to PARAMETER state
+                    STATEMENT,           // IDENTIFIER_PART: can't be first character of named parameter, go back to STATEMENT state
                     STATEMENT,           // LF: can't be first character of named parameter, go back to STATEMENT state
                     STATEMENT,           // CR: can't be first character of named parameter, go back to STATEMENT state
                     STRING,              // APOSTROPHE: not a named parameter but beginning of SQL string processing,
@@ -308,8 +308,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                 },
                 // Transitions from PARAMETER state
                 {
-                    PARAMETER,           // LETTER: next character of named parameter, keep processing it
-                    PARAMETER,           // NUMBER: next character of named parameter, keep processing it
+                    PARAMETER,           // IDENTIFIER_START: next character of named parameter, keep processing it
+                    PARAMETER,           // IDENTIFIER_PART: next character of named parameter, keep processing it
                     STATEMENT,           // LF: can't be next character of named parameter, go back to STATEMENT state
                     STATEMENT,           // CR: can't be next character of named parameter, go back to STATEMENT state
                     STRING,              // APOSTROPHE: end of named parameter and beginning of SQL string processing,
@@ -325,8 +325,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                 },
                 // Transitions from MULTILN_COMMENT_BG state
                 {
-                    STATEMENT,           // LETTER: not starting sequence of multi line comment, go back to STATEMENT state
-                    STATEMENT,           // NUMBER: not starting sequence of multi line comment, go back to STATEMENT state
+                    STATEMENT,           // IDENTIFIER_START: not starting sequence of multi line comment, go back to STATEMENT state
+                    STATEMENT,           // IDENTIFIER_PART: not starting sequence of multi line comment, go back to STATEMENT state
                     STATEMENT,           // LF: not starting sequence of multi line comment, go back to STATEMENT state
                     STATEMENT,           // CR: not starting sequence of multi line comment, go back to STATEMENT state
                     STRING,              // APOSTROPHE: not starting sequence of multi line comment but beginning of SQL
@@ -343,8 +343,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                 },
                 // Transitions from MULTILN_COMMENT_END state
                 {
-                    MULTILN_COMMENT,     // LETTER: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
-                    MULTILN_COMMENT,     // NUMBER: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
+                    MULTILN_COMMENT,     // IDENTIFIER_START: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
+                    MULTILN_COMMENT,     // IDENTIFIER_PART: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
                     MULTILN_COMMENT,     // LF: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
                     MULTILN_COMMENT,     // CR: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
                     MULTILN_COMMENT,     // APOSTROPHE: not ending sequence of multi line comment,
@@ -359,8 +359,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                 },
                 // Transitions from MULTILN_COMMENT state
                 {
-                    MULTILN_COMMENT,     // LETTER: regular multi line comment, keep processing it
-                    MULTILN_COMMENT,     // NUMBER: regular multi line comment, keep processing it
+                    MULTILN_COMMENT,     // IDENTIFIER_START: regular multi line comment, keep processing it
+                    MULTILN_COMMENT,     // IDENTIFIER_PART: regular multi line comment, keep processing it
                     MULTILN_COMMENT,     // LF: regular multi line comment, keep processing it
                     MULTILN_COMMENT,     // CR: regular multi line comment, keep processing it
                     MULTILN_COMMENT,     // APOSTROPHE: regular multi line comment, keep processing it
@@ -373,8 +373,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                 },
                 // Transitions from SINGLELN_COMMENT_BG state
                 {
-                    STATEMENT,           // LETTER: not starting sequence of single line comment, go back to STATEMENT state
-                    STATEMENT,           // NUMBER: not starting sequence of single line comment, go back to STATEMENT state
+                    STATEMENT,           // IDENTIFIER_START: not starting sequence of single line comment, go back to STATEMENT state
+                    STATEMENT,           // IDENTIFIER_PART: not starting sequence of single line comment, go back to STATEMENT state
                     STATEMENT,           // LF: not starting sequence of single line comment, go back to STATEMENT state
                     STATEMENT,           // CR: not starting sequence of single line comment, go back to STATEMENT state
                     STRING,              // APOSTROPHE: not starting sequence of single line comment but beginning of SQL
@@ -390,8 +390,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                 },
                 // Transitions from SINGLELN_COMMENT_END state
                 {
-                    SINGLELN_COMMENT,     // LETTER: not ending sequence of single line comment, go back to SINGLELN_COMMENT state
-                    SINGLELN_COMMENT,     // NUMBER: not ending sequence of single line comment, go back to SINGLELN_COMMENT state
+                    SINGLELN_COMMENT,     // IDENTIFIER_START: not ending sequence of single line comment, go back to SINGLELN_COMMENT state
+                    SINGLELN_COMMENT,     // IDENTIFIER_PART: not ending sequence of single line comment, go back to SINGLELN_COMMENT state
                     STATEMENT,            // LF: end of single line comment, switch to STATEMENT state
                     SINGLELN_COMMENT_END, // CR: not ending sequence of single line comment but possible ending sequence
                                           //     of next single line comment, retry end of single line comment processing
@@ -405,8 +405,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                 },
                 // Transitions from SINGLELN_COMMENT state
                 {
-                    SINGLELN_COMMENT,     // LETTER: regular single line comment, keep processing it
-                    SINGLELN_COMMENT,     // NUMBER: regular single line comment, keep processing it
+                    SINGLELN_COMMENT,     // IDENTIFIER_START: regular single line comment, keep processing it
+                    SINGLELN_COMMENT,     // IDENTIFIER_PART: regular single line comment, keep processing it
                     STATEMENT,            // LF: end of single line comment, switch to STATEMENT state
                     SINGLELN_COMMENT_END, // CR: possible beginning of ending sequence of multi line comment,
                                           //     switch to SINGLELN_COMMENT_END state
@@ -426,8 +426,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
         private static final Action[][] ACTION = {
             // Actions performed on transitions from STATEMENT state
             {
-                Parser::copyChar,  // LETTER: copy regular statement character to output
-                Parser::copyChar,  // NUMBER: copy regular statement character to output
+                Parser::copyChar,  // IDENTIFIER_START: copy regular statement character to output
+                Parser::copyChar,  // IDENTIFIER_PART: copy regular statement character to output
                 Parser::copyChar,  // LF: copy regular statement character to output
                 Parser::copyChar,  // CR: copy regular statement character to output
                 Parser::copyChar,  // APOSTROPHE: copy SQL string character to output
@@ -439,8 +439,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
             },
             // Actions performed on transitions from STRING state
             {
-               Parser::copyChar, // LETTER: copy SQL string character to output
-               Parser::copyChar, // NUMBER: copy SQL string character to output
+               Parser::copyChar, // IDENTIFIER_START: copy SQL string character to output
+               Parser::copyChar, // IDENTIFIER_PART: copy SQL string character to output
                Parser::copyChar, // LF: copy SQL string character to output
                Parser::copyChar, // CR: copy SQL string character to output
                Parser::copyChar, // APOSTROPHE: copy SQL string character to output
@@ -452,8 +452,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
            },
            // Actions performed on transitions from COLON state
            {
-               Parser::setFirstParamChar,   // LETTER: set first parameter character
-               Parser::addColonAndCopyChar, // NUMBER: not a parameter, add delayed colon and copy current statement character
+               Parser::setFirstParamChar,   // IDENTIFIER_START: set first parameter character
+               Parser::addColonAndCopyChar, // IDENTIFIER_PART: not a parameter, add delayed colon and copy current statement character
                                             //         to output
                Parser::addColonAndCopyChar, // LF: not a parameter, add delayed colon and copy current statement character
                                             //     to output
@@ -474,8 +474,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
            },
            // Actions performed on transitions from PARAMETER state
            {
-               Parser::setNextParamChar,       // LETTER: set next parameter character
-               Parser::setNextParamChar,       // NUMBER: set next parameter character
+               Parser::setNextParamChar,       // IDENTIFIER_START: set next parameter character
+               Parser::setNextParamChar,       // IDENTIFIER_PART: set next parameter character
                Parser::finishParamAndCopyChar, // LF: finish parameter processing and copy current character as part
                                                //     of regular statement
                Parser::finishParamAndCopyChar, // CR: finish parameter processing and copy current character as part
@@ -495,8 +495,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
            },
            // Actions performed on transitions from MULTILN_COMMENT_BG state
            {
-               Parser::copyChar,  // LETTER: copy regular statement character to output
-               Parser::copyChar,  // NUMBER: copy regular statement character to output
+               Parser::copyChar,  // IDENTIFIER_START: copy regular statement character to output
+               Parser::copyChar,  // IDENTIFIER_PART: copy regular statement character to output
                Parser::copyChar,  // LF: copy regular statement character to output
                Parser::copyChar,  // CR: copy regular statement character to output
                Parser::copyChar,  // APOSTROPHE: copy SQL string character to output
@@ -508,8 +508,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
            },
            // Actions performed on transitions from MULTILN_COMMENT_END state
            {
-               Parser::copyChar, // LETTER: copy multi line comment character to output
-               Parser::copyChar, // NUMBER: copy multi line comment character to output
+               Parser::copyChar, // IDENTIFIER_START: copy multi line comment character to output
+               Parser::copyChar, // IDENTIFIER_PART: copy multi line comment character to output
                Parser::copyChar, // LF: copy multi line comment character to output
                Parser::copyChar, // CR: copy multi line comment character to output
                Parser::copyChar, // APOSTROPHE: copy multi line comment character to output
@@ -521,8 +521,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
            },
            // Actions performed on transitions from MULTILN_COMMENT state
            {
-               Parser::copyChar, // LETTER: copy multi line comment character to output
-               Parser::copyChar, // NUMBER: copy multi line comment character to output
+               Parser::copyChar, // IDENTIFIER_START: copy multi line comment character to output
+               Parser::copyChar, // IDENTIFIER_PART: copy multi line comment character to output
                Parser::copyChar, // LF: copy multi line comment character to output
                Parser::copyChar, // CR: copy multi line comment character to output
                Parser::copyChar, // APOSTROPHE: copy multi line comment character to output
@@ -534,8 +534,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
            },
            // Actions performed on transitions from SINGLELN_COMMENT_BG state
            {
-               Parser::copyChar,  // LETTER: copy regular statement character to output
-               Parser::copyChar,  // NUMBER: copy regular statement character to output
+               Parser::copyChar,  // IDENTIFIER_START: copy regular statement character to output
+               Parser::copyChar,  // IDENTIFIER_PART: copy regular statement character to output
                Parser::copyChar,  // LF: copy regular statement character to output
                Parser::copyChar,  // CR: copy regular statement character to output
                Parser::copyChar,  // APOSTROPHE: copy SQL string character to output
@@ -547,8 +547,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
            },
            // Actions performed on transitions from SINGLELN_COMMENT_END state
            {
-               Parser::copyChar,  // LETTER: copy single line comment character to output
-               Parser::copyChar,  // NUMBER: copy single line comment character to output
+               Parser::copyChar,  // IDENTIFIER_START: copy single line comment character to output
+               Parser::copyChar,  // IDENTIFIER_PART: copy single line comment character to output
                Parser::copyChar,  // LF: copy single line comment character to output
                Parser::copyChar,  // CR: copy single line comment character to output
                Parser::copyChar,  // APOSTROPHE: copy single line comment character to output
@@ -560,8 +560,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
            },
            // Actions performed on transitions from SINGLELN_COMMENT state
            {
-               Parser::copyChar,  // LETTER: copy single line comment character to output
-               Parser::copyChar,  // NUMBER: copy single line comment character to output
+               Parser::copyChar,  // IDENTIFIER_START: copy single line comment character to output
+               Parser::copyChar,  // IDENTIFIER_PART: copy single line comment character to output
                Parser::copyChar,  // LF: copy single line comment character to output
                Parser::copyChar,  // CR: copy single line comment character to output
                Parser::copyChar,  // APOSTROPHE: copy single line comment character to output
