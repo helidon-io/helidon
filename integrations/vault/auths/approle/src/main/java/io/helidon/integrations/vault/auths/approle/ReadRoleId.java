@@ -47,7 +47,7 @@ public final class ReadRoleId {
             return builder().roleName(appRoleName);
         }
     }
-    
+
     /**
      * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
      */
@@ -58,16 +58,16 @@ public final class ReadRoleId {
             this.roleId = jsonObject.getJsonObject("data").getString("role_id");
         }
 
+        static Response create(JsonObject jsonObject) {
+            return new Response(jsonObject);
+        }
+
         /**
          * Role ID read from the Vault.
          * @return role ID
          */
         public String roleId() {
             return roleId;
-        }
-
-        static Response create(JsonObject jsonObject) {
-            return new Response(jsonObject);
         }
     }
 }

@@ -25,13 +25,14 @@ import java.lang.annotation.Target;
 /**
  * Customize the mount path of a secrets engine.
  * <p>
- * This annotation is optional, by default the default path of the engine is used.
+ * This annotation is optional, by default the default path of the engine/auth method is used.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 public @interface VaultPath {
     /**
-     * Custom mount path
+     * Custom mount path.
+     *
      * @return path
      */
     String value();

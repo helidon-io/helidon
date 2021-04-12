@@ -79,6 +79,12 @@ public interface Sys {
                                      .path(path));
     }
 
+    /**
+     * Disable (unmount) a secrets engine.
+     *
+     * @param request disable engine request
+     * @return disable engine response
+     */
     DisableEngine.Response disableEngine(DisableEngine.Request request);
 
     /**
@@ -111,6 +117,12 @@ public interface Sys {
                                    .path(path));
     }
 
+    /**
+     * Disable an authentication method.
+     *
+     * @param request disable authentication method request
+     * @return disable authentication method response
+     */
     DisableAuth.Response disableAuth(DisableAuth.Request request);
 
     /**
@@ -124,6 +136,12 @@ public interface Sys {
         return createPolicy(CreatePolicy.Request.create(name, policy));
     }
 
+    /**
+     * Create a policy.
+     *
+     * @param request create a policy request
+     * @return create policy response
+     */
     CreatePolicy.Response createPolicy(CreatePolicy.Request request);
 
     /**
@@ -136,5 +154,11 @@ public interface Sys {
         return deletePolicy(DeletePolicy.Request.create(name));
     }
 
+    /**
+     * Delete a policy.
+     *
+     * @param request delete policy request
+     * @return delete policy response
+     */
     DeletePolicy.Response deletePolicy(DeletePolicy.Request request);
 }

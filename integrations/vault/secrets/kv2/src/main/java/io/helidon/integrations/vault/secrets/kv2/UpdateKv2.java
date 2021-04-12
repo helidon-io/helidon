@@ -26,7 +26,7 @@ import io.helidon.integrations.vault.VaultRequest;
 import io.helidon.integrations.vault.VaultResponse;
 
 /**
- * request and response.
+ * Key/Value Version 2 Secret request and response.
  */
 public final class UpdateKv2 {
     private UpdateKv2() {
@@ -53,20 +53,45 @@ public final class UpdateKv2 {
             return new Request();
         }
 
+        /**
+         * New secret values for this update request.
+         *
+         * @param values values to configure, these replace the current values
+         * @return updated request
+         */
         public Request secretValues(Map<String, String> values) {
             values.forEach(this::addSecretValue);
             return this;
         }
 
+        /**
+         * Add a secret value to the map of secret values.
+         *
+         * @param key key of the value
+         * @param value value
+         * @return updated request
+         */
         public Request addSecretValue(String key, String value) {
             return addToObject("data", key, value);
         }
 
+        /**
+         * Path of the secret to update.
+         *
+         * @param path path of the secret
+         * @return updated request
+         */
         public Request path(String path) {
             this.path = path;
             return this;
         }
 
+        /**
+         * Expected version of the secret being updated.
+         *
+         * @param expectedVersion expected current version of the user
+         * @return updated request
+         */
         public Request expectedVersion(int expectedVersion) {
             if (expectedVersion == 0) {
                 throw new VaultApiException("Version 0 is reserved for create requests.");
@@ -97,6 +122,11 @@ public final class UpdateKv2 {
             return new Builder();
         }
 
+        /**
+         * Version of the updated secret.
+         *
+         * @return version
+         */
         public int version() {
             return version;
         }

@@ -20,7 +20,7 @@ import io.helidon.integrations.common.rest.ApiResponse;
 import io.helidon.integrations.vault.AuthMethod;
 
 /**
- * request and response.
+ * Enable Authentication Method request and response.
  */
 public final class EnableAuth {
     private EnableAuth() {
@@ -45,6 +45,13 @@ public final class EnableAuth {
             return new Request();
         }
 
+        /**
+         * Authentication method to enable.
+         * Custom path can be configured through {@link #path(String)}.
+         *
+         * @param auth authentication method to enable
+         * @return updated request
+         */
         public Request auth(AuthMethod<?> auth) {
             super.defaultPath(auth.defaultPath());
             return add("type", auth.type());

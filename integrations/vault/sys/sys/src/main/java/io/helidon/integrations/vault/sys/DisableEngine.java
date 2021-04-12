@@ -27,7 +27,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Disable Secrets Engine request and response.
  */
 public final class DisableEngine {
     private DisableEngine() {
@@ -54,10 +54,23 @@ public final class DisableEngine {
             return new Request();
         }
 
+        /**
+         * Secrets engine to disable.
+         * You can also just configure {@link #path(String)} to disable an engine
+         *
+         * @param engine engine to disable
+         * @return updated request
+         */
         public Request engine(Engine<?> engine) {
             return path(engine.defaultMount());
         }
 
+        /**
+         * Path of a secrets engine to disable.
+         *
+         * @param path path to disable
+         * @return updated request
+         */
         public Request path(String path) {
             this.path = path;
             return this;

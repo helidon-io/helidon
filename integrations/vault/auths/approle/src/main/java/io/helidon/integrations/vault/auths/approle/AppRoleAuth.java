@@ -26,9 +26,16 @@ import io.helidon.integrations.vault.VaultOptionalResponse;
  * Use {@link io.helidon.integrations.vault.auths.approle.AppRoleAuthRx} in reactive code.
  */
 public interface AppRoleAuth {
+    /**
+     * Create AppRole blocking API from its reactive counterpart.
+     *
+     * @param reactive AppRole reactive API
+     * @return AppRole blocking API
+     */
     static AppRoleAuth create(AppRoleAuthRx reactive) {
         return new AppRoleAuthImpl(reactive);
     }
+
     /**
      * Creates a new AppRole or updates an existing AppRole. There
      * can be one or more constraints enabled on the role. It is required to have at least one of them enabled while creating

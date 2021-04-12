@@ -20,20 +20,40 @@ import io.helidon.integrations.common.rest.ApiException;
 import io.helidon.integrations.common.rest.ApiResponse;
 import io.helidon.integrations.vault.VaultRequest;
 
+/**
+ * Delete Key request and response.
+ */
 public final class DeleteKey {
     private DeleteKey() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static final class Request extends VaultRequest<Request> {
         private String name;
 
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }
 
+        /**
+         * Create a request from key name.
+         *
+         * @param keyName name of the key to delete
+         * @return a new request
+         */
         public static Request create(String keyName) {
             return builder().name(keyName);
         }

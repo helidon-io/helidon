@@ -28,7 +28,7 @@ import io.helidon.integrations.vault.VaultResponse;
 import io.helidon.integrations.vault.VaultToken;
 
 /**
- * request and response.
+ * AppRole Login request and response.
  */
 public class Login {
     /**
@@ -113,18 +113,38 @@ public class Login {
             return new Builder();
         }
 
+        /**
+         * Token to use to invoke vault operations.
+         *
+         * @return vault token
+         */
         public VaultToken token() {
             return token;
         }
 
+        /**
+         * Accessor.
+         *
+         * @return accessor
+         */
         public String accessor() {
             return accessor;
         }
 
+        /**
+         * Token policies attached to the token.
+         *
+         * @return list of token policy names
+         */
         public List<String> tokenPolicies() {
             return tokenPolicies;
         }
 
+        /**
+         * Token metadata.
+         *
+         * @return metadata
+         */
         public Map<String, String> metadata() {
             return metadata;
         }

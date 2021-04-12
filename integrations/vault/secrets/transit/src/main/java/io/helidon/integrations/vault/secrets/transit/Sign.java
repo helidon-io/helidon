@@ -24,20 +24,66 @@ import io.helidon.integrations.common.rest.Base64Value;
 import io.helidon.integrations.vault.VaultRequest;
 import io.helidon.integrations.vault.VaultResponse;
 
+/**
+ * Sign request and response.
+ */
 public final class Sign {
     private Sign() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static class Request extends VaultRequest<Request> {
+        /**
+         * Hash algorithm {@value}.
+         *
+         * @see #hashAlgorithm(String)
+         */
         public static final String HASH_ALGORITHM_SHA2_224 = "sha2-224";
+        /**
+         * Hash algorithm {@value}.
+         *
+         * @see #hashAlgorithm(String)
+         */
         public static final String HASH_ALGORITHM_SHA2_256 = "sha2-256";
+        /**
+         * Hash algorithm {@value}.
+         *
+         * @see #hashAlgorithm(String)
+         */
         public static final String HASH_ALGORITHM_SHA2_384 = "sha2-384";
+        /**
+         * Hash algorithm {@value}.
+         *
+         * @see #hashAlgorithm(String)
+         */
         public static final String HASH_ALGORITHM_SHA2_512 = "sha2-512";
 
+        /**
+         * Signature algorithm {@value}.
+         *
+         * @see #signatureAlgorithm(String)
+         */
         public static final String SIGNATURE_ALGORITHM_PSS = "pss";
+        /**
+         * Signature algorithm {@value}.
+         *
+         * @see #signatureAlgorithm(String)
+         */
         public static final String SIGNATURE_ALGORITHM_PKCS1_V15 = "pkcs1v15";
 
+        /**
+         * Marshalling algorithm {@value}.
+         *
+         * @see #marshalingAlgorithm(String)
+         */
         public static final String MARSHALLING_ALGORITHM_ASN_1 = "asn1";
+        /**
+         * Marshalling algorithm {@value}.
+         *
+         * @see #marshalingAlgorithm(String)
+         */
         public static final String MARSHALLING_ALGORITHM_JWS = "jws";
 
         private String signatureKeyName;
@@ -45,6 +91,14 @@ public final class Sign {
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }
@@ -133,7 +187,7 @@ public final class Sign {
          * Base64 encoding instead of standard Base64-encoding.
          *
          * @param marshalingAlgorithm marshaling algorithm
-         * @return udpated request
+         * @return updated request
          */
         public Request marshalingAlgorithm(String marshalingAlgorithm) {
             return add("marshaling_algorithm", marshalingAlgorithm);
@@ -160,6 +214,9 @@ public final class Sign {
 
     }
 
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
     public static class Response extends VaultResponse {
         private final String signature;
 
@@ -173,6 +230,11 @@ public final class Sign {
             return new Builder();
         }
 
+        /**
+         * Signature string.
+         *
+         * @return signature as a string
+         */
         public String signature() {
             return signature;
         }

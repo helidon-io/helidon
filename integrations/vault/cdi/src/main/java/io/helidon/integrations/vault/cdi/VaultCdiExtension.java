@@ -42,11 +42,15 @@ import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.spi.InjectionProvider;
-import io.helidon.microprofile.cdi.BuildTimeStart;
 import io.helidon.microprofile.cdi.RuntimeStart;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
+/**
+ * Implementation of CDI portable extension to add support for Vault into CDI,
+ *  including injection of Vault, Authentication methods, Secret engines and Sys APIs that
+ *  are available on classpath.
+ */
 public class VaultCdiExtension implements Extension {
     private final List<InjectionProvider> providers;
     private final Set<Type> supportedTypes = new HashSet<>();
@@ -55,6 +59,9 @@ public class VaultCdiExtension implements Extension {
 
     private Config config;
 
+    /**
+     * Constructor required for service loader and manual configuration of CDI extension.
+     */
     public VaultCdiExtension() {
         providers = HelidonServiceLoader
                 .builder(ServiceLoader.load(InjectionProvider.class))
@@ -69,7 +76,7 @@ public class VaultCdiExtension implements Extension {
         }
     }
 
-    private void configure(@Observes @RuntimeStart Config config) {
+    void configure(@Observes @RuntimeStart Config config) {
         this.config = config.get("vault");
     }
 
@@ -191,11 +198,7 @@ public class VaultCdiExtension implements Extension {
         event.addBean(new QualifiedBean<>(VaultCdiExtension.class,
                                           (Class<Object>) type,
                                           required.qualifiers(),
-                                          () -> {
-                                              Config config = producerConfig(name);
-                                              Vault vault = CDI.current().select(Vault.class, required.vaultQualifiers()).get();
-                                              return found.createInstance(vault, config, required.instanceConfig());
-                                          }));
+                                          () -> createInstance(name, required, found)));
 
         if (required.internal.path().isEmpty()) {
             // we also want to add named instance if path is default
@@ -205,24 +208,24 @@ public class VaultCdiExtension implements Extension {
                 // add unnamed
                 event.addBean(new QualifiedBean<>(VaultCdiExtension.class,
                                                   (Class<Object>) type,
-                                                  () -> {
-                                                      Config config = producerConfig(name);
-                                                      Vault vault = CDI.current().select(Vault.class, required.vaultQualifiers()).get();
-                                                      return found.createInstance(vault, config, required.instanceConfig());
-                                                  }));
+                                                  () -> createInstance(name, required, found)));
                 newName = "default";
             } else {
                 newName = name;
             }
             event.addBean(new QualifiedBean<>(VaultCdiExtension.class,
-                                (Class<Object>) type,
-                                Set.of(NamedLiteral.of(required.internal.name())),
-                                () -> {
-                                    Config config = producerConfig(newName);
-                                    Vault vault = CDI.current().select(Vault.class, required.vaultQualifiers()).get();
-                                    return found.createInstance(vault, config, required.instanceConfig());
-                                }));
+                                              (Class<Object>) type,
+                                              Set.of(NamedLiteral.of(required.internal.name())),
+                                              () -> createInstance(newName, required, found)));
         }
+    }
+
+    private Object createInstance(String name,
+                                  RequiredProducer required,
+                                  InjectionProvider.InjectionType<?> injectionType) {
+        Config config = producerConfig(name);
+        Vault vault = CDI.current().select(Vault.class, required.vaultQualifiers()).get();
+        return injectionType.createInstance(vault, config, required.instanceConfig());
     }
 
     private Optional<InjectionProvider.InjectionType<?>> findInjectionProvider(Type type) {

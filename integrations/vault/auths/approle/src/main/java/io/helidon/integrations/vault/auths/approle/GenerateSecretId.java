@@ -128,10 +128,20 @@ public final class GenerateSecretId {
             return new Builder();
         }
 
+        /**
+         * The generated secret ID.
+         *
+         * @return secret ID
+         */
         public String secretId() {
             return secretId;
         }
 
+        /**
+         * Secret ID accessor.
+         *
+         * @return accessor
+         */
         public String secretIdAccessor() {
             return secretIdAccessor;
         }

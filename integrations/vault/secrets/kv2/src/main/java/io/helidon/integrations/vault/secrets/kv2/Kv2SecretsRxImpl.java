@@ -41,8 +41,11 @@ class Kv2SecretsRxImpl implements Kv2SecretsRx {
         String apiPath = mount + "/metadata/" + request.path().orElse("");
 
         return restApi
-                .invokeOptional(Vault.LIST, apiPath, request, VaultOptionalResponse.<ListSecrets.Response, JsonObject>builder()
-                        .entityProcessor(ListSecrets.Response::create));
+                .invokeOptional(Vault.LIST,
+                                apiPath,
+                                request,
+                                VaultOptionalResponse.<ListSecrets.Response, JsonObject>vaultResponseBuilder()
+                                        .entityProcessor(ListSecrets.Response::create));
     }
 
     @Override
@@ -50,7 +53,7 @@ class Kv2SecretsRxImpl implements Kv2SecretsRx {
         String path = request.path();
         String apiPath = mount + "/data/" + path;
 
-        return restApi.get(apiPath, request, VaultOptionalResponse.<GetKv2.Response, JsonObject>builder()
+        return restApi.get(apiPath, request, VaultOptionalResponse.<GetKv2.Response, JsonObject>vaultResponseBuilder()
                 .entityProcessor(json -> GetKv2.Response.create(path, json)));
     }
 

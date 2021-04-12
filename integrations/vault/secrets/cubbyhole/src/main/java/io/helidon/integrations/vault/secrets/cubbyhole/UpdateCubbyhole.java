@@ -23,7 +23,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Update Cubbyhole Secret request and response.
  */
 public final class UpdateCubbyhole {
     private UpdateCubbyhole() {
@@ -50,15 +50,34 @@ public final class UpdateCubbyhole {
             return new Request();
         }
 
+        /**
+         * New secret values. These will replace current values.
+         * @param values new secret values
+         * @return updated request
+         */
         public Request secretValues(Map<String, String> values) {
             values.forEach(this::addSecretValue);
             return this;
         }
 
+        /**
+         * Add a new secret value.
+         * New values replace all existing values.
+         *
+         * @param key key of the value
+         * @param value value
+         * @return updated request
+         */
         public Request addSecretValue(String key, String value) {
             return add(key, value);
         }
 
+        /**
+         * Path of the secret.
+         *
+         * @param path secret's path
+         * @return updated request
+         */
         public Request path(String path) {
             this.path = path;
             return this;

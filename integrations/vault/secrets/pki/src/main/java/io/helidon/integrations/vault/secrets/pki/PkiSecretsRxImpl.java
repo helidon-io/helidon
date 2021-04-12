@@ -42,8 +42,11 @@ class PkiSecretsRxImpl implements PkiSecretsRx {
     public Single<VaultOptionalResponse<ListSecrets.Response>> list(ListSecrets.Request request) {
         String apiPath = mount + "/certs";
 
-        return restApi.invokeOptional(Vault.LIST, apiPath, request, VaultOptionalResponse.<ListSecrets.Response, JsonObject>builder()
-                        .entityProcessor(ListSecrets.Response::create));
+        return restApi.invokeOptional(Vault.LIST,
+                                      apiPath,
+                                      request,
+                                      VaultOptionalResponse.<ListSecrets.Response, JsonObject>vaultResponseBuilder()
+                                              .entityProcessor(ListSecrets.Response::create));
     }
 
     @Override
@@ -63,10 +66,10 @@ class PkiSecretsRxImpl implements PkiSecretsRx {
 
         return restApi.getBytes(apiPath,
                                 request,
-                                VaultOptionalResponse.<byte[], byte[]>builder()
+                                VaultOptionalResponse.<byte[], byte[]>vaultResponseBuilder()
                                         .entityProcessor(Function.identity()))
                 .map(optionalResponse -> CaCertificateGet.Response.builder()
-                        .entity(optionalResponse.entity().orElseThrow(() -> VaultRestException.vaultBuilder()
+                        .entity(optionalResponse.entity().orElseThrow(() -> VaultRestException.builder()
                                 .headers(optionalResponse.headers())
                                 .requestId(optionalResponse.requestId())
                                 .status(optionalResponse.status())
@@ -88,7 +91,7 @@ class PkiSecretsRxImpl implements PkiSecretsRx {
             throw new UnsupportedOperationException("Only PEM encoded format is supported");
         }
 
-        return restApi.get(apiPath, request, VaultOptionalResponse.<CertificateGet.Response, JsonObject>builder()
+        return restApi.get(apiPath, request, VaultOptionalResponse.<CertificateGet.Response, JsonObject>vaultResponseBuilder()
                 .entityProcessor(CertificateGet.Response::create));
     }
 
@@ -111,10 +114,10 @@ class PkiSecretsRxImpl implements PkiSecretsRx {
 
         return restApi.getBytes(apiPath,
                                 request,
-                                VaultOptionalResponse.<byte[], byte[]>builder()
+                                VaultOptionalResponse.<byte[], byte[]>vaultResponseBuilder()
                                         .entityProcessor(Function.identity()))
                 .map(optionalResponse -> CrlGet.Response.builder()
-                        .entity(optionalResponse.entity().orElseThrow(() -> VaultRestException.vaultBuilder()
+                        .entity(optionalResponse.entity().orElseThrow(() -> VaultRestException.builder()
                                 .headers(optionalResponse.headers())
                                 .requestId(optionalResponse.requestId())
                                 .status(optionalResponse.status())

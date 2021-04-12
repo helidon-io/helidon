@@ -50,7 +50,7 @@ class AppRoleAuthRxImpl implements AppRoleAuthRx {
     public Single<VaultOptionalResponse<ReadRoleId.Response>> readRoleId(ReadRoleId.Request request) {
         String apiPath = "/auth/" + path + "/role/" + request.roleName() + "/role-id";
 
-        return restApi.get(apiPath, request, VaultOptionalResponse.<ReadRoleId.Response, JsonObject>builder()
+        return restApi.get(apiPath, request, VaultOptionalResponse.<ReadRoleId.Response, JsonObject>vaultResponseBuilder()
                 .entityProcessor(ReadRoleId.Response::create));
     }
 

@@ -181,11 +181,22 @@ public final class CreateRole {
             return add("token_type", type);
         }
 
+        /**
+         * Name of the role to create.
+         *
+         * @param roleName role name
+         * @return updated request
+         */
         public Request roleName(String roleName) {
             this.roleName = roleName;
             return this;
         }
 
+        /**
+         * Name of the configured role.
+         *
+         * @return role name
+         */
         public String roleName() {
             if (roleName == null) {
                 throw new VaultApiException("CreateRole.Request role name must be configured");

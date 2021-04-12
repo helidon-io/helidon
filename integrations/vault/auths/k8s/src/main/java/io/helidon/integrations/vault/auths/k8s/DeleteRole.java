@@ -48,16 +48,29 @@ public final class DeleteRole {
             return new Request();
         }
 
+        /**
+         * Create a new request with role name.
+         *
+         * @param roleName role name
+         * @return a new request
+         * @see #roleName(String)
+         */
         public static Request create(String roleName) {
             return builder().roleName(roleName);
         }
 
+        /**
+         * Role name to delete.
+         *
+         * @param roleName name of the role
+         * @return updated request
+         */
         public Request roleName(String roleName) {
             this.roleName = roleName;
             return this;
         }
 
-        public String roleName() {
+        String roleName() {
             if (roleName == null) {
                 throw new VaultApiException("CreateRole.Request role name must be configured");
             }

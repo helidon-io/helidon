@@ -53,6 +53,12 @@ public final class DeleteTokenRole {
             return new Request();
         }
 
+        /**
+         * Create a new request with role name.
+         *
+         * @param roleName role name
+         * @return a new request
+         */
         public static Request create(String roleName) {
             return builder()
                     .roleName(roleName);
@@ -82,6 +88,9 @@ public final class DeleteTokenRole {
         }
     }
 
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
     public static final class Response extends ApiResponse {
         private Response(Builder builder) {
             super(builder);

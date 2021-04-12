@@ -21,7 +21,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Configure DB request and response.
  */
 public final class DbConfigure {
     private DbConfigure() {
@@ -29,8 +29,10 @@ public final class DbConfigure {
 
     /**
      * Request object. Can be configured with additional headers, query parameters etc.
+     *
+     * @param <T> type of the subclass of this class
      */
-    public static abstract class Request<T extends Request<T>> extends VaultRequest<T> {
+    public abstract static class Request<T extends Request<T>> extends VaultRequest<T> {
         private String name;
 
         /**

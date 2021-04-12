@@ -18,23 +18,46 @@ package io.helidon.integrations.vault.auths.token;
 
 import io.helidon.integrations.common.rest.ApiResponse;
 
+/**
+ * Revoke Token request and response.
+ */
 public final class RevokeToken {
     private RevokeToken() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static final class Request extends TokenRequest<Request> {
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }
 
+        /**
+         * Create a new request from the token value.
+         *
+         * @param token token
+         * @return a new request
+         */
         public static Request create(String token) {
             return builder().token(token);
         }
     }
 
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
     public static final class Response extends ApiResponse {
         private Response(Builder builder) {
             super(builder);

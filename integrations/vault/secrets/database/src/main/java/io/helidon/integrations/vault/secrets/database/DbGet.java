@@ -26,7 +26,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Get DB request and response.
  */
 public final class DbGet {
     private DbGet() {

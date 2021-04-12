@@ -27,6 +27,9 @@ import io.helidon.integrations.vault.VaultOptionalResponse;
 
 /**
  * API operation for Vault PKI Secrets Engine.
+ *
+ * All methods block the current thread. This implementation is not suitable for reactive programming.
+ * Use {@link io.helidon.integrations.vault.secrets.pki.PkiSecretsRx} in reactive code.
  */
 public interface PkiSecrets extends Secrets {
     /**
@@ -38,9 +41,16 @@ public interface PkiSecrets extends Secrets {
      */
     String KEY_TYPE_EC = PkiSecretsRx.KEY_TYPE_EC;
 
+    /**
+     * Create a new blocking API from its reactive counterpart.
+     *
+     * @param reactive reactive PKI Secrets
+     * @return blocking PKI Secrets
+     */
     static PkiSecrets create(PkiSecretsRx reactive) {
         return new PkiSecretsImpl(reactive);
     }
+
     /**
      * List certificate serial numbers.
      * @param request request, path is ignored
@@ -108,6 +118,12 @@ public interface PkiSecrets extends Secrets {
                 .map(CertificateGet.Response::toBytes);
     }
 
+    /**
+     * Get a certificate.
+     *
+     * @param request certificate request with at least the serial number
+     * @return get certificate response
+     */
     VaultOptionalResponse<CertificateGet.Response> certificate(CertificateGet.Request request);
 
     /**
@@ -132,6 +148,12 @@ public interface PkiSecrets extends Secrets {
                 .toBytes();
     }
 
+    /**
+     * Get a CRL (certificate revocation list).
+     *
+     * @param request get CRL request
+     * @return get CRL response
+     */
     CrlGet.Response crl(CrlGet.Request request);
 
     /**
@@ -168,6 +190,12 @@ public interface PkiSecrets extends Secrets {
                 .revocationTime();
     }
 
+    /**
+     * Revoke a certificate.
+     *
+     * @param request revoke certificate request with at least the certificate serial number
+     * @return revoke certificate response
+     */
     RevokeCertificate.Response revokeCertificate(RevokeCertificate.Request request);
 
     /**
@@ -184,6 +212,15 @@ public interface PkiSecrets extends Secrets {
                                               .commonName(commonName));
     }
 
+    /**
+     * Generate a self signed root certificate.
+     * This operations makes sense for testing.
+     * For production environments, this would most likely be initialized with an explicit
+     * key and certificate.
+     *
+     * @param request generate self signed root request with at least the common name configured
+     * @return generate self signed root response
+     */
     GenerateSelfSignedRoot.Response generateSelfSignedRoot(GenerateSelfSignedRoot.Request request);
 
     /**

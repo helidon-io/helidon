@@ -25,16 +25,30 @@ import io.helidon.integrations.common.rest.Base64Value;
 import io.helidon.integrations.vault.VaultRequest;
 import io.helidon.integrations.vault.VaultResponse;
 
+/**
+ * Encrypt request and response.
+ */
 public final class Encrypt {
     private Encrypt() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static class Request extends VaultRequest<Request> {
         private String encryptionKeyName;
 
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }
@@ -135,6 +149,9 @@ public final class Encrypt {
         }
     }
 
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
     public static class Response extends VaultResponse {
         private final Encrypted singleResult;
 
@@ -144,12 +161,17 @@ public final class Encrypt {
             this.singleResult = new Encrypted(data);
         }
 
-        public Encrypted encrypted() {
-            return singleResult;
-        }
-
         static Builder builder() {
             return new Builder();
+        }
+
+        /**
+         * The encrypted value - cipher text and version of key.
+         *
+         * @return encrypted value
+         */
+        public Encrypted encrypted() {
+            return singleResult;
         }
 
         static final class Builder extends ApiEntityResponse.Builder<Builder, Response, JsonObject> {
@@ -163,29 +185,40 @@ public final class Encrypt {
         }
     }
 
+    /**
+     * Encrypted value.
+     */
     public static class Encrypted extends ApiJsonParser {
-        private final String encrypted;
+        private final String cipherText;
         private final int keyVersion;
 
         Encrypted(JsonObject json) {
-            this.encrypted = json.getString("ciphertext");
+            this.cipherText = json.getString("ciphertext");
             this.keyVersion = json.getInt("key_version");
         }
 
+        /**
+         * Cipher text - string representation of the encrypted secret.
+         * @return string value of encrypted secret
+         */
         public String cipherText() {
-            return encrypted;
+            return cipherText;
         }
 
+        /**
+         * Version of the key used to encrypt the data.
+         * @return version of the key
+         */
         public int keyVersion() {
             return keyVersion;
         }
 
         @Override
         public String toString() {
-            return "Encrypted{" +
-                    "encrypted=" + encrypted +
-                    ", keyVersion=" + keyVersion +
-                    '}';
+            return "Encrypted{"
+                    + "cipherText=" + cipherText
+                    + ", keyVersion=" + keyVersion
+                    + '}';
         }
     }
 }

@@ -38,6 +38,9 @@ import io.helidon.integrations.vault.sys.DisableEngine;
 import io.helidon.integrations.vault.sys.EnableEngine;
 import io.helidon.integrations.vault.sys.Sys;
 
+/**
+ * JAX-RS resource for Transit secrets engine operations.
+ */
 @Path("/transit")
 public class TransitResource {
     private static final String ENCRYPTION_KEY = "encryption-key";
@@ -52,6 +55,11 @@ public class TransitResource {
         this.secrets = secrets;
     }
 
+    /**
+     * Enable the secrets engine on the default path.
+     *
+     * @return response
+     */
     @Path("/engine")
     @GET
     public Response enableEngine() {
@@ -62,6 +70,10 @@ public class TransitResource {
                 .build();
     }
 
+    /**
+     * Disable the secrets engine on the default path.
+     * @return response
+     */
     @Path("/engine")
     @DELETE
     public Response disableEngine() {
@@ -72,6 +84,11 @@ public class TransitResource {
                 .build();
     }
 
+    /**
+     * Create the encrypting and signature keys.
+     *
+     * @return response
+     */
     @Path("/keys")
     @GET
     public Response createKeys() {
@@ -87,6 +104,11 @@ public class TransitResource {
                 .build();
     }
 
+    /**
+     * Delete the encryption and signature keys.
+     *
+     * @return response
+     */
     @Path("/keys")
     @DELETE
     public Response deleteKeys() {
@@ -107,6 +129,12 @@ public class TransitResource {
                 .build();
     }
 
+    /**
+     * Encrypt a secret.
+     *
+     * @param secret provided as part of the path
+     * @return cipher text
+     */
     @Path("/encrypt/{secret: .*}")
     @GET
     public String encryptSecret(@PathParam("secret") String secret) {
@@ -117,6 +145,12 @@ public class TransitResource {
                 .cipherText();
     }
 
+    /**
+     * Decrypt a secret.
+     *
+     * @param cipherText provided as part of the path
+     * @return decrypted secret text
+     */
     @Path("/decrypt/{cipherText: .*}")
     @GET
     public String decryptSecret(@PathParam("cipherText") String cipherText) {
@@ -127,24 +161,43 @@ public class TransitResource {
                 .toDecodedString();
     }
 
-    @Path("/hmac/{secret}")
+    /**
+     * Create an HMAC for text.
+     *
+     * @param text text to do HMAC for
+     * @return hmac string that can be used to {@link #verifyHmac(String, String)}
+     */
+    @Path("/hmac/{text}")
     @GET
-    public String hmac(@PathParam("secret") String secret) {
+    public String hmac(@PathParam("text") String text) {
         return secrets.hmac(Hmac.Request.builder()
                                     .hmacKeyName(ENCRYPTION_KEY)
-                                    .data(Base64Value.create(secret)))
+                                    .data(Base64Value.create(text)))
                 .hmac();
     }
 
-    @Path("/sign/{secret}")
+    /**
+     * Create a signature for text.
+     *
+     * @param text text to sign
+     * @return signature string that can be used to {@link #verifySignature(String, String)}
+     */
+    @Path("/sign/{text}")
     @GET
-    public String sign(@PathParam("secret") String secret) {
+    public String sign(@PathParam("text") String text) {
         return secrets.sign(Sign.Request.builder()
                                     .signatureKeyName(SIGNATURE_KEY)
                                     .data(Base64Value.create(secret)))
                 .signature();
     }
 
+    /**
+     * Verify HMAC.
+     *
+     * @param secret secret that was used to {@link #hmac(String)}
+     * @param hmac HMAC text
+     * @return {@code HMAC Valid} or {@code HMAC Invalid}
+     */
     @Path("/verify/hmac/{secret}/{hmac: .*}")
     @GET
     public String verifyHmac(@PathParam("secret") String secret, @PathParam("hmac") String hmac) {
@@ -157,6 +210,13 @@ public class TransitResource {
         return (isValid ? "HMAC Valid" : "HMAC Invalid");
     }
 
+    /**
+     * Verify signature.
+     *
+     * @param secret secret that was used to {@link #sign(String)}
+     * @param signature signature
+     * @return {@code Signature Valid} or {@code Signature Invalid}
+     */
     @Path("/verify/sign/{secret}/{signature: .*}")
     @GET
     public String verifySignature(@PathParam("secret") String secret, @PathParam("signature") String signature) {

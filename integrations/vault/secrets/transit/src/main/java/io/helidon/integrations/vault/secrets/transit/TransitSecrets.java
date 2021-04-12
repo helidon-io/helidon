@@ -24,14 +24,25 @@ import io.helidon.integrations.vault.VaultOptionalResponse;
  * API operations for Vault's Transit Secrets Engine.
  */
 public interface TransitSecrets extends Secrets {
+    /**
+     * Create blocking transit secrets from its reactive counterpart.
+     * This method should not be used when injection is available, as an instance
+     * of this class can be injected.
+     * This method should never be used in reactive environment, unless running
+     * in an executor service (use the {@link io.helidon.integrations.vault.secrets.transit.TransitSecretsRx}
+     * operations in reactive environment).
+     *
+     * @param reactive reactive transit secrets
+     * @return blocking transit secrets
+     */
     static TransitSecrets create(TransitSecretsRx reactive) {
         return new TransitSecretsImpl(reactive);
     }
     /**
      * List available keys.
      *
-     * @param request, path is ignored
-     * @return multi with all available encryption keys
+     * @param request list request, path is ignored
+     * @return list of available keys
      */
     @Override
     VaultOptionalResponse<ListSecrets.Response> list(ListSecrets.Request request);
@@ -106,6 +117,9 @@ public interface TransitSecrets extends Secrets {
     /**
      * Hmac of a message.
      * Equivalent of a signature when using symmetric keys.
+     *
+     * @param request hmac request
+     * @return hmac response
      */
     Hmac.Response hmac(Hmac.Request request);
 

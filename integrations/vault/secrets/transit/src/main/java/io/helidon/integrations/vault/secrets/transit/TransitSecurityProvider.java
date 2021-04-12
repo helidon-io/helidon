@@ -29,6 +29,9 @@ import io.helidon.security.spi.DigestProvider;
 import io.helidon.security.spi.EncryptionProvider;
 import io.helidon.security.spi.ProviderConfig;
 
+/**
+ * Integration with Helidon Security.
+ */
 public class TransitSecurityProvider implements EncryptionProvider<TransitSecurityProvider.TransitEncryptionConfig>,
                                                 DigestProvider<TransitSecurityProvider.TransitDigestConfig> {
     private final TransitSecretsRx transit;
@@ -116,6 +119,9 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
         return DigestSupport.create(digestFunction, verifyFunction);
     }
 
+    /**
+     * Configuration of a digest when using programmatic setup of security digests.
+     */
     public static class TransitDigestConfig implements ProviderConfig {
         private final String keyName;
         private final Optional<Integer> keyVersion;
@@ -136,16 +142,23 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
             this.isSignature = builder.isSignature;
         }
 
+        /**
+         * A new builder for {@link io.helidon.integrations.vault.secrets.transit.TransitSecurityProvider.TransitDigestConfig}.
+         *
+         * @return a new builder
+         */
         public static Builder builder() {
             return new Builder();
         }
 
+        /**
+         * Create a new digest configuration from config.
+         *
+         * @param config config to use
+         * @return a new digest configuration
+         */
         public static TransitDigestConfig create(Config config) {
             return builder().config(config).build();
-        }
-
-        public boolean isSignature() {
-            return isSignature;
         }
 
         Sign.Request signRequest() {
@@ -183,11 +196,20 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
             return request;
         }
 
+        /**
+         * Fluent API builder for
+         * {@link io.helidon.integrations.vault.secrets.transit.TransitSecurityProvider.TransitDigestConfig}.
+         */
         public static class Builder implements io.helidon.common.Builder<TransitDigestConfig> {
-            private static final String CONFIG_KEY_KEY_NAME = "key-name";
+            /**
+             * Digest is a signature.
+             */
             public static final String TYPE_SIGNATURE = "signature";
+            /**
+             * Digest is an HMAC.
+             */
             public static final String TYPE_HMAC = "hmac";
-
+            private static final String CONFIG_KEY_KEY_NAME = "key-name";
             private boolean isSignature = true;
             private String keyName;
             private Integer keyVersion;
@@ -207,10 +229,62 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
                 return new TransitDigestConfig(this);
             }
 
+            /**
+             * Update this builder from configuration.
+             * Only {@value CONFIG_KEY_KEY_NAME} is mandatory.
+             *
+             * Configuration options:
+             * <table class="config">
+             * <caption>Secret configuration</caption>
+             * <tr>
+             *     <th>key</th>
+             *     <th>description</th>
+             *     <th>builder method</th>
+             * </tr>
+             * <tr>
+             *     <td>{@value CONFIG_KEY_KEY_NAME}</td>
+             *     <td>Name of the key used for this digest operation</td>
+             *     <td>{@link #keyName(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code key-version}</td>
+             *     <td>Version of the key to use</td>
+             *     <td>{@link #keyVersion(int)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code context}</td>
+             *     <td>Context as base64 encoded text.</td>
+             *     <td>{@link #context(io.helidon.integrations.common.rest.Base64Value)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code signature-algorithm}</td>
+             *     <td>Signature algorithm.</td>
+             *     <td>{@link #signatureAlgorithm(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code marshalling-algorithm}</td>
+             *     <td>Marshalling algorithm.</td>
+             *     <td>{@link #marshalingAlgorithm(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code hash-algorithm}</td>
+             *     <td>Hash algorithm.</td>
+             *     <td>{@link #hashAlgorithm(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code type}</td>
+             *     <td>Type of digest, defaults to {@value #TYPE_SIGNATURE}.</td>
+             *     <td>{@link #type(String)}</td>
+             * </tr>
+             * </table>
+             *
+             * @param config config to use
+             * @return updated builder
+             */
             public Builder config(Config config) {
                 config.get(CONFIG_KEY_KEY_NAME).asString().ifPresent(this::keyName);
                 config.get("key-version").asInt().ifPresent(this::keyVersion);
-                config.get("context").asString().map(Base64Value::create).ifPresent(this::context);
+                config.get("context").asString().map(Base64Value::createFromEncoded).ifPresent(this::context);
                 config.get("signature-algorithm").asString().ifPresent(this::signatureAlgorithm);
                 config.get("marshaling-algorithm").asString().ifPresent(this::marshalingAlgorithm);
                 config.get("hash-algorithm").asString().ifPresent(this::hashAlgorithm);
@@ -219,6 +293,13 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
                 return this;
             }
 
+            /**
+             * Type of digest, either {@link #TYPE_SIGNATURE} or {@link #TYPE_HMAC}.
+             * Defaults to {@link #TYPE_SIGNATURE}.
+             *
+             * @param type type to use
+             * @return updated builder
+             */
             public Builder type(String type) {
                 switch (type) {
                 case TYPE_HMAC:
@@ -233,31 +314,96 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
                 return this;
             }
 
+            /**
+             * Name of the key (Vault server side) used for this digest.
+             * Note that key type must be valid for the type used. Signatures require an asymmetric key, HMAC requires
+             * a symmetric key.
+             *
+             * @param keyName name of the key
+             * @return updated builder
+             */
             public Builder keyName(String keyName) {
                 this.keyName = keyName;
                 return this;
             }
 
-            public Builder keyVersion(Integer keyVersion) {
+            /**
+             * Specifies the version of the key to use for digest. If not set, uses the latest version.
+             * Must be greater than or equal to the key's {@code min_encryption_version}, if set.
+             * Optional.
+             *
+             * @param keyVersion key version
+             * @return updated request
+             */
+            public Builder keyVersion(int keyVersion) {
                 this.keyVersion = keyVersion;
                 return this;
             }
 
+            /**
+             * Specifies the context for key derivation. This is required if key derivation is enabled for this key; currently
+             * only available with ed25519 keys.
+             *
+             * @param context context
+             * @return updated request
+             */
             public Builder context(Base64Value context) {
                 this.context = context;
                 return this;
             }
 
+            /**
+             * When using a RSA key, specifies the RSA signature algorithm to use for signing. Supported signature types are:
+             *
+             * pss
+             * pkcs1v15
+             *
+             * See signature algorithm constants on this class.
+             *
+             * @param signatureAlgorithm signature algorithm to use
+             * @return updated request
+             * @see Sign.Request#SIGNATURE_ALGORITHM_PSS
+             * @see Sign.Request#SIGNATURE_ALGORITHM_PKCS1_V15
+             */
             public Builder signatureAlgorithm(String signatureAlgorithm) {
                 this.signatureAlgorithm = signatureAlgorithm;
                 return this;
             }
 
+            /**
+             * Specifies the way in which the signature should be marshaled. This currently only applies to ECDSA keys. Supported
+             * types are:
+             * asn1: The default, used by OpenSSL and X.509
+             * jws: The version used by JWS (and thus for JWTs). Selecting this will also change the output encoding to URL-safe
+             * Base64 encoding instead of standard Base64-encoding.
+             *
+             * @param marshalingAlgorithm marshaling algorithm
+             * @return updated request
+             * @see Sign.Request#MARSHALLING_ALGORITHM_ASN_1
+             * @see Sign.Request#MARSHALLING_ALGORITHM_JWS
+             */
             public Builder marshalingAlgorithm(String marshalingAlgorithm) {
                 this.marshalingAlgorithm = marshalingAlgorithm;
                 return this;
             }
 
+            /**
+             * Specifies the hash algorithm to use for supporting key types (notably, not including ed25519 which specifies its
+             * own
+             * hash algorithm).
+             * See hash algorithm constants on this class.
+             *
+             * @param hashAlgorithm algorithm to use
+             * @return updated request
+             * @see Sign.Request#HASH_ALGORITHM_SHA2_224
+             * @see Sign.Request#HASH_ALGORITHM_SHA2_256
+             * @see Sign.Request#HASH_ALGORITHM_SHA2_384
+             * @see Sign.Request#HASH_ALGORITHM_SHA2_512
+             * @see Hmac.Request#HASH_ALGORITHM_SHA2_224
+             * @see Hmac.Request#HASH_ALGORITHM_SHA2_256
+             * @see Hmac.Request#HASH_ALGORITHM_SHA2_384
+             * @see Hmac.Request#HASH_ALGORITHM_SHA2_512
+             */
             public Builder hashAlgorithm(String hashAlgorithm) {
                 this.hashAlgorithm = hashAlgorithm;
                 return this;
@@ -265,12 +411,15 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
         }
     }
 
+    /**
+     * Configuration of encryption when using programmatic setup of security.
+     */
     public static class TransitEncryptionConfig implements ProviderConfig {
         private final String keyName;
         private final Optional<Integer> keyVersion;
         private final Optional<String> encryptionKeyType;
         private final Optional<String> convergentEncryption;
-        private final Optional<String> context;
+        private final Optional<Base64Value> context;
 
         private TransitEncryptionConfig(Builder builder) {
             this.keyName = builder.keyName;
@@ -280,40 +429,56 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
             this.context = Optional.ofNullable(builder.context);
         }
 
+        /**
+         * A new builder for
+         * {@link io.helidon.integrations.vault.secrets.transit.TransitSecurityProvider.TransitEncryptionConfig}.
+         *
+         * @return a new builder
+         */
         public static Builder builder() {
             return new Builder();
         }
 
+        /**
+         * Create a new encryption configuration from config.
+         *
+         * @param config config to use
+         * @return a new encryption configuration
+         */
         public static TransitEncryptionConfig create(Config config) {
             return builder().config(config).build();
         }
 
-        public Encrypt.Request encryptionRequest() {
+        Encrypt.Request encryptionRequest() {
             Encrypt.Request builder = Encrypt.Request.builder()
                     .encryptionKeyName(keyName);
 
             keyVersion.ifPresent(builder::encryptionKeyVersion);
             encryptionKeyType.ifPresent(builder::encryptionKeyType);
-            context.map(Base64Value::createFromEncoded).ifPresent(builder::context);
+            context.ifPresent(builder::context);
             convergentEncryption.ifPresent(builder::convergentEncryption);
 
             return builder;
         }
 
-        public Decrypt.Request decryptionRequest() {
+        Decrypt.Request decryptionRequest() {
             Decrypt.Request builder = Decrypt.Request.builder()
                     .encryptionKeyName(keyName);
 
-            context.map(Base64Value::createFromEncoded).ifPresent(builder::context);
+            context.ifPresent(builder::context);
 
             return builder;
         }
 
+        /**
+         * Fluent API builder for
+         * {@link io.helidon.integrations.vault.secrets.transit.TransitSecurityProvider.TransitEncryptionConfig}.
+         */
         public static class Builder implements io.helidon.common.Builder<TransitEncryptionConfig> {
             private static final String CONFIG_KEY_KEY_NAME = "key-name";
 
             private String keyName;
-            private String context;
+            private Base64Value context;
             private Integer keyVersion;
             private String encryptionKeyType;
             private String convergentEncryption;
@@ -329,35 +494,116 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
                 return new TransitEncryptionConfig(this);
             }
 
+            /**
+             * Update this builder from configuration.
+             * Only {@value CONFIG_KEY_KEY_NAME} is mandatory.
+             *
+             * Configuration options:
+             * <table class="config">
+             * <caption>Secret configuration</caption>
+             * <tr>
+             *     <th>key</th>
+             *     <th>description</th>
+             *     <th>builder method</th>
+             * </tr>
+             * <tr>
+             *     <td>{@value CONFIG_KEY_KEY_NAME}</td>
+             *     <td>Name of the key used for this digest operation</td>
+             *     <td>{@link #keyName(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code context}</td>
+             *     <td>Context as base64 encoded text.</td>
+             *     <td>{@link #context(io.helidon.integrations.common.rest.Base64Value)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code key-version}</td>
+             *     <td>Version of the key to use</td>
+             *     <td>{@link #keyVersion(int)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code key-type}</td>
+             *     <td>Type of the key to use</td>
+             *     <td>{@link #keyVersion(int)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code convergent}</td>
+             *     <td>Convergent encryption</td>
+             *     <td>{@link #convergent(String)}</td>
+             * </tr>
+             * </table>
+             *
+             * @param config config to use
+             * @return updated builder
+             */
             public Builder config(Config config) {
                 config.get(CONFIG_KEY_KEY_NAME).asString().ifPresent(this::keyName);
-                config.get("context").asString().ifPresent(this::context);
+                config.get("context").asString().map(Base64Value::createFromEncoded).ifPresent(this::context);
                 config.get("key-version").asInt().ifPresent(this::keyVersion);
                 config.get("key-type").asString().ifPresent(this::keyType);
                 config.get("convergent").asString().ifPresent(this::convergent);
                 return this;
             }
 
+            /**
+             * Specifies the name of the encryption key to encrypt/decrypt against.
+             * Required.
+             *
+             * @param keyName name of the key
+             * @return updated request
+             */
             public Builder keyName(String keyName) {
                 this.keyName = keyName;
                 return this;
             }
 
-            public Builder context(String context) {
+            /**
+             * Specifies the context for key derivation. This is required if key derivation is enabled for this key.
+             *
+             * @param context context
+             * @return updated request
+             */
+            public Builder context(Base64Value context) {
                 this.context = context;
                 return this;
             }
 
-            public Builder keyVersion(Integer keyVersion) {
+            /**
+             * Version of the key used to encrypt the data.
+             *
+             * @param keyVersion version of the key
+             * @return updated builder
+             */
+            public Builder keyVersion(int keyVersion) {
                 this.keyVersion = keyVersion;
                 return this;
             }
 
+            /**
+             * This parameter is required when encryption key is expected to be created. When performing an upsert operation,
+             * the type of key to create.
+             * <p>
+             * Defaults to {@code aes256-gcm96}.
+             *
+             * @param encryptionKeyType type of the encryption key
+             * @return updated request
+             */
             public Builder keyType(String encryptionKeyType) {
                 this.encryptionKeyType = encryptionKeyType;
                 return this;
             }
 
+            /**
+             * This parameter will only be used when a key is expected to be created. Whether to support convergent encryption.
+             * This is only supported when using a key with key derivation enabled and will require all requests to carry both a
+             * context and 96-bit (12-byte) nonce. The given nonce will be used in place of a randomly generated nonce. As a
+             * result, when the same context and nonce are supplied, the same ciphertext is generated. It is very important when
+             * using this mode that you ensure that all nonces are unique for a given context. Failing to do so will severely
+             * impact the ciphertext's security.
+             *
+             * @param convergentEncryption convergent encryption
+             * @return updated request
+             */
             public Builder convergent(String convergentEncryption) {
                 this.convergentEncryption = convergentEncryption;
                 return this;

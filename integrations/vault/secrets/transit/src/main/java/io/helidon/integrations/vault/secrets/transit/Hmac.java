@@ -24,14 +24,40 @@ import io.helidon.integrations.common.rest.Base64Value;
 import io.helidon.integrations.vault.VaultRequest;
 import io.helidon.integrations.vault.VaultResponse;
 
+/**
+ * HMAC request and response.
+ */
 public final class Hmac {
     private Hmac() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static class Request extends VaultRequest<Request> {
+        /**
+         * Hash algorithm {@value}.
+         *
+         * @see #hashAlgorithm(String)
+         */
         public static final String HASH_ALGORITHM_SHA2_224 = "sha2-224";
+        /**
+         * Hash algorithm {@value}.
+         *
+         * @see #hashAlgorithm(String)
+         */
         public static final String HASH_ALGORITHM_SHA2_256 = "sha2-256";
+        /**
+         * Hash algorithm {@value}.
+         *
+         * @see #hashAlgorithm(String)
+         */
         public static final String HASH_ALGORITHM_SHA2_384 = "sha2-384";
+        /**
+         * Hash algorithm {@value}.
+         *
+         * @see #hashAlgorithm(String)
+         */
         public static final String HASH_ALGORITHM_SHA2_512 = "sha2-512";
 
         private String signatureKeyName;
@@ -39,6 +65,14 @@ public final class Hmac {
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }
@@ -100,6 +134,9 @@ public final class Hmac {
 
     }
 
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
     public static class Response extends VaultResponse {
         private final String hmac;
 
@@ -113,6 +150,10 @@ public final class Hmac {
             return new Builder();
         }
 
+        /**
+         * HMAC string.
+         * @return HMAC string
+         */
         public String hmac() {
             return hmac;
         }

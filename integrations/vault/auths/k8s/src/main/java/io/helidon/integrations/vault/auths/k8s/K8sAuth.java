@@ -36,6 +36,12 @@ public interface K8sAuth {
      */
     String TYPE_DEFAULT = K8sAuthRx.TYPE_DEFAULT;
 
+    /**
+     * Create blocking Kubernetes authentication API from its reactive counterpart.
+     *
+     * @param reactive k8s reactive API
+     * @return k8s blocking API
+     */
     static K8sAuth create(K8sAuthRx reactive) {
         return new K8sAuthImpl(reactive);
     }

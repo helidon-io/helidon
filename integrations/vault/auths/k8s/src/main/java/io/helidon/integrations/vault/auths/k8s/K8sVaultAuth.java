@@ -58,6 +58,11 @@ public class K8sVaultAuth implements VaultAuth {
         this.tokenRole = builder.tokenRole;
     }
 
+    /**
+     * A new builder for {@link io.helidon.integrations.vault.auths.k8s.K8sVaultAuth}.
+     *
+     * @return a new builder
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -131,6 +136,9 @@ public class K8sVaultAuth implements VaultAuth {
                                    .build());
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.integrations.vault.auths.k8s.K8sVaultAuth}.
+     */
     public static class Builder implements io.helidon.common.Builder<K8sVaultAuth> {
         private String serviceAccountToken;
         private String tokenRole;
@@ -143,11 +151,23 @@ public class K8sVaultAuth implements VaultAuth {
             return new K8sVaultAuth(this);
         }
 
+        /**
+         * The k8s service account token.
+         *
+         * @param serviceAccountToken service account token
+         * @return updated builder
+         */
         public Builder serviceAccountToken(String serviceAccountToken) {
             this.serviceAccountToken = serviceAccountToken;
             return this;
         }
 
+        /**
+         * The token role used for authentication.
+         *
+         * @param tokenRole token role name
+         * @return updated builder
+         */
         public Builder tokenRole(String tokenRole) {
             this.tokenRole = tokenRole;
             return this;

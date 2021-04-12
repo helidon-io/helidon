@@ -21,7 +21,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Destroy Key/Value Version 2 Secret version request and response.
  */
 public final class DestroyKv2 {
     private DestroyKv2() {
@@ -48,11 +48,23 @@ public final class DestroyKv2 {
             return new Request();
         }
 
+        /**
+         * Path of the secret to destroy.
+         *
+         * @param path secret's path
+         * @return updated request
+         */
         public Request path(String path) {
             this.path = path;
             return this;
         }
 
+        /**
+         * Version(s) of the secret to destroy.
+         *
+         * @param versions secret's version(s)
+         * @return updated request
+         */
         public Request versions(int... versions) {
             for (int version : versions) {
                 addVersion(version);
@@ -60,6 +72,12 @@ public final class DestroyKv2 {
             return this;
         }
 
+        /**
+         * Add a secret version to destroy.
+         *
+         * @param version secret's version
+         * @return updated request
+         */
         public Request addVersion(int version) {
             return addToArray("versions", version);
         }

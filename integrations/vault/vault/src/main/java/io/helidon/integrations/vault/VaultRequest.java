@@ -28,18 +28,32 @@ import javax.json.JsonObjectBuilder;
 import io.helidon.integrations.common.rest.ApiJsonRequest;
 
 /**
- * Common operation for Vault requests.
+ * Common helper methods for Vault Requests.
+ * @param <T> type of the subclass
  */
 public abstract class VaultRequest<T extends VaultRequest<T>> extends ApiJsonRequest<T> {
     private final Map<String, List<String>> commaDelimitedArrays = new HashMap<>();
 
-
+    /**
+     * Add aa list of values as a comma delimited string instead of a JSON Array.
+     *
+     * @param json the builder
+     * @param name name of the property
+     * @param values list of values
+     */
     protected static void addCommaDelimitedArray(JsonObjectBuilder json, String name, List<String> values) {
         if (!values.isEmpty()) {
             json.add(name, String.join(",", values));
         }
     }
 
+    /**
+     * Add a duration formatted in Vault manner, as a string with duration.
+     *
+     * @param name name of the property
+     * @param duration duration to add
+     * @return updated request
+     */
     public T add(String name, Duration duration) {
         return add(name, durationToTtl(duration));
     }
@@ -65,6 +79,8 @@ public abstract class VaultRequest<T extends VaultRequest<T>> extends ApiJsonReq
 
     /**
      * Duration to time to live in HCP Vault format.
+     * The format is "5h" for exact hour values, "5m" for exact minute values,
+     * or "5s" when seconds are part of the value.
      *
      * @param duration duration
      * @return String of that duration

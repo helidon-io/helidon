@@ -30,16 +30,30 @@ import io.helidon.integrations.common.rest.Base64Value;
 import io.helidon.integrations.vault.VaultRequest;
 import io.helidon.integrations.vault.VaultResponse;
 
+/**
+ * Encrypt Batch request and response.
+ */
 public final class EncryptBatch {
     private EncryptBatch() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static class Request extends VaultRequest<Request> {
         private String encryptionKeyName;
 
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }
@@ -89,7 +103,7 @@ public final class EncryptBatch {
          * context and nonce are supplied, the same ciphertext is generated. It is very important when using this mode that you
          * ensure that all nonces are unique for a given context. Failing to do so will severely impact the ciphertext's security.
          *
-         * @param convergent convergetn encryption
+         * @param convergent convergent encryption
          * @return updated request
          */
         public Request convergentEncryption(String convergent) {
@@ -99,8 +113,11 @@ public final class EncryptBatch {
         /**
          * Specifies a list of items to be encrypted in a single batch. When this parameter is set, if the parameters 'plaintext',
          * 'context' and 'nonce' are also set, they will be ignored.
+         *
+         * @param batch batch to encrypt
+         * @return updated request
          */
-        public Request addBatch(Batch batch) {
+        public Request addEntry(BatchEntry batch) {
             return addToArray("batch_input", batch);
         }
 
@@ -112,6 +129,9 @@ public final class EncryptBatch {
         }
     }
 
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
     public static class Response extends VaultResponse {
         private final List<Encrypt.Encrypted> batchResult;
 
@@ -126,12 +146,17 @@ public final class EncryptBatch {
             this.batchResult = List.copyOf(batchResults);
         }
 
-        public List<Encrypt.Encrypted> batchResult() {
-            return batchResult;
-        }
-
         static Builder builder() {
             return new Builder();
+        }
+
+        /**
+         * Batch result.
+         *
+         * @return restul of the batch
+         */
+        public List<Encrypt.Encrypted> batchResult() {
+            return batchResult;
         }
 
         static final class Builder extends ApiEntityResponse.Builder<Builder, Response, JsonObject> {
@@ -145,27 +170,59 @@ public final class EncryptBatch {
         }
     }
 
-    public static class Batch extends ApiJsonBuilder<Batch> {
-        private Batch() {
+    /**
+     * Definition of a batch entry.
+     */
+    public static class BatchEntry extends ApiJsonBuilder<BatchEntry> {
+        private BatchEntry() {
         }
 
-        public static Batch builder() {
-            return new Batch();
+        /**
+         * A new builder for a batch entry.
+         *
+         * @return a new batch entry
+         */
+        public static BatchEntry builder() {
+            return new BatchEntry();
         }
 
-        public static Batch create(Base64Value base64Value) {
+        /**
+         * Create an entry from Base64 value.
+         *
+         * @param base64Value base64 value
+         * @return a new batch entry
+         */
+        public static BatchEntry create(Base64Value base64Value) {
             return builder().data(base64Value);
         }
 
-        public Batch data(Base64Value value) {
+        /**
+         * Configure the data to be encrypted.
+         *
+         * @param value base64 value
+         * @return updated entry
+         */
+        public BatchEntry data(Base64Value value) {
             return add("plaintext", value.toBase64());
         }
 
-        public Batch context(Base64Value value) {
+        /**
+         * Configure context data.
+         *
+         * @param value base64 context
+         * @return updated entry
+         */
+        public BatchEntry context(Base64Value value) {
             return add("context", value.toBase64());
         }
 
-        public Batch nonce(Base64Value value) {
+        /**
+         * Configure nonce.
+         *
+         * @param value base64 nonce
+         * @return updated entry
+         */
+        public BatchEntry nonce(Base64Value value) {
             return add("nonce", value.toBase64());
         }
     }

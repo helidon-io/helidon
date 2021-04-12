@@ -38,9 +38,11 @@ class TransitSecretsRxImpl implements TransitSecretsRx {
     public Single<VaultOptionalResponse<ListSecrets.Response>> list(ListSecrets.Request request) {
         String apiPath = mount + "/certs";
 
-        return restApi
-                .invokeOptional(Vault.LIST, apiPath, request, VaultOptionalResponse.<ListSecrets.Response, JsonObject>builder()
-                        .entityProcessor(ListSecrets.Response::create));
+        return restApi.invokeOptional(Vault.LIST,
+                                      apiPath,
+                                      request,
+                                      VaultOptionalResponse.<ListSecrets.Response, JsonObject>vaultResponseBuilder()
+                                              .entityProcessor(ListSecrets.Response::create));
     }
 
     @Override

@@ -24,16 +24,30 @@ import io.helidon.integrations.common.rest.Base64Value;
 import io.helidon.integrations.vault.VaultRequest;
 import io.helidon.integrations.vault.VaultResponse;
 
+/**
+ * Verify request and response.
+ */
 public final class Verify {
     private Verify() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static class Request extends VaultRequest<Request> {
         private String signatureKeyName;
 
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }
@@ -157,6 +171,9 @@ public final class Verify {
         }
     }
 
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
     public static class Response extends VaultResponse {
         private final boolean valid;
 
@@ -170,6 +187,10 @@ public final class Verify {
             return new Builder();
         }
 
+        /**
+         * Whether the signature/HMAC was valid.
+         * @return whether valid
+         */
         public boolean isValid() {
             return valid;
         }

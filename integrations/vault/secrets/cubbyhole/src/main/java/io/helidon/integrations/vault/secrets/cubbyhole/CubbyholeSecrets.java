@@ -23,7 +23,6 @@ import java.util.function.Function;
 import io.helidon.integrations.vault.Secret;
 import io.helidon.integrations.vault.Secrets;
 import io.helidon.integrations.vault.VaultOptionalResponse;
-import io.helidon.integrations.vault.VaultRestException;
 
 /**
  * Cubbyhole engine secrets API.
@@ -33,22 +32,50 @@ import io.helidon.integrations.vault.VaultRestException;
  * @see io.helidon.integrations.vault.secrets.cubbyhole.CubbyholeSecretsRx
  */
 public interface CubbyholeSecrets extends Secrets {
+    /**
+     * Create a new instance of blocking API for Cubbyhole secrets from
+     * its reactive counterpart.
+     * In an environment supporting injection, an instance can be injected and
+     * this method should never be called.
+     *
+     * @param reactiveSecrets reactive Cubbyhole secrets
+     * @return blocking Cubbyhole secrets
+     */
     static CubbyholeSecrets create(CubbyholeSecretsRx reactiveSecrets) {
         return new CubbyholeSecretsImpl(reactiveSecrets);
     }
 
+    /**
+     * Get a Cubbyhole secret.
+     *
+     * @param path secret's path
+     * @return secret if found
+     */
     default Optional<Secret> get(String path) {
         return get(GetCubbyhole.Request.builder().path(path))
                 .entity()
                 .map(Function.identity());
     }
 
+    /**
+     * Create a Cubbyhole secret.
+     *
+     * @param path secret's path
+     * @param values value of the new secret
+     * @return vault response
+     */
     default CreateCubbyhole.Response create(String path, Map<String, String> values) {
         return create(CreateCubbyhole.Request.builder()
                               .path(path)
                               .secretValues(values));
     }
 
+    /**
+     * Delete a Cubbyhole secret.
+     *
+     * @param path secret's path
+     * @return vault response
+     */
     default DeleteCubbyhole.Response delete(String path) {
         return delete(DeleteCubbyhole.Request.builder()
                               .path(path));
@@ -66,14 +93,15 @@ public interface CubbyholeSecrets extends Secrets {
      * Create a new secret on the defined path.
      *
      * @param request create cubbyhole request
+     * @return vault response
      */
-    CreateCubbyhole.Response create(CreateCubbyhole.Request request) throws VaultRestException;
+    CreateCubbyhole.Response create(CreateCubbyhole.Request request);
 
     /**
      * Update a secret on the defined path. The new values replace existing values.
      *
      * @param request update request (same as create request)
-     * @throws io.helidon.integrations.vault.VaultRestException in case the secret does not exist or the API call fails
+     * @return vault response
      */
     UpdateCubbyhole.Response update(UpdateCubbyhole.Request request);
 
@@ -81,6 +109,7 @@ public interface CubbyholeSecrets extends Secrets {
      * Delete the secret.
      *
      * @param request delete request
+     * @return vault response
      */
     DeleteCubbyhole.Response delete(DeleteCubbyhole.Request request);
 }

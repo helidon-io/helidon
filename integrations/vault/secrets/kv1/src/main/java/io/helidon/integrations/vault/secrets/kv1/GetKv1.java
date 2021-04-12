@@ -54,10 +54,22 @@ public final class GetKv1 {
             return new Request();
         }
 
+        /**
+         * Get secret request for a secret path.
+         *
+         * @param path secret's path
+         * @return new request
+         */
         public static Request create(String path) {
             return builder().path(path);
         }
 
+        /**
+         * Path of the secret to get.
+         *
+         * @param path secret's path
+         * @return updated request
+         */
         public Request path(String path) {
             this.path = path;
             return this;

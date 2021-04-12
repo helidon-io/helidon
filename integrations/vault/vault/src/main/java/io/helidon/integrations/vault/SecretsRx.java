@@ -37,7 +37,7 @@ public interface SecretsRx {
     default Single<List<String>> list() {
         return list(ListSecrets.Request.create())
                 .map(ApiOptionalResponse::entity)
-                .map(it -> it.map(ListSecrets.Response::paths).orElseGet(List::of));
+                .map(it -> it.map(ListSecrets.Response::list).orElseGet(List::of));
     }
 
     /**
@@ -50,7 +50,7 @@ public interface SecretsRx {
     default Single<List<String>> list(String path) {
         return list(ListSecrets.Request.create(path))
                 .map(ApiOptionalResponse::entity)
-                .map(it -> it.map(ListSecrets.Response::paths).orElseGet(List::of));
+                .map(it -> it.map(ListSecrets.Response::list).orElseGet(List::of));
     }
 
     /**

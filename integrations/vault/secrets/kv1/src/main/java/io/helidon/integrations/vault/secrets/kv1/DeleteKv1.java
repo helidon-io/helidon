@@ -21,7 +21,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Delete Key/Value Version 1 Secret request and response.
  */
 public final class DeleteKv1 {
     private DeleteKv1() {
@@ -48,6 +48,12 @@ public final class DeleteKv1 {
             return new Request();
         }
 
+        /**
+         * Path of the secret to delete.
+         *
+         * @param path secret's path
+         * @return updated request
+         */
         public Request path(String path) {
             this.path = path;
             return this;

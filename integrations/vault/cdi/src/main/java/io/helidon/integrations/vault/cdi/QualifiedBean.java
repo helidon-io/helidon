@@ -111,11 +111,11 @@ class QualifiedBean<T> implements Bean<T>, PassivationCapable {
 
     @Override
     public String toString() {
-        return "QualifiedBean{" +
-                "beanClass=" + beanClass.getSimpleName() +
-                ", type=" + type.getSimpleName() +
-                ", qualifiers=" + customQualifiers +
-                '}';
+        return "QualifiedBean{"
+                + "beanClass=" + beanClass.getSimpleName()
+                + ", type=" + type.getSimpleName()
+                + ", qualifiers=" + customQualifiers
+                + '}';
     }
 
     @Override

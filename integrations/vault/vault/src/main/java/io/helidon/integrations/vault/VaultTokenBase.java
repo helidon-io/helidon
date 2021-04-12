@@ -80,7 +80,7 @@ public abstract class VaultTokenBase {
      * @param <B> type of builder
      * @param <T> type of token
      */
-    public static abstract class Builder<B extends Builder<B, T>, T> implements io.helidon.common.Builder<T> {
+    public abstract static class Builder<B extends Builder<B, T>, T> implements io.helidon.common.Builder<T> {
         private Instant created = Instant.now();
         private String token;
         private Duration leaseDuration;
@@ -89,21 +89,45 @@ public abstract class VaultTokenBase {
         protected Builder() {
         }
 
+        /**
+         * When the token was created.
+         *
+         * @param created instant the token was created
+         * @return updated builder
+         */
         public B created(Instant created) {
             this.created = created;
             return me();
         }
 
+        /**
+         * The token to use (actual string representing the token).
+         *
+         * @param token token string
+         * @return updated builder
+         */
         public B token(String token) {
             this.token = token;
             return me();
         }
 
+        /**
+         * Lease duration.
+         *
+         * @param leaseDuration lease duration, such as {@link Duration#ofHours(long)}.
+         * @return updated builder
+         */
         public B leaseDuration(Duration leaseDuration) {
             this.leaseDuration = leaseDuration;
             return me();
         }
 
+        /**
+         * Whether the token is renewable or not.
+         *
+         * @param renewable {@code true} for a renewable token
+         * @return updated builder
+         */
         public B renewable(boolean renewable) {
             this.renewable = renewable;
             return me();

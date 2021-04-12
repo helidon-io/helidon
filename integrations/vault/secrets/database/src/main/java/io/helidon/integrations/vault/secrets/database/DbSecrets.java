@@ -19,6 +19,7 @@ package io.helidon.integrations.vault.secrets.database;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Secrets;
 import io.helidon.integrations.vault.VaultOptionalResponse;
@@ -26,10 +27,24 @@ import io.helidon.integrations.vault.VaultOptionalResponse;
 /**
  * Database secrets engine API.
  * <p>
- *  All methods block the current thread. This implementation is not suitable for reactive programming.
+ * All methods block the current thread. This implementation is not suitable for reactive programming.
  * Use {@link io.helidon.integrations.vault.secrets.database.DbSecretsRx} in reactive code.
  */
 public interface DbSecrets extends Secrets {
+    /**
+     * Database secrets engine.
+     * <p>
+     * Documentation:
+     * <a href="https://www.vaultproject.io/docs/secrets/databases">https://www.vaultproject.io/docs/secrets/databases</a>
+     */
+    Engine<DbSecretsRx> ENGINE = DbSecretsRx.ENGINE;
+
+    /**
+     * Create blocking DB secrets from its reactive counterpart.
+     *
+     * @param reactive reactive DB secrets
+     * @return blocking DB secrets
+     */
     static DbSecrets create(DbSecretsRx reactive) {
         return new DbSecretsImpl(reactive);
     }
@@ -56,6 +71,12 @@ public interface DbSecrets extends Secrets {
                 .map(Function.identity());
     }
 
+    /**
+     * Get credentials from the {@code /creds} endpoint.
+     *
+     * @param request request with at least the name
+     * @return get DB response
+     */
     VaultOptionalResponse<DbGet.Response> get(DbGet.Request request);
 
     /**
@@ -85,6 +106,12 @@ public interface DbSecrets extends Secrets {
                               .name(name));
     }
 
+    /**
+     * Delete a database configuration.
+     *
+     * @param request delete request with at least name configured
+     * @return delete database configuration response
+     */
     DbDelete.Response delete(DbDelete.Request request);
 
     /**
@@ -98,5 +125,11 @@ public interface DbSecrets extends Secrets {
                                   .name(name));
     }
 
+    /**
+     * Delete a database role.
+     *
+     * @param request request with at least the role name configured
+     * @return delete database role response
+     */
     DbDeleteRole.Response deleteRole(DbDeleteRole.Request request);
 }

@@ -55,16 +55,35 @@ public final class Login {
             return new Request();
         }
 
+        /**
+         * Create a new login request for role name and k8s service account token.
+         *
+         * @param roleName name of the Vault's role
+         * @param serviceAccountToken k8s service account token
+         * @return a new request
+         */
         public static Request create(String roleName, String serviceAccountToken) {
             return builder()
                     .roleName(roleName)
                     .serviceAccountToken(serviceAccountToken);
         }
 
+        /**
+         * Vault's role name.
+         *
+         * @param roleName role name
+         * @return updated request
+         */
         public Request roleName(String roleName) {
             return add("role", roleName);
         }
 
+        /**
+         * Kubernetes service account token.
+         *
+         * @param token token
+         * @return updated request
+         */
         public Request serviceAccountToken(String token) {
             return add("jwt", token);
         }
@@ -98,6 +117,11 @@ public final class Login {
             return new Builder();
         }
 
+        /**
+         * Token to use to access Vault.
+         *
+         * @return token
+         */
         public VaultToken token() {
             return token;
         }

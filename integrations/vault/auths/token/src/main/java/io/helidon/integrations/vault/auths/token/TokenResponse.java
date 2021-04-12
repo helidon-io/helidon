@@ -105,6 +105,11 @@ public abstract class TokenResponse extends VaultResponse {
         return metadata;
     }
 
+    /**
+     * Entity id.
+     *
+     * @return entity id
+     */
     public String entityId() {
         return entityId;
     }

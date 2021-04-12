@@ -36,7 +36,12 @@ public class VaultRestException extends ApiRestException {
         this.vaultErrors = List.copyOf(builder.vaultErrors);
     }
 
-    public static Builder vaultBuilder() {
+    /**
+     * A builder for Vault exception.
+     *
+     * @return a new builder
+     */
+    public static Builder builder() {
         return new Builder();
     }
 
@@ -55,7 +60,10 @@ public class VaultRestException extends ApiRestException {
         super.printStackTrace(s);
     }
 
-
+    /**
+     * Fluent API builder for {@link io.helidon.integrations.vault.VaultRestException}
+     * used by {@link io.helidon.integrations.common.rest.RestApiBase}.
+     */
     public static class Builder extends BaseBuilder<Builder> implements io.helidon.common.Builder<VaultRestException> {
         private final List<String> vaultErrors = new LinkedList<>();
 
@@ -67,6 +75,12 @@ public class VaultRestException extends ApiRestException {
             return new VaultRestException(this);
         }
 
+        /**
+         * Configure the vault errors read from response entity.
+         *
+         * @param errors errors to add
+         * @return updated builder
+         */
         public Builder vaultErrors(List<String> errors) {
             this.vaultErrors.addAll(errors);
             return this;

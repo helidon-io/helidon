@@ -39,8 +39,11 @@ class Kv1SecretsRxImpl implements Kv1SecretsRx {
         String apiPath = mount + "/" + request.path().orElse("");
 
         return restApi
-                .invokeOptional(Vault.LIST, apiPath, request, VaultOptionalResponse.<ListSecrets.Response, JsonObject>builder()
-                        .entityProcessor(ListSecrets.Response::create));
+                .invokeOptional(Vault.LIST,
+                                apiPath,
+                                request,
+                                VaultOptionalResponse.<ListSecrets.Response, JsonObject>vaultResponseBuilder()
+                                        .entityProcessor(ListSecrets.Response::create));
     }
 
     @Override
@@ -48,7 +51,7 @@ class Kv1SecretsRxImpl implements Kv1SecretsRx {
         String path = request.path();
         String apiPath = mount + "/" + path;
 
-        return restApi.get(apiPath, request, VaultOptionalResponse.<GetKv1.Response, JsonObject>builder()
+        return restApi.get(apiPath, request, VaultOptionalResponse.<GetKv1.Response, JsonObject>vaultResponseBuilder()
                 .entityProcessor(it -> GetKv1.Response.create(path, it)));
     }
 

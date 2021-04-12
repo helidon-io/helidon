@@ -15,7 +15,7 @@
  */
 
 /**
- * Vault authentication for Kubernetes.
+ * Vault authentication method for Kubernetes.
  */
 module io.helidon.integrations.vault.auths.k8s {
     requires io.helidon.integrations.vault;

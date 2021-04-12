@@ -42,6 +42,12 @@ public interface Kv1Secrets extends Secrets {
                 .map(Function.identity());
     }
 
+    /**
+     * Get a secret.
+     *
+     * @param request with secret's path
+     * @return response with secret if found
+     */
     VaultOptionalResponse<GetKv1.Response> get(GetKv1.Request request);
 
     /**
@@ -49,6 +55,7 @@ public interface Kv1Secrets extends Secrets {
      *
      * @param path relative to the mount point, no leading slash
      * @param newSecretValues values to use in the new secret
+     * @return vault response
      */
     default CreateKv1.Response create(String path, Map<String, String> newSecretValues) {
         return create(CreateKv1.Request.builder()
@@ -56,6 +63,12 @@ public interface Kv1Secrets extends Secrets {
                               .secretValues(newSecretValues));
     }
 
+    /**
+     * Create a new secret on the defined path.
+     *
+     * @param request with path and secret's values
+     * @return vault response
+     */
     CreateKv1.Response create(CreateKv1.Request request);
 
     /**
@@ -63,6 +76,7 @@ public interface Kv1Secrets extends Secrets {
      *
      * @param path relative to the mount point, no leading slash
      * @param newValues new values of the secret
+     * @return vault response
      */
     default UpdateKv1.Response update(String path, Map<String, String> newValues) {
         return update(UpdateKv1.Request.builder()
@@ -70,17 +84,30 @@ public interface Kv1Secrets extends Secrets {
                               .secretValues(newValues));
     }
 
+    /**
+     * Update a secret on the defined path. The new values replace existing values.
+     *
+     * @param request with secret's path and new values
+     * @return vault response
+     */
     UpdateKv1.Response update(UpdateKv1.Request request);
 
     /**
      * Delete the secret.
      *
      * @param path relative to the mount point, no leading slash
+     * @return vault response
      */
     default DeleteKv1.Response delete(String path) {
         return delete(DeleteKv1.Request.builder()
                               .path(path));
     }
 
+    /**
+     * Delete the secret.
+     *
+     * @param request request with secret's path
+     * @return vault response
+     */
     DeleteKv1.Response delete(DeleteKv1.Request request);
 }

@@ -48,16 +48,35 @@ public final class CreatePolicy {
             return new Request();
         }
 
+        /**
+         * A new request with a policy name and policy text.
+         *
+         * @param name name of the policy
+         * @param policy policy text
+         * @return a new request
+         */
         public static Request create(String name, String policy) {
             return builder()
                     .name(name)
                     .policy(policy);
         }
 
+        /**
+         * Policy text.
+         *
+         * @param policy policy
+         * @return updated request
+         */
         public Request policy(String policy) {
             return add("policy", policy);
         }
 
+        /**
+         * Policy name.
+         *
+         * @param name name of the policy
+         * @return updated request
+         */
         public Request name(String name) {
             this.name = name;
             return this;

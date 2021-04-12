@@ -21,6 +21,11 @@ import io.helidon.integrations.vault.AuthMethod;
 import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.SysApi;
 
+/**
+ * Vault sys operation as reactive non-blocking API.
+ *
+ * @see io.helidon.integrations.vault.Vault#sys(io.helidon.integrations.vault.SysApi)
+ */
 public interface SysRx {
     /**
      * The API of this sys implementation.
@@ -47,6 +52,7 @@ public interface SysRx {
 
     /**
      * Disable (unmount) a secret engine from default path.
+     *
      * @param engine to disable
      * @return when the engine is disabled
      */
@@ -56,7 +62,8 @@ public interface SysRx {
     }
 
     /**
-     * Disable (unmount) a secret engine from specific path.
+     * Disable (unmount) a secrets engine from specific path.
+     *
      * @param path mount path
      * @return when the engine is disabled
      */
@@ -65,6 +72,12 @@ public interface SysRx {
                                      .path(path));
     }
 
+    /**
+     * Disable (unmount) a secrets engine.
+     *
+     * @param request disable engine request
+     * @return disable engine response
+     */
     Single<DisableEngine.Response> disableEngine(DisableEngine.Request request);
 
     /**
@@ -90,13 +103,19 @@ public interface SysRx {
      * Disable an authentication method.
      *
      * @param path path of the method
-     * @return when method is disabled
+     * @return disable authentication method response
      */
     default Single<DisableAuth.Response> disableAuth(String path) {
         return disableAuth(DisableAuth.Request.builder()
                                    .path(path));
     }
 
+    /**
+     * Disable an authentication method.
+     *
+     * @param request disable authentication method request
+     * @return disable authentication method response
+     */
     Single<DisableAuth.Response> disableAuth(DisableAuth.Request request);
 
     /**
@@ -110,6 +129,12 @@ public interface SysRx {
         return createPolicy(CreatePolicy.Request.create(name, policy));
     }
 
+    /**
+     * Create a policy.
+     *
+     * @param request create a policy request
+     * @return create policy response
+     */
     Single<CreatePolicy.Response> createPolicy(CreatePolicy.Request request);
 
     /**
@@ -122,5 +147,11 @@ public interface SysRx {
         return deletePolicy(DeletePolicy.Request.create(name));
     }
 
+    /**
+     * Delete a policy.
+     *
+     * @param request delete policy request
+     * @return delete policy response
+     */
     Single<DeletePolicy.Response> deletePolicy(DeletePolicy.Request request);
 }

@@ -28,7 +28,7 @@ import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.vault.VaultApiException;
 
 /**
- * request and response.
+ * Sign CSR request and response.
  */
 public final class SignCsr {
     private SignCsr() {
@@ -57,13 +57,12 @@ public final class SignCsr {
         /**
          * Certification request (CSR) in PEM format.
          *
-         * @param csr
-         * @return
+         * @param csr certificate signing request
+         * @return updated request
          */
         public Request csr(String csr) {
             return add("csr", csr);
         }
-
     }
 
     /**
@@ -88,6 +87,11 @@ public final class SignCsr {
             return new Builder();
         }
 
+        /**
+         * Get the response as an X.509 certificate.
+         *
+         * @return certificate
+         */
         public X509Certificate toCertificate() {
             return cert.get();
         }

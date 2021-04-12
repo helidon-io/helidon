@@ -53,11 +53,23 @@ public final class DeletePolicy {
             return new Request();
         }
 
+        /**
+         * Create a delete policy request for a policy name.
+         *
+         * @param name name of the policy
+         * @return a new request
+         */
         public static Request create(String name) {
             return builder()
                     .name(name);
         }
 
+        /**
+         * Name of the policy to delete.
+         *
+         * @param name policy name
+         * @return updated request
+         */
         public Request name(String name) {
             this.name = name;
             return this;

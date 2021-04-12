@@ -164,14 +164,14 @@ class TransitService implements Service {
                 .encryptionKeyName(ENCRYPTION_KEY);
 
         for (String dato : data) {
-            request.addBatch(EncryptBatch.Batch.create(Base64Value.create(dato)));
+            request.addEntry(EncryptBatch.BatchEntry.create(Base64Value.create(dato)));
         }
         secrets.encrypt(request)
                 .map(EncryptBatch.Response::batchResult)
                 .flatMapSingle(batchResult -> {
                     for (Encrypt.Encrypted encrypted : batchResult) {
                         System.out.println("Encrypted: " + encrypted.cipherText());
-                        decryptRequest.addBatch(DecryptBatch.Batch.create(encrypted.cipherText()));
+                        decryptRequest.addEntry(DecryptBatch.BatchEntry.create(encrypted.cipherText()));
                     }
                     return secrets.decrypt(decryptRequest);
                 })

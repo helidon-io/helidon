@@ -33,7 +33,7 @@ public interface Secrets {
     default List<String> list() {
         return list(ListSecrets.Request.create())
                 .entity()
-                .map(ListSecrets.Response::paths)
+                .map(ListSecrets.Response::list)
                 .orElseGet(List::of);
     }
 
@@ -47,7 +47,7 @@ public interface Secrets {
     default List<String> list(String path) {
         return list(ListSecrets.Request.create(path))
                 .entity()
-                .map(ListSecrets.Response::paths)
+                .map(ListSecrets.Response::list)
                 .orElseGet(List::of);
     }
 

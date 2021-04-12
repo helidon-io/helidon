@@ -52,6 +52,11 @@ public class TokenVaultAuth implements VaultAuth {
         this.baseNamespace = builder.baseNamespace;
     }
 
+    /**
+     * Create a new builder.
+     *
+     * @return new builder
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -90,6 +95,9 @@ public class TokenVaultAuth implements VaultAuth {
                 .build();
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.integrations.vault.auths.token.TokenVaultAuth}.
+     */
     public static class Builder implements io.helidon.common.Builder<TokenVaultAuth> {
         private String baseNamespace;
         private String token;
@@ -102,11 +110,23 @@ public class TokenVaultAuth implements VaultAuth {
             return new TokenVaultAuth(this);
         }
 
+        /**
+         * Configure a base namespace to use.
+         *
+         * @param baseNamespace base namespace
+         * @return updated builder
+         */
         public Builder baseNamespace(String baseNamespace) {
             this.baseNamespace = baseNamespace;
             return this;
         }
 
+        /**
+         * Configure the token to use.
+         *
+         * @param token token value
+         * @return updated builder
+         */
         public Builder token(String token) {
             this.token = token;
             return this;

@@ -25,7 +25,7 @@ import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Create Token request and response.
  */
 public final class CreateToken {
     private CreateToken() {

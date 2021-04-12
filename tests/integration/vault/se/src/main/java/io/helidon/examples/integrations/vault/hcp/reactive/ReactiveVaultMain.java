@@ -33,7 +33,17 @@ import io.helidon.webserver.WebServer;
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
 
-public class ReactiveVaultMain {
+/**
+ * Main class to start the application.
+ */
+public final class ReactiveVaultMain {
+    private ReactiveVaultMain() {
+    }
+
+    /**
+     * Main method.
+     * @param args ignored
+     */
     public static void main(String[] args) {
         LogConfig.configureRuntime();
 
