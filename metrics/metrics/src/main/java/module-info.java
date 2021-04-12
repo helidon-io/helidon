@@ -23,6 +23,7 @@ module io.helidon.metrics {
     requires java.logging;
 
     requires io.helidon.common;
+    requires io.helidon.common.serviceloader;
     requires io.helidon.webserver.cors;
 
     requires transitive microprofile.metrics.api;
@@ -35,5 +36,5 @@ module io.helidon.metrics {
 
     exports io.helidon.metrics;
 
-    uses ExemplarService;
+    uses io.helidon.metrics.ExemplarService;
 }
