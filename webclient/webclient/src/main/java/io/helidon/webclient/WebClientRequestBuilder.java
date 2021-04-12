@@ -266,6 +266,13 @@ public interface WebClientRequestBuilder {
     WebClientRequestBuilder requestId(long requestId);
 
     /**
+     * Whether chunked {@link Http.Header#TRANSFER_ENCODING} should be added to the headers if the entity is chunked.
+     *
+     * @return updated builder instance
+     */
+    WebClientRequestBuilder allowChunkedEncoding(boolean allowChunkedEncoding);
+
+    /**
      * Performs prepared request and transforms response to requested type.
      *
      * When transformation is done the returned {@link CompletionStage} is notified.
