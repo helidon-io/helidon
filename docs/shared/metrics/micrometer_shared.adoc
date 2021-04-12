@@ -54,7 +54,7 @@ Declare the following dependency in your project:
 [source,xml,subs="verbatim,attributes"]
 ----
 <dependency>
-    <groupId>io.helidon.integrations</groupId>
+    <groupId>io.helidon.integrations.micrometer</groupId>
 ifdef::isSE[]
     <artifactId>helidon-integrations-micrometer</artifactId>
 endif::isSE[]
