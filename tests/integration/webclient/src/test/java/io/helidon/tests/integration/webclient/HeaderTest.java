@@ -87,6 +87,17 @@ public class HeaderTest extends TestParent {
                 .flatMapSingle(response -> response.content().as(String.class))
                 .await();
         assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
+
+        contentLength = webClient.post()
+                .headers(headers -> {
+                    headers.contentLength(0);
+                    return headers;
+                })
+                .path("contentLength")
+                .submit(sampleSmallEntity)
+                .flatMapSingle(response -> response.content().as(String.class))
+                .await();
+        assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
     }
 
     private static final class HeaderTestService implements WebClientService {

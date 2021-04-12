@@ -137,6 +137,8 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
                 } else if (EMPTY_CONTENT_LENGTH.contains(request.method())) {
                     HttpUtil.setContentLength(request, 0);
                 }
+            } else if (HttpUtil.getContentLength(request) == 0 && firstDataChunk != null) {
+                HttpUtil.setContentLength(request, firstDataChunk.remaining());
             }
             channel.writeAndFlush(request);
             if (firstDataChunk != null) {
