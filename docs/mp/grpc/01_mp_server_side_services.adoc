@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@
 :pagename: grpc-microprofile-server
 :description: Helidon gRPC MicroProfile Server-Side Services
 :keywords: helidon, grpc, microprofile, micro-profile
+:feature-name: gRPC MicroProfile Server
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:microprofile-bundle: false
 
 The gRPC Microprofile APIs are an extension to <<microprofile/01_introduction.adoc, Helidon MP>> to allow building
 of gRPC services and clients that integrate with the Microprofile APIs. Using Helidon gRPC MP makes building gRPC services
@@ -31,10 +34,7 @@ in the MP http server.
 Building gRPC services using Helidon gRPC MP is very simple and allows the developer to concentrate on their
 application logic without needing to write a lot of boilerplate gRPC code.
 
-== Maven Coordinates
-
-The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
-should declare dependency management for Helidon applications. Then declare the following dependency in your project:
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
 ----

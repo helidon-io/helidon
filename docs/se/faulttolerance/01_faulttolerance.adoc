@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,7 +28,19 @@
 :javadoc-base-url-reactive: {javadoc-base-url}io.helidon.common.reactive/io/helidon/common/reactive/package-summary.html
 :helidon-variant: SE
 :mp-microprofile: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-2.1.1/microprofile-fault-tolerance-spec.html
+:feature-name: Fault Tolerance
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.fault-tolerance</groupId>
+    <artifactId>helidon-fault-tolerance</artifactId>
+</dependency>
+----
 
 == Introduction
 
@@ -56,18 +68,8 @@ link:{javadoc-base-url-faulttolerance}[Fault Toleance SE API Javadocs].
 
 === Updating your POM
 
-The following POM dependency is necessary to use the Fault Tolerance SE API in a
-Helidon application.
-
-[source,xml]
-.Fault Tolerance SE Dependency in `pom.xml`
-----
-<dependency>
-    <groupId>io.helidon.fault-tolerance</groupId>
-    <artifactId>helidon-fault-tolerance</artifactId>
-    <version>{helidon-version}</version>
-</dependency>
-----
+In order to use Fault Tolerance you first need to add the <<Maven Coordinates, maven dependency>> to
+your `pom.xml`.
 
 === Single<T> and Multi<T>
 

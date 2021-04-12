@@ -20,8 +20,38 @@
 :description: Helidon DB Client
 :keywords: helidon, se, database, dbclient
 :h1Prefix: SE
+:feature-name: DB Client
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
-The Helidon SE DB Client provides a unified, reactive API for working with databases in non-blocking way. 
+The Helidon SE DB Client provides a unified, reactive API for working with databases in non-blocking way.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+     <dependency>
+         <groupId>io.helidon.dbclient</groupId>
+         <artifactId>helidon-dbclient</artifactId>
+     </dependency>
+----
+
+To use with a JDBC client also add the following dependency:
+[source,xml]
+----
+     <dependency>
+         <groupId>io.helidon.dbclient</groupId>
+         <artifactId>helidon-dbclient-jdbc</artifactId>
+     </dependency>
+----
+
+Or to use with MongoDB client add the following dependency:
+[source,xml]
+----
+     <dependency>
+         <groupId>io.helidon.dbclient</groupId>
+         <artifactId>helidon-dbclient-mongodb</artifactId>
+     </dependency>
+----
 
 == Helidon DB Client Features Overview
 
@@ -62,14 +92,11 @@ The API offers support for health checks, metrics and tracing.
 
 Before you begin you must add the DB Client dependencies and configure the client.
 
-. Add the DB Client dependencies to the Maven `pom.xml` file. 
-+
-The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
-should declare dependency management for Helidon applications.
+=== Add the DB Client dependencies to the Maven `pom.xml` file.
 
 For the DB Client using JDBC implementation and H2 database, you must include the following dependencies in your project:
 
-[source,java]
+[source,xml]
 ----
 <dependencies>
      <dependency>
@@ -90,7 +117,7 @@ For the DB Client using JDBC implementation and H2 database, you must include th
 <2> Specify JDBC or MongoDB
 <3> Add the database JDBC driver (only for JDBC)
 
-. Use Helidon Config to configure the client.
+=== Use Helidon Config to configure the client.
 
 The DB Client must be configured before you begin. In the example below we'll use Helidon Config to set up JDBC-based client:
 

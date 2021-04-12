@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@
 :pagename: microprofile-graphql
 :description: Helidon GraphQL MicroProfile
 :keywords: helidon, graphql, microprofile, micro-profile
-
+:feature-name: MicroProfile GraphQL
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:microprofile-bundle: false
 
 The Microprofile GraphQL APIs are an extension to <<microprofile/01_introduction.adoc, Helidon MP>>
 to allow building of applications that can expose a GraphQL endpoint.
@@ -30,6 +32,16 @@ to allow building of applications that can expose a GraphQL endpoint.
 
 WARNING: The Helidon GraphQL feature is currently experimental and the APIs are
  subject to changes until GraphQL support is stabilized.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.graphql</groupId>
+    <artifactId>helidon-microprofile-graphql-server</artifactId>
+</dependency>
+----
 
 == About the MicroProfile GraphQL Specification
 Helidon MP implements the MicroProfile GraphQL
@@ -40,19 +52,6 @@ and a runtime for fulfilling queries with existing data.
 It provides an alternative to, though not necessarily a replacement for, REST.
 
 For more information on GraphQL see https://graphql.org/.
-
-== Maven Coordinates
-
-The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
-should declare dependency management for Helidon applications. Then declare the following dependency in your project:
-
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.microprofile.graphql</groupId>
-    <artifactId>helidon-microprofile-graphql-server</artifactId>
-</dependency>
-----
 
 == Getting Started
 

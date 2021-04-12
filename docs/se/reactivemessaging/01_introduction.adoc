@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,6 +23,18 @@
 :description: Reactive Messaging support in Helidon SE
 :keywords: helidon, se, messaging
 :h1Prefix: SE
+:feature-name: Reactive Messaging
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.messaging</groupId>
+    <artifactId>helidon-messaging</artifactId>
+</dependency>
+----
 
 == Reactive Messaging
 
@@ -119,16 +131,3 @@ Example of such a versatile connectors in Helidon:
 
  * <<se/reactivemessaging/04_kafka.adoc,Kafka connector>>
  * <<se/reactivemessaging/05_jms.adoc,JMS connector>>
-
-
-=== Dependency
-
-Declare the following dependency in your project:
-
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.messaging</groupId>
-    <artifactId>helidon-messaging</artifactId>
-</dependency>
-----
