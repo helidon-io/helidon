@@ -46,6 +46,13 @@ public abstract class HelidonRestServiceSupport implements Service {
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
     private final Logger logger;
 
+    /**
+     * Shared initialization for new service support instances.
+     *
+     * @param logger the {@code Logger} for the concrete service support instance
+     * @param builder builder for the service support instance.
+     * @param serviceName name of the service
+     */
     protected HelidonRestServiceSupport(Logger logger, Builder<?, ?> builder, String serviceName) {
         this.logger = logger;
         this.context = builder.context;
