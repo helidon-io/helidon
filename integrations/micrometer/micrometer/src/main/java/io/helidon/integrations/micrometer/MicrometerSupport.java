@@ -54,7 +54,7 @@ public class MicrometerSupport extends HelidonRestServiceSupport {
         super(Logger.getLogger(MicrometerSupport.class.getName()), builder, SERVICE_NAME);
 
         meterRegistryFactory = builder.meterRegistryFactorySupplier.get();
-        }
+    }
 
     /**
      * Fluid builder for {@code MicrometerSupport}.
