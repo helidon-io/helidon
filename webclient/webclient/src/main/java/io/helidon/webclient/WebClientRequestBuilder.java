@@ -268,6 +268,7 @@ public interface WebClientRequestBuilder {
     /**
      * Whether chunked {@link Http.Header#TRANSFER_ENCODING} should be added to the headers if the entity is chunked.
      *
+     * @param allowChunkedEncoding allow chunked encoding to be added
      * @return updated builder instance
      */
     WebClientRequestBuilder allowChunkedEncoding(boolean allowChunkedEncoding);
