@@ -27,7 +27,7 @@ import io.helidon.integrations.vault.spi.InjectionProvider;
 /**
  * Java Service Loader service implementation for {@link SysRx}.
  */
-public class SysProvider implements io.helidon.integrations.vault.spi.SysProvider<SysRx>, InjectionProvider {
+public class HcpSysProvider implements io.helidon.integrations.vault.spi.SysProvider<SysRx>, InjectionProvider {
     private static final List<InjectionType<?>> INJECTABLES = new LinkedList<>();
 
     static {

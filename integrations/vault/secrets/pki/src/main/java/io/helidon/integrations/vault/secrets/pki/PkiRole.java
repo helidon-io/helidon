@@ -210,7 +210,7 @@ public final class PkiRole {
         /**
          * Specifies the type of key to generate for generated private keys and the type of key expected for submitted CSRs.
          * Currently, rsa and ec are supported, or when signing CSRs any can be specified to allow keys of either type and with any
-         * bit size (subject to > 1024 bits for RSA keys).
+         * bit size (subject to &gt; 1024 bits for RSA keys).
          * <p>
          * Defaults to {@value PkiSecretsRx#KEY_TYPE_RSA}.
          *

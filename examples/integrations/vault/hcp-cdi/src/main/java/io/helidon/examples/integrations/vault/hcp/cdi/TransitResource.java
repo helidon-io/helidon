@@ -187,7 +187,7 @@ public class TransitResource {
     public String sign(@PathParam("text") String text) {
         return secrets.sign(Sign.Request.builder()
                                     .signatureKeyName(SIGNATURE_KEY)
-                                    .data(Base64Value.create(secret)))
+                                    .data(Base64Value.create(text)))
                 .signature();
     }
 

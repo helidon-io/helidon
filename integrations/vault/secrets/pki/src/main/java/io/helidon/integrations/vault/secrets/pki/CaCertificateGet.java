@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 
 import io.helidon.common.LazyValue;
 import io.helidon.integrations.common.rest.ApiEntityResponse;
@@ -113,7 +114,7 @@ public final class CaCertificateGet {
          * @return bytes of the certificate
          */
         public byte[] toBytes() {
-            return certBytes;
+            return Arrays.copyOf(certBytes, certBytes.length);
         }
 
         static final class Builder extends ApiEntityResponse.Builder<Builder, Response, byte[]> {

@@ -74,27 +74,21 @@ class K8sRestApi extends VaultRestApi {
         private K8sAuthRx auth;
         private String roleName;
         private String jwtToken;
-        private VaultTokenBase token;
 
         private Builder() {
         }
 
-        public Builder token(VaultTokenBase token) {
-            this.token = token;
-            return this;
-        }
-
-        public Builder auth(K8sAuthRx auth) {
+        Builder auth(K8sAuthRx auth) {
             this.auth = auth;
             return this;
         }
 
-        public Builder roleName(String roleName) {
+        Builder roleName(String roleName) {
             this.roleName = roleName;
             return this;
         }
 
-        public Builder jwtToken(String jwtToken) {
+        Builder jwtToken(String jwtToken) {
             this.jwtToken = jwtToken;
             return this;
         }

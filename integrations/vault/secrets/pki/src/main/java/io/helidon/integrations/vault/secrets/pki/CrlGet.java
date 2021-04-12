@@ -21,6 +21,7 @@ import java.security.cert.CRLException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509CRL;
+import java.util.Arrays;
 
 import io.helidon.common.LazyValue;
 import io.helidon.integrations.common.rest.ApiEntityResponse;
@@ -115,7 +116,7 @@ public final class CrlGet {
          * @return bytes of the CRL
          */
         public byte[] toBytes() {
-            return crlBytes;
+            return Arrays.copyOf(crlBytes, crlBytes.length);
         }
 
         static final class Builder extends ApiEntityResponse.Builder<Builder, Response, byte[]> {

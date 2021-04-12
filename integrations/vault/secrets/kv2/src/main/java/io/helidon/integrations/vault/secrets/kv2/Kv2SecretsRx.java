@@ -36,7 +36,7 @@ public interface Kv2SecretsRx extends SecretsRx {
      * KV (Key/Value) secrets engine version 2.
      * <p>
      * Documentation:
-     * <a href="https://www.vaultproject.io/docs/secrets/kv/kv-v2>https://www.vaultproject.io/docs/secrets/kv/kv-v2</a>
+     * <a href="https://www.vaultproject.io/docs/secrets/kv/kv-v2">https://www.vaultproject.io/docs/secrets/kv/kv-v2</a>
      */
     Engine<Kv2SecretsRx> ENGINE = Engine.create(Kv2SecretsRx.class, "kv", "secret", "2");
 

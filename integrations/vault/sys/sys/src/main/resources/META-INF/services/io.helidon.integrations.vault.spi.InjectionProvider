@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.integrations.vault.sys.SysProvider
+io.helidon.integrations.vault.sys.HcpSysProvider
