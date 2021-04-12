@@ -41,6 +41,7 @@ public class K8sVaultAuth implements VaultAuth {
 
     private final String serviceAccountToken;
     private final String tokenRole;
+    private final String tokenLocation;
 
     /**
      * Constructor required for Java Service Loader.
@@ -51,11 +52,13 @@ public class K8sVaultAuth implements VaultAuth {
     public K8sVaultAuth() {
         this.serviceAccountToken = null;
         this.tokenRole = null;
+        this.tokenLocation = "/var/run/secrets/kubernetes.io/serviceaccount/token";
     }
 
     private K8sVaultAuth(Builder builder) {
         this.serviceAccountToken = builder.serviceAccountToken;
         this.tokenRole = builder.tokenRole;
+        this.tokenLocation = builder.tokenLocation;
     }
 
     /**
@@ -79,7 +82,7 @@ public class K8sVaultAuth implements VaultAuth {
         if (this.serviceAccountToken == null) {
             Optional<String> maybeToken = config.get("auth.k8s.service-account-token").asString()
                     .or(() -> {
-                        Path tokenPath = Paths.get("/var/run/secrets/kubernetes.io/serviceaccount/token");
+                        Path tokenPath = Paths.get(tokenLocation);
                         if (!Files.exists(tokenPath)) {
                             return Optional.empty();
                         }
@@ -142,6 +145,7 @@ public class K8sVaultAuth implements VaultAuth {
     public static class Builder implements io.helidon.common.Builder<K8sVaultAuth> {
         private String serviceAccountToken;
         private String tokenRole;
+        private String tokenLocation = "/var/run/secrets/kubernetes.io/serviceaccount/token";
 
         private Builder() {
         }
@@ -170,6 +174,17 @@ public class K8sVaultAuth implements VaultAuth {
          */
         public Builder tokenRole(String tokenRole) {
             this.tokenRole = tokenRole;
+            return this;
+        }
+
+        /**
+         * File with the k8s service account token.
+         *
+         * @param tokenLocation path to service account token
+         * @return updated builder
+         */
+        public Builder tokenLocation(String tokenLocation) {
+            this.tokenLocation = tokenLocation;
             return this;
         }
     }

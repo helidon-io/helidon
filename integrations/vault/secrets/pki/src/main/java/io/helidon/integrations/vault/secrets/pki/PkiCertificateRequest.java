@@ -60,8 +60,8 @@ abstract class PkiCertificateRequest<T extends PkiCertificateRequest<T>> extends
 
     /**
      *  Specifies custom OID/UTF8-string SANs. These must match values specified on the role in allowed_other_sans (see role
-     *  creation for allowed_other_sans globbing rules). The format is the same as OpenSSL: <oid>;<type>:<value> where the
-     *  type is hardcoded to UTF8.
+     *  creation for allowed_other_sans globbing rules). The format is the same as OpenSSL:
+     *  &lt;oid&gt;:&lt;type&gt;:&lt;value&gt; where the type is hardcoded to UTF8.
      *
      * @param oid OID of the subject alternative name
      * @param value value of the subject alternative name

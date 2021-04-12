@@ -30,8 +30,8 @@ module io.helidon.integrations.vault.sys {
     exports io.helidon.integrations.vault.sys;
 
     provides io.helidon.integrations.vault.spi.SysProvider
-            with io.helidon.integrations.vault.sys.SysProvider;
+            with io.helidon.integrations.vault.sys.HcpSysProvider;
 
     provides io.helidon.integrations.vault.spi.InjectionProvider
-            with io.helidon.integrations.vault.sys.SysProvider;
+            with io.helidon.integrations.vault.sys.HcpSysProvider;
 }

@@ -66,7 +66,7 @@ public class MySqlConfigureRequest extends DbConfigure.Request<MySqlConfigureReq
     }
 
     /**
-     * Specifies the maximum amount of time a connection may be reused. If <= 0s connections are reused forever.
+     * Specifies the maximum amount of time a connection may be reused. If &lt;= 0s connections are reused forever.
      *
      * @param duration maximal lifetime of a connection
      * @return updated request
