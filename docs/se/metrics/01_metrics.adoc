@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@
 :h1Prefix: SE
 :description: Helidon metrics
 :keywords: helidon, metrics
+:feature-name: DB Client
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 Helidon SE provides the following to support metrics:
 
@@ -28,12 +30,9 @@ Helidon SE provides the following to support metrics:
 2. A base set of metrics, available at `/metrics/base`, as specified by the MicroProfile Metrics specification.
 3. A set of Helidon-specific metrics, available at `/metrics/vendor`
 
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
-== Prerequisites
-
-Declare the following dependency in your project:
-
-[source,xml,subs="verbatim,attributes"]
+[source,xml]
 ----
     <dependency>
         <groupId>io.helidon.metrics</groupId>

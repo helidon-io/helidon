@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,10 +26,19 @@ This is a special Maven pom file that provides dependency management.
 Using the Helidon BOM allows you to use Helidon component dependencies with a
  single version: the Helidon version.
 
+== The Helidon Application POMs
+
+If you created your application using the <<about/05_cli.adoc,Helidon CLI>> or
+<<about/03_prerequisites.adoc,archetypes>> then your
+project will have a Helidon Application POM as its parent POM. In this case you
+will get Helidon's dependency management automatically.
+
+If your project doesn't use a Helidon Application POM as its parent, then
+you will need to import the Helidon BOM POM.
+
 == The Helidon BOM POM
 
-Add the following snippet to your pom.xml file in order to import the Helidon
- BOM.
+To import the Helidon BOM POM add the following snippet to your pom.xml file.
 
 [source,xml,subs="attributes+"]
 .Import the Helidon BOM

@@ -22,12 +22,25 @@
 :description: Bean Validation Introduction
 :keywords: helidon, webserver, bean validation, validation
 :bean-validation-spec-url: https://projects.eclipse.org/projects/ee4j.bean-validation
+:feature-name: Bean Validation
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+
 
 Helidon supports Bean Validation via its integration with JAX-RS/Jersey. The
 {bean-validation-spec-url}[Jakarta Bean
 Validation specification] defines an API to validate Java beans.
 Bean Validation is supported in REST resource classes as well as in
 regular application beans.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source, xml]
+----
+<dependency>
+  <groupId>org.glassfish.jersey.ext</groupId>
+  <artifactId>jersey-bean-validation</artifactId>
+</dependency>
+----
 
 == Validation Example in Helidon MP
 
@@ -50,15 +63,3 @@ public class HelloWorld {
 }
 ----
 
-Validation typically requires an additional dependency from Jersey in your pom:
-
-[source, xml]
-----
-<dependency>
-  <groupId>org.glassfish.jersey.ext</groupId>
-  <artifactId>jersey-bean-validation</artifactId>
-</dependency>
-----
-
-If defined as a parent pom in your project, the version for this dependency
-is inherited from the Helidon application pom.

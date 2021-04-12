@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@
 :description: Helidon CDI extension for Oracle Universal Connection Pool
 :keywords: helidon, java, microservices, microprofile, extensions, cdi, ucp
 :hikaricp-props-url: https://github.com/brettwooldridge/HikariCP/blob/dev/README.md#configuration-knobs-baby
+:feature-name: Oracle UCP Support
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 This https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi[CDI portable extension] provides
 support for injecting
@@ -28,11 +30,9 @@ https://docs.oracle.com/en/database/oracle/oracle-database/19/jjucp/index.html[O
 Universal Connection Pool data sources] in your Helidon MicroProfile
 applications.
 
-== Prerequisites
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
-Declare the following dependency in your project:
-
-[source,xml,subs="attributes+"]
+[source,xml]
 ----
 <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>

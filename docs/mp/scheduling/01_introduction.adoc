@@ -22,18 +22,20 @@
 :description: Scheduling in Helidon MP
 :keywords: helidon, mp, scheduling
 :h1Prefix: MP
+:feature-name: Scheduling
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
-== Scheduling
-For scheduling tasks in Helidon you can choose from @Scheduled or @FixedRate annotations by required complexity of invocation interval. All you need is define method with one of the annotations in application scoped bean.
-
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 [source,xml]
-.Dependency for Scheduling feature
 ----
 <dependency>
     <groupId>io.helidon.microprofile.scheduling</groupId>
     <artifactId>helidon-microprofile-scheduling</artifactId>
 </dependency>
 ----
+
+== Scheduling
+For scheduling tasks in Helidon you can choose from @Scheduled or @FixedRate annotations by required complexity of invocation interval. All you need is define method with one of the annotations in application scoped bean.
 
 
 === Fixed rate

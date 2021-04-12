@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@
 :h1Prefix: MP
 :description: Helidon CDI extension for JTA
 :keywords: helidon, java, microservices, microprofile, extensions, cdi, jta
+:feature-name: JTA Support
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 This https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi[CDI
 portable extension] provides support for JTA (Java Transaction API)
 transactions in your Helidon MicroProfile applications.
 
-== Prerequsites
-
-Declare the following dependency fragment in your project's `pom.xml`:
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
 ----
@@ -36,7 +36,6 @@ Declare the following dependency fragment in your project's `pom.xml`:
   <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
   <scope>runtime</scope>
 </dependency>
-
 <dependency>
   <groupId>javax.transaction</groupId>
   <artifactId>javax.transaction-api</artifactId>

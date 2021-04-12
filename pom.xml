@@ -115,6 +115,7 @@
         <version.plugin.shade>3.0.0</version.plugin.shade>
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.2.0</version.plugin.spotbugs>
+        <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
         <version.plugin.dependency-check>6.0.2</version.plugin.dependency-check>
         <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
@@ -496,6 +497,13 @@
                         <!--suppress UnresolvedMavenProperty -->
                         <excludeFilterFile>${spotbugs.exclude}</excludeFilterFile>
                         <xmlOutput>true</xmlOutput>
+                        <plugins>
+                            <plugin>
+                                <groupId>com.h3xstream.findsecbugs</groupId>
+                                <artifactId>findsecbugs-plugin</artifactId>
+                                <version>${version.plugin.findsecbugs}</version>
+                            </plugin>
+                        </plugins>
                     </configuration>
                 </plugin>
                 <plugin>

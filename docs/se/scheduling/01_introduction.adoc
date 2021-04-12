@@ -22,12 +22,12 @@
 :description: Scheduling in Helidon SE
 :keywords: helidon, se, scheduling
 :h1Prefix: SE
+:feature-name: Scheduling
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
-== Scheduling
-For scheduling periodic tasks it is possible to choose fixed rate setup or Cron expression.
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
-.Dependency for Scheduling feature
 ----
 <dependency>
     <groupId>io.helidon.scheduling</groupId>
@@ -35,6 +35,8 @@ For scheduling periodic tasks it is possible to choose fixed rate setup or Cron 
 </dependency>
 ----
 
+== Scheduling
+For scheduling periodic tasks it is possible to choose fixed rate setup or Cron expression.
 
 === Fixed rate
 For simple fixed rate invocation use .

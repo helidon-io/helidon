@@ -24,6 +24,19 @@
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, config, encryption, reference
 :h1Prefix: MP
+:feature-name: MicroProfile Config
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:microprofile-bundle: true
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+        <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config</artifactId>
+        </dependency>
+----
 
 == About {spec-name}
 

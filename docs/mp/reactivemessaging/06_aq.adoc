@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,24 +22,23 @@
 :description: Reactive Messaging support for Oracle AQ in Helidon MP
 :keywords: helidon, mp, messaging, jms, aq
 :h1Prefix: MP
+:feature-name: AQ Connector
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:microprofile-bundle: false
 
-== Reactive Oracle Advanced Queueing Connector
-
-Connecting streams to Oracle AQ with Reactive Messaging couldn't be easier.
-This connector extends Helidon's JMS connector with Oracle AQ's specific API.
-
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 [source,xml]
-.Dependencies needed:
 ----
-<dependency>
-    <groupId>io.helidon.microprofile.messaging</groupId>
-    <artifactId>helidon-microprofile-messaging</artifactId>
-</dependency>
 <dependency>
     <groupId>io.helidon.messaging.aq</groupId>
     <artifactId>helidon-messaging-aq</artifactId>
 </dependency>
 ----
+
+== Reactive Oracle Advanced Queueing Connector
+
+Connecting streams to Oracle AQ with Reactive Messaging couldn't be easier.
+This connector extends Helidon's JMS connector with Oracle AQ's specific API.
 
 === Config
 
