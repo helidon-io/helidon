@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -60,12 +60,10 @@ Add the following dependency in your project:
 [source,xml]
 .Config YAML Dependency in `pom.xml`
 ----
-<dependencies>
     <dependency>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-yaml</artifactId>
     </dependency>
-</dependencies>
 ----
 
 [source,java]
@@ -138,12 +136,10 @@ Add the following dependency in your project:
 [source,xml]
 .Config HOCON Dependency in `pom.xml`
 ----
-<dependencies>
     <dependency>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-hocon</artifactId>
     </dependency>
-</dependencies>
 ----
 
 [source,java]
@@ -243,12 +239,10 @@ Add the following dependency to your project:
 [source,xml]
 .Config Etcd Dependency in `pom.xml`
 ----
-<dependencies>
     <dependency>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-etcd</artifactId>
     </dependency>
-</dependencies>
 ----
 
 [source,java]
@@ -351,12 +345,10 @@ Add the following dependency to your project:
 [source,xml]
 .Config git Dependency in `pom.xml`
 ----
-<dependencies>
     <dependency>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-git</artifactId>
     </dependency>
-</dependencies>
 ----
 
 [source,java]

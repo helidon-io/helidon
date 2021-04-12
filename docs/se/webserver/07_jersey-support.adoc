@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,23 +20,22 @@
 :h1Prefix: SE
 :description: Helidon Reactive WebServer Jersey JAX-RS support
 :keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
+:feature-name: Jersey (JAX-RS) Support
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
-== JAX-RS Support
-You can register a Jersey (JAX-RS) application at a _context root_ using the
- `JerseySupport` class.
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
-=== Maven Coordinates
-
-Declare the following dependency in your project:
-
-[source,xml,subs="verbatim,attributes"]
-.WebServer Jersey Dependency
+[source,xml]
 ----
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-jersey</artifactId>
 </dependency>
 ----
+
+== JAX-RS Support
+You can register a Jersey (JAX-RS) application at a _context root_ using the
+ `JerseySupport` class.
 
 === Registering a Jersey Application
 To register a *Jersey* application at a context root, use the

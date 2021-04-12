@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,22 +22,21 @@
 :description: Reactive Messaging support for JMS in Helidon SE
 :keywords: helidon, se, messaging, jms
 :h1Prefix: SE
+:feature-name: JMS Connector
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
-== Reactive JMS Connector
-Connecting streams to JMS with Reactive Messaging couldn't be easier.
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
-.Dependencies needed:
 ----
-<dependency>
-    <groupId>io.helidon.messaging</groupId>
-    <artifactId>helidon-messaging</artifactId>
-</dependency>
 <dependency>
     <groupId>io.helidon.messaging.jms</groupId>
     <artifactId>helidon-messaging-jms</artifactId>
 </dependency>
 ----
+
+== Reactive JMS Connector
+Connecting streams to JMS with Reactive Messaging couldn't be easier.
 
 === Explicit config with config builder
 

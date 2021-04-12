@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,9 +21,30 @@
 :description: Helidon health checks
 :keywords: helidon, health-checks, health, check
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.health.checks/io/helidon/health/checks
-
+:feature-name: Health Checks
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 This document describes the health check API available with Helidon SE.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.health</groupId>
+    <artifactId>helidon-health</artifactId>
+</dependency>
+----
+
+Optional dependency to use built-in health checks:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.health</groupId>
+    <artifactId>helidon-health-checks</artifactId>
+</dependency>
+----
 
 == About health checks
 
@@ -43,26 +64,6 @@ A typical health check combines the statuses of all the dependencies that
 * database
 * other services used by your application
 
-=== Prerequisites
-
-Declare the following dependency in your project:
-
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.health</groupId>
-    <artifactId>helidon-health</artifactId>
-</dependency>
-----
-
-[source,xml]
-.Optional dependency to use built-in health checks:
-----
-<dependency>
-    <groupId>io.helidon.health</groupId>
-    <artifactId>helidon-health-checks</artifactId>
-</dependency>
-----
 
 == API overview
 

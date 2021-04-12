@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,7 +15,19 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
-= Reactive Engine
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: Reactive Engine
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.common</groupId>
+    <artifactId>helidon-common-reactive</artifactId>
+</dependency>
+----
+
 == Reactive Engine
 
 Helidon has its own set of reactive operators that have no dependencies outside of the Helidon ecosystem.
@@ -136,14 +148,3 @@ In the situations when part of the operator chain needs to be prepared in advanc
 > Item received: BAR
 ----
 
-=== Dependency
-
-Declare the following dependency in your project:
-
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.common</groupId>
-    <artifactId>helidon-common-reactive</artifactId>
-</dependency>
-----

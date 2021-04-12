@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,7 +21,20 @@
 :pagename: WebClient-Introduction
 :description: Helidon WebClient
 :keywords: helidon, se, rest, httpclient, webclient, reactive
+:feature-name: WebClient
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient</artifactId>
+</dependency>
+----
+
+== Overview
 
 WebClient is an HTTP client for Helidon SE 2.0. It handles the responses to the HTTP requests in a reactive way.
 
@@ -223,28 +236,3 @@ requestBuilder.request(JsonObject.class)
 ----
 <1> Adds JSON-P writer only to this request.
 <2> Adds JSON-P reader only to this request.
-
-
-== Maven Coordinates
-
-The <<about/04_managing-dependencies.adoc,Managing Dependencies>> page describes how you should declare dependency management for Helidon applications. You must declare the following dependency in your project's pom.xml:
-
-[source,xml]
-.Dependency on WebClient.
-----
-<dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient</artifactId>
-</dependency>
-----
-
-
-
-
-
-
-
-
-
-
-

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,9 +32,21 @@
 :mp-cors-config-ref: {mp-pages-ref-prefix}/03_configuration-with-cors-mp.adoc
 :helidon-variant: MP
 :common-page-prefix-inc: ../../shared/cors/common_shared.adoc
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: CORS
 
 To enable CORS behavior for a resource in your Helidon MP application, you simply add the Helidon MP `@CrossOrigin`
 annotation to a particular method in your resource class.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml,subs="attributes+"]
+----
+<dependency>
+    <groupId>io.helidon.microprofile</groupId>
+    <artifactId>helidon-microprofile-cors</artifactId>
+</dependency>
+----
 
 == Understanding the `@CrossOrigin` Annotation
 You set up CORS in Helidon MP using the link:{javadoc-base-url-api}/CrossOrigin.html[`@CrossOrigin`] annotation.
@@ -49,31 +61,14 @@ using `DELETE` or `PUT`, and permits requests to include the non-standard header
              allowMethods = {HttpMethod.DELETE, HttpMethod.PUT})
 ----
 
-
-
-
 == Getting Started
 To add CORS support to your Helidon MP application:
 
-. Determine the type of cross-origin resource sharing you want to allow
+1. Determine the type of cross-origin resource sharing you want to allow
  for each endpoint in your application.
-. {blank}
-+
---
-Add a dependency on the Helidon {helidon-variant} CORS artifact to your Maven `pom.xml` file.
+2. Add a dependency on the Helidon {helidon-variant} CORS <<Maven Coordinates, artifact>>  to your Maven `pom.xml` file.
 
-include::{common-page-prefix-inc}[tag=add-cors-dependency]
-// tag::actual-cors-dependency[]
-[source,xml,subs="attributes+"]
-----
-<dependency>
-    <groupId>io.helidon.microprofile</groupId>
-    <artifactId>helidon-microprofile-cors</artifactId>
-</dependency>
-----
-// end::actual-cors-dependency[]
---
-. Edit each JAX-RS resource class in your application to add the desired CORS behavior as described in the following sections.
+3. Edit each JAX-RS resource class in your application to add the desired CORS behavior as described in the following sections.
 
 
 

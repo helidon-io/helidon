@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@
 :pagename: graphql-server-introduction
 :description: Helidon GraphQL Server Introduction
 :keywords: helidon, graphql, java
+:feature-name: GraphQL
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 Helidon GraphQL Server provides a framework for creating link:https://github.com/graphql-java/graphql-java[GraphQL] applications.
 
@@ -28,6 +30,16 @@ Helidon GraphQL Server provides a framework for creating link:https://github.com
 
 WARNING: The Helidon GraphQL feature is currently experimental and the APIs are
  subject to changes until GraphQL support is stabilized.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.graphql</groupId>
+    <artifactId>helidon-graphql-server</artifactId>
+</dependency>
+----
 
 == Quick Start
 
@@ -103,15 +115,3 @@ curl -X POST http://127.0.0.1:PORT/graphql -d '{"query":"query { helloInDifferen
 {"data":{"helloInDifferentLanguages":["Bonjour","Hola","Zdravstvuyte","Nǐn hǎo","Salve","Gudday","Konnichiwa","Guten Tag"]}}
 ----
 
-== Maven Coordinates
-
-The <<about/04_managing-dependencies.adoc, Getting Started>> page describes how you
-should declare dependency management for Helidon applications. Then declare the following dependency in your project:
-
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.graphql</groupId>
-    <artifactId>helidon-graphql-server</artifactId>
-</dependency>
-----

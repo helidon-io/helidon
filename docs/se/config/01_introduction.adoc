@@ -22,10 +22,24 @@
 :h1Prefix: SE
 :description: Helidon config introduction
 :keywords: helidon, config
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: Config
 
 The config component provides a Java API to load and process
 configuration properties from various sources into a `Config` object which the
 application can use to retrieve config data.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.config</groupId>
+        <artifactId>helidon-config</artifactId>
+    </dependency>
+</dependencies>
+----
 
 == Getting Started
 
@@ -96,23 +110,14 @@ For this first example we can see the basic features of `Config`:
 An easy way to start with the link:{javadoc-base-url-api}/Config.html[Config] API
 is to follow these four steps:
 
-1. <<maven-coords,add config-related dependencies to your `pom.xml`>>
+1. <<add-maven-coords,add config-related dependencies to your `pom.xml`>>
 2. <<update-module-info, revise your `module-info.java` to refer to config (if you are using Java 9+)>>
 3. <<create-simple-config-props, create a simple config properties file>>
 4. <<Config-Basics-DefaultConfig, retrieve and use the default `Config` from your app>>
 
-==== Add Maven Dependency on Config [[maven-coords]]
-[source,xml]
-.Config Dependency in `pom.xml`
-----
-<dependencies>
-    <dependency>
-        <groupId>io.helidon.config</groupId>
-        <artifactId>helidon-config</artifactId>
-        <version>version-of-config-you-are-using</version>
-    </dependency>
-</dependencies>
-----
+==== Add Maven Dependency on Config [[add-maven-coords]]
+
+Add <<maven-coordinates,config-related dependencies>> to your `pom.xml.
 
 ==== Update `module-info.java` [[update-module-info]]
 If you are using Java 11 then create or update the `module-info.java` file for your application:
