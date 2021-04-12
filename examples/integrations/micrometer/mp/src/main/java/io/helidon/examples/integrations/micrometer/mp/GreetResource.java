@@ -87,7 +87,6 @@ public class GreetResource {
      *
      * @return {@link JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Timed(value = GETS_TIMER_NAME, description = GETS_TIMER_DESCRIPTION, histogram = true)
@@ -101,7 +100,6 @@ public class GreetResource {
      * @param name the name to greet
      * @return {@link JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @Path("/{name}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -117,7 +115,6 @@ public class GreetResource {
      * @param jsonObject JSON containing the new greeting
      * @return {@link Response}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @Path("/greeting")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
