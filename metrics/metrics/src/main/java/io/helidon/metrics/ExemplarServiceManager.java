@@ -16,9 +16,6 @@
  */
 package io.helidon.metrics;
 
-import io.helidon.common.serviceloader.HelidonServiceLoader;
-
-import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.function.Predicate;
@@ -27,7 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.annotation.Priority;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 
 /**
  * Loads the {@link ExemplarService} instance (if any) with the most urgent priority.
