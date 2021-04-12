@@ -23,7 +23,7 @@ import static io.helidon.metrics.Sample.derived;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class TestNearestValueSearch {
+class TestNearestValueSearch {
 
     private static final WeightedSample[] VALUES = new WeightedSample[] {
             new WeightedSample(1L),
@@ -32,37 +32,37 @@ public class TestNearestValueSearch {
             new WeightedSample(7L)};
 
     @Test
-    public void testExactMatch() {
+    void testExactMatch() {
         assertThat("Exact match of 1", WeightedSnapshot.slotNear(derived(1.0), VALUES), is(0));
         assertThat("Exact match of 3", WeightedSnapshot.slotNear(derived(3.0), VALUES), is(1));
         assertThat("Exact match of 5", WeightedSnapshot.slotNear(derived(5.0), VALUES), is(2));
     }
 
     @Test
-    public void testBeforeFirst() {
+    void testBeforeFirst() {
         assertThat("Approx match before first element", WeightedSnapshot.slotNear(derived(0.5), VALUES), is(0));
     }
 
     @Test
-    public void testAfterLast() {
+    void testAfterLast() {
         assertThat("Approx match after last element", WeightedSnapshot.slotNear(derived(9.0), VALUES),
                 is(VALUES.length - 1));
     }
 
     @Test
-    public void testCloserToLower() {
+    void testCloserToLower() {
         assertThat("Closer to lowest", WeightedSnapshot.slotNear(derived(1.2), VALUES), is(0));
         assertThat("Closer to inside", WeightedSnapshot.slotNear(derived(3.2), VALUES), is(1));
     }
 
     @Test
-    public void testCloserToHigher() {
+    void testCloserToHigher() {
         assertThat("Closer to highest", WeightedSnapshot.slotNear(derived(6.5), VALUES), is(3));
         assertThat("Closer to inside", WeightedSnapshot.slotNear(derived(2.5), VALUES), is(1));
     }
 
     @Test
-    public void testMidpoint() {
+    void testMidpoint() {
         assertThat("Midpoint", WeightedSnapshot.slotNear(derived(2.0), VALUES), is(0));
     }
 }

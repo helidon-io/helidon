@@ -16,6 +16,8 @@
  */
 package io.helidon.metrics;
 
+import io.helidon.common.serviceloader.HelidonServiceLoader;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -35,6 +37,7 @@ class ExemplarServiceManager {
     private static final Logger LOGGER = Logger.getLogger(ExemplarServiceManager.class.getName());
 
     private static final List<ExemplarService> EXEMPLAR_SERVICES = collectExemplarServices();
+
 
     private static final Supplier<String> EXEMPLAR_SUPPLIER = EXEMPLAR_SERVICES.isEmpty()
             ? () -> ""
@@ -57,21 +60,11 @@ class ExemplarServiceManager {
 
     private static List<ExemplarService> collectExemplarServices() {
         List<ExemplarService> exemplarServices =
-            ServiceLoader.load(ExemplarService.class)
-                .stream()
-                .sorted(Comparator.comparing(ExemplarServiceManager::priorityValue))
-                .map(ServiceLoader.Provider::get)
-                .collect(Collectors.toList());
-
+            HelidonServiceLoader.create(ServiceLoader.load(ExemplarService.class)).asList();
         if (!exemplarServices.isEmpty()) {
             LOGGER.log(Level.INFO, "Using metrics ExemplarServices " + exemplarServices.toString());
         }
 
         return exemplarServices;
-    }
-
-    private static int priorityValue(ServiceLoader.Provider<ExemplarService> exemplarSupportProvider) {
-        Priority p = exemplarSupportProvider.type().getAnnotation(Priority.class);
-        return p == null ? ExemplarService.DEFAULT_PRIORITY : p.value();
     }
 }
