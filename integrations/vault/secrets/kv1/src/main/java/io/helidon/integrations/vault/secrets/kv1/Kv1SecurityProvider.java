@@ -51,6 +51,9 @@ public class Kv1SecurityProvider implements SecretsProvider<Kv1SecurityProvider.
                 .map(it -> it.flatMap(response -> response.value(key)));
     }
 
+    /**
+     * Configuration of a secret when using programmatic setup of security secrets.
+     */
     public static class Kv1SecretConfig implements ProviderConfig {
         private final String path;
         private final String key;
@@ -60,10 +63,21 @@ public class Kv1SecurityProvider implements SecretsProvider<Kv1SecurityProvider.
             this.key = builder.key;
         }
 
+        /**
+         * A new builder for {@link io.helidon.integrations.vault.secrets.kv1.Kv1SecurityProvider.Kv1SecretConfig}.
+         *
+         * @return a new builder
+         */
         public static Builder builder() {
             return new Builder();
         }
 
+        /**
+         * Create a new secrets configuration from config.
+         *
+         * @param config config to use
+         * @return a new secret configuration
+         */
         public static Kv1SecretConfig create(Config config) {
             return builder()
                     .config(config)
@@ -75,6 +89,9 @@ public class Kv1SecurityProvider implements SecretsProvider<Kv1SecurityProvider.
                     .path(this.path);
         }
 
+        /**
+         * Fluent API builder for {@link io.helidon.integrations.vault.secrets.kv1.Kv1SecurityProvider.Kv1SecretConfig}.
+         */
         public static class Builder implements io.helidon.common.Builder<Kv1SecretConfig> {
             private String path;
             private String key;
@@ -90,17 +107,54 @@ public class Kv1SecurityProvider implements SecretsProvider<Kv1SecurityProvider.
                 return new Kv1SecretConfig(this);
             }
 
+            /**
+             * Update this builder from configuration.
+             * Configuration options:
+             * <table class="config">
+             * <caption>Secret configuration</caption>
+             * <tr>
+             *     <th>key</th>
+             *     <th>description</th>
+             *     <th>builder method</th>
+             * </tr>
+             * <tr>
+             *     <td>path</td>
+             *     <td>Path of the secret on Vault's KV2 secret provider</td>
+             *     <td>{@link #path(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>key</td>
+             *     <td>Key within the secret used to obtain the value</td>
+             *     <td>{@link #key(String)}</td>
+             * </tr>
+             * </table>
+             *
+             * @param config config to use
+             * @return updated builder
+             */
             public Builder config(Config config) {
                 config.get("path").asString().ifPresent(this::path);
                 config.get("key").asString().ifPresent(this::key);
                 return this;
             }
 
+            /**
+             * Path of the secret on Vault's KV1 secret provider.
+             *
+             * @param path secret path
+             * @return updated builder
+             */
             public Builder path(String path) {
                 this.path = path;
                 return this;
             }
 
+            /**
+             * Key within the secret used to obtain the value.
+             *
+             * @param key key to use
+             * @return updated builder
+             */
             public Builder key(String key) {
                 this.key = key;
                 return this;

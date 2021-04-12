@@ -20,14 +20,27 @@ import javax.json.JsonObject;
 
 import io.helidon.integrations.common.rest.ApiEntityResponse;
 
+/**
+ * Response from Vault, always expects a JSON entity.
+ */
 public abstract class VaultResponse extends ApiEntityResponse {
     private final String requestId;
 
+    /**
+     * Create a new response from a builder.
+     *
+     * @param builder builder with response entity
+     */
     protected VaultResponse(ApiEntityResponse.Builder<?, ? extends VaultResponse, JsonObject> builder) {
         super(builder);
         this.requestId = builder.entity().getString("request_id");
     }
 
+    /**
+     * Request ID as understood by Vault. May differ from {@link #requestId()}.
+     *
+     * @return valut request ID
+     */
     public String vaultRequestId() {
         return requestId;
     }

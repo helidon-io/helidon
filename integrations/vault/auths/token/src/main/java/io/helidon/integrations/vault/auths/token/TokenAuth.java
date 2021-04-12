@@ -36,6 +36,12 @@ public interface TokenAuth {
      */
     String TYPE_DEFAULT = TokenAuthRx.TYPE_DEFAULT;
 
+    /**
+     * Create blocking token authentication method from its reactive counterpart.
+     *
+     * @param reactive reactive token authentication method API
+     * @return blocking token authentication method API
+     */
     static TokenAuth create(TokenAuthRx reactive) {
         return new TokenAuthImpl(reactive);
     }

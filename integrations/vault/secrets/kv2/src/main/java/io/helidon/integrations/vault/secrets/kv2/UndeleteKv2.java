@@ -21,7 +21,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Key/Value Version 2 Secret version request and response.
  */
 public final class UndeleteKv2 {
     private UndeleteKv2() {
@@ -48,11 +48,23 @@ public final class UndeleteKv2 {
             return new Request();
         }
 
+        /**
+         * Path of the secret to undelete.
+         *
+         * @param path path of the secret
+         * @return updated request
+         */
         public Request path(String path) {
             this.path = path;
             return this;
         }
 
+        /**
+         * Version(s) to undelete.
+         *
+         * @param versions versions to undelete
+         * @return updated request
+         */
         public Request versions(int... versions) {
             for (int version : versions) {
                 addVersion(version);
@@ -60,6 +72,12 @@ public final class UndeleteKv2 {
             return this;
         }
 
+        /**
+         * Add a version to undelete.
+         *
+         * @param version version to undelete
+         * @return updated request
+         */
         public Request addVersion(int version) {
             return addToArray("versions", version);
         }

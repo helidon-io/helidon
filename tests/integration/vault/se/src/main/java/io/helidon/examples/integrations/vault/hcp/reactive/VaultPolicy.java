@@ -17,6 +17,8 @@
 package io.helidon.examples.integrations.vault.hcp.reactive;
 
 final class VaultPolicy {
+    private VaultPolicy() {
+    }
     static final String POLICY = "# Enable and manage authentication methods\n"
             + "path \"auth/*\"\n"
             + "{\n"

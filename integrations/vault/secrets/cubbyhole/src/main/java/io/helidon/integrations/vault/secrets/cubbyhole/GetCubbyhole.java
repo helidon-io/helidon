@@ -27,7 +27,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Get Cubbyhole secret request and response.
  */
 public final class GetCubbyhole {
     private GetCubbyhole() {
@@ -54,6 +54,12 @@ public final class GetCubbyhole {
             return new Request();
         }
 
+        /**
+         * Path of the secret.
+         *
+         * @param path secret's path
+         * @return updated request
+         */
         public Request path(String path) {
             this.path = path;
             return this;

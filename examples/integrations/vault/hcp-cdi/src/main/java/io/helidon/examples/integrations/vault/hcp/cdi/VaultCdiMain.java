@@ -27,7 +27,18 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-public class VaultCdiMain {
+/**
+ * Main class of example.
+ */
+public final class VaultCdiMain {
+    private VaultCdiMain() {
+    }
+
+    /**
+     * Main method of example.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         ConfigProviderResolver configProvider = ConfigProviderResolver.instance();
 

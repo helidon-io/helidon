@@ -20,16 +20,30 @@ import io.helidon.integrations.common.rest.ApiException;
 import io.helidon.integrations.common.rest.ApiResponse;
 import io.helidon.integrations.vault.VaultRequest;
 
+/**
+ * Create Key request and response.
+ */
 public final class CreateKey {
     private CreateKey() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static final class Request extends VaultRequest<Request> {
         private String name;
 
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }

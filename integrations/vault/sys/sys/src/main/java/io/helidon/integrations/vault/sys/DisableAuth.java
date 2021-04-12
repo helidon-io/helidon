@@ -27,7 +27,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Disable authentication method request and response.
  */
 public final class DisableAuth {
     private DisableAuth() {
@@ -54,10 +54,23 @@ public final class DisableAuth {
             return new Request();
         }
 
+        /**
+         * Authentication method to disable.
+         * It is sufficient to use {@link #path(String)}.
+         *
+         * @param method method to disable
+         * @return updated request
+         */
         public Request auth(AuthMethod<?> method) {
             return path(method.defaultPath());
         }
 
+        /**
+         * Path of an authentication method to disable.
+         *
+         * @param path path to disable
+         * @return updated request
+         */
         public Request path(String path) {
             this.path = path;
             return this;

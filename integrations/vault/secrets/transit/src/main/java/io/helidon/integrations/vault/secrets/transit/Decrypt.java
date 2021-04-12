@@ -20,21 +20,34 @@ import javax.json.JsonObject;
 
 import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.common.rest.ApiException;
-import io.helidon.integrations.common.rest.ApiJsonParser;
 import io.helidon.integrations.common.rest.Base64Value;
 import io.helidon.integrations.vault.VaultRequest;
 import io.helidon.integrations.vault.VaultResponse;
 
+/**
+ * Decrypt request and response.
+ */
 public final class Decrypt {
     private Decrypt() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static class Request extends VaultRequest<Request> {
         private String encryptionKeyName;
 
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }
@@ -90,6 +103,9 @@ public final class Decrypt {
         }
     }
 
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
     public static class Response extends VaultResponse {
         private final Base64Value decrypted;
 
@@ -99,12 +115,17 @@ public final class Decrypt {
             this.decrypted = Base64Value.createFromEncoded(data.getString("plaintext"));
         }
 
-        public Base64Value decrypted() {
-            return decrypted;
-        }
-
         static Builder builder() {
             return new Builder();
+        }
+
+        /**
+         * Decrypted secret.
+         *
+         * @return base 64 value of the secret data
+         */
+        public Base64Value decrypted() {
+            return decrypted;
         }
 
         static final class Builder extends ApiEntityResponse.Builder<Builder, Response, JsonObject> {
@@ -115,32 +136,6 @@ public final class Decrypt {
             public Response build() {
                 return new Response(this);
             }
-        }
-    }
-
-    public static class Encrypted extends ApiJsonParser {
-        private final String encrypted;
-        private final int keyVersion;
-
-        Encrypted(JsonObject json) {
-            this.encrypted = json.getString("ciphertext");
-            this.keyVersion = json.getInt("key_version");
-        }
-
-        public String encrypted() {
-            return encrypted;
-        }
-
-        public int keyVersion() {
-            return keyVersion;
-        }
-
-        @Override
-        public String toString() {
-            return "Encrypted{" +
-                    "encrypted=" + encrypted +
-                    ", keyVersion=" + keyVersion +
-                    '}';
         }
     }
 }

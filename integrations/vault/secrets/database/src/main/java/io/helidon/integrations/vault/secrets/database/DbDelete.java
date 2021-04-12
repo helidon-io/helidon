@@ -21,7 +21,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Delete DB request and response.
  */
 public final class DbDelete {
     private DbDelete() {

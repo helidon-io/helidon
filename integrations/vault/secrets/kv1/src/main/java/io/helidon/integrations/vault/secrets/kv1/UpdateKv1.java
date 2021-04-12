@@ -23,7 +23,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Update Key/Value Version 1 Secret request and response.
  */
 public final class UpdateKv1 {
     private UpdateKv1() {
@@ -50,15 +50,34 @@ public final class UpdateKv1 {
             return new Request();
         }
 
+        /**
+         * New values of the secret.
+         *
+         * @param values values to replace current values
+         * @return updated request
+         */
         public Request secretValues(Map<String, String> values) {
             values.forEach(this::addSecretValue);
             return this;
         }
 
+        /**
+         * Add a new value.
+         *
+         * @param key key of the value
+         * @param value value
+         * @return updated request
+         */
         public Request addSecretValue(String key, String value) {
             return add(key, value);
         }
 
+        /**
+         * Path of the secret to update.
+         *
+         * @param path secret's path
+         * @return updated request
+         */
         public Request path(String path) {
             this.path = path;
             return this;

@@ -118,6 +118,12 @@ public final class DbCreateRole {
             return addToArray("renew_statements", statement);
         }
 
+        /**
+         * The name of the database.
+         *
+         * @param dbName db name
+         * @return updated request
+         */
         public Request dbName(String dbName) {
             return add("db_name", dbName);
         }

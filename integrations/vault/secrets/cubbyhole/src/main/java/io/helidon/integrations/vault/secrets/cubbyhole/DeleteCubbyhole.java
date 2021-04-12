@@ -21,7 +21,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Delete Cubbyhole secret request and response.
  */
 public final class DeleteCubbyhole {
     private DeleteCubbyhole() {
@@ -48,6 +48,12 @@ public final class DeleteCubbyhole {
             return new Request();
         }
 
+        /**
+         * Path of the secret.
+         *
+         * @param path secret's path
+         * @return updated request
+         */
         public Request path(String path) {
             this.path = path;
             return this;

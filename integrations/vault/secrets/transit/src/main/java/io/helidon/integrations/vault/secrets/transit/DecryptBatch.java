@@ -30,16 +30,30 @@ import io.helidon.integrations.common.rest.Base64Value;
 import io.helidon.integrations.vault.VaultRequest;
 import io.helidon.integrations.vault.VaultResponse;
 
+/**
+ * Decrypt Batch request and response.
+ */
 public final class DecryptBatch {
     private DecryptBatch() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static class Request extends VaultRequest<Request> {
         private String encryptionKeyName;
 
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }
@@ -59,9 +73,12 @@ public final class DecryptBatch {
         /**
          * Specifies a list of items to be encrypted in a single batch. When this parameter is set, if the parameters 'plaintext',
          * 'context' and 'nonce' are also set, they will be ignored.
+         *
+         * @param batchEntry batch entry to add to this batch request
+         * @return updated request
          */
-        public Request addBatch(Batch batch) {
-            return addToArray("batch_input", batch);
+        public Request addEntry(BatchEntry batchEntry) {
+            return addToArray("batch_input", batchEntry);
         }
 
         String encryptionKeyName() {
@@ -72,6 +89,9 @@ public final class DecryptBatch {
         }
     }
 
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
     public static class Response extends VaultResponse {
         private final List<Base64Value> batchResult;
 
@@ -81,17 +101,22 @@ public final class DecryptBatch {
             List<Base64Value> batchResults = new LinkedList<>();
             JsonArray jsonArray = data.getJsonArray("batch_results");
             for (JsonValue jsonValue : jsonArray) {
-                batchResults.add(Base64Value.createFromEncoded(((JsonObject)jsonValue).getString("plaintext")));
+                batchResults.add(Base64Value.createFromEncoded(((JsonObject) jsonValue).getString("plaintext")));
             }
             this.batchResult = List.copyOf(batchResults);
         }
 
-        public List<Base64Value> batchResult() {
-            return batchResult;
-        }
-
         static Builder builder() {
             return new Builder();
+        }
+
+        /**
+         * Batch result, each element of the list is a single decrypted secret, in the same order the batch was created.
+         *
+         * @return result of batch decryption
+         */
+        public List<Base64Value> batchResult() {
+            return batchResult;
         }
 
         static final class Builder extends ApiEntityResponse.Builder<Builder, Response, JsonObject> {
@@ -105,27 +130,59 @@ public final class DecryptBatch {
         }
     }
 
-    public static class Batch extends ApiJsonBuilder<Batch> {
-        private Batch() {
+    /**
+     * Definition of a batch entry.
+     */
+    public static class BatchEntry extends ApiJsonBuilder<BatchEntry> {
+        private BatchEntry() {
         }
 
-        public static Batch builder() {
-            return new Batch();
+        /**
+         * A new builder for a batch entry.
+         *
+         * @return a new batch entry
+         */
+        public static BatchEntry builder() {
+            return new BatchEntry();
         }
 
-        public static Batch create(String encryptedValue) {
-            return builder().data(encryptedValue);
+        /**
+         * Create a new entry from cipher text.
+         *
+         * @param cipherText cipher text as returned by an encrypt method
+         * @return a new batch entry
+         */
+        public static BatchEntry create(String cipherText) {
+            return builder().cipherText(cipherText);
         }
 
-        public Batch data(String value) {
-            return add("ciphertext", value);
+        /**
+         * Configure the cipher text to be decrypted.
+         *
+         * @param cipherText cipher text
+         * @return updated entry
+         */
+        public BatchEntry cipherText(String cipherText) {
+            return add("ciphertext", cipherText);
         }
 
-        public Batch context(Base64Value value) {
+        /**
+         * Configure context data.
+         *
+         * @param value base64 context
+         * @return updated entry
+         */
+        public BatchEntry context(Base64Value value) {
             return add("context", value.toBase64());
         }
 
-        public Batch nonce(Base64Value value) {
+        /**
+         * Configure nonce.
+         *
+         * @param value base64 nonce
+         * @return updated entry
+         */
+        public BatchEntry nonce(Base64Value value) {
             return add("nonce", value.toBase64());
         }
     }

@@ -17,6 +17,8 @@
 package io.helidon.tests.integration.vault.mp;
 
 final class VaultPolicy {
+    private VaultPolicy() {
+    }
     static final String POLICY = "# Enable and manage authentication methods\n"
             + "path \"auth/*\"\n"
             + "{\n"

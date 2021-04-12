@@ -32,15 +32,25 @@ import io.helidon.integrations.vault.secrets.cubbyhole.CreateCubbyhole;
 import io.helidon.integrations.vault.secrets.cubbyhole.CubbyholeSecrets;
 import io.helidon.integrations.vault.secrets.cubbyhole.DeleteCubbyhole;
 
+/**
+ * JAX-RS resource for Cubbyhole secrets engine operations.
+ */
 @Path("/cubbyhole")
-public class CubbyholeService {
+public class CubbyholeResource {
     private final CubbyholeSecrets secrets;
 
     @Inject
-    CubbyholeService(CubbyholeSecrets secrets) {
+    CubbyholeResource(CubbyholeSecrets secrets) {
         this.secrets = secrets;
     }
 
+    /**
+     * Create a secret from request entity, the name of the value is {@code secret}.
+     *
+     * @param path path of the secret taken from request path
+     * @param secret secret from the entity
+     * @return response
+     */
     @POST
     @Path("/secrets/{path: .*}")
     public Response createSecret(@PathParam("path") String path, String secret) {
@@ -51,6 +61,12 @@ public class CubbyholeService {
                 .build();
     }
 
+    /**
+     * Delete the secret on a specified path.
+     *
+     * @param path path of the secret taken from request path
+     * @return response
+     */
     @DELETE
     @Path("/secrets/{path: .*}")
     public Response deleteSecret(@PathParam("path") String path) {
@@ -61,6 +77,12 @@ public class CubbyholeService {
                 .build();
     }
 
+    /**
+     * Get the secret on a specified path.
+     *
+     * @param path path of the secret taken from request path
+     * @return response
+     */
     @GET
     @Path("/secrets/{path: .*}")
     public Response getSecret(@PathParam("path") String path) {

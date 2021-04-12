@@ -51,7 +51,7 @@ public class TransitEngineProvider implements SecretsEngineProvider<TransitSecre
 
         INJECTABLES = List.copyOf(injectables);
     }
-    
+
     @Override
     public Engine<TransitSecretsRx> supportedEngine() {
         return TransitSecretsRx.ENGINE;

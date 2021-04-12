@@ -28,7 +28,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Get CRL (Certificate revoke list) request and response.
  */
 public final class CrlGet {
     private CrlGet() {
@@ -55,11 +55,22 @@ public final class CrlGet {
             return new Request();
         }
 
+        /**
+         * Format of the CRL.
+         *
+         * @param format format to get
+         * @return updated request
+         */
         public Request format(PkiFormat format) {
             this.format = format;
             return this;
         }
 
+        /**
+         * Configured format.
+         *
+         * @return configured format
+         */
         public PkiFormat format() {
             return format;
         }
@@ -89,10 +100,20 @@ public final class CrlGet {
             return new Builder();
         }
 
+        /**
+         * Get the CRL as X.509 CRL.
+         *
+         * @return X.509 CRL
+         */
         public X509CRL toCrl() {
             return crl.get();
         }
 
+        /**
+         * Get the CRL bytes in the format requested.
+         *
+         * @return bytes of the CRL
+         */
         public byte[] toBytes() {
             return crlBytes;
         }

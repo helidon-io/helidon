@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/**
+ * Vault transit secrets.
+ *
+ * @see io.helidon.integrations.vault.secrets.transit.TransitSecretsRx
+ * @see io.helidon.integrations.vault.secrets.transit.TransitSecrets
+ */
 module io.helidon.integrations.vault.secrets.transit {
     requires java.json;
 

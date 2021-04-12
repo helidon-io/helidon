@@ -20,7 +20,10 @@ import io.helidon.integrations.common.rest.ApiResponse;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Generate Self Signed Root request and response.
+ * @see io.helidon.integrations.vault.secrets.pki.PkiSecrets#generateSelfSignedRoot(GenerateSelfSignedRoot.Request)
+ * @see io.helidon.integrations.vault.secrets.pki.PkiSecretsRx#generateSelfSignedRoot(GenerateSelfSignedRoot.Request)
+ *
  */
 public final class GenerateSelfSignedRoot {
     private GenerateSelfSignedRoot() {
@@ -45,6 +48,12 @@ public final class GenerateSelfSignedRoot {
             return new Request();
         }
 
+        /**
+         * Common name of the certificate that is going to be generated.
+         *
+         * @param commonName common name
+         * @return updated request
+         */
         public Request commonName(String commonName) {
             return add("common_name", commonName);
         }

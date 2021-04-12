@@ -15,7 +15,7 @@
  */
 
 /**
- * Vault's KV2 Secrets Engine support.
+ * Vault's Key/value version 2 Secrets Engine support.
  */
 module io.helidon.integrations.vault.secrets.kv {
     requires java.logging;

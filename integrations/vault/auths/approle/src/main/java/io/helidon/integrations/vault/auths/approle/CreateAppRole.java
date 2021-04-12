@@ -177,7 +177,7 @@ public class CreateAppRole {
             return add("token_type", tokenType);
         }
 
-        public String roleName() {
+        String roleName() {
             if (roleName == null) {
                 throw new VaultApiException("CreateAppRole.Request role name must be defined");
             }

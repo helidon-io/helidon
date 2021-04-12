@@ -34,6 +34,10 @@ import io.helidon.integrations.vault.VaultRestException;
 import io.helidon.integrations.vault.VaultUtil;
 import io.helidon.webclient.WebClientResponse;
 
+/**
+ * REST API implementation with Vault specific features.
+ * Uses the correct type for exception.
+ */
 public class VaultRestApi extends RestApiBase {
     private static final Logger LOGGER = Logger.getLogger(VaultRestApi.class.getName());
 
@@ -41,6 +45,11 @@ public class VaultRestApi extends RestApiBase {
         super(builder);
     }
 
+    /**
+     * A new builder.
+     *
+     * @return a new builder
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -99,7 +108,7 @@ public class VaultRestApi extends RestApiBase {
             vaultErrors.add("Failed to read errors, entity: " + entity);
         }
 
-        return VaultRestException.vaultBuilder()
+        return VaultRestException.builder()
                 .status(response.status())
                 .vaultErrors(vaultErrors)
                 .message(message + ". Status " + response.status() + ". Vault errors " + vaultErrors)
@@ -109,11 +118,19 @@ public class VaultRestApi extends RestApiBase {
                 .build();
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.integrations.vault.auths.common.VaultRestApi}.
+     */
     public static class Builder extends BuilderBase<Builder> {
         private Builder() {
         }
     }
 
+    /**
+     * A base builder for VaultRestApi subclasses.
+     *
+     * @param <B> type of builder that subclasses this class
+     */
     public static class BuilderBase<B extends BuilderBase<B>> extends RestApi.Builder<B, VaultRestApi> {
         @Override
         protected VaultRestApi doBuild() {

@@ -61,6 +61,12 @@ public interface DbSecretsRx extends SecretsRx {
                 .map(it -> it.entity().map(Function.identity()));
     }
 
+    /**
+     * Get credentials from the {@code /creds} endpoint.
+     *
+     * @param request request with at least the name
+     * @return get DB response
+     */
     Single<VaultOptionalResponse<DbGet.Response>> get(DbGet.Request request);
 
     /**
@@ -90,6 +96,12 @@ public interface DbSecretsRx extends SecretsRx {
                               .name(name));
     }
 
+    /**
+     * Delete a database configuration.
+     *
+     * @param request delete request with at least name configured
+     * @return delete database configuration response
+     */
     Single<DbDelete.Response> delete(DbDelete.Request request);
 
     /**
@@ -103,5 +115,11 @@ public interface DbSecretsRx extends SecretsRx {
                                   .name(name));
     }
 
+    /**
+     * Delete a database role.
+     *
+     * @param request request with at least the role name configured
+     * @return delete database role response
+     */
     Single<DbDeleteRole.Response> deleteRole(DbDeleteRole.Request request);
 }

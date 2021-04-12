@@ -50,6 +50,12 @@ public final class RevokeCertificate {
             return new Request();
         }
 
+        /**
+         * Serial number of the certificate to revoke.
+         *
+         * @param serialNumber serial number
+         * @return updated request
+         */
         public Request serialNumber(String serialNumber) {
             return add("serial_number", serialNumber);
         }
@@ -74,6 +80,11 @@ public final class RevokeCertificate {
             return new Builder();
         }
 
+        /**
+         * Revocation instant of the certificate.
+         *
+         * @return instant the certificate was revoked
+         */
         public Instant revocationTime() {
             return revocationTime;
         }

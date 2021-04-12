@@ -24,7 +24,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Pki Role request and response.
  */
 public final class PkiRole {
     private PkiRole() {
@@ -492,7 +492,13 @@ public final class PkiRole {
         public Request addPolicyIdentifier(String policyIdentifierOid) {
             return addToArray("policy_identifiers", policyIdentifierOid);
         }
-        
+
+        /**
+         * Configure role name.
+         *
+         * @param roleName name of the role
+         * @return updated request
+         */
         public Request roleName(String roleName) {
             this.roleName = roleName;
             return this;

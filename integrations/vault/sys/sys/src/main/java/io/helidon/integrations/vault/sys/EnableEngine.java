@@ -20,7 +20,7 @@ import io.helidon.integrations.common.rest.ApiResponse;
 import io.helidon.integrations.vault.Engine;
 
 /**
- * request and response.
+ * Enable Secrets Engine request and response.
  */
 public final class EnableEngine {
     private EnableEngine() {
@@ -45,6 +45,13 @@ public final class EnableEngine {
             return new Request();
         }
 
+        /**
+         * Secrets engine to enable.
+         * Custom path can be configured through {@link #path(String)} if supported by the engine.
+         *
+         * @param engine secrets engine
+         * @return updated request
+         */
         public Request engine(Engine<?> engine) {
             engine.version().ifPresent(it -> addToObject("options", "version", it));
             super.defaultPath(engine.defaultMount());

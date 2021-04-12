@@ -37,8 +37,8 @@ public interface TransitSecretsRx extends SecretsRx {
     /**
      * List available keys.
      *
-     * @param request, path is ignored
-     * @return multi with all available encryption keys
+     * @param request list request, path is ignored
+     * @return transit secret keys
      */
     @Override
     Single<VaultOptionalResponse<ListSecrets.Response>> list(ListSecrets.Request request);
@@ -113,6 +113,9 @@ public interface TransitSecretsRx extends SecretsRx {
     /**
      * Hmac of a message.
      * Equivalent of a signature when using symmetric keys.
+     *
+     * @param request hmac request
+     * @return hmac response
      */
     Single<Hmac.Response> hmac(Hmac.Request request);
 

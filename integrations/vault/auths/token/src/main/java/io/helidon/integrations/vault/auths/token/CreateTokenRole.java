@@ -23,7 +23,7 @@ import io.helidon.integrations.common.rest.ApiResponse;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Create Token Role request and response.
  */
 public final class CreateTokenRole {
     private CreateTokenRole() {

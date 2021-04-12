@@ -34,6 +34,9 @@ import io.helidon.integrations.vault.secrets.kv2.DeleteAllKv2;
 import io.helidon.integrations.vault.secrets.kv2.Kv2Secret;
 import io.helidon.integrations.vault.secrets.kv2.Kv2Secrets;
 
+/**
+ * JAX-RS resource for Key/Value version 2 secrets engine operations.
+ */
 @Path("/kv2")
 public class Kv2Resource {
     private final Kv2Secrets secrets;
@@ -43,6 +46,13 @@ public class Kv2Resource {
         this.secrets = secrets;
     }
 
+    /**
+     * Create a secret from request entity, the name of the value is {@code secret}.
+     *
+     * @param path path of the secret taken from request path
+     * @param secret secret from the entity
+     * @return response
+     */
     @POST
     @Path("/secrets/{path: .*}")
     public Response createSecret(@PathParam("path") String path, String secret) {
@@ -53,6 +63,12 @@ public class Kv2Resource {
                 .build();
     }
 
+    /**
+     * Delete the secret on a specified path.
+     *
+     * @param path path of the secret taken from request path
+     * @return response
+     */
     @DELETE
     @Path("/secrets/{path: .*}")
     public Response deleteSecret(@PathParam("path") String path) {
@@ -63,6 +79,12 @@ public class Kv2Resource {
                 .build();
     }
 
+    /**
+     * Get the secret on a specified path.
+     *
+     * @param path path of the secret taken from request path
+     * @return response
+     */
     @GET
     @Path("/secrets/{path: .*}")
     public Response getSecret(@PathParam("path") String path) {

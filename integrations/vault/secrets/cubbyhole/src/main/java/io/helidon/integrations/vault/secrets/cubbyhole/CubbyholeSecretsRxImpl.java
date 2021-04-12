@@ -40,7 +40,7 @@ class CubbyholeSecretsRxImpl implements CubbyholeSecretsRx {
         String path = request.path();
         String apiPath = mount + "/" + path;
 
-        return restApi.get(apiPath, request, VaultOptionalResponse.<GetCubbyhole.Response, JsonObject>builder()
+        return restApi.get(apiPath, request, VaultOptionalResponse.<GetCubbyhole.Response, JsonObject>vaultResponseBuilder()
                 .entityProcessor(json -> GetCubbyhole.Response.create(path, json)));
     }
 
@@ -49,8 +49,11 @@ class CubbyholeSecretsRxImpl implements CubbyholeSecretsRx {
         String apiPath = mount + "/" + request.path().orElse("");
 
         return restApi
-                .invokeOptional(Vault.LIST, apiPath, request, VaultOptionalResponse.<ListSecrets.Response, JsonObject>builder()
-                        .entityProcessor(ListSecrets.Response::create));
+                .invokeOptional(Vault.LIST,
+                                apiPath,
+                                request,
+                                VaultOptionalResponse.<ListSecrets.Response, JsonObject>vaultResponseBuilder()
+                                        .entityProcessor(ListSecrets.Response::create));
     }
 
     @Override

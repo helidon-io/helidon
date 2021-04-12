@@ -36,17 +36,25 @@ import io.helidon.integrations.vault.sys.DisableEngine;
 import io.helidon.integrations.vault.sys.EnableEngine;
 import io.helidon.integrations.vault.sys.Sys;
 
+/**
+ * JAX-RS resource for Key/Value version 1 secrets engine operations.
+ */
 @Path("/kv1")
-public class Kv1Service {
+public class Kv1Resource {
     private final Sys sys;
     private final Kv1Secrets secrets;
 
     @Inject
-    Kv1Service(Sys sys, Kv1Secrets secrets) {
+    Kv1Resource(Sys sys, Kv1Secrets secrets) {
         this.sys = sys;
         this.secrets = secrets;
     }
 
+    /**
+     * Enable the secrets engine on the default path.
+     *
+     * @return response
+     */
     @Path("/engine")
     @GET
     public Response enableEngine() {
@@ -57,6 +65,10 @@ public class Kv1Service {
                 .build();
     }
 
+    /**
+     * Disable the secrets engine on the default path.
+     * @return response
+     */
     @Path("/engine")
     @DELETE
     public Response disableEngine() {
@@ -66,6 +78,13 @@ public class Kv1Service {
                 .build();
     }
 
+    /**
+     * Create a secret from request entity, the name of the value is {@code secret}.
+     *
+     * @param path path of the secret taken from request path
+     * @param secret secret from the entity
+     * @return response
+     */
     @POST
     @Path("/secrets/{path: .*}")
     public Response createSecret(@PathParam("path") String path, String secret) {
@@ -76,6 +95,12 @@ public class Kv1Service {
                 .build();
     }
 
+    /**
+     * Delete the secret on a specified path.
+     *
+     * @param path path of the secret taken from request path
+     * @return response
+     */
     @DELETE
     @Path("/secrets/{path: .*}")
     public Response deleteSecret(@PathParam("path") String path) {
@@ -86,6 +111,12 @@ public class Kv1Service {
                 .build();
     }
 
+    /**
+     * Get the secret on a specified path.
+     *
+     * @param path path of the secret taken from request path
+     * @return response
+     */
     @GET
     @Path("/secrets/{path: .*}")
     public Response getSecret(@PathParam("path") String path) {

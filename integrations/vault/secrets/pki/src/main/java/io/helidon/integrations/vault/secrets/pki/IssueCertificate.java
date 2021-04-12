@@ -28,7 +28,7 @@ import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.vault.VaultApiException;
 
 /**
- * request and response.
+ * Issue Certificate request and response.
  */
 public final class IssueCertificate {
     private IssueCertificate() {
@@ -78,6 +78,11 @@ public final class IssueCertificate {
             return new Builder();
         }
 
+        /**
+         * Get the certificate as an X.509 certificate.
+         *
+         * @return CA certificate
+         */
         public X509Certificate toCertificate() {
             return cert.get();
         }

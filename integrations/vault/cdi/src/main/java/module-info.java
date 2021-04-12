@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/**
+ * Vault integration with CDI.
+ * Exposes all APIs discovered through
+ * {@link io.helidon.integrations.vault.spi.InjectionProvider} service loader.
+ * This is usually the blocking and reactive API for various secret engines and authentication methods.
+ */
 module io.helidon.integrations.vault.cdi {
     requires java.logging;
 

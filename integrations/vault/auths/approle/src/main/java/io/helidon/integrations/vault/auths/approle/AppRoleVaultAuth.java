@@ -54,6 +54,11 @@ public class AppRoleVaultAuth implements VaultAuth {
         this.secretId = builder.secretId;
     }
 
+    /**
+     * Create a new builder.
+     *
+     * @return new builder
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -120,6 +125,9 @@ public class AppRoleVaultAuth implements VaultAuth {
 
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.integrations.vault.auths.approle.AppRoleVaultAuth}.
+     */
     public static class Builder implements io.helidon.common.Builder<AppRoleVaultAuth> {
         private String appRoleId;
         private String secretId;
@@ -132,11 +140,23 @@ public class AppRoleVaultAuth implements VaultAuth {
             return new AppRoleVaultAuth(this);
         }
 
+        /**
+         * ID of the AppRole.
+         *
+         * @param appRoleId AppRole ID
+         * @return updated builder
+         */
         public Builder appRoleId(String appRoleId) {
             this.appRoleId = appRoleId;
             return this;
         }
 
+        /**
+         * Secret ID generated for the AppRole.
+         *
+         * @param secretId secret ID
+         * @return updated builder
+         */
         public Builder secretId(String secretId) {
             this.secretId = secretId;
             return this;

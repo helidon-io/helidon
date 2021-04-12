@@ -15,7 +15,7 @@
  */
 
 /**
- * Vault  integration.
+ * Common classes for Vault integration.
  */
 module io.helidon.integrations.vault.auths.common {
     requires io.helidon.common.reactive;

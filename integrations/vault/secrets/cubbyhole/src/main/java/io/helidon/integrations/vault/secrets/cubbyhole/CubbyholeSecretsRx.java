@@ -25,7 +25,6 @@ import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.Secret;
 import io.helidon.integrations.vault.SecretsRx;
 import io.helidon.integrations.vault.VaultOptionalResponse;
-import io.helidon.integrations.vault.VaultRestException;
 
 /**
  * Cubbyhole engine secrets API.
@@ -42,17 +41,36 @@ public interface CubbyholeSecretsRx extends SecretsRx {
      */
     Engine<CubbyholeSecretsRx> ENGINE = Engine.create(CubbyholeSecretsRx.class, "cubbyhole", "cubbyhole");
 
+    /**
+     * Get a Cubbyhole secret.
+     *
+     * @param path secret's path
+     * @return secret if found
+     */
     default Single<Optional<Secret>> get(String path) {
         return get(GetCubbyhole.Request.builder().path(path))
                 .map(it -> it.entity().map(Function.identity()));
     }
 
+    /**
+     * Create a Cubbyhole secret.
+     *
+     * @param path secret's path
+     * @param values value of the new secret
+     * @return vault response
+     */
     default Single<CreateCubbyhole.Response> create(String path, Map<String, String> values) {
         return create(CreateCubbyhole.Request.builder()
                               .path(path)
                               .secretValues(values));
     }
 
+    /**
+     * Delete a Cubbyhole secret.
+     *
+     * @param path secret's path
+     * @return vault response
+     */
     default Single<DeleteCubbyhole.Response> delete(String path) {
         return delete(DeleteCubbyhole.Request.builder()
                               .path(path));
@@ -70,14 +88,15 @@ public interface CubbyholeSecretsRx extends SecretsRx {
      * Create a new secret on the defined path.
      *
      * @param request create cubbyhole request
+     * @return vault response
      */
-    Single<CreateCubbyhole.Response> create(CreateCubbyhole.Request request) throws VaultRestException;
+    Single<CreateCubbyhole.Response> create(CreateCubbyhole.Request request);
 
     /**
      * Update a secret on the defined path. The new values replace existing values.
      *
      * @param request update request (same as create request)
-     * @throws io.helidon.integrations.vault.VaultRestException in case the secret does not exist or the API call fails
+     * @return vault response
      */
     Single<UpdateCubbyhole.Response> update(UpdateCubbyhole.Request request);
 
@@ -85,6 +104,7 @@ public interface CubbyholeSecretsRx extends SecretsRx {
      * Delete the secret.
      *
      * @param request delete request
+     * @return vault response
      */
     Single<DeleteCubbyhole.Response> delete(DeleteCubbyhole.Request request);
 }

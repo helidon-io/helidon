@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/**
+ * Sys operations for Vault.
+ *
+ * @see io.helidon.integrations.vault.sys.Sys
+ * @see io.helidon.integrations.vault.sys.SysRx
+ */
 module io.helidon.integrations.vault.sys {
     requires java.logging;
 

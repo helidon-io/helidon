@@ -40,7 +40,7 @@ class DbSecretsRxImpl implements DbSecretsRx {
         return restApi.invokeOptional(Vault.LIST,
                                       apiPath,
                                       request,
-                                      VaultOptionalResponse.<ListSecrets.Response, JsonObject>builder()
+                                      VaultOptionalResponse.<ListSecrets.Response, JsonObject>vaultResponseBuilder()
                                               .entityProcessor(ListSecrets.Response::create));
     }
 
@@ -49,7 +49,7 @@ class DbSecretsRxImpl implements DbSecretsRx {
         String name = request.name();
         String apiPath = mount + "/creds/" + name;
 
-        return restApi.get(apiPath, request, VaultOptionalResponse.<DbGet.Response, JsonObject>builder()
+        return restApi.get(apiPath, request, VaultOptionalResponse.<DbGet.Response, JsonObject>vaultResponseBuilder()
                 .entityProcessor(json -> DbGet.Response.create(name, json)));
     }
 

@@ -27,7 +27,7 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
 
 /**
- * request and response.
+ * Get CA Certificate request and response.
  */
 public final class CaCertificateGet {
     private CaCertificateGet() {
@@ -54,11 +54,22 @@ public final class CaCertificateGet {
             return new Request();
         }
 
+        /**
+         * Format of the certificate to get.
+         *
+         * @param format the required format
+         * @return updated request
+         */
         public Request format(PkiFormat format) {
             this.format = format;
             return this;
         }
 
+        /**
+         * Requested format.
+         *
+         * @return format that was requested
+         */
         public PkiFormat format() {
             return format;
         }
@@ -88,10 +99,19 @@ public final class CaCertificateGet {
             return new Builder();
         }
 
+        /**
+         * Get the certificate as an X.509 certificate.
+         *
+         * @return CA certificate
+         */
         public X509Certificate toCertificate() {
             return cert.get();
         }
 
+        /**
+         * Get certificate bytes in the requested format.
+         * @return bytes of the certificate
+         */
         public byte[] toBytes() {
             return certBytes;
         }

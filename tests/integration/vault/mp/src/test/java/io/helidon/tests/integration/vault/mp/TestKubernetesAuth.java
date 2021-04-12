@@ -57,7 +57,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @HelidonTest(resetPerTest = true)
 @DisableDiscovery
 @AddExtension(VaultCdiExtension.class)
-@Configuration(configSources = "vault-cdi-extension.properties")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class TestKubernetesAuth {
     @Test

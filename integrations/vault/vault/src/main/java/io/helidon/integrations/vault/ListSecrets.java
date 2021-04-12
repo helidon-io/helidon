@@ -24,7 +24,8 @@ import javax.json.JsonObject;
 import io.helidon.integrations.common.rest.ApiJsonParser;
 
 /**
- * request and response.
+ * List secrets request and response.
+ * @see io.helidon.integrations.vault.Secrets#list(io.helidon.integrations.vault.ListSecrets.Request)
  */
 public final class ListSecrets {
     private ListSecrets() {
@@ -34,7 +35,7 @@ public final class ListSecrets {
      * Request object. Can be configured with additional headers, query parameters etc.
      */
     public static class Request extends VaultRequest<Request> {
-        String path;
+        private String path;
 
         private Request() {
         }
@@ -69,11 +70,22 @@ public final class ListSecrets {
             return builder().path(path);
         }
 
+        /**
+         * Configure the path to list, may be ignored by specific secret engines.
+         *
+         * @param path path to list
+         * @return updated request
+         */
         public Request path(String path) {
             this.path = path;
             return this;
         }
 
+        /**
+         * Path to read, may be empty for root (or secret engines that do not support path).
+         *
+         * @return path to list
+         */
         public Optional<String> path() {
             return Optional.ofNullable(path);
         }
@@ -89,11 +101,22 @@ public final class ListSecrets {
             paths = VaultUtil.processListDataResponse(object);
         }
 
+        /**
+         * Create a new list response from JSON entity.
+         *
+         * @param json json object from HTTP response
+         * @return new response
+         */
         public static Response create(JsonObject json) {
             return new Response(json);
         }
 
-        public List<String> paths() {
+        /**
+         * Get the list.
+         *
+         * @return list of objects
+         */
+        public List<String> list() {
             return paths;
         }
     }

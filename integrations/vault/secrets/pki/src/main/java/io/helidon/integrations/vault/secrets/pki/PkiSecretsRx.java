@@ -114,6 +114,12 @@ public interface PkiSecretsRx extends SecretsRx {
                 .map(it -> it.map(CertificateGet.Response::toBytes));
     }
 
+    /**
+     * Get a certificate.
+     *
+     * @param request request with at least the serial number configured
+     * @return get certificate response
+     */
     Single<VaultOptionalResponse<CertificateGet.Response>> certificate(CertificateGet.Request request);
 
     /**
@@ -138,6 +144,12 @@ public interface PkiSecretsRx extends SecretsRx {
                 .map(CrlGet.Response::toBytes);
     }
 
+    /**
+     * Certificate revocation list.
+     *
+     * @param request CRL request
+     * @return CRL response
+     */
     Single<CrlGet.Response> crl(CrlGet.Request request);
 
     /**
@@ -174,6 +186,12 @@ public interface PkiSecretsRx extends SecretsRx {
                 .map(RevokeCertificate.Response::revocationTime);
     }
 
+    /**
+     * Revoke a certificate.
+     *
+     * @param request revocation request with at least the serial number
+     * @return revoke certificate response
+     */
     Single<RevokeCertificate.Response> revokeCertificate(RevokeCertificate.Request request);
 
     /**
@@ -190,6 +208,15 @@ public interface PkiSecretsRx extends SecretsRx {
                                               .commonName(commonName));
     }
 
+    /**
+     * Generate a self signed root certificate.
+     * This operations makes sense for testing.
+     * For production environments, this would most likely be initialized with an explicit
+     * key and certificate.
+     *
+     * @param request request with at least the common name
+     * @return generate self signed root response
+     */
     Single<GenerateSelfSignedRoot.Response> generateSelfSignedRoot(GenerateSelfSignedRoot.Request request);
 
     /**

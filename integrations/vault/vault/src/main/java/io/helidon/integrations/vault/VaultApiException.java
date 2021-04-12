@@ -18,20 +18,27 @@ package io.helidon.integrations.vault;
 
 import io.helidon.integrations.common.rest.ApiException;
 
+/**
+ * Exception in Vault communication not based on HTTP response.
+ */
 public class VaultApiException extends ApiException {
-    public VaultApiException() {
-        super();
-    }
 
+    /**
+     * Vault exception with a descriptive message.
+     *
+     * @param message error message
+     */
     public VaultApiException(String message) {
         super(message);
     }
 
+    /**
+     * Vault exception with message and a cause.
+     *
+     * @param message error message
+     * @param cause throwable that caused this exception
+     */
     public VaultApiException(String message, Throwable cause) {
         super(message, cause);
-    }
-
-    public VaultApiException(Throwable cause) {
-        super(cause);
     }
 }
