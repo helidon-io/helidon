@@ -21,8 +21,6 @@ import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 
-import org.eclipse.microprofile.metrics.ConcurrentGauge;
-
 /**
  * Measures the number of in-flight requests for MP.
  * <p>
@@ -34,19 +32,11 @@ class InflightMetricFilter implements ContainerRequestFilter, ContainerResponseF
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        // The filter is in-place very early, so it's possible other initialization has not completed yet.
-        ConcurrentGauge inflightRequests = MetricsCdiExtension.inflightRequests().get();
-        if (inflightRequests != null) {
-            inflightRequests.inc();
-        }
+        MetricsCdiExtension.inflightRequests().get().inc();
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-        // The filter is in-place very early, so it's possible other initialization has not completed yet.
-        ConcurrentGauge inflightRequests = MetricsCdiExtension.inflightRequests().get();
-        if (inflightRequests != null) {
-            inflightRequests.dec();
-        }
+        MetricsCdiExtension.inflightRequests().get().dec();
     }
 }
