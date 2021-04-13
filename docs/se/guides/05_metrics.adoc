@@ -157,6 +157,11 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics
       "fifteenMinRate": 0.0
     },
     "requests.count": 6,
+    "requests.inflight": {
+        "current": 0,
+        "max": 1,
+        "min": 0
+  },
     "requests.meter": {
       "count": 6,
       "meanRate": 0.008275992296704147,
