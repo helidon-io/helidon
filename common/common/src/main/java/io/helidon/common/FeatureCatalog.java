@@ -348,9 +348,9 @@ final class FeatureCatalog {
                     "Micrometer integration",
                     "Micrometer");
         addMp("io.helidon.integrations.micrometer.cdi",
-                "Micrometer CDI",
-                "Micrometer CDI integration",
-                "Micrometer-CDI");
+                "Micrometer",
+                "Micrometer integration",
+                "Micrometer");
 
         /*
          * Common modules
