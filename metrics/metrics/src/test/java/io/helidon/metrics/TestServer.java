@@ -20,16 +20,21 @@ import javax.json.JsonObject;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.Builder;
 import io.helidon.common.http.MediaType;
+import io.helidon.common.reactive.Single;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
 
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,11 +51,14 @@ public class TestServer {
 
     private static final MetricsSupport.Builder NORMAL_BUILDER = MetricsSupport.builder();
 
+    private static MetricsSupport metricsSupport;
+
     private WebClient.Builder webClientBuilder;
 
     @BeforeAll
     public static void startup() throws InterruptedException, ExecutionException, TimeoutException {
-        webServer = startServer(NORMAL_BUILDER);
+        metricsSupport = NORMAL_BUILDER.build();
+        webServer = startServer(metricsSupport, new GreetService());
     }
 
     @BeforeEach
@@ -65,20 +73,14 @@ public class TestServer {
         shutdownServer(webServer);
     }
 
-    static WebServer startServer(MetricsSupport.Builder builder) throws InterruptedException, ExecutionException,
-            TimeoutException {
-        return startServer(0, builder);
-    }
-
     static WebServer startServer(
-            int port,
-            MetricsSupport.Builder... builders) throws
+            Service... services) throws
             InterruptedException, ExecutionException, TimeoutException {
         WebServer result = WebServer.builder(
                 Routing.builder()
-                    .register(builders)
+                    .register(services)
                     .build())
-                .port(port)
+                .port(0)
                 .build()
                 .start()
                 .toCompletableFuture()
@@ -124,5 +126,28 @@ public class TestServer {
             // MP_METRICS_TAGS causes metrics to add tags to metric IDs. Just do this check in the simple case, without tags.
             assertThat("Vendor metrics in returned entity", metrics.containsKey("requests.count"), is(true));
         }
+    }
+
+    @Test
+    void checkInflightRequests() throws InterruptedException, ExecutionException {
+        ConcurrentGauge inflightRequests = metricsSupport.inflightRequests();
+        long inflightBefore = inflightRequests.getCount();
+
+        GreetService.initSlowRequest();
+        Single<String> response = webClientBuilder
+                .build()
+                .get()
+                .accept(MediaType.APPLICATION_JSON)
+                .path("greet/slow")
+                .request(String.class);
+        GreetService.awaitSlowRequestStarted();
+        long inflightDuring = inflightRequests.getCount();
+
+        String result = response.get();
+
+        assertThat("Returned result", result, is(GreetService.GREETING_RESPONSE));
+        assertThat("Change in inflight requests during invocation", inflightDuring - inflightBefore, is(1L));
+        assertThat("Net change in inflight requests after invocation", inflightRequests.getCount(), is(inflightBefore));
+
     }
 }

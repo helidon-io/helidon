@@ -57,6 +57,7 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
@@ -96,7 +97,7 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  *  req.context().get(MetricRegistry.class).ifPresent(reg -> reg.counter("myCounter").inc());
  * }</pre>
  */
-public final class MetricsSupport extends HelidonRestServiceSupport {
+public class MetricsSupport extends HelidonRestServiceSupport {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";
@@ -104,13 +105,18 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
 
     private static final MessageBodyWriter<JsonStructure> JSONP_WRITER = JsonpSupport.writer();
 
+    private ConcurrentGauge inflightRequestsConcurrentGauge;
+
     private final RegistryFactory rf;
+
+    private final boolean updateInflightRequestsFromHandler;
 
     private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
 
-    private MetricsSupport(Builder builder) {
+    protected MetricsSupport(Builder builder) {
         super(LOGGER, builder, SERVICE_NAME);
         this.rf = builder.registryFactory.get();
+        updateInflightRequestsFromHandler = builder.updateInflightRequestsFromHandler;
     }
 
     /**
@@ -133,6 +139,10 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      */
     public static MetricsSupport create(Config config) {
         return builder().config(config).build();
+    }
+
+    protected ConcurrentGauge inflightRequests() {
+        return inflightRequestsConcurrentGauge;
     }
 
     static JsonObjectBuilder createMergingJsonObjectBuilder(JsonObjectBuilder delegate) {
@@ -350,10 +360,27 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
                 .withUnit(MetricUnits.NONE)
                 .build());
 
+        inflightRequestsConcurrentGauge = vendor.concurrentGauge(Metadata.builder()
+                .withName(metricPrefix + "inflight")
+                .withDisplayName("Current in-flight HTTP requests")
+                .withDescription("Each incoming request increases the count, and each completed request decreases it")
+                .withType(MetricType.CONCURRENT_GAUGE)
+                .withUnit(MetricUnits.NONE)
+                .build());
+
         rules.any((req, res) -> {
             totalCount.inc();
             totalMeter.mark();
-            req.next();
+            if (updateInflightRequestsFromHandler) {
+                inflightRequestsConcurrentGauge.inc();
+            }
+            try {
+                req.next();
+            } finally {
+                if (updateInflightRequestsFromHandler) {
+                    inflightRequestsConcurrentGauge.dec();
+                }
+            }
         });
     }
 
@@ -409,7 +436,6 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      */
     @Override
     public void update(Routing.Rules rules) {
-        configureVendorMetrics(null, rules);
         configureEndpoint(rules);
     }
 
@@ -500,12 +526,13 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
     /**
      * A fluent API builder to build instances of {@link MetricsSupport}.
      */
-    public static final class Builder extends HelidonRestServiceSupport.Builder<MetricsSupport, Builder>
+    public static class Builder extends HelidonRestServiceSupport.Builder<MetricsSupport, Builder>
             implements io.helidon.common.Builder<MetricsSupport> {
 
         private Supplier<RegistryFactory> registryFactory;
+        private boolean updateInflightRequestsFromHandler = true;
 
-        private Builder() {
+        protected Builder() {
             super(Builder.class, DEFAULT_CONTEXT);
         }
 
@@ -518,10 +545,14 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
 
         @Override
         public MetricsSupport build() {
+            return build(MetricsSupport::new);
+        }
+
+        protected <T extends MetricsSupport> T build(Function<Builder, T> factory) {
             if (null == registryFactory) {
                 registryFactory = () -> RegistryFactory.getInstance(config());
             }
-            return new MetricsSupport(this);
+            return factory.apply(this);
         }
 
         /**
@@ -557,6 +588,11 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
          */
         public Builder registryFactory(RegistryFactory factory) {
             registryFactory = () -> factory;
+            return this;
+        }
+
+        protected Builder updateInflightFromHandler(boolean updateInflightFromHandler) {
+            this.updateInflightRequestsFromHandler = updateInflightFromHandler;
             return this;
         }
     }
