@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.webclient.WebClient;
@@ -50,7 +51,7 @@ public class MutualTlsExampleTest {
     @Test
     public void testConfigAccessSuccessful() throws InterruptedException {
         Config config = Config.just(() -> ConfigSources.classpath("application-test.yaml").build());
-        waitForServerToStart(ServerConfigMain.startServer(config.get("server")));
+        webServer = ServerConfigMain.startServer(config.get("server")).await();
         WebClient webClient = WebClient.create(config.get("client"));
 
         assertThat(ClientConfigMain.callUnsecured(webClient, webServer.port()), is("Hello world unsecured!"));
@@ -59,23 +60,10 @@ public class MutualTlsExampleTest {
 
     @Test
     public void testBuilderAccessSuccessful() throws InterruptedException {
-        waitForServerToStart(ServerBuilderMain.startServer(-1, -1));
+        webServer = ServerBuilderMain.startServer(-1, -1).await();
         WebClient webClient = ClientBuilderMain.createWebClient();
 
         assertThat(ClientBuilderMain.callUnsecured(webClient, webServer.port()), is("Hello world unsecured!"));
         assertThat(ClientBuilderMain.callSecured(webClient, webServer.port("secured")), is("Hello Helidon-client!"));
-    }
-
-    private void waitForServerToStart(WebServer webServer) throws InterruptedException {
-        this.webServer = webServer;
-        long timeout = 2000; // 2 seconds should be enough to start the server
-        long now = System.currentTimeMillis();
-
-        while (!webServer.isRunning()) {
-            Thread.sleep(100);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
-            }
-        }
     }
 }
