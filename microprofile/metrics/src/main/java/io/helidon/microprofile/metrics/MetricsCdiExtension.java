@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
@@ -35,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -148,6 +148,12 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
 
     private final WorkItemsManager<MetricWorkItem> workItemsManager = WorkItemsManager.create();
 
+    private static MetricsSupportForCdi metricsSupport;
+
+    static Supplier<org.eclipse.microprofile.metrics.ConcurrentGauge> inflightRequests() {
+        return () -> metricsSupport.inflightRequests();
+    }
+
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
         return (T) bm.getReference(bean, type, bm.createCreationalContext(bean));
@@ -157,7 +163,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
      * Creates a new extension instance.
      */
     public MetricsCdiExtension() {
-        super(LOGGER, MetricsSupport::create, "metrics");
+        super(LOGGER, MetricsCdiExtension::createMetricsSupport, "metrics");
     }
 
     /**
@@ -213,6 +219,16 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                                         MetricWorkItem.create(metricInfo.metricID, metricInfo.metric));
                             })));
 
+    }
+
+    private static MetricsSupportForCdi createMetricsSupport(Config config) {
+
+        metricsSupport = MetricsSupportForCdi.createMetricsSupport(config);
+        return metricsSupport;
+    }
+
+    static MetricsSupportForCdi metricsSupport() {
+        return metricsSupport;
     }
 
     private static Tag[] tags(String[] tagStrings) {
