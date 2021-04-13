@@ -109,12 +109,6 @@ class BareResponseImpl implements BareResponse {
         this.prevRequestChunk = prevRequestChunk;
         this.http2StreamId = requestHeaders.get(HTTP_2_STREAM_ID);
 
-        // No need to pipeline responses with HTTP/2 - multiplexing allowed
-        if (http2StreamId != null) {
-            this.prevRequestChunk = null;        // don't wait for previous pipelined request
-            LOGGER.fine(() -> log("Multiplexing allowed with HTTP/2 keep-alive: %s", keepAlive));
-        }
-
         // We need to keep this listener so we can remove it when this response completes. If we don't, we leak
         // while the channel remains open since each response adds a new listener that references 'this'.
         // Use fields to avoid capturing lambdas.
@@ -192,9 +186,8 @@ class BareResponseImpl implements BareResponse {
 
         // Content length optimization attempt
         if (!lengthOptimization) {
-            LOGGER.fine(() -> String.format("[BareResponseImpl: %s, Channel: %s] Writing headers %s",
-                    System.identityHashCode(this), System.identityHashCode(ctx.channel()), status));
-            initWriteResponse();
+            LOGGER.fine(() -> log("Writing headers %s", status));
+            orderedWrite(this::initWriteResponse);
         }
     }
 
@@ -237,14 +230,16 @@ class BareResponseImpl implements BareResponse {
      */
     private void completeInternal(Throwable throwable) {
         boolean wasClosed = !internallyClosed.compareAndSet(false, true);
-
-        if (prevRequestChunk == null) {
-            completeInternalPipe(wasClosed, throwable);
-        } else {
-            prevRequestChunk = prevRequestChunk.thenRun(() -> completeInternalPipe(wasClosed, throwable));
-        }
+        orderedWrite(() -> completeInternalPipe(wasClosed, throwable));
     }
 
+    /**
+     * Utility method to complete internal pipe. This method must be called inside an
+     * {@link #orderedWrite(Runnable)} runnable.
+     *
+     * @param wasClosed response closed boolean.
+     * @param throwable a throwable.
+     */
     private void completeInternalPipe(boolean wasClosed, Throwable throwable) {
         if (wasClosed) {
             // if already closed, as the contract specifies, don't fail
@@ -274,7 +269,8 @@ class BareResponseImpl implements BareResponse {
 
     /**
      * Write last HTTP content. If length optimization is active and a first chunk is cached,
-     * switch content encoding and write response.
+     * switch content encoding and write response. This method must be called inside an
+     * {@link #orderedWrite(Runnable)} runnable.
      *
      * @param throwable A throwable.
      * @param closeAction Close action listener.
@@ -298,32 +294,19 @@ class BareResponseImpl implements BareResponse {
             initWriteResponse();
         }
 
-        // Writing an empty buffer in HTTP/2 response may result in "stream no longer exist"
-        // error. With HTTP/2, we complete the response without writing an empty buffer.
-        if (http2StreamId != null) {
-            ctx.flush();        // flushes the pipeline
-            ChannelFuture success = ctx.channel().newSucceededFuture();
-            try {
-                completeOnSuccessListener(throwable).operationComplete(success);
-                closeAction.operationComplete(success);
-            } catch (Exception e) {
-                LOGGER.severe(() -> log("Error while writing last content: %s", e));
+        LastHttpContent lastHttpContent = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER);
+        if (chunked) {
+            if (throwable != null) {
+                lastHttpContent.trailingHeaders()
+                        .set(Response.STREAM_STATUS, 500)
+                        .set(Response.STREAM_RESULT, throwable);
+                LOGGER.severe(() -> log("Upstream error while sending response: %s", throwable));
             }
-        } else {
-            LastHttpContent lastHttpContent = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER);
-            if (chunked) {
-                if (throwable != null) {
-                    lastHttpContent.trailingHeaders()
-                            .set(Response.STREAM_STATUS, 500)
-                            .set(Response.STREAM_RESULT, throwable);
-                    LOGGER.severe(() -> log("Upstream error while sending response: %s", throwable));
-                }
-            }
-            ctx.writeAndFlush(lastHttpContent)
-                    .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
-                    .addListener(completeOnSuccessListener(throwable))
-                    .addListener(closeAction);
         }
+        ctx.writeAndFlush(lastHttpContent)
+                .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
+                .addListener(completeOnSuccessListener(throwable))
+                .addListener(closeAction);
     }
 
     private GenericFutureListener<Future<? super Void>> completeOnFailureListener(String message) {
@@ -370,23 +353,26 @@ class BareResponseImpl implements BareResponse {
                 return;
             }
 
-            if (prevRequestChunk == null) {
-                onNextPipe(data);
-            } else {
-                prevRequestChunk = prevRequestChunk.thenRun(() -> onNextPipe(data));
-            }
+            orderedWrite(() -> onNextPipe(data));
         }
     }
 
+    /**
+     * Utility method to write next data chunk. This method must be called inside an
+     * {@link #orderedWrite(Runnable)} runnable.
+     *
+     * @param data the data chunk.
+     */
     private void onNextPipe(DataChunk data) {
-            if (lengthOptimization) {
-                initWriteResponse();
-            }
-            sendData(data);
+        if (lengthOptimization) {
+            initWriteResponse();
+        }
+        sendData(data);
     }
 
     /**
-     * Initiates write of response and sends first chunk if available.
+     * Initiates write of response and sends first chunk if available. This method must be called
+     * inside an {@link #orderedWrite(Runnable)} runnable.
      *
      * @return Future of response or first chunk.
      */
@@ -408,6 +394,13 @@ class BareResponseImpl implements BareResponse {
         return cf;
     }
 
+    /**
+     * Submits a data chunk for writing. This method must be called inside an
+     * {@link #orderedWrite(Runnable)} runnable.
+     *
+     * @param data the chunk.
+     * @return channel future.
+     */
     private ChannelFuture sendData(DataChunk data) {
         LOGGER.finest(() -> log("Sending data chunk"));
 
@@ -485,6 +478,23 @@ class BareResponseImpl implements BareResponse {
     @Override
     public long requestId() {
         return requestId;
+    }
+
+    /**
+     * Ensures a write for a response is only submitted when all writes from the previous
+     * response in an HTTP connection have been submitted. This is required to properly
+     * support HTTP pipelining.
+     *
+     * @param runnable a runnable that writes.
+     * @return new future or {@code null}.
+     */
+    private CompletableFuture<?> orderedWrite(Runnable runnable) {
+        if (prevRequestChunk == null) {
+            runnable.run();
+        } else {
+            prevRequestChunk = prevRequestChunk.thenRun(runnable);
+        }
+        return prevRequestChunk;
     }
 
     /**
