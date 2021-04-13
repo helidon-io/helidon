@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.metrics.ExemplarService;
+
 /**
  * Helidon Metrics implementation.
  */
@@ -21,6 +23,7 @@ module io.helidon.metrics {
     requires java.logging;
 
     requires io.helidon.common;
+    requires io.helidon.common.serviceloader;
     requires io.helidon.webserver.cors;
 
     requires transitive microprofile.metrics.api;
@@ -33,4 +36,6 @@ module io.helidon.metrics {
     requires io.helidon.servicecommon.rest;
 
     exports io.helidon.metrics;
+
+    uses io.helidon.metrics.ExemplarService;
 }

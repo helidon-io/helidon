@@ -23,8 +23,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.eclipse.microprofile.metrics.Snapshot;
-
 import static java.lang.Math.exp;
 import static java.lang.Math.min;
 
@@ -91,8 +89,8 @@ class ExponentiallyDecayingReservoir {
         return (int) min(size, count.get());
     }
 
-    public void update(long value) {
-        update(value, currentTimeInSeconds());
+    public void update(long value, String label) {
+        update(value, currentTimeInSeconds(), label);
     }
 
     /**
@@ -100,13 +98,14 @@ class ExponentiallyDecayingReservoir {
      *
      * @param value     the value to be added
      * @param timestamp the epoch timestamp of {@code value} in seconds
+     * @param label     the optional label associated with the sample
      */
-    public void update(long value, long timestamp) {
+    public void update(long value, long timestamp, String label) {
         rescaleIfNeeded();
         lockForRegularUsage();
         try {
             final double itemWeight = weight(timestamp - startTime);
-            final WeightedSnapshot.WeightedSample sample = new WeightedSnapshot.WeightedSample(value, itemWeight);
+            final WeightedSnapshot.WeightedSample sample = new WeightedSnapshot.WeightedSample(value, itemWeight, label);
             final double priority = itemWeight / ThreadLocalRandom.current().nextDouble();
 
             final long newCount = count.incrementAndGet();
@@ -134,7 +133,7 @@ class ExponentiallyDecayingReservoir {
         }
     }
 
-    public Snapshot getSnapshot() {
+    public WeightedSnapshot getSnapshot() {
         rescaleIfNeeded();
         lockForRegularUsage();
         try {
@@ -184,7 +183,8 @@ class ExponentiallyDecayingReservoir {
                     for (Double key : keys) {
                         final WeightedSnapshot.WeightedSample sample = values.remove(key);
                         final WeightedSnapshot.WeightedSample newSample = new WeightedSnapshot.WeightedSample(sample.getValue(),
-                                                                                                              sample.getWeight() * scalingFactor);
+                                                                                                              sample.getWeight() * scalingFactor,
+                                                                                                              sample.label());
                         if (Double.compare(newSample.getWeight(), 0) == 0) {
                             continue;
                         }
