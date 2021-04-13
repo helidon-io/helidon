@@ -185,6 +185,7 @@
         <module>graphql</module>
         <module>logging</module>
         <module>scheduling</module>
+        <module>service-common</module>
     </modules>
 
 

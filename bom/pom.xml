@@ -583,6 +583,16 @@
                 <artifactId>helidon-common-context</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.service-common</groupId>
+                <artifactId>helidon-service-common-rest</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.service-common</groupId>
+                <artifactId>helidon-service-common-rest-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- db client -->
             <dependency>
@@ -859,6 +869,16 @@
             <dependency>
                 <groupId>io.helidon.integrations.common</groupId>
                 <artifactId>helidon-integrations-common-rest</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.micrometer</groupId>
+                <artifactId>helidon-integrations-micrometer</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.micrometer</groupId>
+                <artifactId>helidon-integrations-micrometer-cdi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- OpenAPI support -->
