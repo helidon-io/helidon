@@ -65,8 +65,6 @@ public final class Main {
                 .build()
                 .start();
 
-        // Try to start the server. If successful, print some info and arrange to
-        // print a message at shutdown. If unsuccessful, print the exception.
         server.thenAccept(ws -> {
                 System.out.println(
                         "WEB server is up! http://localhost:" + ws.port() + "/greet");
