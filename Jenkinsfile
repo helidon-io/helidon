@@ -49,6 +49,24 @@ pipeline {
             sh './etc/scripts/checkstyle.sh'
           }
         }
+        stage('integration-tests') {
+          stages {
+            stage('test-vault') {
+              agent {
+                kubernetes {
+                  inheritFrom 'k8s-slave'
+                  yamlFile 'etc/pods/vault.yaml'
+                  yamlMergeStrategy merge()
+                }
+              }
+              steps {
+                sh './etc/scripts/test-integ-vault.sh'
+                archiveArtifacts artifacts: "tests/integration/**/target/failsafe-reports/*.txt"
+                junit testResults: 'tests/integration/**/target/failsafe-reports/*.xml'
+              }
+            }
+          }
+        }
       }
     }
     stage('release') {
