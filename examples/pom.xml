@@ -36,6 +36,7 @@
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <spotbugs.skip>true</spotbugs.skip>
         <dependency-check.skip>true</dependency-check.skip>
+        <services.skip>true</services.skip>
     </properties>
 
     <modules>

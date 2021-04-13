@@ -48,7 +48,7 @@ public final class MpConfig {
             return (io.helidon.config.Config) mpConfig;
         }
 
-        // If the mpConfig is based on an SE config (such as when we use meta configuration)
+        // If the mpConfig is based on an SE config (such as when we use meta configuration)pom.xml
         // we must reuse that se config instance
         Iterator<ConfigSource> configSources = mpConfig.getConfigSources().iterator();
         ConfigSource first = configSources.hasNext() ? configSources.next() : null;

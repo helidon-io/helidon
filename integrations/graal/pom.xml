@@ -25,6 +25,10 @@
         <version>2.3.0-SNAPSHOT</version>
     </parent>
 
+    <properties>
+        <services.skip>true</services.skip>
+    </properties>
+
     <groupId>io.helidon.integrations.graal</groupId>
     <artifactId>helidon-integrations-graal-project</artifactId>
     <packaging>pom</packaging>

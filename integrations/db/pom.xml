@@ -32,6 +32,10 @@
     <name>Helidon Integrations DB</name>
     <description>Database driver modules with native image support</description>
 
+    <properties>
+        <services.skip>true</services.skip>
+    </properties>
+
     <modules>
         <module>h2</module>
         <module>mysql</module>

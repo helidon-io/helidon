@@ -660,6 +660,22 @@
                     <artifactId>helidon-copyright-plugin</artifactId>
                     <version>${version.plugin.helidon-build-tools}</version>
                 </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-services-plugin</artifactId>
+                    <version>${version.plugin.helidon-build-tools}</version>
+                    <configuration>
+                        <mergeMode>ignore</mergeMode>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>generate-meta-inf-services</id>
+                            <goals>
+                                <goal>services</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -758,6 +774,10 @@
                         <version>${version.lib.asciidoctor.diagram}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>io.helidon.build-tools</groupId>
+                <artifactId>helidon-services-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
