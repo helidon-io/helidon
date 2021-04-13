@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@
 = Tracing
 :h1Prefix: MP
 :description: Helidon MP Tracing Support
+:feature-name: MicroProfile Tracing
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:microprofile-bundle: true
 = :keywords: helidon, tracing, microprofile, micro-profile
 
-== Configuring Tracing with Helidon MP
-Tracing support is implemented for both for Helidon MP Server and for Jersey client.
-
-Declare the following dependency in your project:
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
 ----
@@ -34,6 +34,8 @@ Declare the following dependency in your project:
 </dependency>
 ----
 
+== Configuring Tracing with Helidon MP
+Tracing support is implemented for both for Helidon MP Server and for Jersey client.
 In addition you need to add one of the tracer implementations:
 
 - <<tracing/02_zipkin.adoc,Zipkin>>

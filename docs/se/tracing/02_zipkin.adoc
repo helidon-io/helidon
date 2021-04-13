@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,5 +21,7 @@
 :keywords: helidon, tracing, zipkin
 :h1Prefix: SE
 :zipkin-page: ../../shared/tracing/tracer-zipkin.adoc
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: Zipkin Tracing
 
 include::{zipkin-page}[]

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.json.JsonObjectBuilder;
 
-import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -97,8 +96,14 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
         sb.append(promName)
                 .append(tags)
                 .append(" ")
-                .append(getCount())
-                .append("\n");
+                .append(getCount());
+
+        SimpleTimerImpl simpleTimerImpl = (delegate instanceof SimpleTimerImpl) ? ((SimpleTimerImpl) delegate) : null;
+        Sample.Labeled sample = simpleTimerImpl != null ? simpleTimerImpl.sample : null;
+        if (sample != null) {
+            sb.append(prometheusExemplar(elapsedTimeInSeconds(sample.value()), simpleTimerImpl.sample));
+        }
+        sb.append("\n");
 
         promName = prometheusNameWithUnits(name + "_elapsedTime", Optional.of(MetricUnits.SECONDS));
         if (withHelpType) {
@@ -108,8 +113,11 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
         sb.append(promName)
                 .append(tags)
                 .append(" ")
-                .append(elapsedTimeInSeconds())
-                .append("\n");
+                .append(elapsedTimeInSeconds());
+        if (sample != null) {
+            sb.append(prometheusExemplar(elapsedTimeInSeconds(sample.value()), sample));
+        }
+        sb.append("\n");
     }
 
     @Override
@@ -126,7 +134,11 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
     }
 
     private double elapsedTimeInSeconds() {
-        return getElapsedTime().toNanos() / (1000.0 * 1000.0 * 1000.0);
+        return elapsedTimeInSeconds(getElapsedTime().toNanos());
+    }
+
+    private double elapsedTimeInSeconds(long nanos) {
+        return nanos / (1000.0 * 1000.0 * 1000.0);
     }
 
     private static final class ContextImpl implements Context {
@@ -160,9 +172,10 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
 
     private static class SimpleTimerImpl implements SimpleTimer {
 
-        private final Counter counter;
+        private final HelidonCounter counter;
         private final Clock clock;
         private Duration elapsed = Duration.ofNanos(0);
+        private Sample.Labeled sample = null;
 
         SimpleTimerImpl(String repoType, String name, Clock clock) {
             counter =  HelidonCounter.create(repoType, Metadata.builder()
@@ -217,6 +230,7 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
             if (nanos >= 0) {
                 counter.inc();
                 elapsed = elapsed.plusNanos(nanos);
+                sample = Sample.labeled(nanos);
             }
         }
 

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,15 +20,14 @@
 :h1Prefix: SE
 :description: Helidon Security gRPC integration
 :keywords: helidon, grpc, security
+:feature-name: gRPC Server Security
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 Security integration of the  <<grpc/01_introduction.adoc,gRPC server>>
 
-== Prerequisites
-
-Declare the following dependency in your project:
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
-.Maven Dependency
 ----
 <dependency>
     <groupId>io.helidon.security.integration</groupId>

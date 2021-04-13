@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -30,9 +30,21 @@
 :helidon-se-openapi-example: {helidon-tag}/examples/openapi
 :model-reader-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASModelReader.java
 :filter-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASFilter.java
+:feature-name: OpenAPI
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 Easily allow your Helidon SE application to serve an OpenAPI document
 that describes your application's endpoints.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.openapi</groupId>
+    <artifactId>helidon-openapi</artifactId>
+</dependency>
+----
 
 == OpenAPI support in Helidon SE
 
@@ -59,16 +71,7 @@ To use OpenAPI from your Helidon SE app:
 4. Update your application's Helidon configuration (optional).
 
 === Edit your `pom.xml`
-Add a dependency for Helidon SE OpenAPI runtime support:
-
-[source,xml,subs="attributes+"]
-----
-<dependency>
-    <groupId>io.helidon.openapi</groupId>
-    <artifactId>helidon-openapi</artifactId>
-    <version>{helidon-version}</version>
-</dependency>
-----
+Add a dependency for <<maven-coordinates,Helidon SE OpenAPI>> runtime support.
 This is a compile-time dependency, because your code must register
 `OpenAPISupport` (a class in that artifact) like this:
 

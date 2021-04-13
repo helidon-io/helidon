@@ -55,7 +55,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
 
-import static io.helidon.webserver.HttpInitializer.CERTIFICATE_NAME;
+import static io.helidon.webserver.HttpInitializer.CLIENT_CERTIFICATE_NAME;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
@@ -166,7 +166,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
             // Certificate management
             request.headers().remove(Http.Header.X_HELIDON_CN);
-            Optional.ofNullable(ctx.channel().attr(CERTIFICATE_NAME).get())
+            Optional.ofNullable(ctx.channel().attr(CLIENT_CERTIFICATE_NAME).get())
                     .ifPresent(name -> request.headers().set(Http.Header.X_HELIDON_CN, name));
 
             // Context, publisher and DataChunk queue for this request/response

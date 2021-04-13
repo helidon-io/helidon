@@ -17,14 +17,12 @@
 package io.helidon.metrics;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.json.JsonObjectBuilder;
 
-import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -105,116 +103,24 @@ final class HelidonTimer extends MetricImpl implements Timer {
         return delegate.getSnapshot();
     }
 
+    DisplayableLabeledSnapshot snapshot(){
+        return (delegate instanceof TimerImpl)
+                ? ((TimerImpl) delegate).histogram.snapshot()
+                : WrappedSnapshot.create(delegate.getSnapshot());
+    }
+
     @Override
     public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
-        String nameUnits;
-        String name = metricID.getName();
-        String tags = prometheusTags(metricID.getTags());
-        nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_rate_per_second";
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(getMeanRate())
-                .append("\n");
 
-        nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_one_min_rate_per_second";
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(getOneMinuteRate())
-                .append("\n");
+        PrometheusName name = PrometheusName.create(this, metricID);
 
-        nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_five_min_rate_per_second";
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(getFiveMinuteRate())
-                .append("\n");
+        appendPrometheusTimerStatElement(sb, name, "rate_per_second", withHelpType, "gauge", getMeanRate());
+        appendPrometheusTimerStatElement(sb, name, "one_min_rate_per_second", withHelpType, "gauge", getOneMinuteRate());
+        appendPrometheusTimerStatElement(sb, name, "five_min_rate_per_second", withHelpType, "gauge", getFiveMinuteRate());
+        appendPrometheusTimerStatElement(sb, name, "fifteen_min_rate_per_second", withHelpType, "gauge", getFifteenMinuteRate());
 
-        nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_fifteen_min_rate_per_second";
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(getFifteenMinuteRate())
-                .append("\n");
-
-        Units units = getUnits();
-        Optional<String> unit = units.getPrometheusUnit();
-        Snapshot snap = getSnapshot();
-
-        nameUnits = prometheusNameWithUnits(name + "_mean", unit);
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(units.convert(snap.getMean()))
-                .append("\n");
-
-        nameUnits = prometheusNameWithUnits(name + "_max", unit);
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(units.convert(snap.getMax()))
-                .append("\n");
-
-        nameUnits = prometheusNameWithUnits(name + "_min", unit);
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(units.convert(snap.getMin()))
-                .append("\n");
-
-        nameUnits = prometheusNameWithUnits(name + "_stddev", unit);
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(units.convert(snap.getStdDev()))
-                .append("\n");
-
-        nameUnits = prometheusNameWithUnits(name, unit);
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "summary");
-            prometheusHelp(sb, nameUnits);
-        }
-        nameUnits = prometheusNameWithUnits(name, unit) + "_count";
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(getCount())
-                .append('\n');
-
-        // application:file_sizes_bytes{quantile="0.5"} 4201
-        nameUnits = prometheusNameWithUnits(name, unit);
-        // for each supported quantile
-        prometheusQuantile(sb, tags, units, nameUnits, "0.5", snap::getMedian);
-        prometheusQuantile(sb, tags, units, nameUnits, "0.75", snap::get75thPercentile);
-        prometheusQuantile(sb, tags, units, nameUnits, "0.95", snap::get95thPercentile);
-        prometheusQuantile(sb, tags, units, nameUnits, "0.98", snap::get98thPercentile);
-        prometheusQuantile(sb, tags, units, nameUnits, "0.99", snap::get99thPercentile);
-        prometheusQuantile(sb, tags, units, nameUnits, "0.999", snap::get999thPercentile);
+        DisplayableLabeledSnapshot snap = snapshot();
+        appendPrometheusHistogramElements(sb, name, withHelpType, getCount(), snap);
     }
 
     @Override
@@ -243,6 +149,23 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .add(jsonFullKey("p999", metricID), snapshot.get999thPercentile());
 
         builder.add(metricID.getName(), myBuilder);
+    }
+
+    void appendPrometheusTimerStatElement(StringBuilder sb,
+            PrometheusName name,
+            String statName,
+            boolean withHelpType,
+            String typeName,
+            double value) {
+
+        // For the timer stats output, suppress any units conversion; just emit the value directly.
+        if (withHelpType) {
+            prometheusType(sb, name.nameStat(statName), typeName);
+        }
+        sb.append(name.nameStat(statName))
+                .append(" ")
+                .append(value)
+                .append("\n");
     }
 
     private static final class ContextImpl implements Context {
@@ -276,7 +199,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
 
     private static class TimerImpl implements Timer {
         private final Meter meter;
-        private final Histogram histogram;
+        private final HelidonHistogram histogram;
         private final Clock clock;
 
         TimerImpl(String repoType, String name, Clock clock) {

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: Jaeger Tracing
 
 Helidon is integrated with the Jaeger tracer.
 
@@ -23,10 +25,9 @@ also use the Jaeger builder directly, though this would create a source-code dep
 on the Jaeger tracer.
 
 
-== Prerequisites
-To use Jaeger as a tracer,
-    add the following dependency to your project:
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
+// tag::jaeger-dependency[]
 [source,xml]
 ----
 <dependency>
@@ -34,7 +35,7 @@ To use Jaeger as a tracer,
     <artifactId>helidon-tracing-jaeger</artifactId>
 </dependency>
 ----
-
+// end::jaeger-dependency[]
 == Configuring Jaeger
 
 The Jaeger tracer supports the following configuration options:

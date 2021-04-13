@@ -60,13 +60,15 @@ import io.netty.util.concurrent.Future;
  */
 class HttpInitializer extends ChannelInitializer<SocketChannel> {
     private static final Logger LOGGER = Logger.getLogger(HttpInitializer.class.getName());
-    static final AttributeKey<String> CERTIFICATE_NAME = AttributeKey.valueOf("certificate_name");
+    static final AttributeKey<String> CLIENT_CERTIFICATE_NAME = AttributeKey.valueOf("client_certificate_name");
+    static final AttributeKey<X509Certificate> CLIENT_CERTIFICATE = AttributeKey.valueOf("client_certificate");
+    static final AttributeKey<Certificate[]> CLIENT_CERTIFICATE_CHAIN = AttributeKey.valueOf("client_certificate_chain");
 
-    private final SslContext sslContext;
     private final NettyWebServer webServer;
     private final SocketConfiguration soConfig;
     private final Routing routing;
     private final AtomicBoolean clearLock = new AtomicBoolean();
+    private volatile SslContext sslContext;
 
     /**
      * Reference queue that collects ReferenceHoldingQueue's when they become
@@ -134,6 +136,13 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         });
     }
 
+    void updateSslContext(SslContext context) {
+        if (sslContext == null) {
+            throw new IllegalStateException("Current TLS context is not set, update not allowed");
+        }
+        sslContext = context;
+    }
+
     /**
      * Initializes pipeline for new socket channel.
      *
@@ -146,8 +155,9 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         final ChannelPipeline p = ch.pipeline();
 
         SSLEngine sslEngine = null;
-        if (sslContext != null) {
-            SslHandler sslHandler = sslContext.newHandler(ch.alloc());
+        SslContext context = sslContext;
+        if (context != null) {
+            SslHandler sslHandler = context.newHandler(ch.alloc());
             sslEngine = sslHandler.engine();
             p.addLast(sslHandler);
             sslHandler.handshakeFuture().addListener(future -> obtainClientCN(future, ch, sslHandler));
@@ -224,7 +234,9 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
                             tmpName = tmpName.substring(0, end);
                         }
                     }
-                    ch.attr(CERTIFICATE_NAME).set(tmpName);
+                    ch.attr(CLIENT_CERTIFICATE_NAME).set(tmpName);
+                    ch.attr(CLIENT_CERTIFICATE).set(cert);
+                    ch.attr(CLIENT_CERTIFICATE_CHAIN).set(peerCertificates);
                 }
             } catch (SSLPeerUnverifiedException ignored) {
                 //User not authenticated. Client authentication probably set to OPTIONAL or NONE

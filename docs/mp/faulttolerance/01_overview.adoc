@@ -24,11 +24,23 @@
 :fault-tolerance-spec-url: https://github.com/eclipse/microprofile-fault-tolerance
 :scheduled-executor-config: {javadoc-base-url}io.helidon.common.configurable/io/helidon/common/configurable/ScheduledThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)
 :executor-config: {javadoc-base-url}io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)
+:feature-name: MicroProfile Fault Tolerance
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:microprofile-bundle: true
 
 Fault Tolerance is part of the MicroProfile set of {fault-tolerance-spec-url}[specifications]. This API defines mostly
 annotations that improve application robustness by providing support to conveniently handle
 error conditions (faults) that may occur in real-world applications. Examples include
 service restarts, network delays, temporal infrastructure instabilities, etc.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+[source,xml]
+----
+     <dependency>
+         <groupId>io.helidon.microprofile</groupId>
+         <artifactId>helidon-microprofile-fault-tolerance</artifactId>
+     </dependency>
+----
 
 == Fault Tolerance in Helidon
 

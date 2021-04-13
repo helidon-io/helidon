@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -30,9 +30,30 @@
 :jandex-plugin-doc: https://github.com/wildfly/jandex-maven-plugin
 :model-reader-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASModelReader.java
 :filter-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASFilter.java
+:feature-name: MicroProfile OpenAPI
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:microprofile-bundle: true
 
 Easily allow your Helidon MP application to serve an OpenAPI document
 that describes your application's endpoints.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+[source,xml,subs="attributes+"]
+----
+<dependency> <!--1-->
+    <groupId>org.eclipse.microprofile.openapi</groupId>
+    <artifactId>microprofile-openapi-api</artifactId>
+</dependency>
+
+<dependency> <!--2-->
+    <groupId>io.helidon.microprofile.openapi</groupId>
+    <artifactId>helidon-microprofile-openapi</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+<1> Defines the MicroProfile OpenAPI annotations so you can use them in your code.
+<2> Adds the Helidon MP OpenAPI runtime support.
+
 
 == OpenAPI support in Helidon MP
 
@@ -90,27 +111,6 @@ configured, might inadvertently miss information.
 
 We _strongly recommend_ using the Jandex plug-in to build the index into your app.
 ====
-
-==== Adding Helidon MP OpenAPI support to your app
-Add these two sections to the `<dependencies>` portion of your `pom.xml`:
-
-[source,xml,subs="attributes+"]
-----
-<dependency> <!--1-->
-    <groupId>org.eclipse.microprofile.openapi</groupId>
-    <artifactId>microprofile-openapi-api</artifactId>
-    <version>{microprofile-openapi-version}</version>
-</dependency>
-
-<dependency> <!--2-->
-    <groupId>io.helidon.microprofile.openapi</groupId>
-    <artifactId>helidon-microprofile-openapi</artifactId>
-    <version>{helidon-version}</version>
-    <scope>runtime</scope>
-</dependency>
-----
-<1> Defines the MicroProfile OpenAPI annotations so you can use them in your code.
-<2> Adds the Helidon MP OpenAPI runtime support.
 
 === Furnish OpenAPI information about your endpoints
 Helidon MP OpenAPI combines information from all of the following sources as it 

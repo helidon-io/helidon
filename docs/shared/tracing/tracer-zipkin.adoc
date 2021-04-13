@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: Zipkin Tracing
 
 Helidon is integrated with the Zipkin tracer.
 
@@ -22,11 +24,9 @@ The Zipkin builder is loaded through `ServiceLoader` and configured. You could
 also use the Zipkin builder directly, though this would create a source-code dependency
 on the Zipkin tracer.
 
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
-== Prerequisites
-To use Zipkin as a tracer,
-    add the following dependency to your project:
-
+// tag::zipkin-dependency[]
 [source,xml]
 ----
 <dependency>
@@ -34,6 +34,7 @@ To use Zipkin as a tracer,
     <artifactId>helidon-tracing-zipkin</artifactId>
 </dependency>
 ----
+// end::zipkin-dependency[]
 
 == Configuring Zipkin
 

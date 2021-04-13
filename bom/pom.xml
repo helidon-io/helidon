@@ -512,6 +512,11 @@
                 <artifactId>helidon-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics-trace-exemplar</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- health checks -->
             <dependency>
@@ -581,6 +586,16 @@
             <dependency>
                 <groupId>io.helidon.common</groupId>
                 <artifactId>helidon-common-context</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.service-common</groupId>
+                <artifactId>helidon-service-common-rest</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.service-common</groupId>
+                <artifactId>helidon-service-common-rest-cdi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
@@ -859,6 +874,16 @@
             <dependency>
                 <groupId>io.helidon.integrations.common</groupId>
                 <artifactId>helidon-integrations-common-rest</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.micrometer</groupId>
+                <artifactId>helidon-integrations-micrometer</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.micrometer</groupId>
+                <artifactId>helidon-integrations-micrometer-cdi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- OpenAPI support -->

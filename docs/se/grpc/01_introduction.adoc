@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@
 :pagename: grpc-server-introduction
 :description: Helidon gRPC Server Introduction
 :keywords: helidon, grpc, java
+:feature-name: gRPC
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 Helidon gRPC Server provides a framework for creating link:http://grpc.io/[gRPC] applications.
 
@@ -28,6 +30,16 @@ Helidon gRPC Server provides a framework for creating link:http://grpc.io/[gRPC]
 
 WARNING: The Helidon gRPC feature is currently experimental and the APIs are
  subject to changes until gRPC support is stabilized.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+    <dependency>
+        <groupId>io.helidon.grpc</groupId>
+        <artifactId>helidon-grpc-server</artifactId>
+    </dependency>
+----
 
 == Quick Start
 
@@ -65,18 +77,3 @@ Here is the code for a minimalist gRPC application that runs on a default port (
 The example above deploys a very simple service to the gRPC server that by default uses Java serialization to marshall
 requests and responses. We will look into deployment of "standard" gRPC services that use Protobuf for request and
 response marshalling, as well as how you can configure custom marshallers, later in this document.
-
-== Maven Coordinates
-
-The <<about/04_managing-dependencies.adoc, Getting Started>> page describes how you
-should declare dependency management for Helidon applications. Then declare the following dependency in your project:
-
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.grpc</groupId>
-    <artifactId>helidon-grpc-server</artifactId> <!--1-->
-</dependency>
-----
-
-<1> Dependency on gRPC Server.

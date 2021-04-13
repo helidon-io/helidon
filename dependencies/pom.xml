@@ -91,6 +91,7 @@
         <version.lib.logback>1.2.3</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
+        <version.lib.micrometer>1.6.5</version.lib.micrometer>
         <version.lib.micronaut>2.2.0</version.lib.micronaut>
         <version.lib.micronaut.data>2.2.0</version.lib.micronaut.data>
         <version.lib.micronaut.sql>3.3.1</version.lib.micronaut.sql>
@@ -109,10 +110,10 @@
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
-        <version.lib.neo4j>4.2.0</version.lib.neo4j>
+        <version.lib.neo4j>4.2.4</version.lib.neo4j>
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
-        <version.lib.netty>4.1.59.Final</version.lib.netty>
+        <version.lib.netty>4.1.63.Final</version.lib.netty>
         <version.lib.oci-java-sdk-objectstorage>1.31.0</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>19.8.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
@@ -551,6 +552,18 @@
                 <groupId>com.oracle.database.messaging</groupId>
                 <artifactId>aqapi</artifactId>
                 <version>${version.lib.database.messaging}</version>
+            </dependency>
+
+            <!-- Micrometer related -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${version.lib.micrometer}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+                <version>${version.lib.micrometer}</version>
             </dependency>
 
             <!-- Microprofile related -->
