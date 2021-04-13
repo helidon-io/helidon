@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,4 +39,5 @@ module io.helidon.microprofile.tyrus {
     opens io.helidon.microprofile.tyrus to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.tyrus.WebSocketCdiExtension;
+    provides org.glassfish.tyrus.core.ComponentProvider with io.helidon.microprofile.tyrus.HelidonComponentProvider;
 }

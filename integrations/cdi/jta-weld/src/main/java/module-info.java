@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. 
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,4 +35,7 @@ module io.helidon.integrations.jta.weld {
     requires weld.spi;
 
     exports io.helidon.integrations.jta.weld;
+
+    provides org.jboss.weld.bootstrap.api.Service
+            with io.helidon.integrations.jta.weld.NarayanaTransactionServices;
 }
