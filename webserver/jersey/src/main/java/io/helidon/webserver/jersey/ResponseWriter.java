@@ -146,7 +146,6 @@ class ResponseWriter implements ContainerResponseWriter {
         private static final long CANCEL = Long.MIN_VALUE;
         private static final long ERROR = CANCEL + 1;
         private static final long WAIT = -1;
-        private static final ByteBuf ZERO_BUF = Unpooled.buffer(0);
 
         private byte[] oneByteArray;
         private ByteBuf byteBuf;
@@ -195,7 +194,7 @@ class ResponseWriter implements ContainerResponseWriter {
         public void flush() throws IOException {
             if (byteBuf == null) {
                 awaitRequest();
-                publish(true, ZERO_BUF);
+                publish(true, Unpooled.EMPTY_BUFFER);
             } else {
                 byteBuf = null;
                 publish(true, byteBufRef);

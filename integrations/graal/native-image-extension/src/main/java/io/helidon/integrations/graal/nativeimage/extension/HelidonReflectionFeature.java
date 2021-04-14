@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -455,14 +455,25 @@ public class HelidonReflectionFeature implements Feature {
 
         // register for reflection
         for (Register register : toRegister) {
-            register(register.clazz);
-
-            if (!register.clazz.isInterface()) {
-                register.fields.forEach(this::register);
-                register.constructors.forEach(this::register);
+            // first validate if all fields are on classpath
+            if (!register.validated) {
+                register.validate();
             }
+            // only register classes on the image classpath (not necessarily discovered by the scanning)
+            if (register.valid) {
+                register(register.clazz);
 
-            register.methods.forEach(this::register);
+                if (!register.clazz.isInterface()) {
+                    register.fields.forEach(this::register);
+                    register.constructors.forEach(this::register);
+                }
+
+                register.methods.forEach(this::register);
+            } else {
+                if (TRACE) {
+                    System.out.println(register.clazz.getName() + " is not registered, as it had failed fields or superclass.");
+                }
+            }
         }
     }
 
@@ -742,8 +753,20 @@ public class HelidonReflectionFeature implements Feature {
 
         private final Class<?> clazz;
 
+        private boolean validated;
+        private boolean valid = true;
+
         private Register(Class<?> clazz) {
             this.clazz = clazz;
+        }
+
+        void validate() {
+            validated = true;
+            validateTypeParams();
+            if (!valid) {
+                return;
+            }
+            addFields(true, true);
         }
 
         boolean add(Method m) {
@@ -759,21 +782,49 @@ public class HelidonReflectionFeature implements Feature {
         }
 
         void addAll() {
+            validated = true;
+            validateTypeParams();
+            if (!valid) {
+                return;
+            }
+            addFields(true, false);
+            if (!valid) {
+                return;
+            }
             addMethods();
             if (clazz.isInterface()) {
                 return;
             }
             addConstructors();
-            addFields(true);
         }
 
         void addDefaults() {
+            validated = true;
+            validateTypeParams();
+            if (!valid) {
+                return;
+            }
+            addFields(false, false);
+            if (!valid) {
+                return;
+            }
             addMethods();
             if (clazz.isInterface()) {
                 return;
             }
-            addFields(false);
             addConstructors();
+        }
+
+        private void validateTypeParams() {
+            try {
+                clazz.getGenericSuperclass();
+            } catch (Exception e) {
+                System.out.println("Type parameter of superclass is not on classpath of "
+                                           + clazz.getName()
+                                           + " error: "
+                                           + e.getMessage());
+                valid = false;
+            }
         }
 
         private void addConstructors() {
@@ -806,19 +857,29 @@ public class HelidonReflectionFeature implements Feature {
             }
         }
 
-        void addFields(boolean all) {
+        void addFields(boolean all, boolean validateOnly) {
             try {
                 Field[] fields = clazz.getFields();
                 // add all public fields
                 for (Field field : fields) {
-                    add(field);
+                    if (!validateOnly) {
+                        add(field);
+                    }
                 }
             } catch (NoClassDefFoundError e) {
+                this.valid = false;
                 if (TRACE) {
-                    System.out.println("Public fields of "
-                                               + clazz.getName()
-                                               + " not added to reflection, as a type is not on classpath: "
-                                               + e.getMessage());
+                    if (validateOnly) {
+                        System.out.println("Validation of fields of "
+                                                   + clazz.getName()
+                                                   + " failed, as a type is not on classpath: "
+                                                   + e.getMessage());
+                    } else {
+                        System.out.println("Public fields of "
+                                                   + clazz.getName()
+                                                   + " not added to reflection, as a type is not on classpath: "
+                                                   + e.getMessage());
+                    }
                 }
             }
             try {
@@ -827,16 +888,26 @@ public class HelidonReflectionFeature implements Feature {
                     if (!Modifier.isPublic(declaredField.getModifiers())) {
                         // public already registered
                         if (all || declaredField.getAnnotations().length > 0) {
-                            add(declaredField);
+                            if (!validateOnly) {
+                                add(declaredField);
+                            }
                         }
                     }
                 }
             } catch (NoClassDefFoundError e) {
+                this.valid = false;
                 if (TRACE) {
-                    System.out.println("Fields of "
-                                               + clazz.getName()
-                                               + " not added to reflection, as a type is not on classpath: "
-                                               + e.getMessage());
+                    if (validateOnly) {
+                        System.out.println("Validation of fields of "
+                                                   + clazz.getName()
+                                                   + " failed, as a type is not on classpath: "
+                                                   + e.getMessage());
+                    } else {
+                        System.out.println("Fields of "
+                                                   + clazz.getName()
+                                                   + " not added to reflection, as a type is not on classpath: "
+                                                   + e.getMessage());
+                    }
                 }
             }
         }
