@@ -27,18 +27,6 @@ pipeline {
   stages {
     stage('default') {
       parallel {
-        stage('build'){
-          steps {
-            script {
-              try {
-                sh './etc/scripts/build.sh'
-              } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt, **/target/failsafe-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
-              }
-            }
-          }
-        }
         stage('copyright'){
           steps {
             sh './etc/scripts/copyright.sh'
