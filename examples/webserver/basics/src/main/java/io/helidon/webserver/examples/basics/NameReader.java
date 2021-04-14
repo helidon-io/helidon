@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,9 @@ import io.helidon.media.common.ContentReaders;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyReaderContext;
 
+/**
+ * Reader for the custom media type.
+ */
 public class NameReader implements MessageBodyReader<Name> {
 
     private static final MediaType TYPE = MediaType.parse("application/name");

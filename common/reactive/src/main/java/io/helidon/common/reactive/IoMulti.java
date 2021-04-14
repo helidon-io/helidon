@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.common.reactive;
@@ -428,6 +427,9 @@ public interface IoMulti {
         }
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.common.reactive.OutputStreamMulti}.
+     */
     final class OutputStreamMultiBuilder implements Builder<OutputStreamMulti> {
 
         private final OutputStreamMulti streamMulti = new OutputStreamMulti();

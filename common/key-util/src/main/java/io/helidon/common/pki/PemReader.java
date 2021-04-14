@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,19 +51,19 @@ final class PemReader {
     private static final Logger LOGGER = Logger.getLogger(PemReader.class.getName());
 
     private static final Pattern CERT_PATTERN = Pattern.compile(
-            "-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+" + // Header
-                    "([a-z0-9+/=\\r\\n]+)" +                    // Base64 text
-                    "-+END\\s+.*CERTIFICATE[^-]*-+",            // Footer
+            "-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+" // Header
+                    + "([a-z0-9+/=\\r\\n]+)"                        // Base64 text
+                    + "-+END\\s+.*CERTIFICATE[^-]*-+",              // Footer
             Pattern.CASE_INSENSITIVE);
     private static final Pattern KEY_PATTERN = Pattern.compile(
-            "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" + // Header
-                    "([a-z0-9+/=\\r\\n]+)" +                       // Base64 text
-                    "-+END\\s+.*PRIVATE\\s+KEY[^-]*-+",            // Footer
+            "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" // Header
+                    + "([a-z0-9+/=\\r\\n]+)"                           // Base64 text
+                    + "-+END\\s+.*PRIVATE\\s+KEY[^-]*-+",              // Footer
             Pattern.CASE_INSENSITIVE);
     private static final Pattern PUBLIC_KEY_PATTERN = Pattern.compile(
-            "-+BEGIN\\s+.*PUBLIC\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" + // Header
-                    "([a-z0-9+/=\\r\\n\\s]+)" +                       // Base64 text
-                    "-+END\\s+.*PUBLIC\\s+KEY[^-]*-+",            // Footer
+            "-+BEGIN\\s+.*PUBLIC\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+"  // Header
+                    + "([a-z0-9+/=\\r\\n\\s]+)"                        // Base64 text
+                    + "-+END\\s+.*PUBLIC\\s+KEY[^-]*-+",               // Footer
             Pattern.CASE_INSENSITIVE);
 
     private PemReader() {

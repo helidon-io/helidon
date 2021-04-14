@@ -28,6 +28,9 @@ import javax.ws.rs.core.MediaType;
 import io.helidon.examples.integrations.neo4j.mp.domain.Movie;
 import io.helidon.examples.integrations.neo4j.mp.domain.MovieRepository;
 
+/**
+ * REST endpoint for movies.
+ */
 @Path("/movies")
 @RequestScoped
 public class Neo4jResource {

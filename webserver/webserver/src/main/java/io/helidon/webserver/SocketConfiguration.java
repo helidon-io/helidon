@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -213,6 +213,13 @@ public interface SocketConfiguration {
                 .build();
     }
 
+    /**
+     * Socket configuration builder API, used by {@link io.helidon.webserver.SocketConfiguration.Builder}
+     * to configure additional sockets, and by {@link io.helidon.webserver.WebServer.Builder} to
+     * configure the default socket.
+     *
+     * @param <B> type of the subclass of this class to provide correct fluent API
+     */
     interface SocketConfigurationBuilder<B extends SocketConfigurationBuilder<B>> {
         /**
          * Configures a server port to listen on with the server socket. If port is
