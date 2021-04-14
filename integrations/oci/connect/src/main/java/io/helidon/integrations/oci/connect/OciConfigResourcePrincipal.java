@@ -20,6 +20,12 @@ import java.util.Map;
 
 import io.helidon.common.reactive.Single;
 
+/**
+ * OCI connectivity configuration based on resource principal.
+ * This is used when running within functions.
+ *
+ * TODO THIS CLASS IS NOT YET IMPLEMENTED AND WILL THROW AN EXCEPTION
+ */
 public class OciConfigResourcePrincipal implements OciConfigProvider {
     private static final String OCI_RESOURCE_PRINCIPAL_VERSION = "OCI_RESOURCE_PRINCIPAL_VERSION";
     private static final String RP_VERSION_2_2 = "2.2";
@@ -35,7 +41,7 @@ public class OciConfigResourcePrincipal implements OciConfigProvider {
      *
      * @return {@code true} if this environment can use resource principal
      */
-    public static boolean isAvailable() {
+    static boolean isAvailable() {
         Map<String, String> env = System.getenv();
 
         // this is not complete, but it is a fair guess at the availability
@@ -45,8 +51,13 @@ public class OciConfigResourcePrincipal implements OciConfigProvider {
                 && env.containsKey(OCI_RESOURCE_PRINCIPAL_REGION_ENV_VAR_NAME);
     }
 
+    /**
+     * Create a new instance from environment.
+     *
+     * @return new config provider
+     */
     public static OciConfigResourcePrincipal create() {
-        return null;
+        throw new UnsupportedOperationException("OCI resource principal authentication is not yet supported");
     }
 
     @Override

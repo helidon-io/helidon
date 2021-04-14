@@ -14,30 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.oci.vault;
-
 /**
- * The rotation state of the secret version.
+ * Integration with OCI Vault REST API including the KMS encryption and digest support.
  */
-public enum SecretStage {
-    /**
-     * Current value.
-     */
-    CURRENT,
-    /**
-     * Pending.
-     */
-    PENDING,
-    /**
-     * Latest.
-     */
-    LATEST,
-    /**
-     * Previous.
-     */
-    PREVIOUS,
-    /**
-     * Deprecated.
-     */
-    DEPRECATED
-}
+package io.helidon.integrations.oci.vault;

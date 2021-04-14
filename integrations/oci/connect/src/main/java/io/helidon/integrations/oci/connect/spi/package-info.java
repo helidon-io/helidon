@@ -14,30 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.oci.vault;
-
 /**
- * The rotation state of the secret version.
+ * Service provider interfaces for OCI connect.
  */
-public enum SecretStage {
-    /**
-     * Current value.
-     */
-    CURRENT,
-    /**
-     * Pending.
-     */
-    PENDING,
-    /**
-     * Latest.
-     */
-    LATEST,
-    /**
-     * Previous.
-     */
-    PREVIOUS,
-    /**
-     * Deprecated.
-     */
-    DEPRECATED
-}
+package io.helidon.integrations.oci.connect.spi;

@@ -40,6 +40,13 @@ import io.helidon.integrations.oci.connect.OciRestApi;
 import io.helidon.integrations.oci.connect.spi.InjectionProvider;
 import io.helidon.microprofile.cdi.RuntimeStart;
 
+/**
+ * CDI extension that adds injection support for OCI related APIs.
+ * This extension adds all injectables discovered through {@link io.helidon.integrations.oci.connect.spi.InjectionProvider}
+ * SPI.
+ * This extension also adds support for injection of {@code OciRestApi}, with named instances
+ * obtained from configuration.
+ */
 public class OciCdiExtension implements Extension {
     private final Set<Type> supportedTypes = new HashSet<>();
     private final Set<String> requiredNames = new HashSet<>();
@@ -47,6 +54,10 @@ public class OciCdiExtension implements Extension {
 
     private Config config;
 
+    /**
+     * Default constructor, used by CDI when discovering extensions through service loader,
+     *  or directly when configuring an extension instance with CDI.
+     */
     public OciCdiExtension() {
         providers = HelidonServiceLoader
                 .builder(ServiceLoader.load(InjectionProvider.class))

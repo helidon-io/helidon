@@ -30,7 +30,7 @@ class OciObjectStorageImpl implements OciObjectStorage {
     }
 
     @Override
-    public ApiOptionalResponse<GetObject.Response> getObject(GetObjectRx.Request request) {
+    public ApiOptionalResponse<GetObject.Response> getObject(GetObject.Request request) {
         return delegate.getObject(request).await()
                 .map(reactiveResponse -> GetObject.Response.create(reactiveResponse.bytePublisher()));
     }

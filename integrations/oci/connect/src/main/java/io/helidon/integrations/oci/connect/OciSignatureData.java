@@ -18,10 +18,31 @@ package io.helidon.integrations.oci.connect;
 
 import java.security.interfaces.RSAPrivateKey;
 
-interface OciSignatureData {
+/**
+ * Data needed to sign requests.
+ */
+public interface OciSignatureData {
+    /**
+     * Key ID to use.
+     *
+     * @return key ID
+     */
     String keyId();
+
+    /**
+     * Private key to use to generate signatures.
+     *
+     * @return private key
+     */
     RSAPrivateKey privateKey();
 
+    /**
+     * Create a new instance.
+     *
+     * @param keyId key ID
+     * @param privateKey private key
+     * @return a new instance of signature data
+     */
     static OciSignatureData create(String keyId, RSAPrivateKey privateKey) {
         return new OciSignatureData() {
             @Override

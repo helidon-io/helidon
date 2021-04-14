@@ -30,6 +30,10 @@ import io.helidon.security.spi.EncryptionProvider;
 import io.helidon.security.spi.ProviderConfig;
 import io.helidon.security.spi.SecretsProvider;
 
+/**
+ * Security provider to retrieve secrets from OCI Vault, and to use OCI KMS for encryption,
+ * decryption and signatures.
+ */
 public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurityProvider.OciVaultSecretConfig>,
                                                  EncryptionProvider<OciVaultSecurityProvider.OciVaultEncryptionConfig>,
                                                  DigestProvider<OciVaultSecurityProvider.OciVaultDigestConfig> {
@@ -100,6 +104,9 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
         return DigestSupport.create(digestFunction, verifyFunction);
     }
 
+    /**
+     * Configuration for a signature.
+     */
     public static class OciVaultDigestConfig implements ProviderConfig {
         private final String keyOcid;
         private final String algorithm;
@@ -113,10 +120,22 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
             this.cryptographicEndpoint = Optional.ofNullable(builder.cryptographicEndpoint);
         }
 
+        /**
+         * Builder to set up configuration required to sign data using OCI KMS.
+         *
+         * @return a new builder
+         */
         public static Builder builder() {
             return new Builder();
         }
 
+        /**
+         * Create a new configuration from config.
+         *
+         * @param config config
+         * @return a new instance
+         * @see Builder#config(io.helidon.config.Config)
+         */
         public static OciVaultDigestConfig create(Config config) {
             return builder().config(config).build();
         }
@@ -143,6 +162,9 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
             return request;
         }
 
+        /**
+         * Fluent API builder for {@link io.helidon.integrations.oci.vault.OciVaultSecurityProvider.OciVaultDigestConfig}.
+         */
         public static class Builder implements io.helidon.common.Builder<OciVaultDigestConfig> {
             private static final String CONFIG_KEY_KEY_OCID = "key-ocid";
 
@@ -162,30 +184,92 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
                 return new OciVaultDigestConfig(this);
             }
 
+            /**
+             * Update this builder from configuration.
+             * Configuration options:
+             * <table class="config">
+             * <caption>Secret configuration</caption>
+             * <tr>
+             *     <th>key</th>
+             *     <th>description</th>
+             *     <th>builder method</th>
+             * </tr>
+             * <tr>
+             *     <td>{@code key-ocid}</td>
+             *     <td>OCID of the vault key to use for signatures, must be RSA</td>
+             *     <td>{@link #keyId(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code key-version-ocid}</td>
+             *     <td>OCID of the key version</td>
+             *     <td>{@link #keyVersionId(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code algorithm}</td>
+             *     <td>Signature algorithm</td>
+             *     <td>{@link #algorithm(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code cryptographic-endpoint}</td>
+             *     <td>Cryptographic endpoint to use for signatures (available in console)</td>
+             *     <td>{@link #cryptographicEndpoint(String)}</td>
+             * </tr>
+             * </table>
+             *
+             * @param config config to use
+             * @return updated builder
+             */
             public Builder config(Config config) {
-                config.get(CONFIG_KEY_KEY_OCID).asString().ifPresent(this::keyOcid);
-                config.get("key-version-ocid").asString().ifPresent(this::keyVersionOcid);
+                config.get(CONFIG_KEY_KEY_OCID).asString().ifPresent(this::keyId);
+                config.get("key-version-ocid").asString().ifPresent(this::keyVersionId);
                 config.get("algorithm").asString().ifPresent(this::algorithm);
                 config.get("cryptographic-endpoint").asString().ifPresent(this::cryptographicEndpoint);
 
                 return this;
             }
 
-            public Builder keyOcid(String keyOcid) {
+            /**
+             * OCID of the key to use for signature.
+             * @param keyOcid OCID of the key
+             * @return updated builder
+             * @see Sign.Request#keyId(String)
+             */
+            public Builder keyId(String keyOcid) {
                 this.keyOcid = keyOcid;
                 return this;
             }
 
+            /**
+             * Algorithm to sign with.
+             *
+             * @param algorithm algorithm
+             * @return updated builder
+             * @see Sign.Request#algorithm(String)
+             */
             public Builder algorithm(String algorithm) {
                 this.algorithm = algorithm;
                 return this;
             }
 
-            public Builder keyVersionOcid(String keyVersionOcid) {
+            /**
+             * OCID of the key version.
+             *
+             * @param keyVersionOcid version OCID
+             * @return updated builder
+             * @see Sign.Request#keyVersionId(String)
+             */
+            public Builder keyVersionId(String keyVersionOcid) {
                 this.keyVersionOcid = keyVersionOcid;
                 return this;
             }
 
+            /**
+             * Crypto endpoint to use.
+             *
+             * @param cryptographicEndpoint endpoint
+             * @return udpated builder
+             * @see io.helidon.integrations.oci.vault.OciVaultRx.Builder#cryptographicEndpoint(String)
+             */
             public Builder cryptographicEndpoint(String cryptographicEndpoint) {
                 this.cryptographicEndpoint = cryptographicEndpoint;
                 return this;
@@ -193,6 +277,9 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
         }
     }
 
+    /**
+     * Configuration for encryption/decryption.
+     */
     public static class OciVaultEncryptionConfig implements ProviderConfig {
         private final String keyId;
         private final Optional<String> keyVersionId;
@@ -208,15 +295,26 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
             this.cryptographicEndpoint = Optional.ofNullable(builder.cryptographicEndpoint);
         }
 
+        /**
+         * A new builder for encryption configuration.
+         * @return a new builder
+         */
         public static Builder builder() {
             return new Builder();
         }
 
+        /**
+         * Create encryption configuration from config.
+         *
+         * @param config configuration
+         * @return a new encryption config
+         * @see Builder#config(io.helidon.config.Config)
+         */
         public static OciVaultEncryptionConfig create(Config config) {
             return builder().config(config).build();
         }
 
-        public Encrypt.Request encryptionRequest() {
+        Encrypt.Request encryptionRequest() {
             Encrypt.Request builder = Encrypt.Request.builder()
                     .keyId(keyId);
 
@@ -228,7 +326,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
             return builder;
         }
 
-        public Decrypt.Request decryptionRequest() {
+        Decrypt.Request decryptionRequest() {
             Decrypt.Request builder = Decrypt.Request.builder()
                     .keyId(keyId);
 
@@ -240,6 +338,9 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
             return builder;
         }
 
+        /**
+         * Fluent API builder for {@link io.helidon.integrations.oci.vault.OciVaultSecurityProvider.OciVaultEncryptionConfig}.
+         */
         public static class Builder implements io.helidon.common.Builder<OciVaultEncryptionConfig> {
             private static final String CONFIG_KEY_KEY_ID = "key-ocid";
 
@@ -260,6 +361,46 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
                 return new OciVaultEncryptionConfig(this);
             }
 
+            /**
+             * Update this builder from configuration.
+             * Configuration options:
+             * <table class="config">
+             * <caption>Secret configuration</caption>
+             * <tr>
+             *     <th>key</th>
+             *     <th>description</th>
+             *     <th>builder method</th>
+             * </tr>
+             * <tr>
+             *     <td>{@code key-ocid}</td>
+             *     <td>OCID of the vault key to use for encryption</td>
+             *     <td>{@link #keyId(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code key-version-ocid}</td>
+             *     <td>OCID of the key version</td>
+             *     <td>{@link #keyVersionId(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code algorithm}</td>
+             *     <td>Encryption algorithm</td>
+             *     <td>{@link #algorithm(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code cryptographic-endpoint}</td>
+             *     <td>Cryptographic endpoint to use for encryption (available in console)</td>
+             *     <td>{@link #cryptographicEndpoint(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code context}</td>
+             *     <td>Contextual data</td>
+             *     <td>{@link #context(String)}</td>
+             * </tr>
+             * </table>
+             *
+             * @param config config to use
+             * @return updated builder
+             */
             public Builder config(Config config) {
                 config.get(CONFIG_KEY_KEY_ID).asString().ifPresent(this::keyId);
                 config.get("key-version-ocid").asString().ifPresent(this::keyVersionId);
@@ -269,26 +410,68 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
                 return this;
             }
 
+            /**
+             * Configure the cryptographic endpoint to use.
+             *
+             * @param endpoint crypto endpoint
+             * @return updated builder
+             */
             public Builder cryptographicEndpoint(String endpoint) {
                 this.cryptographicEndpoint = endpoint;
                 return this;
             }
 
+            /**
+             * OCID of the key to use for encryption.
+             *
+             * @param keyId OCID of the key
+             * @return updated builder
+             *
+             * @see io.helidon.integrations.oci.vault.Encrypt.Request#keyId(String)
+             * @see io.helidon.integrations.oci.vault.Decrypt.Request#keyId(String)
+             */
             public Builder keyId(String keyId) {
                 this.keyId = keyId;
                 return this;
             }
 
+            /**
+             * OCID of the key version.
+             *
+             * @param keyVersionId version OCID
+             * @return updated builder
+             *
+             * @see io.helidon.integrations.oci.vault.Encrypt.Request#keyVersionId(String)
+             * @see io.helidon.integrations.oci.vault.Decrypt.Request#keyVersionId(String)
+             */
             public Builder keyVersionId(String keyVersionId) {
                 this.keyVersionId = keyVersionId;
                 return this;
             }
 
+            /**
+             * Algorithm to use for encryption.
+             *
+             * @param algorithm algorithm
+             * @return updated builder
+             *
+             * @see io.helidon.integrations.oci.vault.Encrypt.Request#algorithm(String)
+             * @see io.helidon.integrations.oci.vault.Decrypt.Request#algorithm(String)
+             */
             public Builder algorithm(String algorithm) {
                 this.algorithm = algorithm;
                 return this;
             }
 
+            /**
+             * Contextual data.
+             *
+             * @param context context
+             * @return updated builder
+             *
+             * @see io.helidon.integrations.oci.vault.Encrypt.Request#context(String)
+             * @see io.helidon.integrations.oci.vault.Decrypt.Request#context(String)
+             */
             public Builder context(String context) {
                 this.context = context;
                 return this;
@@ -296,6 +479,9 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
         }
     }
 
+    /**
+     * Configuration of an OCI Vault secret.
+     */
     public static class OciVaultSecretConfig implements ProviderConfig {
         private final String secretId;
         private final Optional<SecretStage> stage;
@@ -309,15 +495,26 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
             this.versionNumber = Optional.ofNullable(builder.versionNumber);
         }
 
+        /**
+         * A new builder.
+         *
+         * @return a new builder
+         */
         public static Builder builder() {
             return new Builder();
         }
 
+        /**
+         * Create secret configuration from config.
+         *
+         * @param config config
+         * @return a new secret configuration
+         */
         public static OciVaultSecretConfig create(Config config) {
             return builder().config(config).build();
         }
 
-        public GetSecretBundle.Request request() {
+        GetSecretBundle.Request request() {
             GetSecretBundle.Request request = GetSecretBundle.Request.builder()
                     .secretId(secretId);
 
@@ -328,6 +525,10 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
             return request;
         }
 
+        /**
+         * Fluent API builder for
+         * {@link io.helidon.integrations.oci.vault.OciVaultSecurityProvider.OciVaultSecretConfig}.
+         */
         public static class Builder implements io.helidon.common.Builder<OciVaultSecretConfig> {
             private static final String SECRET_OCID_CONFIG_KEY = "ocid";
 
@@ -346,31 +547,97 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
                 return new OciVaultSecretConfig(this);
             }
 
+            /**
+             * Update this builder from configuration.
+             * Configuration options:
+             * <table class="config">
+             * <caption>Secret configuration</caption>
+             * <tr>
+             *     <th>key</th>
+             *     <th>description</th>
+             *     <th>builder method</th>
+             * </tr>
+             * <tr>
+             *     <td>{@code ocid}</td>
+             *     <td>OCID of the secret</td>
+             *     <td>{@link #secretId(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code stage}</td>
+             *     <td>Stage of the secret</td>
+             *     <td>{@link #stage(SecretStage)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code version-name}</td>
+             *     <td>Name of the secret version</td>
+             *     <td>{@link #versionName(String)}</td>
+             * </tr>
+             * <tr>
+             *     <td>{@code version-number}</td>
+             *     <td>Version of the secret</td>
+             *     <td>{@link #versionNumber(Integer)}</td>
+             * </tr>
+             * </table>
+             *
+             * @param config config to use
+             * @return updated builder
+             */
             public Builder config(Config config) {
                 config.get(SECRET_OCID_CONFIG_KEY).asString().ifPresent(this::secretId);
                 config.get("stage").asString().map(SecretStage::valueOf).ifPresent(this::stage);
                 config.get("version-name").asString().ifPresent(this::versionName);
                 config.get("version-number").asInt().ifPresent(this::versionNumber);
-                ;
 
                 return this;
             }
 
+            /**
+             * Secret OCID.
+             *
+             * @param secretId secret OCID
+             * @return updated builder
+             *
+             * @see io.helidon.integrations.oci.vault.GetSecretBundle.Request#secretId(String)
+             */
             public Builder secretId(String secretId) {
                 this.secretId = secretId;
                 return this;
             }
 
+            /**
+             * Secret stage.
+             *
+             * @param stage stage
+             * @return updated builder
+             *
+             * @see io.helidon.integrations.oci.vault.GetSecretBundle.Request#stage(SecretStage)
+             */
             public Builder stage(SecretStage stage) {
                 this.stage = stage;
                 return this;
             }
 
+            /**
+             * Secret version name.
+             *
+             * @param versionName version name
+             * @return updated builder
+             *
+             * @see io.helidon.integrations.oci.vault.GetSecretBundle.Request#versionName(String)
+             */
             public Builder versionName(String versionName) {
                 this.versionName = versionName;
                 return this;
             }
 
+            /**
+             * Secret version number.
+             *
+             * @param versionNumber version number
+             * @return updated builder
+             *
+             * @see io.helidon.integrations.oci.vault.GetSecretBundle.Request#versionNumber(int)
+             */
             public Builder versionNumber(Integer versionNumber) {
                 this.versionNumber = versionNumber;
                 return this;

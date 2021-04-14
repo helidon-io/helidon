@@ -14,30 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.oci.vault;
-
 /**
- * The rotation state of the secret version.
+ * CDI extension to add support for injection of OCI APIs.
  */
-public enum SecretStage {
-    /**
-     * Current value.
-     */
-    CURRENT,
-    /**
-     * Pending.
-     */
-    PENDING,
-    /**
-     * Latest.
-     */
-    LATEST,
-    /**
-     * Previous.
-     */
-    PREVIOUS,
-    /**
-     * Deprecated.
-     */
-    DEPRECATED
-}
+package io.helidon.integrations.oci.cdi;

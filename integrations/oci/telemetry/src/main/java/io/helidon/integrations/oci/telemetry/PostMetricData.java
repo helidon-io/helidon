@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.oci.telemetry;
 
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.Date;
@@ -31,13 +32,232 @@ import io.helidon.integrations.common.rest.ApiJsonBuilder;
 import io.helidon.integrations.oci.connect.OciRequestBase;
 
 /**
- * Class to group together all types related to post metric data API.
+ * Class to group together all types related to post metric data request and response.
  */
 public final class PostMetricData {
     private PostMetricData() {
     }
 
-    public static class MetricData extends OciRequestBase<MetricData> {
+    /**
+     * Post metric data request.
+     */
+    public static class Request extends OciRequestBase<Request> {
+        /**
+         * Atomic batch - either all succeed, or all fail.
+         */
+        public static final String BATCH_ATOMICITY_ATOMIC = "ATOMIC";
+        /**
+         * Non atomic batch - some may succeed, some may fail.
+         */
+        public static final String BATCH_ATOMICITY_NON_ATOMIC = "NON_ATOMIC";
+
+        private Request() {
+        }
+
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
+        public static Request builder() {
+            return new Request();
+        }
+
+        /**
+         * Batch atomicity behavior. Requires either partial or full pass of input validation for metric objects in PostMetricData
+         * requests. The default value of NON_ATOMIC requires a partial pass: at least one metric object in the request must pass
+         * input validation, and any objects that failed validation are identified in the returned summary, along with their error
+         * messages. A value of ATOMIC requires a full pass: all metric objects in the request must pass input validation.
+         * <p>
+         * Defaults to {@value #BATCH_ATOMICITY_NON_ATOMIC}.
+         *
+         * @param atomicity atomicity to use
+         * @return updated request
+         * @see #BATCH_ATOMICITY_ATOMIC
+         * @see #BATCH_ATOMICITY_NON_ATOMIC
+         */
+        public Request batchAtomicity(String atomicity) {
+            return add("batchAtomicity", atomicity);
+        }
+
+        /**
+         * Raw metric data points to be posted to the monitoring service.
+         *
+         * @param metricData metric data
+         * @return updated request
+         */
+        public Request addMetricData(MetricData metricData) {
+            return addToArray("metricData", metricData);
+        }
+    }
+
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
+    public static class Response extends ApiEntityResponse {
+        private final int failedMetricsCount;
+        private final List<FailedMetric> failedMetrics;
+
+        private Response(Builder builder) {
+            super(builder);
+
+            JsonObject jsonObject = builder.entity();
+            failedMetricsCount = jsonObject.getInt("failedMetricsCount");
+            failedMetrics = isPresent(jsonObject, "failedMetrics")
+                    .map(ignored -> {
+                        List<FailedMetric> failedMetrics = new LinkedList<>();
+                        JsonArray failedMetricsArray = jsonObject.getJsonArray("failedMetrics");
+                        for (JsonValue jsonValue : failedMetricsArray) {
+                            failedMetrics.add(FailedMetric.create((JsonObject) jsonValue));
+                        }
+                        return List.copyOf(failedMetrics);
+                    }).orElseGet(List::of);
+        }
+
+        static Builder builder() {
+            return new Builder();
+        }
+
+        /**
+         * Number of metrics that failed to be processed.
+         *
+         * @return count
+         */
+        public int failedMetricsCount() {
+            return failedMetricsCount;
+        }
+
+        /**
+         * List of failed metrics.
+         *
+         * @return list of failed metrics
+         */
+        public List<FailedMetric> failedMetrics() {
+            return failedMetrics;
+        }
+
+        static final class Builder extends ApiEntityResponse.Builder<Builder, Response, JsonObject> {
+            private Builder() {
+            }
+
+            @Override
+            public Response build() {
+                return new Response(this);
+            }
+        }
+    }
+
+    /**
+     * The post metric data consists of a set of {@link io.helidon.integrations.oci.telemetry.PostMetricData.MetricData},
+     * and each metric data has one or more data points.
+     */
+    public static class MetricDataPoint extends ApiJsonBuilder<MetricDataPoint> {
+        private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_INSTANT;
+
+        private MetricDataPoint() {
+        }
+
+        /**
+         * Create a new builder.
+         *
+         * @return new builder
+         */
+        public static MetricDataPoint builder() {
+            return new MetricDataPoint();
+        }
+
+        /**
+         * The number of occurrences of the associated value in the set of data.
+         *
+         * Default is 1. Value must be greater than zero.
+         *
+         * @param count number of occurrences
+         * @return updated data point
+         */
+        public MetricDataPoint count(int count) {
+            return add("count", count);
+        }
+
+        /**
+         * Numeric value of the metric.
+         *
+         * @param value value of the metric
+         * @return updated data point
+         */
+        public MetricDataPoint value(double value) {
+            return add("value", value);
+        }
+
+        /**
+         * Timestamp of the metric.
+         *
+         * @param instant the instant
+         * @return updated data point
+         */
+        public MetricDataPoint timestamp(Instant instant) {
+            return add("timestamp", FORMATTER.format(instant));
+        }
+
+        /**
+         * Timestamp as date.
+         *
+         * @param time the instant
+         * @return updated data point
+         */
+        public MetricDataPoint timestamp(Date time) {
+            return timestamp(time.toInstant());
+        }
+    }
+
+    /**
+     * Failed metric definition.
+     */
+    public static class FailedMetric {
+        private final String message;
+        private final JsonObject failedData;
+
+        private FailedMetric(String message, JsonObject failedData) {
+            this.message = message;
+            this.failedData = failedData;
+        }
+
+        static FailedMetric create(JsonObject failedMetric) {
+            String message = failedMetric.getString("message");
+
+            return new FailedMetric(message, failedMetric.getJsonObject("metricData"));
+        }
+
+        /**
+         * Message describing the problem.
+         *
+         * @return error message
+         */
+        public String message() {
+            return message;
+        }
+
+        /**
+         * Json with failed data.
+         *
+         * @return json with failed data
+         */
+        public JsonObject failedDataJson() {
+            return failedData;
+        }
+    }
+
+    /**
+     * Metric data send with post metric data.
+     */
+    public static class MetricData extends ApiJsonBuilder<MetricData> {
+        /**
+         * A new builder.
+         *
+         * @return builder
+         */
         public static MetricData builder() {
             return new MetricData();
         }
@@ -144,156 +364,6 @@ public final class PostMetricData {
          */
         public MetricData resourceGroup(String resourceGroup) {
             return add("resourceGroup", resourceGroup);
-        }
-
-    }
-
-    /**
-     * https://docs.oracle.com/en-us/iaas/api/#/en/monitoring/20180401/datatypes/MetricDataDetails
-     */
-    public static class Request extends OciRequestBase<Request> {
-        public static final String BATCH_ATOMICITY_ATOMIC = "ATOMIC";
-        public static final String BATCH_ATOMICITY_NON_ATOMIC = "NON_ATOMIC";
-
-        private Request() {
-        }
-
-        public static Request builder() {
-            return new Request();
-        }
-
-        /**
-         * Batch atomicity behavior. Requires either partial or full pass of input validation for metric objects in PostMetricData
-         * requests. The default value of NON_ATOMIC requires a partial pass: at least one metric object in the request must pass
-         * input validation, and any objects that failed validation are identified in the returned summary, along with their error
-         * messages. A value of ATOMIC requires a full pass: all metric objects in the request must pass input validation.
-         * <p>
-         * Defaults to {@value #BATCH_ATOMICITY_NON_ATOMIC}.
-         *
-         * @param atomicity atomicity to use
-         * @return updated request
-         * @see #BATCH_ATOMICITY_ATOMIC
-         * @see #BATCH_ATOMICITY_NON_ATOMIC
-         */
-        public Request batchAtomicity(String atomicity) {
-            return add("batchAtomicity", atomicity);
-        }
-
-        /**
-         * Raw metric data points to be posted to the monitoring service.
-         *
-         * @param metricData metric data
-         * @return updated request
-         */
-        public Request addMetricData(MetricData metricData) {
-            return addToArray("metricData", metricData);
-        }
-    }
-
-    public static class Response extends ApiEntityResponse {
-        private final int failedMetricsCount;
-        private final List<FailedMetric> failedMetrics;
-
-        private Response(Builder builder) {
-            super(builder);
-
-            JsonObject jsonObject = builder.entity();
-            failedMetricsCount = jsonObject.getInt("failedMetricsCount");
-            failedMetrics = isPresent(jsonObject, "failedMetrics")
-                    .map(ignored -> {
-                        List<FailedMetric> failedMetrics = new LinkedList<>();
-                        JsonArray failedMetricsArray = jsonObject.getJsonArray("failedMetrics");
-                        for (JsonValue jsonValue : failedMetricsArray) {
-                            failedMetrics.add(FailedMetric.create((JsonObject) jsonValue));
-                        }
-                        return List.copyOf(failedMetrics);
-                    }).orElseGet(List::of);
-        }
-        public int failedMetricsCount() {
-            return failedMetricsCount;
-        }
-
-        public List<FailedMetric> failedMetrics() {
-            return failedMetrics;
-        }
-
-        static Builder builder() {
-            return new Builder();
-        }
-
-        static final class Builder extends ApiEntityResponse.Builder<Builder, Response, JsonObject> {
-            private Builder() {
-            }
-
-            @Override
-            public Response build() {
-                return new Response(this);
-            }
-        }
-    }
-
-    public static class MetricDataPoint extends ApiJsonBuilder<MetricDataPoint> {
-        private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_INSTANT;
-
-        private MetricDataPoint() {
-        }
-
-        public static MetricDataPoint builder() {
-            return new MetricDataPoint();
-        }
-
-        /**
-         * The number of occurrences of the associated value in the set of data.
-         *
-         * Default is 1. Value must be greater than zero.
-         *
-         * @param count
-         * @return
-         */
-        public MetricDataPoint count(int count) {
-            return add("count", count);
-        }
-
-        /**
-         * Numeric value of the metric.
-         *
-         * @param value
-         * @return
-         */
-        public MetricDataPoint value(double value) {
-            return add("value", value);
-        }
-
-        public MetricDataPoint timestamp(TemporalAccessor instant) {
-            return add("timestamp", FORMATTER.format(instant));
-        }
-
-        public MetricDataPoint timestamp(Date time) {
-            return timestamp(time.toInstant());
-        }
-    }
-
-    public static class FailedMetric {
-        private final String message;
-        private final JsonObject failedData;
-
-        private FailedMetric(String message, JsonObject failedData) {
-            this.message = message;
-            this.failedData = failedData;
-        }
-
-        static FailedMetric create(JsonObject failedMetric) {
-            String message = failedMetric.getString("message");
-
-            return new FailedMetric(message, failedMetric.getJsonObject("metricData"));
-        }
-
-        public String message() {
-            return message;
-        }
-
-        public JsonObject failedDataJson() {
-            return failedData;
         }
     }
 }

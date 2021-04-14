@@ -20,23 +20,4 @@
  * @see io.helidon.integrations.oci.objectstorage.OciObjectStorage
  * @see io.helidon.integrations.oci.objectstorage.OciObjectStorageRx
  */
-module io.helidon.integrations.oci.objectstorage {
-    requires transitive java.json;
-    requires transitive io.helidon.common.reactive;
-    requires transitive io.helidon.integrations.oci.connect;
-    requires transitive io.helidon.config;
-
-    requires io.helidon.integrations.common.rest;
-    requires io.helidon.common.http;
-
-
-
-    exports io.helidon.integrations.oci.objectstorage;
-
-    // this is the intended usage, deprecation is to warn about accidental usage in code
-    //noinspection deprecation
-    provides io.helidon.integrations.oci.connect.spi.InjectionProvider
-            with io.helidon.integrations.oci.objectstorage.OciObjectStorageInjectionProvider;
-
-    opens io.helidon.integrations.oci.objectstorage to weld.core.impl, io.helidon.microprofile.cdi;
-}
+package io.helidon.integrations.oci.objectstorage;

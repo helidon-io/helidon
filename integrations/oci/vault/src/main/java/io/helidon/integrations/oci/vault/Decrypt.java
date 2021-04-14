@@ -148,22 +148,47 @@ public final class Decrypt {
             return new Builder();
         }
 
+        /**
+         * Decrypted secret.
+         *
+         * @return decrypted value
+         */
         public Base64Value decrypted() {
             return decrypted;
         }
 
+        /**
+         * Data checksum.
+         *
+         * @return checksum
+         */
         public String checksum() {
             return checksum;
         }
 
+        /**
+         * Algorithm used.
+         *
+         * @return algorithm
+         */
         public Optional<String> encryptionAlgorithm() {
             return encryptionAlgorithm;
         }
 
+        /**
+         * Decryption key ID.
+         *
+         * @return key ID
+         */
         public Optional<String> keyId() {
             return keyId;
         }
 
+        /**
+         * Decryption key version ID.
+         *
+         * @return key version ID
+         */
         public Optional<String> keyVersionId() {
             return keyVersionId;
         }

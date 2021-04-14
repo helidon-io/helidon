@@ -23,6 +23,12 @@ import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.webclient.WebClient;
 
+/**
+ * OCI connectivity configuration based on instance principal.
+ * This is used when running within OCI VMs.
+ *
+ * TODO THIS CLASS IS NOT YET IMPLEMENTED AND WILL THROW AN EXCEPTION
+ */
 public class OciConfigInstancePrincipal extends OciConfigPrincipalBase implements OciConfigProvider {
     private static final String DEFAULT_METADATA_SERVICE_URL = "http://169.254.169.254/opc/v2/";
 
@@ -38,7 +44,7 @@ public class OciConfigInstancePrincipal extends OciConfigPrincipalBase implement
     }
 
     // this method blocks when trying to connect to a remote IP address
-    public static boolean isAvailable() {
+    static boolean isAvailable() {
         return WebClient.builder()
                 .connectTimeout(1, TimeUnit.SECONDS)
                 .readTimeout(1, TimeUnit.SECONDS)
@@ -53,8 +59,13 @@ public class OciConfigInstancePrincipal extends OciConfigPrincipalBase implement
                 .await();
     }
 
+    /**
+     * Create a new instance from environment.
+     *
+     * @return a new instance
+     */
     public static OciConfigInstancePrincipal create() {
-        return null;
+        throw new UnsupportedOperationException("OCI instance principal authentication is not yet supported");
     }
 
     @Override
@@ -77,6 +88,9 @@ public class OciConfigInstancePrincipal extends OciConfigPrincipalBase implement
         return OciConfigProvider.super.refresh();
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.integrations.oci.connect.OciConfigInstancePrincipal}.
+     */
     public static class Builder extends OciConfigPrincipalBase.Builder<Builder>
             implements io.helidon.common.Builder<OciConfigInstancePrincipal> {
         @Override

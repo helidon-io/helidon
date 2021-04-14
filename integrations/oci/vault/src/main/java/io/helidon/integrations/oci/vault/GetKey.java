@@ -27,32 +27,55 @@ import io.helidon.integrations.oci.connect.OciRequestBase;
 import io.helidon.integrations.oci.connect.OciResponseParser;
 
 /**
- * Request and response for getting secret metadata.
+ * Get Key request and response.
  */
 public final class GetKey {
     private GetKey() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static class Request extends OciRequestBase<Request> {
         private String keyId;
 
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }
 
+        /**
+         * Create a new request for Key OCID.
+         *
+         * @param keyId key OCID
+         * @return a new request
+         */
         public static Request create(String keyId) {
             return builder().keyId(keyId);
         }
 
+        /**
+         * Key OCID.
+         *
+         * @param keyId key OCID
+         * @return updated request
+         */
         public Request keyId(String keyId) {
             this.keyId = keyId;
             return this;
         }
 
-        public String keyId() {
+        String keyId() {
             if (keyId == null) {
                 throw new OciApiException("GetKey.Request keyId must be defined");
             }
@@ -65,6 +88,9 @@ public final class GetKey {
         }
     }
 
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
     public static class Response extends OciResponseParser {
         private final String keyId;
         private final String currentKeyVersionId;
@@ -88,6 +114,11 @@ public final class GetKey {
             return new Response(json);
         }
 
+        /**
+         * Key OCID.
+         *
+         * @return key OCID
+         */
         public String keyId() {
             return keyId;
         }

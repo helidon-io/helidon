@@ -20,7 +20,7 @@ import java.security.KeyPair;
 
 import io.helidon.common.reactive.Single;
 
-public abstract class OciConfigPrincipalBase {
+abstract class OciConfigPrincipalBase {
     private final SessionKeySupplier keySupplier;
     private final FederationClient federationClient;
 

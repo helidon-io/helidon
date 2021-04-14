@@ -21,6 +21,11 @@ import java.util.List;
 
 import io.helidon.integrations.oci.connect.spi.InjectionProvider;
 
+/**
+ * Service provider for {@link io.helidon.integrations.oci.connect.spi.InjectionProvider}.
+ * @deprecated Do not use directly, this is only used via service loader
+ */
+@Deprecated
 public class OciTelemetryInjectionProvider implements InjectionProvider {
     private static final List<InjectionType<?>> INJECTABLES;
 
@@ -40,6 +45,14 @@ public class OciTelemetryInjectionProvider implements InjectionProvider {
                                                                                             .build())));
 
         INJECTABLES = List.copyOf(injectables);
+    }
+
+    /**
+     * Public constructor must be present for service loader.
+     * @deprecated Do not use directly, this is only used via service loader
+     */
+    @Deprecated
+    public OciTelemetryInjectionProvider() {
     }
 
     @Override

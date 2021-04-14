@@ -18,7 +18,19 @@ package io.helidon.integrations.oci.vault;
 
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
 
+/**
+ * Blocking API to access OCI Vault.
+ * All methods block the current thread. This implementation is not suitable for reactive programming.
+ * Use {@link io.helidon.integrations.oci.vault.OciVaultRx} in reactive code.
+ */
 public interface OciVault {
+    /**
+     * Create blocking Vault from its reactive counterpart.
+     * When within an environment that supports injection, such as CDI, this class can be simply injected.
+     *
+     * @param reactive reactive Vault
+     * @return blocking Vault
+     */
     static OciVault create(OciVaultRx reactive) {
         return new OciVaultImpl(reactive);
     }

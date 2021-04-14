@@ -32,10 +32,21 @@ public final class CreateSecret {
     private CreateSecret() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static final class Request extends OciRequestBase<Request> {
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }
@@ -132,6 +143,7 @@ public final class CreateSecret {
         public static SecretContent create(String plainTextSecret) {
             return builder().content(plainTextSecret);
         }
+
         /**
          * Names should be unique within a secret. Valid characters are uppercase or lowercase letters, numbers, hyphens,
          * underscores, and periods.
@@ -161,7 +173,7 @@ public final class CreateSecret {
          *
          * @param base64Content content
          * @return updated builder
-         * @see #content(String) 
+         * @see #content(String)
          */
         public SecretContent contentBase64(String base64Content) {
             add("contentType", "BASE64");
@@ -200,6 +212,11 @@ public final class CreateSecret {
             return new Builder();
         }
 
+        /**
+         * Metadata of the created secret.
+         *
+         * @return secret
+         */
         public Secret secret() {
             return secret;
         }

@@ -32,6 +32,10 @@ public interface InjectionProvider {
      */
     List<InjectionType<?>> injectables();
 
+    /**
+     * An interface to allow lambda for creating instances.
+     * @param <T> type of the instance to be created
+     */
     @FunctionalInterface
     interface CreateInstanceFunction<T> {
         /**
@@ -44,6 +48,11 @@ public interface InjectionProvider {
         T apply(OciRestApi restApi, Config ociConfig);
     }
 
+    /**
+     * A single type that can be injected.
+     *
+     * @param <T> type to inject
+     */
     class InjectionType<T> {
         private final Class<T> type;
         private final CreateInstanceFunction<T> creator;
@@ -53,14 +62,34 @@ public interface InjectionProvider {
             this.creator = creator;
         }
 
+        /**
+         * Create an injection type for a type and associated function to create an instance.
+         *
+         * @param type class that can be injected
+         * @param creator function to create a new instance
+         * @param <T> type of the injectable
+         * @return a new injection type
+         */
         public static <T> InjectionType<T> create(Class<T> type, CreateInstanceFunction<T> creator) {
             return new InjectionType<>(type, creator);
         }
 
+        /**
+         * Get the class of the injectable.
+         *
+         * @return class
+         */
         public Class<T> injectedType() {
             return type;
         }
 
+        /**
+         * Create a new instance of the injectable.
+         *
+         * @param ociRestApi rest API to use
+         * @param vaultConfig configuration of Vault (may be empty, never null)
+         * @return a new instance
+         */
         public T createInstance(OciRestApi ociRestApi, Config vaultConfig) {
             return creator.apply(ociRestApi, vaultConfig);
         }

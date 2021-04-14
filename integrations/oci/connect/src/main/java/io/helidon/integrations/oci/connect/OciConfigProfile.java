@@ -291,6 +291,12 @@ public class OciConfigProfile implements OciConfigProvider {
             return this;
         }
 
+        /**
+         * Configure an explicit RSA private key.
+         *
+         * @param privateKey private key to use
+         * @return updated builder
+         */
         public Builder privateKey(RSAPrivateKey privateKey) {
             this.rsaPrivateKey = privateKey;
 

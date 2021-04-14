@@ -170,6 +170,9 @@ public interface OciVaultRx {
      */
     Single<ApiOptionalResponse<GetVault.Response>> getVault(GetVault.Request request);
 
+    /**
+     * Fluent API builder for {@link io.helidon.integrations.oci.vault.OciVaultRx}.
+     */
     class Builder implements io.helidon.common.Builder<OciVaultRx> {
         private final OciRestApi.Builder accessBuilder = OciRestApi.builder();
 

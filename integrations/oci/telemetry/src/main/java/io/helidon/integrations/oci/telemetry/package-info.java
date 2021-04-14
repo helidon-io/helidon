@@ -20,20 +20,4 @@
  * @see io.helidon.integrations.oci.telemetry.OciMetrics
  * @see io.helidon.integrations.oci.telemetry.OciMetricsRx
  */
-module io.helidon.integrations.oci.telemetry {
-    requires java.json;
-
-    requires io.helidon.common.reactive;
-    requires io.helidon.integrations.common.rest;
-    requires transitive io.helidon.integrations.oci.connect;
-    requires io.helidon.common.http;
-    requires io.helidon.common;
-    requires io.helidon.config;
-
-    exports io.helidon.integrations.oci.telemetry;
-
-    provides io.helidon.integrations.oci.connect.spi.InjectionProvider
-            with io.helidon.integrations.oci.telemetry.OciTelemetryInjectionProvider;
-
-    opens io.helidon.integrations.oci.telemetry to weld.core.impl, io.helidon.microprofile.cdi;
-}
+package io.helidon.integrations.oci.telemetry;

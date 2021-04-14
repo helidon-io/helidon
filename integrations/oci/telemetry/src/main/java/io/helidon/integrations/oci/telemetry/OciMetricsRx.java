@@ -89,6 +89,9 @@ public interface OciMetricsRx {
      */
     Single<PostMetricData.Response> postMetricData(PostMetricData.Request request);
 
+    /**
+     * Fluent API builder for {@link io.helidon.integrations.oci.telemetry.OciMetricsRx}.
+     */
     class Builder implements io.helidon.common.Builder<OciMetricsRx> {
         private final OciRestApi.Builder apiBuilder = OciRestApi.builder();
 

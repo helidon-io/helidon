@@ -20,7 +20,22 @@ import io.helidon.config.Config;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
 
+/**
+ * Service provider for {@link io.helidon.security.spi.SecurityProviderService}.
+ * Only used by a service loader.
+ * @deprecated do not use directly
+ */
+@Deprecated
 public class OciVaultSecurityService implements SecurityProviderService {
+    /**
+     * This constructor is only intended for service loader.
+     * DO NOT USE DIRECTLY.
+     * @deprecated do not use
+     */
+    @Deprecated
+    public OciVaultSecurityService() {
+    }
+
     @Override
     public String providerConfigKey() {
         return "oci-vault";

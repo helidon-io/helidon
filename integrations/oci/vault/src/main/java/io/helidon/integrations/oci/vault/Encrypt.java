@@ -159,18 +159,39 @@ public final class Encrypt {
             return new Builder();
         }
 
+        /**
+         * Cipher text that can be passed to another service and then used
+         * to obtain the decrypted secret.
+         *
+         * @return cipher text
+         */
         public String cipherText() {
             return cipherText;
         }
 
+        /**
+         * Encryption algorithm used to encrypt the secret.
+         *
+         * @return encryption algorithm
+         */
         public Optional<String> encryptionAlgorithm() {
             return encryptionAlgorithm;
         }
 
+        /**
+         * Encryption key OCID.
+         *
+         * @return key OCID
+         */
         public Optional<String> keyId() {
             return keyId;
         }
 
+        /**
+         * Encryption key version OCID.
+         *
+         * @return key version ocid
+         */
         public Optional<String> keyVersionId() {
             return keyVersionId;
         }

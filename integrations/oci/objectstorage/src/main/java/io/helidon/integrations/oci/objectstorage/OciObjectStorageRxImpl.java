@@ -42,7 +42,7 @@ class OciObjectStorageRxImpl implements OciObjectStorageRx {
     }
 
     @Override
-    public Single<ApiOptionalResponse<GetObjectRx.Response>> getObject(GetObjectRx.Request request) {
+    public Single<ApiOptionalResponse<GetObjectRx.Response>> getObject(GetObject.Request request) {
         String namespace = namespace(request);
         String apiPath = "/n/" + namespace + "/b/" + request.bucket() + "/o/" + request.objectName();
 

@@ -58,54 +58,114 @@ public class Secret extends OciResponseParser {
         this.deleted = toInstant(json, "timeOfDeletion");
     }
 
-    public static Secret create(JsonObject json) {
+    static Secret create(JsonObject json) {
         return new Secret(json);
     }
 
+    /**
+     * The OCID of the compartment where the secret was created.
+     *
+     * @return compartment OCID
+     */
     public String compartmentId() {
         return compartmentId;
     }
 
+    /**
+     * The OCID of the secret.
+     *
+     * @return secret OCID
+     */
     public String id() {
         return id;
     }
 
+    /**
+     * The current lifecycle state of the secret.
+     *
+     * @return lifecycle state
+     */
     public String lifecycleState() {
         return lifecycleState;
     }
 
+    /**
+     * The user-friendly name of the secret. Avoid entering confidential information.
+     *
+     * @return name
+     */
     public String name() {
         return name;
     }
 
+    /**
+     * A property indicating when the secret was created.
+     *
+     * @return creation instant
+     */
     public Instant created() {
         return created;
     }
 
+    /**
+     * The OCID of the vault where the secret exists.
+     *
+     * @return vault OCID
+     */
     public String vaultId() {
         return vaultId;
     }
 
+    /**
+     * The version number of the secret version that's currently in use.
+     *
+     * @return version number
+     */
     public Optional<Integer> currentVersionNumber() {
         return currentVersionNumber;
     }
 
+    /**
+     * A brief description of the secret. Avoid entering confidential information.
+     *
+     * @return description
+     */
     public Optional<String> description() {
         return description;
     }
 
+    /**
+     * The OCID of the master encryption key that is used to encrypt the secret.
+     *
+     * @return key OCID
+     */
     public Optional<String> keyId() {
         return keyId;
     }
 
+    /**
+     * Additional information about the current lifecycle state of the secret.
+     *
+     * @return lifecycle information
+     */
     public Optional<String> lifecycleDetail() {
         return lifecycleDetail;
     }
 
+    /**
+     * An optional property indicating when the current secret version will expire.
+     *
+     * @return when the version expires
+     */
     public Optional<Instant> versionExpires() {
         return versionExpires;
     }
 
+    /**
+     * An optional property indicating when to delete the secret.
+     *
+     * @return deletion instant
+     */
     public Optional<Instant> deleted() {
         return deleted;
     }

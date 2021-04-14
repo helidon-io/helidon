@@ -23,14 +23,28 @@ import javax.json.JsonObject;
 
 import io.helidon.integrations.common.rest.ApiResponse;
 
+/**
+ * Delete Object request and response.
+ */
 public final class DeleteObject {
     private DeleteObject() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static class Request extends ObjectRequest<Request> {
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }

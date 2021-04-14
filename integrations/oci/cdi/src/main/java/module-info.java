@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * CDI extension to add support for injection of OCI APIs.
+ */
 module io.helidon.integrations.oci.cdi {
     requires java.logging;
 

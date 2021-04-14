@@ -133,7 +133,8 @@ public class OciRestApi extends RestApiBase {
         return wrapSupplierInSecurityRetry(originalSupplier);
     }
 
-    private Supplier<Single<WebClientResponse>> wrapSupplierInSecurityRetry(Supplier<Single<WebClientResponse>> originalSupplier) {
+    private Supplier<Single<WebClientResponse>>
+    wrapSupplierInSecurityRetry(Supplier<Single<WebClientResponse>> originalSupplier) {
         // to handle timed-out token(s) when using instance or resource identity, we need to retry in case we get 401
         // and the token refreshes successfully
         return () -> {
@@ -348,9 +349,21 @@ public class OciRestApi extends RestApiBase {
         }
     }
 
+    /**
+     * How to connect to OCI.
+     */
     public enum ConfigType {
+        /**
+         * Use {@link io.helidon.integrations.oci.connect.OciConfigInstancePrincipal}.
+         */
         INSTANCE_PRINCIPAL,
+        /**
+         * Use {@link io.helidon.integrations.oci.connect.OciConfigResourcePrincipal}.
+         */
         RESOURCE_PRINCIPAL,
+        /**
+         * Use {@link io.helidon.integrations.oci.connect.OciConfigProfile}.
+         */
         OCI_PROFILE
     }
 
@@ -426,6 +439,14 @@ public class OciRestApi extends RestApiBase {
             return this;
         }
 
+        /**
+         * How to obtain data to configure connectivity to OCI.
+         * By default, an attempt is made to discover whether to use
+         * instance principal or resource principal. Falls back to {@link ConfigType#OCI_PROFILE}.
+         *
+         * @param configType type of config to use
+         * @return updated builder
+         */
         public Builder configType(ConfigType configType) {
             this.configType = configType;
             return this;
@@ -479,6 +500,7 @@ public class OciRestApi extends RestApiBase {
                     configProvider(OciConfigResourcePrincipal.create());
                     break;
                 case OCI_PROFILE:
+                default:
                     configProvider(OciConfigProfile.create());
                     break;
                 }

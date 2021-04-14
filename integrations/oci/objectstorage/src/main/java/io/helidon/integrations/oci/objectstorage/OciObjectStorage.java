@@ -22,8 +22,18 @@ import io.helidon.integrations.common.rest.ApiOptionalResponse;
 
 /**
  * Blocking OCI Vault API.
+ * All methods block the current thread. This implementation is not suitable for reactive programming.
+ * Use {@link io.helidon.integrations.oci.objectstorage.OciObjectStorageRx} in reactive code.
  */
 public interface OciObjectStorage {
+    /**
+     * Create a blocking object storage integration from its reactive counterpart.
+     * When running within an injection capable environment (such as CDI), instances of this
+     * class can be injected.
+     *
+     * @param reactive reactive OCI object storage
+     * @return blocking OCI object storage
+     */
     static OciObjectStorage create(OciObjectStorageRx reactive) {
         return new OciObjectStorageImpl(reactive);
     }
@@ -34,7 +44,7 @@ public interface OciObjectStorage {
      * @param request get object request
      * @return future with response or error
      */
-    ApiOptionalResponse<GetObject.Response> getObject(GetObjectRx.Request request);
+    ApiOptionalResponse<GetObject.Response> getObject(GetObject.Request request);
 
     /**
      * Creates a new object or overwrites an existing object with the same name. The maximum object size allowed by PutObject

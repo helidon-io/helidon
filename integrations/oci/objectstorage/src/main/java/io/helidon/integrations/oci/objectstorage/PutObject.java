@@ -24,16 +24,30 @@ import javax.json.JsonObject;
 import io.helidon.integrations.common.rest.ApiResponse;
 import io.helidon.integrations.oci.connect.OciApiException;
 
+/**
+ * Put object request and response.
+ */
 public final class PutObject {
     private PutObject() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static class Request extends ObjectRequest<Request> {
         private Long contentLength;
 
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }
@@ -50,6 +64,11 @@ public final class PutObject {
             return this;
         }
 
+        /**
+         * Content lenght configured on this request.
+         *
+         * @return content lenght, must be preset
+         */
         public long contentLength() {
             if (contentLength == null) {
                 throw new OciApiException("Content-Length must be defined for PutObject request.");

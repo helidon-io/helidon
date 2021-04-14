@@ -27,32 +27,55 @@ import io.helidon.integrations.oci.connect.OciRequestBase;
 import io.helidon.integrations.oci.connect.OciResponseParser;
 
 /**
- * Request and response for getting secret metadata.
+ * Get Vault request and response.
  */
 public final class GetVault {
     private GetVault() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static class Request extends OciRequestBase<Request> {
         private String vaultId;
 
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }
 
+        /**
+         * Create a request for a vault OCID.
+         *
+         * @param vaultId vault OCID
+         * @return a new request
+         */
         public static Request create(String vaultId) {
             return builder().vaultId(vaultId);
         }
 
+        /**
+         * Vault OCID.
+         *
+         * @param vaultId vault ID
+         * @return updated request
+         */
         public Request vaultId(String vaultId) {
             this.vaultId = vaultId;
             return this;
         }
 
-        public String vaultId() {
+        String vaultId() {
             if (vaultId == null) {
                 throw new OciApiException("GetVault.Request vaultId must be defined");
             }
@@ -65,6 +88,9 @@ public final class GetVault {
         }
     }
 
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
     public static class Response extends OciResponseParser {
         private final String vaultId;
         private final String compartmentId;

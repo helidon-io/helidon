@@ -26,26 +26,51 @@ public final class GetSecret {
     private GetSecret() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static class Request extends OciRequestBase<Request> {
         private String secretId;
 
         private Request() {
         }
 
+        /**
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @return new request builder
+         */
         public static Request builder() {
             return new Request();
         }
 
+        /**
+         * Create a new request for a secret OCID.
+         *
+         * @param secretOcid secret OCID
+         * @return a new request
+         *
+         * @see #secretId(String)
+         */
         public static Request create(String secretOcid) {
             return builder().secretId(secretOcid);
         }
 
+        /**
+         * Secret OCID to get.
+         *
+         * @param secretId secret OCID
+         * @return updated request
+         */
         public Request secretId(String secretId) {
             this.secretId = secretId;
             return this;
         }
 
-        public String secretId() {
+        String secretId() {
             if (secretId == null) {
                 throw new ApiException("secretId is mandatory in GetSecret.Request");
             }

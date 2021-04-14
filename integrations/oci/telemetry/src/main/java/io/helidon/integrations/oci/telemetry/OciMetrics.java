@@ -20,6 +20,12 @@ package io.helidon.integrations.oci.telemetry;
  * Blocking APIs for OCI Metrics.
  */
 public interface OciMetrics {
+    /**
+     * Create blocking OCI metrics from its reactive counterpart.
+     *
+     * @param reactive reactive OCI metrics
+     * @return blocking OCI metrics
+     */
     static OciMetrics create(OciMetricsRx reactive) {
         return new OciMetricsImpl(reactive);
     }

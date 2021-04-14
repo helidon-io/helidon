@@ -26,6 +26,9 @@ import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.connect.OciRestApi;
 
+/**
+ * Reactive API for OCI Object Storage.
+ */
 public interface OciObjectStorageRx {
     /**
      * Version of Secret API supported by this client.
@@ -43,7 +46,7 @@ public interface OciObjectStorageRx {
     String API_HOST_FORMAT = "%s://%s.%s.%s";
 
     /**
-     * Create a new fluent API builder for OCI metrics.
+     * Create a new fluent API builder for OCI object storage.
      *
      * @return a new builder
      */
@@ -52,19 +55,19 @@ public interface OciObjectStorageRx {
     }
 
     /**
-     * Create OCI metrics using the default {@link io.helidon.integrations.oci.connect.OciRestApi}.
+     * Create OCI Object Storage using the default {@link io.helidon.integrations.oci.connect.OciRestApi}.
      *
-     * @return OCI metrics instance connecting based on {@code DEFAULT} profile
+     * @return OCI object storage instance connecting based on {@code DEFAULT} profile
      */
     static OciObjectStorageRx create() {
         return builder().build();
     }
 
     /**
-     * Create OCI metrics based on configuration.
+     * Create OCI Object Storage based on configuration.
      *
      * @param config configuration on the node of OCI configuration
-     * @return OCI metrics instance configured from the configuration
+     * @return OCI object storage instance configured from the configuration
      * @see OciObjectStorageRx.Builder#config(io.helidon.config.Config)
      */
     static OciObjectStorageRx create(Config config) {
@@ -77,7 +80,7 @@ public interface OciObjectStorageRx {
      * @param request get object request
      * @return future with response or error
      */
-    Single<ApiOptionalResponse<GetObjectRx.Response>> getObject(GetObjectRx.Request request);
+    Single<ApiOptionalResponse<GetObjectRx.Response>> getObject(GetObject.Request request);
 
     /**
      * Creates a new object or overwrites an existing object with the same name. The maximum object size allowed by PutObject
@@ -105,6 +108,9 @@ public interface OciObjectStorageRx {
      */
     Single<RenameObject.Response> renameObject(RenameObject.Request request);
 
+    /**
+     * Fluent API Builder for {@link io.helidon.integrations.oci.objectstorage.OciObjectStorageRx}.
+     */
     class Builder implements io.helidon.common.Builder<OciObjectStorageRx> {
         private final OciRestApi.Builder apiBuilder = OciRestApi.builder();
 
@@ -130,7 +136,7 @@ public interface OciObjectStorageRx {
          * node.
          *
          * @param config configuration
-         * @return updated metrics builder
+         * @return updated builder
          */
         public Builder config(Config config) {
             apiBuilder.config(config);
@@ -141,21 +147,46 @@ public interface OciObjectStorageRx {
             return this;
         }
 
+        /**
+         * Instance of rest API to use.
+         *
+         * @param restApi rest API
+         * @return updated builder
+         */
         public Builder restApi(OciRestApi restApi) {
             this.restApi = restApi;
             return this;
         }
 
+        /**
+         * Host prefix to use for object storage,
+         * defaults to {@value API_HOST_PREFIX}.
+         *
+         * @param prefix prefix to use
+         * @return updated builder
+         */
         public Builder hostPrefix(String prefix) {
             this.hostPrefix = prefix;
             return this;
         }
 
+        /**
+         * Explicit endpoint to use.
+         *
+         * @param endpoint endpoint
+         * @return updated builder
+         */
         public Builder endpoint(String endpoint) {
             this.endpoint = endpoint;
             return this;
         }
 
+        /**
+         * Object storage namespace to use.
+         *
+         * @param namespace object storage namespace
+         * @return updated buidler
+         */
         public Builder namespace(String namespace) {
             this.namespace = namespace;
             return this;
@@ -177,7 +208,7 @@ public interface OciObjectStorageRx {
          * Update the rest access builder to modify defaults.
          *
          * @param builderConsumer consumer of the builder
-         * @return updated metrics builder
+         * @return updated builder
          */
         public Builder updateRestApi(Consumer<OciRestApi.Builder> builderConsumer) {
             builderConsumer.accept(apiBuilder);

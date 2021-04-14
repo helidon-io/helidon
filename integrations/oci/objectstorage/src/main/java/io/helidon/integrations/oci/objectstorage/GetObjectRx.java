@@ -17,33 +17,21 @@
 package io.helidon.integrations.oci.objectstorage;
 
 import java.nio.ByteBuffer;
-import java.util.Optional;
-
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
 import io.helidon.integrations.oci.connect.OciResponseParser;
 
+/**
+ * Reactive get object request and response.
+ */
 public final class GetObjectRx {
     private GetObjectRx() {
     }
 
-    public static class Request extends ObjectRequest<Request> {
-        private Request() {
-        }
-
-        public static Request builder() {
-            return new Request();
-        }
-
-        @Override
-        public Optional<JsonObject> toJson(JsonBuilderFactory factory) {
-            return Optional.empty();
-        }
-    }
-
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
     public static class Response extends OciResponseParser {
         private final Multi<DataChunk> publisher;
 
@@ -51,14 +39,25 @@ public final class GetObjectRx {
             this.publisher = publisher;
         }
 
-        public static Response create(Multi<DataChunk> publisher) {
+        static Response create(Multi<DataChunk> publisher) {
             return new Response(publisher);
         }
 
+        /**
+         * Get a publisher of {@link io.helidon.common.http.DataChunk}, this is useful
+         * when the result is sent via WebServer or WebClient that also use it.
+         *
+         * @return publisher of data chunks
+         */
         public Multi<DataChunk> publisher() {
             return publisher;
         }
 
+        /**
+         * Get a publisher of byte buffers.
+         *
+         * @return publisher of byte buffers
+         */
         public Multi<ByteBuffer> bytePublisher() {
             return publisher.flatMap(it -> Multi.just(it.data()));
         }

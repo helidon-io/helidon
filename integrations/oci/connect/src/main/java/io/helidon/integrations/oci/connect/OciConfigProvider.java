@@ -20,6 +20,9 @@ import java.util.Optional;
 
 import io.helidon.common.reactive.Single;
 
+/**
+ * Provider of data needed to connect to OCI, and to use its APIs.
+ */
 public interface OciConfigProvider {
     /**
      * Get the current signature data.
