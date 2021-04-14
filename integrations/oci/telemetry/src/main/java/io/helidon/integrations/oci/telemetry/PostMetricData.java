@@ -16,7 +16,6 @@
 
 package io.helidon.integrations.oci.telemetry;
 
-import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.Date;
@@ -197,7 +196,7 @@ public final class PostMetricData {
          * @param instant the instant
          * @return updated data point
          */
-        public MetricDataPoint timestamp(Instant instant) {
+        public MetricDataPoint timestamp(TemporalAccessor instant) {
             return add("timestamp", FORMATTER.format(instant));
         }
 

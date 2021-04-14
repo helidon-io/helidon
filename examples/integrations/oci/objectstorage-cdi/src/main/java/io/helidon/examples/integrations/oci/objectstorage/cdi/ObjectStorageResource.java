@@ -36,7 +36,6 @@ import io.helidon.common.http.Http;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.objectstorage.DeleteObject;
 import io.helidon.integrations.oci.objectstorage.GetObject;
-import io.helidon.integrations.oci.objectstorage.GetObjectRx;
 import io.helidon.integrations.oci.objectstorage.OciObjectStorage;
 import io.helidon.integrations.oci.objectstorage.PutObject;
 
@@ -67,7 +66,7 @@ public class ObjectStorageResource {
     @GET
     @Path("/file/{file-name}")
     public Response download(@PathParam("file-name") String fileName) {
-        ApiOptionalResponse<GetObject.Response> ociResponse = objectStorage.getObject(GetObjectRx.Request.builder()
+        ApiOptionalResponse<GetObject.Response> ociResponse = objectStorage.getObject(GetObject.Request.builder()
                                                                                                       .bucket(bucketName)
                                                                                                       .objectName(fileName));
         Optional<GetObject.Response> entity = ociResponse.entity();
@@ -106,8 +105,8 @@ public class ObjectStorageResource {
      * @return response
      */
     @POST
-    @Path("/file/{file-name}")
-    public Response upload(@PathParam("file-name") String fileName,
+    @Path("/file/{fileName}")
+    public Response upload(@PathParam("fileName") String fileName,
                          @HeaderParam("Content-Length") long contentLength,
                          @HeaderParam("Content-Type") @DefaultValue("application/octet-stream") String type,
                          InputStream entity) {

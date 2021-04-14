@@ -26,6 +26,7 @@ module io.helidon.examples.integrations.oci.objectstorage.cdi {
     requires io.helidon.config.yaml;
     requires io.helidon.common.http;
     requires io.helidon.integrations.common.rest;
+    requires io.helidon.integrations.oci.cdi;
     requires io.helidon.integrations.oci.objectstorage;
     requires io.helidon.microprofile.cdi;
 
