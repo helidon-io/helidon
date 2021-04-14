@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.webserver.cors;
 
@@ -106,6 +105,9 @@ public class CorsSupport extends CorsSupportBase<ServerRequest, ServerResponse, 
         return String.format("CorsSupport[%s]{%s}", name(), describe());
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.webserver.cors.CorsSupport}.
+     */
     public static class Builder extends CorsSupportBase.Builder<ServerRequest, ServerResponse, CorsSupport, Builder> {
 
         private static int builderCount = 0; // To help distinguish otherwise-unnamed CorsSupport instances in log messages

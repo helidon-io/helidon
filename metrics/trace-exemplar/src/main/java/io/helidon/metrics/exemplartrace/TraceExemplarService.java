@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.metrics.exemplartrace;
 
@@ -21,6 +20,9 @@ import io.helidon.metrics.ExemplarService;
 
 import io.opentracing.SpanContext;
 
+/**
+ * Service provider for {@link io.helidon.metrics.ExemplarService}.
+ */
 public class TraceExemplarService implements ExemplarService {
     @Override
     public String label() {

@@ -139,6 +139,9 @@ public interface WebClient {
      */
     WebClientRequestBuilder method(Http.RequestMethod method);
 
+    /**
+     * Fluent API builder for {@link io.helidon.webclient.WebClient}.
+     */
     final class Builder implements io.helidon.common.Builder<WebClient>,
                                    ParentingMediaContextBuilder<Builder>,
                                    MediaContextBuilder<Builder> {
