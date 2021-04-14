@@ -17,39 +17,36 @@
 server.port: 8080
 
 vault:
-  properties:
+  default:
     address: "http://localhost:8200"
-  k8s:
-    address: "${vault.properties.address}"
-    # please change this to your k8s cluster address
-    # cluster-address: "https://kubernetes.docker.internal:6443"
-    cluster-address: "https://10.96.0.1"
+    token: "myroot"
     auth:
+      app-role:
+        enabled: false
+      token:
+        enabled: true
+      k8s:
+        enabled: false
+  app-role:
+    address: "http://localhost:8200"
+    auth:
+      app-role:
+        enabled: true
+        role-id: "${vault.properties.app-role.role-id}"
+        secret-id: "${vault.properties.app-role.secret-id}"
+      k8s:
+        enabled: false
+      token:
+        enabled: false
+  k8s:
+    address: "http://localhost:8200"
+    auth:
+      app-role:
+        enabled: false
       k8s:
         enabled: true
         # this role is created in the code, must be the same value
         token-role: my-role
-        service-account-token: "${vault.properties.k8s.service-account-token}"
-      app-role:
-        enabled: false
       token:
         enabled: false
-  token:
-    token: "myroot"
-    address: "${vault.properties.address}"
-    auth:
-      k8s:
-        enabled: false
-      app-role:
-        enabled: false
-      token:
-        enabled: true
-  approle:
-    address: "${vault.properties.address}"
-    auth:
-      k8s:
-        enabled: false
-      app-role:
-        enabled: true
-      token:
-        enabled: false
+

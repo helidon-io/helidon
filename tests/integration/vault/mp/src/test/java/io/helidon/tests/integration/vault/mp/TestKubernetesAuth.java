@@ -16,6 +16,7 @@
 
 package io.helidon.tests.integration.vault.mp;
 
+import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.Optional;
 
@@ -24,6 +25,8 @@ import javax.enterprise.inject.literal.NamedLiteral;
 import javax.enterprise.inject.se.SeContainer;
 import javax.inject.Inject;
 
+import io.helidon.config.mp.MpConfigSources;
+import io.helidon.config.yaml.YamlMpConfigSource;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.auths.k8s.ConfigureK8s;
 import io.helidon.integrations.vault.auths.k8s.CreateRole;
@@ -36,12 +39,17 @@ import io.helidon.integrations.vault.secrets.kv2.Kv2Secrets;
 import io.helidon.integrations.vault.secrets.kv2.Kv2SecretsRx;
 import io.helidon.integrations.vault.sys.EnableEngine;
 import io.helidon.integrations.vault.sys.Sys;
+import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.Configuration;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -57,8 +65,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @HelidonTest(resetPerTest = true)
 @DisableDiscovery
 @AddExtension(VaultCdiExtension.class)
+@AddExtension(ConfigCdiExtension.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Configuration(useExisting = true)
 class TestKubernetesAuth {
+    @BeforeAll
+    static void setupConfig() {
+        ConfigProviderResolver resolver = ConfigProviderResolver.instance();
+        Config config = resolver.getBuilder()
+                .withSources(MpConfigSources.systemProperties())
+                .withSources(MpConfigSources.create(Map.of("mp.initializer.allow", "true")))
+                .withSources(YamlMpConfigSource.classPath("vault-application.yaml").toArray(new ConfigSource[0]))
+                .build();
+        resolver.registerConfig(config, null);
+    }
+
     @Test
     @Order(0)
     void setupK8s(SeContainer container) {
@@ -68,8 +89,9 @@ class TestKubernetesAuth {
 
         K8sAuthRx k8sAuth = vault.auth(K8sAuthRx.AUTH_METHOD);
 
+        //kubernetes.default.svc
         k8sAuth.configure(ConfigureK8s.Request.builder()
-                                  .address("https://kubernetes.docker.internal:6443"))
+                                  .address("https://10.96.0.1"))
                 .await();
 
         sys.createPolicy("admin", VaultPolicy.POLICY);
