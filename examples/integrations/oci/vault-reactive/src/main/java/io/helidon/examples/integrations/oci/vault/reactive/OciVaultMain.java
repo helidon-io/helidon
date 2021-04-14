@@ -29,7 +29,10 @@ import static io.helidon.config.ConfigSources.file;
  * Main class of the example.
  * Boots a web server and provides REST API for Vault interactions.
  */
-public class OciVaultMain {
+public final class OciVaultMain {
+    private OciVaultMain() {
+    }
+
     /**
      * Main method.
      * @param args ignored

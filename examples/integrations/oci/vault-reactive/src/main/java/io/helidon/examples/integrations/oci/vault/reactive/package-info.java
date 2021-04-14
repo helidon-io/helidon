@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.security.providers.httpsign;
-
 /**
- * Exception from HTTP signatures provider.
+ * Example of OCI Vault integration in a reactive application.
  */
-public class HttpSignatureException extends SecurityException {
-    /**
-     * Create a new exception with message.
-     * @param message descriptive message
-     */
-    public HttpSignatureException(String message) {
-        super(message);
-    }
-
-    /**
-     * Create a new exception with a cause.
-     * @param e cause
-     */
-    public HttpSignatureException(Exception e) {
-        super(e);
-    }
-}
+package io.helidon.examples.integrations.oci.vault.reactive;

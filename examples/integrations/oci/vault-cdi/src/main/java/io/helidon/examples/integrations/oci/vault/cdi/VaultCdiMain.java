@@ -30,7 +30,10 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * Main class of the example.
  * Used only to set up configuration.
  */
-public class VaultCdiMain {
+public final class VaultCdiMain {
+    private VaultCdiMain() {
+    }
+
     /**
      * Main method.
      *

@@ -91,10 +91,23 @@ public final class SignedHeadersConfig {
         return new Builder().defaultConfig(HeadersConfig.create());
     }
 
+    /**
+     * Headers configured for a method with optional headers matched against actual transport headers.
+     *
+     * @param method method (such as GET)
+     * @param transportHeaders actual headers received on the transport
+     * @return list of headers that must be signed
+     */
     public List<String> headers(String method, Map<String, List<String>> transportHeaders) {
         return methodConfigs.getOrDefault(method, defaultConfig).getHeaders(transportHeaders);
     }
 
+    /**
+     * Headers configured for a method.
+     *
+     * @param method method (such as GET)
+     * @return list of headers
+     */
     public List<String> headers(String method) {
         return new ArrayList<>(methodConfigs.getOrDefault(method, defaultConfig).always);
     }

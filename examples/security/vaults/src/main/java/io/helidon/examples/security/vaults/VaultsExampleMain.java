@@ -29,7 +29,10 @@ import static io.helidon.config.ConfigSources.file;
 /**
  * Main class of the example based on configuration.
  */
-public class VaultsExampleMain {
+public final class VaultsExampleMain {
+    private VaultsExampleMain() {
+    }
+
     /**
      * Start the server.
      *

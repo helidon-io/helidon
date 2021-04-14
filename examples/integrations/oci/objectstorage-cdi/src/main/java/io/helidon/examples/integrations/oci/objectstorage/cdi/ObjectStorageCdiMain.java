@@ -31,7 +31,10 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * Main class of the example.
  * This is only used to merge configuration from home directory with the one embedded on classpath.
  */
-public class ObjectStorageCdiMain {
+public final class ObjectStorageCdiMain {
+    private ObjectStorageCdiMain() {
+    }
+
     /**
      * Main method.
      *

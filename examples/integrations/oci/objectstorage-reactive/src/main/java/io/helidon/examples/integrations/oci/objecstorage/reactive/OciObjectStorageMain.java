@@ -29,7 +29,10 @@ import static io.helidon.config.ConfigSources.file;
  * Main class of the example.
  * This example sets up a web server to serve REST API to upload/download/delete objects.
  */
-public class OciObjectStorageMain {
+public final class OciObjectStorageMain {
+    private OciObjectStorageMain() {
+    }
+
     /**
      * Main method.
      *

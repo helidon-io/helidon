@@ -31,7 +31,10 @@ import static io.helidon.config.ConfigSources.file;
 /**
  * OCI Metrics example.
  */
-public class OciMetricsMain {
+public final class OciMetricsMain {
+    private OciMetricsMain() {
+    }
+
     /**
      * Main method.
      * @param args ignored
