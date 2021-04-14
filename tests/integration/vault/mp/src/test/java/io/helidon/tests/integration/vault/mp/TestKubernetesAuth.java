@@ -16,7 +16,10 @@
 
 package io.helidon.tests.integration.vault.mp;
 
-import java.io.InputStreamReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 
@@ -98,9 +101,21 @@ class TestKubernetesAuth {
         k8sAuth.createRole(CreateRole.Request.builder()
                                    .roleName("my-role")
                                    .addBoundServiceAccountName("*")
-                                   .addBoundServiceAccountNamespace("default")
+                                   .addBoundServiceAccountNamespace(findNamespace())
                                    .addTokenPolicy("admin"))
                 .await();
+    }
+
+    private static String findNamespace() {
+        Path path = Paths.get("/var/run/secrets/kubernetes.io/serviceaccount/namespace");
+        if (Files.exists(path)) {
+            try {
+                return Files.readString(path);
+            } catch (IOException e) {
+                throw new IllegalStateException("Could not read k8s namespace", e);
+            }
+        }
+        return "default";
     }
 
     @Test
