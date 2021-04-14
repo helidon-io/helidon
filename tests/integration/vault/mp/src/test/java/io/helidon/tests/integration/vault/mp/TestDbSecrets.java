@@ -16,8 +16,10 @@
 
 package io.helidon.tests.integration.vault.mp;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 
 import javax.inject.Inject;
@@ -42,6 +44,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.helidon.config.testing.OptionalMatcher.present;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
@@ -57,7 +60,7 @@ class TestDbSecrets {
     Sys vault;
 
     @Inject
-    @ConfigProperty(name = "vault.db.host", defaultValue = "mysql")
+    @ConfigProperty(name = "vault.db.host", defaultValue = "localhost")
     String dbHost;
 
     @Test
@@ -90,9 +93,7 @@ class TestDbSecrets {
 
     @Test
     @Order(4)
-    void testGetSecrets() {
-        List<String> list = db.list("");
-
+    void testGetSecrets() throws SQLException {
         Optional<DbCredentials> maybeCreds = db.get("readonly");
 
         assertThat(maybeCreds, is(present()));
@@ -101,9 +102,12 @@ class TestDbSecrets {
 
         String username = mysql.username();
         String password = mysql.password();
-        // todo connect to database
-        System.out.println("username = " + username);
-        System.out.println("password = " + password);
+
+        String address = "jdbc:mysql://localhost:3306/";
+        com.mysql.jdbc.Driver.class.getName();
+        try (Connection conn = DriverManager.getConnection(address, username, password)) {
+            assertThat(conn, notNullValue());
+        }
     }
 
     @Test
