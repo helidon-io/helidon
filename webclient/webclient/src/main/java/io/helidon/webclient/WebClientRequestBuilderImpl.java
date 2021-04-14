@@ -128,6 +128,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private Duration connectTimeout;
     private boolean keepAlive;
     private Long requestId;
+    private boolean allowChunkedEncoding;
 
     private WebClientRequestBuilderImpl(LazyValue<NioEventLoopGroup> eventGroup,
                                         WebClientConfiguration configuration,
@@ -138,6 +139,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.method = method;
         this.uri = configuration.uri();
         this.skipUriEncoding = false;
+        this.allowChunkedEncoding = true;
         this.path = ClientPath.create(null, "", new HashMap<>());
         //Default headers added to the current headers of the request
         this.headers = new WebClientRequestHeadersImpl(this.configuration.headers());
@@ -373,6 +375,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
+    public WebClientRequestBuilder allowChunkedEncoding(boolean allowChunkedEncoding) {
+        this.allowChunkedEncoding = allowChunkedEncoding;
+        return this;
+    }
+
+    @Override
     public <T> Single<T> request(Class<T> responseType) {
         return request(GenericType.create(responseType));
     }
@@ -582,7 +590,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     RequestContentSubscriber requestContentSubscriber = new RequestContentSubscriber(request,
                                                                                                      channelFuture.channel(),
                                                                                                      result,
-                                                                                                     sent);
+                                                                                                     sent,
+                                                                                                     allowChunkedEncoding);
                     requestEntity.subscribe(requestContentSubscriber);
                 } else {
                     sent.completeExceptionally(cause);

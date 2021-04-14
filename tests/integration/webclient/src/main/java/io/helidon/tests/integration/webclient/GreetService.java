@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,10 +81,19 @@ public class GreetService implements Service {
                 .get("/redirect/infinite", this::redirectInfinite)
                 .post("/form", this::form)
                 .post("/form/content", this::formContent)
+                .post("/contentLength", this::contentLength)
+                .put("/contentLength", this::contentLength)
+                .get("/contentLength", this::contentLength)
                 .get("/secure/basic", this::basicAuth)
                 .get("/secure/basic/outbound", this::basicAuthOutbound)
                 .get("/valuesPropagated", this::valuesPropagated)
                 .put("/greeting", this::updateGreetingHandler);
+    }
+
+    private void contentLength(ServerRequest serverRequest, ServerResponse serverResponse) {
+        serverRequest.headers().contentLength()
+                .ifPresentOrElse(value -> serverResponse.send(Http.Header.CONTENT_LENGTH + " is " + value),
+                                 () -> serverResponse.send("No " + Http.Header.CONTENT_LENGTH + " has been set"));
     }
 
     private void basicAuthOutbound(ServerRequest serverRequest, ServerResponse response) {

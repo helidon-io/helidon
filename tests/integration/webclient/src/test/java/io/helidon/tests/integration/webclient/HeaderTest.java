@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.WebClientServiceRequest;
 import io.helidon.webclient.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Tests to test headers.
@@ -41,7 +43,7 @@ public class HeaderTest extends TestParent {
     private static final String TEST_USER = "unit-test-user";
 
     @Test
-    public void userAgentNotOverridden() throws Exception {
+    public void userAgentNotOverridden() {
         WebClient webClient = createNewClient(new HeaderTestService(TEST_USER));
 
         webClient.get()
@@ -50,8 +52,52 @@ public class HeaderTest extends TestParent {
                     return headers;
                 })
                 .request(JsonObject.class)
-                .toCompletableFuture()
-                .get();
+                .await();
+    }
+
+    @Test
+    public void contentLengthSet() {
+        WebClient webClient = createNewClient();
+
+        String contentLength = webClient.post()
+                .path("contentLength")
+                .submit()
+                .flatMapSingle(response -> response.content().as(String.class))
+                .await();
+        assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is 0"));
+
+        contentLength = webClient.put()
+                .path("contentLength")
+                .submit()
+                .flatMapSingle(response -> response.content().as(String.class))
+                .await();
+        assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is 0"));
+
+        contentLength = webClient.get()
+                .path("contentLength")
+                .request()
+                .flatMapSingle(response -> response.content().as(String.class))
+                .await();
+        assertThat(contentLength, is("No " + Http.Header.CONTENT_LENGTH + " has been set"));
+
+        String sampleSmallEntity = "Hi there";
+        contentLength = webClient.post()
+                .path("contentLength")
+                .submit(sampleSmallEntity)
+                .flatMapSingle(response -> response.content().as(String.class))
+                .await();
+        assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
+
+        contentLength = webClient.post()
+                .headers(headers -> {
+                    headers.contentLength(0);
+                    return headers;
+                })
+                .path("contentLength")
+                .submit(sampleSmallEntity)
+                .flatMapSingle(response -> response.content().as(String.class))
+                .await();
+        assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
     }
 
     private static final class HeaderTestService implements WebClientService {
@@ -69,7 +115,7 @@ public class HeaderTest extends TestParent {
 
         @Override
         public Single<WebClientServiceResponse> response(WebClientRequestBuilder.ClientRequest request,
-                                                                  WebClientServiceResponse response) {
+                                                         WebClientServiceResponse response) {
             List<String> userAgent = request.headers().all(Http.Header.USER_AGENT);
             assertThat(userAgent, hasSize(1));
             assertThat(userAgent, contains(user));
