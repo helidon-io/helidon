@@ -25,7 +25,15 @@ import io.helidon.webserver.WebServer;
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
 
+/**
+ * Main class of the example.
+ * Boots a web server and provides REST API for Vault interactions.
+ */
 public class OciVaultMain {
+    /**
+     * Main method.
+     * @param args ignored
+     */
     public static void main(String[] args) {
         LogConfig.configureRuntime();
 

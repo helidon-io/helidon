@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.examples.integrations.oci.objectstorage.cdi;
 
 import java.io.InputStream;
@@ -26,6 +42,9 @@ import io.helidon.integrations.oci.objectstorage.PutObject;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+/**
+ * JAX-RS resource - REST API for the objecstorage example.
+ */
 @Path("/files")
 public class ObjectStorageResource {
     private final OciObjectStorage objectStorage;
@@ -39,6 +58,12 @@ public class ObjectStorageResource {
         this.bucketName = bucketName;
     }
 
+    /**
+     * Download a file from object storage.
+     *
+     * @param fileName name of the object
+     * @return response
+     */
     @GET
     @Path("/file/{file-name}")
     public Response download(@PathParam("file-name") String fileName) {
@@ -71,6 +96,15 @@ public class ObjectStorageResource {
         return ok.build();
     }
 
+    /**
+     * Upload a file to object storage.
+     *
+     * @param fileName name of the object
+     * @param contentLength content length (required)
+     * @param type content type
+     * @param entity the entity used for upload
+     * @return response
+     */
     @POST
     @Path("/file/{file-name}")
     public Response upload(@PathParam("file-name") String fileName,
@@ -91,6 +125,12 @@ public class ObjectStorageResource {
                 .build();
     }
 
+    /**
+     * Delete a file from object storage.
+     *
+     * @param fileName object name
+     * @return response
+     */
     @DELETE
     @Path("/file/{file-name}")
     public Response delete(@PathParam("file-name") String fileName) {

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.examples.integrations.oci.vault.cdi;
 
 import java.time.Instant;
@@ -25,6 +41,9 @@ import io.helidon.integrations.oci.vault.Verify;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+/**
+ * JAX-RS resource - REST API of the example.
+ */
 @Path("/vault")
 public class VaultResource {
     private final OciVault vault;
@@ -50,6 +69,12 @@ public class VaultResource {
         this.signatureKeyOcid = signatureKeyOcid;
     }
 
+    /**
+     * Encrypt a string.
+     *
+     * @param secret secret to encrypt
+     * @return cipher text
+     */
     @GET
     @Path("/encrypt/{text}")
     public String encrypt(@PathParam("text") String secret) {
@@ -59,6 +84,12 @@ public class VaultResource {
                 .cipherText();
     }
 
+    /**
+     * Decrypt a cipher text.
+     *
+     * @param cipherText cipher text to decrypt
+     * @return original secret
+     */
     @GET
     @Path("/decrypt/{text: .*}")
     public String decrypt(@PathParam("text") String cipherText) {
@@ -69,6 +100,12 @@ public class VaultResource {
                 .toDecodedString();
     }
 
+    /**
+     * Sign data.
+     *
+     * @param dataToSign data to sign (must be a String)
+     * @return signature text
+     */
     @GET
     @Path("/sign/{text}")
     public String sign(@PathParam("text") String dataToSign) {
@@ -80,6 +117,13 @@ public class VaultResource {
                 .toBase64();
     }
 
+    /**
+     * Verify a signature.
+     *
+     * @param dataToVerify data that was signed
+     * @param signature signature text
+     * @return whether the signature is valid or not
+     */
     @GET
     @Path("/sign/{text}/{signature: .*}")
     public String verify(@PathParam("text") String dataToVerify,
@@ -94,6 +138,12 @@ public class VaultResource {
         return valid ? "Signature valid" : "Signature not valid";
     }
 
+    /**
+     * Get secret content from Vault.
+     *
+     * @param secretOcid OCID of the secret to get
+     * @return content of the secret
+     */
     @GET
     @Path("/secret/{id}")
     public String getSecret(@PathParam("id") String secretOcid) {
@@ -108,6 +158,13 @@ public class VaultResource {
         return response.get().secretString().orElse("");
     }
 
+    /**
+     * Delete a secret from Vault.
+     * This operation actually marks a secret for deletion, and the minimal time is 30 days.
+     *
+     * @param secretOcid OCID of the secret to delete
+     * @return short message
+     */
     @DELETE
     @Path("/secret/{id}")
     public String deleteSecret(@PathParam("id") String secretOcid) {
@@ -121,6 +178,13 @@ public class VaultResource {
         return "Secret " + secretOcid + " was deleted";
     }
 
+    /**
+     * Create a new secret.
+     *
+     * @param name name of the secret
+     * @param secretText secret content
+     * @return OCID of the created secret
+     */
     @POST
     @Path("/secret/{name}")
     public String createSecret(@PathParam("name") String name,

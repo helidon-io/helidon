@@ -25,7 +25,16 @@ import io.helidon.webserver.WebServer;
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
 
+/**
+ * Main class of the example.
+ * This example sets up a web server to serve REST API to upload/download/delete objects.
+ */
 public class OciObjectStorageMain {
+    /**
+     * Main method.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         LogConfig.configureRuntime();
         // as I cannot share my configuration of OCI, let's combine the configuration

@@ -27,7 +27,16 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
+/**
+ * Main class of the example.
+ * This is only used to merge configuration from home directory with the one embedded on classpath.
+ */
 public class ObjectStorageCdiMain {
+    /**
+     * Main method.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         ConfigProviderResolver configProvider = ConfigProviderResolver.instance();
 

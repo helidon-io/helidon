@@ -32,6 +32,10 @@ import static io.helidon.config.ConfigSources.file;
  * OCI Metrics example.
  */
 public class OciMetricsMain {
+    /**
+     * Main method.
+     * @param args ignored
+     */
     public static void main(String[] args) {
         LogConfig.configureRuntime();
         // as I cannot share my configuration of OCI, let's combine the configuration

@@ -15,13 +15,6 @@
  */
 
 /**
- * Example using OCI metrics reactive API.
+ * Example of OCI Vault integration in CDI.
  */
-module io.helidon.examples.integrations.oci.metrics.reactive {
-    requires java.logging;
-
-    requires io.helidon.config;
-    requires io.helidon.integrations.oci.telemetry;
-
-    exports io.helidon.examples.integrations.oci.telemetry.reactive;
-}
+package io.helidon.examples.integrations.oci.vault.cdi;
