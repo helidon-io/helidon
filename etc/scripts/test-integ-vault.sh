@@ -39,9 +39,6 @@ readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
-JAVA_HOME='/tools/graalvm-ce-java11-21.0.0'
-PATH="${PATH}:${JAVA_HOME}/bin"
-
 mvn ${MAVEN_ARGS} --version
 
 # Temporary workaround until job stages will share maven repository
