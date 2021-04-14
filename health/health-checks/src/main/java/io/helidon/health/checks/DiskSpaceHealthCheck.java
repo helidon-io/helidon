@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.Locale;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import io.helidon.config.Config;
 import io.helidon.health.HealthCheckException;
 import io.helidon.health.common.BuiltInHealthCheck;
 
@@ -78,14 +79,25 @@ public final class DiskSpaceHealthCheck implements HealthCheck {
      * {@link org.eclipse.microprofile.health.HealthCheckResponse.State#DOWN}.
      */
     public static final double DEFAULT_THRESHOLD = 99.999;
+
+    static final String CONFIG_KEY_DISKSPACE_PREFIX = "diskSpace";
+
+    static final String CONFIG_KEY_PATH_SUFFIX = "path";
+    static final String CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX = "thresholdPercent";
+
     /**
-     * Configuration key for path, when configured through Microprofile config.
+     * Full configuration key for path, when configured through MicroProfile config.
      */
-    public static final String CONFIG_KEY_PATH = "helidon.health.diskSpace.path";
+    public static final String CONFIG_KEY_PATH = HealthChecks.CONFIG_KEY_HEALTH_PREFIX
+            + "." + CONFIG_KEY_DISKSPACE_PREFIX
+            + "." + CONFIG_KEY_PATH_SUFFIX;
+
     /**
-     * Configuration key for threshold percent, when configured through Microprofile config.
+     * Full configuration key for threshold percent, when configured through Microprofile config.
      */
-    public static final String CONFIG_KEY_THRESHOLD_PERCENT = "helidon.health.diskSpace.thresholdPercent";
+    public static final String CONFIG_KEY_THRESHOLD_PERCENT = HealthChecks.CONFIG_KEY_HEALTH_PREFIX
+            + "." + CONFIG_KEY_DISKSPACE_PREFIX
+            + "." + CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX;
 
     private static final long KB = 1024;
     private static final long MB = 1024 * KB;
@@ -236,6 +248,24 @@ public final class DiskSpaceHealthCheck implements HealthCheck {
          */
         public Builder thresholdPercent(double threshold) {
             this.threshold = threshold;
+            return this;
+        }
+
+        /**
+         * Set up the disk space health check via config keys, if present.
+         *
+         * @param config root {@code Config} node
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get(CONFIG_KEY_PATH_SUFFIX)
+                    .as(Path.class)
+                    .ifPresent(this::path);
+
+            config.get(CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX)
+                    .asDouble()
+                    .ifPresent(this::thresholdPercent);
+
             return this;
         }
     }
