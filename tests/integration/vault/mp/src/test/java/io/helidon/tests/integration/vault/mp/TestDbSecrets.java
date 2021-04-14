@@ -20,10 +20,13 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.inject.Inject;
 
+import io.helidon.config.mp.MpConfigSources;
+import io.helidon.config.yaml.YamlMpConfigSource;
 import io.helidon.integrations.vault.cdi.VaultCdiExtension;
 import io.helidon.integrations.vault.secrets.database.DbCreateRole;
 import io.helidon.integrations.vault.secrets.database.DbCredentials;
@@ -32,10 +35,15 @@ import io.helidon.integrations.vault.secrets.database.MySqlConfigureRequest;
 import io.helidon.integrations.vault.sys.Sys;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.Configuration;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -52,6 +60,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @AddExtension(VaultCdiExtension.class)
 @AddExtension(ConfigCdiExtension.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Configuration(useExisting = true)
 class TestDbSecrets {
     @Inject
     DbSecrets db;
@@ -62,6 +71,17 @@ class TestDbSecrets {
     @Inject
     @ConfigProperty(name = "vault.db.host", defaultValue = "localhost")
     String dbHost;
+
+    @BeforeAll
+    static void setupConfig() {
+        ConfigProviderResolver resolver = ConfigProviderResolver.instance();
+        Config config = resolver.getBuilder()
+                .withSources(MpConfigSources.systemProperties())
+                .withSources(MpConfigSources.create(Map.of("mp.initializer.allow", "true")))
+                .withSources(YamlMpConfigSource.classPath("vault-application.yaml").toArray(new ConfigSource[0]))
+                .build();
+        resolver.registerConfig(config, null);
+    }
 
     @Test
     @Order(1)

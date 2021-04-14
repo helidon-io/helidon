@@ -27,16 +27,6 @@ pipeline {
   stages {
     stage('default') {
       parallel {
-        stage('copyright'){
-          steps {
-            sh './etc/scripts/copyright.sh'
-          }
-        }
-        stage('checkstyle'){
-          steps {
-            sh './etc/scripts/checkstyle.sh'
-          }
-        }
         stage('integration-tests') {
           stages {
             stage('test-vault') {
