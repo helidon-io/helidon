@@ -120,7 +120,6 @@ public class GreetResource {
      * @param jsonObject JSON containing the new greeting
      * @return {@link Response}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @Path("/greeting")
     @PUT
     @Operation(summary = "Set the greeting prefix",
