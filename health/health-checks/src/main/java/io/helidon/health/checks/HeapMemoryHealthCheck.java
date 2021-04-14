@@ -155,7 +155,7 @@ public final class HeapMemoryHealthCheck implements HealthCheck {
         /**
          * Set up the heap space health check via config key, if present.
          *
-         * @param config root {@code Config} node
+         * @param config {@code Config} node for heap memory
          * @return updated builder instance
          */
         public Builder config(Config config) {

@@ -254,7 +254,7 @@ public final class DiskSpaceHealthCheck implements HealthCheck {
         /**
          * Set up the disk space health check via config keys, if present.
          *
-         * @param config root {@code Config} node
+         * @param config {@code Config} node for disk space
          * @return updated builder instance
          */
         public Builder config(Config config) {
