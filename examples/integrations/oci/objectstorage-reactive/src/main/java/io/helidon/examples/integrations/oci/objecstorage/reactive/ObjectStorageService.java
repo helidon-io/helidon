@@ -22,6 +22,7 @@ import java.util.OptionalLong;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.integrations.oci.objectstorage.DeleteObject;
+import io.helidon.integrations.oci.objectstorage.GetObject;
 import io.helidon.integrations.oci.objectstorage.GetObjectRx;
 import io.helidon.integrations.oci.objectstorage.OciObjectStorageRx;
 import io.helidon.integrations.oci.objectstorage.PutObject;
@@ -96,7 +97,7 @@ class ObjectStorageService implements Service {
     private void download(ServerRequest req, ServerResponse res) {
         String objectName = req.path().param("file-name");
 
-        objectStorage.getObject(GetObjectRx.Request.builder()
+        objectStorage.getObject(GetObject.Request.builder()
                                         .bucket(bucketName)
                                         .objectName(objectName))
                 .forSingle(apiResponse -> {

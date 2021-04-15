@@ -42,8 +42,27 @@ abstract class OciConfigPrincipalBase {
         Single<String> claim(String claimName);
     }
 
-    public static class Builder<B extends Builder<B>> {
+    /**
+     * Fluent API builder base for {@link io.helidon.integrations.oci.connect.OciConfigPrincipalBase}
+     * subclasses.
+     *
+     * @param <B> builder type
+     */
+    static class Builder<B extends Builder<B>> {
         private SessionKeySupplier keySupplier;
         private FederationClient federationClient;
+
+        protected Builder() {
+        }
+
+        Builder<B> keySupplier(SessionKeySupplier keySupplier) {
+            this.keySupplier = keySupplier;
+            return this;
+        }
+
+        Builder<B> federationClient(FederationClient federationClient) {
+            this.federationClient = federationClient;
+            return this;
+        }
     }
 }

@@ -114,7 +114,6 @@ public interface OciObjectStorageRx {
     class Builder implements io.helidon.common.Builder<OciObjectStorageRx> {
         private final OciRestApi.Builder apiBuilder = OciRestApi.builder();
 
-        private String apiVersion = API_VERSION;
         private String hostPrefix = API_HOST_PREFIX;
         private String namespace;
         private String endpoint;
@@ -142,7 +141,6 @@ public interface OciObjectStorageRx {
             apiBuilder.config(config);
             config.get("objectstorage.host-prefix").asString().ifPresent(this::hostPrefix);
             config.get("objectstorage.endpoint").asString().ifPresent(this::endpoint);
-            config.get("objectstorage.api-version").asString().ifPresent(this::apiVersion);
             config.get("objectstorage.namespace").asString().ifPresent(this::namespace);
             return this;
         }
@@ -189,18 +187,6 @@ public interface OciObjectStorageRx {
          */
         public Builder namespace(String namespace) {
             this.namespace = namespace;
-            return this;
-        }
-
-        /**
-         * API version is ignored in this version of OCI Object Storage API, as the
-         * URI does not include it.
-         *
-         * @param apiVersion API version
-         * @return updated builder
-         */
-        public Builder apiVersion(String apiVersion) {
-            this.apiVersion = apiVersion;
             return this;
         }
 

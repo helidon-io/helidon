@@ -164,6 +164,7 @@ public class OciConfigProfile implements OciConfigProvider {
     public static class Builder implements io.helidon.common.Builder<OciConfigProfile> {
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
         private static final String DEFAULT_PROFILE = "DEFAULT";
+        private static final String DEFAULT_PROFILE_PATH = "~/.oci/config";
 
         private final Map<String, String> fullConfig = new HashMap<>();
 
@@ -451,12 +452,7 @@ public class OciConfigProfile implements OciConfigProvider {
         }
 
         private Path defaultPath() {
-            Path location = Paths.get("~/.oci/config");
-            if (Files.exists(location)) {
-                return location;
-            }
-            // maybe ~ does not work
-            location = Paths.get(System.getProperty("user.home"));
+            Path location = Paths.get(System.getProperty("user.home"));
             location = location.resolve(".oci").resolve("config");
 
             return location;
