@@ -151,7 +151,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
     private static MetricsSupportForCdi metricsSupport;
 
     static Supplier<org.eclipse.microprofile.metrics.ConcurrentGauge> inflightRequests() {
-        return () -> metricsSupport.inflightRequests();
+        return () -> metricsSupport == null ? null : metricsSupport.inflightRequests();
     }
 
     @SuppressWarnings("unchecked")
