@@ -20,6 +20,9 @@ import javax.json.JsonObject;
 
 import io.helidon.integrations.common.rest.ApiEntityResponse;
 
+/**
+ * Renew Token request and response.
+ */
 public final class RenewToken {
     private RenewToken() {
     }

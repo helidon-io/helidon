@@ -220,6 +220,9 @@ public final class CreateToken {
         }
     }
 
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
     public static final class Response extends TokenResponse {
         private Response(Builder builder) {
             super(builder);

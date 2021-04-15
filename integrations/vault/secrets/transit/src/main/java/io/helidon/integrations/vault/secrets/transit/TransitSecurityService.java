@@ -21,6 +21,9 @@ import io.helidon.integrations.vault.Vault;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
 
+/**
+ * Service provider for {@link io.helidon.security.spi.SecurityProviderService} for transit secrets.
+ */
 public class TransitSecurityService implements SecurityProviderService {
     @Override
     public String providerConfigKey() {

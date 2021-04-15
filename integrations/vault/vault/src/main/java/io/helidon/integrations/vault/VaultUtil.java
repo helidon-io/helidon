@@ -27,6 +27,9 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
+/**
+ * Utility class for Vault API.
+ */
 public final class VaultUtil {
     private VaultUtil() {
     }

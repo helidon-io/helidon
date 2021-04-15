@@ -18,10 +18,16 @@ package io.helidon.integrations.vault.auths.approle;
 
 import io.helidon.integrations.common.rest.ApiResponse;
 
+/**
+ * Delete AppRole request and response.
+ */
 public final class DeleteAppRole {
     private DeleteAppRole() {
     }
 
+    /**
+     * Request object. Can be configured with additional headers, query parameters etc.
+     */
     public static class Request extends AppRoleRequestBase<Request> {
         private Request() {
         }

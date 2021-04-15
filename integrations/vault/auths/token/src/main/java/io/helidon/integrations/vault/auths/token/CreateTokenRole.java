@@ -209,6 +209,9 @@ public final class CreateTokenRole {
         }
     }
 
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
     public static final class Response extends ApiResponse {
         private Response(Builder builder) {
             super(builder);
