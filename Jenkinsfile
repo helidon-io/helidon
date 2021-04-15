@@ -27,6 +27,28 @@ pipeline {
   stages {
     stage('default') {
       parallel {
+        stage('build'){
+          steps {
+            script {
+              try {
+                sh './etc/scripts/build.sh'
+              } finally {
+                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt, **/target/failsafe-reports/*.txt"
+                junit testResults: '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
+              }
+            }
+          }
+        }
+        stage('copyright'){
+          steps {
+            sh './etc/scripts/copyright.sh'
+          }
+        }
+        stage('checkstyle'){
+          steps {
+            sh './etc/scripts/checkstyle.sh'
+          }
+        }
         stage('integration-tests') {
           stages {
             stage('test-vault') {
@@ -39,7 +61,6 @@ pipeline {
               }
               steps {
                 sh './etc/scripts/test-integ-vault.sh'
-                sh 'sleep 3600'
                 archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
                 junit testResults: '**/target/surefire-reports/*.xml'
               }
