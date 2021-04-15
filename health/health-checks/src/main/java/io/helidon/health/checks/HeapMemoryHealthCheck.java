@@ -155,6 +155,23 @@ public final class HeapMemoryHealthCheck implements HealthCheck {
         /**
          * Set up the heap space health check via config key, if present.
          *
+         * Configuration options:
+         * <table class="config">
+         * <caption>Heap space health check configuration</caption>
+         * <tr>
+         *     <th>Key</th>
+         *     <th>Default Value</th>
+         *     <th>Description</th>
+         *     <th>Builder method</th>
+         * </tr>
+         * <tr>
+         *     <td>{@value CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX}</td>
+         *     <td>{@value DEFAULT_THRESHOLD}</td>
+         *     <td>Minimum percent of heap memory consumed for this health check to fail</td>
+         *     <td>{@link #thresholdPercent(double)}</td>
+         * </tr>
+         * </table>
+         *
          * @param config {@code Config} node for heap memory
          * @return updated builder instance
          */
