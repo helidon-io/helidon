@@ -26,21 +26,19 @@ pipeline {
   }
   stages {
     stage('default') {
-      stage('integration-tests') {
-        stages {
-          stage('test-vault') {
-            agent {
-              kubernetes {
-                inheritFrom 'k8s-slave'
-                yamlFile 'etc/pods/vault.yaml'
-                yamlMergeStrategy merge()
-              }
+      stages {
+        stage('test-vault') {
+          agent {
+            kubernetes {
+              inheritFrom 'k8s-slave'
+              yamlFile 'etc/pods/vault.yaml'
+              yamlMergeStrategy merge()
             }
-            steps {
-              sh './etc/scripts/test-integ-vault.sh'
-              archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
-              junit testResults: '**/target/surefire-reports/*.xml'
-            }
+          }
+          steps {
+            sh './etc/scripts/test-integ-vault.sh'
+            archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
+            junit testResults: '**/target/surefire-reports/*.xml'
           }
         }
       }
