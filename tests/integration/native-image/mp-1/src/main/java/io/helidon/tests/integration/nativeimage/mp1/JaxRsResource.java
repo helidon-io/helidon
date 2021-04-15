@@ -174,4 +174,10 @@ public class JaxRsResource {
     public String queryParam(@QueryParam("boolean") Boolean booleanParam) {
         return String.valueOf(booleanParam);
     }
+
+    @GET
+    @Path("/queryparam3")
+    public String queryParam(@QueryParam("int") int intParam) {
+        return String.valueOf(intParam);
+    }
 }

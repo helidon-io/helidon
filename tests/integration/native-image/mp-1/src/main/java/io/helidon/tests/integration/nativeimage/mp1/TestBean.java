@@ -111,6 +111,11 @@ public class TestBean {
                 .queryParam(param);
     }
 
+    public String restClientQuery(int param) {
+        return restClient()
+                .queryParam(param);
+    }
+
     @Fallback(fallbackMethod = "fallbackTo")
     public String fallback() {
         throw new RuntimeException("intentional failure");
