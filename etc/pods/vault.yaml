@@ -22,6 +22,7 @@ spec:
   containers:
     - name: mysql
       image: mysql:8
+      imagePullPolicy: "IfNotPresent"
       ports:
         - containerPort: 3306
       env:
@@ -34,7 +35,8 @@ spec:
         - name: MYSQL_DATABASE
           value: "pokemon"
     - name: vault
-      image: vault
+      image: vault:1.7.0
+      imagePullPolicy: "IfNotPresent"
       ports:
         - containerPort: 8200
       env:
