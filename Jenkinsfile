@@ -26,44 +26,20 @@ pipeline {
   }
   stages {
     stage('default') {
-      parallel {
-        stage('build'){
-          steps {
-            script {
-              try {
-                sh './etc/scripts/build.sh'
-              } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt, **/target/failsafe-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
+      stage('integration-tests') {
+        stages {
+          stage('test-vault') {
+            agent {
+              kubernetes {
+                inheritFrom 'k8s-slave'
+                yamlFile 'etc/pods/vault.yaml'
+                yamlMergeStrategy merge()
               }
             }
-          }
-        }
-        stage('copyright'){
-          steps {
-            sh './etc/scripts/copyright.sh'
-          }
-        }
-        stage('checkstyle'){
-          steps {
-            sh './etc/scripts/checkstyle.sh'
-          }
-        }
-        stage('integration-tests') {
-          stages {
-            stage('test-vault') {
-              agent {
-                kubernetes {
-                  inheritFrom 'k8s-slave'
-                  yamlFile 'etc/pods/vault.yaml'
-                  yamlMergeStrategy merge()
-                }
-              }
-              steps {
-                sh './etc/scripts/test-integ-vault.sh'
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml'
-              }
+            steps {
+              sh './etc/scripts/test-integ-vault.sh'
+              archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
+              junit testResults: '**/target/surefire-reports/*.xml'
             }
           }
         }
