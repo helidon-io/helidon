@@ -21,17 +21,22 @@ module io.helidon.integrations.oci.connect {
     requires java.logging;
 
     requires io.helidon.common;
-    requires io.helidon.config;
-    requires io.helidon.security;
-    requires java.json;
-    requires transitive io.helidon.common.http;
     requires io.helidon.common.pki;
+    requires io.helidon.faulttolerance;
+    requires io.helidon.media.jsonp;
+    requires io.helidon.security;
     requires io.helidon.security.providers.common;
     requires io.helidon.security.providers.httpsign;
     requires io.helidon.security.util;
-    requires io.helidon.webclient;
     requires io.helidon.webclient.security;
+
+    requires transitive java.json;
+
+    requires transitive io.helidon.common.http;
+    requires transitive io.helidon.common.reactive;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.integrations.common.rest;
+    requires transitive io.helidon.webclient;
 
     exports io.helidon.integrations.oci.connect;
     exports io.helidon.integrations.oci.connect.spi;

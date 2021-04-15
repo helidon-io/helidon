@@ -60,16 +60,24 @@
             <artifactId>helidon-webclient-security</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient-tracing</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.security.providers</groupId>
             <artifactId>helidon-security-providers-http-sign</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.media</groupId>
             <artifactId>helidon-media-jsonp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-key-util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-util</artifactId>
         </dependency>
     </dependencies>
 </project>
