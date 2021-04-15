@@ -37,6 +37,7 @@ pipeline {
           }
           steps {
             sh './etc/scripts/test-integ-vault.sh'
+            sh 'sleep 3600'
             archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
             junit testResults: '**/target/surefire-reports/*.xml'
           }
