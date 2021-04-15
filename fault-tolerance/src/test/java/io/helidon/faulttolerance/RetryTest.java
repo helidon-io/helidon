@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 package io.helidon.faulttolerance;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Flow;
@@ -212,6 +214,55 @@ class RetryTest {
         assertThat(ts.throwable.get(), instanceOf(RetryException.class));
         assertThat("Should not be completed", ts.completed.get(), is(false));
 
+    }
+
+    @Test
+    public void testLastDelay() {
+        List<Long> lastDelayCalls = new ArrayList<>();
+        Retry retry = Retry.builder()
+                .retryPolicy((firstCallMillis, lastDelay, call) -> {
+                    lastDelayCalls.add(lastDelay);
+                    return Optional.of(lastDelay + 1);
+                })
+                .build();
+
+
+        Request req = new Request(3, new RetryException(), new RetryException());
+        Single<Integer> result = retry.invoke(req::invoke);
+        result.await(1, TimeUnit.SECONDS);
+        assertThat(req.call.get(), is(4));
+
+        assertThat("Last delay should increase", lastDelayCalls, contains(0L, 1L, 2L));
+    }
+
+    @Test
+    public void testMultiLastDelay() throws InterruptedException {
+        List<Long> lastDelayCalls = new ArrayList<>();
+        Retry retry = Retry.builder()
+                .retryPolicy((firstCallMillis, lastDelay, call) -> {
+                    lastDelayCalls.add(lastDelay);
+                    return Optional.of(lastDelay + 1);
+                })
+                .build();
+
+        AtomicInteger count = new AtomicInteger();
+
+        TestSubscriber ts = new TestSubscriber();
+
+        Multi<Integer> multi = retry.invokeMulti(() -> {
+            if (count.getAndIncrement() < 3) {
+                return Multi.error(new RetryException());
+            } else {
+                return Multi.just(0, 1, 2);
+            }
+        });
+
+        multi.subscribe(ts);
+        ts.request(2);
+
+        ts.cdl.await(1, TimeUnit.SECONDS);
+
+        assertThat("Last delay should increase", lastDelayCalls, contains(0L, 1L, 2L));
     }
 
     private static class PartialPublisher implements Flow.Publisher<Integer> {
