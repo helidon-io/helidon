@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -124,7 +124,7 @@ public class ExampleConnector implements IncomingConnectorFactory {
 
 An explicit config for channel's publisher is possible with `Channel.Builder#publisherConfig(Config config)`
 and for subscriber with `Channel.Builder#subscriberConfig(Config config)`.
-Supplied <<se/config/01_introduction.adoc,Heldion Config>> is merged with
+Supplied <<se/config/01_introduction.adoc,Helidon Config>> is merged with
 mandatory attributes and any implicit config found. Resulting config is served to Connector.
 
 [source,java]
@@ -162,7 +162,7 @@ Messaging messaging = Messaging.builder()
 <3> Prepare Kafka connector, can be used by any channel
 
 ==== Implicit Config
-Implicit config without any hard-coding is possible with <<se/config/01_introduction.adoc,Heldion Config>>  following notation of link:https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_configuration[MicroProfile Reactive Messaging].
+Implicit config without any hard-coding is possible with <<se/config/01_introduction.adoc,Helidon Config>>  following notation of link:https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_configuration[MicroProfile Reactive Messaging].
 
 [source,yaml]
 .Example of channel to connector mapping config with custom properties:
