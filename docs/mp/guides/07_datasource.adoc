@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -184,7 +184,7 @@ Here, the `test` data source is requested.
 
 Now that you have a `DataSource`, you'll use it to connect to the database.
 
-First, ensure the `io.heldion.example.ds.ExampleResource` resource
+First, ensure the `io.helidon.example.ds.ExampleResource` resource
 class imports various `java.sql` classes:
 
 [source,java]
