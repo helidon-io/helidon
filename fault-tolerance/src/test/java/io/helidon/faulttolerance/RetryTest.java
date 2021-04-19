@@ -265,24 +265,6 @@ class RetryTest {
         assertThat("Last delay should increase", lastDelayCalls, contains(0L, 1L, 2L));
     }
 
-    private static class PartialPublisher implements Flow.Publisher<Integer> {
-        @Override
-        public void subscribe(Flow.Subscriber<? super Integer> subscriber) {
-            subscriber.onSubscribe(new Flow.Subscription() {
-                @Override
-                public void request(long n) {
-                    subscriber.onNext(1);
-                    subscriber.onError(new RetryException());
-                }
-
-                @Override
-                public void cancel() {
-
-                }
-            });
-        }
-    }
-
     private static class TestSubscriber implements Flow.Subscriber<Integer> {
         private final AtomicBoolean failed = new AtomicBoolean();
         private final AtomicReference<Throwable> throwable = new AtomicReference<>();
