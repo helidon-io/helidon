@@ -49,3 +49,4 @@ etc/HELIDON_THIRD_PARTY_LICENSES.xml
 etc/dependency-check-suppression.xml
 target/
 /archetypes/
+.git/

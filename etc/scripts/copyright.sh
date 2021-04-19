@@ -24,12 +24,20 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
+readonly LOG_FILE=$(mktemp -t XXXcopyright-log)
+
 readonly RESULT_FILE=$(mktemp -t XXXcopyright-result)
 
 die() { echo "${1}" ; exit 1 ;}
 
 mvn ${MAVEN_ARGS} \
         -f ${WS_DIR}/pom.xml \
-        -Pexamples,docs,ossrh-releases,tests,copyright \
+        -Dhelidon.enforcer.output.file="${RESULT_FILE}" \
+        -Dhelidon.enforcer.rules=copyright \
+        -Dhelidon.enforcer.failOnError=false \
+        -Pcopyright \
         -N \
-        validate
+        validate > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
+
+grep "^\[ERROR\]" ${RESULT_FILE} \
+    && die "COPYRIGHT ERROR" || echo "COPYRIGHT OK"
