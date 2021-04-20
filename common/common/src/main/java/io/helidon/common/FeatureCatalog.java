@@ -169,6 +169,14 @@ final class FeatureCatalog {
                     .nativeDescription("Experimental support, tested on limited use cases")
                     .flavor(HelidonFlavor.SE)
                     .experimental(true));
+        add("io.helidon.integrations.micrometer",
+            FeatureDescriptor.builder()
+                    .name("Micrometer")
+                    .description("Micrometer integration")
+                    .path("Micrometer")
+                    .experimental(true)
+                    .nativeSupported(true)
+                    .flavor(HelidonFlavor.SE));
 
         /*
          * MP Modules
@@ -343,14 +351,14 @@ final class FeatureCatalog {
                     .experimental(true)
         );
 
-        addSe("io.helidon.integrations.micrometer",
-                    "Micrometer",
-                    "Micrometer integration",
-                    "Micrometer");
-        addMp("io.helidon.integrations.micrometer.cdi",
-                "Micrometer",
-                "Micrometer integration",
-                "Micrometer");
+        add("io.helidon.integrations.micrometer.cdi",
+            FeatureDescriptor.builder()
+                    .name("Micrometer")
+                    .description("Micrometer integration")
+                    .path("Micrometer")
+                    .experimental(true)
+                    .nativeSupported(true)
+                    .flavor(HelidonFlavor.MP));
 
         /*
          * Common modules
