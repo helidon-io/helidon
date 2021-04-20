@@ -11,16 +11,22 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 2.3.0 is a minor release of Helidon that contains bug fixes and enhancements. Notable enhancements:
 
-* HashiCorp Vault support
+* gRPC native image support
+* Reloadable WebServer TLS certificates
+* New metric: Exemplars
+* Performance improvements for JAX-RS applications with large number of concurrent connections
+* Scheduling feature to schedule periodic tasks 
+
+Experimental:
+
+* HashiCorp Vault support 
 * Oracle OCI Vault support
 * Oracle OCI Object Storage support (replaces older MP only version)
 * Neo4J support
-* gRPC native image support
-* Scheduling feature to schedule periodic tasks 
-* Reloadable WebServer TLS certificates
 * Micrometer metrics support
-* New metric: Exemplars
-* Performance improvements for JAX-RS applications with large number of concurrent connections
+
+Experimental features are tested, supported and ready for use. But their APIs are subject to change.
+
 
 ### Compatibility
 
