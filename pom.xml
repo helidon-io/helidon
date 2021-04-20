@@ -1325,12 +1325,6 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
-                                    <fileConfig>
-                                        <gitBranch>master</gitBranch>
-                                        <useGit>true</useGit>
-                                        <checkAll>false</checkAll>
-                                        <honorGitIgnore>true</honorGitIgnore>
-                                    </fileConfig>
                                     <copyrightConfig>
                                         <failOnError>true</failOnError>
                                         <!--suppress UnresolvedMavenProperty -->
