@@ -1,4 +1,4 @@
-# Heldion's Application Pom
+# Helidon's Application Pom
 
 PR [1022](https://github.com/oracle/helidon/pull/1022) introduced Helidon application parent
 poms. These are poms to be used by Helidon applications. This PR also re-structured the Helidon project poms. This document gives an 

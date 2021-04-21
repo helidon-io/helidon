@@ -28,6 +28,7 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+
 import org.junit.jupiter.api.Test;
 
 @HelidonTest
@@ -96,4 +97,8 @@ class TenantTest {
         assertThat(entityValue, is("1"));
     }
 
+    @Test
+    public void testStartup() {
+        assertThat(StartupServices.SUCCESSFUL_STARTUP.get(), is(true));
+    }
 }

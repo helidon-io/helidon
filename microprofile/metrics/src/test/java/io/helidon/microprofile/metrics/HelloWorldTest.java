@@ -28,7 +28,9 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
+import io.helidon.common.http.Http;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
@@ -134,6 +136,20 @@ public class HelloWorldTest {
         assertThat("SimpleTimer from @SyntheticSimplyTimed count", syntheticSimpleTimer.getCount(), is(expectedSyntheticSimpleTimerCount));
     }
 
+    @Test
+    public void checkMetricsVendorURL() {
+        Response response = webTarget
+                .path("metrics/vendor")
+                .request()
+                .accept(MediaType.APPLICATION_JSON_TYPE)
+                .get();
+
+        assertThat("Metrics /metrics/vendor URL HTTP status", response.getStatus(), is(Http.Status.OK_200.code()));
+
+        JsonObject vendorMetrics = response.readEntity(JsonObject.class);
+
+        assertThat("Vendor metric requests.count present", vendorMetrics.containsKey("requests.count"), is(true));
+    }
 
     SimpleTimer getSyntheticSimpleTimer(String methodName, Class<?>... paramTypes) {
         try {

@@ -20,14 +20,10 @@ import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-
+import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.SimpleTimer;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
-
-import java.lang.reflect.Method;
 
 /**
  * Class MetricsBaseTest.
@@ -40,29 +36,16 @@ public class MetricsBaseTest {
     @Inject
     private MetricRegistry metricRegistry;
 
-    @Inject
-    @RegistryType(type = MetricRegistry.Type.BASE)
-    private MetricRegistry baseRegistry;
-
     MetricRegistry getMetricRegistry() {
         return metricRegistry;
     }
 
-    <T extends Metric> T getMetric(Object bean, String name) {
-        return getMetric(getMetricRegistry(), bean, name);
-    }
-
     @SuppressWarnings("unchecked")
-    <T extends Metric> T getMetric(MetricRegistry registry, Object bean, String name) {
+    <T extends Metric> T getMetric(Object bean, String name) {
         MetricID metricName = new MetricID(String.format(METRIC_NAME_TEMPLATE,
                 MetricsCdiExtension.getRealClass(bean).getName(),        // CDI proxies
                 name));
-        return (T)registry.getMetrics().get(metricName);
-    }
-
-    SimpleTimer getSyntheticSimpleTimer(Method method) {
-        MetricID metricID = MetricsCdiExtension.syntheticSimpleTimerMetricID(method);
-        return baseRegistry.getSimpleTimers().get(metricID);
+        return (T) getMetricRegistry().getMetrics().get(metricName);
     }
 
     <T> T newBean(Class<T> beanClass) {

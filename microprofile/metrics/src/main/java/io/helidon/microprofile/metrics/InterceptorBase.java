@@ -23,11 +23,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.inject.Inject;
-import javax.interceptor.AroundConstruct;
-import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
 import io.helidon.microprofile.metrics.MetricsCdiExtension.MetricWorkItem;
+import io.helidon.servicecommon.restcdi.HelidonInterceptor;
 
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -41,7 +40,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
  * </p>
  * @param <M> type of metrics the interceptor handles
  */
-abstract class InterceptorBase<M extends Metric> {
+abstract class InterceptorBase<M extends Metric> extends HelidonInterceptor.Base<MetricWorkItem> {
 
     private static final Logger LOGGER = Logger.getLogger(InterceptorBase.class.getName());
 
@@ -86,19 +85,8 @@ abstract class InterceptorBase<M extends Metric> {
         return metricsForVerification;
     }
 
-    @AroundConstruct
-    Object aroundConstruct(InvocationContext context) throws Exception {
-        InterceptionTargetInfo<MetricWorkItem> interceptionTargetInfo = extension.interceptInfo(context.getConstructor());
-        return interceptionTargetInfo.runner().run(context, interceptionTargetInfo.workItems(annotationType), this::preInvoke);
-    }
-
-    @AroundInvoke
-    Object aroundInvoke(InvocationContext context) throws Exception {
-        InterceptionTargetInfo<MetricWorkItem> interceptionTargetInfo = extension.interceptInfo(context.getMethod());
-        return interceptionTargetInfo.runner().run(context, interceptionTargetInfo.workItems(annotationType), this::preInvoke);
-    }
-
-    void preInvoke(InvocationContext context, MetricWorkItem workItem) {
+    @Override
+    public void preInvocation(InvocationContext context, MetricWorkItem workItem) {
         invokeVerifiedAction(context, workItem, this::preInvoke, ActionType.PREINVOKE);
     }
 

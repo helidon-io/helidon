@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ module io.helidon.health.checks {
     requires static jakarta.inject.api;
 
     requires io.helidon.common;
+    requires io.helidon.config;
     requires io.helidon.health;
     requires io.helidon.health.common;
     requires static microprofile.config.api;

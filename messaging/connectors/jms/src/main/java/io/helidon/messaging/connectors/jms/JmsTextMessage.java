@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,9 @@ import javax.jms.JMSException;
 
 import io.helidon.messaging.MessagingException;
 
+/**
+ * A JMS Text message representation.
+ */
 public class JmsTextMessage extends AbstractJmsMessage<String> {
 
     private final javax.jms.TextMessage msg;

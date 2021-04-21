@@ -27,6 +27,7 @@ on the Jaeger tracer.
 
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
+// tag::jaeger-dependency[]
 [source,xml]
 ----
 <dependency>
@@ -34,7 +35,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
     <artifactId>helidon-tracing-jaeger</artifactId>
 </dependency>
 ----
-
+// end::jaeger-dependency[]
 == Configuring Jaeger
 
 The Jaeger tracer supports the following configuration options:

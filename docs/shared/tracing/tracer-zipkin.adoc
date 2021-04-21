@@ -26,6 +26,7 @@ on the Zipkin tracer.
 
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
+// tag::zipkin-dependency[]
 [source,xml]
 ----
 <dependency>
@@ -33,6 +34,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
     <artifactId>helidon-tracing-zipkin</artifactId>
 </dependency>
 ----
+// end::zipkin-dependency[]
 
 == Configuring Zipkin
 
