@@ -56,6 +56,11 @@ chmod +x ./helidon
 sudo mv ./helidon /usr/local/bin/
 ```
 
+Windows:
+```bat
+PowerShell -Command Invoke-WebRequest -Uri "https://helidon.io/cli/latest/windows/helidon.exe" -OutFile "C:\Windows\system32\helidon.exe"
+```
+
 See this [document](HELIDON-CLI.md) for more info.
 
 ## Build
