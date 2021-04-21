@@ -157,11 +157,7 @@ public class OciCdiExtension implements Extension {
                 abd.addBean(new QualifiedBean<>(OciRestApi.class,
                                                 OciRestApi.class,
                                                 Set.of(named),
-                                                () -> {
-                                                    System.out.println("Creating OCI REST API from config: " + config.get(name)
-                                                            .key());
-                                                    return OciRestApi.create(config.get(name));
-                                                }
+                                                () -> OciRestApi.create(config.get(name))
                 ));
             }
         }

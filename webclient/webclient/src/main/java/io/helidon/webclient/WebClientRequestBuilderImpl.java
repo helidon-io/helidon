@@ -742,8 +742,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         } catch (IOException e) {
             throw new WebClientException("An error occurred while setting cookies.", e);
         }
-        Map<String, List<String>> headerMap = this.headers.toMap();
-        headerMap.forEach(headers::add);
+        this.headers.toMap().forEach(headers::add);
         addHeaderIfAbsent(headers, HttpHeaderNames.HOST, uri.getHost() + ":" + uri.getPort());
         addHeaderIfAbsent(headers, HttpHeaderNames.CONNECTION, keepAlive ? HttpHeaderValues.KEEP_ALIVE : HttpHeaderValues.CLOSE);
         addHeaderIfAbsent(headers, HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
