@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.examples.messaging.se;
@@ -38,6 +36,9 @@ import io.helidon.messaging.connectors.kafka.KafkaConnector;
 
 import org.apache.kafka.common.serialization.StringDeserializer;
 
+/**
+ * Web socket endpoint.
+ */
 public class WebSocketEndpoint extends Endpoint {
 
     private static final Logger LOGGER = Logger.getLogger(WebSocketEndpoint.class.getName());

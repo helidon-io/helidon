@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -497,9 +497,9 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         private static final String CONFIG_PUBLIC_KEY_PATH = "mp.jwt.verify.publickey.location";
         private static final String JSON_START_MARK = "{";
         private static final Pattern PUBLIC_KEY_PATTERN = Pattern.compile(
-                "-+BEGIN\\s+.*PUBLIC\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" + // Header
-                        "([a-z0-9+/=\\r\\n\\s]+)" +                       // Base64 text
-                        "-+END\\s+.*PUBLIC\\s+KEY[^-]*-+",            // Footer
+                "-+BEGIN\\s+.*PUBLIC\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" // Header
+                        + "([a-z0-9+/=\\r\\n\\s]+)"                       // Base64 text
+                        + "-+END\\s+.*PUBLIC\\s+KEY[^-]*-+",              // Footer
                 Pattern.CASE_INSENSITIVE);
 
         private String expectedIssuer;

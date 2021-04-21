@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Locale;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import io.helidon.config.Config;
 import io.helidon.health.common.BuiltInHealthCheck;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -56,10 +57,16 @@ public final class HeapMemoryHealthCheck implements HealthCheck {
      */
     public static final double DEFAULT_THRESHOLD = 98;
 
+    static final String CONFIG_KEY_HEAP_PREFIX = "heapMemory";
+
+    static final String CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX = "thresholdPercent";
+
     /**
      * Config property key for heap memory threshold.
      */
-    public static final String CONFIG_KEY_THRESHOLD_PERCENT = "helidon.health.heapMemory.thresholdPercent";
+    public static final String CONFIG_KEY_THRESHOLD_PERCENT = HealthChecks.CONFIG_KEY_HEALTH_PREFIX
+            + "." + CONFIG_KEY_HEAP_PREFIX
+            + "." + CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX;
 
     private final Runtime rt;
     private final double thresholdPercent;
@@ -142,6 +149,37 @@ public final class HeapMemoryHealthCheck implements HealthCheck {
          */
         public Builder thresholdPercent(double threshold) {
             this.threshold = threshold;
+            return this;
+        }
+
+        /**
+         * Set up the heap space health check via config key, if present.
+         *
+         * Configuration options:
+         * <table class="config">
+         * <caption>Heap space health check configuration</caption>
+         * <tr>
+         *     <th>Key</th>
+         *     <th>Default Value</th>
+         *     <th>Description</th>
+         *     <th>Builder method</th>
+         * </tr>
+         * <tr>
+         *     <td>{@value CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX}</td>
+         *     <td>{@value DEFAULT_THRESHOLD}</td>
+         *     <td>Minimum percent of heap memory consumed for this health check to fail</td>
+         *     <td>{@link #thresholdPercent(double)}</td>
+         * </tr>
+         * </table>
+         *
+         * @param config {@code Config} node for heap memory
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get(CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX)
+                    .asDouble()
+                    .ifPresent(this::thresholdPercent);
+
             return this;
         }
     }

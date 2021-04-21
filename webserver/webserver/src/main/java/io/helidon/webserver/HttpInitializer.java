@@ -21,6 +21,9 @@ import java.lang.ref.ReferenceQueue;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -105,7 +108,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         try {
             for (Reference<?> r = queues.poll(); r != null; r = queues.poll()) {
                 if (!(r instanceof IndirectReference<?, ?>)) {
-                    LOGGER.finest("Unexpected reference in queues");
+                    LOGGER.finer(() -> log("Unexpected reference in queues", null));
                     continue;
                 }
                 ReferenceHoldingQueue<?> q = ((IndirectReference<?, ReferenceHoldingQueue<?>>) r).acquire();
@@ -147,6 +150,8 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
      */
     @Override
     public void initChannel(SocketChannel ch) {
+        LOGGER.finer(() -> log("Initializing channel", ch));
+
         final ChannelPipeline p = ch.pipeline();
 
         SSLEngine sslEngine = null;
@@ -166,6 +171,8 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
                                                                    soConfig.validateHeaders(),
                                                                    soConfig.initialBufferSize());
         if (serverConfig.isHttp2Enabled()) {
+            LOGGER.finer(() -> log("Setting up HTTP/2 pipeline", ch));
+
             ExperimentalConfiguration experimental = serverConfig.experimental();
             Http2Configuration http2Config = experimental.http2();
             HttpServerCodec sourceCodec = new HttpServerCodec();
@@ -189,7 +196,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
 
             // Enable compression via "Accept-Encoding" header if configured
             if (serverConfig.enableCompression()) {
-                LOGGER.fine("HTTP compression negotiation enabled (gzip, deflate)");
+                LOGGER.finer(() -> log("Compression negotiation enabled (gzip, deflate)", ch));
                 p.addLast(new HttpContentCompressor());
             }
         }
@@ -241,11 +248,27 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     /**
      * Event logger for HTTP/2 events.
      */
-    private static final class HelidonEventLogger extends ChannelInboundHandlerAdapter {
+    private final class HelidonEventLogger extends ChannelInboundHandlerAdapter {
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-            LOGGER.finer(() -> "Event Triggered: " + evt);
+            LOGGER.finest(() -> log("Event: %s", ctx.channel(), evt));
             ctx.fireUserEventTriggered(evt);
         }
+    }
+
+    /**
+     * Log message formatter for this class.
+     *
+     * @param template template suffix.
+     * @param channel channel.
+     * @param params template suffix paframs.
+     * @return string to log.
+     */
+    private String log(String template, Object channel, Object... params) {
+        List<Object> list = new ArrayList<>(params.length + 2);
+        list.add(System.identityHashCode(this));
+        list.add(channel != null ? System.identityHashCode(channel) : "N/A");
+        list.addAll(Arrays.asList(params));
+        return String.format("[Initializer: %s, Channel: %s] " + template, list.toArray());
     }
 }

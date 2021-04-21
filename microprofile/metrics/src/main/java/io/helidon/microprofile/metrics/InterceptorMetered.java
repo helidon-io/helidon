@@ -28,7 +28,7 @@ import org.eclipse.microprofile.metrics.annotation.Metered;
 @Metered
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 9)
-final class InterceptorMetered extends InterceptorBase<Meter> {
+final class InterceptorMetered extends MetricsInterceptorBase<Meter> {
 
     InterceptorMetered() {
         super(Metered.class, Meter.class);

@@ -28,7 +28,7 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 @Counted
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 8)
-final class InterceptorCounted extends InterceptorBase<Counter> {
+final class InterceptorCounted extends MetricsInterceptorBase<Counter> {
 
     InterceptorCounted() {
         super(Counted.class, Counter.class);

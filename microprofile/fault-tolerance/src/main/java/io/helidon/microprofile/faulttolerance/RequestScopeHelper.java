@@ -92,7 +92,7 @@ class RequestScopeHelper {
         if (state != State.STORED) {
             throw new IllegalStateException("Request scope state never stored");
         }
-        if (requestScope != null) {                     // Jersey and CDI
+        if (requestScope != null && requestContext != null) {       // Jersey and CDI
             return () -> requestScope.runInScope(requestContext,
                     (Callable<?>) (() -> {
                         InjectionManager old = WeldRequestScope.actualInjectorManager.get();

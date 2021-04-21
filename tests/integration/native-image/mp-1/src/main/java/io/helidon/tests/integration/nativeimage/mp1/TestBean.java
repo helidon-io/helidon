@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -56,6 +58,13 @@ public class TestBean {
 
     @Inject
     private ProducedBean producedBean;
+
+    @Inject
+    private MetricRegistry metricRegistry;
+
+    @Inject
+    @RegistryType(type = MetricRegistry.Type.BASE)
+    private MetricRegistry baseRegistry;
 
     private final AtomicInteger retries = new AtomicInteger();
 
@@ -102,6 +111,11 @@ public class TestBean {
                 .queryParam(param);
     }
 
+    public String restClientQuery(int param) {
+        return restClient()
+                .queryParam(param);
+    }
+
     @Fallback(fallbackMethod = "fallbackTo")
     public String fallback() {
         throw new RuntimeException("intentional failure");
@@ -139,5 +153,13 @@ public class TestBean {
 
     public String produced() {
         return BeanProcessor.getProducedName(producedBean);
+    }
+
+    public String appRegistry() {
+        return "SimpleTimers.size(): " + metricRegistry.getSimpleTimers().size();
+    }
+
+    public String baseRegistry() {
+        return "SimpleTimers.size(): " + metricRegistry.getSimpleTimers().size();
     }
 }

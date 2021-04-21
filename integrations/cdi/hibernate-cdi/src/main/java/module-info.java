@@ -33,4 +33,7 @@ module io.helidon.integrations.cdi.hibernate {
     requires dom4j;
 
     exports io.helidon.integrations.cdi.hibernate;
+
+    provides org.hibernate.engine.transaction.jta.platform.spi.JtaPlatformProvider
+            with io.helidon.integrations.cdi.hibernate.CDISEJtaPlatformProvider;
 }
