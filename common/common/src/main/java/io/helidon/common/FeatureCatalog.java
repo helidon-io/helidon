@@ -177,7 +177,13 @@ final class FeatureCatalog {
                     .experimental(true)
                     .nativeSupported(true)
                     .flavor(HelidonFlavor.SE));
-
+        add("io.helidon.integrations.oci.connect",
+            FeatureDescriptor.builder()
+                    .name("OCI")
+                    .description("OCI Integration")
+                    .path("OCI")
+                    .flavor(HelidonFlavor.SE)
+                    .experimental(true));
         /*
          * MP Modules
          */
@@ -359,6 +365,14 @@ final class FeatureCatalog {
                     .experimental(true)
                     .nativeSupported(true)
                     .flavor(HelidonFlavor.MP));
+
+        add("io.helidon.integrations.oci.cdi",
+            FeatureDescriptor.builder()
+                    .name("OCI")
+                    .description("OCI Integration")
+                    .path("OCI")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true));
 
         /*
          * Common modules
@@ -578,6 +592,18 @@ final class FeatureCatalog {
             "Static Content",
             "Static content support for webserver",
             "WebServer", "Static Content");
+        add("io.helidon.integrations.oci.objectstorage",
+            "OCI Object Storage",
+            "Integration with OCI Object Storage",
+            "OCI", "Object Storage");
+        add("io.helidon.integrations.oci.vault",
+            "OCI Vault",
+            "Integration with OCI Vault",
+            "OCI", "Vault");
+        add("io.helidon.integrations.oci.telemetry",
+            "OCI Telemetry",
+            "Integration with OCI Telemetry",
+            "OCI", "Telemetry");
 
         /*
          * Packages that are not a feature

@@ -46,5 +46,6 @@
         <module>idcs-login</module>
         <module>outbound-override</module>
         <module>basic-auth-with-static-content</module>
+        <module>vaults</module>
     </modules>
 </project>

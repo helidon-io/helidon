@@ -316,6 +316,8 @@ public interface RestApi {
          * @return updated builder
          */
         public B config(Config config) {
+            // TODO add fault tolerance configuration - at least retry
+
             webClientBuilder.config(config.get("webclient"));
             Map<String, String> jsonConfig = config.get("jsonp")
                     .asMap()

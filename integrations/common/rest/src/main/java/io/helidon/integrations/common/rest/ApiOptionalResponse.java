@@ -56,6 +56,26 @@ public class ApiOptionalResponse<R> extends ApiResponse {
     }
 
     /**
+     * Map the (possible) response entity to a different type.
+     *
+     * @param mapper mapper function
+     * @param <U> new type
+     * @return new optional response with the mapped entity
+     */
+    public <U> ApiOptionalResponse<U> map(Function<R, U> mapper) {
+        Builder<U, U> builder = ApiOptionalResponse.apiResponseBuilder();
+
+        entity.map(mapper).ifPresent(builder::entity);
+
+        return builder
+                .entityProcessor(Function.identity())
+                .headers(headers())
+                .requestId(requestId())
+                .status(status())
+                .build();
+    }
+
+    /**
      * Fluent API builder for {@link io.helidon.integrations.common.rest.ApiOptionalResponse}.
      *
      * @param <X> type of the entity, such as{@link javax.json.JsonObject}
