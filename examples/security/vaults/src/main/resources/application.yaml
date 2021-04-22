@@ -32,12 +32,12 @@ security:
   providers:
     - config-vault:
         master-password: "very much secret"
-#    - vault-kv2:
-#        address: "${vault.address}"
-#        token: "${vault.token}"
-#    - vault-transit:
-#        address: "${vault.address}"
-#        token: "${vault.token}"
+    - vault-kv2:
+        address: "${vault.address}"
+        token: "${vault.token}"
+    - vault-transit:
+        address: "${vault.address}"
+        token: "${vault.token}"
     - oci-vault:
         # We need either the cryptographic endpoint (recommended), or management-endpoint configured
         # Also ~/.oci/config must be correctly set up, otherwise all information is required here
@@ -46,11 +46,11 @@ security:
         # vault.cryptographic-endpoint: "${oci.properties.cryptographic-endpoint}"
         # vault.management-endpoint: "${oci.properties.management-endpoint}"
   secrets:
-#    - name: "username"
-#      provider: "vault-kv2"
-#      config:
-#        path: "app/secret"
-#        key: "username"
+    - name: "username"
+      provider: "vault-kv2"
+      config:
+        path: "app/secret"
+        key: "username"
     - name: "password"
       provider: "oci-vault"
       config:
@@ -61,16 +61,16 @@ security:
         value: "${app.token}"
   digest:
     # Signatures and hmac
-#    - name: "sig-2"
-#      provider: "vault-transit"
-#      config:
-#        type: "signature"
-#        key-name: "signature-key"
-#    - name: "hmac-1"
-#      provider: "vault-transit"
-#      config:
-#        type: "hmac"
-#        key-name: "encryption-key"
+    - name: "sig-2"
+      provider: "vault-transit"
+      config:
+        type: "signature"
+        key-name: "signature-key"
+    - name: "hmac-1"
+      provider: "vault-transit"
+      config:
+        type: "hmac"
+        key-name: "encryption-key"
     - name: "sig-1"
       provider: "oci-vault"
       config:
@@ -79,10 +79,10 @@ security:
         algorithm: "SHA_256_RSA_PKCS_PSS"
   encryption:
     # encryption and decryption
-#    - name: "crypto-3"
-#      provider: "vault-transit"
-#      config:
-#        key-name: "encryption-key"
+    - name: "crypto-3"
+      provider: "vault-transit"
+      config:
+        key-name: "encryption-key"
     - name: "crypto-1"
       provider: "oci-vault"
       config:

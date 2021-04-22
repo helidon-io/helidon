@@ -64,18 +64,18 @@
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.helidon.integrations.vault.secrets</groupId>-->
-<!--            <artifactId>helidon-integrations-vault-secrets-kv2</artifactId>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>io.helidon.integrations.vault.secrets</groupId>-->
-<!--            <artifactId>helidon-integrations-vault-secrets-transit</artifactId>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>io.helidon.integrations.vault.auths</groupId>-->
-<!--            <artifactId>helidon-integrations-vault-auths-token</artifactId>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>io.helidon.integrations.vault.secrets</groupId>
+            <artifactId>helidon-integrations-vault-secrets-kv2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.vault.secrets</groupId>
+            <artifactId>helidon-integrations-vault-secrets-transit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.vault.auths</groupId>
+            <artifactId>helidon-integrations-vault-auths-token</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.integrations.oci</groupId>
             <artifactId>helidon-integrations-oci-vault</artifactId>
