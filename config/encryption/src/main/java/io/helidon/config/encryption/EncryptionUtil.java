@@ -35,6 +35,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
@@ -47,7 +48,9 @@ import io.helidon.config.mp.MpConfig;
 public final class EncryptionUtil {
     private static final Logger LOGGER = Logger.getLogger(EncryptionUtil.class.getName());
 
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    // SecureRandom instances cannot be in memory when building native image
+    private static final LazyValue<SecureRandom> SECURE_RANDOM = LazyValue.create(SecureRandom::new);
+
     private static final int SALT_LENGTH = 16;
     private static final int NONCE_LENGTH = 12; //(Also called IV) Needs to be 12 when using GCM!
     private static final int SEED_LENGTH = 16;
@@ -165,8 +168,8 @@ public final class EncryptionUtil {
         Objects.requireNonNull(masterPassword, "Password must be provided for encryption");
         Objects.requireNonNull(secret, "Secret message must be provided to be encrypted");
 
-        byte[] salt = SECURE_RANDOM.generateSeed(SALT_LENGTH);
-        byte[] nonce = SECURE_RANDOM.generateSeed(NONCE_LENGTH);
+        byte[] salt = SECURE_RANDOM.get().generateSeed(SALT_LENGTH);
+        byte[] nonce = SECURE_RANDOM.get().generateSeed(NONCE_LENGTH);
 
         Cipher cipher = cipher(masterPassword, salt, nonce, Cipher.ENCRYPT_MODE);
         // encrypt
