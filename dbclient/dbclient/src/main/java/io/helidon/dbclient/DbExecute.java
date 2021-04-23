@@ -355,17 +355,6 @@ public interface DbExecute {
         return createDmlStatement(statement).params(parameters).execute();
     }
 
-    /**
-     * Unwrap single value execution context as given class.
-     *
-     * @param <C> target class being unwrapped
-     * @param cls target class being unwrapped
-     * @return unwrapped future execution context
-     */
-    default <C> Single<C> unwrapSingle(Class<C> cls) {
-        throw new UnsupportedOperationException(String.format("Class %s is not supported for unwrap", cls.getName()));
-    }
-
     /*
      * Unwrap support
      */
