@@ -12,7 +12,6 @@ would also work) which the config system invokes when the config source changes
 
 ## Latest-value supplier
 
-A third example illustrates a different solution. 
 Recall that once your application obtains a `Config` instance, its config values 
 do not change. The 
 [`AsSupplierExample.java`](./src/main/java/io/helidon/config/examples/changes/AsSupplierExample.java)
