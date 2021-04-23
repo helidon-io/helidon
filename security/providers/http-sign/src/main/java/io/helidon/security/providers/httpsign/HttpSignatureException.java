@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,19 @@ package io.helidon.security.providers.httpsign;
  * Exception from HTTP signatures provider.
  */
 public class HttpSignatureException extends SecurityException {
-    HttpSignatureException(String message) {
+    /**
+     * Create a new exception with message.
+     * @param message descriptive message
+     */
+    public HttpSignatureException(String message) {
         super(message);
     }
 
-    HttpSignatureException(Exception e) {
+    /**
+     * Create a new exception with a cause.
+     * @param e cause
+     */
+    public HttpSignatureException(Exception e) {
         super(e);
     }
 }
