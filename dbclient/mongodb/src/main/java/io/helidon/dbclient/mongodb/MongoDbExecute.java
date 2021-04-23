@@ -15,6 +15,9 @@
  */
 package io.helidon.dbclient.mongodb;
 
+import java.util.concurrent.CompletableFuture;
+
+import io.helidon.common.reactive.Single;
 import io.helidon.dbclient.DbExecute;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementGet;
@@ -94,4 +97,17 @@ public class MongoDbExecute extends AbstractDbExecute implements DbExecute {
                                                                  statementName,
                                                                  statement));
     }
+
+    // MongoDB internals are not blocking. Single instance is returned as already completed.
+    @Override
+    public <C> Single<C> unwrap(Class<C> cls) {
+        if (MongoDatabase.class.isAssignableFrom(cls)) {
+            final CompletableFuture<MongoDatabase> future = new CompletableFuture<>();
+            future.complete(db);
+            return Single.create(future).map(cls::cast);
+        } else {
+            throw new UnsupportedOperationException(String.format("Class %s is not supported for unwrap", cls.getName()));
+        }
+    }
+
 }

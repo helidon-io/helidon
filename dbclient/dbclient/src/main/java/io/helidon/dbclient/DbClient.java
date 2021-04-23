@@ -22,6 +22,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.Subscribable;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
@@ -62,6 +63,19 @@ public interface DbClient {
      * @return name of the database provider
      */
     String dbType();
+
+    /**
+     * Unwrap database client internals.
+     * Only database connection is supported. Any operations based on this connection are <b>blocking</b>.
+     * Reactive support must be implemented in user code.
+     * Mongo database driver internals support {@code MongoClient} and {@code MongoDatabase} classes.
+     *
+     * @param <C> target class to be unwrapped
+     * @param cls target class to be unwrapped
+     * @return database client internals future matching provided class.
+     * @throws UnsupportedOperationException when provided class is not supported
+     */
+    <C> Single<C> unwrap(Class<C> cls);
 
     /**
      * Create Helidon database handler builder.

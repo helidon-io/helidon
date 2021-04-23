@@ -354,4 +354,34 @@ public interface DbExecute {
     default Single<Long> dml(String statement, Object... parameters) {
         return createDmlStatement(statement).params(parameters).execute();
     }
+
+    /**
+     * Unwrap single value execution context as given class.
+     *
+     * @param <C> target class being unwrapped
+     * @param cls target class being unwrapped
+     * @return unwrapped future execution context
+     */
+    default <C> Single<C> unwrapSingle(Class<C> cls) {
+        throw new UnsupportedOperationException(String.format("Class %s is not supported for unwrap", cls.getName()));
+    }
+
+    /*
+     * Unwrap support
+     */
+
+    /**
+     * Unwrap database executor internals.
+     * Only database connection is supported. Any operations based on this connection are <b>blocking</b>.
+     * Reactive support must be implemented in user code. This connection instance is being used to execute
+     * all statements in current database executor context.
+     * Mongo database driver internals support {@code MongoDatabase} class.
+     *
+     * @param <C> target class to be unwrapped
+     * @param cls target class to be unwrapped
+     * @return database executor internals future matching provided class
+     * @throws UnsupportedOperationException when provided class is not supported
+     */
+    <C> Single<C> unwrap(Class<C> cls);
+
 }
