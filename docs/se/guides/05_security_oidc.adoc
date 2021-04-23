@@ -366,9 +366,9 @@ resources the user is allowed to access. Once expired, the refresh token allows 
 token. As these tokens contain sensitive information, they are valid for a very short period. It is possible to make them
 last longer in order to let you manipulate them with Postman. To do so:
 
-* Open the Postman Console.
-* Click on the `Realm Setting` in the left menu.
-* Navigate to the `Tokens` tab.
+1. Open the Postman Console.
+2. Click on the `Realm Setting` in the left menu.
+3. Navigate to the `Tokens` tab.
 
 You can increase the access token lifespan.
 
