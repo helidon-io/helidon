@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,13 +92,19 @@ public class WebClientSecurity implements WebClientService {
         // context either from request or create a new one
         Optional<SecurityContext> maybeContext = requestContext.get(SecurityContext.class);
 
+        SecurityContext context;
+
         if (null == security) {
             if (maybeContext.isEmpty()) {
                 return Single.just(request);
+            } else {
+                context = maybeContext.get();
             }
+        } else {
+            // we have our own security - we need to use this instance for outbound,
+            // so we cannot re-use the context
+            context = createContext(request);
         }
-
-        SecurityContext context = maybeContext.orElseGet(() -> createContext(request));
 
         Span span = context.tracer()
                 .buildSpan("security:outbound")

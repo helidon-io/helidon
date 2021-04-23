@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,11 +91,24 @@ public final class SignedHeadersConfig {
         return new Builder().defaultConfig(HeadersConfig.create());
     }
 
-    List<String> headers(String method, Map<String, List<String>> transportHeaders) {
+    /**
+     * Headers configured for a method with optional headers matched against actual transport headers.
+     *
+     * @param method method (such as GET)
+     * @param transportHeaders actual headers received on the transport
+     * @return list of headers that must be signed
+     */
+    public List<String> headers(String method, Map<String, List<String>> transportHeaders) {
         return methodConfigs.getOrDefault(method, defaultConfig).getHeaders(transportHeaders);
     }
 
-    List<String> headers(String method) {
+    /**
+     * Headers configured for a method.
+     *
+     * @param method method (such as GET)
+     * @return list of headers
+     */
+    public List<String> headers(String method) {
         return new ArrayList<>(methodConfigs.getOrDefault(method, defaultConfig).always);
     }
 
