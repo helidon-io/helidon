@@ -74,6 +74,9 @@ sudo mv ./helidon /usr/local/bin/
 PowerShell -Command Invoke-WebRequest -Uri "https://helidon.io/cli/latest/windows/helidon.exe" -OutFile "C:\Windows\system32\helidon.exe"
 ----
 
+For Windows you will also need the Visual C++ Redistributable Runtime. See <<about/04_windows.adoc,Helidon on Windows>>
+for more information.
+
 == Create a New Project
 
 [source,bash]
