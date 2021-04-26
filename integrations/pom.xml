@@ -48,6 +48,7 @@
         <module>neo4j</module>
         <module>micrometer</module>
         <module>oci</module>
+        <module>vault</module>
     </modules>
 
     <build>
