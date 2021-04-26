@@ -37,12 +37,12 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 ----
 
 To enable built-in health checks add the following dependency
-(or us the <<mp/introduction/02_microprofile.adoc, helidon-microprofile bundle>> )
+(or use the <<mp/introduction/02_microprofile.adoc, helidon-microprofile bundle>> )
 
 [source,xml]
 ----
         <dependency>
-            <groupId>io.helidon.microprofile.health</groupId>
+            <groupId>io.helidon.health</groupId>
             <artifactId>helidon-health-checks</artifactId>
         </dependency>
 ----
