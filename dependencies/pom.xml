@@ -992,6 +992,10 @@
                         <groupId>jakarta.json</groupId>
                         <artifactId>jakarta.json-api</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.hk2.external</groupId>
+                        <artifactId>jakarta.inject</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <!-- Micronaut integrations -->
