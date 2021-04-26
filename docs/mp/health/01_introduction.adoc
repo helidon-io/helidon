@@ -36,6 +36,17 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
         </dependency>
 ----
 
+To enable built-in health checks add the following dependency
+(or us the <<mp/introduction/02_microprofile.adoc, helidon-microprofile bundle>> )
+
+[source,xml]
+----
+        <dependency>
+            <groupId>io.helidon.microprofile.health</groupId>
+            <artifactId>helidon-health-checks</artifactId>
+        </dependency>
+----
+
 == Overview
 Microservices expose their health status primarily so external tools (for example, an orchestrator such as Kubernetes)
 can monitor each service and take action, such as restarting a service instance if it has failed
