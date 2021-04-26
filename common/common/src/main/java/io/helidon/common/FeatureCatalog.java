@@ -184,6 +184,13 @@ final class FeatureCatalog {
                     .path("OCI")
                     .flavor(HelidonFlavor.SE)
                     .experimental(true));
+        add("io.helidon.integrations.vault",
+            FeatureDescriptor.builder()
+                    .name("HCP Vault")
+                    .description("Hashicorp Vault Integration")
+                    .path("HCP Vault")
+                    .flavor(HelidonFlavor.SE)
+                    .experimental(true));
         /*
          * MP Modules
          */
@@ -374,6 +381,14 @@ final class FeatureCatalog {
                     .flavor(HelidonFlavor.MP)
                     .experimental(true));
 
+        add("io.helidon.integrations.vault.cdi",
+            FeatureDescriptor.builder()
+                    .name("HCP Vault")
+                    .description("Hashicorp Vault Integration")
+                    .path("HCP Vault")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true));
+
         /*
          * Common modules
          */
@@ -517,6 +532,9 @@ final class FeatureCatalog {
             "HTTP Signatures",
             "Security provider for HTTP Signature authentication and outbound",
             "Security", "Provider", "HttpSign");
+        add("io.helidon.security.providers.config.vault",
+            "Config Vault",
+            "Security", "Provider", "ConfigVault");
         add("io.helidon.security.providers.idcs.mapper",
             FeatureDescriptor.builder()
                     .name("IDCS Role Mapper")
@@ -604,6 +622,46 @@ final class FeatureCatalog {
             "OCI Telemetry",
             "Integration with OCI Telemetry",
             "OCI", "Telemetry");
+        add("io.helidon.integrations.vault.auths.approle",
+            "AppRole",
+            "AppRole Authentication Method",
+            "HCP Vault", "Auth", "AppRole");
+        add("io.helidon.integrations.vault.auths.k8s",
+            "k8s",
+            "Kubernetes Authentication Method",
+            "HCP Vault", "Auth", "k8s");
+        add("io.helidon.integrations.vault.auths.token",
+            "Token",
+            "Token Authentication Method",
+            "HCP Vault", "Auth", "Token");
+        add("io.helidon.integrations.vault.secrets.cubbyhole",
+            "Cubbyhole",
+            "Cubbyhole Secrets Engine",
+            "HCP Vault", "Secrets", "Cubbyhole");
+        add("io.helidon.integrations.vault.secrets.database",
+            "Database",
+            "Database Secrets Engine",
+            "HCP Vault", "Secrets", "Database");
+        add("io.helidon.integrations.vault.secrets.kv1",
+            "K/V 1",
+            "Key/Value Version 1 Secrets Engine",
+            "HCP Vault", "Secrets", "K/V 1");
+        add("io.helidon.integrations.vault.secrets.kv2",
+            "K/V 2",
+            "Key/Value Version 2 Secrets Engine",
+            "HCP Vault", "Secrets", "K/V 2");
+        add("io.helidon.integrations.vault.secrets.pki",
+            "PKI",
+            "PKI Secrets Engine",
+            "HCP Vault", "Secrets", "PKI");
+        add("io.helidon.integrations.vault.secrets.transit",
+            "Transit",
+            "Transit Secrets Engine",
+            "HCP Vault", "Secrets", "Transit");
+        add("io.helidon.integrations.vault.sys",
+            "Sys",
+            "System operations",
+            "HCP Vault", "Sys");
 
         /*
          * Packages that are not a feature
