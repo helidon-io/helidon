@@ -18,6 +18,7 @@ package io.helidon.examples.security.vaults;
 
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.webserver.Routing;
@@ -39,6 +40,8 @@ public final class VaultsExampleMain {
      * @param args ignored
      */
     public static void main(String[] args) {
+        LogConfig.configureRuntime();
+
         // as I cannot share my configuration of OCI, let's combine the configuration
         // from my home directory with the one compiled into the jar
         // when running this example, you can either update the application.yaml in resources directory
