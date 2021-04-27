@@ -218,7 +218,6 @@ public class SymmetricCipher implements CommonCipher {
                                       Base64Value encrypted) {
         Objects.requireNonNull(algorithm, "Algorithm cannot be null");
         Objects.requireNonNull(key, "Key cannot be null");
-        Objects.requireNonNull(params, "Initialization vector cannot be null");
         Objects.requireNonNull(encrypted, "Encrypted content cannot be null");
         Cipher cipher = cipher(algorithm, provider, key, params, Cipher.DECRYPT_MODE);
         try {
