@@ -79,12 +79,6 @@ public class QueriesAndMutationsWithNulls {
         return "value";
     }
 
-    // String should be mandatory because of NonNull
-    @Query("paramShouldBeMandatory")
-    public String query4(@Name("value") @NonNull String value) {
-        return value;
-    }
-
     // just to generate NullPOJOInput
     @Query
     public boolean validate(@Name("pojo") NullPOJO nullPOJO) {

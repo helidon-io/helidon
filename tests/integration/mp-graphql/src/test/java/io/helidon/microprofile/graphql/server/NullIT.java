@@ -81,7 +81,6 @@ public class NullIT extends AbstractGraphQlCdiIT {
         assertReturnTypeArgumentMandatory(query, "paramShouldBeNonMandatory", "value", false);
         assertReturnTypeArgumentMandatory(query, "paramShouldBeNonMandatory2", "value", false);
         assertReturnTypeArgumentMandatory(query, "paramShouldBeNonMandatory3", "value", false);
-        assertReturnTypeArgumentMandatory(query, "paramShouldBeMandatory", "value", true);
 
         SchemaType input = schema.getInputTypeByName("NullPOJOInput");
         assertReturnTypeMandatory(input, "nonNullForInput", true);
