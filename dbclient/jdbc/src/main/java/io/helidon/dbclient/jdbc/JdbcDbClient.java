@@ -207,6 +207,18 @@ class JdbcDbClient implements DbClient {
         return connectionPool.dbType();
     }
 
+    @Override
+    public <C> Single<C> unwrap(Class<C> cls) {
+        if (Connection.class.isAssignableFrom(cls)) {
+            return Single.create(
+                    CompletableFuture.supplyAsync(
+                            connectionPool::connection, executorService))
+                    .map(cls::cast);
+        } else {
+            throw new UnsupportedOperationException(String.format("Class %s is not supported for unwrap", cls.getName()));
+        }
+    }
+
     private static final class JdbcTxExecute extends JdbcExecute implements DbTransaction {
 
         private volatile boolean setRollbackOnly = false;
@@ -365,6 +377,16 @@ class JdbcDbClient implements DbClient {
                         }
                     });
         }
+
+        @Override
+        public <C> Single<C> unwrap(Class<C> cls) {
+            if (Connection.class.isAssignableFrom(cls)) {
+                return Single.create(context.connection()).map(cls::cast);
+            } else {
+                throw new UnsupportedOperationException(String.format("Class %s is not supported for unwrap", cls.getName()));
+            }
+        }
+
     }
 
 }

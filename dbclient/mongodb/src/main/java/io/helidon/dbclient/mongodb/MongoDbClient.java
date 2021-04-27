@@ -18,6 +18,7 @@ package io.helidon.dbclient.mongodb;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.Subscribable;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbExecute;
@@ -60,6 +61,29 @@ public class MongoDbClient implements DbClient {
         this.connectionString = new ConnectionString(config.url());
         this.client = initMongoClient();
         this.db = initMongoDatabase();
+    }
+
+    /**
+     * Creates an instance of MongoDB driver handler with MongoDb client and connection
+     * supplied.
+     * Used in jUnit tests to mock MongoDB driver internals.
+     *
+     * @param builder builder for mongoDB database
+     * @param client MongoDB client provided externally
+     * @param db MongoDB database provided externally
+     */
+    MongoDbClient(MongoDbClientProviderBuilder builder, MongoClient client, MongoDatabase db) {
+        this.clientContext = DbClientContext.builder()
+                .dbMapperManager(builder.dbMapperManager())
+                .mapperManager(builder.mapperManager())
+                .clientServices(builder.clientServices())
+                .statements(builder.statements())
+                .build();
+
+        this.config = builder.dbConfig();
+        this.connectionString = config != null ? new ConnectionString(config.url()) : null;
+        this.client = client;
+        this.db = db;
     }
 
     private static final class MongoSessionSubscriber implements org.reactivestreams.Subscriber<ClientSession> {
@@ -124,6 +148,22 @@ public class MongoDbClient implements DbClient {
     @Override
     public String dbType() {
         return MongoDbClientProvider.DB_TYPE;
+    }
+
+    // MongoDB internals are not blocking. Single instance is returned as already completed.
+    @Override
+    public <C> Single<C> unwrap(Class<C> cls) {
+        if (MongoClient.class.isAssignableFrom(cls)) {
+            final CompletableFuture<MongoClient> future = new CompletableFuture<>();
+            future.complete(client);
+            return Single.create(future).map(cls::cast);
+        } else if (MongoDatabase.class.isAssignableFrom(cls)) {
+            final CompletableFuture<MongoDatabase> future = new CompletableFuture<>();
+            future.complete(db);
+            return Single.create(future).map(cls::cast);
+        } else {
+            throw new UnsupportedOperationException(String.format("Class %s is not supported for unwrap", cls.getName()));
+        }
     }
 
     /**
