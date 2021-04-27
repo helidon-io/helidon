@@ -364,7 +364,6 @@ public interface DbExecute {
      * Only database connection is supported. Any operations based on this connection are <b>blocking</b>.
      * Reactive support must be implemented in user code. This connection instance is being used to execute
      * all statements in current database executor context.
-     * Mongo database driver internals support {@code MongoDatabase} class.
      *
      * @param <C> target class to be unwrapped
      * @param cls target class to be unwrapped

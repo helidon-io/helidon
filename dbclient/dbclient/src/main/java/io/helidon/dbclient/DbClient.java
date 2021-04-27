@@ -68,7 +68,6 @@ public interface DbClient {
      * Unwrap database client internals.
      * Only database connection is supported. Any operations based on this connection are <b>blocking</b>.
      * Reactive support must be implemented in user code.
-     * Mongo database driver internals support {@code MongoClient} and {@code MongoDatabase} classes.
      *
      * @param <C> target class to be unwrapped
      * @param cls target class to be unwrapped
