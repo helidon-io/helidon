@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -69,3 +69,6 @@ Now you are ready to try the Quickstart Examples:
 
 TIP: See <<about/02_introduction.adoc,About Helidon>>
 for more information on the differences between Helidon MP and SE.
+
+TIP: See <<about/04_windows.adoc,Helidon on Windows>>
+for some tips on using Helidon on Windows.
