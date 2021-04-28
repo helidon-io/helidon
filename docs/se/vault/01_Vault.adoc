@@ -191,7 +191,7 @@ Then `WebService` has to be configured with endpoints routing registered:
                 .await();
 ----
 
-App role based and Kubernetes authentications are available.
+AppRole-based and Kubernetes authentications are available.
 
 === Cubbyhole secrets
 
@@ -459,7 +459,7 @@ Transit secrets engine operations:
 
 1. Enable the secrets engine on the default path.
 2. Disable the secrets engine on the default path.
-3. Create the encrypting and signature keys.
+3. Create the encryption and signature keys.
 4. Delete the encryption and signature keys.
 5. Encrypt a secret.
 6. Decrypt a secret.
