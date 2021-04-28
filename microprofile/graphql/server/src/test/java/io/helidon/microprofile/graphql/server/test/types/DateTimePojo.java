@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 
 import javax.json.bind.annotation.JsonbDateFormat;
@@ -60,6 +61,8 @@ public class DateTimePojo {
     private List<LocalDate> significantDates;
 
     private List<LocalDate> formattedListOfDates;
+
+    private Date legacyDate;
 
     public DateTimePojo() {
     }
@@ -172,5 +175,13 @@ public class DateTimePojo {
 
     public void setFormattedListOfDates(List<LocalDate> formattedListOfDates) {
         this.formattedListOfDates = formattedListOfDates;
+    }
+
+    public Date getLegacyDate() {
+        return legacyDate;
+    }
+
+    public void setLegacyDate(Date legacyDate) {
+        this.legacyDate = legacyDate;
     }
 }

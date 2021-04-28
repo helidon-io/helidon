@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Date;
 
 import graphql.Scalars;
 import graphql.language.StringValue;
@@ -194,7 +196,7 @@ class CustomScalars {
      static GraphQLScalarType newDateScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.Date;
         return GraphQLScalarType.newScalar()
-                .coercing(new DateTimeCoercing())
+                .coercing(new DateCoercing())
                 .name(name)
                 .description("Custom: " + originalScalar.getDescription())
                 .build();
@@ -312,7 +314,8 @@ class CustomScalars {
                 }
             }
 
-            throw new CoercingParseLiteralException("Unable to convert type of " + input.getClass());
+            throw new CoercingParseLiteralException("Unable to convert type of " + input.getClass().toString()
+                                                    + " with classes " + Arrays.toString(clazzes));
         }
 
         /**
@@ -368,7 +371,7 @@ class CustomScalars {
          * Construct a {@link DateCoercing}.
          */
          DateCoercing() {
-            super(LocalDate.class);
+            super(LocalDate.class, Date.class);
         }
     }
 
@@ -378,7 +381,7 @@ class CustomScalars {
      static class BigDecimalCoercing extends AbstractDateTimeCoercing {
 
         /**
-         * Construct a {@link DateCoercing}.
+         * Construct a {@link BigDecimalCoercing}.
          */
          BigDecimalCoercing() {
             super(BigDecimal.class);
