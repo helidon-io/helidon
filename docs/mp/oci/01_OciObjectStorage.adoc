@@ -1,0 +1,205 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/oci
+
+= The OCI Object Storage
+:h1Prefix: MP
+:description: Helidon OCI Object Storage integration
+:keywords: oci, objectstorage
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: OCI Object Storage
+
+The Helidon MP OCI Object Storage integration provides easy access files stored in Oracle cloud.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+        <dependency>
+            <groupId>io.helidon.integrations.oci</groupId>
+            <artifactId>helidon-integrations-oci-cdi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.oci</groupId>
+            <artifactId>helidon-integrations-oci-objectstorage</artifactId>
+        </dependency>
+----
+
+
+== Setting up the Object Storage
+
+
+In order to use the OCI Object Storage integration, the following setup should be made:
+
+Current configuration requires `~/.oci/config` to be available in the home folder. This configuration file can be downloaded from OCI.
+
+REST endpoint to work with OCI Object Storage:
+
+[source,java]
+----
+@Path("/files")
+public class ObjectStorageResource {
+    private final OciObjectStorage objectStorage;
+    private final String bucketName;
+
+    @Inject
+    ObjectStorageResource(OciObjectStorage objectStorage, (1)
+                          @ConfigProperty(name = "oci.objectstorage.bucket")
+                                  String bucketName) { (2)
+        this.objectStorage = objectStorage;
+        this.bucketName = bucketName;
+    }
+}
+----
+1. `OciObjectStorage` is configured and injected automatically
+2. Bucket name is read from the properties
+
+Additionally, in `application.yaml` OCI properties should be specified:
+
+[source,yaml]
+----
+oci:
+    properties:
+      compartment-ocid: "ocid1.tenancy.oc1..<..>"
+      objectstorage-namespace: "<..>"
+      objectstorage-bucket: "demobucket"
+
+----
+
+The exact values are available in OCI object storage and bucket properties.
+
+== Using the Object Storage
+
+=== Upload file
+To upload a file via `PUT` method to OCI Object Storage:
+
+[source,java]
+----
+    @POST
+    @Path("/file/{fileName}")
+    public Response upload(@PathParam("fileName") String fileName,
+                         @HeaderParam("Content-Length") long contentLength,
+                         @HeaderParam("Content-Type") @DefaultValue("application/octet-stream") String type,
+                         InputStream entity) {
+        PutObject.Response response = objectStorage.putObject(PutObject.Request.builder() (1)
+                                                                      .contentLength(contentLength)
+                                                                      .bucket(bucketName)
+                                                                      .requestMediaType(io.helidon.common.http.MediaType
+                                                                                                .parse(type))
+                                                                      .objectName(fileName),
+                                                              Channels.newChannel(entity));
+
+        return Response.status(response.status().code()) (2)
+                .header("opc-request-id", response.headers().first("opc-request-id").orElse(""))
+                .header("request-id", response.requestId())
+                .build();
+    }
+----
+
+1. Use `objectStorage.putObject` method with`PutObject.Request.builder()` to submit data
+3. Put the result in the `Response`
+
+
+=== Download file
+To download the file via `GET` method from OCI Object Storage:
+
+[source,java]
+----
+    @GET
+    @Path("/file/{file-name}")
+    public Response download(@PathParam("file-name") String fileName) {
+        ApiOptionalResponse<GetObject.Response> ociResponse = objectStorage.getObject(GetObject.Request.builder() (1)
+                                                                                                      .bucket(bucketName)
+                                                                                                      .objectName(fileName));
+        Optional<GetObject.Response> entity = ociResponse.entity(); (2)
+
+        if (entity.isEmpty()) {
+            return Response.status(Response.Status.NOT_FOUND).build(); (3)
+        }
+
+        GetObject.Response response = entity.get();
+
+        StreamingOutput stream = output -> response.writeTo(Channels.newChannel(output));
+
+        Response.ResponseBuilder ok = Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM_TYPE) (4)
+                .header(Http.Header.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .header("opc-request-id", ociResponse.headers().first("opc-request-id").orElse(""))
+                .header("request-id", ociResponse.requestId());
+
+        ociResponse.headers()
+                .first(Http.Header.CONTENT_TYPE)
+                .ifPresent(ok::type);
+
+        ociResponse.headers()
+                .first(Http.Header.CONTENT_LENGTH)
+                .ifPresent(it -> ok.header(Http.Header.CONTENT_LENGTH, it));
+
+        return ok.build();
+    }
+----
+1. Use `getObject` function to make asynchronous request to OCI Object Storage
+2. The result is of type `Optional`
+3. Whenever the result is empty, return status `404`
+4. Get the response, set headers and return the result
+
+
+=== Delete
+Finally, to delete a file, `DELETE` method should be used
+
+[source,java]
+----
+    @DELETE
+    @Path("/file/{file-name}")
+    public Response delete(@PathParam("file-name") String fileName) {
+        DeleteObject.Response response = objectStorage.deleteObject(DeleteObject.Request.builder() (1)
+                                                                            .bucket(bucketName)
+                                                                            .objectName(fileName));
+
+        return Response.status(response.status().code()) (2)
+                .header("opc-request-id", response.headers().first("opc-request-id").orElse(""))
+                .header("request-id", response.requestId())
+                .build();
+    }
+----
+
+1. Use `deleteObject` function and configure a `DeleteObject.Request.builder()` to submit the delete request
+2. Return the result
+
+== Using CURL and WGET to work with files stored in OCI
+Just run the application either from maven or IDE.
+
+To upload a file type in the terminal:
+
+[source,bash]
+----
+curl -i -d @frank.png -X POST -H "Content-Type:application/image" http://localhost:8080/files/file/frank.png
+----
+
+To download the file:
+
+[source,bash]
+----
+wget http://localhost:8080/files/file/frank.png
+----
+
+To delete the file:
+[source,bash]
+----
+curl -X DELETE http://localhost:8080/files/file/frank.png
+----

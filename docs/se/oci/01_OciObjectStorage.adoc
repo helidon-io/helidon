@@ -41,7 +41,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 == Setting up the Object Storage
 
 
-In order to use the integration, the following setup should be made.
+In order to use the OCI Object Storage integration, the following setup should be made:
 
 [source,java]
 ----
@@ -74,8 +74,8 @@ Additionally, in `application.yaml` OCI properties should be specified:
 oci:
     properties:
       compartment-ocid: "ocid1.tenancy.oc1..<..>"
-      objectstorage-namespace: "<..>"
-      objectstorage-bucket: "demobucket"
+      objectstorage-namespace: "<...>"
+      objectstorage-bucket: "<...>"
 
 ----
 
@@ -199,20 +199,20 @@ Finally, to delete a file, `DELETE` method should be used
 2. The request is made in asynchronous way; a `Single` is returned
 
 == Using CURL and WGET to work with files stored in OCI
-Just run the application either from maven or your IDE.
+Just run the application either from maven or  IDE.
 
 To upload a file type in the terminal:
 
 [source,bash]
 ----
-curl -i -d @frank.png -X POST -H "Content-Type:application/image" http://localhost:8080/files/file/pom.xml
+curl -i -d @frank.png -X POST -H "Content-Type:application/image" http://localhost:8080/files/file/frank.png
 ----
 
 To download the file:
 
 [source,bash]
 ----
-curl -X GET http://localhost:8080/files/file/frank.png
+wget http://localhost:8080/files/file/frank.png
 ----
 
 To rename the file type:

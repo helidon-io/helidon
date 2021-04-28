@@ -1,0 +1,233 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/oci
+
+= The OCI Vault
+:h1Prefix: MP
+:description: Helidon OCI Vault integration
+:keywords: oci, vault
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: OCI Vault
+
+The Helidon MP OCI Vault integration provides easy access to Oracle Cloud Vault features.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+        <dependency>
+            <groupId>io.helidon.integrations.oci</groupId>
+            <artifactId>helidon-integrations-oci-cdi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.oci</groupId>
+            <artifactId>helidon-integrations-oci-vault</artifactId>
+        </dependency>
+----
+
+
+== Setting up the OCI Vault
+
+
+In order to use the OCI Vault integration, the following setup should be made.
+
+* The configuration required for Vault integration includes:
+* Vault OCID - to use the correct Vault, as more than one can be configured
+* Compartment OCID - OCI specific compartment
+* Encryption Key OCIO - required when doing encryption/decryption
+* Signature Key OCID - required when doing signatures/verification
+* Cryptographic endpoint - required for all except secrets
+
+First specify OCID is of Vault items:
+
+[source,yaml]
+----
+oci:
+  vault:
+    vault-ocid: "<...>"
+    compartment-ocid: "<...>"
+    encryption-key-ocid: "<...>"
+    signature-key-ocid: "<...>"
+    cryptographic-endpoint: "<...>"
+----
+
+The OCIDs can be set up and found in OCI under Security tab.
+
+REST endpoint should be setup
+
+[source,java]
+----
+@Path("/vault")
+public class VaultResource {
+    private final OciVault vault;
+    private final String vaultOcid;
+    private final String compartmentOcid;
+    private final String encryptionKeyOcid;
+    private final String signatureKeyOcid;
+
+    @Inject
+    VaultResource(@Named("custom") OciVault vault, (1)
+                  @ConfigProperty(name = "app.vault.vault-ocid") (2)
+                          String vaultOcid,
+                  @ConfigProperty(name = "app.vault.compartment-ocid") (3)
+                          String compartmentOcid,
+                  @ConfigProperty(name = "app.vault.encryption-key-ocid") (4)
+                          String encryptionKeyOcid,
+                  @ConfigProperty(name = "app.vault.signature-key-ocid") (5)
+                          String signatureKeyOcid) {
+        this.vault = vault;
+        this.vaultOcid = vaultOcid;
+        this.compartmentOcid = compartmentOcid;
+        this.encryptionKeyOcid = encryptionKeyOcid;
+        this.signatureKeyOcid = signatureKeyOcid;
+    }
+}
+----
+1. `OciVault` support class is configured and injected automatically
+2. 3. 4. 5. Properties a read from the configuration
+
+== OCI Vault usage
+
+=== Encryption
+To encrypt a text, submitted with a GET request to `/encrypt` endpoint:
+
+[source,java]
+----
+    @GET
+    @Path("/encrypt/{text}")
+    public String encrypt(@PathParam("text") String secret) {
+        return vault.encrypt(Encrypt.Request.builder()
+                                     .keyId(encryptionKeyOcid)
+                                     .data(Base64Value.create(secret)))
+                .cipherText();
+    }
+----
+
+=== Decryption
+To decrypt a text, submitted with a GET request to `/decrypt` endpoint:
+
+[source,java]
+----
+    @GET
+    @Path("/decrypt/{text: .*}")
+    public String decrypt(@PathParam("text") String cipherText) {
+        return vault.decrypt(Decrypt.Request.builder()
+                                     .keyId(encryptionKeyOcid)
+                                     .cipherText(cipherText))
+                .decrypted()
+                .toDecodedString();
+    }
+----
+
+=== Signature
+To retrieve a signature for submitted text via GET request to `/sign` endpoint:
+
+[source,java]
+----
+    @GET
+    @Path("/sign/{text}")
+    public String sign(@PathParam("text") String dataToSign) {
+        return vault.sign(Sign.Request.builder()
+                                  .keyId(signatureKeyOcid)
+                                  .algorithm(Sign.Request.ALGORITHM_SHA_224_RSA_PKCS_PSS)
+                                  .message(Base64Value.create(dataToSign)))
+                .signature()
+                .toBase64();
+    }
+----
+
+=== Verification of a signature
+To verify the correctness of the signature to the submitted text via GET request to `/verify` endpoint:
+
+[source,java]
+----
+    @GET
+    @Path("/sign/{text}/{signature: .*}")
+    public String verify(@PathParam("text") String dataToVerify,
+                         @PathParam("signature") String signature) {
+        boolean valid = vault.verify(Verify.Request.builder()
+                                             .keyId(signatureKeyOcid)
+                                             .message(Base64Value.create(dataToVerify))
+                                             .algorithm(Sign.Request.ALGORITHM_SHA_224_RSA_PKCS_PSS)
+                                             .signature(Base64Value.createFromEncoded(signature)))
+                .isValid();
+
+        return valid ? "Signature valid" : "Signature not valid";
+    }
+----
+
+=== Creating a signature
+To create a secret with a provided name, using GET request submitted to `/secret`
+
+[source,java]
+----
+    @POST
+    @Path("/secret/{name}")
+    public String createSecret(@PathParam("name") String name,
+                               String secretText) {
+        return vault.createSecret(CreateSecret.Request.builder()
+                                          .secretName(name)
+                                          .secretContent(CreateSecret.SecretContent.create(secretText))
+                                          .vaultId(vaultOcid)
+                                          .compartmentId(compartmentOcid)
+                                          .encryptionKeyId(encryptionKeyOcid))
+                .secret()
+                .id();
+
+    }
+----
+
+=== Getting a signature
+To get a secret by its OCID, use GET Request to `/secret`:
+
+[source,java]
+----
+    @GET
+    @Path("/secret/{id}")
+    public String getSecret(@PathParam("id") String secretOcid) {
+        Optional<GetSecretBundle.Response> response = vault.getSecretBundle(GetSecretBundle.Request.builder()
+                                                                                    .secretId(secretOcid))
+                .entity();
+
+        if (response.isEmpty()) {
+            throw new NotFoundException("Secret with id " + secretOcid + " does not exist");
+        }
+
+        return response.get().secretString().orElse("");
+    }
+----
+
+=== Deleting a signature
+To delete a secret, a DELETE request to `/secret` should be used:
+
+[source, java]
+----
+    @DELETE
+    @Path("/secret/{id}")
+    public String deleteSecret(@PathParam("id") String secretOcid) {
+        // has to be for quite a long period of time - did not work with less than 30 days
+        Instant deleteTime = Instant.now().plus(30, ChronoUnit.DAYS);
+
+        vault.deleteSecret(DeleteSecret.Request.builder()
+                                   .secretId(secretOcid)
+                                   .timeOfDeletion(deleteTime));
+
+        return "Secret " + secretOcid + " was deleted";
+    }
+----
