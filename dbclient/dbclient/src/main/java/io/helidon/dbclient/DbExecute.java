@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -354,4 +354,22 @@ public interface DbExecute {
     default Single<Long> dml(String statement, Object... parameters) {
         return createDmlStatement(statement).params(parameters).execute();
     }
+
+    /*
+     * Unwrap support
+     */
+
+    /**
+     * Unwrap database executor internals.
+     * Only database connection is supported. Any operations based on this connection are <b>blocking</b>.
+     * Reactive support must be implemented in user code. This connection instance is being used to execute
+     * all statements in current database executor context.
+     *
+     * @param <C> target class to be unwrapped
+     * @param cls target class to be unwrapped
+     * @return database executor internals future matching provided class
+     * @throws UnsupportedOperationException when provided class is not supported
+     */
+    <C> Single<C> unwrap(Class<C> cls);
+
 }
