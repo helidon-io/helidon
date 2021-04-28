@@ -120,12 +120,16 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>-Dgrpc.marshaller.java.enabled=true</argLine>
+                </configuration>
             </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
+                    <argLine>-Dgrpc.marshaller.java.enabled=true</argLine>
                     <reuseForks>false</reuseForks>
                     <includes>
                         <include>**/*IT.java</include>
