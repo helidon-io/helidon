@@ -19,7 +19,7 @@
 [ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
 
 # Load pipeline environment setup and define WS_DIR
-. $(dirname -- "${SCRIPT_PATH}")/../../../etc/scripts/includes/local-env.sh "${SCRIPT_PATH}" '../../..'
+. $(dirname -- "${SCRIPT_PATH}")/../../../etc/scripts/includes/docker-env.sh "${SCRIPT_PATH}" '../../..'
 
 # Local error handler
 test_on_error() {
@@ -74,12 +74,12 @@ fi
 # Start docker Container
 if [ -n "${FLAG_C}" ]; then
     readonly DOCKER_CONT_NAME="helidon-tests-dbclient-${FLAG_D}"
-    docker_db_start "${DOCKER_IMG}" \
-                    "${DOCKER_CONT_NAME}" \
-                    "${DB_HOST}:${DB_PORT}:${DB_PORT}" \
-                    "${DOCKER_ENV}" \
-                    'FLAG_C_RUN' \
-                    'FLAG_C'
+    docker_start "${DOCKER_IMG}" \
+                 "${DOCKER_CONT_NAME}" \
+                 "${DB_HOST}:${DB_PORT}:${DB_PORT}" \
+                 "${DOCKER_ENV}" \
+                 'FLAG_C_RUN' \
+                 'FLAG_C'
 fi
 
 # Turn simple tests on when no test was selected

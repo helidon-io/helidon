@@ -47,7 +47,7 @@ if [ -z "${__LOCAL_ENV_INCLUDED__}" ]; then
 
     # Docker helper functions
 
-    # Docker database container start.
+    # Docker container start.
     # Database containers require listening TCP port to be mapped to specific host:port.
     # Arguments: $1 - name:version of the image
     #            $2 - name of the container (--name ${2})
@@ -55,7 +55,7 @@ if [ -z "${__LOCAL_ENV_INCLUDED__}" ]; then
     #            $4 - additional docker run command arguments
     #            $5 - name of variable with container running status
     #            $6 - container start trigger variable name (optional, default true)
-    docker_db_start() {
+    docker_start() {
         if [ -z "${6}" ] || [ -n "${6}" -a -n "${!6}" ]; then
             echo -n 'Starting Docker container: '
             docker run -d \
@@ -78,5 +78,5 @@ if [ -z "${__LOCAL_ENV_INCLUDED__}" ]; then
     }
 
 else
-    echo "WARNING: ${WS_DIR}/etc/scripts/includes/local-env.sh included multiple times."
+    echo "WARNING: ${WS_DIR}/etc/scripts/includes/docker-env.sh included multiple times."
 fi
