@@ -6,17 +6,32 @@ run in Java VM and Native Image mode.
 ## Building and running the Tests
 
 Maven configuration contains 3 profiles:
-* **mysql** (required) to select MySQL database. Profiles for additional databases can be added.
-* **docker** (optional) to start docker container with database defined in its profile.
+* **mysql** to select MySQL database.
+* **pgsql** to select PostgreSQL database. Profiles for additional databases can be added.
 * **native-image** (optional) to trigger build and execution of web server in Native Image mode.
 
-To build and run the tests in *Java VM* mode, execute:
+To build and run the tests in *Java VM* mode with running MySQL database, execute:
 
-     mvn clean verify -Pdocker -Pmysql
+     mvn verify -Pdocker -Pmysql -Dapp.config=mysql.yaml \
+         -Ddb.user=<database_user> -Ddb.password=<database_password> \
+         -Ddb.url=<database_url>
 
 To build and run the tests in *Native Image* mode, execute:
 
-    mvn clean verify -Pdocker -Pmysql -Pnative-image
+    mvn clean verify -Pdocker -Pmysql -Pnative-image \
+        -Dapp.config=mysql.yaml -Ddb.user=<database_user> \
+        -Ddb.password=<database_password> -Ddb.url=<database_url>
+
+Project contains script `test.sh` to simplify tests execution:
+
+    Usage: test.sh [-hcjn] -d <database>
+
+        -h print this help and exit
+        -c start and stop Docker containers
+        -j execute remote application tests in Java VM mode (default)
+        -n execute remote application tests in native image mode
+        -d <database> select database
+           <database> :: mysql | pgsql
 
 ## Code structure
 
