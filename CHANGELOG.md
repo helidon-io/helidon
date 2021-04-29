@@ -7,38 +7,43 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [2.3.0]
+## [2.3.0-SNAPSHOT]
 
 2.3.0 is a minor release of Helidon that contains bug fixes and enhancements. Notable enhancements:
 
+* HashiCorp Vault support (Experimental)
+* Oracle OCI Vault support (Experimental)
+* Oracle OCI Object Storage support (Experimental)
+* Neo4J support (Experimental)
+* Micrometer metrics support (Experimental)
 * gRPC native image support
 * Reloadable WebServer TLS certificates
 * New metric: Exemplars
-* Performance improvements for JAX-RS applications with large number of concurrent connections
 * Scheduling feature to schedule periodic tasks 
-
-Experimental:
-
-* HashiCorp Vault support 
-* Oracle OCI Vault support
-* Oracle OCI Object Storage support (replaces older MP only version)
-* Neo4J support
-* Micrometer metrics support
+* Performance improvements for JAX-RS applications with large number of concurrent connections
 
 Experimental features are tested, supported and ready for use. But their APIs are subject to change.
 
+Users of the current OCI Object Storage extension (`helidon-integrations-cdi-oci-objectstorage`) are encouraged
+to look at the new OCI Object Storage support (`helidon-integrations-oci-objectstorage`). The old OCI object
+storage support will be deprecated in a future release.
 
 ### Compatibility
 
-2.3.0 is API compatible with 2.2.0. There is one behavior change related to Java marshalling in gRPC.
-`io.helidon.grpc.core.JavaMarshaller` has been deprecated and disabled by default. It was never
-reccomended for production use. To enable it XXX .........
+2.3.0 is API compatible with 2.2.0.
+
+There is a behavior change related to Java marshalling in gRPC. `io.helidon.grpc.core.JavaMarshaller` has
+been deprecated and disabled by default. It's use is not recommended for production and it will be removed
+in Helidon 3.0. If you need to use the JavaMarshaller you can re-enable it by setting the
+`grpc.marshaller.java.enabled` configuration property to true.
+
 
 ### CHANGES    
 
 - Config: Meta-Configuration support for Helidon MP. [2767](https://github.com/oracle/helidon/pull/2767)
 - Config: Support for custom default config file suffixes [2717](https://github.com/oracle/helidon/pull/2717)
 - DBClient: Removed query parameter check that is too strict. [2693](https://github.com/oracle/helidon/pull/2693)
+- DBClient: DB Client unwrap support for JDBC and MongoDB internals [2970](https://github.com/oracle/helidon/pull/2970)
 - Fault Tolerance: Fix delay computation in Retry policies [2938](https://github.com/oracle/helidon/pull/2938)
 - JAX-RS: Fix NPE with async Jersey resource [2911](https://github.com/oracle/helidon/pull/2911)
 - JAX-RS: Handle startups with request scopes available from CDI [2933](https://github.com/oracle/helidon/pull/2933)
@@ -67,7 +72,7 @@ reccomended for production use. To enable it XXX .........
 - Security: HTTP Basic auth Hash equals robustness [2871](https://github.com/oracle/helidon/pull/2871)
 - Vault/Config: Add encryption, digest and secret [2872](https://github.com/oracle/helidon/pull/2872)
 - Vault: Hashicorp vault integration [2895](https://github.com/oracle/helidon/pull/2895)
-- Vault/Object Storage: Oracle OCI integration for Vault and Object Storage [2894](https://github.com/oracle/helidon/pull/2894)
+- Vault/Object Storage: Oracle OCI integration for Vault and Object Storage [2894](https://github.com/oracle/helidon/pull/2894) [2973](https://github.com/oracle/helidon/pull/2973)
 - WebClient: Content-length set to 0 for PUT and POST if no entity has been sent [2924](https://github.com/oracle/helidon/pull/2924)
 - WebClient: Using an interface instead of an enum implementing it. [2875](https://github.com/oracle/helidon/pull/2875)
 - WebServer: Correctly handling content type of icons. [2905](https://github.com/oracle/helidon/pull/2905)
@@ -76,12 +81,14 @@ reccomended for production use. To enable it XXX .........
 - WebServer: Reloadable WebServer TLS during runtime [2900](https://github.com/oracle/helidon/pull/2900)
 - WebServer: Static content support module. [2705](https://github.com/oracle/helidon/pull/2705)
 - gRPC: Add support for gRPC reflection [2822](https://github.com/oracle/helidon/pull/2822)
+- gRPC: JavaMarshaller deprecation [2975](https://github.com/oracle/helidon/pull/2975)
 - Build: Add plugin to spotbugs-maven-plugin [2878](https://github.com/oracle/helidon/pull/2878)
 - Build: Checkstyle now checks class javadocs. [2935](https://github.com/oracle/helidon/pull/2935)
 - Build: Faster license filtering [2749](https://github.com/oracle/helidon/pull/2749)
 - Build: Remove the Helidon specific info from application effective pom [2783](https://github.com/oracle/helidon/pull/2783)
 - Dependencies: Graalvm upgrade (Merge do not squash) [2710](https://github.com/oracle/helidon/pull/2710)
 - Dependencies: Upgrade Hibernate and jaxb-runtime used by maven-jaxb2-plugin. For JD… [2862](https://github.com/oracle/helidon/pull/2862)
+- Dependencies: Upgrade Jersey and MP Rest client [2971](https://github.com/oracle/helidon/pull/2971)
 - Dependencies: Upgrade Netty to 4.1.63.Final [2915](https://github.com/oracle/helidon/pull/2915)
 - Examples: Fixes and cleanup [2891](https://github.com/oracle/helidon/pull/2891) [2768](https://github.com/oracle/helidon/pull/2768) [2931](https://github.com/oracle/helidon/pull/2931) [2858](https://github.com/oracle/helidon/pull/2858)
 - Examples: More fixes and cleanup [2830](https://github.com/oracle/helidon/pull/2830) [2936](https://github.com/oracle/helidon/pull/2936) [2901](https://github.com/oracle/helidon/pull/2901) [2656](https://github.com/oracle/helidon/pull/2656)
@@ -90,8 +97,8 @@ reccomended for production use. To enable it XXX .........
 - Docs: Fix #2809: h2 dependency in DB Client doc [2832](https://github.com/oracle/helidon/pull/2832)
 - Docs: Fixed Javadoc links in document [2819](https://github.com/oracle/helidon/pull/2819)
 - Docs: New section in docs for bean validation [2792](https://github.com/oracle/helidon/pull/2792)
-- Docs: consitently document maven coordinates [2921](https://github.com/oracle/helidon/pull/2921)
-- Docs: fixed securityContext.userName() [2854](https://github.com/oracle/helidon/pull/2854)
+- Docs: consitently document maven coordinates [2921](https://github.com/oracle/helidon/pull/2921) [2974](https://github.com/oracle/helidon/pull/2974)
+- Docs: various updates [2958](https://github.com/oracle/helidon/pull/2958) [2960](https://github.com/oracle/helidon/pull/2960)
 - Tests: Fix imports to use Hamcrest and Junit5 instead of Junit4 [2902](https://github.com/oracle/helidon/pull/2902)
 - Tests: Fixed interfering tests in MP config. [2714](https://github.com/oracle/helidon/pull/2714)
 - Tests: Move Multi reactive streams tck to standalone test project [2762](https://github.com/oracle/helidon/pull/2762)
@@ -1354,7 +1361,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.3.0]: https://github.com/oracle/helidon/compare/2.2.2...2.3.0
+[2.3.0]: https://github.com/oracle/helidon/compare/2.2.2...HEAD
 [2.2.2]: https://github.com/oracle/helidon/compare/2.2.1...2.2.2
 [2.2.1]: https://github.com/oracle/helidon/compare/2.2.0...2.2.1
 [2.2.0]: https://github.com/oracle/helidon/compare/2.1.0...2.2.0
