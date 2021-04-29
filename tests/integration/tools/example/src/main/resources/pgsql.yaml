@@ -25,11 +25,9 @@ db:
     username: ${db.user}
     password: ${db.password}
   health-check:
-    type: dml
-    statement: "DO 0"
+    type: query
+    statement: "SELECT 0"
   statements:
-    # custom DML ping statement
-    ping-dml: "DO 0"
     # custom query ping statement
     ping-query: "SELECT 0"
     # database schema initialization statements

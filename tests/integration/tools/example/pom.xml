@@ -14,6 +14,15 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
+
+<!--
+  Tests execution requires following maven properties to be provided:
+   * app.config  - configuration file name
+   * db.user     - database user name
+   * db.password - database user password
+   * db.url      - database URL
+-->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -30,7 +39,6 @@
 
     <properties>
         <version.lib.jandex-maven-plugin>1.0.6</version.lib.jandex-maven-plugin>
-        <version.lib.docker-maven-plugin>0.33.0</version.lib.docker-maven-plugin>
         <mainClass>io.helidon.tests.integration.tools.example.ServerMain</mainClass>
     </properties>
 
@@ -110,11 +118,6 @@
                     <version>${version.lib.jandex-maven-plugin}</version>
                 </plugin>
                 <plugin>
-                    <groupId>io.fabric8</groupId>
-                    <artifactId>docker-maven-plugin</artifactId>
-                    <version>${version.lib.docker-maven-plugin}</version>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${version.plugin.surefire}</version>
@@ -128,6 +131,7 @@
         </pluginManagement>
 
         <plugins>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -137,6 +141,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.jboss.jandex</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
@@ -146,6 +151,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -154,6 +160,10 @@
                     <threadCount>10</threadCount>
                     <systemPropertyVariables>
                         <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                        <app.config>${app.config}</app.config>
+                        <db.user>${db.user}</db.user>
+                        <db.password>${db.password}</db.password>
+                        <db.url>${db.url}</db.url>
                     </systemPropertyVariables>
                 </configuration>
                 <executions>
@@ -172,39 +182,12 @@
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
 
     </build>
 
     <profiles>
-
-        <profile>
-            <id>docker</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>io.fabric8</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>start</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>start</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>stop</id>
-                                <phase>post-integration-test</phase>
-                                <goals>
-                                    <goal>stop</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
 
         <profile>
             <id>native-image</id>
@@ -225,21 +208,6 @@
 
         <profile>
             <id>mysql</id>
-            <activation>
-                <property>
-                    <name>mysql</name>
-                </property>
-            </activation>
-            <properties>
-                <db.port>3306</db.port>
-                <db.host>127.0.0.1</db.host>
-                <db.database>pokemon</db.database>
-                <db.user>user</db.user>
-                <db.password>password</db.password>
-                <db.roootpw>root</db.roootpw>
-                <db.args>useSSL=false&amp;allowPublicKeyRetrieval=true</db.args>
-                <db.url>jdbc:mysql://${db.host}:${db.port}/${db.database}?${db.args}</db.url>
-            </properties>
             <dependencies>
                 <dependency>
                     <groupId>io.helidon.integrations.db</groupId>
@@ -252,60 +220,24 @@
                     <scope>runtime</scope>
                 </dependency>
             </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <app.config>mysql.yaml</app.config>
-                                <db.user>${db.user}</db.user>
-                                <db.password>${db.password}</db.password>
-                                <db.url>${db.url}</db.url>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>io.fabric8</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
-                        <configuration>
-                            <images>
-                                <image>
-                                    <name>mysql:8</name>
-                                    <alias>mysql</alias>
-                                    <run>
-                                        <env>
-                                            <MYSQL_USER>${db.user}</MYSQL_USER>
-                                            <MYSQL_PASSWORD>${db.password}</MYSQL_PASSWORD>
-                                            <MYSQL_ROOT_PASSWORD>${db.roootpw}</MYSQL_ROOT_PASSWORD>
-                                            <MYSQL_DATABASE>${db.database}</MYSQL_DATABASE>
-                                        </env>
-                                        <hostname>${db.host}</hostname>
-                                        <ports>
-                                            <port>${db.host}:${db.port}:3306</port>
-                                        </ports>
-                                        <wait>
-                                            <tcp>
-                                                <host>127.0.0.1</host>
-                                                <ports>
-                                                    <port>${db.port}</port>
-                                                </ports>
-                                            </tcp>
-                                            <time>120000</time>
-                                        </wait>
-                                    </run>
-                                </image>
-                            </images>
-                            <showLogs>true</showLogs>
-                            <startParallel>false</startParallel>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
+        </profile>
+
+        <profile>
+            <id>pgsql</id>
+            <dependencies>
+                <dependency>
+                    <groupId>io.helidon.integrations.db</groupId>
+                    <artifactId>helidon-integrations-db-pgsql</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
         </profile>
 
     </profiles>
-
 
 </project>

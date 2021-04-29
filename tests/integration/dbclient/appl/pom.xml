@@ -17,10 +17,10 @@
 
 <!--
   Tests execution requires following maven properties to be provided:
-   * app.config
-   * db.user
-   * db.password
-   * db.url
+   * app.config  - configuration file name
+   * db.user     - database user name
+   * db.password - database user password
+   * db.url      - database URL
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
