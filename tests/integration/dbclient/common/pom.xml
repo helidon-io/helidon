@@ -28,7 +28,7 @@ limitations under the License.
     </parent>
 
     <groupId>io.helidon.tests.integration.dbclient</groupId>
-    <artifactId>heldion-tests-integration-dbclient-common</artifactId>
+    <artifactId>helidon-tests-integration-dbclient-common</artifactId>
     <name>Integration Tests: DB Client Common</name>
 
     <dependencies>

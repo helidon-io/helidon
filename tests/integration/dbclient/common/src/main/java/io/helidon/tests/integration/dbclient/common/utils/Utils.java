@@ -38,6 +38,7 @@ import static org.hamcrest.Matchers.notNullValue;
  */
 public class Utils {
 
+    /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(Utils.class.getName());
 
     private Utils() {

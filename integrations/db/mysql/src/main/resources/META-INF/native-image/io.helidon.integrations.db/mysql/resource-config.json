@@ -1,7 +1,12 @@
 {
-  "resources":[
-    {"pattern":"com/mysql/cj/util/TimeZoneMapping.properties"}
-  ],
-  "bundles": [
-  ]
+    "resources":[
+        {
+            "pattern": "com/mysql/cj/util/TimeZoneMapping.properties"
+        }
+    ],
+    "bundles": [
+        {
+            "name": "com.mysql.cj.LocalizedErrorMessages"
+        }
+    ]
 }

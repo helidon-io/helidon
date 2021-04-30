@@ -65,11 +65,7 @@ public class ServerHealthCheckIT {
     private static String URL;
 
     private static Routing createRouting() {
-        Config cfgPingDml = CONFIG.get("test.ping-dml");
-        boolean pingDml = cfgPingDml.exists() ? cfgPingDml.asBoolean().get() : true;
-        HealthCheck check = pingDml
-                ? DbClientHealthCheck.create(DB_CLIENT)
-                : DbClientHealthCheck.builder(DB_CLIENT).query().build();
+        HealthCheck check = DbClientHealthCheck.create(DB_CLIENT, CONFIG.get("db.health-check"));
         final HealthSupport health = HealthSupport.builder()
                 .addLiveness(check)
                 .build();
@@ -148,13 +144,15 @@ public class ServerHealthCheckIT {
         }
         JsonArray checks = jsonResponse.asJsonObject().getJsonArray("checks");
         assertThat(checks.size(), greaterThan(0));
-        for (JsonValue check : checks) {
+        checks.stream().map((check) -> {
             String name = check.asJsonObject().getString("name");
+            return check;
+        }).forEachOrdered((check) -> {
             String state = check.asJsonObject().getString("state");
             String status = check.asJsonObject().getString("status");
             assertThat(state, equalTo("UP"));
             assertThat(status, equalTo("UP"));
-        }
+        });
     }
 
 

@@ -1,0 +1,39 @@
+#
+# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+server:
+  port: 0
+  host: 0.0.0.0
+
+db:
+  source: jdbc
+  connection:
+    url: ${db.url}
+    username: ${db.user}
+    password: ${db.password}
+  health-check:
+    type: dml
+    statement: "DO 0"
+  statements:
+    # custom DML ping statement
+    ping-dml: "DO 0"
+    # custom query ping statement
+    ping-query: "SELECT 0"
+    # database schema initialization statements
+    create-table: "CREATE TABLE Person (nick VARCHAR(64) NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
+    insert-person: "INSERT INTO Person (nick, name) VALUES(?, ?)"
+    # get person name by nick, use named parameters in query
+    get-name: "SELECT name FROM Person WHERE nick = :nick"

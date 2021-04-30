@@ -53,9 +53,16 @@ db:
 #  username: ${mongo.user}
 #  password: ${mongo.password}
 
+  health-check:
+    type: query
+    statement: '{
+            "operation": "command",
+            "query": { ping: 1 }
+        }'
+
   statements:
-    # required ping statement
-    ping: '{
+    # custom query ping statement
+    ping-query: '{
             "operation": "command",
             "query": { ping: 1 }
         }'
@@ -212,3 +219,8 @@ db:
             "projection": { id: 1, name: 1, _id: 0 },
             "query": { $and: [ { id: { $gt: ? } }, { id: { $lt: ? } } ] }
         }'
+
+# Tests configuration
+test:
+    # Whether database supports ping statement as DML (default value is true)
+    ping-dml: false

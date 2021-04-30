@@ -197,9 +197,9 @@ public class CheckMsSqlIT {
     @Test
     public void testDmlStatementExecution() throws SQLException {
         CheckIT.ConnectionBuilder builder = new CheckIT.ConnectionBuilder();
-        String ping = CONFIG.get("db.statements.ping").asString().get();
-        Config cfgPingDml = CONFIG.get("test.ping-dml");
-        boolean pingDml = cfgPingDml.exists() ? cfgPingDml.asBoolean().get() : true;
+        String ping = CONFIG.get("db.health-check.statement").asString().get();
+        String typeStr = CONFIG.get("db.health-check.type").asString().get();
+        boolean pingDml = typeStr != null && "dml".equals(typeStr.toLowerCase());
         CONFIG.get("db.connection").ifExists(builder);
         Connection conn = builder.createConnection();
         if (pingDml) {
