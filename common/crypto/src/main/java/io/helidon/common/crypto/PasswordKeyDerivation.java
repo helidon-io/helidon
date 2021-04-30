@@ -35,7 +35,7 @@ public class PasswordKeyDerivation {
 
     /**
      * Derive key from the password with the usage of the salt.
-     * <p>
+     * <br>
      * Uses algorithm PBKDF2WithHmacSHA256 for password derivation by default.
      *
      * @param password   base for key derivation

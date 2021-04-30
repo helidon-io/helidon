@@ -33,41 +33,60 @@ public class HmacDigest implements Digest {
 
     /**
      * HMAC using MD5 as a hash function.
+     * <br>
+     * Value is: {@value}.
+     * @deprecated HMAC-MD5 should not be used for signature purposes, for more information see
+     * <a href="https://tools.ietf.org/html/rfc6151#section-2.3">RFC6151 - Section 2.3</a>.
      */
+    @Deprecated
     public static final String ALGORITHM_MD5 = "HmacMD5";
 
     /**
      * HMAC using SHA1 as a hash function.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA_1 = "HmacSHA1";
 
     /**
      * HMAC using SHA224 as a hash function.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA_224 = "HmacSHA224";
 
     /**
      * HMAC using SHA256 as a hash function.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA_256 = "HmacSHA256";
 
     /**
      * HMAC using SHA384 as a hash function.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA_384 = "HmacSHA384";
 
     /**
      * HMAC using SHA512 as a hash function.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA_512 = "HmacSHA512";
 
     /**
      * HMAC using SHA512/224 as a hash function.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA_512_224 = "HmacSHA512/224";
 
     /**
      * HMAC using SHA512/256 as a hash function.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA_512_256 = "HmacSHA512/256";
 
@@ -133,7 +152,7 @@ public class HmacDigest implements Digest {
 
         /**
          * Set new HMAC algorithm.
-         * <p>
+         * <br>
          * Default value is {@link #ALGORITHM_SHA_256}
          *
          * @param algorithm algorithm to set

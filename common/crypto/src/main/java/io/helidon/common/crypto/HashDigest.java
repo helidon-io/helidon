@@ -24,77 +24,109 @@ import java.util.Objects;
 import io.helidon.integrations.common.rest.Base64Value;
 
 /**
- * The PlainDigest is used for ordinary data digest creation and verification.
- * <p>
+ * The HashDigest is used for ordinary data digest creation and verification.
+ * <br>
  * Should not be used for authentication purposes.
  */
-public class PlainDigest implements Digest {
+public class HashDigest implements Digest {
 
     /**
      * Digest MD2 algorithm.
+     * <br>
+     * Value is: {@value}.
+     * @deprecated It is strongly recommended not to use this algorithm as stated here
+     * <a href="https://tools.ietf.org/html/rfc6149#section-6">RFC6149 - Section 6</a>.
      */
+    @Deprecated
     public static final String ALGORITHM_MD2 = "MD2";
 
     /**
      * Digest MD5 algorithm.
+     * <br>
+     * Value is: {@value}.
+     * @deprecated It is strongly recommended not to use this algorithm as stated here
+     * <a href="https://tools.ietf.org/html/rfc6151#section-2.1">RFC6151 - Section 2.1</a>.
      */
+    @Deprecated
     public static final String ALGORITHM_MD5 = "MD5";
 
     /**
      * Digest SHA-1 algorithm.
+     * <br>
+     * Value is: {@value}.
+     * @deprecated SHA-1 is unsafe to use alone due to its vulnerability to collision attacks
      */
+    @Deprecated
     public static final String ALGORITHM_SHA_1 = "SHA-1";
 
     /**
      * Digest SHA-224 algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA_224 = "SHA-224";
 
     /**
      * Digest SHA-256 algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA_256 = "SHA-256";
 
     /**
      * Digest SHA-384 algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA_384 = "SHA-384";
 
     /**
      * Digest SHA-512/224 algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA_512_224 = "SHA-512/224";
 
     /**
      * Digest SHA-512/256 algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA_512_256 = "SHA-512/256";
 
     /**
      * Digest SHA3-224 algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA3_224 = "SHA3-224";
 
     /**
      * Digest SHA3-256 algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA3_256 = "SHA3-256";
 
     /**
      * Digest SHA3-384 algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA3_384 = "SHA3-384";
 
     /**
      * Digest SHA3-512 algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA3_512 = "SHA3-512";
 
-    private final String digestType;
+    private final String algorithm;
     private final String provider;
 
-    private PlainDigest(Builder builder) {
-        this.digestType = builder.algorithm;
+    private HashDigest(Builder builder) {
+        this.algorithm = builder.algorithm;
         this.provider = builder.provider;
     }
 
@@ -104,7 +136,7 @@ public class PlainDigest implements Digest {
      * @param algorithm algorithm to be used
      * @return new instance
      */
-    public static PlainDigest create(String algorithm) {
+    public static HashDigest create(String algorithm) {
         return builder().algorithm(algorithm).build();
     }
 
@@ -122,9 +154,9 @@ public class PlainDigest implements Digest {
         try {
             MessageDigest digest;
             if (provider == null) {
-                digest = MessageDigest.getInstance(digestType);
+                digest = MessageDigest.getInstance(algorithm);
             } else {
-                digest = MessageDigest.getInstance(digestType, provider);
+                digest = MessageDigest.getInstance(algorithm, provider);
             }
             return Base64Value.create(digest.digest(value.toBytes()));
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
@@ -133,9 +165,9 @@ public class PlainDigest implements Digest {
     }
 
     /**
-     * Builder of the {@link PlainDigest}.
+     * Builder of the {@link HashDigest}.
      */
-    public static final class Builder implements io.helidon.common.Builder<PlainDigest> {
+    public static final class Builder implements io.helidon.common.Builder<HashDigest> {
 
         private String algorithm = ALGORITHM_SHA_256;
         private String provider = null;
@@ -166,8 +198,8 @@ public class PlainDigest implements Digest {
         }
 
         @Override
-        public PlainDigest build() {
-            return new PlainDigest(this);
+        public HashDigest build() {
+            return new HashDigest(this);
         }
     }
 

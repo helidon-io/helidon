@@ -29,12 +29,12 @@ import static io.helidon.common.crypto.CryptoCommonConstants.PREFIX_PATTERN;
 public interface CommonCipher {
 
     /**
-     * Encrypt plain message.
+     * Encrypt message.
      *
-     * @param plain plain message
+     * @param message message
      * @return encrypted message
      */
-    Base64Value encrypt(Base64Value plain);
+    Base64Value encrypt(Base64Value message);
 
     /**
      * Decrypt encrypted message.
@@ -45,33 +45,33 @@ public interface CommonCipher {
     Base64Value decrypt(Base64Value encrypted);
 
     /**
-     * Encrypt plain message to the String format.
-     * <p>
-     * Template format: <code>helidon:(formatVersion):encryptedDataInBase64</code><p>
+     * Encrypt message to the String format.
+     * <br>
+     * Template format: <code>helidon:(formatVersion):encryptedDataInBase64</code><br>
      * Example: <code>helidon:2:encryptedDataInBase64</code>
      *
-     * @param plain plain message
-     * @return encrypted message in the String format
+     * @param message message
+     * @return cipher text
      */
-    default String encryptToString(Base64Value plain) {
-        return PREFIX + encrypt(plain).toBase64();
+    default String encryptToString(Base64Value message) {
+        return PREFIX + encrypt(message).toBase64();
     }
 
     /**
-     * Decrypt encrypted message in String format.
-     * <p>
-     * Required format: <code>helidon:(formatVersion):encryptedDataInBase64</code><p>
+     * Decrypt cipherText provided by {@link #encryptToString(Base64Value)}.
+     * <br>
+     * Required format: <code>helidon:(formatVersion):encryptedDataInBase64</code><br>
      * Example: <code>helidon:2:encryptedDataInBase64</code>
      *
-     * @param encrypted encrypted message in the String format
+     * @param cipherText cipher text
      * @return decrypted message
      */
-    default Base64Value decryptFromString(String encrypted) {
-        Matcher matcher = PREFIX_PATTERN.matcher(encrypted);
+    default Base64Value decryptFromString(String cipherText) {
+        Matcher matcher = PREFIX_PATTERN.matcher(cipherText);
         if (matcher.matches()) {
             return decrypt(Base64Value.createFromEncoded(matcher.group(2)));
         } else {
-            throw new CryptoException("String does not contain Helidon prefix: " + encrypted);
+            throw new CryptoException("String does not contain Helidon prefix: " + cipherText);
         }
     }
 

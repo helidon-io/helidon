@@ -27,7 +27,7 @@ import io.helidon.integrations.common.rest.Base64Value;
 
 /**
  * This class provides simple and stateless way to encrypt and decrypt messages using selected asymmetric cipher.
- * <p>
+ * <br>
  * It requires to have a {@link PrivateKey} provided for decryption purposes and
  * a {@link PublicKey} for encryption purposes.
  */
@@ -35,30 +35,53 @@ public class AsymmetricCipher implements CommonCipher {
 
     /**
      * RSA cipher with ECB method using optimal asymmetric encryption padding with MD5 and MGF1.
+     * <br>
+     * Value is: {@value}.
+     * @deprecated It is strongly recommended not to use this algorithm as stated here
+     * <a href="https://tools.ietf.org/html/rfc6151#section-2">RFC6151 - 2</a>.
      */
+    @Deprecated
     public static final String ALGORITHM_RSA_ECB_OAEP_MD5 = "RSA/ECB/OAEPWithMD5AndMGF1Padding";
+
     /**
      * RSA cipher with ECB method using optimal asymmetric encryption padding with SHA1 and MGF1.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_RSA_ECB_OAEP_SHA1 = "RSA/ECB/OAEPWithSHA1AndMGF1Padding";
+
     /**
      * RSA cipher with ECB method using optimal asymmetric encryption padding with SHA-256 and MGF1.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_RSA_ECB_OAEP256 = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
+
     /**
      * RSA cipher with ECB method using optimal asymmetric encryption padding with SHA-384 and MGF1.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_RSA_ECB_OAEP384 = "RSA/ECB/OAEPWithSHA-384AndMGF1Padding";
+
     /**
      * RSA cipher with ECB method using optimal asymmetric encryption padding with SHA-512/224 and MGF1.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_RSA_ECB_OAEP512_224 = "RSA/ECB/OAEPWithSHA-512/224AndMGF1Padding";
+
     /**
      * RSA cipher with ECB method using optimal asymmetric encryption padding with SHA-512/256 and MGF1.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_RSA_ECB_OAEP512_256 = "RSA/ECB/OAEPWithSHA-512/256AndMGF1Padding";
+
     /**
      * RSA cipher with ECB method using PKCS1 padding.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_RSA_ECB_PKCS1 = "RSA/ECB/PKCS1Padding";
 
@@ -84,9 +107,12 @@ public class AsymmetricCipher implements CommonCipher {
     }
 
     @Override
-    public Base64Value encrypt(Base64Value plain) {
+    public Base64Value encrypt(Base64Value message) {
+        if (publicKey == null) {
+            throw new CryptoException("No public key present. Could not perform encrypt operation");
+        }
         try {
-            return performCryptoOperation(Cipher.ENCRYPT_MODE, publicKey, plain);
+            return performCryptoOperation(Cipher.ENCRYPT_MODE, publicKey, message);
         } catch (Exception e) {
             throw new CryptoException("Message could not be encrypted", e);
         }
@@ -130,7 +156,7 @@ public class AsymmetricCipher implements CommonCipher {
 
         /**
          * Set algorithm which should be used.
-         * <p>
+         * <br>
          * Default value is {@link #ALGORITHM_RSA_ECB_OAEP256}.
          *
          * @param algorithm algorithm to be used

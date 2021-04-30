@@ -33,81 +33,119 @@ public class Signature implements Digest {
 
     /**
      * RSA signature algorithm with no digest algorithm specified.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_NONE_RSA = "NONEwithRSA";
 
     /**
      * RSA signature algorithm with MD2 digest algorithm.
+     * <br>
+     * Value is: {@value}.
+     * @deprecated It is strongly recommended not to use this algorithm for signature purposes as stated here
+     * <a href="https://tools.ietf.org/html/rfc6149#section-6">RFC6149 - Section 6</a>.
      */
+    @Deprecated
     public static final String ALGORITHM_MD2_RSA = "MD2withRSA";
 
     /**
      * RSA signature algorithm with MD5 digest algorithm.
+     * <br>
+     * Value is: {@value}.
+     * @deprecated It is strongly recommended not to use this algorithm for signature purposes as stated here
+     * <a href="https://tools.ietf.org/html/rfc6151#section-2">RFC6149 - Section 2</a>.
      */
+    @Deprecated
     public static final String ALGORITHM_MD5_RSA = "MD5withRSA";
 
     /**
      * RSA signature algorithm with SHA1 digest algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA1_RSA = "SHA1withRSA";
 
     /**
      * RSA signature algorithm with SHA224 digest algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA224_RSA = "SHA224withRSA";
 
     /**
      * RSA signature algorithm with SHA256 digest algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA256_RSA = "SHA256withRSA";
 
     /**
      * RSA signature algorithm with SHA384 digest algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA384_RSA = "SHA384withRSA";
 
     /**
      * RSA signature algorithm with SHA512 digest algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA512_RSA = "SHA512withRSA";
 
     /**
      * RSA signature algorithm with SHA512/224 digest algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA512_224_RSA = "SHA512/224withRSA";
 
     /**
      * RSA signature algorithm with SHA512/256 digest algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA512_256_RSA = "SHA512/256withRSA";
 
     /**
      * Elliptic curve digital signature algorithm with no digest algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_NONE_ECDSA = "NONEwithECDSA";
 
     /**
      * Elliptic curve digital signature algorithm with SHA1 digest algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA1_ECDSA = "SHA1withECDSA";
 
     /**
      * Elliptic curve digital signature algorithm with SHA224 digest algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA224_ECDSA = "SHA224withECDSA";
 
     /**
      * Elliptic curve digital signature algorithm with SHA256 digest algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA256_ECDSA = "SHA256withECDSA";
 
     /**
      * Elliptic curve digital signature algorithm with SHA384 digest algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA384_ECDSA = "SHA384withECDSA";
 
     /**
      * Elliptic curve digital signature algorithm with SHA512 digest algorithm.
+     * <br>
+     * Value is: {@value}.
      */
     public static final String ALGORITHM_SHA512_ECDSA = "SHA512withECDSA";
 
@@ -185,7 +223,7 @@ public class Signature implements Digest {
 
         /**
          * Set algorithm which should be used.
-         * <p>
+         * <br>
          * Default value is {@link #ALGORITHM_SHA256_RSA}.
          *
          * @param algorithm algorithm to be used

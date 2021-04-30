@@ -19,6 +19,8 @@ package io.helidon.integrations.common.rest;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+import io.helidon.common.LazyValue;
+
 /**
  * Base64 wrapper.
  * APIs use base64 encoding to transfer binary data as strings. This class provides helpful methods
@@ -33,10 +35,27 @@ public class Base64Value {
     private static final Base64.Encoder ENCODER = Base64.getEncoder();
     private static final Base64.Decoder DECODER = Base64.getDecoder();
 
-    private final String base64;
+    private final LazyValue<String> base64;
+    private final LazyValue<byte[]> bytes;
+    private final LazyValue<String> plainString;
 
     private Base64Value(String base64) {
-        this.base64 = base64;
+        this.base64 = LazyValue.create(base64);
+        this.bytes = LazyValue.create(() -> DECODER.decode(base64));
+        this.plainString = LazyValue.create(() -> new String(this.bytes.get(), StandardCharsets.UTF_8));
+    }
+
+    private Base64Value(byte[] bytes) {
+        this.bytes = LazyValue.create(bytes);
+        this.base64 = LazyValue.create(() -> ENCODER.encodeToString(bytes));
+        this.plainString = LazyValue.create(() -> new String(bytes, StandardCharsets.UTF_8));
+    }
+
+    @SuppressWarnings("unused")
+    private Base64Value(String plainString, boolean ignored) {
+        this.plainString = LazyValue.create(plainString);
+        this.bytes = LazyValue.create(() -> plainString.getBytes(StandardCharsets.UTF_8));
+        this.base64 = LazyValue.create(() -> ENCODER.encodeToString(this.bytes.get()));
     }
 
     /**
@@ -47,7 +66,7 @@ public class Base64Value {
      * @return a new value
      */
     public static Base64Value create(String plainText) {
-        return create(plainText.getBytes(StandardCharsets.UTF_8));
+        return new Base64Value(plainText, true);
     }
 
     /**
@@ -57,7 +76,7 @@ public class Base64Value {
      * @return a new value
      */
     public static Base64Value create(byte[] bytes) {
-        return createFromEncoded(ENCODER.encodeToString(bytes));
+        return new Base64Value(bytes);
     }
 
     /**
@@ -76,7 +95,7 @@ public class Base64Value {
      * @return base64 value
      */
     public String toBase64() {
-        return base64;
+        return base64.get();
     }
 
     /**
@@ -85,7 +104,7 @@ public class Base64Value {
      * @return bytes
      */
     public byte[] toBytes() {
-        return DECODER.decode(base64);
+        return bytes.get();
     }
 
     /**
@@ -98,11 +117,11 @@ public class Base64Value {
      * @return string value from the decoded bytes
      */
     public String toDecodedString() {
-        return new String(toBytes(), StandardCharsets.UTF_8);
+        return plainString.get();
     }
 
     @Override
     public String toString() {
-        return base64;
+        return base64.get();
     }
 }

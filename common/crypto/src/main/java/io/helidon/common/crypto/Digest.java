@@ -16,6 +16,7 @@
 
 package io.helidon.common.crypto;
 
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 
@@ -45,13 +46,13 @@ public interface Digest {
      * @return whether both digests are the same
      */
     default boolean verify(Base64Value toVerify, Base64Value digestToVerify) {
-        return Arrays.equals(digest(toVerify).toBytes(), digestToVerify.toBytes());
+        return MessageDigest.isEqual(digest(toVerify).toBytes(), digestToVerify.toBytes());
     }
 
     /**
      * Create digest of the value and return as String format.
-     * <p>
-     * Template format: <code>helidon:(formatVersion):digestInBase64</code><p>
+     * <br>
+     * Template format: <code>helidon:(formatVersion):digestInBase64</code><br>
      * Example: <code>helidon:2:digestInBase64</code>
      *
      * @param value value to make digest from
@@ -63,8 +64,8 @@ public interface Digest {
 
     /**
      * Verify the digest of the value against the provided digest in String format.
-     * <p>
-     * Template format: <code>helidon:(formatVersion):digestInBase64</code><p>
+     * <br>
+     * Template format: <code>helidon:(formatVersion):digestInBase64</code><br>
      * Example: <code>helidon:2:digestInBase64</code>
      *
      * @param toVerify value to create digest from

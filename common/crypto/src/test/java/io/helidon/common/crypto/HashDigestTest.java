@@ -34,20 +34,20 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class PlainDigestTest {
+public class HashDigestTest {
 
     private static final Base64Value DATA_TO_SIGN_1 = Base64Value.create("Some data to be signed1");
     private static final Base64Value DATA_TO_SIGN_2 = Base64Value.create("Some data to be signed2");
 
     private static Stream<ParameterWrapper> initParams() throws IllegalAccessException {
         List<ParameterWrapper> params = new ArrayList<>();
-        List<Field> fields = Arrays.stream(PlainDigest.class.getDeclaredFields())
+        List<Field> fields = Arrays.stream(HashDigest.class.getDeclaredFields())
                 .filter(it -> Modifier.isStatic(it.getModifiers()))
                 .filter(it -> it.getName().startsWith("ALGORITHM_"))
                 .collect(Collectors.toList());
         for (Field field : fields) {
             String digestType = (String) field.get(null);
-            PlainDigest digest = PlainDigest.create(digestType);
+            HashDigest digest = HashDigest.create(digestType);
             params.add(new ParameterWrapper(digestType, digest));
         }
         return params.stream();
@@ -56,39 +56,39 @@ public class PlainDigestTest {
     @ParameterizedTest
     @MethodSource("initParams")
     public void testSignAndVerify(ParameterWrapper params) {
-        PlainDigest plainDigest = params.digest;
-        Base64Value digest = plainDigest.digest(DATA_TO_SIGN_1);
-        Base64Value digestSecond = plainDigest.digest(DATA_TO_SIGN_1);
+        HashDigest hashDigest = params.digest;
+        Base64Value digest = hashDigest.digest(DATA_TO_SIGN_1);
+        Base64Value digestSecond = hashDigest.digest(DATA_TO_SIGN_1);
         assertThat(digest.toBytes(), not(DATA_TO_SIGN_1.toBytes()));
         assertThat(digest.toBytes(), is(digestSecond.toBytes()));
 
-        assertThat(plainDigest.verify(DATA_TO_SIGN_1, digest), is(true));
+        assertThat(hashDigest.verify(DATA_TO_SIGN_1, digest), is(true));
     }
 
     @ParameterizedTest
     @MethodSource("initParams")
     public void testVerificationFailure(ParameterWrapper params) {
-        PlainDigest plainDigest = params.digest;
-        Base64Value digest = plainDigest.digest(DATA_TO_SIGN_1);
+        HashDigest hashDigest = params.digest;
+        Base64Value digest = hashDigest.digest(DATA_TO_SIGN_1);
 
-        assertThat(plainDigest.verify(DATA_TO_SIGN_2, digest), is(false));
+        assertThat(hashDigest.verify(DATA_TO_SIGN_2, digest), is(false));
     }
 
     @ParameterizedTest
     @MethodSource("initParams")
     public void testStringFormat(ParameterWrapper params) {
-        PlainDigest plainDigest = params.digest;
-        String digest = plainDigest.digestString(DATA_TO_SIGN_1);
+        HashDigest hashDigest = params.digest;
+        String digest = hashDigest.digestString(DATA_TO_SIGN_1);
         assertThat(digest, startsWith(CryptoCommonConstants.PREFIX));
-        assertThat(plainDigest.verifyString(DATA_TO_SIGN_1, digest), is(true));
+        assertThat(hashDigest.verifyString(DATA_TO_SIGN_1, digest), is(true));
     }
 
     private static class ParameterWrapper {
 
         private final String digestType;
-        private final PlainDigest digest;
+        private final HashDigest digest;
 
-        private ParameterWrapper(String digestType, PlainDigest digest) {
+        private ParameterWrapper(String digestType, HashDigest digest) {
             this.digestType = digestType;
             this.digest = digest;
         }
