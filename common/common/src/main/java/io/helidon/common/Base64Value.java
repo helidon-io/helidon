@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.common.rest;
+package io.helidon.common;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-
-import io.helidon.common.LazyValue;
 
 /**
  * Base64 wrapper.

@@ -24,7 +24,7 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.Objects;
 
-import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.common.Base64Value;
 
 /**
  * The Signature class is used for simplification of the digital signature creation and verification.

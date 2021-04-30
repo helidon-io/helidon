@@ -21,7 +21,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.Objects;
 
-import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.common.Base64Value;
 
 /**
  * The HashDigest is used for ordinary data digest creation and verification.

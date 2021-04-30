@@ -19,7 +19,7 @@ package io.helidon.integrations.oci.vault;
 import javax.json.JsonObject;
 
 import io.helidon.integrations.common.rest.ApiEntityResponse;
-import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.common.Base64Value;
 import io.helidon.integrations.oci.connect.OciApiException;
 import io.helidon.integrations.oci.connect.OciRequestBase;
 
@@ -109,8 +109,8 @@ public final class Sign {
          *
          * @param value value to sign
          * @return updated request
-         * @see io.helidon.integrations.common.rest.Base64Value#create(String)
-         * @see io.helidon.integrations.common.rest.Base64Value#create(byte[])
+         * @see Base64Value#create(String)
+         * @see Base64Value#create(byte[])
          */
         public Request message(Base64Value value) {
             return add("message", value.toBase64());

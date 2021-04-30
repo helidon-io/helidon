@@ -22,7 +22,7 @@ import java.util.function.Function;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.common.Base64Value;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.security.SecurityException;
 import io.helidon.security.spi.DigestProvider;
@@ -254,7 +254,7 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
              * <tr>
              *     <td>{@code context}</td>
              *     <td>Context as base64 encoded text.</td>
-             *     <td>{@link #context(io.helidon.integrations.common.rest.Base64Value)}</td>
+             *     <td>{@link #context(Base64Value)}</td>
              * </tr>
              * <tr>
              *     <td>{@code signature-algorithm}</td>
@@ -514,7 +514,7 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
              * <tr>
              *     <td>{@code context}</td>
              *     <td>Context as base64 encoded text.</td>
-             *     <td>{@link #context(io.helidon.integrations.common.rest.Base64Value)}</td>
+             *     <td>{@link #context(Base64Value)}</td>
              * </tr>
              * <tr>
              *     <td>{@code key-version}</td>

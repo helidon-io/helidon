@@ -37,7 +37,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import io.helidon.common.LazyValue;
-import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.common.Base64Value;
 
 /**
  * This class provides simple and stateless way to encrypt and decrypt messages using selected symmetric cipher.

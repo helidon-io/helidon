@@ -20,7 +20,7 @@ import javax.json.JsonObject;
 
 import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.common.rest.ApiException;
-import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.common.Base64Value;
 import io.helidon.integrations.vault.VaultRequest;
 import io.helidon.integrations.vault.VaultResponse;
 

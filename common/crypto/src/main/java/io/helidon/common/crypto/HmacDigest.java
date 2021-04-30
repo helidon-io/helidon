@@ -24,7 +24,7 @@ import java.util.Objects;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.common.Base64Value;
 
 /**
  * The HmacDigest is used for simplification of the HMAC signature creation and verification.

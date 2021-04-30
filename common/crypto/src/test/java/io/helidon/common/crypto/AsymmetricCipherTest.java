@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 
 import javax.crypto.BadPaddingException;
 
-import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.common.Base64Value;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;

@@ -18,7 +18,7 @@ package io.helidon.common.crypto;
 
 import java.util.regex.Matcher;
 
-import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.common.Base64Value;
 
 import static io.helidon.common.crypto.CryptoCommonConstants.PREFIX;
 import static io.helidon.common.crypto.CryptoCommonConstants.PREFIX_PATTERN;
