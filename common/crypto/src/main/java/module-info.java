@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
- *
+ * Helidon Common Crypto library.
  */
 module io.helidon.common.crypto {
     requires io.helidon.common;
