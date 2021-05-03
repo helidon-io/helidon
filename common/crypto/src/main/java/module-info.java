@@ -13,22 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package io.helidon.common.crypto;
-
-import java.util.regex.Pattern;
-
 /**
- * Constants for data String formats.
+ *
  */
-class CryptoCommonConstants {
+module io.helidon.common.crypto {
+    requires io.helidon.common;
 
-    static final String CURRENT_VERSION = "2";
-    static final String PREFIX = "helidon:" + CURRENT_VERSION + ":";
-    static final Pattern PREFIX_PATTERN = Pattern.compile("^helidon:(\\d+):(\\S+)$");
-
-    private CryptoCommonConstants() {
-        throw new IllegalStateException("This class cannot be instantiated");
-    }
-
+    exports io.helidon.common.crypto;
 }

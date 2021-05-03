@@ -17,14 +17,25 @@
 package io.helidon.common.crypto;
 
 /**
- * Cryptography exception.
+ * Common cryptography exception.
  */
 public class CryptoException extends RuntimeException {
 
+    /**
+     * Constructor with detailed message.
+     *
+     * @param message detailed message
+     */
     public CryptoException(String message) {
         super(message);
     }
 
+    /**
+     * Constructor with detailed message and wrapped throwable.
+     *
+     * @param message detailed message
+     * @param throwable wrapped throwable
+     */
     public CryptoException(String message, Throwable throwable) {
         super(message, throwable);
     }

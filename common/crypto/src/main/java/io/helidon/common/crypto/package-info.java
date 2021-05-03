@@ -14,21 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.common.crypto;
-
-import java.util.regex.Pattern;
-
 /**
- * Constants for data String formats.
+ * Common cryptography implementations.
  */
-class CryptoCommonConstants {
-
-    static final String CURRENT_VERSION = "2";
-    static final String PREFIX = "helidon:" + CURRENT_VERSION + ":";
-    static final Pattern PREFIX_PATTERN = Pattern.compile("^helidon:(\\d+):(\\S+)$");
-
-    private CryptoCommonConstants() {
-        throw new IllegalStateException("This class cannot be instantiated");
-    }
-
-}
+package io.helidon.common.crypto;
