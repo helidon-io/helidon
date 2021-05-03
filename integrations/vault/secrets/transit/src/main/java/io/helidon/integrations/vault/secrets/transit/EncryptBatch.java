@@ -23,10 +23,10 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
+import io.helidon.common.Base64Value;
 import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.common.rest.ApiException;
 import io.helidon.integrations.common.rest.ApiJsonBuilder;
-import io.helidon.common.Base64Value;
 import io.helidon.integrations.vault.VaultRequest;
 import io.helidon.integrations.vault.VaultResponse;
 

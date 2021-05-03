@@ -18,10 +18,10 @@ package io.helidon.integrations.vault.secrets.transit;
 
 import javax.json.JsonObject;
 
+import io.helidon.common.Base64Value;
 import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.common.rest.ApiException;
 import io.helidon.integrations.common.rest.ApiJsonParser;
-import io.helidon.common.Base64Value;
 import io.helidon.integrations.vault.VaultRequest;
 import io.helidon.integrations.vault.VaultResponse;
 

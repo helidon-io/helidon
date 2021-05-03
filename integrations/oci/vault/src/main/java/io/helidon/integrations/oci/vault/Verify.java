@@ -18,8 +18,8 @@ package io.helidon.integrations.oci.vault;
 
 import javax.json.JsonObject;
 
-import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.common.Base64Value;
+import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.oci.connect.OciApiException;
 import io.helidon.integrations.oci.connect.OciRequestBase;
 
