@@ -28,6 +28,10 @@
     <artifactId>helidon-common-crypto</artifactId>
     <name>Helidon Common Crypto</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>

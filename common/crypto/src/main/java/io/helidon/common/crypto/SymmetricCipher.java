@@ -357,7 +357,8 @@ public class SymmetricCipher implements CommonCipher {
          * @return updated builder instance
          */
         public Builder password(char[] password) {
-            this.password = password;
+            Objects.requireNonNull(password, "Password cannot be null");
+            this.password = password.clone();
             return this;
         }
 
