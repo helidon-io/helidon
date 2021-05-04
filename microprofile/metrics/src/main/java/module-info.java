@@ -41,4 +41,6 @@ module io.helidon.microprofile.metrics {
     opens io.helidon.microprofile.metrics to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.metrics.MetricsCdiExtension;
+    provides io.helidon.webserver.KeyPerformanceIndicatorMetricsService
+            with io.helidon.microprofile.metrics.MpKeyPerformanceIndicatorMetricsService;
 }

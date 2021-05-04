@@ -17,30 +17,32 @@
 package io.helidon.metrics;
 
 import javax.json.JsonObject;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.Builder;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.reactive.Single;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
+import io.helidon.webserver.KeyPerformanceIndicatorMetricsService;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 public class TestServer {
@@ -124,30 +126,39 @@ public class TestServer {
         JsonObject metrics = response.content().as(JsonObject.class).await();
         if (System.getenv("MP_METRICS_TAGS") == null) {
             // MP_METRICS_TAGS causes metrics to add tags to metric IDs. Just do this check in the simple case, without tags.
-            assertThat("Vendor metrics in returned entity", metrics.containsKey("requests.count"), is(true));
+            assertThat("Vendor metrics requests.count in returned entity", metrics.containsKey("requests.count"), is(true));
+            assertThat("Vendor metrics requests.meter in returned entity", metrics.containsKey("requests.meter"), is(true));
+
+            // Even accesses to the /metrics endpoint should affect the metrics. Make sure.
+            int count = metrics.getInt("requests.count");
+            assertThat("requests.count", count, is(greaterThan(0)));
+
+            JsonObject meter = metrics.getJsonObject("requests.meter");
+            int meterCount = meter.getInt("count");
+            assertThat("requests.meter count", meterCount, is(greaterThan(0)));
+
+            double meterRate = meter.getJsonNumber("meanRate").doubleValue();
+            assertThat("requests.meter meanRate", meterRate, is(greaterThan(0.0)));
         }
     }
 
     @Test
-    void checkInflightRequests() throws InterruptedException, ExecutionException {
-        ConcurrentGauge inflightRequests = metricsSupport.inflightRequests();
-        long inflightBefore = inflightRequests.getCount();
+    void checkKPIDisabledByDefault() {
+        boolean isKPIEnabled = MetricsSupport.keyPerformanceIndicatorMetricsConfig().isExtendedKpiEnabled();
+        KeyPerformanceIndicatorMetricsService kpiMetricsService = KeyPerformanceIndicatorMetricsService.KPI_METRICS_SERVICE.get();
+        KeyPerformanceIndicatorMetricsService.Context ctx = kpiMetricsService.metricsSupportHandlerContext();
 
-        GreetService.initSlowRequest();
-        Single<String> response = webClientBuilder
-                .build()
-                .get()
-                .accept(MediaType.APPLICATION_JSON)
-                .path("greet/slow")
-                .request(String.class);
-        GreetService.awaitSlowRequestStarted();
-        long inflightDuring = inflightRequests.getCount();
+        assertThat("KPI context extended functionality is disabled",
+                 ctx, is(instanceOf(SeKeyPerformanceIndicatorMetricsService.SeBasicContext.class)));
 
-        String result = response.get();
+        MetricRegistry vendorRegistry = RegistryFactory.getInstance()
+                .getRegistry(MetricRegistry.Type.VENDOR);
 
-        assertThat("Returned result", result, is(GreetService.GREETING_RESPONSE));
-        assertThat("Change in inflight requests during invocation", inflightDuring - inflightBefore, is(1L));
-        assertThat("Net change in inflight requests after invocation", inflightRequests.getCount(), is(inflightBefore));
-
+        Optional<ConcurrentGauge> inflightRequests =
+                vendorRegistry.getConcurrentGauges((metricID, metric) -> metricID.getName().endsWith(
+                        SeKeyPerformanceIndicatorMetricsService.SeKeyPerformanceIndicatorMetrics.INFLIGHT_REQUESTS_NAME))
+                        .values().stream()
+                        .findAny();
+        assertThat("In-flight concurrent gauge metric exists", inflightRequests.isPresent(), is(isKPIEnabled));
     }
 }

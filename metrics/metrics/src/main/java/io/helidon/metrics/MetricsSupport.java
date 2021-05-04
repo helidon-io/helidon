@@ -50,22 +50,19 @@ import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.metrics.SeKeyPerformanceIndicatorMetricsService.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Handler;
+import io.helidon.webserver.KeyPerformanceIndicatorMetricsService;
+import io.helidon.webserver.KeyPerformanceIndicatorMetricsService.Context;
 import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
-import org.eclipse.microprofile.metrics.ConcurrentGauge;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.MetricUnits;
 
 /**
  * Support for metrics for Helidon Web Server.
@@ -99,24 +96,51 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  */
 public class MetricsSupport extends HelidonRestServiceSupport {
 
+    /**
+     * Config key for extended key performance indicator metrics settings.
+     */
+    public static final String EXTENDED_KEY_PERFORMANCE_INDICATORS_CONFIG_KEY = "extended-key-performance-indicators";
+
+    /**
+     * Config key for {@code enabled} setting of the extended KPI metrics.
+     */
+    public static final String KEY_PERFORMANCE_INDICATORS_ENABLED_CONFIG_KEY = "enabled";
+    private static final String KEY_PERFORMANCE_INDICATORS_ENABLED_CONFIG_FULL_KEY =
+            EXTENDED_KEY_PERFORMANCE_INDICATORS_CONFIG_KEY + "." + KEY_PERFORMANCE_INDICATORS_ENABLED_CONFIG_KEY;
+
+    /**
+     * Config key for long-running requests settings.
+     */
+    public static final String LONG_RUNNING_REQUESTS_CONFIG_KEY = "long-running-requests";
+
+    /**
+     * Config key for long-running requests threshold setting (in milliseconds).
+     */
+    public static final String LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY = "threshold-ms";
+    private static final String LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_FULL_KEY =
+            EXTENDED_KEY_PERFORMANCE_INDICATORS_CONFIG_KEY + "." + LONG_RUNNING_REQUESTS_CONFIG_KEY
+            + "." + LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY;
+
+    static final boolean EXTENDED_KEY_PERFORMANCE_INDICATORS_ENABLED_DEFAULT = false;
+    static final long LONG_RUNNING_REQUESTS_THRESHOLD_MS_DEFAULT = 10 * 1000; // 10 seconds
+    static final String DEFAULT_METRICS_NAME_PREFIX = "requests.";
+
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";
     private static final String SERVICE_NAME = "Metrics";
 
     private static final MessageBodyWriter<JsonStructure> JSONP_WRITER = JsonpSupport.writer();
 
-    private ConcurrentGauge inflightRequestsConcurrentGauge;
-
     private final RegistryFactory rf;
 
-    private final boolean updateInflightRequestsFromHandler;
-
     private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
+
+    private static KeyPerformanceIndicatorMetricsConfig kpiConfig = new KeyPerformanceIndicatorMetricsConfig();
 
     protected MetricsSupport(Builder builder) {
         super(LOGGER, builder, SERVICE_NAME);
         this.rf = builder.registryFactory.get();
-        updateInflightRequestsFromHandler = builder.updateInflightRequestsFromHandler;
+        kpiConfig = builder.kpiConfig;
     }
 
     /**
@@ -141,12 +165,12 @@ public class MetricsSupport extends HelidonRestServiceSupport {
         return builder().config(config).build();
     }
 
-    protected ConcurrentGauge inflightRequests() {
-        return inflightRequestsConcurrentGauge;
-    }
-
     static JsonObjectBuilder createMergingJsonObjectBuilder(JsonObjectBuilder delegate) {
         return new MergingJsonObjectBuilder(delegate);
+    }
+
+    static KeyPerformanceIndicatorMetricsConfig keyPerformanceIndicatorMetricsConfig() {
+        return kpiConfig;
     }
 
     /**
@@ -337,49 +361,20 @@ public class MetricsSupport extends HelidonRestServiceSupport {
      */
     public void configureVendorMetrics(String routingName,
             Routing.Rules rules) {
-        String metricPrefix = (null == routingName ? "" : routingName + ".") + "requests.";
+        String metricPrefix = (null == routingName ? "" : routingName + ".") + DEFAULT_METRICS_NAME_PREFIX;
 
-        /*
-         * For each metric, create the metric ID to harvest any config-generated
-         * tags.
-         */
-        Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
-        Counter totalCount = vendor.counter(Metadata.builder()
-                .withName(metricPrefix + "count")
-                .withDisplayName("Total number of HTTP requests")
-                .withDescription("Each request (regardless of HTTP method) will increase this counter")
-                .withType(MetricType.COUNTER)
-                .withUnit(MetricUnits.NONE)
-                .build());
-
-        Meter totalMeter = vendor.meter(Metadata.builder()
-                .withName(metricPrefix + "meter")
-                .withDisplayName("Meter for overall HTTP requests")
-                .withDescription("Each request will mark the meter to see overall throughput")
-                .withType(MetricType.METERED)
-                .withUnit(MetricUnits.NONE)
-                .build());
-
-        inflightRequestsConcurrentGauge = vendor.concurrentGauge(Metadata.builder()
-                .withName(metricPrefix + "inflight")
-                .withDisplayName("Current in-flight HTTP requests")
-                .withDescription("Each incoming request increases the count, and each completed request decreases it")
-                .withType(MetricType.CONCURRENT_GAUGE)
-                .withUnit(MetricUnits.NONE)
-                .build());
+        KeyPerformanceIndicatorMetricsService kpiMetricsService = KeyPerformanceIndicatorMetricsService.KPI_METRICS_SERVICE.get();
+        kpiMetricsService.initialize(metricPrefix);
 
         rules.any((req, res) -> {
-            totalCount.inc();
-            totalMeter.mark();
-            if (updateInflightRequestsFromHandler) {
-                inflightRequestsConcurrentGauge.inc();
-            }
+            Context kpiMetricsContext = kpiMetricsService.metricsSupportHandlerContext();
+            kpiMetricsContext.requestStarted();
+            boolean isSuccessful = false;
             try {
                 req.next();
+                isSuccessful = true;
             } finally {
-                if (updateInflightRequestsFromHandler) {
-                    inflightRequestsConcurrentGauge.dec();
-                }
+                kpiMetricsContext.requestCompleted(isSuccessful);
             }
         });
     }
@@ -530,7 +525,7 @@ public class MetricsSupport extends HelidonRestServiceSupport {
             implements io.helidon.common.Builder<MetricsSupport> {
 
         private Supplier<RegistryFactory> registryFactory;
-        private boolean updateInflightRequestsFromHandler = true;
+        private final KeyPerformanceIndicatorMetricsConfig kpiConfig = new KeyPerformanceIndicatorMetricsConfig();
 
         protected Builder() {
             super(Builder.class, DEFAULT_CONTEXT);
@@ -558,6 +553,32 @@ public class MetricsSupport extends HelidonRestServiceSupport {
         /**
          * Override default configuration.
          *
+         * Configuration options:
+         * <table class="config">
+         * <caption>MetricsSupport configuration</caption>
+         * <tr>
+         *     <th>Key</th>
+         *     <th>Default</th>
+         *     <th>Description</th>
+         *     <th>Builder method</th>
+         * </tr>
+         * <tr>
+         *     <td>
+         *         {@value KEY_PERFORMANCE_INDICATORS_ENABLED_CONFIG_FULL_KEY}
+         *     </td>
+         *     <td>{@value EXTENDED_KEY_PERFORMANCE_INDICATORS_ENABLED_DEFAULT}</td>
+         *     <td>Whether the extended key performance indicator metrics should be enabled</td>
+         *     <td>{@link #extendedKeyPerformanceIndicatorsEnabled(boolean)} </td>
+         * </tr>
+         * <tr>
+         *     <td>{@value LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_FULL_KEY}
+         *     </td>
+         *     <td>{@value LONG_RUNNING_REQUESTS_THRESHOLD_MS_DEFAULT}</td>
+         *     <td>Threshold (in milliseconds) for long-running requests</td>
+         *     <td>{@link #longRunningRequestThresholdMs(long)}</td>
+         * </tr>
+         * </table>
+         *
          * @param config configuration instance
          * @return updated builder instance
          * @see MetricsSupport for details about configuration keys
@@ -567,6 +588,7 @@ public class MetricsSupport extends HelidonRestServiceSupport {
             if (!config.get(BaseRegistry.BASE_ENABLED_KEY).asBoolean().orElse(true)) {
                 LOGGER.finest("Metrics support for base metrics is disabled in configuration");
             }
+            config.get(EXTENDED_KEY_PERFORMANCE_INDICATORS_CONFIG_KEY).ifExists(this::keyPerformanceIndicatorsConfig);
             return this;
         }
 
@@ -591,9 +613,37 @@ public class MetricsSupport extends HelidonRestServiceSupport {
             return this;
         }
 
-        protected Builder updateInflightFromHandler(boolean updateInflightFromHandler) {
-            this.updateInflightRequestsFromHandler = updateInflightFromHandler;
+        /**
+         * Sets whether the extended key performance indicator metrics should be enabled.
+         *
+         * @param enabled new setting
+         * @return updated builder instance
+         */
+        public Builder extendedKeyPerformanceIndicatorsEnabled(boolean enabled) {
+            kpiConfig.enableExtendedKpi(enabled);
             return this;
+        }
+
+        /**
+         * Sets the threshold for identifying long-running requests in the extended key performance indicator metrics.
+         *
+         * @param thresholdMs threshold value in milliseconds
+         * @return updated builder instance
+         */
+        public Builder longRunningRequestThresholdMs(long thresholdMs) {
+            kpiConfig.longRunningRequestThresholdMs(thresholdMs);
+            return this;
+        }
+
+        private void keyPerformanceIndicatorsConfig(Config kpiConfig) {
+            kpiConfig.get(KEY_PERFORMANCE_INDICATORS_ENABLED_CONFIG_KEY)
+                    .asBoolean()
+                    .ifPresent(this::extendedKeyPerformanceIndicatorsEnabled);
+
+            Config longRunningRequestsConfig = kpiConfig.get(LONG_RUNNING_REQUESTS_CONFIG_KEY);
+            longRunningRequestsConfig.get(LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY)
+                    .asLong()
+                    .ifPresent(this::longRunningRequestThresholdMs);
         }
     }
 

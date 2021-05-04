@@ -34,7 +34,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -118,7 +117,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
     private static final List<Class<? extends Annotation>> JAX_RS_ANNOTATIONS
             = Arrays.asList(GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class);
 
-    static final String REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME = "rest-request.enabled";
+    private static final String REST_ENDPOINTS_METRIC_CONFIG_PREFIX = "rest-request";
+    private static final String REST_ENDPOINT_METRIC_ENABLED_PROPERTY_NAME_SUFFIX = "enabled";
+    static final String REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME =
+            REST_ENDPOINTS_METRIC_CONFIG_PREFIX + "." + REST_ENDPOINT_METRIC_ENABLED_PROPERTY_NAME_SUFFIX;
     private static final boolean REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE = false;
 
     static final String SYNTHETIC_SIMPLE_TIMER_METRIC_NAME = "REST.request";
@@ -148,12 +150,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
 
     private final WorkItemsManager<MetricWorkItem> workItemsManager = WorkItemsManager.create();
 
-    private static MetricsSupportForCdi metricsSupport;
-
-    static Supplier<org.eclipse.microprofile.metrics.ConcurrentGauge> inflightRequests() {
-        return () -> metricsSupport == null ? null : metricsSupport.inflightRequests();
-    }
-
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
         return (T) bm.getReference(bean, type, bm.createCreationalContext(bean));
@@ -163,7 +159,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
      * Creates a new extension instance.
      */
     public MetricsCdiExtension() {
-        super(LOGGER, MetricsCdiExtension::createMetricsSupport, "metrics");
+        super(LOGGER, MetricsSupport::create, "metrics");
     }
 
     /**
@@ -219,16 +215,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                                         MetricWorkItem.create(metricInfo.metricID, metricInfo.metric));
                             })));
 
-    }
-
-    private static MetricsSupportForCdi createMetricsSupport(Config config) {
-
-        metricsSupport = MetricsSupportForCdi.createMetricsSupport(config);
-        return metricsSupport;
-    }
-
-    static MetricsSupportForCdi metricsSupport() {
-        return metricsSupport;
     }
 
     private static Tag[] tags(String[] tagStrings) {
@@ -605,7 +591,9 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
 
     private static boolean chooseRestEndpointsSetting(Config metricsConfig) {
         ConfigValue<Boolean> explicitRestEndpointsSetting =
-                metricsConfig.get(REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME).asBoolean();
+                metricsConfig.get(REST_ENDPOINTS_METRIC_CONFIG_PREFIX)
+                        .get(REST_ENDPOINT_METRIC_ENABLED_PROPERTY_NAME_SUFFIX)
+                        .asBoolean();
         boolean result = explicitRestEndpointsSetting.orElse(REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE);
         if (explicitRestEndpointsSetting.isPresent()) {
             LOGGER.log(Level.FINE, () -> String.format(

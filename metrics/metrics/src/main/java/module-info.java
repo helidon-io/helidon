@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.metrics.ExemplarService;
-
 /**
  * Helidon Metrics implementation.
  */
@@ -28,7 +26,7 @@ module io.helidon.metrics {
 
     requires transitive microprofile.metrics.api;
     requires java.management;
-    requires io.helidon.webserver;
+    requires transitive io.helidon.webserver; // webserver/webserver/Context is a public return value
     requires io.helidon.media.jsonp;
     requires java.json;
     requires io.helidon.config.mp;
@@ -38,4 +36,6 @@ module io.helidon.metrics {
     exports io.helidon.metrics;
 
     uses io.helidon.metrics.ExemplarService;
+
+    provides io.helidon.webserver.KeyPerformanceIndicatorMetricsService with io.helidon.metrics.SeKeyPerformanceIndicatorMetricsService;
 }

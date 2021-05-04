@@ -44,6 +44,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
+import io.helidon.webserver.KeyPerformanceIndicatorMetricsService;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -238,6 +239,9 @@ public class JerseySupport implements Service {
 
         private final ResourceConfig resourceConfig;
 
+        private final KeyPerformanceIndicatorMetricsService kpiMetricsService =
+                KeyPerformanceIndicatorMetricsService.KPI_METRICS_SERVICE.get();
+
         JerseyHandler(final ResourceConfig resourceConfig) {
             this.resourceConfig = resourceConfig;
         }
@@ -280,15 +284,17 @@ public class JerseySupport implements Service {
 
             requestContext.setWriter(responseWriter);
 
+            KeyPerformanceIndicatorMetricsService.Context kpiMetricsContext = kpiMetricsService.jerseyContext();
             req.content()
                     .as(InputStream.class)
                     .thenAccept(is -> {
                         requestContext.setEntityStream(is);
 
                         service.execute(() -> { // No need to use submit() since the future is not used.
+                            boolean isSuccessful = true;
                             try {
                                 LOGGER.finer("Handling in Jersey started.");
-
+                                kpiMetricsContext.requestStarted();
                                 requestContext.setRequestScopedInitializer(injectionManager -> {
                                     injectionManager.<Ref<ServerRequest>>getInstance(REQUEST_TYPE).set(req);
                                     injectionManager.<Ref<ServerResponse>>getInstance(RESPONSE_TYPE).set(res);
@@ -303,6 +309,9 @@ public class JerseySupport implements Service {
                                 // rather
                                 // than to propagate the exception
                                 req.next(e);
+                                isSuccessful = false;
+                            } finally {
+                                kpiMetricsContext.requestCompleted(isSuccessful);
                             }
                         });
 
@@ -310,6 +319,7 @@ public class JerseySupport implements Service {
                     .exceptionally(throwable -> {
                         // this should not happen; but for the sake of completeness ..
                         req.next(throwable);
+                        kpiMetricsContext.requestCompleted(false);
                         return null;
                     });
         }

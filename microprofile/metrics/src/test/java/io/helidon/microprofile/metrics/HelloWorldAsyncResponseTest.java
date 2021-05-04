@@ -18,19 +18,19 @@ package io.helidon.microprofile.metrics;
 
 
 import java.time.Duration;
-import java.time.temporal.TemporalUnit;
 import java.util.Map;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.LongStream;
 
 import javax.inject.Inject;
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.MediaType;
 
+import io.helidon.metrics.MetricsSupport;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
@@ -53,6 +53,11 @@ import static org.hamcrest.Matchers.notNullValue;
 
 @HelidonTest
 @AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "true")
+@AddConfig(key =
+        "metrics."
+                + MetricsSupport.EXTENDED_KEY_PERFORMANCE_INDICATORS_CONFIG_KEY
+                + "." + MetricsSupport.KEY_PERFORMANCE_INDICATORS_ENABLED_CONFIG_KEY,
+        value = "true")
 public class HelloWorldAsyncResponseTest {
 
     @Inject
@@ -64,6 +69,10 @@ public class HelloWorldAsyncResponseTest {
     @Inject
     @RegistryType(type = MetricRegistry.Type.BASE)
     private MetricRegistry syntheticSimpleTimerRegistry;
+
+    @Inject
+    @RegistryType(type = MetricRegistry.Type.VENDOR)
+    private MetricRegistry vendorRegistry;
 
     @Test
     public void test() throws NoSuchMethodException {
@@ -151,8 +160,14 @@ public class HelloWorldAsyncResponseTest {
 
     @Test
     void testInflightRequests() throws InterruptedException, ExecutionException {
-        ConcurrentGauge inflight = MetricsCdiExtension.inflightRequests().get();
-        long beforeRequest = inflight.getCount();
+        Optional<ConcurrentGauge> inflightRequests =
+                vendorRegistry.getConcurrentGauges((metricID, metric) -> metricID.getName().endsWith("in-flight"))
+                        .values()
+                        .stream()
+                        .findAny();
+        assertThat("In-flight requests ConcurrentGauge is present", inflightRequests.isPresent(),is(true));
+
+        long beforeRequest = inflightRequests.get().getCount();
         HelloWorldResource.initSlowRequest();
 
         Future<String> future =
@@ -162,12 +177,17 @@ public class HelloWorldAsyncResponseTest {
                 .async()
                 .get(String.class);
         HelloWorldResource.awaitSlowRequestStarted();
-        long duringRequest = inflight.getCount();
+        long duringRequest = inflightRequests.get().getCount();
         String response = future.get();
-        long afterRequest = inflight.getCount();
+        long afterRequest = inflightRequests.get().getCount();
 
         assertThat("Slow response", response, containsString(SLOW_RESPONSE));
         assertThat("Change in inflight during slow request", duringRequest - beforeRequest, is(1L));
         assertThat("Change in inflight after slow request completes", afterRequest - beforeRequest, is(0L));
+    }
+
+    @Test
+    void testBasicPerRequestMetrics() {
+        TestBasicPerformanceIndicators.doCheckMetricsVendorURL(webTarget);
     }
 }
