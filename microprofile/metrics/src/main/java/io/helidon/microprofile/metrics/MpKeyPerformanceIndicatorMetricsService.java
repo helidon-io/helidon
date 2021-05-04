@@ -55,12 +55,12 @@ public class MpKeyPerformanceIndicatorMetricsService extends SeKeyPerformanceInd
 
     @Override
     public Context metricsSupportHandlerContext() {
-        return isExtendedKpiEnabled() ? new MpExtendedContext(metrics.get()) : new MpBasicContext(metrics.get());
+        return new MpBasicContext(metrics.get());
     }
 
     @Override
     public Context jerseyContext() {
-        return isExtendedKpiEnabled() ? new MpExtendedContext(metrics.get()) : new MpBasicContext(metrics.get());
+        return isExtendedKpiEnabled() ? new MpExtendedContext(metrics.get()) : Context.NO_OP;
     }
 
     /**
