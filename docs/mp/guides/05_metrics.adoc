@@ -20,64 +20,17 @@
 :h1Prefix: MP
 :description: Helidon metrics
 :keywords: helidon, metrics, microprofile, guide
+:common-guides: ../../common/guides
+:metrics-common: {common-guides}/metrics.adoc
+:lower-case-flavor: mp
+:intro-project-name: MicroProfile (MP)
 
-This guide describes how to create a sample MicroProfile (MP) project
-that can be used to run some basic examples using both built-in and custom metrics with Helidon MP.
+include::{metrics-common}[tag=intro]
+include::{metrics-common}[tag=create-sample-project]
+include::{metrics-common}[tag=using-built-in-metrics-intro]
 
-== What you need
+include::{metrics-common}[tag=build-and-run-intro]
 
-[width=50%,role="flex, sm7"]
-|===
-|About 30 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|https://github.com/helm/helm[Helm]
-|===
-
-=== Create a sample Helidon MP project
-
-Use the Helidon MP Maven archetype to create a simple project that can be used for the examples in this guide.
-
-[source,bash,subs="attributes+"]
-.Run the Maven archetype:
-----
-mvn -U archetype:generate -DinteractiveMode=false \
-    -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-mp \
-    -DarchetypeVersion={helidon-version} \
-    -DgroupId=io.helidon.examples \
-    -DartifactId=helidon-quickstart-mp \
-    -Dpackage=io.helidon.examples.quickstart.mp
-----
-
-=== Using the built-in metrics
-
-Helidon provides three scopes of metrics: base, vendor, and application.  Helidon automatically provides built-in base and vendor metrics.
-Applications can use these metrics without additional configuration or code changes.  Here are the metric endpoints:
-
-1. `/metrics/base` - Base metrics data as specified by the MicroProfile Metrics specification.
-2. `/metrics/vendor` - Helidon-specific metrics data.
-3. `/metrics/application` - Application-specific metrics data.
-
-NOTE: The `/metrics` endpoint will return data for all scopes.
-
-The following example will demonstrate how to use the built-in metrics.  All examples are executed
-from the root directory of your project (helidon-quickstart-mp).
-
-[source,bash]
-.Build the application, skipping unit tests, then run it:
-----
-mvn package -DskipTests=true
-java -jar target/helidon-quickstart-mp.jar
-----
-
-NOTE: Metrics can be returned in either text format (the default), or JSON.  The text format uses Prometheus Text Format,
-see https://prometheus.io/docs/instrumenting/exposition_formats/#text-format-details.
-
-[source,bash]
-.Verify the metrics endpoint in a new terminal window:
-----
-curl http://localhost:8080/metrics
-----
 
 [source,text]
 .Text response:
@@ -91,22 +44,10 @@ base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",
 base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0.0
 base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="updateGreeting_javax.json.JsonObject"} 0
 base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="updateGreeting_javax.json.JsonObject"} 0.0
-# TYPE base:classloader_current_loaded_class_count counter
-# HELP base:classloader_current_loaded_class_count Displays the number of classes that are currently loaded in the Java virtual machine.
-base:classloader_current_loaded_class_count 7511
-# TYPE base:classloader_total_loaded_class_count counter
-# HELP base:classloader_total_loaded_class_count Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
-base:classloader_total_loaded_class_count 7512
-...
+include::{metrics-common}[tag=metrics-prometheus-output]
 ----
 
-You can get the same data in JSON format.
-
-[source,bash]
-.Verify the metrics endpoint with an HTTP accept header:
-----
-curl -H "Accept: application/json"  http://localhost:8080/metrics
-----
+include::{metrics-common}[tag=curl-metrics-json]
 
 [source,json]
 .JSON response:
@@ -122,64 +63,12 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics
         "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=updateGreeting_javax.json.JsonObject":0,
         "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=updateGreeting_javax.json.JsonObject":0.0
       },
-    "classloader.currentLoadedClass.count": 7534,
-    "classloader.totalLoadedClass.count": 7538,
-    "classloader.totalUnloadedClass.count": 1,
-    "cpu.availableProcessors": 4,
-    "cpu.systemLoadAverage": 2.83349609375,
-    "gc.PS MarkSweep.count": 2,
-    "gc.PS MarkSweep.time": 77,
-    "gc.PS Scavenge.count": 5,
-    "gc.PS Scavenge.time": 37,
-    "jvm.uptime": 727588,
-    "memory.committedHeap": 284164096,
-    "memory.maxHeap": 3817865216,
-    "memory.usedHeap": 53283088,
-    "thread.count": 44,
-    "thread.daemon.count": 35,
-    "thread.max.count": 44
+include::{metrics-common}[tag=base-metrics-json-output]
   },
-  "vendor": {
-    "requests.count": 6,
-    "requests.inflight": {
-        "current": 0,
-        "max": 1,
-        "min": 0
-      },
-    "requests.meter": {
-      "count": 6,
-      "meanRate": 0.008275992296704147,
-      "oneMinRate": 0.01576418632772332,
-      "fiveMinRate": 0.006695060022357365,
-      "fifteenMinRate": 0.0036382699664488415
-    }
-  }
+include::{metrics-common}[tag=vendor-metrics-json-output]
 }
 ----
-
-You can get a single metric by specifying the name in the URL path.
-
-[source,bash]
-.Get the Helidon `requests.meter` metric:
-----
-curl -H "Accept: application/json"  http://localhost:8080/metrics/vendor/requests.meter
-----
-
-[source,json]
-.JSON response:
-----
-{
-  "requests.meter": {
-    "count": 6,
-    "meanRate": 0.008275992296704147,
-    "oneMinRate": 0.01576418632772332,
-    "fiveMinRate": 0.006695060022357365,
-    "fifteenMinRate": 0.0036382699664488415
-  }
-}
-----
-
-NOTE: You cannot get the individual fields of a metric. For example, you cannot target http://localhost:8080/metrics/vendor/requests.meter.count.
+include::{metrics-common}[tag=get-single-metric]
 
 ==== Controlling `REST.request` metrics
 Helidon implements the optional family of metrics, all with the name `REST.request`, as described in the
@@ -194,49 +83,9 @@ Note that the applications you generate using the full Helidon archetype _do_ en
 generated config file.
 You can see the results in the sample output shown in earlier example runs.
 
-=== Metrics metadata
+include::{metrics-common}[tag=KPI]
 
-Each metric has associated metadata that describes:
-
-1. name: The name of the metric.
-2. units: The unit of the metric such as time (seconds, millisecond), size (bytes, megabytes), etc.
-3. type: The type of metric: `Counter`, `Timer`, `Meter`, `Histogram`, or `Gauge`.
-
-You can get the metadata for any scope, such as `/metrics/base`, as shown below:
-
-[source,bash]
-.Get the metrics metadata using HTTP OPTIONS method:
-----
- curl -X OPTIONS -H "Accept: application/json"  http://localhost:8080/metrics/base
-----
-
-[source,json]
-.JSON response (truncated):
-----
-{
-  "classloader.currentLoadedClass.count": {
-    "unit": "none",
-    "type": "counter",
-    "description": "Displays the number of classes that are currently loaded in the Java virtual machine.",
-    "displayName": "Current Loaded Class Count"
-  },
-...
-  "jvm.uptime": {
-    "unit": "milliseconds",
-    "type": "gauge",
-    "description": "Displays the start time of the Java virtual machine in milliseconds. This attribute displays the approximate time when the Java virtual machine started.",
-    "displayName": "JVM Uptime"
-  },
-...
-  "memory.usedHeap": {
-    "unit": "bytes",
-    "type": "gauge",
-    "description": "Displays the amount of used heap memory in bytes.",
-    "displayName": "Used Heap Memory"
-  }
-}
-----
-
+include::{metrics-common}[tag=metrics-metadata]
 
 === Application-specific metrics data
 
@@ -768,132 +617,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 ----
 <1> The application has been running for 6 seconds.
 
-=== Integration with Kubernetes and Prometheus
-
-The following example shows how to integrate the Helidon MP application with Kubernetes.
-
-[source,bash]
-.Stop the application and build the docker image:
-----
-docker build -t helidon-metrics-mp .
-----
-
-[source,yaml]
-.Create the Kubernetes YAML specification, named `metrics.yaml`, with the following content:
-----
-kind: Service
-apiVersion: v1
-metadata:
-  name: helidon-metrics // <1>
-  labels:
-    app: helidon-metrics
-  annotations:
-    prometheus.io/scrape: 'true' // <2>
-spec:
-  type: NodePort
-  selector:
-    app: helidon-metrics
-  ports:
-    - port: 8080
-      targetPort: 8080
-      name: http
----
-kind: Deployment
-apiVersion: extensions/v1beta1
-metadata:
-  name: helidon-metrics
-spec:
-  replicas: 1 // <3>
-  template:
-    metadata:
-      labels:
-        app: helidon-metrics
-        version: v1
-    spec:
-      containers:
-        - name: helidon-metrics
-          image: helidon-metrics-mp
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 8080
-----
-<1> A service of type `NodePort` that serves the default routes on port `8080`.
-<2> An annotation that will allow Prometheus to discover and scrape the application pod.
-<3> A deployment with one replica of a pod.
-
-
-[source,bash]
-.Create and deploy the application into Kubernetes:
-----
-kubectl apply -f ./metrics.yaml
-----
-
-[source,bash]
-.Get the service information:
-----
-kubectl get service/helidon-metrics
-----
-
-[source,bash]
-----
-NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s // <1>
-----
-<1> A service of type `NodePort` that serves the default routes on port `31143`.
-
-[source,bash]
-.Verify the metrics endpoint using port `30116`, your port will likely be different:
-----
-curl http://localhost:31143/metrics
-----
-
-NOTE: Leave the application running in Kubernetes since it will be used for Prometheus integration.
-
-==== Prometheus integration
-
-The metrics service that you just deployed into Kubernetes is already annotated with `prometheus.io/scrape:`.  This will allow
-Prometheus to discover the service and scrape the metrics.  In this exercise, you will install Prometheus
-into Kubernetes, then verify that it discovered the Helidon metrics in your application.
-
-[source,bash]
-.Install Prometheus and wait until the pod is ready:
-----
-helm install stable/prometheus --name metrics
-export POD_NAME=$(kubectl get pods --namespace default -l "app=prometheus,component=server" -o jsonpath="{.items[0].metadata.name}")
-kubectl get pod $POD_NAME
-----
-
-You will see output similar to the following.  Repeat the `kubectl get pod` command until you see `2/2` and `Running`. This may take up to one minute.
-
-[source,bash]
-----
-metrics-prometheus-server-5fc5dc86cb-79lk4   2/2     Running   0          46s
-----
-
-[source,bash]
-.Create a port-forward so you can access the server URL:
-----
-kubectl --namespace default port-forward $POD_NAME 7090:9090
-----
-
-Now open your browser and navigate to `http://localhost:7090/targets`.  Search for helidon on the page and you will see your
-Helidon application as one of the Prometheus targets.
-
-==== Final cleanup
-
-You can now delete the Kubernetes resources that were just created during this example.
-
-[source,bash]
-.Delete the Prometheus Kubernetes resources:
-----
-helm delete --purge metrics
-----
-
-[source,bash]
-.Delete the application Kubernetes resources:
-----
-kubectl delete -f ./metrics.yaml
-----
+include::{metrics-common}[tag=k8s-and-prometheus-integration]
 
 === Summary
 
