@@ -39,7 +39,7 @@
         <spotbugs.skip>true</spotbugs.skip>
         <checkstyle.skip>true</checkstyle.skip>
         <dependency-check.skip>true</dependency-check.skip>
-        <services.skip>true</services.skip>
+        <helidon.services.skip>true</helidon.services.skip>
     </properties>
 
     <modules>

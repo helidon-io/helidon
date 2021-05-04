@@ -21,6 +21,7 @@
 .zip
 .dat
 .md
+.MD
 .p12
 .txt
 jaxb.index
@@ -50,3 +51,4 @@ etc/dependency-check-suppression.xml
 target/
 /archetypes/
 .git/
+META-INF/services/

@@ -1325,6 +1325,10 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <rules>
+                                        <rule>copyright</rule>
+                                        <rule>typos</rule>
+                                    </rules>
                                     <copyrightConfig>
                                         <failOnError>true</failOnError>
                                         <!--suppress UnresolvedMavenProperty -->
