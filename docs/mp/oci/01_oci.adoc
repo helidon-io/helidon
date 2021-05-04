@@ -41,7 +41,22 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 == General configuration
 
-For authentication in OCI a special configuration file should be set up. The file is usually located at `~/.oci/config`
+=== Via Helidon Properties configuration
+
+The first option to configure connection to OCI is to directly specify properties in `microprofile-config.properties` file:
+
+[source,properties]
+----
+oci.user=ocid1.user....
+oci.fingerprint=1c:6c:....
+oci.tenancy=ocid1.tenancy.oc1..
+oci.region=us-...
+oci.key=<pem content>
+----
+
+=== Via OCI Configuration
+
+The second  option is via OCI configuration file. For authentication in OCI a special configuration file should be set up. The file is usually located at `~/.oci/config`
 
 [source,properties]
 ----

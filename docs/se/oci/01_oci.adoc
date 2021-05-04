@@ -29,6 +29,22 @@ The Helidon SE OCI Integration provides easy access to Oracle Cloud Infrastructu
 
 == General configuration
 
+=== Via Helidon Properties configuration
+
+The first option to configure connection to OCI is to directly specify properties in `application.yaml` file:
+
+[source,yaml]
+----
+oci:
+    user: ocid1.user....
+    fingerprint: 1c:6c:....
+    tenancy: ocid1.tenancy.oc1..
+    region: us-...
+    oci.key: <pem content>
+----
+=== Via OCI Configuration
+
+The second  option is via OCI configuration file.
 For authentication in OCI a special configuration file should be set up. The file is usually located at `~/.oci/config`
 
 [source,properties]
