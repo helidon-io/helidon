@@ -36,6 +36,11 @@
 
     <dependencies>
         <dependency>
+            <!-- TODO remove again -->
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
         </dependency>

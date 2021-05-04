@@ -20,6 +20,8 @@
 module io.helidon.integrations.oci.connect {
     requires java.logging;
 
+    //TODO remove again
+    requires io.helidon.webserver;
     requires io.helidon.common;
     requires io.helidon.common.pki;
     requires io.helidon.faulttolerance;
