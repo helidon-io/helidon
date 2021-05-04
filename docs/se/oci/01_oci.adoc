@@ -1,0 +1,44 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/oci
+
+= The Oracle Cloud Infrastructure Integration
+:h1Prefix: SE
+:description: Helidon OCI Integration
+:keywords: oci
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: OCI Integration
+
+The Helidon SE OCI Integration provides easy access to Oracle Cloud Infrastructure.
+
+== General configuration
+
+For authentication in OCI a special configuration file should be set up. The file is usually located at `~/.oci/config`
+
+[source,properties]
+----
+[DEFAULT]
+user=ocid1.user....
+fingerprint=1c:6c:....
+tenancy=ocid1.tenancy.oc1..
+region=us-...
+key_file=<path to key file>
+----
+
+More information how to set up on your environment: https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#SDK_and_CLI_Configuration_File[Official website]

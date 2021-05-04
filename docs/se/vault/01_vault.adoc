@@ -178,17 +178,17 @@ Then `WebService` has to be configured with endpoints routing registered:
 
 [source,java]
 ----
-        SysRx sys = tokenVault.sys(SysRx.API);
-        WebServer webServer = WebServer.builder()
-                .config(config.get("server"))
-                .routing(Routing.builder()
-                                 .register("/cubbyhole", new CubbyholeService(sys, tokenVault.secrets(CubbyholeSecretsRx.ENGINE)))
-                                 .register("/kv1", new Kv1Service(sys, tokenVault.secrets(Kv1SecretsRx.ENGINE)))
-                                 .register("/kv2", new Kv2Service(sys, tokenVault.secrets(Kv2SecretsRx.ENGINE)))
-                                 .register("/transit", new TransitService(sys, tokenVault.secrets(TransitSecretsRx.ENGINE))))
-                .build()
-                .start()
-                .await();
+SysRx sys = tokenVault.sys(SysRx.API);
+WebServer webServer = WebServer.builder()
+        .config(config.get("server"))
+        .routing(Routing.builder()
+                         .register("/cubbyhole", new CubbyholeService(sys, tokenVault.secrets(CubbyholeSecretsRx.ENGINE)))
+                         .register("/kv1", new Kv1Service(sys, tokenVault.secrets(Kv1SecretsRx.ENGINE)))
+                         .register("/kv2", new Kv2Service(sys, tokenVault.secrets(Kv2SecretsRx.ENGINE)))
+                         .register("/transit", new TransitService(sys, tokenVault.secrets(TransitSecretsRx.ENGINE))))
+        .build()
+        .start()
+        .await();
 ----
 
 AppRole-based and Kubernetes authentications are available.
@@ -200,32 +200,32 @@ Cubbyhole secrets engine operations:
 [source,java]
 ----
 @Override
-    public void update(Routing.Rules rules) {
-        rules.get("/create", this::createSecrets)
-                .get("/secrets/{path:.*}", this::getSecret);
-    }
+public void update(Routing.Rules rules) {
+    rules.get("/create", this::createSecrets)
+            .get("/secrets/{path:.*}", this::getSecret);
+}
 
-    private void createSecrets(ServerRequest req, ServerResponse res) { (1)
-        secrets.create("first/secret", Map.of("key", "secretValue"))
-                .thenAccept(ignored -> res.send("Created secret on path /first/secret"))
-                .exceptionally(res::send);
-    }
+private void createSecrets(ServerRequest req, ServerResponse res) { (1)
+    secrets.create("first/secret", Map.of("key", "secretValue"))
+            .thenAccept(ignored -> res.send("Created secret on path /first/secret"))
+            .exceptionally(res::send);
+}
 
-    private void getSecret(ServerRequest req, ServerResponse res) { (2)
-        String path = req.path().param("path");
+private void getSecret(ServerRequest req, ServerResponse res) { (2)
+    String path = req.path().param("path");
 
-        secrets.get(path)
-                .thenAccept(secret -> {
-                    if (secret.isPresent()) {
-                        // using toString so we do not need to depend on JSON-B
-                        res.send(secret.get().values().toString());
-                    } else {
-                        res.status(Http.Status.NOT_FOUND_404);
-                        res.send();
-                    }
-                })
-                .exceptionally(res::send);
-    }
+    secrets.get(path)
+            .thenAccept(secret -> {
+                if (secret.isPresent()) {
+                    // using toString so we do not need to depend on JSON-B
+                    res.send(secret.get().values().toString());
+                } else {
+                    res.status(Http.Status.NOT_FOUND_404);
+                    res.send();
+                }
+            })
+            .exceptionally(res::send);
+}
 ----
 
 1. Create a secret from request entity.
@@ -237,55 +237,55 @@ Key/Value version 1 secrets engine operations:
 
 [source,java]
 ----
-    @Override
-    public void update(Routing.Rules rules) {
-        rules.get("/enable", this::enableEngine)
-                .get("/create", this::createSecrets)
-                .get("/secrets/{path:.*}", this::getSecret)
-                .delete("/secrets/{path:.*}", this::deleteSecret)
-                .get("/disable", this::disableEngine);
-    }
+@Override
+public void update(Routing.Rules rules) {
+    rules.get("/enable", this::enableEngine)
+            .get("/create", this::createSecrets)
+            .get("/secrets/{path:.*}", this::getSecret)
+            .delete("/secrets/{path:.*}", this::deleteSecret)
+            .get("/disable", this::disableEngine);
+}
 
-    private void disableEngine(ServerRequest req, ServerResponse res) { (1)
-        sys.disableEngine(Kv1SecretsRx.ENGINE)
-                .thenAccept(ignored -> res.send("KV1 Secret engine disabled"))
-                .exceptionally(res::send);
-    }
+private void disableEngine(ServerRequest req, ServerResponse res) { (1)
+    sys.disableEngine(Kv1SecretsRx.ENGINE)
+            .thenAccept(ignored -> res.send("KV1 Secret engine disabled"))
+            .exceptionally(res::send);
+}
 
-    private void enableEngine(ServerRequest req, ServerResponse res) { (2)
-        sys.enableEngine(Kv1SecretsRx.ENGINE)
-                .thenAccept(ignored -> res.send("KV1 Secret engine enabled"))
-                .exceptionally(res::send);
-    }
+private void enableEngine(ServerRequest req, ServerResponse res) { (2)
+    sys.enableEngine(Kv1SecretsRx.ENGINE)
+            .thenAccept(ignored -> res.send("KV1 Secret engine enabled"))
+            .exceptionally(res::send);
+}
 
-    private void createSecrets(ServerRequest req, ServerResponse res) { (3)
-        secrets.create("first/secret", Map.of("key", "secretValue"))
-                .thenAccept(ignored -> res.send("Created secret on path /first/secret"))
-                .exceptionally(res::send);
-    }
+private void createSecrets(ServerRequest req, ServerResponse res) { (3)
+    secrets.create("first/secret", Map.of("key", "secretValue"))
+            .thenAccept(ignored -> res.send("Created secret on path /first/secret"))
+            .exceptionally(res::send);
+}
 
-    private void deleteSecret(ServerRequest req, ServerResponse res) { (4)
-        String path = req.path().param("path");
+private void deleteSecret(ServerRequest req, ServerResponse res) { (4)
+    String path = req.path().param("path");
 
-        secrets.delete(path)
-                .thenAccept(ignored -> res.send("Deleted secret on path " + path));
-    }
+    secrets.delete(path)
+            .thenAccept(ignored -> res.send("Deleted secret on path " + path));
+}
 
-    private void getSecret(ServerRequest req, ServerResponse res) { (5)
-        String path = req.path().param("path");
+private void getSecret(ServerRequest req, ServerResponse res) { (5)
+    String path = req.path().param("path");
 
-        secrets.get(path)
-                .thenAccept(secret -> {
-                    if (secret.isPresent()) {
-                        // using toString so we do not need to depend on JSON-B
-                        res.send(secret.get().values().toString());
-                    } else {
-                        res.status(Http.Status.NOT_FOUND_404);
-                        res.send();
-                    }
-                })
-                .exceptionally(res::send);
-    }
+    secrets.get(path)
+            .thenAccept(secret -> {
+                if (secret.isPresent()) {
+                    // using toString so we do not need to depend on JSON-B
+                    res.send(secret.get().values().toString());
+                } else {
+                    res.status(Http.Status.NOT_FOUND_404);
+                    res.send();
+                }
+            })
+            .exceptionally(res::send);
+}
 ----
 
 1. Disable the secrets engine on the default path.
@@ -300,42 +300,42 @@ Key/Value version 2 secrets engine operations:
 
 [source,java]
 ----
-    @Override
-    public void update(Routing.Rules rules) {
-        rules.get("/create", this::createSecrets)
-                .get("/secrets/{path:.*}", this::getSecret)
-                .delete("/secrets/{path:.*}", this::deleteSecret);
-    }
+@Override
+public void update(Routing.Rules rules) {
+    rules.get("/create", this::createSecrets)
+            .get("/secrets/{path:.*}", this::getSecret)
+            .delete("/secrets/{path:.*}", this::deleteSecret);
+}
 
-    private void createSecrets(ServerRequest req, ServerResponse res) { (1)
-        secrets.create("first/secret", Map.of("key", "secretValue"))
-                .thenAccept(ignored -> res.send("Created secret on path /first/secret"))
-                .exceptionally(res::send);
-    }
+private void createSecrets(ServerRequest req, ServerResponse res) { (1)
+    secrets.create("first/secret", Map.of("key", "secretValue"))
+            .thenAccept(ignored -> res.send("Created secret on path /first/secret"))
+            .exceptionally(res::send);
+}
 
-    private void deleteSecret(ServerRequest req, ServerResponse res) { (2)
-        String path = req.path().param("path");
+private void deleteSecret(ServerRequest req, ServerResponse res) { (2)
+    String path = req.path().param("path");
 
-        secrets.deleteAll(path)
-                .thenAccept(ignored -> res.send("Deleted secret on path " + path));
-    }
+    secrets.deleteAll(path)
+            .thenAccept(ignored -> res.send("Deleted secret on path " + path));
+}
 
-    private void getSecret(ServerRequest req, ServerResponse res) { (3)
-        String path = req.path().param("path");
+private void getSecret(ServerRequest req, ServerResponse res) { (3)
+    String path = req.path().param("path");
 
-        secrets.get(path)
-                .thenAccept(secret -> {
-                    if (secret.isPresent()) {
-                        // using toString so we do not need to depend on JSON-B
-                        Kv2Secret kv2Secret = secret.get();
-                        res.send("Version " + kv2Secret.metadata().version() + ", secret: " + kv2Secret.values().toString());
-                    } else {
-                        res.status(Http.Status.NOT_FOUND_404);
-                        res.send();
-                    }
-                })
-                .exceptionally(res::send);
-    }
+    secrets.get(path)
+            .thenAccept(secret -> {
+                if (secret.isPresent()) {
+                    // using toString so we do not need to depend on JSON-B
+                    Kv2Secret kv2Secret = secret.get();
+                    res.send("Version " + kv2Secret.metadata().version() + ", secret: " + kv2Secret.values().toString());
+                } else {
+                    res.status(Http.Status.NOT_FOUND_404);
+                    res.send();
+                }
+            })
+            .exceptionally(res::send);
+}
 ----
 
 1. Create a secret from request entity.
@@ -348,113 +348,113 @@ Transit secrets engine operations:
 
 [source,bash]
 ----
-    @Override
-    public void update(Routing.Rules rules) {
-        rules.get("/enable", this::enableEngine)
-                .get("/keys", this::createKeys)
-                .delete("/keys", this::deleteKeys)
-                .get("/batch", this::batch)
-                .get("/encrypt/{text:.*}", this::encryptSecret)
-                .get("/decrypt/{text:.*}", this::decryptSecret)
-                .get("/sign", this::sign)
-                .get("/hmac", this::hmac)
-                .get("/verify/sign/{text:.*}", this::verify)
-                .get("/verify/hmac/{text:.*}", this::verifyHmac)
-                .get("/disable", this::disableEngine);
-    }
+@Override
+public void update(Routing.Rules rules) {
+    rules.get("/enable", this::enableEngine)
+            .get("/keys", this::createKeys)
+            .delete("/keys", this::deleteKeys)
+            .get("/batch", this::batch)
+            .get("/encrypt/{text:.*}", this::encryptSecret)
+            .get("/decrypt/{text:.*}", this::decryptSecret)
+            .get("/sign", this::sign)
+            .get("/hmac", this::hmac)
+            .get("/verify/sign/{text:.*}", this::verify)
+            .get("/verify/hmac/{text:.*}", this::verifyHmac)
+            .get("/disable", this::disableEngine);
+}
 
-    private void enableEngine(ServerRequest req, ServerResponse res) { (1)
-        sys.enableEngine(TransitSecretsRx.ENGINE)
-                .thenAccept(ignored -> res.send("Transit Secret engine enabled"))
-                .exceptionally(res::send);
-    }
+private void enableEngine(ServerRequest req, ServerResponse res) { (1)
+    sys.enableEngine(TransitSecretsRx.ENGINE)
+            .thenAccept(ignored -> res.send("Transit Secret engine enabled"))
+            .exceptionally(res::send);
+}
 
-    private void disableEngine(ServerRequest req, ServerResponse res) { (2)
-        sys.disableEngine(TransitSecretsRx.ENGINE)
-                .thenAccept(ignored -> res.send("Transit Secret engine disabled"))
-                .exceptionally(res::send);
-    }
+private void disableEngine(ServerRequest req, ServerResponse res) { (2)
+    sys.disableEngine(TransitSecretsRx.ENGINE)
+            .thenAccept(ignored -> res.send("Transit Secret engine disabled"))
+            .exceptionally(res::send);
+}
 
-    private void createKeys(ServerRequest req, ServerResponse res) { (3)
-        CreateKey.Request request = CreateKey.Request.builder()
-                .name(ENCRYPTION_KEY);
+private void createKeys(ServerRequest req, ServerResponse res) { (3)
+    CreateKey.Request request = CreateKey.Request.builder()
+            .name(ENCRYPTION_KEY);
 
-        secrets.createKey(request)
-                .flatMapSingle(ignored -> secrets.createKey(CreateKey.Request.builder()
-                                                                    .name(SIGNATURE_KEY)
-                                                                    .type("rsa-2048")))
-                .forSingle(ignored -> res.send("Created keys"))
-                .exceptionally(res::send);
-    }
+    secrets.createKey(request)
+            .flatMapSingle(ignored -> secrets.createKey(CreateKey.Request.builder()
+                                                                .name(SIGNATURE_KEY)
+                                                                .type("rsa-2048")))
+            .forSingle(ignored -> res.send("Created keys"))
+            .exceptionally(res::send);
+}
 
-    private void deleteKeys(ServerRequest req, ServerResponse res) { (4)
+private void deleteKeys(ServerRequest req, ServerResponse res) { (4)
 
-        secrets.updateKeyConfig(UpdateKeyConfig.Request.builder()
-                                        .name(ENCRYPTION_KEY)
-                                        .allowDeletion(true))
-                .peek(ignored -> System.out.println("Updated key config"))
-                .flatMapSingle(ignored -> secrets.deleteKey(DeleteKey.Request.create(ENCRYPTION_KEY)))
-                .forSingle(ignored -> res.send("Deleted key."))
-                .exceptionally(res::send);
-    }
+    secrets.updateKeyConfig(UpdateKeyConfig.Request.builder()
+                                    .name(ENCRYPTION_KEY)
+                                    .allowDeletion(true))
+            .peek(ignored -> System.out.println("Updated key config"))
+            .flatMapSingle(ignored -> secrets.deleteKey(DeleteKey.Request.create(ENCRYPTION_KEY)))
+            .forSingle(ignored -> res.send("Deleted key."))
+            .exceptionally(res::send);
+}
 
-    private void encryptSecret(ServerRequest req, ServerResponse res) { (5)
-        String secret = req.path().param("text");
+private void encryptSecret(ServerRequest req, ServerResponse res) { (5)
+    String secret = req.path().param("text");
 
-        secrets.encrypt(Encrypt.Request.builder()
-                                .encryptionKeyName(ENCRYPTION_KEY)
-                                .data(Base64Value.create(secret)))
-                .forSingle(response -> res.send(response.encrypted().cipherText()))
-                .exceptionally(res::send);
-    }
+    secrets.encrypt(Encrypt.Request.builder()
+                            .encryptionKeyName(ENCRYPTION_KEY)
+                            .data(Base64Value.create(secret)))
+            .forSingle(response -> res.send(response.encrypted().cipherText()))
+            .exceptionally(res::send);
+}
 
-    private void decryptSecret(ServerRequest req, ServerResponse res) { (6)
-        String encrypted = req.path().param("text");
+private void decryptSecret(ServerRequest req, ServerResponse res) { (6)
+    String encrypted = req.path().param("text");
 
-        secrets.decrypt(Decrypt.Request.builder()
-                                .encryptionKeyName(ENCRYPTION_KEY)
-                                .cipherText(encrypted))
-                .forSingle(response -> res.send(String.valueOf(response.decrypted().toDecodedString())))
-                .exceptionally(res::send);
-    }
+    secrets.decrypt(Decrypt.Request.builder()
+                            .encryptionKeyName(ENCRYPTION_KEY)
+                            .cipherText(encrypted))
+            .forSingle(response -> res.send(String.valueOf(response.decrypted().toDecodedString())))
+            .exceptionally(res::send);
+}
 
-    private void hmac(ServerRequest req, ServerResponse res) { (7)
-        secrets.hmac(Hmac.Request.builder()
-                             .hmacKeyName(ENCRYPTION_KEY)
-                             .data(SECRET_STRING))
-                .forSingle(response -> res.send(response.hmac()))
-                .exceptionally(res::send);
-    }
+private void hmac(ServerRequest req, ServerResponse res) { (7)
+    secrets.hmac(Hmac.Request.builder()
+                         .hmacKeyName(ENCRYPTION_KEY)
+                         .data(SECRET_STRING))
+            .forSingle(response -> res.send(response.hmac()))
+            .exceptionally(res::send);
+}
 
-    private void sign(ServerRequest req, ServerResponse res) { (8)
-        secrets.sign(Sign.Request.builder()
-                             .signatureKeyName(SIGNATURE_KEY)
-                             .data(SECRET_STRING))
-                .forSingle(response -> res.send(response.signature()))
-                .exceptionally(res::send);
-    }
+private void sign(ServerRequest req, ServerResponse res) { (8)
+    secrets.sign(Sign.Request.builder()
+                         .signatureKeyName(SIGNATURE_KEY)
+                         .data(SECRET_STRING))
+            .forSingle(response -> res.send(response.signature()))
+            .exceptionally(res::send);
+}
 
-    private void verifyHmac(ServerRequest req, ServerResponse res) { (9)
-        String hmac = req.path().param("text");
+private void verifyHmac(ServerRequest req, ServerResponse res) { (9)
+    String hmac = req.path().param("text");
 
-        secrets.verify(Verify.Request.builder()
-                               .digestKeyName(ENCRYPTION_KEY)
-                               .data(SECRET_STRING)
-                               .hmac(hmac))
-                .forSingle(response -> res.send("Valid: " + response.isValid()))
-                .exceptionally(res::send);
-    }
+    secrets.verify(Verify.Request.builder()
+                           .digestKeyName(ENCRYPTION_KEY)
+                           .data(SECRET_STRING)
+                           .hmac(hmac))
+            .forSingle(response -> res.send("Valid: " + response.isValid()))
+            .exceptionally(res::send);
+}
 
-    private void verify(ServerRequest req, ServerResponse res) { (10)
-        String signature = req.path().param("text");
+private void verify(ServerRequest req, ServerResponse res) { (10)
+    String signature = req.path().param("text");
 
-        secrets.verify(Verify.Request.builder()
-                               .digestKeyName(SIGNATURE_KEY)
-                               .data(SECRET_STRING)
-                               .signature(signature))
-                .forSingle(response -> res.send("Valid: " + response.isValid()))
-                .exceptionally(res::send);
-    }
+    secrets.verify(Verify.Request.builder()
+                           .digestKeyName(SIGNATURE_KEY)
+                           .data(SECRET_STRING)
+                           .signature(signature))
+            .forSingle(response -> res.send("Valid: " + response.isValid()))
+            .exceptionally(res::send);
+}
 ----
 
 1. Enable the secrets engine on the default path.

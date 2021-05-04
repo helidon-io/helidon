@@ -87,41 +87,41 @@ In the Service we must specify the mapping for CRUD operations with the files an
 
 [source,java]
 ----
-    @Override
-    public void update(Routing.Rules rules) {
-        rules.get("/file/{file-name}", this::download)
-                .post("/file/{file-name}", this::upload)
-                .delete("/file/{file-name}", this::delete)
-                .get("/rename/{old-name}/{new-name}", this::rename);
-    }
+@Override
+public void update(Routing.Rules rules) {
+    rules.get("/file/{file-name}", this::download)
+            .post("/file/{file-name}", this::upload)
+            .delete("/file/{file-name}", this::delete)
+            .get("/rename/{old-name}/{new-name}", this::rename);
+}
 ----
 
 To upload a file via `PUT` method to OCI Object Storage:
 
 [source,java]
 ----
-    private void upload(ServerRequest req, ServerResponse res) {
-        OptionalLong contentLength = req.headers().contentLength();
-        if (contentLength.isEmpty()) {
-            req.content().forEach(DataChunk::release);
-            res.status(Http.Status.BAD_REQUEST_400).send("Content length must be defined");
-            return;
-        }
-
-        String objectName = req.path().param("file-name");
-
-        PutObject.Request request = PutObject.Request.builder() (1)
-                .objectName(objectName)
-                .bucket(bucketName)
-                .contentLength(contentLength.getAsLong());
-
-        req.headers().contentType().ifPresent(request::requestMediaType); (2)
-
-        objectStorage.putObject(request,
-                                req.content())
-                .forSingle(response -> res.send(response.requestId())) (3)
-                .exceptionally(res::send);
+private void upload(ServerRequest req, ServerResponse res) {
+    OptionalLong contentLength = req.headers().contentLength();
+    if (contentLength.isEmpty()) {
+        req.content().forEach(DataChunk::release);
+        res.status(Http.Status.BAD_REQUEST_400).send("Content length must be defined");
+        return;
     }
+
+    String objectName = req.path().param("file-name");
+
+    PutObject.Request request = PutObject.Request.builder() (1)
+            .objectName(objectName)
+            .bucket(bucketName)
+            .contentLength(contentLength.getAsLong());
+
+    req.headers().contentType().ifPresent(request::requestMediaType); (2)
+
+    objectStorage.putObject(request,
+                            req.content())
+            .forSingle(response -> res.send(response.requestId())) (3)
+            .exceptionally(res::send);
+}
 ----
 
 1. Create the `Request` using `PutObject.Request.builder()`
@@ -132,27 +132,27 @@ To download the file via `GET` method from OCI Object Storage:
 
 [source,java]
 ----
-    private void download(ServerRequest req, ServerResponse res) {
-        String objectName = req.path().param("file-name");
+private void download(ServerRequest req, ServerResponse res) {
+    String objectName = req.path().param("file-name");
 
-        objectStorage.getObject(GetObject.Request.builder()
-                                        .bucket(bucketName)
-                                        .objectName(objectName)) (1)
-                .forSingle(apiResponse -> {
-                    Optional<GetObjectRx.Response> entity = apiResponse.entity(); (2)
-                    if (entity.isEmpty()) {
-                        res.status(Http.Status.NOT_FOUND_404).send(); (3)
-                    } else {
-                        GetObjectRx.Response response = entity.get();
-                        // copy the content length header to response
-                        apiResponse.headers()
-                                .first(Http.Header.CONTENT_LENGTH)
-                                .ifPresent(res.headers()::add);
-                        res.send(response.publisher()); (4)
-                    }
-                })
-                .exceptionally(res::send);
-    }
+    objectStorage.getObject(GetObject.Request.builder()
+                                    .bucket(bucketName)
+                                    .objectName(objectName)) (1)
+            .forSingle(apiResponse -> {
+                Optional<GetObjectRx.Response> entity = apiResponse.entity(); (2)
+                if (entity.isEmpty()) {
+                    res.status(Http.Status.NOT_FOUND_404).send(); (3)
+                } else {
+                    GetObjectRx.Response response = entity.get();
+                    // copy the content length header to response
+                    apiResponse.headers()
+                            .first(Http.Header.CONTENT_LENGTH)
+                            .ifPresent(res.headers()::add);
+                    res.send(response.publisher()); (4)
+                }
+            })
+            .exceptionally(res::send);
+}
 ----
 1. Use `getObject` function to make asynchronous request to OCI Object Storage
 2. The result is of type `Optional`
@@ -164,17 +164,17 @@ To rename an existing file in the OCI bucket a `GET` method with two parameters:
 
 [source,java]
 ----
-    private void rename(ServerRequest req, ServerResponse res) {
-        String oldName = req.path().param("old-name");
-        String newName = req.path().param("new-name");
+private void rename(ServerRequest req, ServerResponse res) {
+    String oldName = req.path().param("old-name");
+    String newName = req.path().param("new-name");
 
-        objectStorage.renameObject(RenameObject.Request.builder()
-                                           .bucket(bucketName)
-                                           .objectName(oldName)
-                                           .newObjectName(newName)) (1)
-                .forSingle(it -> res.send("Renamed to " + newName)) (2)
-                .exceptionally(res::send);
-    }
+    objectStorage.renameObject(RenameObject.Request.builder()
+                                       .bucket(bucketName)
+                                       .objectName(oldName)
+                                       .newObjectName(newName)) (1)
+            .forSingle(it -> res.send("Renamed to " + newName)) (2)
+            .exceptionally(res::send);
+}
 ----
 1. Use `renameObject` function and configure a `RenameObject.Request.builder()` to submit the rename request
 2. The request is made in asynchronous way; a `Single` is returned
@@ -184,45 +184,16 @@ Finally, to delete a file, `DELETE` method should be used
 
 [source,java]
 ----
-    private void delete(ServerRequest req, ServerResponse res) {
-        String objectName = req.path().param("file-name");
+private void delete(ServerRequest req, ServerResponse res) {
+    String objectName = req.path().param("file-name");
 
-        objectStorage.deleteObject(DeleteObject.Request.builder()
-                                           .bucket(bucketName)
-                                           .objectName(objectName)) (1)
-                .forSingle(response -> res.status(response.status()).send())
-                .exceptionally(res::send);
-    }
+    objectStorage.deleteObject(DeleteObject.Request.builder()
+                                       .bucket(bucketName)
+                                       .objectName(objectName)) (1)
+            .forSingle(response -> res.status(response.status()).send())
+            .exceptionally(res::send);
+}
 ----
 
 1.  Use `deleteObject` function and configure a `DeleteObject.Request.builder()` to submit the delete request
 2. The request is made in asynchronous way; a `Single` is returned
-
-== Using CURL and WGET to work with files stored in OCI
-Just run the application either from maven or  IDE.
-
-To upload a file type in the terminal:
-
-[source,bash]
-----
-curl -i -d @frank.png -X POST -H "Content-Type:application/image" http://localhost:8080/files/file/frank.png
-----
-
-To download the file:
-
-[source,bash]
-----
-wget http://localhost:8080/files/file/frank.png
-----
-
-To rename the file type:
-[source,bash]
-----
-curl -X GET http://localhost:8080/files/rename/frank.png/frank1.png
-----
-
-To delete the file:
-[source,bash]
-----
-curl -X DELETE http://localhost:8080/files/file/frank1.png
-----
