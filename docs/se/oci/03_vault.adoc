@@ -18,7 +18,7 @@
 
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/oci
 
-= The OCI Vault
+= OCI Vault
 :h1Prefix: SE
 :description: Helidon OCI Vault integration
 :keywords: oci, vault
@@ -31,10 +31,10 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
 ----
-        <dependency>
-            <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-vault</artifactId>
-        </dependency>
+<dependency>
+    <groupId>io.helidon.integrations.oci</groupId>
+    <artifactId>helidon-integrations-oci-vault</artifactId>
+</dependency>
 ----
 
 
@@ -65,6 +65,8 @@ oci:
 Current configuration requires `~/.oci/config` to be available in the home folder. This configuration file can be downloaded from OCI.
 
 The OCIDs can be set up and found in OCI under Security tab.
+
+image::oci/ocivault.png[OCI Vault, align="center"]
 
 Next, these values should be read and provided to `VaultService`:
 

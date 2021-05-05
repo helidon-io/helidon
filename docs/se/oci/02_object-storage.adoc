@@ -2,11 +2,11 @@
 
     Copyright (c) 2021 Oracle and/or its affiliates.
 
-    Licensed under the Apache License, Version 2.0 (the "License");
+    Licensed under the Apache License, Version <2>0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-<2>0
 
     Unless required by applicable law or agreed to in writing, software
     distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
 
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/oci
 
-= The OCI Object Storage
+= OCI Object Storage
 :h1Prefix: SE
 :description: Helidon OCI Object Storage integration
 :keywords: oci, objectstorage
@@ -73,13 +73,15 @@ Additionally, in `application.yaml` OCI properties should be specified:
 ----
 oci:
     properties:
-      compartment-ocid: "ocid1.tenancy.oc1..<..>"
+      compartment-ocid: "ocid<1>tenancy.oc<1>.<..>"
       objectstorage-namespace: "<...>"
       objectstorage-bucket: "<...>"
 
 ----
 
 The exact values are available in OCI object storage and bucket properties.
+
+image::oci/ocibucket.png[OCI Bucket, align="center"]
 
 == Using the Object Storage
 
@@ -110,23 +112,23 @@ private void upload(ServerRequest req, ServerResponse res) {
 
     String objectName = req.path().param("file-name");
 
-    PutObject.Request request = PutObject.Request.builder() (1)
+    PutObject.Request request = PutObject.Request.builder() <1>
             .objectName(objectName)
             .bucket(bucketName)
             .contentLength(contentLength.getAsLong());
 
-    req.headers().contentType().ifPresent(request::requestMediaType); (2)
+    req.headers().contentType().ifPresent(request::requestMediaType); <2>
 
     objectStorage.putObject(request,
                             req.content())
-            .forSingle(response -> res.send(response.requestId())) (3)
+            .forSingle(response -> res.send(response.requestId())) <3>
             .exceptionally(res::send);
 }
 ----
 
-1. Create the `Request` using `PutObject.Request.builder()`
-2. Define `MediaType`
-3. Execute the request to OCI in asynchronous way and put the result in `response` object
+<1> Create the `Request` using `PutObject.Request.builder()`
+<2> Define `MediaType`
+<3> Execute the request to OCI in asynchronous way and put the result in `response` object
 
 To download the file via `GET` method from OCI Object Storage:
 
@@ -137,27 +139,28 @@ private void download(ServerRequest req, ServerResponse res) {
 
     objectStorage.getObject(GetObject.Request.builder()
                                     .bucket(bucketName)
-                                    .objectName(objectName)) (1)
+                                    .objectName(objectName)) <1>
             .forSingle(apiResponse -> {
-                Optional<GetObjectRx.Response> entity = apiResponse.entity(); (2)
+                Optional<GetObjectRx.Response> entity = apiResponse.entity(); <2>
                 if (entity.isEmpty()) {
-                    res.status(Http.Status.NOT_FOUND_404).send(); (3)
+                    res.status(Http.Status.NOT_FOUND_404).send(); <3>
                 } else {
                     GetObjectRx.Response response = entity.get();
                     // copy the content length header to response
                     apiResponse.headers()
                             .first(Http.Header.CONTENT_LENGTH)
                             .ifPresent(res.headers()::add);
-                    res.send(response.publisher()); (4)
+                    res.send(response.publisher()); <4>
                 }
             })
             .exceptionally(res::send);
 }
 ----
-1. Use `getObject` function to make asynchronous request to OCI Object Storage
-2. The result is of type `Optional`
-3. Whenever the result is empty, return status `404`
-4. Get the response, set headers and return the result as a `Publisher`
+
+<1> Use `getObject` function to make asynchronous request to OCI Object Storage
+<2> The result is of type `Optional`
+<3> Whenever the result is empty, return status `404`
+<4> Get the response, set headers and return the result as a `Publisher`
 
 
 To rename an existing file in the OCI bucket a `GET` method with two parameters:
@@ -171,13 +174,14 @@ private void rename(ServerRequest req, ServerResponse res) {
     objectStorage.renameObject(RenameObject.Request.builder()
                                        .bucket(bucketName)
                                        .objectName(oldName)
-                                       .newObjectName(newName)) (1)
-            .forSingle(it -> res.send("Renamed to " + newName)) (2)
+                                       .newObjectName(newName)) <1>
+            .forSingle(it -> res.send("Renamed to " + newName)) <2>
             .exceptionally(res::send);
 }
 ----
-1. Use `renameObject` function and configure a `RenameObject.Request.builder()` to submit the rename request
-2. The request is made in asynchronous way; a `Single` is returned
+
+<1> Use `renameObject` function and configure a `RenameObject.Request.builder()` to submit the rename request
+<2> The request is made in asynchronous way; a `Single` is returned
 
 
 Finally, to delete a file, `DELETE` method should be used
@@ -189,11 +193,11 @@ private void delete(ServerRequest req, ServerResponse res) {
 
     objectStorage.deleteObject(DeleteObject.Request.builder()
                                        .bucket(bucketName)
-                                       .objectName(objectName)) (1)
+                                       .objectName(objectName)) <1>
             .forSingle(response -> res.status(response.status()).send())
             .exceptionally(res::send);
 }
 ----
 
-1.  Use `deleteObject` function and configure a `DeleteObject.Request.builder()` to submit the delete request
-2. The request is made in asynchronous way; a `Single` is returned
+<1>  Use `deleteObject` function and configure a `DeleteObject.Request.builder()` to submit the delete request
+<2> The request is made in asynchronous way; a `Single` is returned

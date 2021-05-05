@@ -2,11 +2,11 @@
 
     Copyright (c) 2021 Oracle and/or its affiliates.
 
-    Licensed under the Apache License, Version 2.0 (the "License");
+    Licensed under the Apache License, Version <2>0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-<2>0
 
     Unless required by applicable law or agreed to in writing, software
     distributed under the License is distributed on an "AS IS" BASIS,
@@ -174,7 +174,7 @@ public class CubbyholeResource {
 
     @POST
     @Path("/secrets/{path: .*}")
-    public Response createSecret(@PathParam("path") String path, String secret) { (1)
+    public Response createSecret(@PathParam("path") String path, String secret) { <1>
         CreateCubbyhole.Response response = secrets.create(path, Map.of("secret", secret));
 
         return Response.ok()
@@ -184,7 +184,7 @@ public class CubbyholeResource {
 
     @DELETE
     @Path("/secrets/{path: .*}")
-    public Response deleteSecret(@PathParam("path") String path) { (2)
+    public Response deleteSecret(@PathParam("path") String path) { <2>
         DeleteCubbyhole.Response response = secrets.delete(path);
 
         return Response.ok()
@@ -194,7 +194,7 @@ public class CubbyholeResource {
 
     @GET
     @Path("/secrets/{path: .*}")
-    public Response getSecret(@PathParam("path") String path) { (3)
+    public Response getSecret(@PathParam("path") String path) { <3>
         Optional<Secret> secret = secrets.get(path);
 
         if (secret.isPresent()) {
@@ -208,9 +208,10 @@ public class CubbyholeResource {
     }
 }
 ----
-1. Create a secret from request entity, the name of the value is {@code secret}.
-2. Delete the secret on a specified path.
-3. Get the secret on a specified path.
+
+<1> Create a secret from request entity, the name of the value is {@code secret}.
+<2> Delete the secret on a specified path.
+<3> Get the secret on a specified path.
 
 === KV1 secrets
 
@@ -231,7 +232,7 @@ public class Kv1Resource {
 
     @Path("/engine")
     @GET
-    public Response enableEngine() { (1)
+    public Response enableEngine() { <1>
         EnableEngine.Response response = sys.enableEngine(Kv1SecretsRx.ENGINE);
 
         return Response.ok()
@@ -241,7 +242,7 @@ public class Kv1Resource {
 
     @Path("/engine")
     @DELETE
-    public Response disableEngine() { (2)
+    public Response disableEngine() { <2>
         DisableEngine.Response response = sys.disableEngine(Kv1SecretsRx.ENGINE);
         return Response.ok()
                 .entity("Key/value version 1 secret engine is now disabled. Original status: " + response.status().code())
@@ -250,8 +251,8 @@ public class Kv1Resource {
 
     @POST
     @Path("/secrets/{path: .*}")
-    public Response createSecret(@PathParam("path") String path, String secret) { (3)
-        CreateKv1.Response response = secrets.create(path, Map.of("secret", secret));
+    public Response createSecret(@PathParam("path") String path, String secret) { <3>
+        CreateKv<1>Response response = secrets.create(path, Map.of("secret", secret));
 
         return Response.ok()
                 .entity("Created secret on path: " + path + ", key is \"secret\", original status: " + response.status().code())
@@ -260,8 +261,8 @@ public class Kv1Resource {
 
     @DELETE
     @Path("/secrets/{path: .*}")
-    public Response deleteSecret(@PathParam("path") String path) { (4)
-        DeleteKv1.Response response = secrets.delete(path);
+    public Response deleteSecret(@PathParam("path") String path) { <4>
+        DeleteKv<1>Response response = secrets.delete(path);
 
         return Response.ok()
                 .entity("Deleted secret on path: " + path + ". Original status: " + response.status().code())
@@ -270,7 +271,7 @@ public class Kv1Resource {
 
     @GET
     @Path("/secrets/{path: .*}")
-    public Response getSecret(@PathParam("path") String path) { (5)
+    public Response getSecret(@PathParam("path") String path) { <5>
         Optional<Secret> secret = secrets.get(path);
 
         if (secret.isPresent()) {
@@ -284,11 +285,12 @@ public class Kv1Resource {
     }
 }
 ----
-1. Enable the secrets engine on the default path.
-2. Disable the secrets engine on the default path.
-3. Create a secret from request entity, the name of the value is `secret`.
-4. Delete the secret on a specified path.
-5. Get the secret on a specified path.
+
+<1> Enable the secrets engine on the default path.
+<2> Disable the secrets engine on the default path.
+<3> Create a secret from request entity, the name of the value is `secret`.
+<4> Delete the secret on a specified path.
+<5> Get the secret on a specified path.
 
 === KV2 secrets
 
@@ -307,8 +309,8 @@ public class Kv2Resource {
 
     @POST
     @Path("/secrets/{path: .*}")
-    public Response createSecret(@PathParam("path") String path, String secret) { (1)
-        CreateKv2.Response response = secrets.create(path, Map.of("secret", secret));
+    public Response createSecret(@PathParam("path") String path, String secret) { <1>
+        CreateKv<2>Response response = secrets.create(path, Map.of("secret", secret));
 
         return Response.ok()
                 .entity("Created secret on path: " + path + ", key is \"secret\", original status: " + response.status().code())
@@ -317,8 +319,8 @@ public class Kv2Resource {
 
     @DELETE
     @Path("/secrets/{path: .*}")
-    public Response deleteSecret(@PathParam("path") String path) { (2)
-        DeleteAllKv2.Response response = secrets.deleteAll(path);
+    public Response deleteSecret(@PathParam("path") String path) { <2>
+        DeleteAllKv<2>Response response = secrets.deleteAll(path);
 
         return Response.ok()
                 .entity("Deleted secret on path: " + path + ". Original status: " + response.status().code())
@@ -327,7 +329,7 @@ public class Kv2Resource {
 
     @GET
     @Path("/secrets/{path: .*}")
-    public Response getSecret(@PathParam("path") String path) { (3)
+    public Response getSecret(@PathParam("path") String path) { <3>
 
         Optional<Kv2Secret> secret = secrets.get(path);
 
@@ -342,9 +344,10 @@ public class Kv2Resource {
     }
 }
 ----
-1. Create a secret from request entity, the name of the value is `secret`.
-2. Delete the secret on a specified path.
-3. Get the secret on a specified path.
+
+<1> Create a secret from request entity, the name of the value is `secret`.
+<2> Delete the secret on a specified path.
+<3> Get the secret on a specified path.
 
 
 === Transit secrets
@@ -369,7 +372,7 @@ public class TransitResource {
 
     @Path("/engine")
     @GET
-    public Response enableEngine() { (1)
+    public Response enableEngine() { <1>
         EnableEngine.Response response = sys.enableEngine(TransitSecretsRx.ENGINE);
 
         return Response.ok()
@@ -379,7 +382,7 @@ public class TransitResource {
 
     @Path("/engine")
     @DELETE
-    public Response disableEngine() { (2)
+    public Response disableEngine() { <2>
         DisableEngine.Response response = sys.disableEngine(TransitSecretsRx.ENGINE);
 
         return Response.ok()
@@ -389,7 +392,7 @@ public class TransitResource {
 
     @Path("/keys")
     @GET
-    public Response createKeys() { (3)
+    public Response createKeys() { <3>
         secrets.createKey(CreateKey.Request.builder()
                                   .name(ENCRYPTION_KEY));
 
@@ -404,7 +407,7 @@ public class TransitResource {
 
     @Path("/keys")
     @DELETE
-    public Response deleteKeys() { (4)
+    public Response deleteKeys() { <4>
         // we must first enable deletion of the key (by default it cannot be deleted)
         secrets.updateKeyConfig(UpdateKeyConfig.Request.builder()
                                         .name(ENCRYPTION_KEY)
@@ -424,7 +427,7 @@ public class TransitResource {
 
     @Path("/encrypt/{secret: .*}")
     @GET
-    public String encryptSecret(@PathParam("secret") String secret) { (5)
+    public String encryptSecret(@PathParam("secret") String secret) { <5>
         return secrets.encrypt(Encrypt.Request.builder()
                                        .encryptionKeyName(ENCRYPTION_KEY)
                                        .data(Base64Value.create(secret)))
@@ -434,7 +437,7 @@ public class TransitResource {
 
     @Path("/decrypt/{cipherText: .*}")
     @GET
-    public String decryptSecret(@PathParam("cipherText") String cipherText) { (6)
+    public String decryptSecret(@PathParam("cipherText") String cipherText) { <6>
         return secrets.decrypt(Decrypt.Request.builder()
                                        .encryptionKeyName(ENCRYPTION_KEY)
                                        .cipherText(cipherText))
@@ -444,7 +447,7 @@ public class TransitResource {
 
     @Path("/hmac/{text}")
     @GET
-    public String hmac(@PathParam("text") String text) { (7)
+    public String hmac(@PathParam("text") String text) { <7>
         return secrets.hmac(Hmac.Request.builder()
                                     .hmacKeyName(ENCRYPTION_KEY)
                                     .data(Base64Value.create(text)))
@@ -453,7 +456,7 @@ public class TransitResource {
 
     @Path("/sign/{text}")
     @GET
-    public String sign(@PathParam("text") String text) { (8)
+    public String sign(@PathParam("text") String text) { <8>
         return secrets.sign(Sign.Request.builder()
                                     .signatureKeyName(SIGNATURE_KEY)
                                     .data(Base64Value.create(text)))
@@ -462,7 +465,7 @@ public class TransitResource {
 
     @Path("/verify/hmac/{secret}/{hmac: .*}")
     @GET
-    public String verifyHmac(@PathParam("secret") String secret, @PathParam("hmac") String hmac) { (9)
+    public String verifyHmac(@PathParam("secret") String secret, @PathParam("hmac") String hmac) { <9>
         boolean isValid = secrets.verify(Verify.Request.builder()
                                                  .digestKeyName(ENCRYPTION_KEY)
                                                  .data(Base64Value.create(secret))
@@ -473,7 +476,7 @@ public class TransitResource {
     }
     @Path("/verify/sign/{secret}/{signature: .*}")
     @GET
-    public String verifySignature(@PathParam("secret") String secret, @PathParam("signature") String signature) { (10)
+    public String verifySignature(@PathParam("secret") String secret, @PathParam("signature") String signature) { <10>
         boolean isValid = secrets.verify(Verify.Request.builder()
                                                  .digestKeyName(SIGNATURE_KEY)
                                                  .data(Base64Value.create(secret))
@@ -484,16 +487,17 @@ public class TransitResource {
     }
 }
 ----
-1. Enable the secrets engine on the default path.
-2. Disable the secrets engine on the default path.
-3. Create the encrypting and signature keys.
-4. Delete the encryption and signature keys.
-5. Encrypt a secret.
-6. Decrypt a secret.
-7. Create an HMAC for text.
-8. Create a signature for text.
-9. Verify HMAC.
-10. Verify signature.
+
+<1> Enable the secrets engine on the default path.
+<2> Disable the secrets engine on the default path.
+<3> Create the encrypting and signature keys.
+<4> Delete the encryption and signature keys.
+<5> Encrypt a secret.
+<6> Decrypt a secret.
+<7> Create an HMAC for text.
+<8> Create a signature for text.
+<9> Verify HMAC.
+<10> Verify signature.
 
 == Local testing
 Vault is available as a docker image, so to test locally, you can simply:

@@ -18,7 +18,7 @@
 
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/oci
 
-= The Oracle Cloud Infrastructure Integration
+= Oracle Cloud Infrastructure Integration
 :h1Prefix: SE
 :description: Helidon OCI Integration
 :keywords: oci
@@ -29,7 +29,7 @@ The Helidon SE OCI Integration provides easy access to Oracle Cloud Infrastructu
 
 == General configuration
 
-=== Via Helidon Properties configuration
+=== Using Helidon SE Properties configuration
 
 The first option to configure connection to OCI is to directly specify properties in `application.yaml` file:
 
@@ -44,7 +44,8 @@ oci:
             region: us-...
             key-pem: <pem content>
 ----
-=== Via OCI Configuration
+
+=== Using OCI Configuration
 
 The second  option is via OCI configuration file.
 For authentication in OCI a special configuration file should be set up. The file is usually located at `~/.oci/config`

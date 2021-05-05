@@ -18,7 +18,7 @@
 
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/oci
 
-= The OCI Object Storage
+= OCI Object Storage
 :h1Prefix: MP
 :description: Helidon OCI Object Storage integration
 :keywords: oci, objectstorage
@@ -55,16 +55,16 @@ public class ObjectStorageResource {
     private final String bucketName;
 
     @Inject
-    ObjectStorageResource(OciObjectStorage objectStorage, (1)
+    ObjectStorageResource(OciObjectStorage objectStorage, <1>
                           @ConfigProperty(name = "oci.objectstorage.bucket")
-                                  String bucketName) { (2)
+                                  String bucketName) { <2>
         this.objectStorage = objectStorage;
         this.bucketName = bucketName;
     }
 }
 ----
-1. `OciObjectStorage` is configured and injected automatically
-2. Bucket name is read from the properties
+<1> `OciObjectStorage` is configured and injected automatically
+<2> Bucket name is read from the properties
 
 Additionally, in `microprofile-config.properties` OCI properties should be specified:
 
@@ -77,7 +77,9 @@ oci.properties.objectstorage-bucket: "demobucket"
 
 The exact values are available in OCI object storage and bucket properties.
 
-== Using the Object Storage
+image::oci/ocibucket.png[OCI Bucket, align="center"]
+
+== Using Object Storage
 
 === Upload file
 To upload a file via `PUT` method to OCI Object Storage:
@@ -90,7 +92,7 @@ public Response upload(@PathParam("fileName") String fileName,
                      @HeaderParam("Content-Length") long contentLength,
                      @HeaderParam("Content-Type") @DefaultValue("application/octet-stream") String type,
                      InputStream entity) {
-    PutObject.Response response = objectStorage.putObject(PutObject.Request.builder() (1)
+    PutObject.Response response = objectStorage.putObject(PutObject.Request.builder() <1>
                                                                   .contentLength(contentLength)
                                                                   .bucket(bucketName)
                                                                   .requestMediaType(io.helidon.common.http.MediaType
@@ -98,15 +100,15 @@ public Response upload(@PathParam("fileName") String fileName,
                                                                   .objectName(fileName),
                                                           Channels.newChannel(entity));
 
-    return Response.status(response.status().code()) (2)
+    return Response.status(response.status().code()) <2>
             .header("opc-request-id", response.headers().first("opc-request-id").orElse(""))
             .header("request-id", response.requestId())
             .build();
 }
 ----
 
-1. Use `objectStorage.putObject` method with`PutObject.Request.builder()` to submit data
-3. Put the result in the `Response`
+<1> Use `objectStorage.putObject` method with`PutObject.Request.builder()` to submit data
+<2> Put the result in the `Response`
 
 
 === Download file
@@ -117,20 +119,20 @@ To download the file via `GET` method from OCI Object Storage:
 @GET
 @Path("/file/{file-name}")
 public Response download(@PathParam("file-name") String fileName) {
-    ApiOptionalResponse<GetObject.Response> ociResponse = objectStorage.getObject(GetObject.Request.builder() (1)
+    ApiOptionalResponse<GetObject.Response> ociResponse = objectStorage.getObject(GetObject.Request.builder() <1>
                                                                                                   .bucket(bucketName)
                                                                                                   .objectName(fileName));
-    Optional<GetObject.Response> entity = ociResponse.entity(); (2)
+    Optional<GetObject.Response> entity = ociResponse.entity(); <2>
 
     if (entity.isEmpty()) {
-        return Response.status(Response.Status.NOT_FOUND).build(); (3)
+        return Response.status(Response.Status.NOT_FOUND).build(); <3>
     }
 
     GetObject.Response response = entity.get();
 
     StreamingOutput stream = output -> response.writeTo(Channels.newChannel(output));
 
-    Response.ResponseBuilder ok = Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM_TYPE) (4)
+    Response.ResponseBuilder ok = Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM_TYPE) <4>
             .header(Http.Header.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
             .header("opc-request-id", ociResponse.headers().first("opc-request-id").orElse(""))
             .header("request-id", ociResponse.requestId());
@@ -147,10 +149,10 @@ public Response download(@PathParam("file-name") String fileName) {
 }
 ----
 
-1. Use `getObject` function to make asynchronous request to OCI Object Storage
-2. The result is of type `Optional`
-3. Whenever the result is empty, return status `404`
-4. Get the response, set headers and return the result
+<1> Use `getObject` function to make asynchronous request to OCI Object Storage
+<2> The result is of type `Optional`
+<3> Whenever the result is empty, return status `404`
+<4> Get the response, set headers and return the result
 
 
 === Delete
@@ -161,16 +163,16 @@ Finally, to delete a file, `DELETE` method should be used
 @DELETE
 @Path("/file/{file-name}")
 public Response delete(@PathParam("file-name") String fileName) {
-    DeleteObject.Response response = objectStorage.deleteObject(DeleteObject.Request.builder() (1)
+    DeleteObject.Response response = objectStorage.deleteObject(DeleteObject.Request.builder() <1>
                                                                         .bucket(bucketName)
                                                                         .objectName(fileName));
 
-    return Response.status(response.status().code()) (2)
+    return Response.status(response.status().code()) <2>
             .header("opc-request-id", response.headers().first("opc-request-id").orElse(""))
             .header("request-id", response.requestId())
             .build();
 }
 ----
 
-1. Use `deleteObject` function and configure a `DeleteObject.Request.builder()` to submit the delete request
-2. Return the result
+<1> Use `deleteObject` function and configure a `DeleteObject.Request.builder()` to submit the delete request
+<2> Return the result
