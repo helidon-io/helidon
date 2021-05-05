@@ -93,7 +93,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</attr
     are offered by Oracle alone and not by any other party.
 ________________________________________________
 Copyright (c) 2019,2020 Payara Foundation and/or its affiliates. All rights reserved.
-  Copyright (c) 2015,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2015,2020 Oracle and/or its affiliates.
   Copyright (c) 2019 Payara Services and/or its affiliates. All rights reserved.
   Copyright (c) 2019,2020 IBM and/or its affiliates. All rights reserved.
 
@@ -184,17 +184,17 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Fourth Party Dependencies
 --------------------------------------------
 "JSON-B API" (jakarta.json.bind:jakarta.json.bind-api)
-  Copyright (c) 2015,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2015,2019 Oracle and/or its affiliates.
   Copyright 2019 Eclipse Foundation. All Rights Reserved.
   Multi License: Eclipse Public License - v 2.0, GPL Version 2 + CPE
 --------------------------------------------
 "JSON-P API" (jakarta.json-api:jakarta.json-api)
-  Copyright (c) 2011, 2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2011, 2021 Oracle and/or its affiliates.
   Copyright (c) 2019 Eclipse Foundation.
   Multi License: Eclipse Public License - v 2.0, GPL Version 2 + CPE
 --------------------------------------------
 "JSON-P Default Provider" (org.glassfish:jakarta.json)
-  Copyright (c) 2011,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2011,2019 Oracle and/or its affiliates.
   Multi License: Eclipse Public License - v 2.0, GPL Version 2 + CPE
 </attribution>
         </dependency>
@@ -207,7 +207,7 @@ Fourth Party Dependencies
             <consumers>
                 <consumer>helidon-integrations-cdi-eclipselink</consumer>
             </consumers>
-            <attribution>  Copyright (c) 1998,2019 Oracle and/or its affiliates. All rights reserved.
+            <attribution>  Copyright (c) 1998,2019 Oracle and/or its affiliates.
   Copyright (c) 1998,2018 Oracle and/or its affiliates, IBM Corporation. All rights reserved.
   Copyright (c) 1998,2018 IBM and/or its affiliates. All rights reserved.
   Copyright (c) 2000, 2015 -2011 INRIA, France Telecom
@@ -255,26 +255,26 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Fourth Party Dependencies
 --------------------------------------------
 "Jakarta Persistence" (org.eclipse.persistence:jakarta.persistence)
-  Copyright (c) 1998,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 1998,2019 Oracle and/or its affiliates.
   Copyright (c) OSGi Alliance (2009). All Rights Reserved.
   Eclipse Public License - 2.0
   Eclipse Distribution License - v 1.0 
 --------------------------------------------
 "EclipseLink ASM" (org.eclipse.persistence:org.eclipse.persistence.asm)
   Copyright (c) 2000-2011 INRIA, France Telecom
-  Copyright (c) 2007,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2018 Oracle and/or its affiliates.
   Eclipse Public License - 2.0
   Eclipse Distribution License - v 1.0 
 --------------------------------------------
 "EclipseLink ANTLR" (org.eclipse.persistence:org.eclipse.persistence.antlr)
   Copyright (c) 2005-2012 Terence Parr
-  Copyright (c) 2007,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2018 Oracle and/or its affiliates.
   Copyright (c) 2012 Sam Harwell
   Eclipse Public License - 2.0
   Eclipse Distribution License - v 1.0 
 --------------------------------------------
 "EclipseLink Hermes JPQL Parser" (org.eclipse.persistence:org.eclipse.persistence.jpa.jpql)
-  Copyright (c) 2006,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2006,2019 Oracle and/or its affiliates.
   Eclipse Public License - 2.0
   Eclipse Distribution License - v 1.0 
 --------------------------------------------
@@ -285,10 +285,10 @@ Fourth Party Dependencies
   Copyright (c) 2009,2018 Markus Karg, SAP. All rights reserved.
   Copyright (c) 2019 Payara Services Ltd.
   Copyright (c) 2011,2018 Jenzabar, Inc. All rights reserved.
-  Copyright (c) 1998,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 1998,2019 Oracle and/or its affiliates.
   Copyright (c) 1998,2015 Sei Syvalta. All rights reserved.
   Copyright (c) 2012,2018 Pervasive Software Inc. All Rights Reserved.
-  Copyright (c) 2012,2018 Oracle and/or its affiliates. All Rights Reserved.
+  Copyright (c) 2012,2018 Oracle and/or its affiliates.
   Copyright (c) 2010 Frank Schwarz. All rights reserved.
   Copyright (c) 2009,2018 Fujitsu Limited. All rights reserved.
   Copyright (c) 1998,2019 IBM Corporation and/or its affiliates. All rights reserved.
@@ -929,7 +929,7 @@ License Identifier: Apache-2.0
 -------------------------------------------------
 "fastinfoset" (com.sun.xml.fastinfoset:FastInfoset)
   Copyright (c) 1999-2004 The Apache Software Foundation.  All rights
-  Copyright (c) 2004-2013 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2004-2013 Oracle and/or its affiliates.
   Copyright (c) 2001-2005 freebxml.org.  All rights reserved.
 Apache License 2.0
 ----------------------------------------------------
@@ -1394,7 +1394,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 License Identifier: LGPL-2.1-only
 --------------------------------------------
 "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2005,2018 Oracle and/or its affiliates.
   Copyright 2019 Eclipse Foundation. All rights reserved.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 
@@ -2154,7 +2154,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 License Identifier: LGPL-2.1-only
 --------------------------------------------
 "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2005,2018 Oracle and/or its affiliates.
   Copyright 2019 Eclipse Foundation. All rights reserved.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 
@@ -3116,7 +3116,7 @@ Apache License Version 2.0
                 <consumer>helidon-microprofile-metrics</consumer>
                 <consumer>helidon-microprofile-tracing</consumer>
             </consumers>
-            <attribution>Copyright (c) 1997,2019 Oracle and/or its affiliates. All rights reserved.
+            <attribution>Copyright (c) 1997,2019 Oracle and/or its affiliates.
 --------------------------------------------
 This content is produced and maintained by Jakarta Activation project.
 
@@ -3217,7 +3217,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     License are offered by Oracle alone and not by any other party.
 __________________________________________________________________
 
-Copyright (c) 2005,2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2005,2018 Oracle and/or its affiliates.
   Copyright  2019 Eclipse Foundation. All rights reserved.
 -----------------------------------------------------------------------
 This content is produced and maintained by the Jakarta Annotations project.
@@ -3365,21 +3365,21 @@ Fourth Party Dependencies
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "Jakarta Interceptors" (jakarta.interceptor:jakarta.interceptor-api)
-  Copyright (c) 1997,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 1997,2019 Oracle and/or its affiliates.
   Copyright 2019 Eclipse Foundation. All rights reserved.&lt;br&gt;
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2005,2018 Oracle and/or its affiliates.
   Copyright 2019 Eclipse Foundation. All rights reserved.&lt;br&gt;
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "Jakarta Enterprise Beans" (jakarta.ejb:jakarta.ejb-api)
-  Copyright (c) 1997,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 1997,2019 Oracle and/or its affiliates.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "Jakarta Transaction API" (jakarta.transaction:jakarta.transaction-api)
-  Copyright (c) 1997,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 1997,2018 Oracle and/or its affiliates.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 License Identifier: EPL-2.0
@@ -3899,7 +3899,7 @@ License Identifier: EPL-2.0
 ________________________________________________________________
 
 Jakarta Interceptors API (jakarta.interceptor:jakarta.interceptor-api)
-  Copyright (c) 1997,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 1997,2019 Oracle and/or its affiliates.
   Copyright Eclipse Foundation. All rights reserved.
 --------------------------------------------
 This content is produced and maintained by the Eclipse Project for Interceptors
@@ -3926,16 +3926,16 @@ License Identifier: EPL-2.0
 Fourth Party Dependencies
 --------------------------------------------
 "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2005,2018 Oracle and/or its affiliates.
   Copyright 2019 Eclipse Foundation. All rights reserved.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "Jakarta Enterprise Beans" (jakarta.ejb:jakarta.ejb-api)
-  Copyright (c) 1997,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 1997,2019 Oracle and/or its affiliates.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "Jakarta Transactions API" (jakarta.transaction:jakarta.transaction-api)
-  Copyright (c) 1997,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 1997,2018 Oracle and/or its affiliates.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 </attribution>
@@ -3963,7 +3963,7 @@ Fourth Party Dependencies
 _______________________________________________________________
 
 Jakarta JSON Binding API (JSON-B) (jakarta.json.bind:jakarta.json.bind-api)
-  Copyright (c) 2015,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2015,2019 Oracle and/or its affiliates.
   Copyright 2019 Eclipse Foundation. All Rights Reserved.
 --------------------------------------------
 This content is produced and maintained by the Jakarta JSON Binding project.
@@ -4002,7 +4002,7 @@ Fourth Party Dependencies
 --------------------------------------------
 Jakarta JSON Processing API (JSON-P) (jakarta.json:jakarta.json-api)
   Copyright  2019 Eclipse Foundation. All rights reserved.
-  Copyright (c) 2011,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2011,2019 Oracle and/or its affiliates.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 </attribution>
@@ -4037,7 +4037,7 @@ Jakarta JSON Processing API (JSON-P) (jakarta.json:jakarta.json-api)
 __________________________________________________
 
 Copyright  2019 Eclipse Foundation. All rights reserved.
-  Copyright (c) 2011,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2011,2019 Oracle and/or its affiliates.
 --------------------------------------------
 This content is produced and maintained by the Eclipse Project for JSON
 Processing project.
@@ -4087,18 +4087,18 @@ License Identifier: EPL-2.0
 Fourth Party Dependencies
 --------------------------------------------
 "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2005,2018 Oracle and/or its affiliates.
   Copyright 2019 Eclipse Foundation. All rights reserved.&lt;br&gt;
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2019 Oracle and/or its affiliates.
   Copyright (c) 2006 Google Inc.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "jakarta.json" (org.glassfish,jakarta.json)
   Copyright  2019 Eclipse Foundation. All rights reserved.
-  Copyright (c) 2011,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2011,2019 Oracle and/or its affiliates.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 </attribution>
@@ -4113,7 +4113,7 @@ Fourth Party Dependencies
                 <consumer>helidon-integrations-cdi-hibernate</consumer>
                 <consumer>helidon-integrations-cdi-jpa</consumer>
             </consumers>
-            <attribution>  Copyright (c) 2008,2019 Oracle and/or its affiliates. All rights reserved.
+            <attribution>  Copyright (c) 2008,2019 Oracle and/or its affiliates.
   Copyright 2019 Eclipse Foundation. All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -4175,18 +4175,18 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ________________________________________________________________
 
-  Copyright (c) 2010,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2019 Oracle and/or its affiliates.
   Copyright (c) 2006 Google Inc.
 License Identifier: EPL-2.0
 ----------------------------------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
 Jakarta Activation API (JAF) (jakarta.activation:jakarta.activation-api)
-  Copyright (c) 1997,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 1997,2019 Oracle and/or its affiliates.
   Eclipse Distribution License - v 1.0
 --------------------------------------------
 Jakarta XML Binding API (JAX-B) (jakarta.xml.bind:jakarta.xml.bind-api)
-  Copyright (c) 2003,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2003,2020 Oracle and/or its affiliates.
   Copyright 2019, 2020 Eclipse Foundation. All rights reserved.&lt;br&gt;
   Eclipse Distribution License - v 1.0
 
@@ -4254,7 +4254,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     License are offered by Oracle alone and not by any other party.
 ___________________________________________
 
- * Copyright (c) 1997, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021 Oracle and/or its affiliates.
 License Identifier: EPL-2.0
 --------------------------------------------
 Fourth Party Dependencies
@@ -4292,7 +4292,7 @@ License Identifier: Apache-2.0
 _____________________
 
 Jakarta WebSocket
-  Copyright (c) 2018 Oracle and/or its affiliates and others.
+  Copyright (c) 2018, 2021 Oracle and/or its affiliates and others.
 Eclipse Public License 2.0
 Secondary: GNU General Public License, version 2 with the GNU Classpath Exception
 
@@ -4725,7 +4725,7 @@ from your version.
                 <consumer>helidon-security-integration-jersey</consumer>
             </consumers>
             <attribution>Jakarta XML Binding API (JAX-B) (jakarta.xml.bind:jakarta.xml.bind-api)
-  Copyright (c) 2003,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2003,2020 Oracle and/or its affiliates.
   Copyright 2019, 2020 Eclipse Foundation. All rights reserved.&lt;br&gt;
 --------------------------------------------
 This content is produced and maintained by the Jakarta XML Binding
@@ -4806,7 +4806,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Fourth Party Dependencies
 --------------------------------------------
 "Jakarta Activation API jar" (jakarta.activation:jakarta.activation-api)
-  Copyright (c) 1997,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 1997,2019 Oracle and/or its affiliates.
 Eclipse Distribution License - v 1.0
 --------------------------------------------
 </attribution>
@@ -6068,7 +6068,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <consumer>helidon-webserver-tyrus</consumer>
             </consumers>
             <attribution>Tyrus 
-  Copyright (c) 2007,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2020 Oracle and/or its affiliates.
 
 This content is produced and maintained by the Eclipse Tyrus project.
 
@@ -6102,7 +6102,7 @@ License Identifier: EPL-2.0
 Fourth Party Runtime Dependencies
 --------------------------------------------
 "jakarta.xml.bind-api"  (jakarta.xml.bind:jakarta.xml.bind-api)
-  Copyright (c) 2003,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2003,2018 Oracle and/or its affiliates.
 
 Eclipse Distribution License - v 1.0 Copyright (c) 2007, Eclipse Foundation,
 Inc. and its licensors.
@@ -6130,7 +6130,7 @@ OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --------------------------------------------
 "JavaBeans Activation Framework API jar" (jakarta.activation:jakarta.activation-api)
-  Copyright (c) 1997,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 1997,2018 Oracle and/or its affiliates.
   Eclipse Distribution License - v 1.0 
 --------------------------------------------
 JLine
@@ -7411,7 +7411,7 @@ _________________________________________________________________
 jersey-core-client (org.glassfish.jersey.core:jersey-client)
   Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
   Copyright (c) 2018,2019 Payara Foundation and/or its affiliates.
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2021 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 # Notice for Jersey 
@@ -7448,23 +7448,23 @@ The project maintains the following source code repositories:
 Fourth Party Dependencies
 --------------------------------------------
 "jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2019 Oracle and/or its affiliates.
   Copyright (c) 2006 Google Inc.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2021 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2021 Oracle and/or its affiliates.
   Copyright (c) 2018 Payara Foundation and/or its affiliates.
   Copyright (C) 2006,2014 The Guava Authors
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2005,2018 Oracle and/or its affiliates.
   Copyright &amp;#169; 2019 Eclipse Foundation. All rights reserved.&lt;br&gt;
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "OSGi resource locator" (org.glassfish.hk2:osgi-resource-locator)
-  Copyright (c) 2009,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2009,2018 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
         </attribution>
@@ -7493,7 +7493,7 @@ Fourth Party Dependencies
     License are offered by Oracle alone and not by any other party.
 ____________________________________________________
 jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2)
-  Copyright (c) 2017,2021 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2017,2021 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 # Notice for Jersey 
@@ -7530,45 +7530,45 @@ The project maintains the following source code repositories:
 Fourth Party Dependencies
 --------------------------------------------
 "jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2021 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2021 Oracle and/or its affiliates.
   Copyright (c) 2018 Payara Foundation and/or its affiliates.
   Copyright (C) 2006,2014 The Guava Authors
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2019 Oracle and/or its affiliates.
   Copyright (c) 2006 Google Inc.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2005,2018 Oracle and/or its affiliates.
   Copyright &amp;#169; 2019 Eclipse Foundation. All rights reserved.&lt;br&gt;
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "OSGi resource locator" (org.glassfish.hk2:osgi-resource-locator)
-  Copyright (c) 2009,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2009,2018 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "ServiceLocator Default Implementation" (org.glassfish.hk2:hk2-locator)
-  Copyright (c) 2010,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2019 Oracle and/or its affiliates.
   Copyright (c) 2019 Payara Service Ltd. and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "aopalliance version 1.0 repackaged as a module" (org.glassfish.hk2.external:aopalliance-repackaged)
-  Copyright (c) 2013,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2013,2018 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "javax.inject:1 as OSGi bundle" (org.glassfish.hk2.external:jakarta.inject)
   Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright (c) 2013,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2013,2018 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "HK2 API module" (org.glassfish.hk2:hk2-api)
-  Copyright (c) 2007,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2018 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "HK2 Implementation Utilities" (org.glassfish.hk2:hk2-utils)
-  Copyright (c) 2007,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2019 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "Javassist" (org.javassist:javassist)
@@ -7598,7 +7598,7 @@ Fourth Party Dependencies
 3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public
     License are offered by Oracle alone and not by any other party.
 _________________________________________________
-  Copyright (c) 2017,2021 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2017,2021 Oracle and/or its affiliates.
 # Notice for Jersey 
 This content is produced and maintained by the Eclipse Jersey project.
 
@@ -7633,46 +7633,46 @@ The project maintains the following source code repositories:
 Fourth Party Dependencies
 --------------------------------------------
 "jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2021 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2021 Oracle and/or its affiliates.
   Copyright (c) 2018 Payara Foundation and/or its affiliates.
   Copyright (C) 2006,2014 The Guava Authors
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2019 Oracle and/or its affiliates.
   Copyright (c) 2006 Google Inc.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2005,2018 Oracle and/or its affiliates.
   Copyright &amp;#169; 2019 Eclipse Foundation. All rights reserved.&lt;br&gt;
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
   Jakarta JSON Processing API (JSON-P) (jakarta.json:jakarta.json-api)
   Copyright  2019 Eclipse Foundation. All rights reserved.
-  Copyright (c) 2011,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2011,2019 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "JSON-P Default Provider" (org.glassfish:jakarta.json)
-  Copyright (c) 2011,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2011,2019 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "JSON-B API" (jakarta.json.bind:jakarta.json.bind-api)
-  Copyright (c) 2015,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2015,2019 Oracle and/or its affiliates.
   Copyright &amp;#169; 2019 Eclipse Foundation. All Rights Reserved.&lt;br&gt;
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "OSGi resource locator" (org.glassfish.hk2:osgi-resource-locator)
-  Copyright (c) 2009,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2009,2018 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "org.glassfish.hk2.external:jakarta.inject"
-  Copyright (c) 2013,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2013,2018 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "org.eclipse.yasson" (org.eclipse:yasson)
   Copyright (c) 2019 IBM and/or its affiliates. All rights reserved.
-  Copyright (c) 2015,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2015,2019 Oracle and/or its affiliates.
   Copyright (c) 2019 Payara Foundation and/or its affiliates. All rights reserved.
   Copyright (c) 2019 Payara Services and/or its affiliates. All rights reserved.
   Eclipse Public License 2.0 or Eclipse Distribution License 1.0 
@@ -7725,7 +7725,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     License are offered by Oracle alone and not by any other party.
 ____________________________________________
 jersey-media-json-processing (org.glassfish.jersey.media:jersey-media-json-processing)
-  Copyright (c) 2011,2021 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2011,2021 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 # Notice for Jersey 
@@ -7762,40 +7762,40 @@ The project maintains the following source code repositories:
 Fourth Party Dependencies
 --------------------------------------------
 "jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2021 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2021 Oracle and/or its affiliates.
   Copyright (c) 2018 Payara Foundation and/or its affiliates.
   Copyright (C) 2006,2014 The Guava Authors
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2019 Oracle and/or its affiliates.
   Copyright (c) 2006 Google Inc.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2005,2018 Oracle and/or its affiliates.
   Copyright &amp;#169; 2019 Eclipse Foundation. All rights reserved.&lt;br&gt;
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "javax.inject:1 as OSGi bundle" (org.glassfish.hk2.external:jakarta.inject)
   Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright (c) 2010,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2018 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "OSGi resource locator" (org.glassfish.hk2:osgi-resource-locator)
-  Copyright (c) 2009,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2009,2018 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "JSON-P Default Provider" (org.glassfish:jakarta.json)
-  Copyright (c) 2011,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2011,2019 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "Jakarta JSON Processing Media for Jakarta RESTful Web Services" (org.glassfish:jsonp-jaxrs)
-  Copyright (c) 2012,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2012,2019 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "JSON-P Default Provider" (org.glassfish:jakarta.json)
-  Copyright (c) 2011,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2011,2019 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 </attribution>
@@ -7822,7 +7822,7 @@ Fourth Party Dependencies
 ___________________________________________________
 jersey-mp-rest-client (org.glassfish.jersey.ext.microprofile:jersey-mp-rest-client)
   Copyright (c) 2019 Payara Foundation and/or its affiliates. All rights reserved.
-  Copyright (c) 2019,2021 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2019,2021 Oracle and/or its affiliates.
 --------------------------------------------
 # Notice for Jersey 
 This content is produced and maintained by the Eclipse Jersey project.
@@ -7864,7 +7864,7 @@ org.glassfish.jersey.inject:jersey-hk2
 org.glassfish.jersey.media:jersey-media-json-binding
 org.glassfish.jersey.core:jersey-common
 org.glassfish.jersey.media:jersey-media-jaxb
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2021 Oracle and/or its affiliates.
   Copyright (c) 2018,2019 Payara Foundation and/or its affiliates.
   Copyright (c) 2019 Payara Foundation and/or its affiliates. All rights reserved.
   Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
@@ -7873,39 +7873,39 @@ org.glassfish.jersey.media:jersey-media-jaxb
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "OSGi resource locator" (org.glassfish.hk2:osgi-resource-locator)
-  Copyright (c) 2009,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2009,2018 Oracle and/or its affiliates.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "javax.inject:1 as OSGi bundle" (org.glassfish.hk2.external:jakarta.inject)
   Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright (c) 2010,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2018 Oracle and/or its affiliates.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2005,2018 Oracle and/or its affiliates.
   Copyright &amp;#169; 2019 Eclipse Foundation. All rights reserved.&lt;br&gt;
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "HK2" (org.glassfish.hk2)
-  Copyright (c) 2007,2018 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2007,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2018 Oracle and/or its affiliates.
+  Copyright (c) 2007,2019 Oracle and/or its affiliates.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
  "aopalliance version repackaged as a module" (org.glassfish.hk2.external:aopalliance-repackaged)
-  Copyright (c) 2013,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2013,2018 Oracle and/or its affiliates.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "JSON-B API" (jakarta.json.bind:jakarta.json.bind-api)
-  Copyright (c) 2015,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2015,2019 Oracle and/or its affiliates.
   Copyright &amp;#169; 2019 Eclipse Foundation. All Rights Reserved.&lt;br&gt;
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-
 --------------------------------------------
 "Jakarta JSON Processing Media for Jakarta RESTful Web Services" (org.glassfish:jsonp-jaxrs)
-  Copyright (c) 2012,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2012,2019 Oracle and/or its affiliates.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "Jakarta Interceptors" (jakarta.interceptor:jakarta.interceptor-api)
-  Copyright (c) 1997,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 1997,2019 Oracle and/or its affiliates.
   Copyright 2019 Eclipse Foundation. All rights reserved.&lt;br&gt;
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
@@ -7916,12 +7916,12 @@ Jakarta Expression Language API (EL) (jakarta.el:jakarta.el-api)
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "jakarta.ws.rs-api" jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2019 Oracle and/or its affiliates.
   Copyright (c) 2006 Google Inc.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "JSON-P Default Provider" (org.glassfish:jakarta.json)
-  Copyright (c) 2011,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2011,2019 Oracle and/or its affiliates.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 "MicroProfile Rest Client API" (org.eclipse.microprofile.rest.client:microprofile-rest-client-api)
@@ -7977,7 +7977,7 @@ Jakarta Contexts and Dependency Injection API (CDI API) (jakarta.enterprise:jaka
   Apache License Version 2.0
 --------------------------------------------
 "Jakarta XML Binding API" (jakarta.xml.bind:jakarta.xml.bind-api)
-  Copyright (c) 2003,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2003,2020 Oracle and/or its affiliates.
   Copyright &amp;#169; 2019, 2020 Eclipse Foundation. All rights reserved.&lt;br&gt;
   Copyright (c) 2018 Payara Foundation and/or its affiliates.
 
@@ -8018,12 +8018,12 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --------------------------------------------
 "Jakarta Activation" (com.sun.activation:jakarta.activation)
-  Copyright (c) 1997,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 1997,2019 Oracle and/or its affiliates.
   Eclipse Distribution License - v 1.0
 --------------------------------------------
 "org.eclipse.yasson" (org.eclipse:yasson)
   Copyright (c) 2019 IBM and/or its affiliates. All rights reserved.
-  Copyright (c) 2015,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2015,2019 Oracle and/or its affiliates.
   Copyright (c) 2019 Payara Foundation and/or its affiliates. All rights reserved.
   Copyright (c) 2019 Payara Services and/or its affiliates. All rights reserved.
   Eclipse Public License v. 2.0, Eclipse Distribution License v. 1.0
@@ -8057,7 +8057,7 @@ _________________________________________________
 jersey-core-server (org.glassfish.jersey.core:jersey-server)
   Copyright (c) 2000-2011 INRIA, France Telecom
   Copyright (c) 2018 Payara Foundation and/or its affiliates.
-  Copyright (c) 2010,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2020 Oracle and/or its affiliates.
   Copyright 2010,2013 Coda Hale and Yammer, Inc.
 --------------------------------------------
 # Notice for Jersey 
@@ -8096,34 +8096,34 @@ Fourth Party Dependencies
 "jersey-core-client" (org.glassfish.jersey.core:jersey-client)
   Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
   Copyright (c) 2018,2019 Payara Foundation and/or its affiliates.
-  Copyright (c) 2010,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2020 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2020 Oracle and/or its affiliates.
   Copyright (c) 2018 Payara Foundation and/or its affiliates.
   Copyright (C) 2006,2014 The Guava Authors
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "OSGi resource locator" (org.glassfish.hk2:osgi-resource-locator)
-  Copyright (c) 2009,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2009,2018 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "javax.inject:1 as OSGi bundle" (org.glassfish.hk2.external:jakarta.inject)
   Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright (c) 2013,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2013,2018 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2019 Oracle and/or its affiliates.
   Copyright (c) 2006 Google Inc.
-  Copyright (c) 2010,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2020 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2005,2018 Oracle and/or its affiliates.
   Copyright &amp;#169; 2019 Eclipse Foundation. All rights reserved.&lt;br&gt;
-  Copyright (c) 2010,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2020 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "Jakarta Bean Validation API" (jakarta.validation:jakarta.validation-api)
@@ -8155,7 +8155,7 @@ Fourth Party Dependencies
     License are offered by Oracle alone and not by any other party.
 ______________________________________________________
 jersey-ext-weld2-se (org.glassfish.jersey.ext.cdi:jersey-weld2-se)
-  Copyright (c) 2014,2021 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2014,2021 Oracle and/or its affiliates.
 --------------------------------------------
 # Notice for Jersey 
 This content is produced and maintained by the Eclipse Jersey project.
@@ -8191,7 +8191,7 @@ The project maintains the following source code repositories:
 Fourth Party Dependencies
 --------------------------------------------
 "jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2021 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2021 Oracle and/or its affiliates.
   Copyright (c) 2018 Payara Foundation and/or its affiliates.
   Copyright (C) 2006,2014 The Guava Authors
   Eclipse Public License 2.0 + GPL v.2 with CPE
@@ -8199,37 +8199,37 @@ Fourth Party Dependencies
 "jersey-core-server" (org.glassfish.jersey.core:jersey-server)
  Copyright (c) 2000-2011 INRIA, France Telecom
  Copyright (c) 2018 Payara Foundation and/or its affiliates.
- Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2010,2021 Oracle and/or its affiliates.
  Copyright 2010,2013 Coda Hale and Yammer, Inc.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "jersey-core-client" (org.glassfish.jersey.core:jersey-client)
   Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
   Copyright (c) 2018,2019 Payara Foundation and/or its affiliates.
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2021 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "jersey-ext-cdi1x" (org.glassfish.jersey.ext.cdi:jersey-cdi1x)
   Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
-  Copyright (c) 2013,2021 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2013,2021 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "org.glassfish.hk2.external:jakarta.inject"
-  Copyright (c) 2013,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2013,2018 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2019 Oracle and/or its affiliates.
   Copyright (c) 2006 Google Inc.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
   "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2005,2018 Oracle and/or its affiliates.
   Copyright &amp;#169; 2019 Eclipse Foundation. All rights reserved.&lt;br&gt;
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "OSGi resource locator" (org.glassfish.hk2:osgi-resource-locator)
-  Copyright (c) 2009,2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2009,2018 Oracle and/or its affiliates.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "Jakarta Bean Validation API" (jakarta.validation:jakarta.validation-api)
@@ -9285,7 +9285,7 @@ or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. Yo
 ____________________________
 
 The Universal Permissive License (UPL), Version 1.0
-Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2016, 2018, Oracle and/or its affiliates.
 
 Subject to the condition set forth below, permission is hereby granted to any person obtaining a copy of this software, associated documentation and/or data (collectively the "Software"), free of charge and under any and all copyright rights in the Software, and any and all patent rights owned or freely licensable by each licensor hereunder covering either (i) the unmodified Software as contributed to or provided by such licensor, or (ii) the Larger Works (as defined below), to deal in both
 
@@ -9301,7 +9301,7 @@ The above copyright notice and either this complete permission notice or at a mi
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 The Apache Software License, Version 2.0
-Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2016, 2018, Oracle and/or its affiliates.
 
 Licensed under the Apache License, Version 2.0 (the "License"); You may not use this product except in compliance with the License.  You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0.  A copy of the license is also reproduced below.  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions and  limitations under the License.
 ---------------------------------------------------------------------------

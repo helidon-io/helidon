@@ -655,6 +655,42 @@
                     <artifactId>helidon-maven-plugin</artifactId>
                     <version>${version.plugin.helidon-build-tools}</version>
                 </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-enforcer-plugin</artifactId>
+                    <version>${version.plugin.helidon-build-tools}</version>
+                    <configuration>
+                        <rules>
+                            <rule>copyright</rule>
+                            <rule>typos</rule>
+                        </rules>
+                        <copyrightConfig>
+                            <failOnError>true</failOnError>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
+                        </copyrightConfig>
+                        <typosConfig>
+                            <failOnError>true</failOnError>
+                            <typos>
+                                <typo>heldion</typo>
+                                <typo>helidion</typo>
+                                <typo>buidler</typo>
+                                <typo>vuilder</typo>
+                                <typo>bidler</typo>
+                            </typos>
+                        </typosConfig>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-services-plugin</artifactId>
+                    <version>${version.plugin.helidon-build-tools}</version>
+                    <configuration>
+                        <mode>fail</mode>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -753,6 +789,19 @@
                         <version>${version.lib.asciidoctor.diagram}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>io.helidon.build-tools</groupId>
+                <artifactId>helidon-services-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-meta-inf-services</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>services</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -1290,34 +1339,15 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.glassfish.copyright</groupId>
-                        <artifactId>glassfish-copyright-maven-plugin</artifactId>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-enforcer-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>print-copyright</id>
-                                <goals>
-                                    <goal>copyright</goal>
-                                </goals>
+                                <id>helidon-enforcer</id>
                                 <phase>validate</phase>
-                                <configuration>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>check-copyright</id>
                                 <goals>
                                     <goal>check</goal>
                                 </goals>
-                                <phase>validate</phase>
-                                <configuration>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

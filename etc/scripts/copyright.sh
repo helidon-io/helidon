@@ -24,16 +24,20 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
+readonly LOG_FILE=$(mktemp -t XXXcopyright-log)
+
 readonly RESULT_FILE=$(mktemp -t XXXcopyright-result)
 
 die() { echo "${1}" ; exit 1 ;}
 
-mvn ${MAVEN_ARGS} -q org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
+mvn ${MAVEN_ARGS} \
         -f ${WS_DIR}/pom.xml \
-        -Dcopyright.exclude="${WS_DIR}/etc/copyright-exclude.txt" \
-        -Dcopyright.template="${WS_DIR}/etc/copyright.txt" \
-        -Dcopyright.scm="git" \
-        -Pexamples,docs,ossrh-releases,tests > ${RESULT_FILE} || die "Error running the Maven command"
+        -Dhelidon.enforcer.output.file="${RESULT_FILE}" \
+        -Dhelidon.enforcer.rules=copyright \
+        -Dhelidon.enforcer.failOnError=false \
+        -Pcopyright \
+        -N \
+        validate > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
 
-grep -i "copyright" ${RESULT_FILE} \
+grep "^\[ERROR\]" ${RESULT_FILE} \
     && die "COPYRIGHT ERROR" || echo "COPYRIGHT OK"
