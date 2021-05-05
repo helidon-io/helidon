@@ -659,6 +659,29 @@
                     <groupId>io.helidon.build-tools</groupId>
                     <artifactId>helidon-enforcer-plugin</artifactId>
                     <version>${version.plugin.helidon-build-tools}</version>
+                    <configuration>
+                        <rules>
+                            <rule>copyright</rule>
+                            <rule>typos</rule>
+                        </rules>
+                        <copyrightConfig>
+                            <failOnError>true</failOnError>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
+                        </copyrightConfig>
+                        <typosConfig>
+                            <failOnError>true</failOnError>
+                            <typos>
+                                <typo>heldion</typo>
+                                <typo>helidion</typo>
+                                <typo>buidler</typo>
+                                <typo>vuilder</typo>
+                                <typo>bidler</typo>
+                            </typos>
+                        </typosConfig>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>io.helidon.build-tools</groupId>
@@ -667,14 +690,6 @@
                     <configuration>
                         <mode>fail</mode>
                     </configuration>
-                    <executions>
-                        <execution>
-                            <id>generate-meta-inf-services</id>
-                            <goals>
-                                <goal>services</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -778,6 +793,15 @@
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>helidon-services-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-meta-inf-services</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>services</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -1320,33 +1344,10 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                         <executions>
                             <execution>
                                 <id>helidon-enforcer</id>
+                                <phase>validate</phase>
                                 <goals>
                                     <goal>check</goal>
                                 </goals>
-                                <phase>validate</phase>
-                                <configuration>
-                                    <rules>
-                                        <rule>copyright</rule>
-                                        <rule>typos</rule>
-                                    </rules>
-                                    <copyrightConfig>
-                                        <failOnError>true</failOnError>
-                                        <!--suppress UnresolvedMavenProperty -->
-                                        <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
-                                        <!--suppress UnresolvedMavenProperty -->
-                                        <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
-                                    </copyrightConfig>
-                                    <typosConfig>
-                                        <failOnError>true</failOnError>
-                                        <typos>
-                                            <typo>heldion</typo>
-                                            <typo>helidion</typo>
-                                            <typo>buidler</typo>
-                                            <typo>vuilder</typo>
-                                            <typo>bidler</typo>
-                                        </typos>
-                                    </typosConfig>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
