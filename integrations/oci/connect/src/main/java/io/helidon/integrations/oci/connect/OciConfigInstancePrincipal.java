@@ -18,7 +18,7 @@ package io.helidon.integrations.oci.connect;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
+import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -55,12 +55,20 @@ public class OciConfigInstancePrincipal extends OciConfigPrincipalBase implement
     private final AtomicReference<OciSignatureData> currentSignatureData = new AtomicReference<>();
     private final String region;
     private final String tenancyId;
+    private final SessionKeys sessionKeys;
+    private final Supplier<Single<PrivateKey>> privateKeySupplier;
+    private final Supplier<Single<X509Certificate>> certificateSupplier;
+    private final Supplier<Single<X509Certificate>> intermediateCertificateSupplier;
 
     private OciConfigInstancePrincipal(Builder builder) {
         super(builder);
 
-        this.region = null;
-        this.tenancyId = null;
+        this.region = builder.region;
+        this.tenancyId = builder.tenant;
+        this.sessionKeys = builder.sessionKeys;
+        this.privateKeySupplier = builder.privateKeySupplier;
+        this.certificateSupplier = builder.certificateSupplier;
+        this.intermediateCertificateSupplier = builder.intermediateCertSupplier;
     }
 
     // this method blocks when trying to connect to a remote IP address
@@ -120,7 +128,28 @@ public class OciConfigInstancePrincipal extends OciConfigPrincipalBase implement
 
     @Override
     public Single<OciSignatureData> refresh() {
-        return OciConfigProvider.super.refresh();
+        KeyPair keyPair = sessionKeys.refresh();
+        return privateKeySupplier.get()
+                          .flatMapSingle(privateKey -> {
+                              return certificateSupplier.get()
+                                                 .flatMapSingle(certificate -> {
+                                                     return intermediateCertificateSupplier.get()
+                                                                                    .flatMapSingle(intermediateCert -> {
+                                                                                        return refresh(keyPair,
+                                                                                                       privateKey,
+                                                                                                       certificate,
+                                                                                                       intermediateCert);
+                                                                                    });
+                                                 });
+                          });
+
+    }
+
+    private Single<OciSignatureData> refresh(KeyPair keyPair,
+                                             PrivateKey privateKey,
+                                             X509Certificate certificate,
+                                             X509Certificate intermediateCert) {
+
     }
 
     /**
@@ -142,118 +171,7 @@ public class OciConfigInstancePrincipal extends OciConfigPrincipalBase implement
         private Supplier<Single<X509Certificate>> certificateSupplier;
         private Supplier<Single<PrivateKey>> privateKeySupplier;
         private Supplier<Single<X509Certificate>> intermediateCertSupplier;
-
-        @Override
-        public OciConfigInstancePrincipal build() {
-            webClientBuilder.baseUri(metadataServiceUrl);
-            webClient = webClientBuilder.build();
-
-            // get region
-            if (region == null) {
-                region = getRegion();
-            }
-            LOGGER.fine("Using region " + region);
-
-            // endpoint for authentication service
-            if (federationEndpoint == null) {
-                federationEndpoint = "https://auth." + region + ".oraclecloud.com";
-            }
-            LOGGER.fine("Using federation endpoint " + federationEndpoint);
-
-            if (tenant == null) {
-                // now we need certificate and tenancy ID
-                X509Certificate certificate = getCertificate(webClient).await(10, TimeUnit.SECONDS);
-                Map<String, List<String>> name = parseName(certificate.getSubjectX500Principal().getName());
-                tenant = getOu(name, "opc-tenant:")
-                        .or(() -> getO(name, "opc-identity:"))
-                        .orElseThrow(() -> new OciApiException("Could not identify instance tenant from certificate."));
-
-            }
-
-            if (certificateSupplier == null) {
-                certificateSupplier = () -> getCertificate(webClient);
-            }
-            if (privateKeySupplier == null) {
-                privateKeySupplier = () -> getPrivateKey(webClient);
-            }
-            if (intermediateCertSupplier == null) {
-                intermediateCertSupplier = () -> getIntermediateCertificate(webClient);
-            }
-
-
-            return new OciConfigInstancePrincipal(this);
-        }
-
-        private Optional<String> getO(Map<String, List<String>> name, String prefix) {
-            return getFromName(name.get("O"), prefix);
-        }
-
-        private Optional<String> getOu(Map<String, List<String>> name, String prefix) {
-            return getFromName(name.get("OU"), prefix);
-        }
-
-        private Optional<String> getFromName(List<String> values, String prefix) {
-            if (values == null) {
-                return Optional.empty();
-            }
-
-            for (String value : values) {
-                if (value.startsWith(prefix)) {
-                    return Optional.of(value.substring(prefix.length()));
-                }
-            }
-
-            return Optional.empty();
-        }
-
-        private Map<String, List<String>> parseName(String name) {
-            Map<String, List<String>> result = new HashMap<>();
-            //name is a=b,b=c,d=f
-            String[] parts = name.split(",");
-            for (String part : parts) {
-                int equals = part.indexOf('=');
-                if (equals > 0) {
-                    String key = part.substring(0, equals).trim();
-                    String value = part.substring(equals + 1).trim();
-
-                    LOGGER.finest("Found name part: " + key + "=" + value);
-                    result.computeIfAbsent(key.toUpperCase(), it -> new LinkedList<>()).add(value);
-                } else {
-                    LOGGER.fine("Could not understand name part " + part);
-                }
-            }
-
-            return result;
-        }
-
-        /**
-         * Update web client builder.
-         * This can be used to configure
-         * {@link io.helidon.webclient.WebClient.Builder#connectTimeout(long, java.util.concurrent.TimeUnit)},
-         * {@link io.helidon.webclient.WebClient.Builder#readTimeout(long, java.util.concurrent.TimeUnit)} and other options.
-         *
-         * @param updater consumer that updates the web client builder
-         * @return updated builder instance
-         */
-        public Builder webClientBuilder(Consumer<WebClient.Builder> updater) {
-            updater.accept(this.webClientBuilder);
-            return this;
-        }
-
-        public Builder metadataServiceUrl(String metadataServiceUrl) {
-            this.metadataServiceUrl = metadataServiceUrl;
-            return this;
-        }
-
-        public Builder region(String region) {
-            this.region = region;
-            return this;
-        }
-
-        public Builder federationEndpoint(String federationEndpoint) {
-            this.federationEndpoint = federationEndpoint;
-            return this;
-        }
+        private SessionKeys sessionKeys;
 
         private static Single<PrivateKey> getPrivateKey(WebClient webClient) {
             LOGGER.finest("Looking up private key");
@@ -298,6 +216,120 @@ public class OciConfigInstancePrincipal extends OciConfigPrincipalBase implement
             } catch (CertificateException e) {
                 throw new OciApiException("Failed to parse certificate for instance principal", e);
             }
+        }
+
+        @Override
+        public OciConfigInstancePrincipal build() {
+            webClientBuilder.baseUri(metadataServiceUrl);
+            webClient = webClientBuilder.build();
+
+            // get region
+            if (region == null) {
+                region = getRegion();
+            }
+            LOGGER.fine("Using region " + region);
+
+            // endpoint for authentication service
+            if (federationEndpoint == null) {
+                federationEndpoint = "https://auth." + region + ".oraclecloud.com";
+            }
+            LOGGER.fine("Using federation endpoint " + federationEndpoint);
+
+            if (tenant == null) {
+                // now we need certificate and tenancy ID
+                X509Certificate certificate = getCertificate(webClient).await(10, TimeUnit.SECONDS);
+                Map<String, List<String>> name = parseName(certificate.getSubjectX500Principal().getName());
+                tenant = getOu(name, "opc-tenant:")
+                        .or(() -> getO(name, "opc-identity:"))
+                        .orElseThrow(() -> new OciApiException("Could not identify instance tenant from certificate."));
+
+            }
+
+            if (certificateSupplier == null) {
+                certificateSupplier = () -> getCertificate(webClient);
+            }
+            if (privateKeySupplier == null) {
+                privateKeySupplier = () -> getPrivateKey(webClient);
+            }
+            if (intermediateCertSupplier == null) {
+                intermediateCertSupplier = () -> getIntermediateCertificate(webClient);
+            }
+            if (sessionKeys == null) {
+                sessionKeys = SessionKeys.create();
+            }
+
+            return new OciConfigInstancePrincipal(this);
+        }
+
+        /**
+         * Update web client builder.
+         * This can be used to configure
+         * {@link io.helidon.webclient.WebClient.Builder#connectTimeout(long, java.util.concurrent.TimeUnit)},
+         * {@link io.helidon.webclient.WebClient.Builder#readTimeout(long, java.util.concurrent.TimeUnit)} and other options.
+         *
+         * @param updater consumer that updates the web client builder
+         * @return updated builder instance
+         */
+        public Builder webClientBuilder(Consumer<WebClient.Builder> updater) {
+            updater.accept(this.webClientBuilder);
+            return this;
+        }
+
+        public Builder metadataServiceUrl(String metadataServiceUrl) {
+            this.metadataServiceUrl = metadataServiceUrl;
+            return this;
+        }
+
+        public Builder region(String region) {
+            this.region = region;
+            return this;
+        }
+
+        public Builder federationEndpoint(String federationEndpoint) {
+            this.federationEndpoint = federationEndpoint;
+            return this;
+        }
+
+        private Optional<String> getO(Map<String, List<String>> name, String prefix) {
+            return getFromName(name.get("O"), prefix);
+        }
+
+        private Optional<String> getOu(Map<String, List<String>> name, String prefix) {
+            return getFromName(name.get("OU"), prefix);
+        }
+
+        private Optional<String> getFromName(List<String> values, String prefix) {
+            if (values == null) {
+                return Optional.empty();
+            }
+
+            for (String value : values) {
+                if (value.startsWith(prefix)) {
+                    return Optional.of(value.substring(prefix.length()));
+                }
+            }
+
+            return Optional.empty();
+        }
+
+        private Map<String, List<String>> parseName(String name) {
+            Map<String, List<String>> result = new HashMap<>();
+            //name is a=b,b=c,d=f
+            String[] parts = name.split(",");
+            for (String part : parts) {
+                int equals = part.indexOf('=');
+                if (equals > 0) {
+                    String key = part.substring(0, equals).trim();
+                    String value = part.substring(equals + 1).trim();
+
+                    LOGGER.finest("Found name part: " + key + "=" + value);
+                    result.computeIfAbsent(key.toUpperCase(), it -> new LinkedList<>()).add(value);
+                } else {
+                    LOGGER.fine("Could not understand name part " + part);
+                }
+            }
+
+            return result;
         }
 
         private String getRegion() {
