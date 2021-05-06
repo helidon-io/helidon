@@ -157,7 +157,7 @@ backend:
                 pathprefix: "/se/oci"
                 glyph:
                   type: "icon"
-                  value: "donut_large"
+                  value: "filter_drama"
                 items:
                   - includes:
                       - "se/oci/*.adoc"
@@ -213,7 +213,7 @@ backend:
                 pathprefix: "/se/vault"
                 glyph:
                   type: "icon"
-                  value: "http"
+                  value: "lock"
                 items:
                   - includes:
                       - "se/vault/*.adoc"
@@ -225,14 +225,7 @@ backend:
               items:
                 - includes:
                     - "se/webclient/*.adoc"
-            - title: "Vault"
-                pathprefix: "/se/vault"
-                glyph:
-                  type: "icon"
-                  value: "timeline"
-                items:
-                  - includes:
-                      - "se/vault/*.adoc"
+
             - title: "Websocket"
               pathprefix: "/se/websocket"
               glyph:
@@ -387,7 +380,7 @@ backend:
                 pathprefix: "/mp/oci"
                 glyph:
                   type: "icon"
-                  value: "donut_large"
+                  value: "filter_drama"
                 items:
                   - includes:
                       - "mp/oci/*.adoc"
