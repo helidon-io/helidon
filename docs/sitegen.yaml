@@ -28,6 +28,7 @@ engine:
       jandex-plugin-version: ${version.plugin.jandex}
       mp-version: "3.3"
       guides-dir: "${project.basedir}/../examples/guides"
+      jaeger-version: "${version.lib.jaeger}"
 assets:
   - target: "/"
     includes:
