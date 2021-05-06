@@ -17,12 +17,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 :description: Helidon metrics
-:keywords: helidon, metrics, exemplar, prometheus, OpenMetrics
-:jaeger-doc-link: https://www.jaegertracing.io/docs/${jaeger-version}/client-libraries
+:keywords: helidon, metrics, jaeger, tracing
+:jaeger-doc-link: https://www.jaegertracing.io/docs/{jaeger-doc-version}/client-libraries
+Integrate the metrics from Jaeger tracing into your Helidon {helidon-variant} application simply by adding a dependency.
 
-Integrate the metrics from Jaeger tracing into your Helidon {h1Prefix} application simply by adding a dependency.
-
-As the link:{helidon-jaeger-doc-link}[Helidon Jaeger Tracing] document describes, you can use Jaeger tracing in your Helidon {h1Prefix} application.
+== Overview
+As the <<{helidon-jaeger-doc-link}, Helidon Jaeger Tracing>> document describes, you can use Jaeger tracing in your Helidon {helidon-variant} application.
 
 Jaeger maintains several metrics about its own activity (briefly outlined in the link:{jaeger-doc-link}/#metrics[Jaeger client documentation]). This document explains how you can integrate those Jaeger tracing metrics with Helidon's metrics.
 
@@ -56,7 +56,7 @@ Then, when you access your application's metrics endpoint (`/metrics` by default
 curl -H "Accept: application/json" -X GET http://localhost:8080/metrics/vendor
 ----
 [source,json]
-.Example Helidon Metrics `vendor` Output with Jaeger Metrics
+.Partial Helidon Metrics `vendor` Output Showing Jaeger Metrics
 ----
  ... "jaeger_tracer_baggage_restrictions_updates;result=err": 0,
   "jaeger_tracer_baggage_restrictions_updates;result=ok": 0,

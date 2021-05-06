@@ -28,7 +28,7 @@ engine:
       jandex-plugin-version: ${version.plugin.jandex}
       mp-version: "3.3"
       guides-dir: "${project.basedir}/../examples/guides"
-      jaeger-version: "${version.lib.jaeger}"
+      jaeger-doc-version: 1.22 # hard-coded because older doc not avl for our version ${version.lib.jaegertracing}
 assets:
   - target: "/"
     includes:
