@@ -154,13 +154,13 @@ backend:
                 - includes:
                     - "se/openapi/*.adoc"
             - title: "OCI"
-                pathprefix: "/se/oci"
-                glyph:
-                  type: "icon"
-                  value: "filter_drama"
-                items:
-                  - includes:
-                      - "se/oci/*.adoc"
+              pathprefix: "/se/oci"
+              glyph:
+                type: "icon"
+                value: "filter_drama"
+              items:
+                - includes:
+                    - "se/oci/*.adoc"
             - title: "Reactive Streams"
               pathprefix: "/se/reactivestreams"
               glyph:
@@ -210,13 +210,13 @@ backend:
                 - includes:
                     - "se/tracing/*.adoc"
             - title: "Vault"
-                pathprefix: "/se/vault"
-                glyph:
-                  type: "icon"
-                  value: "lock"
-                items:
-                  - includes:
-                      - "se/vault/*.adoc"
+              pathprefix: "/se/vault"
+              glyph:
+                type: "icon"
+                value: "lock"
+              items:
+                - includes:
+                    - "se/vault/*.adoc"
             - title: "Web Client"
               pathprefix: "/se/webclient"
               glyph:
@@ -225,7 +225,6 @@ backend:
               items:
                 - includes:
                     - "se/webclient/*.adoc"
-
             - title: "Websocket"
               pathprefix: "/se/websocket"
               glyph:
@@ -377,13 +376,13 @@ backend:
                 - includes:
                     - "mp/openapi/*.adoc"
             - title: "OCI"
-                pathprefix: "/mp/oci"
-                glyph:
-                  type: "icon"
-                  value: "filter_drama"
-                items:
-                  - includes:
-                      - "mp/oci/*.adoc"
+              pathprefix: "/mp/oci"
+              glyph:
+                type: "icon"
+                value: "filter_drama"
+              items:
+                - includes:
+                    - "mp/oci/*.adoc"
             - title: "Reactive Streams"
               pathprefix: "/mp/reactivestreams"
               glyph:
@@ -432,6 +431,14 @@ backend:
               items:
                 - includes:
                     - "mp/tracing/*.adoc"
+            - title: "Vault"
+              pathprefix: "/mp/vault"
+              glyph:
+                type: "icon"
+                value: "lock"
+              items:
+                - includes:
+                    - "mp/vault/*.adoc"
             - title: "Websocket"
               pathprefix: "/mp/websocket"
               glyph:

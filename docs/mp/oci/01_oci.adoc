@@ -25,7 +25,7 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Integration
 
-The Helidon MP OCI Integration provides easy access to Oracle Cloud Infrastructure.
+Helidon MP OCI Integration provides easy access to Oracle Cloud Infrastructure.
 
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
@@ -37,9 +37,9 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== General configuration
+== General Configuration
 
-===  Using Helidon MP Properties configuration
+===  Using Helidon MP Properties Configuration
 
 The first option to configure connection to OCI is to directly specify properties in `microprofile-config.properties` file:
 
@@ -54,7 +54,7 @@ oci.config.oci-profile.key-pem=<pem content>
 
 === Using OCI Configuration
 
-The second  option is via OCI configuration file. For authentication in OCI a special configuration file should be set up. The file is usually located at `~/.oci/config`
+The second option is via OCI configuration file. For authentication in OCI a special configuration file should be set up. The file is usually located at `~/.oci/config`
 
 [source,properties]
 ----
@@ -66,4 +66,4 @@ region=us-...
 key_file=<path to key file>
 ----
 
-More information how to set up on your environment: https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#SDK_and_CLI_Configuration_File[Official website]
+For more information on setting up basic configuration information, see https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#SDK_and_CLI_Configuration_File[SDK and CLI Configuration File] in OCI Developer Resources.

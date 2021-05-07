@@ -34,6 +34,7 @@ Vault integration supports the following:
 * *Other Sys Operations and Configurations*
 
 === Sys Operations
+
 Each of these features is implemented as a separate module, with the Vault class binding them together. In Helidon MP, with injection, this binding is done automatically, and you can simply inject your favorite secret engine.
 
 In addition to these features, Vault itself can be authenticated as follows:
@@ -43,6 +44,7 @@ In addition to these features, Vault itself can be authenticated as follows:
 * K8s authentication - the k8s JWT token is discovered on current node and used to obtain a temporary token that is used to connect to Vault
 
 === Extensibility
+
 New secret engines and authentication methods can be implemented quite easily, as the integration is based on service providers (using ServiceLoader). This gives us (or you, as the users) the option to add new secret engines and/or authentication methods without adding a plethora of methods to the Vault class.
 
 See the following SPIs:
@@ -56,7 +58,9 @@ io.helidon.integrations.vault.spi.InjectionProvider
 ----
 
 === Modules
-The following is a list of maven coordinates of all Vault modules available :
+
+The following is a list of maven coordinates of all Vault modules available:
+
 [source,xml]
 ----
 <dependency>
@@ -553,6 +557,7 @@ class K8sExample {
 <4> Function used to enable Kubernetes authentication.
 
 == Local testing
+
 Vault is available as a docker image, so to test locally, you can simply:
 
 [source,bash]

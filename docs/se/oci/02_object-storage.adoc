@@ -98,7 +98,9 @@ public void update(Routing.Rules rules) {
 }
 ----
 
-To upload a file via `PUT` method to OCI Object Storage:
+===  Upload file
+
+To upload a file to OCI Object Storage using the `PUT` method:
 
 [source,java]
 ----
@@ -130,7 +132,9 @@ private void upload(ServerRequest req, ServerResponse res) {
 <2> Define `MediaType`
 <3> Execute the request to OCI in asynchronous way and put the result in `response` object
 
-To download the file via `GET` method from OCI Object Storage:
+=== Download file
+
+To download a file from OCI Object Storage using the `GET` method:
 
 [source,java]
 ----
@@ -162,8 +166,9 @@ private void download(ServerRequest req, ServerResponse res) {
 <3> Whenever the result is empty, return status `404`
 <4> Get the response, set headers and return the result as a `Publisher`
 
+=== Rename file
 
-To rename an existing file in the OCI bucket a `GET` method with two parameters:
+To rename an existing file in the OCI bucket, submit a `GET` method with two parameters:
 
 [source,java]
 ----
@@ -184,7 +189,9 @@ private void rename(ServerRequest req, ServerResponse res) {
 <2> The request is made in asynchronous way; a `Single` is returned
 
 
-Finally, to delete a file, `DELETE` method should be used
+=== Delete file
+
+Finally, to delete a file, `DELETE` request should be used:
 
 [source,java]
 ----
@@ -199,5 +206,5 @@ private void delete(ServerRequest req, ServerResponse res) {
 }
 ----
 
-<1>  Use `deleteObject` function and configure a `DeleteObject.Request.builder()` to submit the delete request
+<1> Use `deleteObject` function and configure a `DeleteObject.Request.builder()` to submit the delete request
 <2> The request is made in asynchronous way; a `Single` is returned

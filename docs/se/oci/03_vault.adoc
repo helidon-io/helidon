@@ -40,7 +40,6 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 == Setting up the OCI Vault
 
-
 In order to use the OCI Vault integration, the following setup should be made.
 
 * The configuration required for Vault integration includes:
@@ -115,7 +114,8 @@ public void update(Routing.Rules rules) {
 == OCI Vault usage
 
 === Encryption
-To encrypt a text, submitted with a GET request to `/encrypt` endpoint:
+
+To encrypt a text, submit a `GET` request to the `/encrypt` endpoint:
 
 [source,java]
 ----
@@ -130,7 +130,8 @@ private void encrypt(ServerRequest req, ServerResponse res) {
 ----
 
 === Decryption
-To decrypt a text, submitted with a GET request to `/decrypt` endpoint:
+
+To decrypt a text, submit a `GET` request to `/decrypt` endpoint:
 
 [source,java]
 ----
@@ -146,7 +147,8 @@ private void decrypt(ServerRequest req, ServerResponse res) {
 ----
 
 === Signature
-To retrieve a signature for submitted text via GET request to `/sign` endpoint:
+
+To retrieve a signature, submit a `GET` request to `/sign` endpoint:
 
 [source,java]
 ----
@@ -163,7 +165,8 @@ private void sign(ServerRequest req, ServerResponse res) {
 ----
 
 === Verification of a signature
-To verify the correctness of the signature to the submitted text via GET request to `/verify` endpoint:
+
+To verify the correctness of the signature, submit a `GET` request to `/verify` endpoint:
 
 [source,java]
 ----
@@ -184,7 +187,8 @@ private void verify(ServerRequest req, ServerResponse res) {
 ----
 
 === Creating a signature
-To create a secret with a provided name, using GET request submitted to `/secret`
+
+To create a secret with a provided name, submit a `GET` request to `/secret`:
 
 [source,java]
 ----
@@ -203,7 +207,8 @@ private void createSecret(ServerRequest req, ServerResponse res, String secretTe
 ----
 
 === Getting a signature
-To get a secret by its OCID, use GET Request to `/secret`:
+
+To get a secret by its OCID, submit a `GET` request to `/secret`:
 
 [source,java]
 ----
@@ -223,7 +228,8 @@ private void getSecret(ServerRequest req, ServerResponse res) {
 ----
 
 === Deleting a signature
-To delete a secret, a DELETE request to `/secret` should be used:
+
+To delete a secret, a `DELETE` request to `/secret` should be used:
 
 [source, java]
 ----

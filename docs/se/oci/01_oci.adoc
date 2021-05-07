@@ -25,11 +25,11 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Integration
 
-The Helidon SE OCI Integration provides easy access to Oracle Cloud Infrastructure.
+Helidon SE OCI Integration provides easy access to Oracle Cloud Infrastructure.
 
-== General configuration
+== General Configuration
 
-=== Using Helidon SE Properties configuration
+=== Using Helidon SE Properties Configuration
 
 The first option to configure connection to OCI is to directly specify properties in `application.yaml` file:
 
@@ -47,7 +47,7 @@ oci:
 
 === Using OCI Configuration
 
-The second  option is via OCI configuration file.
+The second option is via OCI configuration file.
 For authentication in OCI a special configuration file should be set up. The file is usually located at `~/.oci/config`
 
 [source,properties]

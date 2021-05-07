@@ -40,7 +40,6 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 == Setting up the Object Storage
 
-
 In order to use the OCI Object Storage integration, the following setup should be made:
 
 Current configuration requires `~/.oci/config` to be available in the home folder. This configuration file can be downloaded from OCI.
@@ -82,7 +81,8 @@ image::oci/ocibucket.png[OCI Bucket, align="center"]
 == Using Object Storage
 
 === Upload file
-To upload a file via `PUT` method to OCI Object Storage:
+
+To upload a file to OCI Object Storage using the `PUT` method:
 
 [source,java]
 ----
@@ -112,7 +112,8 @@ public Response upload(@PathParam("fileName") String fileName,
 
 
 === Download file
-To download the file via `GET` method from OCI Object Storage:
+
+To download a file from OCI Object Storage using the `GET` method:
 
 [source,java]
 ----
@@ -155,8 +156,9 @@ public Response download(@PathParam("file-name") String fileName) {
 <4> Get the response, set headers and return the result
 
 
-=== Delete
-Finally, to delete a file, `DELETE` method should be used
+=== Delete file
+
+Finally, to delete a file, `DELETE` request should be used:
 
 [source,java]
 ----

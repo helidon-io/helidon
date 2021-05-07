@@ -34,6 +34,7 @@ Vault integration supports the following:
 * *Other Sys Operations and Configurations*
 
 === Sys Operations
+
 Each of these features is implemented as a separate module, with the Vault class binding them together. In Helidon MP, with injection, this binding is done automatically, and you can simply inject your favorite secret engine.
 
 In addition to these features, Vault itself can be authenticated as follows:
@@ -43,9 +44,11 @@ In addition to these features, Vault itself can be authenticated as follows:
 * K8s authentication - the k8s JWT token is discovered on current node and used to obtain a temporary token that is used to connect to Vault
 
 === Extensibility
+
 New secret engines and authentication methods can be implemented quite easily, as the integration is based on service providers (using ServiceLoader). This gives us (or you, as the users) the option to add new secret engines and/or authentication methods without adding a plethora of methods to the Vault class.
 
 See the following SPIs:
+
 [source,properties]
 ----
 io.helidon.integrations.vault.spi.AuthMethodProvider
@@ -56,7 +59,9 @@ io.helidon.integrations.vault.spi.InjectionProvider
 ----
 
 === Modules
-The following is a list of maven coordinates of all Vault modules available :
+
+The following is a list of maven coordinates of all Vault modules available:
+
 [source,xml]
 ----
 <dependency>
@@ -102,6 +107,7 @@ The following is a list of maven coordinates of all Vault modules available :
 ----
 
 To use Vault integration in MP, the following module must be added, as it enables injection of all features:
+
 [source,xml]
 ----
 <dependency>
@@ -109,6 +115,7 @@ To use Vault integration in MP, the following module must be added, as it enable
     <artifactId>helidon-integrations-vault-cdi</artifactId>
 </dependency>
 ----
+
 Configuration to connect to Vault (using token and AppRole authentication):
 [source,properties]
 ----
@@ -118,6 +125,7 @@ vault.approle.address=http://localhost:8200
 vault.approle.role-id=app-role-id
 vault.approle.secret-id=app-role-secret-id
 ----
+
 The following classes can be injected into any CDI bean (if appropriate module is on the classpath):
 
 * Kv2Secrets - Key/Value Version 2 Secrets (versioned secrets, default)
@@ -500,6 +508,7 @@ public class TransitResource {
 <10> Verify signature.
 
 == Local testing
+
 Vault is available as a docker image, so to test locally, you can simply:
 
 [source,bash]
