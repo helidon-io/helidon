@@ -2,11 +2,11 @@
 
     Copyright (c) 2021 Oracle and/or its affiliates.
 
-    Licensed under the Apache License, Version <2>0 (the "License");
+    Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-<2>0
+        http://www.apache.org/licenses/LICENSE-2.0
 
     Unless required by applicable law or agreed to in writing, software
     distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,10 @@
 :feature-name: OCI Object Storage
 
 The Helidon SE OCI Object Storage integration provides a reactive API to files stored in Oracle cloud.
+
+== Experimental
+
+WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
 
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
