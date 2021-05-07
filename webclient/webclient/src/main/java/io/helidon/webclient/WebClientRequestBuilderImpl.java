@@ -113,6 +113,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private final MessageBodyWriterContext writerContext;
 
     private URI uri;
+    private URI finalUri;
     private Http.Version httpVersion;
     private Context context;
     private Proxy proxy;
@@ -451,7 +452,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     URI uri() {
-        return uri;
+        return finalUri;
     }
 
     Parameters queryParams() {
@@ -459,7 +460,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     String query() {
-        return uri.getRawQuery() == null ? "" : uri.getRawQuery();
+        return finalUri.getRawQuery() == null ? "" : finalUri.getRawQuery();
     }
 
     String queryFromParams() {
@@ -514,7 +515,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     private Single<WebClientResponse> invoke(Flow.Publisher<DataChunk> requestEntity) {
-        this.uri = prepareFinalURI();
+        finalUri = prepareFinalURI();
         if (requestId == null) {
             requestId = REQUEST_NUMBER.incrementAndGet();
         }
@@ -534,14 +535,14 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         for (WebClientService service : services) {
             rcs = rcs.thenCompose(service::request)
                     .thenApply(servReq -> {
-                        this.uri = recreateURI(servReq);
+                        finalUri = recreateURI(servReq);
                         return servReq;
                     });
         }
 
         return Single.create(rcs.thenCompose(serviceRequest -> {
             //Relative URI is used in request if no proxy set
-            URI requestURI = proxy == Proxy.noProxy() ? prepareRelativeURI() : uri;
+            URI requestURI = proxy == Proxy.noProxy() ? prepareRelativeURI() : finalUri;
             requestId = serviceRequest.requestId();
             HttpHeaders headers = toNettyHttpHeaders();
             DefaultHttpRequest request = new DefaultHttpRequest(toNettyHttpVersion(httpVersion),
@@ -550,7 +551,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                                                                 headers);
             boolean keepAlive = HttpUtil.isKeepAlive(request);
 
-            requestConfiguration = RequestConfiguration.builder(uri)
+            requestConfiguration = RequestConfiguration.builder(finalUri)
                     .update(configuration)
                     .followRedirects(followRedirects)
                     .clientServiceRequest(serviceRequest)
@@ -578,7 +579,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
             ChannelFuture channelFuture = keepAlive
                     ? obtainChannelFuture(requestConfiguration, bootstrap)
-                    : bootstrap.connect(uri.getHost(), uri.getPort());
+                    : bootstrap.connect(finalUri.getHost(), finalUri.getPort());
 
             channelFuture.addListener((ChannelFutureListener) future -> {
                 LOGGER.finest(() -> "(client reqID: " + requestId + ") "
@@ -600,7 +601,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     sent.completeExceptionally(cause);
                     responseReceived.completeExceptionally(cause);
                     complete.completeExceptionally(cause);
-                    result.completeExceptionally(new WebClientException(uri.toString(), cause));
+                    result.completeExceptionally(new WebClientException(finalUri.toString(), cause));
                 }
             });
             return result;
@@ -616,17 +617,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     private URI recreateURI(WebClientServiceRequest request) {
-        try {
-            this.uri = new URI(request.schema(),
-                               null,
-                               request.host(),
-                               request.port(),
-                               null,
-                               null,
-                               null);
-        } catch (URISyntaxException e) {
-            throw new WebClientException("Could not create URI!", e);
-        }
+        clearUri(request.schema(), request.host(), request.port());
         return prepareFinalURI();
     }
 
@@ -655,7 +646,22 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         StringBuilder sb = new StringBuilder();
         sb.append(scheme).append("://").append(uri.getHost()).append(":").append(port);
         constructRelativeURI(sb, path, query, fragment);
+        clearUri(scheme, uri.getHost(), port);
         return URI.create(sb.toString());
+    }
+
+    private void clearUri(String scheme, String host, int port) {
+        try {
+            this.uri = new URI(scheme,
+                               null,
+                               host,
+                               port,
+                               null,
+                               null,
+                               null);
+        } catch (URISyntaxException e) {
+            throw new WebClientException("Could not create URI!", e);
+        }
     }
 
     private String resolveFragment() {
@@ -669,9 +675,9 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     private URI prepareRelativeURI() {
-        String path = this.uri.getRawPath();
-        String fragment = this.uri.getRawFragment();
-        String query = this.uri.getRawQuery();
+        String path = finalUri.getRawPath();
+        String fragment = finalUri.getRawFragment();
+        String query = finalUri.getRawQuery();
         StringBuilder sb = new StringBuilder();
         constructRelativeURI(sb, path, query, fragment);
         return URI.create(sb.toString());
@@ -743,7 +749,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private HttpHeaders toNettyHttpHeaders() {
         HttpHeaders headers = new DefaultHttpHeaders(this.configuration.validateHeaders());
         try {
-            Map<String, List<String>> cookieHeaders = this.configuration.cookieManager().get(uri, new HashMap<>());
+            Map<String, List<String>> cookieHeaders = this.configuration.cookieManager().get(finalUri, new HashMap<>());
             List<String> cookies = new ArrayList<>(cookieHeaders.get(Http.Header.COOKIE));
             cookies.addAll(this.headers.values(Http.Header.COOKIE));
             if (!cookies.isEmpty()) {
@@ -753,7 +759,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             throw new WebClientException("An error occurred while setting cookies.", e);
         }
         this.headers.toMap().forEach(headers::add);
-        addHeaderIfAbsent(headers, HttpHeaderNames.HOST, uri.getHost() + ":" + uri.getPort());
+        addHeaderIfAbsent(headers, HttpHeaderNames.HOST, finalUri.getHost() + ":" + finalUri.getPort());
         addHeaderIfAbsent(headers, HttpHeaderNames.CONNECTION, keepAlive ? HttpHeaderValues.KEEP_ALIVE : HttpHeaderValues.CLOSE);
         addHeaderIfAbsent(headers, HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
         addHeaderIfAbsent(headers, HttpHeaderNames.USER_AGENT, configuration.userAgent());
