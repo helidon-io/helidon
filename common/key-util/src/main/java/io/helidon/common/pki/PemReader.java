@@ -96,7 +96,7 @@ final class PemReader {
 
         switch (pkInfo.type) {
         case "PKCS1-RSA":
-            return rsaPrivateKey(pkcs1RsaKeySpec(pkInfo.bytes, password));
+            return rsaPrivateKey(pkcs1RsaKeySpec(pkInfo.bytes));
         case "PKCS1-DSA":
             throw new UnsupportedOperationException("PKCS#1 DSA private key is not supported");
         case "PKCS1-EC":
@@ -107,9 +107,9 @@ final class PemReader {
         }
     }
 
-    private static KeySpec pkcs1RsaKeySpec(byte[] bytes, char[] password) {
+    private static KeySpec pkcs1RsaKeySpec(byte[] bytes) {
         DerUtils.checkEnabled();
-        return DerUtils.pkcs1RsaKeySpec(bytes, password);
+        return DerUtils.pkcs1RsaKeySpec(bytes);
     }
 
     private static PrivateKey pkcs8(KeySpec keySpec) {

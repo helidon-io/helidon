@@ -24,7 +24,10 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerValue;
 
-class DerUtils {
+final class DerUtils {
+    private DerUtils() {
+    }
+
     static void checkEnabled() {
         Module javaBase = String.class.getModule();
         Module myModule = DerUtils.class.getModule();
@@ -38,7 +41,7 @@ class DerUtils {
         }
     }
 
-    static KeySpec pkcs1RsaKeySpec(byte[] bytes, char[] password) {
+    static KeySpec pkcs1RsaKeySpec(byte[] bytes) {
         try {
             DerInputStream derReader = new DerInputStream(bytes);
             DerValue[] seq = derReader.getSequence(0);
