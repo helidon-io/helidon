@@ -17,10 +17,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Metrics Support for Jaeger
-
-:h1Prefix: SE
-:helidon-variant: SE
+:h1Prefix: MP
+:helidon-variant: MP
 :description: Helidon support for Jaeger metrics
 :keywords: helidon, metrics, tracing, jaeger
-:helidon-jaeger-doc-link: se/tracing/03_jaeger.adoc
-include::../../shared/metrics/jaeger_shared.adoc[]
+:helidon-jaeger-doc-link: mp/tracing/03_jaeger.adoc
+include::../../shared/tracing/jaeger_metrics.adoc[]

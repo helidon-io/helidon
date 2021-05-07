@@ -21,5 +21,6 @@
 :keywords: helidon, tracing, jaeger
 :h1Prefix: MP
 :jager-page: ../../shared/tracing/tracer-jaeger.adoc
+:jaeger-metrics-page-ref: mp/tracing/04_jaeger_metrics.adoc
 
 include::{jager-page}[]

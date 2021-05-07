@@ -23,5 +23,6 @@
 :jager-page: ../../shared/tracing/tracer-jaeger.adoc
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: Jaeger Tracing
+:jaeger-metrics-page-ref: se/tracing/04_jaeger_metrics.adoc
 
 include::{jager-page}[]
