@@ -40,6 +40,8 @@ public interface SessionKeys {
 
     /**
      * Refresh keys.
+     *
+     * @return a new key pair
      */
     KeyPair refresh();
 }
