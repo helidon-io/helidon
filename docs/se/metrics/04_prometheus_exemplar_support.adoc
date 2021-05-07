@@ -16,10 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Metrics Support for Exemplars
-
 :h1Prefix: SE
 :description: Helidon metrics
 :keywords: helidon, metrics, exemplar, prometheus, OpenMetrics
+
+= Metrics Support for Exemplars
 
 include::../../shared/metrics/prometheus-exemplar-support.adoc[]
