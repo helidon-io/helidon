@@ -30,6 +30,7 @@ class DerUtils {
         Module myModule = DerUtils.class.getModule();
 
         if (!javaBase.isExported("sun.security.util", myModule)) {
+            //--add-exports java.base/sun.security.util=io.helidon.common.pki
             throw new PkiException("Cannot read PKCS#1 key specification, as package sun.security.util "
                                            + "is not exported to this module. Please add --add-exports "
                                            + "java.base/sun.security.util=io.helidon.common.pki to java "

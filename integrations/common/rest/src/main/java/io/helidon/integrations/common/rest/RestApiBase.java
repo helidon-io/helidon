@@ -838,9 +838,22 @@ public abstract class RestApiBase implements RestApi {
 
         requestBuilder.accept(request.responseMediaType().orElse(MediaType.APPLICATION_JSON));
         requestBuilder.contentType(request.requestMediaType().orElse(MediaType.APPLICATION_JSON));
-
-        return () -> updateRequestBuilder(requestBuilder, path, request, method, requestId, jsonObject)
-                .flatMapSingle(it -> it.submit(jsonObject));
+        AtomicBoolean updated = new AtomicBoolean();
+        return () -> {
+            // we should only update request builder once - if a retry is done, it should not be reset
+            if (updated.compareAndSet(false, true)) {
+                Single<WebClientRequestBuilder> res = updateRequestBuilder(requestBuilder,
+                                                                           path,
+                                                                           request,
+                                                                           method,
+                                                                           requestId,
+                                                                           jsonObject);
+                return res.flatMapSingle(it -> it.submit(jsonObject));
+            } else {
+                // path was broken when using retries
+                return requestBuilder.path(path).submit(jsonObject);
+            }
+        };
     }
 
     /**
@@ -865,9 +878,17 @@ public abstract class RestApiBase implements RestApi {
                                                                       Flow.Publisher<DataChunk> publisher) {
         requestBuilder.accept(request.responseMediaType().orElse(MediaType.APPLICATION_JSON));
         requestBuilder.contentType(request.requestMediaType().orElse(MediaType.APPLICATION_OCTET_STREAM));
+        AtomicBoolean updated = new AtomicBoolean();
 
-        return () -> updateRequestBuilderBytesPayload(requestBuilder, path, request, method, requestId)
-                .flatMapSingle(it -> it.submit(publisher));
+        return () -> {
+            if (updated.compareAndSet(false, true)) {
+                return updateRequestBuilderBytesPayload(requestBuilder, path, request, method, requestId)
+                        .flatMapSingle(it -> it.submit(publisher));
+            } else {
+                // path was broken when using retries
+                return requestBuilder.path(path).submit(publisher);
+            }
+        };
     }
 
     /**
@@ -887,12 +908,21 @@ public abstract class RestApiBase implements RestApi {
                                                                  String requestId,
                                                                  WebClientRequestBuilder requestBuilder) {
 
-        return () -> updateRequestBuilder(requestBuilder,
-                                          path,
-                                          request,
-                                          method,
-                                          requestId)
-                .flatMapSingle(WebClientRequestBuilder::request);
+        AtomicBoolean updated = new AtomicBoolean();
+        return () -> {
+            // we should only update request builder once - if a retry is done, it should not be reset
+            if (updated.compareAndSet(false, true)) {
+                Single<WebClientRequestBuilder> res = updateRequestBuilder(requestBuilder,
+                                                                           path,
+                                                                           request,
+                                                                           method,
+                                                                           requestId);
+                return res.flatMapSingle(WebClientRequestBuilder::request);
+            } else {
+                // path was broken when using retries
+                return requestBuilder.path(path).request();
+            }
+        };
     }
 
     /**

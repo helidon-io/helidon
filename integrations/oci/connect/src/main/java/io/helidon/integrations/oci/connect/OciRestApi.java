@@ -109,6 +109,16 @@ public class OciRestApi extends RestApiBase {
         return ConfigType.OCI_PROFILE;
     }
 
+    static String computeSha256(byte[] requestBytes) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            digest.update(requestBytes);
+            return Base64.getEncoder().encodeToString(digest.digest());
+        } catch (NoSuchAlgorithmException e) {
+            throw new OciApiException("Failed to generate message digest", e);
+        }
+    }
+
     @Override
     protected Supplier<Single<WebClientResponse>> responseSupplier(Http.RequestMethod method,
                                                                    String path,
@@ -139,18 +149,24 @@ public class OciRestApi extends RestApiBase {
         // and the token refreshes successfully
         return () -> {
             OciSignatureData ociSignatureData = configProvider.signatureData();
+            LOGGER.finest("Trying request with kid: " + ociSignatureData.keyId());
 
             return originalSupplier.get()
                     .flatMapSingle(clientResponse -> {
                         if (clientResponse.status() == Http.Status.UNAUTHORIZED_401) {
-                            // maybe this is an timed-out token
+                            // maybe this is a timed-out token
+                            LOGGER.finest("Unauthorized request, trying to refresh signature data");
                             return configProvider.refresh()
                                     .flatMapSingle(newSignatureData -> {
                                         if (newSignatureData == ociSignatureData) {
                                             // no change in signature data, just return
+                                            LOGGER.finest("Signature data refresh failed, failing API request");
                                             return Single.just(clientResponse);
                                         } else {
                                             // signature data modified, let's retry
+                                            LOGGER.finest("Signature data refresh succeeded, retrying with kid: "
+                                                                  + newSignatureData.keyId());
+                                            outboundProvider.updateSignatureData(newSignatureData);
                                             return originalSupplier.get();
                                         }
                                     });
@@ -336,16 +352,6 @@ public class OciRestApi extends RestApiBase {
             requestBuilder.headers().add("host", ociUri.getHost());
         } else {
             throw new OciApiException("Cannot handle non-OCI requests. Request: " + request.getClass().getName());
-        }
-    }
-
-    private String computeSha256(byte[] requestBytes) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            digest.update(requestBytes);
-            return Base64.getEncoder().encodeToString(digest.digest());
-        } catch (NoSuchAlgorithmException e) {
-            throw new OciApiException("Failed to generate message digest", e);
         }
     }
 

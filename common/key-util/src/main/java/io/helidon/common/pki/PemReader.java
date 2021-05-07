@@ -240,7 +240,8 @@ final class PemReader {
 
         byte[] base64 = m.group(1).getBytes(StandardCharsets.US_ASCII);
         String type;
-        if (content.startsWith("-----BEGIN PRIVATE KEY-----")) {
+        if (content.startsWith("-----BEGIN PRIVATE KEY-----")
+                || content.startsWith("-----BEGIN ENCRYPTED PRIVATE KEY-----")) {
             // in this case, we do not know the type, we must try all
             type = "PKCS8";
         } else if (content.startsWith("-----BEGIN RSA PRIVATE KEY-----")) {
@@ -254,7 +255,7 @@ final class PemReader {
             if (firstEol < 1) {
                 throw new PkiException("Could not find a PKCS#8 private key in input stream");
             } else {
-                throw new PkiException("Unknown key type: " + content.substring(0, firstEol));
+                throw new PkiException("Unsupported key type: " + content.substring(0, firstEol));
             }
         }
         return new PrivateKeyInfo(type, Base64.getMimeDecoder().decode(base64));
