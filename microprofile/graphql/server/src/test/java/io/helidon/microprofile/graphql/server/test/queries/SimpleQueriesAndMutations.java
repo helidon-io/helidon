@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -257,5 +258,10 @@ public class SimpleQueriesAndMutations {
                                            @JsonbDateFormat(value = "dd MMMM yyyy 'at' HH:mm 'in' VV",locale = "en-ZA")
                                            ZonedDateTime zonedDateTime) {
         return zonedDateTime;
+    }
+
+    @Query
+    public Date echoLegacyDate(@Name("value") Date legacyDate) {
+        return legacyDate;
     }
 }

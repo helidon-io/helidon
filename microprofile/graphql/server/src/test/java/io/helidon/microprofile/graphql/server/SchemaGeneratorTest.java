@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 and/or its affiliates.
+ * Copyright (c) 2020, 2021 and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -565,11 +565,6 @@ class SchemaGeneratorTest extends AbstractGraphQLTest {
         SchemaGenerator schemaGenerator = createSchemaGenerator();
         Schema schema = schemaGenerator.generateSchemaFromClasses(Set.of(SimpleContactWithNumberFormats.class));
         assertThat(schema, is(notNullValue()));
-    }
-
-    @Test
-    public void testPrimitiveArrays() {
-        ArrayList a;
     }
 
     private void assertParameterFormat(Method method, int paramNumber, String[] expectedFormat) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Unit test for {@link Resource}.
  */
 class ResourceTest {
-    private static final String COPYRIGHT_TEXT = "Copyright (c) 2017,2018 Oracle and/or its affiliates. All rights reserved.";
+    private static final String COPYRIGHT_TEXT = "Copyright (c) 2017,2018 Oracle and/or its affiliates.";
     // intentionally UTF-8 string
     private static final String STRING_CONTENT = "abcdefgčřžúů";
     private static Config prefixedConfig;

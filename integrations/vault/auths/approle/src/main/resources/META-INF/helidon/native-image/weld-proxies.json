@@ -1,0 +1,14 @@
+[
+    {
+        "bean-class": "io.helidon.integrations.vault.cdi.VaultCdiExtension",
+        "ifaces": [
+            "io.helidon.integrations.vault.auths.approle.AppRoleAuth"
+        ]
+    },
+    {
+        "bean-class": "io.helidon.integrations.vault.cdi.VaultCdiExtension",
+        "ifaces": [
+            "io.helidon.integrations.vault.auths.approle.AppRoleAuthRx"
+        ]
+    }
+]

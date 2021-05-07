@@ -27,8 +27,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Response;
 
-import io.helidon.integrations.vault.cdi.VaultName;
-import io.helidon.integrations.vault.cdi.VaultPath;
 import io.helidon.integrations.vault.secrets.kv2.CreateKv2;
 import io.helidon.integrations.vault.secrets.kv2.DeleteAllKv2;
 import io.helidon.integrations.vault.secrets.kv2.Kv2Secret;
@@ -42,7 +40,7 @@ public class Kv2Resource {
     private final Kv2Secrets secrets;
 
     @Inject
-    Kv2Resource(@VaultName("app-role") @VaultPath("custom") Kv2Secrets secrets) {
+    Kv2Resource(Kv2Secrets secrets) {
         this.secrets = secrets;
     }
 

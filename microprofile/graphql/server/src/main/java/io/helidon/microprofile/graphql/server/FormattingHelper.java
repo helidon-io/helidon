@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,12 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Locale;
 import java.util.logging.Logger;
 
@@ -49,6 +51,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FLOAT
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INTEGER_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INTEGER_PRIMITIVE_CLASS;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LEGACY_DATE_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LOCAL_DATE_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LOCAL_DATE_TIME_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LOCAL_TIME_CLASS;
@@ -172,7 +175,7 @@ class FormattingHelper {
 
         DateTimeFormatter formatter;
 
-        if (format != null) {
+        if (format != null && !LEGACY_DATE_CLASS.equals(type)) {
             formatter = DateTimeFormatter.ofPattern(format, actualLocale);
         } else {
             // handle defaults if no format specified
@@ -424,6 +427,31 @@ class FormattingHelper {
         } else {
             return originalResult instanceof TemporalAccessor
                     ? dateTimeFormatter.format((TemporalAccessor) originalResult) : originalResult;
+        }
+    }
+
+    /**
+     * Format a date value given a {@link SimpleDateFormat} for a {@link Date}.
+     *
+     * @param originalResult   original result
+     * @param simpleDateFormat {@link SimpleDateFormat} to format with
+     * @return formatted value
+     */
+    @SuppressWarnings({"unchecked", "rawtypes" })
+    public static Object formatDate(Object originalResult, SimpleDateFormat simpleDateFormat) {
+        if (originalResult == null) {
+            return null;
+        }
+        if (originalResult instanceof Collection) {
+            Collection formattedResult = new ArrayList();
+            Collection originalCollection = (Collection) originalResult;
+            originalCollection.forEach(e -> formattedResult.add(e instanceof DateTimeFormatter ? simpleDateFormat
+                    .format(e) : e)
+            );
+            return formattedResult;
+        } else {
+            return originalResult instanceof Date
+                    ? simpleDateFormat.format(originalResult) : originalResult;
         }
     }
 

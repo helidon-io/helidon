@@ -251,25 +251,25 @@ Fourth Party Dependencies
   Copyright (c) 1998,2019 Oracle and/or its affiliates. All rights reserved.
   Copyright (c) OSGi Alliance (2009). All Rights Reserved.
   Eclipse Public License - 2.0
-  Eclipse Distribution License - v 1.0 
+  Eclipse Distribution License - v 1.0
 --------------------------------------------
 "EclipseLink ASM" (org.eclipse.persistence:org.eclipse.persistence.asm)
   Copyright (c) 2000-2011 INRIA, France Telecom
   Copyright (c) 2007,2018 Oracle and/or its affiliates. All rights reserved.
   Eclipse Public License - 2.0
-  Eclipse Distribution License - v 1.0 
+  Eclipse Distribution License - v 1.0
 --------------------------------------------
 "EclipseLink ANTLR" (org.eclipse.persistence:org.eclipse.persistence.antlr)
   Copyright (c) 2005-2012 Terence Parr
   Copyright (c) 2007,2018 Oracle and/or its affiliates. All rights reserved.
   Copyright (c) 2012 Sam Harwell
   Eclipse Public License - 2.0
-  Eclipse Distribution License - v 1.0 
+  Eclipse Distribution License - v 1.0
 --------------------------------------------
 "EclipseLink Hermes JPQL Parser" (org.eclipse.persistence:org.eclipse.persistence.jpa.jpql)
   Copyright (c) 2006,2019 Oracle and/or its affiliates. All rights reserved.
   Eclipse Public License - 2.0
-  Eclipse Distribution License - v 1.0 
+  Eclipse Distribution License - v 1.0
 --------------------------------------------
 "EclipseLink Core" (org.eclipse.persistence:org.eclipse.persistence.core)
   Copyright (c) 2009,2016 SAP, IBM Corporation. All rights reserved.
@@ -288,7 +288,7 @@ Fourth Party Dependencies
   Copyright (c) 1998,2019 IBM Corporation. All rights reserved.
   Copyright (c) 2008 Markus KARG(markus-karg@users.sourceforge.net).
   Eclipse Public License - 2.0
-  Eclipse Distribution License - v 1.0 
+  Eclipse Distribution License - v 1.0
 --------------------------------------------
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -495,7 +495,7 @@ MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
 NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --------------------------------------------
 "ANTLR 4 Runtime" (org.antlr:antlr4-runtime)
 Copyright (c) 2012-2017 The ANTLR Project. All rights reserved.
@@ -523,7 +523,7 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-   
+
 --------------------------------------------
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Google APIs Client Library for Java 1.30.11 Google Inc
@@ -545,7 +545,7 @@ Copyright 2004-present by the Checker Framework developers
 
 The MIT License SPDX short identifier: MIT
 
-Further resources on the MIT License Copyright 
+Further resources on the MIT License Copyright
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -806,7 +806,7 @@ Used by: [h2]
     implied warranties or conditions of merchantability and fitness for a particular
     purpose.  In addition, such Contributors are not liable for any damages,
     including direct, indirect, special, incidental and consequential damages,
-    such as lost profits.  
+    such as lost profits.
 3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public License
     are offered by Oracle alone and not by any other party.
 __________________________
@@ -817,7 +817,7 @@ Copyright 2004-2019 H2 Group.
 License Identifier: EPL-1.0
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Hibernate ORM 5.4.25 Red Hat, Inc.
+Hibernate ORM 5.4.29.Final Red Hat, Inc.
 LGPL v.2.1
 Used by: [helidon-integrations-cdi-hibernate]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -912,7 +912,7 @@ Javassist (org.javassist:javassist)
   Copyright (C) 2004 Bill Burke. All Rights Reserved.
 This software is distributed under the Apache License Version 2.0.
 
-                          
+
 ---------------------------------------------------
 JBoss Logging 3 (org.jboss.logging:jboss-logging)
 
@@ -935,7 +935,7 @@ JBoss Logging 3 (org.jboss.logging:jboss-logging)
  */
 ---------------------------------------------------
 DOM4J (org.dom4j:dom4j)
-BSD 4-clause 
+BSD 4-clause
 
 Copyright 2001-2016 (C) MetaStuff, Ltd. and DOM4J contributors. All Rights Reserved.
 
@@ -946,24 +946,24 @@ that the following conditions are met:
 1. Redistributions of source code must retain copyright
    statements and notices.  Redistributions must also contain a
    copy of this document.
- 
+
 2. Redistributions in binary form must reproduce the
    above copyright notice, this list of conditions and the
    following disclaimer in the documentation and/or other
    materials provided with the distribution.
- 
+
 3. The name "DOM4J" must not be used to endorse or promote
    products derived from this Software without prior written
    permission of MetaStuff, Ltd.  For written permission,
    please contact dom4j-info@metastuff.com.
- 
+
 4. Products derived from this Software may not be called "DOM4J"
    nor may "DOM4J" appear in their names without prior written
    permission of MetaStuff, Ltd. DOM4J is a registered
    trademark of MetaStuff, Ltd.
- 
+
 5. Due credit should be given to the DOM4J Project - https://dom4j.github.io/
- 
+
 THIS SOFTWARE IS PROVIDED BY METASTUFF, LTD. AND CONTRIBUTORS
 ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT
 NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
@@ -977,7 +977,7 @@ STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 ---------------------------------------------------
- 
+
 *****************************
 Hibernate-entitymanager dependencies:
 *****************************
@@ -985,7 +985,7 @@ Hibernate-entitymanager dependencies:
 Byte Buddy (net.bytebuddy:byte-buddy)
   Copyright (c) 2000-2011 INRIA, France Telecom
   Copyright 2014-2020 Rafael Winterhalter
- 
+
  /*
  * Copyright 2014 - 2020 Rafael Winterhalter
  *
@@ -1044,7 +1044,7 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-End license text. 
+End license text.
 
 
 --------------------------------------------------------------
@@ -1060,10 +1060,10 @@ SLF4j 1.7.28 - CopyRight
  distribute,  sublicense, and/or sell  copies of  the Software,  and to
  permit persons to whom the Software  is furnished to do so, subject to
  the following conditions:
- 
+
  The  above  copyright  notice  and  this permission  notice  shall  be
  included in all copies or substantial portions of the Software.
- 
+
  THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
  EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
  MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
@@ -1071,7 +1071,7 @@ SLF4j 1.7.28 - CopyRight
  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
  OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-  
+
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 HttpComponents HttpClient 4.5.13 Apache
 Apache 2.0
@@ -1107,7 +1107,7 @@ From the Notice File:
 
     This product includes software developed at
     The Apache Software Foundation (http://www.apache.org/).
-License File: 
+License File:
     Apache License Version 2.0
 
 
@@ -1118,7 +1118,7 @@ From the Notice File:
 
     This product includes software developed at
     The Apache Software Foundation (http://www.apache.org/).
-License File: 
+License File:
     Apache License Version 2.0
 
 
@@ -1141,7 +1141,7 @@ From the Notice File:
     with permission from the original authors.
     Original source copyright:
     Copyright (c) 2008 Alexander Beider and Stephen P. Morse.
-License File: 
+License File:
     Apache License Version 2.0
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -1887,7 +1887,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   Copyright (C) 2003,2011 University of Maryland
 License Identifier: LGPL-2.1-only
 --------------------------------------------
-            
+
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 micronaut-inject-java null original author or authors
 Apache 2.0
@@ -2455,7 +2455,183 @@ based on this library.  If you modify this library, you may extend this
 exception to your version of the library, but you are not obligated to
 do so.  If you do not wish to do so, delete this exception statement
 from your version.
-            
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+neo4j-java-driver 4.2.4 neo4j
+Apache 2.0
+Used by: [helidon-integrations-neo4j, helidon-integrations-neo4j-health, helidon-integrations-neo4j-metrics]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Neo4j Java Driver (org.neo4j.driver:neo4j-java-driver)
+  Copyright (c) 2002- 2020 "Neo4j,"
+  Copyright (c) 2011-2019 Pivotal Software Inc, All Rights Reserved.
+  Copyright (c) 2004-2011 QOS.ch
+  Copyright (c) 2011-2019 Present Pivotal Software Inc, All Rights Reserved.
+  Copyright (c) 2011- Present VMware Inc. or its affiliates, All Rights Reserved.
+  Copyright 2002-2017 the original author or authors.
+  Copyright 2011,2020 The Netty Project
+--------------------------------------------
+Neo4j
+Copyright © 2002-2020 Neo4j Sweden AB (referred to in this notice as "Neo4j")
+   [http://neo4j.com]
+
+This product includes software ("Software") developed by Neo4j.
+--------------------------------------------
+License Identifier: Apache-2.0
+--------------------------------------------
+Fourth Party Dependencies
+--------------------------------------------
+"reactive-streams" (org.reactivestreams:reactive-streams)
+
+/************************************************************************
+ * Licensed under Public Domain (CC0)                                    *
+ *                                                                       *
+ * To the extent possible under law, the person who associated CC0 with  *
+ * this code has waived all copyright and related or neighboring         *
+ * rights to this code.                                                  *
+ *                                                                       *
+ * You should have received a copy of the CC0 legalcode along with this  *
+ * work. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.*
+ ************************************************************************/
+
+Statement of Purpose The laws of most jurisdictions throughout the world
+automatically confer exclusive Copyright and Related Rights (defined below) upon
+the creator and subsequent owner(s) (each and all, an "owner") of an original
+work of authorship and/or a database (each, a "Work").
+
+Certain owners wish to permanently relinquish those rights to a Work for the
+purpose of contributing to a commons of creative, cultural and scientific works
+("Commons") that the public can reliably and without fear of later claims of
+infringement build upon, modify, incorporate in other works, reuse and
+redistribute as freely as possible in any form whatsoever and for any purposes,
+including without limitation commercial purposes. These owners may contribute to
+the Commons to promote the ideal of a free culture and the further production of
+creative, cultural and scientific works, or to gain reputation or greater
+distribution for their Work in part through the use and efforts of others.
+
+For these and/or other purposes and motivations, and without any expectation of
+additional consideration or compensation, the person associating CC0 with a Work
+(the "Affirmer"), to the extent that he or she is an owner of Copyright and
+Related Rights in the Work, voluntarily elects to apply CC0 to the Work and
+publicly distribute the Work under its terms, with knowledge of his or her
+Copyright and Related Rights in the Work and the meaning and intended legal
+effect of CC0 on those rights.
+
+1. Copyright and Related Rights. A Work made available under CC0 may be
+protected by copyright and related or neighboring rights ("Copyright and Related
+Rights"). Copyright and Related Rights include, but are not limited to, the
+following:
+
+the right to reproduce, adapt, distribute, perform, display, communicate, and
+translate a Work; moral rights retained by the original author(s) and/or
+performer(s); publicity and privacy rights pertaining to a person's image or
+likeness depicted in a Work; rights protecting against unfair competition in
+regards to a Work, subject to the limitations in paragraph 4(a), below; rights
+protecting the extraction, dissemination, use and reuse of data in a Work;
+database rights (such as those arising under Directive 96/9/EC of the European
+Parliament and of the Council of 11 March 1996 on the legal protection of
+databases, and under any national implementation thereof, including any amended
+or successor version of such directive); and other similar, equivalent or
+corresponding rights throughout the world based on applicable law or treaty, and
+any national implementations thereof. 2. Waiver. To the greatest extent
+permitted by, but not in contravention of, applicable law, Affirmer hereby
+overtly, fully, permanently, irrevocably and unconditionally waives, abandons,
+and surrenders all of Affirmer's Copyright and Related Rights and associated
+claims and causes of action, whether now known or unknown (including existing as
+well as future claims and causes of action), in the Work (i) in all territories
+worldwide, (ii) for the maximum duration provided by applicable law or treaty
+(including future time extensions), (iii) in any current or future medium and
+for any number of copies, and (iv) for any purpose whatsoever, including without
+limitation commercial, advertising or promotional purposes (the "Waiver").
+Affirmer makes the Waiver for the benefit of each member of the public at large
+and to the detriment of Affirmer's heirs and successors, fully intending that
+such Waiver shall not be subject to revocation, rescission, cancellation,
+termination, or any other legal or equitable action to disrupt the quiet
+enjoyment of the Work by the public as contemplated by Affirmer's express
+Statement of Purpose.
+
+3. Public License Fallback. Should any part of the Waiver for any reason be
+judged legally invalid or ineffective under applicable law, then the Waiver
+shall be preserved to the maximum extent permitted taking into account
+Affirmer's express Statement of Purpose. In addition, to the extent the Waiver
+is so judged Affirmer hereby grants to each affected person a royalty-free, non
+transferable, non sublicensable, non exclusive, irrevocable and unconditional
+license to exercise Affirmer's Copyright and Related Rights in the Work (i) in
+all territories worldwide, (ii) for the maximum duration provided by applicable
+law or treaty (including future time extensions), (iii) in any current or future
+medium and for any number of copies, and (iv) for any purpose whatsoever,
+including without limitation commercial, advertising or promotional purposes
+(the "License"). The License shall be deemed effective as of the date CC0 was
+applied by Affirmer to the Work. Should any part of the License for any reason
+be judged legally invalid or ineffective under applicable law, such partial
+invalidity or ineffectiveness shall not invalidate the remainder of the License,
+and in such case Affirmer hereby affirms that he or she will not (i) exercise
+any of his or her remaining Copyright and Related Rights in the Work or (ii)
+assert any associated claims and causes of action with respect to the Work, in
+either case contrary to Affirmer's express Statement of Purpose.
+
+4. Limitations and Disclaimers.
+
+No trademark or patent rights held by Affirmer are waived, abandoned,
+surrendered, licensed or otherwise affected by this document. Affirmer offers
+the Work as-is and makes no representations or warranties of any kind concerning
+the Work, express, implied, statutory or otherwise, including without limitation
+warranties of title, merchantability, fitness for a particular purpose, non
+infringement, or the absence of latent or other defects, accuracy, or the
+present or absence of errors, whether or not discoverable, all to the greatest
+extent permissible under applicable law. Affirmer disclaims responsibility for
+clearing rights of other persons that may apply to the Work or any use thereof,
+including without limitation any person's Copyright and Related Rights in the
+Work. Further, Affirmer disclaims responsibility for obtaining any necessary
+consents, permissions or other rights required for any use of the Work. Affirmer
+understands and acknowledges that Creative Commons is not a party to this
+document and has no duty or obligation with respect to this CC0 or use of the
+Work.
+--------------------------------------------
+"SLF4J API Module" (org.slf4j:slf4j-api)
+  Copyright (c) 2004-2011 QOS.ch
+
+The MIT License SPDX short identifier: MIT
+
+Further resources on the MIT License Copyright <YEAR> <COPYRIGHT HOLDER>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+--------------------------------------------
+"Netty Handler" (io.netty:netty-handler)
+Copyright 2014 The Netty Project
+
+The Netty Project licenses this file to you under the Apache License,
+version 2.0 (the "License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at:
+
+  https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations
+under the License.
+  Apache License Version 2.0
+--------------------------------------------
+"Reactor Core" (io.projectreactor:reactor-core)
+Copyright (c) 2011-2018 Pivotal Software Inc, All Rights Reserved.
+Copyright (c) 2019-Present Pivotal Software Inc, All Rights Reserved.
+  Apache License Version 2.0
+--------------------------------------------
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 JBoss Transaction SPI 7.6.0.Final Red Hat Middleware LLC
 LGPL v.2.1
@@ -2464,8 +2640,8 @@ Used by: [helidon-integrations-cdi-jta]
 You are receiving a copy of JBoss Transaction SPI in both source and object code
 in the following JAR (identify the JAR jboss-transaction-spi-7.6.0.Final.jar). The
 terms of the Oracle license do NOT apply to the JBoss Transaction SPI program;
-it is licensed under the following license, separately from the Oracle programs you receive. 
--------------------------------------------------------------------------------- 
+it is licensed under the following license, separately from the Oracle programs you receive.
+--------------------------------------------------------------------------------
 Written Offer for Source Code
 For third party technology that you receive from Oracle in binary form which is
 licensed under an open source license that gives you the right to receive the source
@@ -2473,10 +2649,10 @@ code for that binary, you can obtain a copy of the applicable source code from t
 http://www.oracle.com/goto/opensourcecode
 If the source code for the technology was not provided to you with the binary, you
 can also receive a copy of the source code on physical media by submitting a written request to:
-Oracle America, Inc. 
-Attn: Associate General Counsel, 
-Development and Engineering Legal 
-500 Oracle Parkway, 10th Floor 
+Oracle America, Inc.
+Attn: Associate General Counsel,
+Development and Engineering Legal
+500 Oracle Parkway, 10th Floor
 Redwood Shores, CA 94065
 Or, you may send an email to Oracle using the form at:
 http://www.oracle.com/goto/opensourcecode/request
@@ -2486,7 +2662,7 @@ Your request should include:
 •         The date you received the Oracle product
 •         Your name
 •         Your company name (if applicable)
-•         Your return mailing address and email and 
+•         Your return mailing address and email and
 •         A telephone number in the event we need to reach you.
 We may charge you a fee to cover the cost of physical media and processing. Your
 request must be sent (i) within three (3) years of the date you received the
@@ -2920,7 +3096,7 @@ Used by: [helidon-bundles-config, helidon-common-service-loader, helidon-config,
     non-infringement, and implied warranties or conditions of merchantability and
     fitness for a particular purpose.  In addition, such Contributors are not liable
     for any damages, including direct, indirect, special, incidental and consequential
-    damages, such as lost profits.  
+    damages, such as lost profits.
 3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public
     License are offered by Oracle alone and not by any other party.
 __________________________________________________________________
@@ -2966,11 +3142,11 @@ permitted.
 License Identifier: EPL-2.0
 -----------------------------------------------------------------------
 
-                  
+
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta CDI-API 2.0.2 Red Hat, Inc.
 Apache 2.0
-Used by: [helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-delegates, helidon-integrations-cdi-eclipselink, helidon-integrations-cdi-hibernate, helidon-integrations-cdi-jedis, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-cdi-jta-weld, helidon-integrations-cdi-oci-objectstorage, helidon-integrations-cdi-reference-counted-context, helidon-microprofile-config, helidon-microprofile-fault-tolerance, helidon-microprofile-grpc-client, helidon-microprofile-grpc-core, helidon-microprofile-grpc-metrics, helidon-microprofile-grpc-server, helidon-microprofile-metrics, helidon-microprofile-server, helidon-microprofile-tracing, helidon-microprofile-websocket, weld-se-core]
+Used by: [helidon-health-checks, helidon-health-common, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-delegates, helidon-integrations-cdi-eclipselink, helidon-integrations-cdi-hibernate, helidon-integrations-cdi-jedis, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-cdi-jta-weld, helidon-integrations-cdi-oci-objectstorage, helidon-integrations-cdi-reference-counted-context, helidon-integrations-micrometer-cdi, helidon-integrations-micronaut-cdi, helidon-integrations-micronaut-data, helidon-integrations-neo4j, helidon-integrations-neo4j-health, helidon-integrations-neo4j-metrics, helidon-integrations-oci-cdi, helidon-integrations-vault-cdi, helidon-messaging-aq, helidon-messaging-jms, helidon-messaging-kafka, helidon-microprofile-config, helidon-microprofile-fault-tolerance, helidon-microprofile-grpc-client, helidon-microprofile-grpc-core, helidon-microprofile-grpc-metrics, helidon-microprofile-grpc-server, helidon-microprofile-metrics, helidon-microprofile-server, helidon-microprofile-tracing, helidon-microprofile-websocket, helidon-service-common-rest-cdi, weld-se-core]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Copyright 2010, 2016, Red Hat, Inc., and individual contributors
   Copyright 2008,2018 Red Hat, Inc., and individual contributors
@@ -3462,7 +3638,7 @@ Used by: [helidon-security-abac-policy-el, weld-se-core]
     non-infringement, and implied warranties or conditions of merchantability and
     fitness for a particular purpose.  In addition, such Contributors are not liable
     for any damages, including direct, indirect, special, incidental and consequential
-    damages, such as lost profits.  
+    damages, such as lost profits.
 3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public
     License are offered by Oracle alone and not by any other party.
 _______________________________________________
@@ -3515,7 +3691,7 @@ permitted.
 License Identifier: EPL-2.0
 -------------------------------------------------------------------------
 
-                   
+
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta Interceptors API 1.2.5 Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
@@ -3528,7 +3704,7 @@ Used by: [helidon-microprofile-access-log, helidon-microprofile-jwt-auth, helido
     non-infringement, and implied warranties or conditions of merchantability and
     fitness for a particular purpose.  In addition, such Contributors are not liable
     for any damages, including direct, indirect, special, incidental and consequential
-    damages, such as lost profits.  
+    damages, such as lost profits.
 3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public
     License are offered by Oracle alone and not by any other party.
 ________________________________________________________________
@@ -3556,7 +3732,7 @@ source code repository logs.
 License Identifier: EPL-2.0
 ----------------------------------------------------------------------
 
-                    
+
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -3586,7 +3762,7 @@ Used by: [helidon-grpc-core, helidon-microprofile]
     non-infringement, and implied warranties or conditions of merchantability and
     fitness for a particular purpose.  In addition, such Contributors are not liable
     for any damages, including direct, indirect, special, incidental and consequential
-    damages, such as lost profits.  
+    damages, such as lost profits.
 3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public
     License are offered by Oracle alone and not by any other party.
 _______________________________________________________________
@@ -3625,7 +3801,7 @@ SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 License Identifier: EPL-2.0
 ----------------------------------------------------------------------
 
-                    
+
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -3647,7 +3823,7 @@ Used by: [helidon-dbclient-jsonp, helidon-dbclient-mongodb, helidon-graal-native
     non-infringement, and implied warranties or conditions of merchantability and
     fitness for a particular purpose.  In addition, such Contributors are not liable
     for any damages, including direct, indirect, special, incidental and consequential
-    damages, such as lost profits.  
+    damages, such as lost profits.
 3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public
     License are offered by Oracle alone and not by any other party.
 __________________________________________________
@@ -3771,7 +3947,7 @@ Used by: [helidon-microprofile-cors, helidon-microprofile-rest-client, helidon-s
     non-infringement, and implied warranties or conditions of merchantability and
     fitness for a particular purpose.  In addition, such Contributors are not liable
     for any damages, including direct, indirect, special, incidental and consequential
-    damages, such as lost profits.  
+    damages, such as lost profits.
 3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public
     License are offered by Oracle alone and not by any other party.
 
@@ -3842,7 +4018,7 @@ Used by: [helidon-integrations-cdi-eclipselink, helidon-integrations-cdi-hiberna
     non-infringement, and implied warranties or conditions of merchantability and
     fitness for a particular purpose.  In addition, such Contributors are not liable
     for any damages, including direct, indirect, special, incidental and consequential
-    damages, such as lost profits.  
+    damages, such as lost profits.
 3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public
     License are offered by Oracle alone and not by any other party.
 ___________________________________________
@@ -3873,7 +4049,7 @@ Used by: [helidon-microprofile-websocket, helidon-webserver-tyrus]
     non-infringement, and implied warranties or conditions of merchantability and
     fitness for a particular purpose.  In addition, such Contributors are not liable
     for any damages, including direct, indirect, special, incidental and consequential
-    damages, such as lost profits.  
+    damages, such as lost profits.
 3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public
     License are offered by Oracle alone and not by any other party.
 _____________________
@@ -4578,7 +4754,7 @@ David Chan chdavid@ca.ibm.com,
 Don Bourne dbourne@ca.ibm.com,
 Antonin Stefanutti antonin@stefanutti.fr,
 Arjun Sharma arjun.a.sharma@ibm.com,
-Fahham Khan fahhamk@ca.ibm.com, 
+Fahham Khan fahhamk@ca.ibm.com,
 Felix Wong fmhwong@ca.ibm.com,
 Mike Croft mike.croft@payara.fish,
 Werner Keil werner@catmedia.us,
@@ -4587,7 +4763,7 @@ Jan Martiska jmartisk@redhat.com
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
-OSGi Annotation Versioning 
+OSGi Annotation Versioning
   Copyright (c) OSGi Alliance (2013, 2017). All Rights Reserved.
   Copyright (c) OSGi Alliance (2013, 2016). All Rights Reserved.
   Copyright (c) OSGi Alliance (2013, 2014). All Rights Reserved.
@@ -4619,7 +4795,7 @@ PackageName: Eclipse MicroProfile
 PackageHomePage: http://www.eclipse.org/microprofile
 PackageLicenseDeclared: Apache-2.0
 
-PackageCopyrightText: 
+PackageCopyrightText:
 Arthur De Magalhaes arthurdm@ca.ibm.com
 --------------------------------------------
 License Identifier: Apache-2.0
@@ -5098,7 +5274,7 @@ License Identifier: Apache-2.0
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
-OSGi Versioning Annotations 
+OSGi Versioning Annotations
   Copyright (c) OSGi Alliance (2013, 2014). All Rights Reserved.
   Copyright (c) OSGi Alliance (2013). All Rights Reserved.
   Apache License Version 2.0
@@ -5150,7 +5326,7 @@ Parliament and of the Council of 11 March 1996 on the legal protection of
 databases, and under any national implementation thereof, including any amended
 or successor version of such directive); and other similar, equivalent or
 corresponding rights throughout the world based on applicable law or treaty, and
-any national implementations thereof. 
+any national implementations thereof.
 
 2. Waiver. To the greatest extent
 permitted by, but not in contravention of, applicable law, Affirmer hereby
@@ -5209,13 +5385,23 @@ Work.
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-MicroProfile Rest Client API 1.4.1 Eclipse Foundation
+MicroProfile Rest Client API 2.0 Eclipse Foundation
 Apache 2.0
 Used by: [helidon-microprofile-tracing]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 MicroProfile Rest Client
   Copyright (c) 2016-2020 Contributors to the Eclipse Foundation
 Apache License  Version 2.0
+--------------------------------------------
+=========================================================================
+==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
+==  Version 2.0, in this case for Microprofile Config                  ==
+=========================================================================
+
+SPDXVersion: SPDX-2.1
+PackageName: Eclipse Microprofile
+PackageHomePage: http://www.eclipse.org/microprofile
+PackageLicenseDeclared: Apache-2.0
 --------------------------------------------
 License Identifier: Apache-2.0
 
@@ -5424,7 +5610,7 @@ You are receiving a copy of Narayana Transaction Processing in both source and
 object code in the following JAR (org.jboss.narayana.jta;cdi.jar). The terms of
 the Oracle license do NOT apply to the Narayana Transaction Processing  program;
 it is licensed under the following license, separately from the Oracle programs
-you receive. 
+you receive.
 --------------------------------------------------------------------------------
 License Identifier: LGPL-2.1-only
 
@@ -5490,7 +5676,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 https://jdbc.postgresql.org/about/license.html
 
-License for client1.0.0-beta.2.jar from com.ongres.scram 
+License for client1.0.0-beta.2.jar from com.ongres.scram
 
 Copyright 2017, OnGres.
 
@@ -5520,7 +5706,7 @@ Project Tyrus 1.17 Oracle
 Eclipse Public License 2.0 + GPL v.2 with CPE
 Used by: [helidon-microprofile-websocket, helidon-webserver-tyrus]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Tyrus 
+Tyrus
   Copyright (c) 2007,2020 Oracle and/or its affiliates. All rights reserved.
 
 This content is produced and maintained by the Eclipse Tyrus project.
@@ -5541,7 +5727,7 @@ listed source code repository logs. Declared Project Licenses
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0. 
+http://www.eclipse.org/legal/epl-2.0.
 
 ## Source Code
 
@@ -5563,7 +5749,7 @@ Inc. and its licensors.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following condOracle IPitions are met: 
+are permitted provided that the following condOracle IPitions are met:
 Redistributions of source code must retain the above copyright notice, this list
 of conditions and the following disclaimer. Redistributions in binary form must
 reproduce the above copyright notice, this list of conditions and the following
@@ -5584,7 +5770,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --------------------------------------------
 "JavaBeans Activation Framework API jar" (jakarta.activation:jakarta.activation-api)
   Copyright (c) 1997,2018 Oracle and/or its affiliates. All rights reserved.
-  Eclipse Distribution License - v 1.0 
+  Eclipse Distribution License - v 1.0
 --------------------------------------------
 JLine
 Copyright (c) 2002-2016, the original author or authors.
@@ -6022,8 +6208,8 @@ Spring Framework: Beans 2.5.6 (org.springframework:spring-beans)
 --------------------------------------------
 "RabbitMQ Java Client" 4.11.3 (com.rabbitmq:amqp-client)
 Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
-Apache License version 2.0 
-  
+Apache License version 2.0
+
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 classgraph 4.8.87 Luke Hutchinson
 MIT
@@ -6061,6 +6247,52 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 --------------------------------------------
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+cron-utils 9.1.3 Joze Martin Rozanec
+Apache 2.0
+Used by: [helidon-scheduling]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+cron-utils (com.cronutils:cron-utils)
+  Copyright (C) 2006,2007 The Guava Authors
+  Copyright 2014,2017 jmrozanec
+  Copyright 2019 fahmpeermoh
+ --------------------------------------------
+License Identifier: Apache-2.0
+--------------------------------------------------------------------------------
+4th party dependency:
+org.slf4j:slf4j-api:jar:1.7.30(MIT License)
+http://www.slf4j.org/
+
+Copyright (c) 2004-2017 QOS.ch
+ All rights reserved.
+
+ Permission is hereby granted, free  of charge, to any person obtaining
+ a  copy  of this  software  and  associated  documentation files  (the
+ "Software"), to  deal in  the Software without  restriction, including
+ without limitation  the rights to  use, copy, modify,  merge, publish,
+ distribute,  sublicense, and/or sell  copies of  the Software,  and to
+ permit persons to whom the Software  is furnished to do so, subject to
+ the following conditions:
+
+ The  above  copyright  notice  and  this permission  notice  shall  be
+ included in all copies or substantial portions of the Software.
+
+ THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
+ EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
+ MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
+ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
+ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+--------------------------------------------------------------------------------
+"Apache Commons Lang" (org.apache.commons:commons-lang3)
+Copyright 2001-2021 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+Apache License Version 2
+--------------------------------------------------------------------------------
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 etcd4j 2.17.0 Jurriaan Mous
@@ -6102,7 +6334,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --------------------------------------------
 "SLF4J API Module" (org.slf4j:slf4j-api)
   Copyright (c) 2004-2011 QOS.ch
-  The MIT License 
+  The MIT License
 --------------------------------------------
 "Netty" (io.netty:netty-*)
   Copyright 2015,2016 The Netty Project
@@ -6235,7 +6467,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 4P Dependencies:
 
 
-com.ibm.icu » icu4j 
+com.ibm.icu » icu4j
 COPYRIGHT: © 2016 and later: Unicode, Inc. and others.
 LICENSE: MIT
 
@@ -6270,7 +6502,7 @@ PERFORMANCE OF THE DATA FILES OR SOFTWARE.
 
 
 ---
-org.abego.treelayout.core 
+org.abego.treelayout.core
 COPYRIGHT and LICENSE:
 BSD 3-Clause License
 
@@ -6304,7 +6536,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 ******************************************
-antlr-runtime 
+antlr-runtime
 COPYRIGHT:
 Copyright (c) 2003-2008 Terence Parr. All rights reserved.
 Copyright (c) 2008, Yahoo! Inc. All rights reserved.
@@ -6320,7 +6552,7 @@ Redistribution and use in source and binary forms, with or without modification,
 
     Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
     Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-    Neither the name of the author nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission. 
+    Neither the name of the author nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
@@ -6359,7 +6591,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 *********************************
-Reactive Streams  
+Reactive Streams
 
 The same license text is available at: http://creativecommons.org/publicdomain/zero/1.0/
 
@@ -6395,7 +6627,7 @@ Affirmer understands and acknowledges that Creative Commons is not a party to th
 Additional languages available: français, Nederlands, polski, suomeksi, 日本語. Please read the FAQ for more information about official translations.
 
 
-The top of each source file contains the following.  There are no specific copyright notices.  The CCO license is above and point #1 refers to the copyright.   
+The top of each source file contains the following.  There are no specific copyright notices.  The CCO license is above and point #1 refers to the copyright.
 
 /************************************************************************
  * Licensed under Public Domain (CC0)                                    *
@@ -6431,9 +6663,9 @@ MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
 NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
-   
-   
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 grpc-java 1.35.0 The gRPC Authors
 Apache 2.0
@@ -6703,7 +6935,7 @@ License URL - http://www.apache.org/licenses/LICENSE-2.0
 License Identifier: Apache-2.0
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jersey-core-client 2.33 Eclipse Foundation
+jersey-core-client 2.34 Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
 Used by: [helidon-jersey-client, helidon-jersey-connector]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -6721,10 +6953,10 @@ _________________________________________________________________
 jersey-core-client (org.glassfish.jersey.core:jersey-client)
   Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
   Copyright (c) 2018,2019 Payara Foundation and/or its affiliates.
-  Copyright (c) 2010,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
-# Notice for Jersey 
+# Notice for Jersey
 This content is produced and maintained by the Eclipse Jersey project.
 
 *  Project home: https://projects.eclipse.org/projects/ee4j.jersey
@@ -6763,7 +6995,7 @@ Fourth Party Dependencies
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2021 Oracle and/or its affiliates. All rights reserved.
   Copyright (c) 2018 Payara Foundation and/or its affiliates.
   Copyright (C) 2006,2014 The Guava Authors
   Eclipse Public License 2.0 + GPL v.2 with CPE
@@ -6777,9 +7009,9 @@ Fourth Party Dependencies
   Copyright (c) 2009,2018 Oracle and/or its affiliates. All rights reserved.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
-        
+
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jersey-inject-hk2 2.33 GlassFish
+jersey-inject-hk2 2.34 Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
 Used by: [helidon-integrations-cdi-oci-objectstorage, helidon-jersey-client, helidon-jersey-connector, helidon-jersey-server]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -6795,10 +7027,10 @@ Used by: [helidon-integrations-cdi-oci-objectstorage, helidon-jersey-client, hel
     License are offered by Oracle alone and not by any other party.
 ____________________________________________________
 jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2)
-  Copyright (c) 2017,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2017,2021 Oracle and/or its affiliates. All rights reserved.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
-# Notice for Jersey 
+# Notice for Jersey
 This content is produced and maintained by the Eclipse Jersey project.
 
 *  Project home: https://projects.eclipse.org/projects/ee4j.jersey
@@ -6832,7 +7064,7 @@ The project maintains the following source code repositories:
 Fourth Party Dependencies
 --------------------------------------------
 "jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2021 Oracle and/or its affiliates. All rights reserved.
   Copyright (c) 2018 Payara Foundation and/or its affiliates.
   Copyright (C) 2006,2014 The Guava Authors
   Eclipse Public License 2.0 + GPL v.2 with CPE
@@ -6880,7 +7112,7 @@ Fourth Party Dependencies
 --------------------------------------------
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jersey-media-json-binding 2.33 Eclipse Foundation
+jersey-media-json-binding 2.34 Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
 Used by: [helidon-microprofile]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -6895,7 +7127,8 @@ Used by: [helidon-microprofile]
 3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public
     License are offered by Oracle alone and not by any other party.
 _________________________________________________
-# Notice for Jersey 
+  Copyright (c) 2017,2021 Oracle and/or its affiliates. All rights reserved.
+# Notice for Jersey
 This content is produced and maintained by the Eclipse Jersey project.
 
 *  Project home: https://projects.eclipse.org/projects/ee4j.jersey
@@ -6929,7 +7162,7 @@ The project maintains the following source code repositories:
 Fourth Party Dependencies
 --------------------------------------------
 "jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2021 Oracle and/or its affiliates. All rights reserved.
   Copyright (c) 2018 Payara Foundation and/or its affiliates.
   Copyright (C) 2006,2014 The Guava Authors
   Eclipse Public License 2.0 + GPL v.2 with CPE
@@ -6971,7 +7204,7 @@ Fourth Party Dependencies
   Copyright (c) 2015,2019 Oracle and/or its affiliates. All rights reserved.
   Copyright (c) 2019 Payara Foundation and/or its affiliates. All rights reserved.
   Copyright (c) 2019 Payara Services and/or its affiliates. All rights reserved.
-  Eclipse Public License 2.0 or Eclipse Distribution License 1.0 
+  Eclipse Public License 2.0 or Eclipse Distribution License 1.0
 
 Eclipse Distribution License - v 1.0 Copyright (c) 2007, Eclipse Foundation,
 Inc. and its licensors.
@@ -7000,7 +7233,7 @@ OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --------------------------------------------
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jersey-media-json-processing 2.33 Eclipse Foundation
+jersey-media-json-processing 2.34 Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
 Used by: [helidon-jersey-media-jsonp]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -7016,10 +7249,10 @@ Used by: [helidon-jersey-media-jsonp]
     License are offered by Oracle alone and not by any other party.
 ____________________________________________
 jersey-media-json-processing (org.glassfish.jersey.media:jersey-media-json-processing)
-  Copyright (c) 2011,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2011,2021 Oracle and/or its affiliates. All rights reserved.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
-# Notice for Jersey 
+# Notice for Jersey
 This content is produced and maintained by the Eclipse Jersey project.
 
 *  Project home: https://projects.eclipse.org/projects/ee4j.jersey
@@ -7053,7 +7286,7 @@ The project maintains the following source code repositories:
 Fourth Party Dependencies
 --------------------------------------------
 "jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2021 Oracle and/or its affiliates. All rights reserved.
   Copyright (c) 2018 Payara Foundation and/or its affiliates.
   Copyright (C) 2006,2014 The Guava Authors
   Eclipse Public License 2.0 + GPL v.2 with CPE
@@ -7091,9 +7324,9 @@ Fourth Party Dependencies
 --------------------------------------------
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jersey-mp-rest-client 2.33 Eclipse Foundation
+jersey-mp-rest-client 2.34 Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-jersey-client, helidon-jersey-connector, helidon-microprofile-rest-client]
+Used by: [helidon-microprofile-rest-client]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 1.  The follow files are available in source code form under the Eclipse Public License at:
     https://github.com/eclipse-ee4j/jersey (The EPL license is reproduced below).
@@ -7108,9 +7341,9 @@ Used by: [helidon-jersey-client, helidon-jersey-connector, helidon-microprofile-
 ___________________________________________________
 jersey-mp-rest-client (org.glassfish.jersey.ext.microprofile:jersey-mp-rest-client)
   Copyright (c) 2019 Payara Foundation and/or its affiliates. All rights reserved.
-  Copyright (c) 2019,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2019,2021 Oracle and/or its affiliates. All rights reserved.
 --------------------------------------------
-# Notice for Jersey 
+# Notice for Jersey
 This content is produced and maintained by the Eclipse Jersey project.
 
 *  Project home: https://projects.eclipse.org/projects/ee4j.jersey
@@ -7150,7 +7383,7 @@ org.glassfish.jersey.inject:jersey-hk2
 org.glassfish.jersey.media:jersey-media-json-binding
 org.glassfish.jersey.core:jersey-common
 org.glassfish.jersey.media:jersey-media-jaxb
-  Copyright (c) 2010,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
   Copyright (c) 2018,2019 Payara Foundation and/or its affiliates.
   Copyright (c) 2019 Payara Foundation and/or its affiliates. All rights reserved.
   Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
@@ -7320,7 +7553,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  Apache License 2.0
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jersey-core-server 2.33 Eclipse Foundation
+jersey-core-server 2.34 Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
 Used by: [helidon-jersey-server]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -7341,7 +7574,7 @@ jersey-core-server (org.glassfish.jersey.core:jersey-server)
   Copyright (c) 2010,2020 Oracle and/or its affiliates. All rights reserved.
   Copyright 2010,2013 Coda Hale and Yammer, Inc.
 --------------------------------------------
-# Notice for Jersey 
+# Notice for Jersey
 This content is produced and maintained by the Eclipse Jersey project.
 
 *  Project home: https://projects.eclipse.org/projects/ee4j.jersey
@@ -7415,7 +7648,7 @@ Fourth Party Dependencies
   https://www.apache.org/licenses/LICENSE-2.0.
 --------------------------------------------
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jersey-ext-weld2-se 2.33 Eclipse Foundation
+jersey-ext-weld2-se 2.34 Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
 Used by: [helidon-microprofile-server]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -7431,9 +7664,9 @@ Used by: [helidon-microprofile-server]
     License are offered by Oracle alone and not by any other party.
 ______________________________________________________
 jersey-ext-weld2-se (org.glassfish.jersey.ext.cdi:jersey-weld2-se)
-  Copyright (c) 2014,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2014,2021 Oracle and/or its affiliates. All rights reserved.
 --------------------------------------------
-# Notice for Jersey 
+# Notice for Jersey
 This content is produced and maintained by the Eclipse Jersey project.
 
 *  Project home: https://projects.eclipse.org/projects/ee4j.jersey
@@ -7467,7 +7700,7 @@ The project maintains the following source code repositories:
 Fourth Party Dependencies
 --------------------------------------------
 "jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2007,2021 Oracle and/or its affiliates. All rights reserved.
   Copyright (c) 2018 Payara Foundation and/or its affiliates.
   Copyright (C) 2006,2014 The Guava Authors
   Eclipse Public License 2.0 + GPL v.2 with CPE
@@ -7475,19 +7708,19 @@ Fourth Party Dependencies
 "jersey-core-server" (org.glassfish.jersey.core:jersey-server)
  Copyright (c) 2000-2011 INRIA, France Telecom
  Copyright (c) 2018 Payara Foundation and/or its affiliates.
- Copyright (c) 2010,2020 Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
  Copyright 2010,2013 Coda Hale and Yammer, Inc.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "jersey-core-client" (org.glassfish.jersey.core:jersey-client)
   Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
   Copyright (c) 2018,2019 Payara Foundation and/or its affiliates.
-  Copyright (c) 2010,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "jersey-ext-cdi1x" (org.glassfish.jersey.ext.cdi:jersey-cdi1x)
   Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
-  Copyright (c) 2013,2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2013,2021 Oracle and/or its affiliates. All rights reserved.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
 "org.glassfish.hk2.external:jakarta.inject"
@@ -7548,7 +7781,7 @@ This product includes software developed by Apache
  (Apache 2.0 license)
 
 == Contributors ==
-  * Tatu Saloranta  
+  * Tatu Saloranta
     * Providing benchmark suite
   * Alec Wysoker
     * Performance and memory usage improvement
@@ -7607,12 +7840,310 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --------------------------------------------
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-netty 4.1.58.Final The Netty Project
+micrometer-core 1.6.6 VMware
 Apache 2.0
-Used by: [helidon-webclient, helidon-webserver]
+Used by: [helidon-integrations-micrometer]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Micrometer Core
 
- Copyright 2012,2020 The Netty Project
+Copyright (c) 2017-Present VMware, Inc. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-------------------------------------------------------------------------------
+This product contains a modified portion of 'io.netty.util.internal.logging',
+in the Netty/Common library distributed by The Netty Project:
+
+  * Copyright 2013 The Netty Project
+  * License: Apache License v2.0
+  * Homepage: https://netty.io
+
+This product contains a modified portion of 'StringUtils.isBlank()',
+in the Commons Lang library distributed by The Apache Software Foundation:
+
+  * Copyright 2001-2019 The Apache Software Foundation
+  * License: Apache License v2.0
+  * Homepage: https://commons.apache.org/proper/commons-lang/
+
+This product contains a modified portion of 'JsonUtf8Writer',
+in the Moshi library distributed by Square, Inc:
+
+  * Copyright 2010 Google Inc.
+  * License: Apache License v2.0
+  * Homepage: https://github.com/square/moshi
+
+This product contains a modified portion of the 'org.springframework.lang'
+package in the Spring Framework library, distributed by VMware, Inc:
+
+  * Copyright 2002-2019 the original author or authors.
+  * License: Apache License v2.0
+  * Homepage: https://spring.io/projects/spring-framework
+-------------------------------------------------------------------------------
+License Identifier: Apache-2.0
+-------------------------------------------------------------------------------
+Fourth Party Runtime Dependencies
+-------------------------------------------------------------------------------
+"HdrHistogram" (org.hdrhistogram:HdrHistogram)
+
+The code in this repository code was Written by Gil Tene, Michael Barker,
+and Matt Warren, and released to the public domain, as explained at
+http://creativecommons.org/publicdomain/zero/1.0/
+
+For users of this code who wish to consume it under the "BSD" license
+rather than under the public domain or CC0 contribution text mentioned
+above, the code found under this directory is *also* provided under the
+following license (commonly referred to as the BSD 2-Clause License). This
+license does not detract from the above stated release of the code into
+the public domain, and simply represents an additional license granted by
+the Author.
+
+** Beginning of "BSD 2-Clause License" text. **
+
+ Copyright (c) 2012, 2013, 2014, 2015, 2016 Gil Tene
+ Copyright (c) 2014 Michael Barker
+ Copyright (c) 2014 Matt Warren
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+ 1. Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+
+ 2. Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ THE POSSIBILITY OF SUCH DAMAGE.
+--------------------------------------------
+"LatencyUtils" (org.latencyutils:LatencyUtils)
+
+* This code was Written by Gil Tene of Azul Systems, and released to the
+* public domain, as explained at http://creativecommons.org/publicdomain/zero/1.0/
+
+ For users of this code who wish to consume it under the "BSD" license
+ rather than under the public domain or CC0 contribution text mentioned
+ above, the code found under this directory is *also* provided under the
+ following license (commonly referred to as the BSD 2-Clause License). This
+ license does not detract from the above stated release of the code into
+ the public domain, and simply represents an additional license granted by
+ the Author.
+
+ ** Beginning of "BSD 2-Clause License" text. **
+
+  Copyright (c) 2012, 2013, 2014 Gil Tene
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+  THE POSSIBILITY OF SUCH DAMAGE.
+--------------------------------------------
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+micrometer-registry-prometheus 1.6.6 VMware
+Apache 2.0
+Used by: [helidon-integrations-micrometer, helidon-integrations-micrometer-cdi]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Micrometer Registry Prometheus
+
+Copyright (c) 2017-Present VMware, Inc. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-------------------------------------------------------------------------------
+This product contains a modified portion of 'io.netty.util.internal.logging',
+in the Netty/Common library distributed by The Netty Project:
+
+  * Copyright 2013 The Netty Project
+  * License: Apache License v2.0
+  * Homepage: https://netty.io
+
+This product contains a modified portion of 'StringUtils.isBlank()',
+in the Commons Lang library distributed by The Apache Software Foundation:
+
+  * Copyright 2001-2019 The Apache Software Foundation
+  * License: Apache License v2.0
+  * Homepage: https://commons.apache.org/proper/commons-lang/
+
+This product contains a modified portion of 'JsonUtf8Writer',
+in the Moshi library distributed by Square, Inc:
+
+  * Copyright 2010 Google Inc.
+  * License: Apache License v2.0
+  * Homepage: https://github.com/square/moshi
+
+This product contains a modified portion of the 'org.springframework.lang'
+package in the Spring Framework library, distributed by VMware, Inc:
+
+  * Copyright 2002-2019 the original author or authors.
+  * License: Apache License v2.0
+  * Homepage: https://spring.io/projects/spring-framework
+-------------------------------------------------------------------------------
+License Identifier: Apache-2.0
+-------------------------------------------------------------------------------
+Fourth Party Runtime Dependencies
+-------------------------------------------------------------------------------
+"micrometer-core" (io.micrometer:micrometer-core)
+  Copyright 2002-2019 the original author or authors.
+  Copyright 2010 Google Inc. The comments and initialization of {@code REPLACEMENT_CHARS} came
+  Copyright 2017,2020 Pivotal Software, Inc.
+  Copyright (c) 2004-2011 QOS.ch
+  Copyright 2012,2017 The Netty Project
+  Copyright 2017,2021 VMware, Inc.
+  Apache License, Version 2.0
+-------------------------------------------------------------------------------
+"HdrHistogram" (org.hdrhistogram:HdrHistogram)
+
+The code in this repository code was Written by Gil Tene, Michael Barker,
+and Matt Warren, and released to the public domain, as explained at
+http://creativecommons.org/publicdomain/zero/1.0/
+
+For users of this code who wish to consume it under the "BSD" license
+rather than under the public domain or CC0 contribution text mentioned
+above, the code found under this directory is *also* provided under the
+following license (commonly referred to as the BSD 2-Clause License). This
+license does not detract from the above stated release of the code into
+the public domain, and simply represents an additional license granted by
+the Author.
+
+** Beginning of "BSD 2-Clause License" text. **
+
+ Copyright (c) 2012, 2013, 2014, 2015, 2016 Gil Tene
+ Copyright (c) 2014 Michael Barker
+ Copyright (c) 2014 Matt Warren
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+ 1. Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+
+ 2. Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ THE POSSIBILITY OF SUCH DAMAGE.
+--------------------------------------------
+"LatencyUtils" (org.latencyutils:LatencyUtils)
+
+* This code was Written by Gil Tene of Azul Systems, and released to the
+* public domain, as explained at http://creativecommons.org/publicdomain/zero/1.0/
+
+ For users of this code who wish to consume it under the "BSD" license
+ rather than under the public domain or CC0 contribution text mentioned
+ above, the code found under this directory is *also* provided under the
+ following license (commonly referred to as the BSD 2-Clause License). This
+ license does not detract from the above stated release of the code into
+ the public domain, and simply represents an additional license granted by
+ the Author.
+
+ ** Beginning of "BSD 2-Clause License" text. **
+
+  Copyright (c) 2012, 2013, 2014 Gil Tene
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+  THE POSSIBILITY OF SUCH DAMAGE.
+--------------------------------------------
+"Prometheus Java Simpleclient Common" (io.prometheus:simpleclient_common)
+"Prometheus Java Simpleclient" (io.prometheus:simpleclient)
+
+Prometheus instrumentation library for JVM applications
+Copyright 2012-2015 The Prometheus Authors
+Copyright 2012 Andrew Wang (andrew@umbrant.com)
+
+This product includes software developed at
+Boxever Ltd. (http://www.boxever.com/).
+
+This product includes software developed at
+SoundCloud Ltd. (http://soundcloud.com/).
+
+This product includes software developed as part of the
+Ocelli project by Netflix Inc. (https://github.com/Netflix/ocelli/).
+  Apache License 2.0
+--------------------------------------------
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+netty 4.1.63.Final The Netty Project
+Apache 2.0
+Used by: [helidon-webclient, helidon-webserver, helidon-webserver-jersey]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Netty (io.netty:netty-*)
+  Copyright 2012,2021 The Netty Project
   Copyright 2014 Twitter, Inc.
   Copyright (c) 2011, Joe Walnes and contributors
   Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
@@ -7723,16 +8254,16 @@ WebSocket and HTTP server, which can be obtained at:
 Copyright (c) 2011, Joe Walnes, Aslak Hellesøy and contributors
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or 
-without modification, are permitted provided that the 
+Redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the
 following conditions are met:
 
-* Redistributions of source code must retain the above 
-  copyright notice, this list of conditions and the 
+* Redistributions of source code must retain the above
+  copyright notice, this list of conditions and the
   following disclaimer.
 
 * Redistributions in binary form must reproduce the above
-  copyright notice, this list of conditions and the 
+  copyright notice, this list of conditions and the
   following disclaimer in the documentation and/or other
   materials provided with the distribution.
 
@@ -7741,19 +8272,19 @@ following conditions are met:
   derived from this software without specific prior written
   permission.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, 
-INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR 
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE 
-GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR 
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
 BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT 
-OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
   * HOMEPAGE:
     * https://github.com/joewalnes/webbit
@@ -7763,10 +8294,10 @@ facade for Java, which can be obtained at:
 
   * LICENSE:
     * license/LICENSE.slf4j.txt (MIT License)
-/* 
+/*
  * Copyright (c) 2004-2007 QOS.ch
  * All rights reserved.
- * 
+ *
  * Permission is hereby granted, free  of charge, to any person obtaining
  * a  copy  of this  software  and  associated  documentation files  (the
  * "Software"), to  deal in  the Software without  restriction, including
@@ -7774,10 +8305,10 @@ facade for Java, which can be obtained at:
  * distribute,  sublicense, and/or sell  copies of  the Software,  and to
  * permit persons to whom the Software  is furnished to do so, subject to
  * the following conditions:
- * 
+ *
  * The  above  copyright  notice  and  this permission  notice  shall  be
  * included in all copies or substantial portions of the Software.
- * 
+ *
  * THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
  * EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
  * MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
@@ -7885,8 +8416,8 @@ modification, are permitted provided that the following conditions are met:
   1. Redistributions of source code must retain the above copyright notice,
      this list of conditions and the following disclaimer.
 
-  2. Redistributions in binary form must reproduce the above copyright 
-     notice, this list of conditions and the following disclaimer in 
+  2. Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in
      the documentation and/or other materials provided with the distribution.
 
   3. The names of the authors may not be used to endorse or promote products
@@ -8102,7 +8633,7 @@ the HTTP/2 HPACK algorithm written by Twitter. It can be obtained at:
     * license/LICENSE.hpack.txt (Apache License 2.0)
   * HOMEPAGE:
     * https://github.com/twitter/hpack
-    
+
 This product contains a modified version of 'HPACK', a Java implementation of
 the HTTP/2 HPACK algorithm written by Cory Benfield. It can be obtained at:
 
@@ -8210,6 +8741,41 @@ Copyright 2016-2019 The OpenTracing Authors
 ---------------------------------------------------------------------------
 License Identifier: Apache-2.0
 
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+OCI Java SDK 1.31.0 Oracle
+Apache 2.0
+Used by: [helidon-integrations-cdi-oci-objectstorage]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+Copyright (c) 2016, 2020, Oracle and/or its affiliates.
+
+This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl
+or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
+
+____________________________
+
+The Universal Permissive License (UPL), Version 1.0
+Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+
+Subject to the condition set forth below, permission is hereby granted to any person obtaining a copy of this software, associated documentation and/or data (collectively the "Software"), free of charge and under any and all copyright rights in the Software, and any and all patent rights owned or freely licensable by each licensor hereunder covering either (i) the unmodified Software as contributed to or provided by such licensor, or (ii) the Larger Works (as defined below), to deal in both
+
+(a) the Software, and
+(b) any piece of software and/or hardware listed in the lrgrwrks.txt file if one is included with the Software (each a "Larger Work" to which the Software is contributed by such licensors),
+
+without restriction, including without limitation the rights to copy, create derivative works of, display, perform, and distribute the Software and make, use, sell, offer for sale, import, export, have made, and have sold the Software and the Larger Work(s), and to sublicense the foregoing rights on either these or other terms.
+
+This license is subject to the following condition:
+
+The above copyright notice and either this complete permission notice or at a minimum a reference to the UPL must be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+The Apache Software License, Version 2.0
+Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License"); You may not use this product except in compliance with the License.  You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0.  A copy of the license is also reproduced below.  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions and  limitations under the License.
+---------------------------------------------------------------------------
+License Identifier: Apache-2.0
 
 =======================================================================
 Full Text of Referenced Licenses
@@ -8917,7 +9483,7 @@ convey the exclusion of warranty; and each file should have at least the
 "copyright" line and a pointer to where the full notice is found.
 
 
-Copyright (C) 
+Copyright (C)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -8985,7 +9551,7 @@ Mozilla Public License Version 2.0
     means any form of the work other than Source Code Form.
 
 1.7. "Larger Work"
-    means a work that combines Covered Software with other material, in 
+    means a work that combines Covered Software with other material, in
     a separate file or files, that is not Covered Software.
 
 1.8. "License"
@@ -9540,8 +10106,8 @@ Eclipse Public License - v 2.0
   a) in the case of the initial Contributor, the initial content
      Distributed under this Agreement, and
 
-  b) in the case of each subsequent Contributor: 
-     i) changes to the Program, and 
+  b) in the case of each subsequent Contributor:
+     i) changes to the Program, and
      ii) additions to the Program;
   where such changes and/or additions to the Program originate from
   and are Distributed by that particular Contributor. A Contribution
@@ -9790,8 +10356,8 @@ No third-party beneficiary rights are created under this Agreement.
 
 Exhibit A - Form of Secondary Licenses Notice
 
-"This Source Code may also be made available under the following 
-Secondary Licenses when the conditions for such availability set forth 
+"This Source Code may also be made available under the following
+Secondary Licenses when the conditions for such availability set forth
 in the Eclipse Public License, v. 2.0 are satisfied: {name license(s),
 version(s), and exceptions or additional permissions here}."
 
@@ -10763,7 +11329,7 @@ License Identifier: EPL-2.0
     implied, including warranties or conditions of title and non-infringement, and implied
     warranties or conditions of merchantability and fitness for a particular purpose.
     In addition, such Contributors are not liable for any damages, including direct,
-    indirect, special, incidental and consequential damages, such as lost profits.  
+    indirect, special, incidental and consequential damages, such as lost profits.
 3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public License
     are offered by Oracle alone and not by any other party.
 --------------------------------------------
@@ -10787,7 +11353,7 @@ Apache 2.0
 Used by: [tck-config]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 MicroProfile Config TCK (org.eclipse.microprofile.config:microprofile-config-tck)
-Copyright (c) Contributors to the Eclipse Foundation  
+Copyright (c) Contributors to the Eclipse Foundation
 License Identifier: Apache-2.0
 --------------------------------------------
 "BeanShell" 2.0b4 (org.beanshell:bsh)
@@ -11346,27 +11912,27 @@ Fourth Party Dependencies
 --------------------------------------------
 "jsoup" 1.7.2 (org.jsoup:jsoup)
   Copyright © 2009 - 2017 Jonathan Hedley (jonathan@hedley.net)
-  Eclipse Public License - v 1.0 
+  Eclipse Public License - v 1.0
 --------------------------------------------
 "Aether API" 0.9.0.M2 (org.eclipse.aether:aether-api)
   Copyright (c) 2010,2013 Sonatype, Inc.
-  Eclipse Public License - v 1.0 
+  Eclipse Public License - v 1.0
 --------------------------------------------
 "Aether Implementation" 0.9.0.M2 (org.eclipse.aether:aether-impl)
   Copyright (c) 2010,2013 Sonatype, Inc.
-  Eclipse Public License - v 1.0 
+  Eclipse Public License - v 1.0
 --------------------------------------------
 "Aether SPI" 0.9.0.M2 (org.eclipse.aether:aether-spi)
   Copyright (c) 2010,2013 Sonatype, Inc.
-  Eclipse Public License - v 1.0 
+  Eclipse Public License - v 1.0
 --------------------------------------------
 "Aether Utilities" 0.9.0.M2 (org.eclipse.aether:aether-util)
   Copyright (c) 2010,2013 Sonatype, Inc.
-  Eclipse Public License - v 1.0 
+  Eclipse Public License - v 1.0
 --------------------------------------------
 "Aether Connector Wagon" 0.9.0.M2 (org.eclipse.aether:aether-connector-wagon)
   Copyright (c) 2010,2012 Sonatype, Inc.
-  Eclipse Public License - v 1.0 
+  Eclipse Public License - v 1.0
 --------------------------------------------
 "JUnit" 4.12 (junit:junit)
   Copyright (c) JUnit. All Rights Reserved.
@@ -11703,7 +12269,7 @@ Fourth Party Dependencies
   Copyright 2014 Square Inc.
   Copyright (C) 2014,2019 Square, Inc.
 Apache License 2.0
-  
+
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Restito 0.9.1 Mark Kotsur
 MIT

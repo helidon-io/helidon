@@ -183,7 +183,7 @@ public interface OciObjectStorageRx {
          * Object storage namespace to use.
          *
          * @param namespace object storage namespace
-         * @return updated buidler
+         * @return updated builder
          */
         public Builder namespace(String namespace) {
             this.namespace = namespace;
