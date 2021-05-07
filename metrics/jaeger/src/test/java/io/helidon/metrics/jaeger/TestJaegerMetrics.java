@@ -31,7 +31,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.metrics.jaeger.HelidonJaegerMetricsFactory.tags;
+import static io.helidon.metrics.jaeger.HelidonJaegerMetricsFactory.convertTags;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
@@ -58,7 +58,7 @@ class TestJaegerMetrics {
         Map<MetricID, Gauge> gauges = vendorRegistry.getGauges();
 
         MetricID expectedCounterID = new MetricID("jaeger_tracer_traces",
-                tags(Map.of("sampled", "n", "state", "started")));
+                convertTags(Map.of("sampled", "n", "state", "started")));
         Map<MetricID, Counter>  counters = vendorRegistry.getCounters((metricID, metric) -> metricID.equals(expectedCounterID));
         Counter expectedCounter = counters.get(expectedCounterID);
         assertThat("jaeger_tracer_traces counter", expectedCounter, is(notNullValue()));
