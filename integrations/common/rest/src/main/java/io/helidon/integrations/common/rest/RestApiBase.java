@@ -850,8 +850,7 @@ public abstract class RestApiBase implements RestApi {
                                                                            jsonObject);
                 return res.flatMapSingle(it -> it.submit(jsonObject));
             } else {
-                // path was broken when using retries
-                return requestBuilder.path(path).submit(jsonObject);
+                return requestBuilder.submit(jsonObject);
             }
         };
     }
@@ -885,8 +884,7 @@ public abstract class RestApiBase implements RestApi {
                 return updateRequestBuilderBytesPayload(requestBuilder, path, request, method, requestId)
                         .flatMapSingle(it -> it.submit(publisher));
             } else {
-                // path was broken when using retries
-                return requestBuilder.path(path).submit(publisher);
+                return requestBuilder.submit(publisher);
             }
         };
     }
@@ -919,8 +917,7 @@ public abstract class RestApiBase implements RestApi {
                                                                            requestId);
                 return res.flatMapSingle(WebClientRequestBuilder::request);
             } else {
-                // path was broken when using retries
-                return requestBuilder.path(path).request();
+                return requestBuilder.request();
             }
         };
     }
