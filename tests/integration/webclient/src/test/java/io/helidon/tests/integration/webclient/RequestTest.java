@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,14 @@ import javax.json.JsonObject;
 
 import io.helidon.common.http.Http;
 import io.helidon.webclient.WebClientException;
+import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -196,6 +198,21 @@ public class RequestTest extends TestParent {
 
         assertThat(response.lastEndpointURI(), is(defaultTemplate));
         response.close();
+    }
+
+    @Test
+    public void reuseRequestBuilder() {
+        WebClientRequestBuilder requestBuilder = webClient.get();
+        JsonObject response = requestBuilder
+                .request(JsonObject.class)
+                .await();
+        assertThat(response, notNullValue());
+        assertThat(response.getString("message"), is("Hello World!"));
+        response = requestBuilder
+                .request(JsonObject.class)
+                .await();
+        assertThat(response, notNullValue());
+        assertThat(response.getString("message"), is("Hello World!"));
     }
 
 }
