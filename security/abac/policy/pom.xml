@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security.abac</groupId>
         <artifactId>helidon-security-abac-project</artifactId>
-        <version>1.4.8-SNAPSHOT</version>
+        <version>1.4.8</version>
     </parent>
     <artifactId>helidon-security-abac-policy</artifactId>
     <name>Helidon Security Validators Policy</name>

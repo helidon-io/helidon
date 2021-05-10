@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.tracing</groupId>
         <artifactId>helidon-tracing-project</artifactId>
-        <version>1.4.8-SNAPSHOT</version>
+        <version>1.4.8</version>
     </parent>
 
     <artifactId>helidon-tracing-jersey</artifactId>

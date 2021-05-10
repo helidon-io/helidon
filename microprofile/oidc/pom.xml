@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile</groupId>
         <artifactId>helidon-microprofile-project</artifactId>
-        <version>1.4.8-SNAPSHOT</version>
+        <version>1.4.8</version>
     </parent>
     <artifactId>helidon-microprofile-oidc</artifactId>
     <name>Helidon Microprofile Security OIDC Integration</name>

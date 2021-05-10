@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
-        <version>1.4.8-SNAPSHOT</version>
+        <version>1.4.8</version>
     </parent>
 
     <groupId>io.helidon.tests.functional</groupId>

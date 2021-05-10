@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security.providers</groupId>
         <artifactId>helidon-security-providers-project</artifactId>
-        <version>1.4.8-SNAPSHOT</version>
+        <version>1.4.8</version>
     </parent>
     <artifactId>helidon-security-providers-http-auth</artifactId>
     <name>Helidon Security Providers HTTP Authentication</name>

@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security</groupId>
         <artifactId>helidon-security-project</artifactId>
-        <version>1.4.8-SNAPSHOT</version>
+        <version>1.4.8</version>
     </parent>
     <artifactId>helidon-security-util</artifactId>
     <name>Helidon Security Utilities</name>
