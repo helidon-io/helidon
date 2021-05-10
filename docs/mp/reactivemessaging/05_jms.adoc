@@ -56,6 +56,7 @@ Connector name: `helidon-jms`
 |`transacted` | Indicates whether the session will use a local transaction. Default value: `false`
 |`message-selector` | JMS API message selector expression based on a subset of the SQL92.
 Expression can only access headers and properties, not the payload.
+|`client-id` | Client identifier for JMS connection.
 |`named-factory` | Select in case factory is injected as a named bean or configured with name.
 |`poll-timeout` | Timeout for polling for next message in every poll cycle in millis. Default value: `50`
 |`period-executions` | Period for executing poll cycles in millis. Default value: `100`

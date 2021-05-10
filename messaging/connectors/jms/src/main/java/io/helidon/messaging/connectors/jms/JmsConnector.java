@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,6 +94,10 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
      * Password used with ConnectionFactory.
      */
     protected static final String PASSWORD_ATTRIBUTE = "password";
+    /**
+     * Client identifier for JMS connection.
+     */
+    protected static final String CLIENT_ID_ATTRIBUTE = "client-id";
 
     static final String ACK_MODE_ATTRIBUTE = "acknowledge-mode";
     static final String TRANSACTED_ATTRIBUTE = "transacted";
@@ -445,12 +449,17 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         } else {
             Optional<String> user = config.get(USERNAME_ATTRIBUTE).asString().asOptional();
             Optional<String> password = config.get(PASSWORD_ATTRIBUTE).asString().asOptional();
+            Optional<String> userId = config.get(CLIENT_ID_ATTRIBUTE).asString().asOptional();
 
             Connection connection;
             if (user.isPresent() && password.isPresent()) {
                 connection = factory.createConnection(user.get(), password.get());
             } else {
                 connection = factory.createConnection();
+            }
+            
+            if(userId.isPresent()){
+                connection.setClientID(userId.get());
             }
 
             boolean transacted = config.get(TRANSACTED_ATTRIBUTE)
