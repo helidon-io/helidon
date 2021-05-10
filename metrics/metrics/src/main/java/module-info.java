@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.metrics.DirectRequestKeyPerformanceIndicatorMetricsServiceFactory;
+
 /**
  * Helidon Metrics implementation.
  */
@@ -37,5 +39,6 @@ module io.helidon.metrics {
 
     uses io.helidon.metrics.ExemplarService;
 
-    provides io.helidon.webserver.KeyPerformanceIndicatorMetricsService with io.helidon.metrics.SeKeyPerformanceIndicatorMetricsService;
+    provides io.helidon.webserver.KeyPerformanceIndicatorMetricsServiceFactory
+            with DirectRequestKeyPerformanceIndicatorMetricsServiceFactory;
 }

@@ -23,6 +23,7 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
+import io.helidon.webserver.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.webserver.KeyPerformanceIndicatorMetricsService;
 import io.helidon.webserver.WebServer;
 
@@ -42,7 +43,8 @@ class TestServerWithKeyPerformanceIndicatorMetrics {
     private static WebServer webServer;
 
     private static final MetricsSupport.Builder KPI_ENABLED_BUILDER = MetricsSupport.builder()
-            .extendedKeyPerformanceIndicatorsEnabled(true);
+            .keyPerformanceIndicatorsMetricsConfig(KeyPerformanceIndicatorMetricsConfig.builder()
+                    .extended(true));
 
     private static MetricsSupport metricsSupport;
 
@@ -69,19 +71,14 @@ class TestServerWithKeyPerformanceIndicatorMetrics {
     @Test
     void checkInflightRequests() throws InterruptedException, ExecutionException {
 
-        boolean isKPIEnabled = MetricsSupport.keyPerformanceIndicatorMetricsConfig().isExtendedKpiEnabled();
-        KeyPerformanceIndicatorMetricsService kpiMetricsService = KeyPerformanceIndicatorMetricsService.KPI_METRICS_SERVICE.get();
-        KeyPerformanceIndicatorMetricsService.Context ctx = kpiMetricsService.metricsSupportHandlerContext();
-        assertThat("KPI context functionality is no-op",
-                ctx == KeyPerformanceIndicatorMetricsService.Context.NO_OP,
-                is(false));
+        boolean isKPIEnabled = MetricsSupport.keyPerformanceIndicatorMetricsConfig().isExtended();
 
         MetricRegistry vendorRegistry = RegistryFactory.getInstance()
                 .getRegistry(MetricRegistry.Type.VENDOR);
 
         Optional<ConcurrentGauge> inflightRequests =
                 vendorRegistry.getConcurrentGauges((metricID, metric) -> metricID.getName().endsWith(
-                        SeKeyPerformanceIndicatorMetricsService.SeKeyPerformanceIndicatorMetrics.INFLIGHT_REQUESTS_NAME))
+                        KeyPerformanceIndicatorMetricsService.INFLIGHT_REQUESTS_NAME))
                         .values().stream()
                         .findAny();
         assertThat("In-flight concurrent gauge metric exists", inflightRequests.isPresent(), is(isKPIEnabled));

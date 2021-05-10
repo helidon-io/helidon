@@ -183,8 +183,8 @@ You can enable and control these metrics using configuration:
 [source,properties]
 .Configuration properties file controlling extended KPI metrics
 ----
-metrics.extended-key-performance-indicators.enabled = true
-metrics.extended-key-performance-indicators.long-running.threshold-ms = 2000
+metrics.key-performance-indicators.extended = true
+metrics.key-performance-indicators.long-running.threshold-ms = 2000
 ----
 
 // end::KPI[]

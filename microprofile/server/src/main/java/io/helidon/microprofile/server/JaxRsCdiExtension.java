@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -269,9 +269,13 @@ public class JaxRsCdiExtension implements Extension {
                                           .build());
     }
 
-    JerseySupport toJerseySupport(Supplier<? extends ExecutorService> defaultExecutorService, JaxRsApplication jaxRsApplication) {
+    JerseySupport toJerseySupport(Supplier<? extends ExecutorService> defaultExecutorService, JaxRsApplication jaxRsApplication,
+            String namedRouting) {
+        io.helidon.config.Config config = (io.helidon.config.Config) ConfigProvider.getConfig();
         JerseySupport.Builder builder = JerseySupport.builder(jaxRsApplication.resourceConfig());
-        builder.config(((io.helidon.config.Config) ConfigProvider.getConfig()).get("server.jersey"));
+        builder.config(config.get("server.jersey"));
+        config.get("metrics.extended-key-performance-indicators").ifExists(builder::keyPerformanceIndicatorsConfig);
+        builder.namedRouting(namedRouting);
         builder.executorService(jaxRsApplication.executorService().orElseGet(defaultExecutorService));
         builder.register(new ExceptionMapper<Exception>() {
             @Override

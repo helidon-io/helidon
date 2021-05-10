@@ -30,7 +30,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.MediaType;
 
-import io.helidon.metrics.MetricsSupport;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
@@ -45,6 +44,9 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.microprofile.metrics.HelloWorldResource.SLOW_MESSAGE_SIMPLE_TIMER;
 import static io.helidon.microprofile.metrics.HelloWorldResource.SLOW_MESSAGE_TIMER;
 import static io.helidon.microprofile.metrics.HelloWorldResource.SLOW_RESPONSE;
+import static io.helidon.webserver.KeyPerformanceIndicatorMetricsConfig.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
+import static io.helidon.webserver.KeyPerformanceIndicatorMetricsConfig.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
@@ -55,8 +57,8 @@ import static org.hamcrest.Matchers.notNullValue;
 @AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "true")
 @AddConfig(key =
         "metrics."
-                + MetricsSupport.EXTENDED_KEY_PERFORMANCE_INDICATORS_CONFIG_KEY
-                + "." + MetricsSupport.KEY_PERFORMANCE_INDICATORS_ENABLED_CONFIG_KEY,
+                + KEY_PERFORMANCE_INDICATORS_CONFIG_KEY
+                + "." + KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY,
         value = "true")
 public class HelloWorldAsyncResponseTest {
 

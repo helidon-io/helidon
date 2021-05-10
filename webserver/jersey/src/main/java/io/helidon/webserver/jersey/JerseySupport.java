@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
@@ -44,7 +45,9 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
+import io.helidon.webserver.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.webserver.KeyPerformanceIndicatorMetricsService;
+import io.helidon.webserver.KeyPerformanceIndicatorMetricsServiceFactory;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -139,7 +142,7 @@ public class JerseySupport implements Service {
             // use the one provided
             builder.resourceConfig.register(AsyncExecutorProvider.create(builder.asyncExecutorService));
         }
-        this.handler = new JerseyHandler(builder.resourceConfig);
+        this.handler = new JerseyHandler(builder.resourceConfig, builder.kpiConfigBuilder.build(), builder.namedRouting);
         this.appHandler = new ApplicationHandler(builder.resourceConfig, new ServerBinder(executorService));
         this.container = new HelidonJerseyContainer(appHandler, builder.resourceConfig);
 
@@ -239,11 +242,12 @@ public class JerseySupport implements Service {
 
         private final ResourceConfig resourceConfig;
 
-        private final KeyPerformanceIndicatorMetricsService kpiMetricsService =
-                KeyPerformanceIndicatorMetricsService.KPI_METRICS_SERVICE.get();
+        private final KeyPerformanceIndicatorMetricsService kpiMetricsService;
 
-        JerseyHandler(final ResourceConfig resourceConfig) {
+        JerseyHandler(final ResourceConfig resourceConfig, KeyPerformanceIndicatorMetricsConfig kpiConfig, String namedRouting) {
             this.resourceConfig = resourceConfig;
+            kpiMetricsService = KeyPerformanceIndicatorMetricsServiceFactory.KPI_METRICS_SERVICE_FACTORY.get()
+                    .create(KeyPerformanceIndicatorMetricsConfig.metricsNamePrefix(namedRouting), kpiConfig);
         }
 
         @Override
@@ -284,17 +288,19 @@ public class JerseySupport implements Service {
 
             requestContext.setWriter(responseWriter);
 
-            KeyPerformanceIndicatorMetricsService.Context kpiMetricsContext = kpiMetricsService.jerseyContext();
+            Optional<KeyPerformanceIndicatorMetricsService.Context> kpiMetricsContext =
+                    req.context().get(KeyPerformanceIndicatorMetricsService.Context.class);
             req.content()
                     .as(InputStream.class)
                     .thenAccept(is -> {
                         requestContext.setEntityStream(is);
 
                         service.execute(() -> { // No need to use submit() since the future is not used.
-                            boolean isSuccessful = true;
+                            AtomicBoolean isSuccessful = new AtomicBoolean(true);
                             try {
                                 LOGGER.finer("Handling in Jersey started.");
-                                kpiMetricsContext.requestStarted();
+                                kpiMetricsContext.ifPresent(
+                                        KeyPerformanceIndicatorMetricsService.Context::requestProcessingStarted);
                                 requestContext.setRequestScopedInitializer(injectionManager -> {
                                     injectionManager.<Ref<ServerRequest>>getInstance(REQUEST_TYPE).set(req);
                                     injectionManager.<Ref<ServerResponse>>getInstance(RESPONSE_TYPE).set(res);
@@ -304,14 +310,15 @@ public class JerseySupport implements Service {
 
                                 appHandler.handle(requestContext);
                                 whenHandleFinishes.complete(null);
+                                isSuccessful.set(res.status().code() < 500);
                             } catch (Throwable e) {
                                 // this is very unlikely to happen; Jersey will try to call ResponseWriter.failure(Throwable)
                                 // rather
                                 // than to propagate the exception
                                 req.next(e);
-                                isSuccessful = false;
+                                isSuccessful.set(false);
                             } finally {
-                                kpiMetricsContext.requestCompleted(isSuccessful);
+                                kpiMetricsContext.ifPresent(c -> c.requestProcessingCompleted(isSuccessful.get()));
                             }
                         });
 
@@ -319,7 +326,7 @@ public class JerseySupport implements Service {
                     .exceptionally(throwable -> {
                         // this should not happen; but for the sake of completeness ..
                         req.next(throwable);
-                        kpiMetricsContext.requestCompleted(false);
+                        kpiMetricsContext.ifPresent(c -> c.requestProcessingCompleted(false));
                         return null;
                     });
         }
@@ -426,10 +433,18 @@ public class JerseySupport implements Service {
      * Builder for convenient way to create {@link JerseySupport}.
      */
     public static final class Builder implements Configurable<Builder>, io.helidon.common.Builder<JerseySupport> {
+
+        private static final String KEY_PERFORMANCE_INDICATORS_ENABLED_CONFIG_KEY = "enabled";
+        private static final String LONG_RUNNING_REQUESTS_CONFIG_KEY = "long-running-requests";
+        private static final String LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY = "threshold-ms";
+
+
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;
         private Config config = Config.empty();
         private ExecutorService asyncExecutorService;
+        private String namedRouting = null;
+        private KeyPerformanceIndicatorMetricsConfig.Builder kpiConfigBuilder = KeyPerformanceIndicatorMetricsConfig.builder();
 
         private Builder() {
             this(null);
@@ -572,6 +587,46 @@ public class JerseySupport implements Service {
          */
         public Builder config(Config config) {
             this.config = config;
+            return this;
+        }
+
+        /**
+         * Sets values assigned in the provided key performance indicator metrics configuration.
+         *
+         * @param kpiConfig Config node containing key perf. indicator metrics settings
+         * @return updated builder instance
+         */
+        public Builder keyPerformanceIndicatorsConfig(Config kpiConfig) {
+            kpiConfig.get(KEY_PERFORMANCE_INDICATORS_ENABLED_CONFIG_KEY)
+                    .asBoolean()
+                    .ifPresent(kpiConfigBuilder::extended);
+
+            Config longRunningRequestsConfig = kpiConfig.get(LONG_RUNNING_REQUESTS_CONFIG_KEY);
+            longRunningRequestsConfig.get(LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY)
+                    .asLong()
+                    .ifPresent(kpiConfigBuilder::longRunningRequestThresholdMs);
+            return this;
+        }
+
+        /**
+         * Sets the builder for KPI metrics configuration, overriding any previous-assigned settings.
+         *
+         * @param kpiConfigBuilder new Builder for KPI metrics config
+         * @return updated builder instance
+         */
+        public Builder keyPerformanceIndicatorsConfig(KeyPerformanceIndicatorMetricsConfig.Builder kpiConfigBuilder) {
+            this.kpiConfigBuilder = kpiConfigBuilder;
+            return this;
+        }
+
+        /**
+         * Sets the routing name.
+         *
+         * @param nameRouting name for routing
+         * @return updated builder instance
+         */
+        public Builder namedRouting(String nameRouting) {
+            this.namedRouting = nameRouting;
             return this;
         }
     }

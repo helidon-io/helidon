@@ -42,7 +42,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 public class TestServer {
@@ -144,19 +143,14 @@ public class TestServer {
 
     @Test
     void checkKPIDisabledByDefault() {
-        boolean isKPIEnabled = MetricsSupport.keyPerformanceIndicatorMetricsConfig().isExtendedKpiEnabled();
-        KeyPerformanceIndicatorMetricsService kpiMetricsService = KeyPerformanceIndicatorMetricsService.KPI_METRICS_SERVICE.get();
-        KeyPerformanceIndicatorMetricsService.Context ctx = kpiMetricsService.metricsSupportHandlerContext();
-
-        assertThat("KPI context extended functionality is disabled",
-                 ctx, is(instanceOf(SeKeyPerformanceIndicatorMetricsService.SeBasicContext.class)));
+        boolean isKPIEnabled = MetricsSupport.keyPerformanceIndicatorMetricsConfig().isExtended();
 
         MetricRegistry vendorRegistry = RegistryFactory.getInstance()
                 .getRegistry(MetricRegistry.Type.VENDOR);
 
         Optional<ConcurrentGauge> inflightRequests =
                 vendorRegistry.getConcurrentGauges((metricID, metric) -> metricID.getName().endsWith(
-                        SeKeyPerformanceIndicatorMetricsService.SeKeyPerformanceIndicatorMetrics.INFLIGHT_REQUESTS_NAME))
+                        KeyPerformanceIndicatorMetricsService.INFLIGHT_REQUESTS_NAME))
                         .values().stream()
                         .findAny();
         assertThat("In-flight concurrent gauge metric exists", inflightRequests.isPresent(), is(isKPIEnabled));

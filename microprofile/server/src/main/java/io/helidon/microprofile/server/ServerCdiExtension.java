@@ -304,7 +304,7 @@ public class ServerCdiExtension implements Extension {
 
         Routing.Builder routing = routingBuilder(namedRouting, routingNameRequired, applicationMeta.appName());
 
-        JerseySupport jerseySupport = jaxRs.toJerseySupport(jaxRsExecutorService, applicationMeta);
+        JerseySupport jerseySupport = jaxRs.toJerseySupport(jaxRsExecutorService, applicationMeta, namedRouting.orElse(null));
         if (contextRoot.isPresent()) {
             String contextRootString = contextRoot.get();
             LOGGER.fine(() -> "JAX-RS application " + applicationMeta.appName() + " registered on '" + contextRootString + "'");
