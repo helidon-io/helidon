@@ -23,7 +23,7 @@ limitations under the License.
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>2.2.2-SNAPSHOT</version>
+        <version>2.2.2</version>
         <relativePath>../../../../applications/mp/pom.xml</relativePath>
     </parent>
 
