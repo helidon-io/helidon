@@ -105,17 +105,36 @@ The following is a list of maven coordinates of all Vault modules available:
 </dependency>
 ----
 
-Configuration to connect to Vault (using token and AppRole authentication):
+Configuration to connect to Vault.
 
-[source,properties]
+1. Authenticating using Token:
+[source,yaml]
 ----
-vault.default.address=http://localhost:8200
-vault.default.token=my-token
-vault.approle.address=http://localhost:8200
-vault.approle.role-id=app-role-id
-vault.approle.secret-id=app-role-secret-id
+vault:
+   address: "http://localhost:8200"
+   token: "my-token"
 ----
 
+2. Authenticating using AppRole:
+[source,yaml]
+----
+vault:
+  auth:
+    app-role:
+      role-id: "app-role-id"
+      secret-id: app-role-secret-id
+----
+
+3. Authenticating using Kubernetes:
+[source,yaml]
+----
+vault:
+  auth:
+    k8s:
+      token-role: "my-role" <1>
+----
+
+<1> The token role must be configured in Vault
 Minimal configuration to connect to Vault:
 
 [source,yaml]
