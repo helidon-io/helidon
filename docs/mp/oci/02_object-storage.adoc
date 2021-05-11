@@ -27,6 +27,10 @@
 
 The Helidon MP OCI Object Storage integration provides easy access files stored in Oracle cloud.
 
+== Experimental
+
+WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
+
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
