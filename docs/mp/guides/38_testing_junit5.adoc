@@ -29,7 +29,7 @@ This guide describes how to write and execute tests for your MicroProfile applic
 |===
 |About 30 minutes
 |<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|Review the concepts in https://helidon.io/docs/v2/#/mp/testing/01_testing[Helidon MP Testing with JUnit 5]
+|Familiarity with the  concepts described in https://helidon.io/docs/v2/#/mp/testing/01_testing[Helidon MP Testing with JUnit 5]
 |===
 
 == Dependency
@@ -80,7 +80,7 @@ You can see this in the test output:
 ****
 
 
-NOTE: The application server starts on port 8080 by default. 
+NOTE: The application server starts on port 8080 by default. For this example we modified the port number to avoid any conflicts.
 
 
 
@@ -91,7 +91,7 @@ The test is only useful if it invokes the server and verifies the result. To sup
 
 
 [source,java]
-.Updated Class
+.Updated Class with webTarget
 ----
 import static org.junit.jupiter.api.Assertions.assertEquals;@HelidonTest
 class GreetTest {
@@ -129,7 +129,7 @@ This is useful when we want to modify configuration or beans between executions.
 | `@Configuration(configSources = "test-config.properties")` | Adds a whole config source from classpath. 
 |====================
 
-Here's an example showing how these two approaches are used to execute the same endpoint with different configuration:
+Here's an example showing how these approaches are used to execute the same endpoint with different configuration:
 
 [source,java]
 ----
@@ -251,12 +251,12 @@ class GreetTest {
 
 == Summary
 
-This guide demonstrated how to use annotations in your testing extension to configure test outcomes for your Helidon MP applications. 
+This guide demonstrated how to create tests for MicroProfile applications in a JUnit 5 environment. It described some useful customizations that can be added to your testing extension and allow you to configure test outcomes for your Helidon MP applications. 
 
 Refer to the following references for additional information:
 
 * https://junit.org/junit5/docs/current/user-guide/[JUnit 5 User Guide]
-* https://helidon.io/docs/v2/#/mp/testing/01_testing[Helidon MP Testing with JUnit 5]
+* https://helidon.io/docs/v2/#/mp/introduction/01_introduction[Helidon MP Documentation]
 
 
  
