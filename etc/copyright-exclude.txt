@@ -21,6 +21,7 @@
 .zip
 .dat
 .md
+.MD
 .p12
 .txt
 jaxb.index
@@ -47,4 +48,7 @@ src/main/java/org/jboss/weld/bean/proxy/ProxyFactory.java
 etc/THIRD_PARTY_LICENSES.xml
 etc/HELIDON_THIRD_PARTY_LICENSES.xml
 etc/dependency-check-suppression.xml
+target/
+/archetypes/
+.git/
 META-INF/services/

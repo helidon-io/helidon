@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -153,6 +153,14 @@ backend:
               items:
                 - includes:
                     - "se/openapi/*.adoc"
+            - title: "OCI"
+              pathprefix: "/se/oci"
+              glyph:
+                type: "icon"
+                value: "filter_drama"
+              items:
+                - includes:
+                    - "se/oci/*.adoc"
             - title: "Reactive Streams"
               pathprefix: "/se/reactivestreams"
               glyph:
@@ -201,6 +209,14 @@ backend:
               items:
                 - includes:
                     - "se/tracing/*.adoc"
+            - title: "Vault"
+              pathprefix: "/se/vault"
+              glyph:
+                type: "icon"
+                value: "lock"
+              items:
+                - includes:
+                    - "se/vault/*.adoc"
             - title: "Web Client"
               pathprefix: "/se/webclient"
               glyph:
@@ -359,6 +375,14 @@ backend:
               items:
                 - includes:
                     - "mp/openapi/*.adoc"
+            - title: "OCI"
+              pathprefix: "/mp/oci"
+              glyph:
+                type: "icon"
+                value: "filter_drama"
+              items:
+                - includes:
+                    - "mp/oci/*.adoc"
             - title: "Reactive Streams"
               pathprefix: "/mp/reactivestreams"
               glyph:
@@ -407,6 +431,14 @@ backend:
               items:
                 - includes:
                     - "mp/tracing/*.adoc"
+            - title: "Vault"
+              pathprefix: "/mp/vault"
+              glyph:
+                type: "icon"
+                value: "lock"
+              items:
+                - includes:
+                    - "mp/vault/*.adoc"
             - title: "Websocket"
               pathprefix: "/mp/websocket"
               glyph:

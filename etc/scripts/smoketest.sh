@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,20 +22,21 @@
 #    https://oss.sonatype.org/content/groups/staging/ as a repository
 #    See bottom of RELEASE.md for details
 
+# Path to this script
+[ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
 
-set -o pipefail || true  # trace ERR through pipes
-set -o errtrace || true # trace ERR through commands and functions
-set -o errexit || true  # exit the script if any statement returns a non-true return value
+# Load error handling functions and define error handling
+. $(dirname -- "${SCRIPT_PATH}")/includes/error_handlers.sh
 
-on_error(){
-    CODE="${?}" && \
-    set +x && \
-    printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-        "${CODE}" "${BASH_SOURCE}" "${LINENO}" "${BASH_COMMAND}"
+# Local error handler
+smoketest_on_error(){
+    on_error
     echo "===== Log file: ${OUTPUTFILE} ====="
     # In case there is a process left running
 }
-trap on_error ERR
+
+# Setup error handling using local error handler (defined in includes/error_handlers.sh)
+error_trap_setup 'smoketest_on_error'
 
 usage(){
     cat <<EOF

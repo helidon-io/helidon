@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.time.OffsetTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +110,11 @@ final class SchemaGeneratorHelper {
      * {@link LocalDate} class name.
      */
     protected static final String LOCAL_DATE_CLASS = LocalDate.class.getName();
+
+    /**
+     * {@link LocalDate} class name.
+     */
+    protected static final String LEGACY_DATE_CLASS = Date.class.getName();
 
     /**
      * {@link BigDecimal} class name.
@@ -300,6 +306,10 @@ final class SchemaGeneratorHelper {
 
         // Date scalar
         put(LOCAL_DATE_CLASS, new SchemaScalar(FORMATTED_DATE_SCALAR, LOCAL_DATE_CLASS, FORMATTED_CUSTOM_DATE_SCALAR,
+                                               "yyyy-MM-dd"));
+
+        // Date scalar
+        put(LEGACY_DATE_CLASS, new SchemaScalar(FORMATTED_DATE_SCALAR, LEGACY_DATE_CLASS, FORMATTED_CUSTOM_DATE_SCALAR,
                                                "yyyy-MM-dd"));
 
         // BigDecimal scalars
@@ -598,6 +608,7 @@ final class SchemaGeneratorHelper {
     protected static boolean isDateTimeClass(Class<?> clazz) {
         return clazz != null && (
                 clazz.equals(LocalDate.class)
+                        || clazz.equals(Date.class)
                         || clazz.equals(LocalTime.class)
                         || clazz.equals(LocalDateTime.class)
                         || clazz.equals(OffsetTime.class)

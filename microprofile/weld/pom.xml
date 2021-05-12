@@ -34,6 +34,11 @@
     <description>
         Repackaged Weld SE to remove Java service for SeContainerInitializer
     </description>
+
+    <properties>
+        <helidon.services.skip>true</helidon.services.skip>
+    </properties>
+
     <modules>
         <module>weld-se-core</module>
         <module>weld-core-impl</module>

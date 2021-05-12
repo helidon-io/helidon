@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,8 +117,7 @@ public class CheckIT extends AbstractIT {
      */
     @Test
     public void testDmlStatementExecution() throws ExecutionException, InterruptedException {
-        Multi<DbRow> result = DB_CLIENT.execute(exec -> exec.namedQuery("ping"));
-
+        Multi<DbRow> result = DB_CLIENT.execute(exec -> exec.namedQuery("ping-query"));
         List<DbRow> rowsList = result.collectList().await(5, TimeUnit.SECONDS);
         DbRow row = rowsList.get(0);
         Double ok = row.column("ok").as(Double.class);

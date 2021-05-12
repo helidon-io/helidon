@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -32,6 +33,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -415,6 +417,10 @@ class DataFetcherUtils {
                     if (isDateTimeClass(originalType)) {
                         DateTimeFormatter dateFormatter = getCorrectDateFormatter(originalType.getName(),
                                                                                   format[1], format[0]);
+                        if (dateFormatter == null) {
+                            // must be java.util.Date
+                            return new SimpleDateFormat(format[0]).parse(rawValue.toString());
+                        }
                         return getOriginalDateTimeValue(originalType, dateFormatter.parse(rawValue.toString()));
                     } else {
                         NumberFormat numberFormat = getCorrectNumberFormat(originalType.getName(),
@@ -485,6 +491,11 @@ class DataFetcherUtils {
         private DateTimeFormatter dateTimeFormatter;
 
         /**
+         * {@link SimpleDateFormat} for a {@link Date}.
+         */
+        private SimpleDateFormat simpleDateFormat;
+
+        /**
          * Construct a new DateFormattingDataFetcher.
          *
          * @param propertyName property to extract
@@ -495,11 +506,22 @@ class DataFetcherUtils {
         DateFormattingDataFetcher(String propertyName, String type, String valueFormat, String locale) {
             super(propertyName);
             dateTimeFormatter = getCorrectDateFormatter(type, locale, valueFormat);
+            if (dateTimeFormatter == null) {
+                // must be java.util.Date
+                simpleDateFormat = new SimpleDateFormat(valueFormat);
+            }
+            System.err.println("DateFormattingDataFetcher: propertyName=" + propertyName
+                                        + ", type=" + type
+                                        + ", valueFormat=" + valueFormat
+                                        + ", dateTimeFormatter=" + dateTimeFormatter
+                                        + ", simpleDateFormat=" + simpleDateFormat);
         }
 
         @Override
         public Object get(DataFetchingEnvironment environment) {
-            return formatDate(super.get(environment), dateTimeFormatter);
+            return dateTimeFormatter != null
+                    ? formatDate(super.get(environment), dateTimeFormatter)
+                    : formatDate(super.get(environment), simpleDateFormat);
         }
     }
 

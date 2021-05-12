@@ -58,6 +58,12 @@ Connector name: `helidon-aq`
 |`transacted` | Indicates whether the session will use a local transaction. Default value: `false`
 |`message-selector` | JMS API message selector expression based on a subset of the SQL92.
 Expression can only access headers and properties, not the payload.
+|`client-id` | Client identifier for JMS connection.
+|`durable` | True for creating durable consumer (only for topic). Default value: `false`
+|`subscriber-name` | Subscriber name for durable consumer used to identify subscription.
+|`non-local` | If true then any messages published to the topic using this session's connection,
+or any other connection with the same client identifier,
+will not be added to the durable subscription. Default value: `false`
 |`named-factory` | Select in case factory is injected as a named bean or configured with name.
 |`poll-timeout` | Timeout for polling for next message in every poll cycle in millis. Default value: `50`
 |`period-executions` | Period for executing poll cycles in millis. Default value: `100`

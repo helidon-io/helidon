@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -197,9 +197,9 @@ public class CheckMsSqlIT {
     @Test
     public void testDmlStatementExecution() throws SQLException {
         CheckIT.ConnectionBuilder builder = new CheckIT.ConnectionBuilder();
-        String ping = CONFIG.get("db.statements.ping").asString().get();
-        Config cfgPingDml = CONFIG.get("test.ping-dml");
-        boolean pingDml = cfgPingDml.exists() ? cfgPingDml.asBoolean().get() : true;
+        String ping = CONFIG.get("db.health-check.statement").asString().get();
+        String typeStr = CONFIG.get("db.health-check.type").asString().get();
+        boolean pingDml = typeStr != null && "dml".equals(typeStr.toLowerCase());
         CONFIG.get("db.connection").ifExists(builder);
         Connection conn = builder.createConnection();
         if (pingDml) {
