@@ -74,6 +74,7 @@ import org.glassfish.jersey.server.model.RuntimeResource;
 public class SecurityFilter extends SecurityFilterCommon implements ContainerRequestFilter, ContainerResponseFilter {
     private static final Logger LOGGER = Logger.getLogger(SecurityFilter.class.getName());
 
+    private final Map<Class<?>, SecurityDefinition> applicationClassSecurity = new ConcurrentHashMap<>();
     private final Map<Class<?>, SecurityDefinition> resourceClassSecurity = new ConcurrentHashMap<>();
     private final Map<Method, SecurityDefinition> resourceMethodSecurity = new ConcurrentHashMap<>();
     private final Map<String, SecurityDefinition> subResourceMethodSecurity = new ConcurrentHashMap<>();
@@ -273,44 +274,46 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
     private SecurityDefinition securityForClass(Class<?> theClass, SecurityDefinition parent) {
         Class<?> realClass = getRealClass(theClass);
-        Authenticated atn = realClass.getAnnotation(Authenticated.class);
-        Authorized atz = realClass.getAnnotation(Authorized.class);
-        Audited audited = realClass.getAnnotation(Audited.class);
+        return applicationClassSecurity.computeIfAbsent(realClass,
+                clazz -> {
+                    Authenticated atn = clazz.getAnnotation(Authenticated.class);
+                    Authorized atz = clazz.getAnnotation(Authorized.class);
+                    Audited audited = clazz.getAnnotation(Audited.class);
 
-        // as sometimes we may want to prevent calls to authorization provider unless
-        // explicitly invoked by developer
-        SecurityDefinition definition = (
-                (null == parent)
-                        ? new SecurityDefinition(featureConfig().shouldAuthorizeAnnotatedOnly())
-                        : parent.copyMe());
-        definition.add(atn);
-        definition.add(atz);
-        definition.add(audited);
-        if (!featureConfig().shouldAuthenticateAnnotatedOnly()) {
-            definition.requiresAuthentication(true);
-        }
+                    // as sometimes we may want to prevent calls to authorization provider unless
+                    // explicitly invoked by developer
+                    SecurityDefinition definition = (
+                            (null == parent)
+                                    ? new SecurityDefinition(featureConfig().shouldAuthorizeAnnotatedOnly())
+                                    : parent.copyMe());
+                    definition.add(atn);
+                    definition.add(atz);
+                    definition.add(audited);
+                    if (!featureConfig().shouldAuthenticateAnnotatedOnly()) {
+                        definition.requiresAuthentication(true);
+                    }
 
-        Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap = new HashMap<>();
-        addCustomAnnotations(customAnnotsMap, realClass);
+                    Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap = new HashMap<>();
+                    addCustomAnnotations(customAnnotsMap, realClass);
 
-        SecurityLevel securityLevel = SecurityLevel.create(realClass.getName())
-                .withClassAnnotations(customAnnotsMap)
-                .build();
-        definition.getSecurityLevels().add(securityLevel);
+                    SecurityLevel securityLevel = SecurityLevel.create(realClass.getName())
+                            .withClassAnnotations(customAnnotsMap)
+                            .build();
+                    definition.getSecurityLevels().add(securityLevel);
 
-        for (AnnotationAnalyzer analyzer : analyzers) {
-            AnnotationAnalyzer.AnalyzerResponse analyzerResponse;
+                    for (AnnotationAnalyzer analyzer : analyzers) {
+                        AnnotationAnalyzer.AnalyzerResponse analyzerResponse;
 
-            if (null == parent) {
-                analyzerResponse = analyzer.analyze(realClass);
-            } else {
-                analyzerResponse = analyzer.analyze(realClass, parent.analyzerResponse(analyzer));
-            }
+                        if (null == parent) {
+                            analyzerResponse = analyzer.analyze(realClass);
+                        } else {
+                            analyzerResponse = analyzer.analyze(realClass, parent.analyzerResponse(analyzer));
+                        }
 
-            definition.analyzerResponse(analyzer, analyzerResponse);
-        }
-
-        return definition;
+                        definition.analyzerResponse(analyzer, analyzerResponse);
+                    }
+                    return definition;
+        });
     }
 
     /**
