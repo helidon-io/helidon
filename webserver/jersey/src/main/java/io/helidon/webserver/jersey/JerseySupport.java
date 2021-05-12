@@ -291,6 +291,10 @@ public class JerseySupport implements Service {
                             try {
                                 LOGGER.finer("Handling in Jersey started.");
 
+                                // Register Application instance in context in case there is more
+                                // than one application. Class SecurityFilter requires this.
+                                req.context().register(getApplication(resourceConfig));
+
                                 requestContext.setRequestScopedInitializer(injectionManager -> {
                                     injectionManager.<Ref<ServerRequest>>getInstance(REQUEST_TYPE).set(req);
                                     injectionManager.<Ref<ServerResponse>>getInstance(RESPONSE_TYPE).set(res);
@@ -327,6 +331,24 @@ public class JerseySupport implements Service {
         } catch (IllegalStateException e) {
             LOGGER.warning(() -> "Exception while shutting down Jersey's application handler " + e.getMessage());
         }
+    }
+
+    /**
+     * Extracts the actual {@code Application} instance.
+     *
+     * @param resourceConfig the resource config
+     * @return the application
+     */
+    private static Application getApplication(ResourceConfig resourceConfig) {
+        Application application = resourceConfig;
+        while (application instanceof ResourceConfig) {
+            Application wrappedApplication = ((ResourceConfig) application).getApplication();
+            if (wrappedApplication == application) {
+                break;
+            }
+            application = wrappedApplication;
+        }
+        return application;
     }
 
     /**

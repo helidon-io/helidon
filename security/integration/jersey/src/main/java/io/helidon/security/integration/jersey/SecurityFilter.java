@@ -56,9 +56,9 @@ import io.helidon.security.integration.common.ResponseTracing;
 import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
+import io.helidon.webserver.ServerRequest;
 
 import org.glassfish.jersey.server.ExtendedUriInfo;
-import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerConfig;
 import org.glassfish.jersey.server.model.AbstractResourceModelVisitor;
 import org.glassfish.jersey.server.model.Invocable;
@@ -84,8 +84,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     @Context
     private SecurityContext securityContext;
 
-    // The filter is in singleton scope, so caching in an instance field is OK
-    private SecurityDefinition appWideSecurity;
+    @Context
+    private ServerRequest serverRequest;
 
     private final List<AnnotationAnalyzer> analyzers = new LinkedList<>();
 
@@ -122,13 +122,9 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
      */
     @PostConstruct
     public void postConstruct() {
-        Class<?> appClass = getOriginalApplication().getClass();
-
         // we must initialize the analyzers before using them in appWideSecurity
         Config analyzersConfig = config("jersey.analyzers");
         analyzers.forEach(analyzer -> analyzer.init(analyzersConfig));
-
-        this.appWideSecurity = securityForClass(appClass, null);
     }
 
     @Override
@@ -345,6 +341,10 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                 .orElseThrow(() -> new SecurityException("Got definition method, cannot get definition class"));
         Class<?> definitionClass = getRealClass(obtainedClass);
 
+        // Get the application for this request in case there's more than one
+        Application app = serverRequest.context().get(Application.class).get();
+        SecurityDefinition securityDefinition = securityForClass(app.getClass(), null);
+
         if (definitionClass.getAnnotation(Path.class) == null) {
             // this is a sub-resource
             // I must locate the resource class and method that was invoked
@@ -382,8 +382,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             }
 
             // now process each definition method and class
-            SecurityDefinition current = appWideSecurity;
-
+            SecurityDefinition current = securityDefinition;
             for (Method method : methodsToProcess) {
                 Class<?> clazz = method.getDeclaringClass();
                 current = securityForClass(clazz, current);
@@ -423,7 +422,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         }
 
         SecurityDefinition definition = this.resourceClassSecurity
-                .computeIfAbsent(definitionClass, aClass -> securityForClass(definitionClass, appWideSecurity));
+                .computeIfAbsent(definitionClass, aClass -> securityForClass(definitionClass, securityDefinition));
 
         Authenticated atn = definitionMethod.getAnnotation(Authenticated.class);
         Authorized atz = definitionMethod.getAnnotation(Authorized.class);
@@ -474,32 +473,6 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         for (Annotation annotation : annotations) {
             addToMap(annotation.annotationType(), customAnnotsMap, annotation);
         }
-    }
-
-    private Application getOriginalApplication() {
-        // Unfortunately the following logic is very "implementation aware". We need the original instance of
-        // javax.ws.rs.core.Application to get the @Authenticated annotation instance if present.
-        // Jersey server configuration is immutable and a defensive copy is done with every change.
-        // However, the original Application instance is always present and hidden deep in the ServerConfig implementation.
-
-        // ResourceConfig is always the implementation of ServerConfig
-        if (!(serverConfig instanceof ResourceConfig)) {
-            throw new IllegalStateException("Could not get Application instance. Incompatible version of Jersey?");
-        }
-
-        ResourceConfig resourceConfig = (ResourceConfig) serverConfig;
-        Application application = resourceConfig.getApplication();
-
-        while (application instanceof ResourceConfig) {
-            Application wrappedApplication = ((ResourceConfig) application).getApplication();
-            //noinspection ObjectEquality
-            if (wrappedApplication == application) {
-                break;
-            }
-            application = wrappedApplication;
-        }
-
-        return application;
     }
 
     // unit test method
