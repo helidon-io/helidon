@@ -74,10 +74,48 @@ import org.glassfish.jersey.server.model.RuntimeResource;
 public class SecurityFilter extends SecurityFilterCommon implements ContainerRequestFilter, ContainerResponseFilter {
     private static final Logger LOGGER = Logger.getLogger(SecurityFilter.class.getName());
 
-    private final Map<Class<?>, SecurityDefinition> applicationClassSecurity = new ConcurrentHashMap<>();
-    private final Map<Class<?>, SecurityDefinition> resourceClassSecurity = new ConcurrentHashMap<>();
-    private final Map<Method, SecurityDefinition> resourceMethodSecurity = new ConcurrentHashMap<>();
-    private final Map<String, SecurityDefinition> subResourceMethodSecurity = new ConcurrentHashMap<>();
+    /**
+     * Since Helidon supports multiple {@code Application} subclasses as well as resource
+     * sharing among them, the caching for security definitions is first keyed on the
+     * application class.
+     */
+    private final Map<Class<?>, CacheEntry> applicationClassCache = new ConcurrentHashMap<>();
+
+    /**
+     * Cache entry for main cache. Includes application class security definition as
+     * well as security definitions for resource classes, methods and sub-resources.
+     */
+    private static class CacheEntry {
+        private SecurityDefinition appClassSecurity;
+        private final Map<Class<?>, SecurityDefinition> resourceClassSecurity = new ConcurrentHashMap<>();
+        private final Map<Method, SecurityDefinition> resourceMethodSecurity = new ConcurrentHashMap<>();
+        private final Map<String, SecurityDefinition> subResourceMethodSecurity = new ConcurrentHashMap<>();
+    }
+
+    private CacheEntry appClassCacheEntry(Class<?> appClass) {
+        return applicationClassCache.computeIfAbsent(appClass, c -> {
+            SecurityDefinition appClassSecurity = securityForClass(c, null);
+            CacheEntry entry = new CacheEntry();
+            entry.appClassSecurity = appClassSecurity;
+            return entry;
+        });
+    }
+
+    private SecurityDefinition appClassSecurity(Class<?> appClass) {
+        return appClassCacheEntry(appClass).appClassSecurity;
+    }
+
+    private Map<Class<?>, SecurityDefinition> resourceClassSecurity(Class<?> appClass) {
+        return appClassCacheEntry(appClass).resourceClassSecurity;
+    }
+
+    private Map<Method, SecurityDefinition> resourceMethodSecurity(Class<?> appClass) {
+        return appClassCacheEntry(appClass).resourceMethodSecurity;
+    }
+
+    private Map<String, SecurityDefinition> subResourceMethodSecurity(Class<?> appClass) {
+        return appClassCacheEntry(appClass).subResourceMethodSecurity;
+    }
 
     @Context
     private ServerConfig serverConfig;
@@ -272,48 +310,54 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         return LOGGER;
     }
 
+    /**
+     * Creates security definition based on the annotations on a class and using a
+     * parent as a starting point. Obtains real class before processing to skip
+     * proxies.
+     *
+     * @param theClass class from which to create security definition
+     * @param parent base security definition or {@code null}
+     * @return security definition for the class
+     */
     private SecurityDefinition securityForClass(Class<?> theClass, SecurityDefinition parent) {
         Class<?> realClass = getRealClass(theClass);
-        return applicationClassSecurity.computeIfAbsent(realClass,
-                clazz -> {
-                    Authenticated atn = clazz.getAnnotation(Authenticated.class);
-                    Authorized atz = clazz.getAnnotation(Authorized.class);
-                    Audited audited = clazz.getAnnotation(Audited.class);
+        Authenticated atn = realClass.getAnnotation(Authenticated.class);
+        Authorized atz = realClass.getAnnotation(Authorized.class);
+        Audited audited = realClass.getAnnotation(Audited.class);
 
-                    // as sometimes we may want to prevent calls to authorization provider unless
-                    // explicitly invoked by developer
-                    SecurityDefinition definition = (
-                            (null == parent)
-                                    ? new SecurityDefinition(featureConfig().shouldAuthorizeAnnotatedOnly())
-                                    : parent.copyMe());
-                    definition.add(atn);
-                    definition.add(atz);
-                    definition.add(audited);
-                    if (!featureConfig().shouldAuthenticateAnnotatedOnly()) {
-                        definition.requiresAuthentication(true);
-                    }
+        // as sometimes we may want to prevent calls to authorization provider unless
+        // explicitly invoked by developer
+        SecurityDefinition definition = (
+                (null == parent)
+                        ? new SecurityDefinition(featureConfig().shouldAuthorizeAnnotatedOnly())
+                        : parent.copyMe());
+        definition.add(atn);
+        definition.add(atz);
+        definition.add(audited);
+        if (!featureConfig().shouldAuthenticateAnnotatedOnly()) {
+            definition.requiresAuthentication(true);
+        }
 
-                    Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap = new HashMap<>();
-                    addCustomAnnotations(customAnnotsMap, realClass);
+        Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap = new HashMap<>();
+        addCustomAnnotations(customAnnotsMap, realClass);
 
-                    SecurityLevel securityLevel = SecurityLevel.create(realClass.getName())
-                            .withClassAnnotations(customAnnotsMap)
-                            .build();
-                    definition.getSecurityLevels().add(securityLevel);
+        SecurityLevel securityLevel = SecurityLevel.create(realClass.getName())
+                .withClassAnnotations(customAnnotsMap)
+                .build();
+        definition.getSecurityLevels().add(securityLevel);
 
-                    for (AnnotationAnalyzer analyzer : analyzers) {
-                        AnnotationAnalyzer.AnalyzerResponse analyzerResponse;
+        for (AnnotationAnalyzer analyzer : analyzers) {
+            AnnotationAnalyzer.AnalyzerResponse analyzerResponse;
 
-                        if (null == parent) {
-                            analyzerResponse = analyzer.analyze(realClass);
-                        } else {
-                            analyzerResponse = analyzer.analyze(realClass, parent.analyzerResponse(analyzer));
-                        }
+            if (null == parent) {
+                analyzerResponse = analyzer.analyze(realClass);
+            } else {
+                analyzerResponse = analyzer.analyze(realClass, parent.analyzerResponse(analyzer));
+            }
 
-                        definition.analyzerResponse(analyzer, analyzerResponse);
-                    }
-                    return definition;
-        });
+            definition.analyzerResponse(analyzer, analyzerResponse);
+        }
+        return definition;
     }
 
     /**
@@ -322,7 +366,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
      * @param object The object.
      * @return Its class.
      */
-    private Class<?> getRealClass(Class<?> object) {
+    private static Class<?> getRealClass(Class<?> object) {
         Class<?> result = object;
         while (result.isSynthetic()) {
             result = result.getSuperclass();
@@ -345,8 +389,11 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         Class<?> definitionClass = getRealClass(obtainedClass);
 
         // Get the application for this request in case there's more than one
-        Application app = serverRequest.context().get(Application.class).get();
-        SecurityDefinition securityDefinition = securityForClass(app.getClass(), null);
+        Application appInstance = serverRequest.context().get(Application.class).get();
+
+        // Create and cache security definition for application
+        Class<?> appRealClass = getRealClass(appInstance.getClass());
+        SecurityDefinition appClassSecurity = appClassSecurity(appRealClass);
 
         if (definitionClass.getAnnotation(Path.class) == null) {
             // this is a sub-resource
@@ -380,12 +427,12 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
             String fullPath = fullPathBuilder.toString();
             // now full path can be used as a cache
-            if (subResourceMethodSecurity.containsKey(fullPath)) {
-                return subResourceMethodSecurity.get(fullPath);
+            if (subResourceMethodSecurity(appRealClass).containsKey(fullPath)) {
+                return subResourceMethodSecurity(appRealClass).get(fullPath);
             }
 
             // now process each definition method and class
-            SecurityDefinition current = securityDefinition;
+            SecurityDefinition current = appClassSecurity;
             for (Method method : methodsToProcess) {
                 Class<?> clazz = method.getDeclaringClass();
                 current = securityForClass(clazz, current);
@@ -416,22 +463,22 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                 current = methodDef;
             }
 
-            subResourceMethodSecurity.put(fullPath, current);
+            subResourceMethodSecurity(appRealClass).put(fullPath, current);
             return current;
         }
 
-        if (resourceMethodSecurity.containsKey(definitionMethod)) {
-            return resourceMethodSecurity.get(definitionMethod);
+        if (resourceMethodSecurity(appRealClass).containsKey(definitionMethod)) {
+            return resourceMethodSecurity(appRealClass).get(definitionMethod);
         }
 
-        SecurityDefinition definition = this.resourceClassSecurity
-                .computeIfAbsent(definitionClass, aClass -> securityForClass(definitionClass, securityDefinition));
+        SecurityDefinition resClassSecurity = resourceClassSecurity(appRealClass)
+                .computeIfAbsent(definitionClass, aClass -> securityForClass(definitionClass, appClassSecurity));
 
         Authenticated atn = definitionMethod.getAnnotation(Authenticated.class);
         Authorized atz = definitionMethod.getAnnotation(Authorized.class);
         Audited audited = definitionMethod.getAnnotation(Audited.class);
 
-        SecurityDefinition methodDef = definition.copyMe();
+        SecurityDefinition methodDef = resClassSecurity.copyMe();
         methodDef.add(atn);
         methodDef.add(atz);
         methodDef.add(audited);
@@ -446,11 +493,11 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                 .withMethodAnnotations(methodLevelAnnots)
                 .build());
 
-        resourceMethodSecurity.put(definitionMethod, methodDef);
+        resourceMethodSecurity(appRealClass).put(definitionMethod, methodDef);
 
         for (AnnotationAnalyzer analyzer : analyzers) {
             AnnotationAnalyzer.AnalyzerResponse analyzerResponse = analyzer.analyze(definitionMethod,
-                                                                                    definition.analyzerResponse(analyzer));
+                                                                                    resClassSecurity.analyzerResponse(analyzer));
 
             methodDef.analyzerResponse(analyzer, analyzerResponse);
         }
