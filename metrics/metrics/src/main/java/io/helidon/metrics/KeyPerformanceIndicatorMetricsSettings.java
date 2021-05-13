@@ -16,12 +16,12 @@
 package io.helidon.metrics;
 
 /**
- * Configuration for KPI metrics.
+ * Settings for KPI metrics.
  */
-public interface KeyPerformanceIndicatorMetricsConfig {
+public interface KeyPerformanceIndicatorMetricsSettings {
 
     /**
-     * Creates a new builder for the config.
+     * Creates a new builder for the settings.
      *
      * @return new {@link Builder}
      */
@@ -31,7 +31,7 @@ public interface KeyPerformanceIndicatorMetricsConfig {
 
     /**
      *
-     * @return  whether extended KPI metrics are enabled in the config
+     * @return  whether extended KPI metrics are enabled in the settings
      */
     boolean isExtended();
 
@@ -42,7 +42,7 @@ public interface KeyPerformanceIndicatorMetricsConfig {
     long longRunningRequestThresholdMs();
 
     /**
-     * Override default configuration.
+     * Override default settings.
      * <p>
      * Configuration options:
      *
@@ -72,7 +72,7 @@ public interface KeyPerformanceIndicatorMetricsConfig {
      * </tr>
      * </table>
      */
-    class Builder implements io.helidon.common.Builder<KeyPerformanceIndicatorMetricsConfig> {
+    class Builder implements io.helidon.common.Builder<KeyPerformanceIndicatorMetricsSettings> {
         private boolean isExtendedKpiEnabled = KEY_PERFORMANCE_INDICATORS_EXTENDED_DEFAULT;
         private long longRunningRequestThresholdMs = LONG_RUNNING_REQUESTS_THRESHOLD_MS_DEFAULT;
 
@@ -111,7 +111,7 @@ public interface KeyPerformanceIndicatorMetricsConfig {
                 LONG_RUNNING_REQUESTS_CONFIG_KEY + "." + KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
 
         /**
-         * Sets whether exntended KPI metrics should be enabled in the config.
+         * Sets whether exntended KPI metrics should be enabled in the settings.
          *
          * @param value whether extended KPI metrics should be enabled
          * @return updated builder instance
@@ -133,12 +133,12 @@ public interface KeyPerformanceIndicatorMetricsConfig {
         }
 
         /**
-         * Builds a {@link KeyPerformanceIndicatorMetricsConfig} using the config values set on the builder.
+         * Builds a {@link KeyPerformanceIndicatorMetricsSettings} using the settings from the builder.
          *
-         * @return {@code KeyPerformanceIndicatorMetricsConfig} set up according to the builder
+         * @return {@code KeyPerformanceIndicatorMetricsSettings} prepared according to the builder
          */
-        public KeyPerformanceIndicatorMetricsConfig build() {
-            return new KeyPerformanceIndicatorMetricsConfigImpl(this);
+        public KeyPerformanceIndicatorMetricsSettings build() {
+            return new KeyPerformanceIndicatorMetricsSettingsImpl(this);
         }
 
         boolean isExtended() {

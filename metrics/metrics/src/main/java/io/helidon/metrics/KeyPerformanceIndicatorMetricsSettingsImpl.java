@@ -15,12 +15,12 @@
  */
 package io.helidon.metrics;
 
-class KeyPerformanceIndicatorMetricsConfigImpl implements KeyPerformanceIndicatorMetricsConfig {
+class KeyPerformanceIndicatorMetricsSettingsImpl implements KeyPerformanceIndicatorMetricsSettings {
 
     private final boolean isExtended;
     private final long longRunningRequestThresholdMs;
 
-    KeyPerformanceIndicatorMetricsConfigImpl(Builder builder) {
+    KeyPerformanceIndicatorMetricsSettingsImpl(Builder builder) {
         this.isExtended = builder.isExtended();
         this.longRunningRequestThresholdMs = builder.longRunningRequestThresholdMs();
     }

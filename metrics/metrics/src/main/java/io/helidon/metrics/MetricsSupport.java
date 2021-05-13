@@ -62,10 +62,10 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
-import static io.helidon.metrics.KeyPerformanceIndicatorMetricsConfig.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
-import static io.helidon.metrics.KeyPerformanceIndicatorMetricsConfig.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
-import static io.helidon.metrics.KeyPerformanceIndicatorMetricsConfig.Builder.LONG_RUNNING_REQUESTS_CONFIG_KEY;
-import static io.helidon.metrics.KeyPerformanceIndicatorMetricsConfig.Builder.LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY;
+import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
+import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
+import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.LONG_RUNNING_REQUESTS_CONFIG_KEY;
+import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY;
 
 /**
  * Support for metrics for Helidon Web Server.
@@ -107,14 +107,14 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
 
     private final RegistryFactory rf;
 
-    private static KeyPerformanceIndicatorMetricsConfig kpiConfig;
+    private static KeyPerformanceIndicatorMetricsSettings kpiSettings;
 
     private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
 
     protected MetricsSupport(Builder builder) {
         super(LOGGER, builder, SERVICE_NAME);
         this.rf = builder.registryFactory.get();
-        kpiConfig = builder.kpiConfigBuilder.build();
+        kpiSettings = builder.kpiSettingsBuilder.build();
     }
 
     /**
@@ -144,8 +144,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
     }
 
     // For testing
-    static KeyPerformanceIndicatorMetricsConfig keyPerformanceIndicatorMetricsConfig() {
-        return kpiConfig;
+    static KeyPerformanceIndicatorMetricsSettings keyPerformanceIndicatorMetricsConfig() {
+        return kpiSettings;
     }
 
     /**
@@ -349,7 +349,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
             Routing.Rules rules) {
         String metricPrefix = metricsNamePrefix(routingName);
 
-        KeyPerformanceIndicatorSupport.Metrics kpiMetrics = KeyPerformanceIndicatorMetricsImpls.get(metricPrefix, kpiConfig);
+        KeyPerformanceIndicatorSupport.Metrics kpiMetrics = KeyPerformanceIndicatorMetricsImpls.get(metricPrefix, kpiSettings);
 
         rules.any((req, res) -> {
             KeyPerformanceIndicatorSupport.Context kpiContext = kpiContext(req);
@@ -523,7 +523,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
             implements io.helidon.common.Builder<MetricsSupport> {
 
         private Supplier<RegistryFactory> registryFactory;
-        private KeyPerformanceIndicatorMetricsConfig.Builder kpiConfigBuilder = KeyPerformanceIndicatorMetricsConfig.builder();
+        private KeyPerformanceIndicatorMetricsSettings.Builder kpiSettingsBuilder =
+                KeyPerformanceIndicatorMetricsSettings.builder();
 
         protected Builder() {
             super(Builder.class, DEFAULT_CONTEXT);
@@ -553,7 +554,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
          *
          * @param config configuration instance
          * @return updated builder instance
-         * @see KeyPerformanceIndicatorMetricsConfig.Builder Details about key
+         * @see KeyPerformanceIndicatorMetricsSettings.Builder Details about key
          * performance metrics configuration
          */
         public Builder config(Config config) {
@@ -587,13 +588,13 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
         }
 
         /**
-         * Sets the builder for KPI metrics config, overriding any previous-assigned settings.
+         * Sets the builder for KPI metrics settings, overriding any previous-assigned settings.
          *
-         * @param builder for the KPI metrics config
+         * @param builder for the KPI metrics settings
          * @return updated builder instance
          */
-        public Builder keyPerformanceIndicatorsMetricsConfig(KeyPerformanceIndicatorMetricsConfig.Builder builder) {
-            this.kpiConfigBuilder = builder;
+        public Builder keyPerformanceIndicatorsMetricsConfig(KeyPerformanceIndicatorMetricsSettings.Builder builder) {
+            this.kpiSettingsBuilder = builder;
             return this;
         }
 
@@ -606,13 +607,13 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
         public Builder keyPerformanceIndicatorsMetricsConfig(Config kpiConfig) {
             kpiConfig.get(KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY)
                     .asBoolean()
-                    .ifPresent(kpiConfigBuilder::extended);
+                    .ifPresent(kpiSettingsBuilder::extended);
 
             Config longRunningRequestsConfig =
                     kpiConfig.get(LONG_RUNNING_REQUESTS_CONFIG_KEY);
             longRunningRequestsConfig.get(LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY)
                     .asLong()
-                    .ifPresent(kpiConfigBuilder::longRunningRequestThresholdMs);
+                    .ifPresent(kpiSettingsBuilder::longRunningRequestThresholdMs);
 
             return this;
         }

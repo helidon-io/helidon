@@ -41,7 +41,7 @@ class TestServerWithKeyPerformanceIndicatorMetrics {
     private static WebServer webServer;
 
     private static final MetricsSupport.Builder KPI_ENABLED_BUILDER = MetricsSupport.builder()
-            .keyPerformanceIndicatorsMetricsConfig(KeyPerformanceIndicatorMetricsConfig.builder()
+            .keyPerformanceIndicatorsMetricsConfig(KeyPerformanceIndicatorMetricsSettings.builder()
                     .extended(true));
 
     private static MetricsSupport metricsSupport;

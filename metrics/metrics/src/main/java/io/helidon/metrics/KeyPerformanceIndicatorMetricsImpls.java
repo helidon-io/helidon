@@ -15,6 +15,9 @@
  */
 package io.helidon.metrics;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
@@ -24,9 +27,6 @@ import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-
-import java.util.HashMap;
-import java.util.Map;
 
 class KeyPerformanceIndicatorMetricsImpls {
 
@@ -67,7 +67,7 @@ class KeyPerformanceIndicatorMetricsImpls {
 
     private static final MetricRegistry.Type KPI_METRICS_REGISTRY_TYPE = MetricRegistry.Type.VENDOR;
 
-    private static final Map<String, KeyPerformanceIndicatorSupport.Metrics> kpiMetrics = new HashMap<>();
+    private static final Map<String, KeyPerformanceIndicatorSupport.Metrics> KPI_METRICS = new HashMap<>();
 
     private KeyPerformanceIndicatorMetricsImpls() {
     }
@@ -80,8 +80,8 @@ class KeyPerformanceIndicatorMetricsImpls {
      * @return properly prepared new KPI metrics instance
      */
     static KeyPerformanceIndicatorSupport.Metrics get(String metricsNamePrefix,
-            KeyPerformanceIndicatorMetricsConfig kpiConfig) {
-        return kpiMetrics.computeIfAbsent(metricsNamePrefix, prefix ->
+            KeyPerformanceIndicatorMetricsSettings kpiConfig) {
+        return KPI_METRICS.computeIfAbsent(metricsNamePrefix, prefix ->
              kpiConfig.isExtended()
                     ? new Extended(metricsNamePrefix, kpiConfig)
                     : new Basic(metricsNamePrefix));
@@ -148,7 +148,7 @@ class KeyPerformanceIndicatorMetricsImpls {
         protected static final String LOAD_DESCRIPTION =
                 "Measures the total number of in-flight requests and rates at which they occur";
 
-        protected Extended(String metricsNamePrefix, KeyPerformanceIndicatorMetricsConfig kpiConfig) {
+        protected Extended(String metricsNamePrefix, KeyPerformanceIndicatorMetricsSettings kpiConfig) {
             super(metricsNamePrefix);
             longRunningRequestThresdholdMs = kpiConfig.longRunningRequestThresholdMs();
 
