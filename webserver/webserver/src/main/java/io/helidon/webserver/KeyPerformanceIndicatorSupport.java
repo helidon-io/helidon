@@ -136,21 +136,6 @@ public interface KeyPerformanceIndicatorSupport {
         };
 
         /**
-         * Factory behavior for furnishing a new {@code Metrics}.
-         */
-        interface Factory {
-
-            /**
-             * Provides a {@code Metrics} instance suitable for the current environment.
-             *
-             * @param metricsNamePrefix common prefix for KPI metrics names
-             * @param kpiMetricsConfig KPI metrics configuration
-             * @return new {@code Metrics}
-             */
-            Metrics get(String metricsNamePrefix, KeyPerformanceIndicatorMetricsConfig kpiMetricsConfig);
-        }
-
-        /**
          * Invoked when a request has been received.
          */
         default void onRequestReceived() {

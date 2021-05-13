@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics;
 
-import io.helidon.webserver.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
@@ -25,6 +24,9 @@ import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+
+import java.util.HashMap;
+import java.util.Map;
 
 class KeyPerformanceIndicatorMetricsImpls {
 
@@ -65,22 +67,26 @@ class KeyPerformanceIndicatorMetricsImpls {
 
     private static final MetricRegistry.Type KPI_METRICS_REGISTRY_TYPE = MetricRegistry.Type.VENDOR;
 
+    private static final Map<String, KeyPerformanceIndicatorSupport.Metrics> kpiMetrics = new HashMap<>();
+
     private KeyPerformanceIndicatorMetricsImpls() {
     }
 
     /**
-     * Creates a new KPI metrics instance.
+     * Provides a KPI metrics instance.
      *
      * @param metricsNamePrefix prefix to use for the created metrics
      * @param kpiConfig         KPI metrics config which may influence the construction of the metrics
      * @return properly prepared new KPI metrics instance
      */
-    static KeyPerformanceIndicatorSupport.Metrics create(String metricsNamePrefix,
+    static KeyPerformanceIndicatorSupport.Metrics get(String metricsNamePrefix,
             KeyPerformanceIndicatorMetricsConfig kpiConfig) {
-        return kpiConfig.isExtended()
-                ? new Extended(metricsNamePrefix, kpiConfig)
-                : new Basic(metricsNamePrefix);
+        return kpiMetrics.computeIfAbsent(metricsNamePrefix, prefix ->
+             kpiConfig.isExtended()
+                    ? new Extended(metricsNamePrefix, kpiConfig)
+                    : new Basic(metricsNamePrefix));
     }
+
     /**
      * Basic KPI metrics.
      */

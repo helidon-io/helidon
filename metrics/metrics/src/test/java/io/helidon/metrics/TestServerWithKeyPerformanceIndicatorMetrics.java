@@ -23,7 +23,6 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
-import io.helidon.webserver.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.webserver.WebServer;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;

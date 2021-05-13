@@ -52,7 +52,6 @@ import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Handler;
-import io.helidon.webserver.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.Routing;
@@ -63,10 +62,10 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
-import static io.helidon.webserver.KeyPerformanceIndicatorMetricsConfig.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
-import static io.helidon.webserver.KeyPerformanceIndicatorMetricsConfig.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
-import static io.helidon.webserver.KeyPerformanceIndicatorMetricsConfig.Builder.LONG_RUNNING_REQUESTS_CONFIG_KEY;
-import static io.helidon.webserver.KeyPerformanceIndicatorMetricsConfig.Builder.LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY;
+import static io.helidon.metrics.KeyPerformanceIndicatorMetricsConfig.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
+import static io.helidon.metrics.KeyPerformanceIndicatorMetricsConfig.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
+import static io.helidon.metrics.KeyPerformanceIndicatorMetricsConfig.Builder.LONG_RUNNING_REQUESTS_CONFIG_KEY;
+import static io.helidon.metrics.KeyPerformanceIndicatorMetricsConfig.Builder.LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY;
 
 /**
  * Support for metrics for Helidon Web Server.
@@ -350,7 +349,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
             Routing.Rules rules) {
         String metricPrefix = metricsNamePrefix(routingName);
 
-        KeyPerformanceIndicatorSupport.Metrics kpiMetrics = KeyPerformanceIndicatorMetricsImpls.create(metricPrefix, kpiConfig);
+        KeyPerformanceIndicatorSupport.Metrics kpiMetrics = KeyPerformanceIndicatorMetricsImpls.get(metricPrefix, kpiConfig);
 
         rules.any((req, res) -> {
             KeyPerformanceIndicatorSupport.Context kpiContext = kpiContext(req);
