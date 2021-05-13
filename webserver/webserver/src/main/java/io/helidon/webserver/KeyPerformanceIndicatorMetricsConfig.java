@@ -30,16 +30,6 @@ public interface KeyPerformanceIndicatorMetricsConfig {
     }
 
     /**
-     * Derives the name prefix for KPI metrics based on the routing name (if any).
-     *
-     * @param routingName the routing name (empty string if none)
-     * @return prefix for KPI metrics names incorporating the routing name
-     */
-    static String metricsNamePrefix(String routingName) {
-        return (null == routingName ? "" : routingName + ".") + KeyPerformanceIndicatorMetricsService.METRICS_NAME_PREFIX + ".";
-    }
-
-    /**
      *
      * @return  whether extended KPI metrics are enabled in the config
      */

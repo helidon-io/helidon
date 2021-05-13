@@ -28,7 +28,6 @@ import io.helidon.common.http.MediaType;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
-import io.helidon.webserver.KeyPerformanceIndicatorMetricsService;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
@@ -150,7 +149,7 @@ public class TestServer {
 
         Optional<ConcurrentGauge> inflightRequests =
                 vendorRegistry.getConcurrentGauges((metricID, metric) -> metricID.getName().endsWith(
-                        KeyPerformanceIndicatorMetricsService.INFLIGHT_REQUESTS_NAME))
+                        KeyPerformanceIndicatorMetricsImpls.INFLIGHT_REQUESTS_NAME))
                         .values().stream()
                         .findAny();
         assertThat("In-flight concurrent gauge metric exists", inflightRequests.isPresent(), is(isKPIEnabled));

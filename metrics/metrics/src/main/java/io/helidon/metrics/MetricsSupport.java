@@ -53,9 +53,7 @@ import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.KeyPerformanceIndicatorMetricsConfig;
-import io.helidon.webserver.KeyPerformanceIndicatorMetricsService;
-import io.helidon.webserver.KeyPerformanceIndicatorMetricsService.Context;
-import io.helidon.webserver.KeyPerformanceIndicatorMetricsServiceFactory;
+import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -164,6 +162,17 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
         Optional<MediaType> mediaType = headers.bestAccepted(MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON);
         return mediaType.orElse(null);
     }
+
+    /**
+     * Derives the name prefix for KPI metrics based on the routing name (if any).
+     *
+     * @param routingName the routing name (empty string if none)
+     * @return prefix for KPI metrics names incorporating the routing name
+     */
+    private static String metricsNamePrefix(String routingName) {
+        return (null == routingName ? "" : routingName + ".") + KeyPerformanceIndicatorMetricsImpls.METRICS_NAME_PREFIX + ".";
+    }
+
 
     private static void getAll(ServerRequest req, ServerResponse res, Registry registry) {
         if (registry.empty()) {
@@ -339,23 +348,26 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      */
     public void configureVendorMetrics(String routingName,
             Routing.Rules rules) {
-        String metricPrefix =
-                KeyPerformanceIndicatorMetricsConfig.metricsNamePrefix(routingName);
+        String metricPrefix = metricsNamePrefix(routingName);
 
-        KeyPerformanceIndicatorMetricsService kpiMetricsService =
-                KeyPerformanceIndicatorMetricsServiceFactory.KPI_METRICS_SERVICE_FACTORY.get()
-                        .create(metricPrefix, kpiConfig);
+        KeyPerformanceIndicatorSupport.Metrics kpiMetrics = KeyPerformanceIndicatorMetricsImpls.create(metricPrefix, kpiConfig);
 
         rules.any((req, res) -> {
-            Context kpiMetricsContext = kpiMetricsService.context();
-            req.context().register(kpiMetricsContext);
-            kpiMetricsContext.requestHandlingStarted();
-            boolean isSuccessful = false;
+            KeyPerformanceIndicatorSupport.Context kpiContext = kpiContext(req);
+
+            kpiContext.requestHandlingStarted(kpiMetrics);
+            res.whenSent()
+                    .thenAccept(r -> kpiContext.requestProcessingCompleted(
+                            r.status().code() < 500))
+                    .exceptionallyAccept(t -> kpiContext.requestProcessingCompleted(false));
+            Exception exception = null;
             try {
                 req.next();
-                isSuccessful = true;
+            } catch (Exception e) {
+                exception = e;
+                throw e;
             } finally {
-                kpiMetricsContext.requestHandlingCompleted(isSuccessful);
+                kpiContext.requestHandlingCompleted(exception == null);
             }
         });
     }
@@ -413,6 +425,12 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
     @Override
     public void update(Routing.Rules rules) {
         configureEndpoint(rules);
+    }
+
+    private static KeyPerformanceIndicatorSupport.Context kpiContext(ServerRequest request) {
+        return request.context()
+                .get(KeyPerformanceIndicatorSupport.Context.class)
+                .orElseGet(KeyPerformanceIndicatorSupport.Context::create);
     }
 
     private void getByName(ServerRequest req, ServerResponse res, Registry registry) {

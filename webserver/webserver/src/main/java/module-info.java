@@ -40,7 +40,5 @@ module io.helidon.webserver {
     requires io.netty.buffer;
     requires io.netty.codec.http2;
 
-    uses io.helidon.webserver.KeyPerformanceIndicatorMetricsServiceFactory;
-
     exports io.helidon.webserver;
 }

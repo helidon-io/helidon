@@ -269,13 +269,11 @@ public class JaxRsCdiExtension implements Extension {
                                           .build());
     }
 
-    JerseySupport toJerseySupport(Supplier<? extends ExecutorService> defaultExecutorService, JaxRsApplication jaxRsApplication,
-            String namedRouting) {
+    JerseySupport toJerseySupport(Supplier<? extends ExecutorService> defaultExecutorService, JaxRsApplication jaxRsApplication) {
         io.helidon.config.Config config = (io.helidon.config.Config) ConfigProvider.getConfig();
         JerseySupport.Builder builder = JerseySupport.builder(jaxRsApplication.resourceConfig());
         builder.config(config.get("server.jersey"));
         config.get("metrics.extended-key-performance-indicators").ifExists(builder::keyPerformanceIndicatorsConfig);
-        builder.namedRouting(namedRouting);
         builder.executorService(jaxRsApplication.executorService().orElseGet(defaultExecutorService));
         builder.register(new ExceptionMapper<Exception>() {
             @Override
