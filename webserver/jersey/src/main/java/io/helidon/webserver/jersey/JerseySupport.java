@@ -44,7 +44,6 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
-import io.helidon.webserver.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -422,16 +421,10 @@ public class JerseySupport implements Service {
      */
     public static final class Builder implements Configurable<Builder>, io.helidon.common.Builder<JerseySupport> {
 
-        private static final String KEY_PERFORMANCE_INDICATORS_ENABLED_CONFIG_KEY = "enabled";
-        private static final String LONG_RUNNING_REQUESTS_CONFIG_KEY = "long-running-requests";
-        private static final String LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY = "threshold-ms";
-
-
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;
         private Config config = Config.empty();
         private ExecutorService asyncExecutorService;
-        private KeyPerformanceIndicatorMetricsConfig.Builder kpiConfigBuilder = KeyPerformanceIndicatorMetricsConfig.builder();
 
         private Builder() {
             this(null);
@@ -574,35 +567,6 @@ public class JerseySupport implements Service {
          */
         public Builder config(Config config) {
             this.config = config;
-            return this;
-        }
-
-        /**
-         * Sets values assigned in the provided key performance indicator metrics configuration.
-         *
-         * @param kpiConfig Config node containing key perf. indicator metrics settings
-         * @return updated builder instance
-         */
-        public Builder keyPerformanceIndicatorsConfig(Config kpiConfig) {
-            kpiConfig.get(KEY_PERFORMANCE_INDICATORS_ENABLED_CONFIG_KEY)
-                    .asBoolean()
-                    .ifPresent(kpiConfigBuilder::extended);
-
-            Config longRunningRequestsConfig = kpiConfig.get(LONG_RUNNING_REQUESTS_CONFIG_KEY);
-            longRunningRequestsConfig.get(LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY)
-                    .asLong()
-                    .ifPresent(kpiConfigBuilder::longRunningRequestThresholdMs);
-            return this;
-        }
-
-        /**
-         * Sets the builder for KPI metrics configuration, overriding any previous-assigned settings.
-         *
-         * @param kpiConfigBuilder new Builder for KPI metrics config
-         * @return updated builder instance
-         */
-        public Builder keyPerformanceIndicatorsConfig(KeyPerformanceIndicatorMetricsConfig.Builder kpiConfigBuilder) {
-            this.kpiConfigBuilder = kpiConfigBuilder;
             return this;
         }
     }
