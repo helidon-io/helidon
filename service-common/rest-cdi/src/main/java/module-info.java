@@ -14,6 +14,12 @@
  * limitations under the License.
  *
  */
+
+
+/**
+ * General-purpose reusable artifacts to help write CDI extensions, annotation processing, and interceptors for Helidon
+ * services.
+ */
 module io.helidon.servicecommon.restcdi {
 
     requires jakarta.enterprise.cdi.api;

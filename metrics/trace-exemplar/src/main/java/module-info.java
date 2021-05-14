@@ -14,6 +14,10 @@
  * limitations under the License.
  *
  */
+
+/**
+ * Provides exemplar support in metrics using tracing identifiers.
+ */
 module io.helidon.metrics.traceexemplar {
 
     requires io.helidon.metrics;
