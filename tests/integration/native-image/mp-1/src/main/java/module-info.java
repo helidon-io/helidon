@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * Application to test GraalVM native-image with Helidon MP.
+ */
 module helidon.tests.nimage.mp {
     requires jakarta.enterprise.cdi.api;
     requires java.ws.rs;

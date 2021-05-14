@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * MicroProfile Reactive Messaging Oracle AQ connector.
+ */
 module io.helidon.messaging.connectors.aq {
     requires transitive io.helidon.messaging.connectors.jms;
     requires java.logging;

@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * Helidon Reactive Messaging.
+ */
 module io.helidon.messaging {
     requires java.logging;
 

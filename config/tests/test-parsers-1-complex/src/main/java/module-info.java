@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * Integration tests of ConfigParsers implementations available in 'config' as well as 'module-parsers-1-override' module.
+ */
 module io.helidon.config.tests.parsers1 {
 
     requires io.helidon.config.tests.module.parsers1;

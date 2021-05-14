@@ -15,6 +15,18 @@
  *
  */
 
+/**
+ * Helidon SE OpenAPI Support.
+ * <p>
+ * Use {@link OpenAPISupport} and its {@code Builder} to include support for
+ * OpenAPI in your application.
+ * <p>
+ * Because Helidon SE does not use annotation processing to identify endpoints,
+ * you need to provide the OpenAPI information for your application yourself.
+ * You can provide a static OpenAPI document or you can implement and specify
+ * your own model processing class that provides the data needed to build the
+ * OpenAPI document.
+ */
 module io.helidon.openapi {
     requires java.logging;
 

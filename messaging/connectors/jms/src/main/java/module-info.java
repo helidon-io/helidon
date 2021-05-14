@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * Microprofile messaging JMS connector.
+ */
 module io.helidon.messaging.connectors.jms {
     requires java.logging;
 

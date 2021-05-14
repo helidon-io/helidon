@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * Common infrastructure useful in JUnit tests across multiple projects.
+ */
 module io.helidon.config.test.infra {
     requires org.junit.jupiter.api;
     
