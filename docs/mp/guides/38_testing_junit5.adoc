@@ -93,7 +93,9 @@ The test is only useful if it invokes the server and verifies the result. To sup
 [source,java]
 .Updated Class with webTarget
 ----
-import static org.junit.jupiter.api.Assertions.assertEquals;@HelidonTest
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@HelidonTest
 class GreetTest {
     @Inject
     WebTarget webTarget;
@@ -227,14 +229,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @DisableDiscovery
 @AddExtension(ConfigCdiExtension.class)
 @AddBean(GreetTest.ConfiguredBean.class)
-@AddConfig(key = "test.message", value = "Hello Blog!")
+@AddConfig(key = "test.message", value = "Hello Guide!")
 class GreetTest {
     @Inject
     ConfiguredBean bean;
 
     @Test
     void testBean() {
-        assertEquals("Hello Blog!", bean.message());
+        assertEquals("Hello Guide!", bean.message());
     }
 
     public static class ConfiguredBean {
