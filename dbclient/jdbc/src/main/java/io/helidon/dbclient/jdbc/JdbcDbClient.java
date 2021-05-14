@@ -57,6 +57,8 @@ class JdbcDbClient implements DbClient {
     private final DbMapperManager dbMapperManager;
     private final MapperManager mapperManager;
     private final List<DbClientService> clientServices;
+    private final JdbcCustomizationsManager customizationsManager;
+    private final boolean caseSensitive;
 
     JdbcDbClient(JdbcDbClientProviderBuilder builder) {
         this.executorService = builder.executorService();
@@ -65,6 +67,9 @@ class JdbcDbClient implements DbClient {
         this.dbMapperManager = builder.dbMapperManager();
         this.mapperManager = builder.mapperManager();
         this.clientServices = builder.clientServices();
+        // PERF: This calls service loader.
+        this.customizationsManager = JdbcCustomizationsManager.create();
+        this.caseSensitive = builder.isCaseSensitive();
     }
 
     @Override
@@ -77,7 +82,10 @@ class JdbcDbClient implements DbClient {
                 clientServices,
                 connectionPool,
                 dbMapperManager,
-                mapperManager);
+                mapperManager,
+                customizationsManager,
+                caseSensitive
+        );
 
         T result = executor.apply(execute);
 
@@ -117,8 +125,9 @@ class JdbcDbClient implements DbClient {
                     .onError(RollbackHandler.create(execute, Level.WARNING)::apply);
         } else {
             execute.doRollback();
-            throw new IllegalStateException("You must return a Single or Multi instance to inTransaction, yet "
-                                                    + "you provided: " + result.getClass().getName());
+            throw new IllegalStateException(
+                    "You must return a Single or Multi instance to inTransaction, yet you provided: "
+                    + (result != null ? result.getClass().getName() : "null"));
         }
     }
 
@@ -161,13 +170,18 @@ class JdbcDbClient implements DbClient {
     @Override
     public <U, T extends Subscribable<U>> T execute(Function<DbExecute, T> executor) {
 
-        JdbcExecute execute = new JdbcExecute(statements,
-                                              JdbcExecute.createContext(statements,
-                                                                        executorService,
-                                                                        clientServices,
-                                                                        connectionPool,
-                                                                        dbMapperManager,
-                                                                        mapperManager));
+        JdbcExecute execute = new JdbcExecute(
+                statements,
+                JdbcExecute.createContext(
+                        statements,
+                        executorService,
+                        clientServices,
+                        connectionPool,
+                        dbMapperManager,
+                        mapperManager,
+                        customizationsManager,
+                        caseSensitive
+                ));
 
         Subscribable<U> result;
 
@@ -228,7 +242,9 @@ class JdbcDbClient implements DbClient {
                               List<DbClientService> clientServices,
                               ConnectionPool connectionPool,
                               DbMapperManager dbMapperManager,
-                              MapperManager mapperManager) {
+                              MapperManager mapperManager,
+                              JdbcCustomizationsManager customizationsManager,
+                              boolean caseSensitive) {
             super(statements, JdbcExecuteContext.jdbcBuilder()
                     .statements(statements)
                     .clientServices(clientServices)
@@ -236,7 +252,9 @@ class JdbcDbClient implements DbClient {
                     .connection(createConnection(executorService, connectionPool))
                     .dbMapperManager(dbMapperManager)
                     .mapperManager(mapperManager)
+                    .customizationsManager(customizationsManager)
                     .executorService(executorService)
+                    .caseSensitive(caseSensitive)
                     .build());
         }
 
@@ -258,6 +276,7 @@ class JdbcDbClient implements DbClient {
             setRollbackOnly = true;
         }
 
+        @SuppressWarnings("ConvertToTryWithResources")
         private CompletionStage<Void> doRollback() {
             return context().connection()
                     .thenApply(conn -> {
@@ -272,6 +291,7 @@ class JdbcDbClient implements DbClient {
                     });
         }
 
+        @SuppressWarnings("ConvertToTryWithResources")
         private CompletionStage<Void> doCommit() {
             if (setRollbackOnly) {
                 return doRollback();
@@ -304,7 +324,9 @@ class JdbcDbClient implements DbClient {
                                                         List<DbClientService> clientServices,
                                                         ConnectionPool connectionPool,
                                                         DbMapperManager dbMapperManager,
-                                                        MapperManager mapperManager) {
+                                                        MapperManager mapperManager,
+                                                        JdbcCustomizationsManager customizationsManager,
+                                                        boolean caseSensitive) {
             CompletionStage<Connection> connection = CompletableFuture.supplyAsync(connectionPool::connection, executorService)
                     .thenApply(conn -> {
                         try {
@@ -322,45 +344,83 @@ class JdbcDbClient implements DbClient {
                     .clientServices(clientServices)
                     .dbMapperManager(dbMapperManager)
                     .mapperManager(mapperManager)
+                    .customizationsManager(customizationsManager)
                     .dbType(connectionPool.dbType())
+                    .caseSensitive(caseSensitive)
                     .build();
         }
 
         @Override
         public DbStatementQuery createNamedQuery(String statementName, String statement) {
-            return new JdbcStatementQuery(context,
-                                          DbStatementContext.create(context, DbStatementType.QUERY, statementName, statement));
+            return new JdbcStatementQuery(
+                    context,
+                    DbStatementContext.create(
+                            context,
+                            DbStatementType.QUERY,
+                            statementName,
+                            statement,
+                            context.caseSensitive()));
 
         }
 
         @Override
         public DbStatementGet createNamedGet(String statementName, String statement) {
-            return new JdbcStatementGet(context,
-                                        DbStatementContext.create(context, DbStatementType.GET, statementName, statement));
+            return new JdbcStatementGet(
+                    context,
+                    DbStatementContext.create(
+                            context,
+                            DbStatementType.GET,
+                            statementName,
+                            statement,
+                            context.caseSensitive()));
         }
 
         @Override
         public DbStatementDml createNamedDmlStatement(String statementName, String statement) {
-            return new JdbcStatementDml(context,
-                                        DbStatementContext.create(context, DbStatementType.DML, statementName, statement));
+            return new JdbcStatementDml(
+                    context,
+                    DbStatementContext.create(
+                            context,
+                            DbStatementType.DML,
+                            statementName,
+                            statement,
+                            context.caseSensitive()));
         }
 
         @Override
         public DbStatementDml createNamedInsert(String statementName, String statement) {
-            return new JdbcStatementDml(context,
-                                        DbStatementContext.create(context, DbStatementType.INSERT, statementName, statement));
+            return new JdbcStatementDml(
+                    context,
+                    DbStatementContext.create(
+                            context,
+                            DbStatementType.INSERT,
+                            statementName,
+                            statement,
+                            context.caseSensitive()));
         }
 
         @Override
         public DbStatementDml createNamedUpdate(String statementName, String statement) {
-            return new JdbcStatementDml(context,
-                                        DbStatementContext.create(context, DbStatementType.UPDATE, statementName, statement));
+            return new JdbcStatementDml(
+                    context,
+                    DbStatementContext.create(
+                            context,
+                            DbStatementType.UPDATE,
+                            statementName,
+                            statement,
+                            context.caseSensitive()));
         }
 
         @Override
         public DbStatementDml createNamedDelete(String statementName, String statement) {
-            return new JdbcStatementDml(context,
-                                        DbStatementContext.create(context, DbStatementType.DELETE, statementName, statement));
+            return new JdbcStatementDml(
+                    context,
+                    DbStatementContext.create(
+                            context,
+                            DbStatementType.DELETE,
+                            statementName,
+                            statement,
+                            context.caseSensitive()));
         }
 
         JdbcExecuteContext context() {

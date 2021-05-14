@@ -53,6 +53,10 @@
     <suppress checks="MethodLength"
               files="HelidonReactiveStreamsEngine\.java"/>
 
+    <!-- DbClient internal context builder needs large amount of parameters. -->
+    <suppress checks="ParameterNumber"
+              files="dbclient/jdbc/src/main/java/io/helidon/dbclient/jdbc/JdbcDbClient\.java"/>
+
     <!-- PKCS#1 private keys - required for OCI Instance Principal Authentication -->
     <suppress checks="IllegalImport"
             files="DerUtils\.java"/>

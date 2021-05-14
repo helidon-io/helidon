@@ -34,6 +34,7 @@ import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.common.AbstractStatement;
 import io.helidon.dbclient.common.DbStatementContext;
+import io.helidon.dbclient.jdbc.spi.JdbcCustomizationsProvider;
 
 /**
  * Common JDBC statement builder.
@@ -41,9 +42,8 @@ import io.helidon.dbclient.common.DbStatementContext;
  * @param <S> subclass of this class
  * @param <R> Statement execution result type
  */
-abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractStatement<S, R> {
+public abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractStatement<S, R> {
 
-    /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(JdbcStatement.class.getName());
 
     private final ExecutorService executorService;
@@ -69,11 +69,15 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
 
         if (dbContext.isIndexed()) {
             return dbContext.indexedParameters()
-                    .map(params -> prepareIndexedStatement(conn, statementName, statement, params))
+                    .map(params -> executeContext
+                            .customizationsManager()
+                            .prepareIndexedStatement(conn, statementName, statement, params))
                     .orElseGet(simpleStatementSupplier);
         } else {
             return dbContext.namedParameters()
-                    .map(params -> prepareNamedStatement(conn, statementName, statement, params))
+                    .map(params -> executeContext
+                            .customizationsManager()
+                            .prepareNamedStatement(conn, statementName, statement, params))
                     .orElseGet(simpleStatementSupplier);
         }
     }
@@ -103,61 +107,12 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
         }
     }
 
-    private PreparedStatement prepareNamedStatement(Connection connection,
-                                                    String statementName,
-                                                    String statement,
-                                                    Map<String, Object> parameters) {
-
-        PreparedStatement preparedStatement = null;
-        try {
-            // Parameters names must be replaced with ? and names occurence order must be stored.
-            Parser parser = new Parser(statement);
-            String jdbcStatement = parser.convert();
-            LOGGER.finest(() -> String.format("Converted statement: %s", jdbcStatement));
-            preparedStatement = connection.prepareStatement(jdbcStatement);
-            List<String> namesOrder = parser.namesOrder();
-            // Set parameters into prepared statement
-            int i = 1;
-            for (String name : namesOrder) {
-                if (parameters.containsKey(name)) {
-                    Object value = parameters.get(name);
-                    LOGGER.finest(String.format("Mapped parameter %d: %s -> %s", i, name, value));
-                    preparedStatement.setObject(i, value);
-                    i++;
-                } else {
-                    throw new DbClientException(namedStatementErrorMessage(namesOrder, parameters));
-                }
-            }
-            return preparedStatement;
-        } catch (SQLException e) {
-            closePreparedStatement(preparedStatement);
-            throw new DbClientException("Failed to prepare statement with named parameters: " + statementName, e);
-        }
-    }
-
-    private PreparedStatement prepareIndexedStatement(Connection connection,
-                                                      String statementName,
-                                                      String statement,
-                                                      List<Object> parameters) {
-
-        PreparedStatement preparedStatement = null;
-        try {
-            preparedStatement = connection.prepareStatement(statement);
-            int i = 1; // JDBC set position parameter starts from 1.
-            for (Object value : parameters) {
-                LOGGER.finest(String.format("Indexed parameter %d: %s", i, value));
-                preparedStatement.setObject(i, value);
-                // increase value for next iteration
-                i++;
-            }
-            return preparedStatement;
-        } catch (SQLException e) {
-            closePreparedStatement(preparedStatement);
-            throw new DbClientException(String.format("Failed to prepare statement with indexed params: %s", statementName), e);
-        }
-    }
-
-    private void closePreparedStatement(final PreparedStatement preparedStatement) {
+    /**
+     * Close prepared statement.
+     *
+     * @param preparedStatement prepared statement to be closed
+     */
+    public static void closePreparedStatement(final PreparedStatement preparedStatement) {
         if (preparedStatement != null) {
             try {
                 preparedStatement.close();
@@ -167,14 +122,20 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
         }
     }
 
-    private static String namedStatementErrorMessage(final List<String> namesOrder, final Map<String, Object> parameters) {
+    /**
+     * Build error message for named statement processing error.
+     *
+     * @param namesOrder names order {@code List}.
+     * @param parameters parameters names {@code Map}
+     * @return error message {@code String}
+     */
+    public static String namedStatementErrorMessage(final List<String> namesOrder, final Map<String, Object> parameters) {
         // Parameters in query missing in parameters Map
         List<String> notInParams = new ArrayList<>(namesOrder.size());
-        for (String name : namesOrder) {
-            if (!parameters.containsKey(name)) {
-                notInParams.add(name);
-            }
-        }
+        namesOrder.stream().filter((name) -> (!parameters.containsKey(name)))
+                .forEachOrdered((name) -> {
+                    notInParams.add(name);
+                });
         StringBuilder sb = new StringBuilder();
         sb.append("Query parameters missing in Map: ");
         boolean first = true;
@@ -189,6 +150,74 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
         return sb.toString();
     }
 
+    // Default handler for named statement parameters, used by JdbcCustomizationsManager when not overriden
+    static class PrepareNamedStatement implements JdbcCustomizationsProvider.PrepareNamedStatement {
+
+        @Override
+        public PreparedStatement apply(
+                Connection connection,
+                String statementName,
+                String statement,
+                Map<String, Object> parameters) {
+
+            PreparedStatement preparedStatement = null;
+            try {
+                // Parameters names must be replaced with ? and names occurence order must be stored.
+                Parser parser = new Parser(statement);
+                String jdbcStatement = parser.convert();
+                LOGGER.finer(() -> String.format("Converted statement: %s", jdbcStatement));
+                preparedStatement = connection.prepareStatement(jdbcStatement);
+                List<String> namesOrder = parser.namesOrder();
+                // Set parameters into prepared statement
+                int i = 1;
+                for (String name : namesOrder) {
+                    if (parameters.containsKey(name)) {
+                        Object value = parameters.get(name);
+                        LOGGER.finest(String.format("Mapped parameter %d: %s -> %s", i, name, value));
+                        preparedStatement.setObject(i, value);
+                        i++;
+                    } else {
+                        throw new DbClientException(namedStatementErrorMessage(namesOrder, parameters));
+                    }
+                }
+                return preparedStatement;
+            } catch (SQLException e) {
+                closePreparedStatement(preparedStatement);
+                throw new DbClientException("Failed to prepare statement with named parameters: " + statementName, e);
+            }
+        }
+    }
+
+    // Default handler for indexed statement parameters, used by JdbcCustomizationsManager when not overriden
+    static class PrepareIndexedStatement implements JdbcCustomizationsProvider.PrepareIndexedStatement {
+
+        @Override
+        public PreparedStatement apply(
+                Connection connection,
+                String statementName,
+                String statement,
+                List<Object> parameters) {
+
+            PreparedStatement preparedStatement = null;
+            try {
+                preparedStatement = connection.prepareStatement(statement);
+                int i = 1; // JDBC set position parameter starts from 1.
+                for (Object value : parameters) {
+                    LOGGER.finest(String.format("Indexed parameter %d: %s", i, value));
+                    preparedStatement.setObject(i, value);
+                    // increase value for next iteration
+                    i++;
+                }
+                return preparedStatement;
+            } catch (SQLException e) {
+                closePreparedStatement(preparedStatement);
+                throw new DbClientException(
+                        String.format("Failed to prepare statement with indexed params: %s", statementName), e);
+            }
+        }
+
+    }
+
     /**
      * Mapping parser state machine.
      *
@@ -199,7 +228,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
      * Expected list of parameters:
      * {@code "name", "type"}
      */
-    static final class Parser {
+    public static final class Parser {
                 @FunctionalInterface
 
         private interface Action extends Consumer<Parser> {}
@@ -693,7 +722,12 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          */
         private CharClass cl;
 
-        Parser(String statement) {
+        /**
+         * Creates an instance of mapping parser state machine.
+         *
+         * @param statement statement to be parsed
+         */
+        public Parser(String statement) {
             this.sb = new StringBuilder(statement.length());
             this.nap = new StringBuilder(32);
             this.names = new LinkedList<>();
@@ -703,7 +737,12 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
 
         }
 
-        String convert() {
+        /**
+         * Convert named statement.
+         *
+         * @return named statement converted to prepared statement.
+         */
+        public String convert() {
             State state = State.STATEMENT;  // Initial state: common statement processing
             int len = statement.length();
             for (int i = 0; i < len; i++) {
@@ -721,7 +760,12 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
             return sb.toString();
         }
 
-        List<String> namesOrder() {
+        /**
+         * Get names order {@code List}.
+         *
+         * @return names order {@code List}.
+         */
+        public List<String> namesOrder() {
             return names;
         }
 

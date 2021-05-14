@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.tests.integration.dbclient.jdbc.init;
 
 import java.util.HashSet;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
@@ -46,17 +48,37 @@ public class InitIT extends AbstractIT {
     /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(InitIT.class.getName());
 
+    // Execute DML statement without failing the test suite on error.
+    private static void execDmlNoFail(final DbClient dbClient, final String dmlName) {
+        try {
+            dbClient.execute(exec -> exec
+                    .namedDml(dmlName)
+            ).await();
+        } catch (Exception ex) {
+            LOGGER.log(Level.INFO, ex,
+                    () -> String.format("Statement %s execution failed: %s", dmlName, ex.getMessage()));
+        }
+    }
+
     /**
      * Initializes database schema (tables).
      *
      * @param dbClient Helidon database client
      */
     private static void initSchema(DbClient dbClient) {
-        dbClient.execute(exec -> exec
-                .namedDml("create-types")
-                .flatMapSingle(result -> exec.namedDml("create-pokemons"))
-                .flatMapSingle(result -> exec.namedDml("create-poketypes"))
-        ).await();
+        execDmlNoFail(dbClient, "drop-poketypes");
+        execDmlNoFail(dbClient, "drop-pokemons");
+        execDmlNoFail(dbClient, "drop-types");
+        try {
+            dbClient.execute(exec -> exec
+                    .namedDml("create-types")
+                    .flatMapSingle(result -> exec.namedDml("create-pokemons"))
+                    .flatMapSingle(result -> exec.namedDml("create-poketypes"))
+            ).await();
+        } catch (Exception ex) {
+            LOGGER.log(Level.INFO, ex, () -> String.format("Database tables did not exit: %s", ex.getMessage()));
+            throw ex;
+        }
     }
 
     /**
@@ -117,7 +139,6 @@ public class InitIT extends AbstractIT {
     @BeforeAll
     public static void setup() {
         LOGGER.info(() -> "Initializing Integration Tests");
-
         initSchema(DB_CLIENT);
         initData(DB_CLIENT);
     }

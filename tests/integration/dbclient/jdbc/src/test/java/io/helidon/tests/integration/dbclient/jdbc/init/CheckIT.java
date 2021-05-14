@@ -16,14 +16,13 @@
 package io.helidon.tests.integration.dbclient.jdbc.init;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.function.Consumer;
+import java.sql.Statement;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
 import io.helidon.tests.integration.dbclient.common.ConfigIT;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -31,109 +30,51 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Check minimal functionality needed before running database schema initialization.
  * First test class being executed after database startup.
  */
+
 public class CheckIT {
 
     /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(CheckIT.class.getName());
 
-    /** Test configuration. */
-    public static final Config CONFIG = Config.create(ConfigSources.classpath(ConfigIT.configFile()));
+    // Test configuration
+    public static final Config CONFIG = ConfigJDBC.CONFIG;
 
-    /** Timeout in seconds to wait for database to come up. */
-    private static final int TIMEOUT = 60;
-
-    /**
-     * Wait until database starts up when its configuration node is available.
-     */
-    private static final class ConnectionCheck implements Consumer<Config> {
-
-        private boolean connected;
-
-        private ConnectionCheck() {
-            connected = false;
-        }
-
-        @Override
-        public void accept(Config config) {
-            String url = config.get("url").asString().get();
-            String username = config.get("username").asString().get();
-            String password = config.get("password").asString().get();
-            long endTm = 1000 * TIMEOUT + System.currentTimeMillis();
-            while (true) {
-                try {
-                    DriverManager.getConnection(url, username, password);
-                    connected = true;
-                    return;
-                } catch (SQLException ex) {
-                    LOGGER.info(() -> String.format("Connection check: %s", ex.getMessage()));
-                    if (System.currentTimeMillis() > endTm) {
-                        return;
-                    }
-                }
-            }
-        }
-
-        private boolean connected() {
-            return connected;
-        }
-
-    }
-
-    /**
-     * Store database connection configuration and build {@link Connection} instance.
-     */
-    static final class ConnectionBuilder implements Consumer<Config> {
-
-        private boolean hasConfig;
-        private String url;
-        private String username;
-        private String password;
-
-        ConnectionBuilder() {
-            hasConfig = false;
-        }
-
-        @Override
-        public void accept(Config config) {
-            url = config.get("url").asString().get();
-            username = config.get("username").asString().get();
-            password = config.get("password").asString().get();
-            hasConfig = true;
-        }
-
-        Connection createConnection() throws SQLException {
-            if (!hasConfig) {
-                fail("No db.connection configuration node was found.");
-            }
-            return DriverManager.getConnection(url, username, password);
-        }
-
-    }
-
-    /**
-     * Wait for database server to start.
-     */
-    private static void waitForStart() {
-        ConnectionCheck check = new ConnectionCheck();
-        CONFIG.get("db.connection").ifExists(check);
-        if (!check.connected()) {
-            fail("Database startup failed!");
-        }
-    }
+    private static Connection conn = null;
 
     /**
      * Setup database for tests.
      * Wait for database to start. Returns after ping query completed successfully or timeout passed.
      */
     @BeforeAll
+    @SuppressWarnings("UseSpecificCatch")
     public static void setup() {
-        waitForStart();
+        try {
+            final String dbUser = ConfigJDBC.getCheckUser();
+            final String dbPassword = ConfigJDBC.getCheckPassword();
+            try {
+                ConfigJDBC.ConnectionBuilder builder = new ConfigJDBC.ConnectionBuilder();
+                builder.accept(dbUser, dbPassword, ConfigJDBC.DB_URL);
+                conn = builder.createConnection();
+                final String dbName = conn.getMetaData().getDatabaseProductName();
+                ConfigIT.initDbType(dbName);
+                LOGGER.fine(() -> String.format("Database %s started", dbName));
+            } catch (SQLException ex) {
+                LOGGER.warning(() -> String.format("Could not connect to database: %s", ex.getMessage()));
+            }
+            switch (ConfigIT.dbType) {
+                case ORACLE:
+                    initOraDB(ConfigJDBC.DB_USER, ConfigJDBC.DB_PASSWORD);
+                    break;
+            }
+        } catch (Throwable t) {
+            LOGGER.log(Level.SEVERE, t, () -> String.format("Database setup failed: %s", t.getMessage()));
+            throw t;
+        }
     }
 
     /**
@@ -144,23 +85,55 @@ public class CheckIT {
      */
     @Test
     public void testDmlStatementExecution() throws SQLException {
-        ConnectionBuilder builder = new ConnectionBuilder();
         String ping = CONFIG.get("db.health-check.statement").asString().get();
         String typeStr = CONFIG.get("db.health-check.type").asString().get();
         boolean pingDml = typeStr != null && "dml".equals(typeStr.toLowerCase());
-        CONFIG.get("db.connection").ifExists(builder);
-        Connection conn = builder.createConnection();
         if (pingDml) {
             int result = conn.createStatement().executeUpdate(ping);
             assertThat(result, equalTo(0));
-            LOGGER.info(() -> String.format("Command ping result: %d", result));
+            LOGGER.finest(() -> String.format("Command ping result: %d", result));
         } else {
             ResultSet rs = conn.createStatement().executeQuery(ping);
             rs.next();
             int result = rs.getInt(1);
             assertThat(result, equalTo(0));
-            LOGGER.info(() -> String.format("Command ping result: %d", result));
+            LOGGER.finest(() -> String.format("Command ping result: %d", result));
         }
     }
+
+    /**
+     * Initialize Oracle database.
+     * Database name is retrieved from connection URL.
+     *
+     * @param dbUser MsSQL database connection user name
+     * @param dbPassword MsSQL database connection user password
+     */
+    private static void initOraDB(final String dbUser, final String dbPassword) {
+        LOGGER.fine(() -> "Oracle database initialization");
+        final String crUsr = String.format("CREATE USER %s IDENTIFIED BY %s", dbUser, dbPassword);
+        try {
+            final Statement stmt = conn.createStatement();
+            final int dbCount = stmt.executeUpdate(crUsr);
+            LOGGER.finer(() -> String.format("Executed EXEC statement. %d records modified.", dbCount));
+        } catch (SQLException ex) {
+            LOGGER.warning(() -> String.format("Failed statement: %s", crUsr));
+            LOGGER.log(Level.WARNING, "Could not create database user:", ex);
+        }
+        execStatement(String.format("GRANT CONNECT %s", dbUser));
+        execStatement(String.format("GRANT RESOURCE TO %s", dbUser));
+        execStatement(String.format("GRANT UNLIMITED TABLESPACE TO %s", dbUser));
+    }
+
+    private static void execStatement(String stmtStr) {
+        try {
+            Statement stmt = conn.createStatement();
+            final int dbCount = stmt.executeUpdate(stmtStr);
+            LOGGER.finer(() -> String.format("Executed statement. %d records modified.", dbCount));
+        } catch (SQLException ex) {
+            LOGGER.warning(() -> String.format("Failed statement: %s", stmtStr));
+            LOGGER.log(Level.WARNING, "Could not execute statement: ", ex);
+        }
+    }
+
 
 }

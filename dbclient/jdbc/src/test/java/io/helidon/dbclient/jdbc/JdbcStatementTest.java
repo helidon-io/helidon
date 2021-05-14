@@ -56,6 +56,7 @@ public class JdbcStatementTest {
         JdbcExecuteContext execCtx = JdbcExecuteContext.jdbcBuilder()
                 .dbType("Test")
                 .connection(connFuture)
+                .customizationsManager(JdbcCustomizationsManager.create())
                 .build();
         DbStatementContext stmtCtx = DbStatementContext.builder()
                 .statementName("test")

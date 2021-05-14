@@ -52,7 +52,7 @@
         <version.lib.google-api-client>1.34.1</version.lib.google-api-client>
         <version.lib.google-oauth-client>1.33.3</version.lib.google-oauth-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
-        <version.lib.google-protobuf>3.21.4</version.lib.google-protobuf>
+        <version.lib.google-protobuf>3.20.1</version.lib.google-protobuf>
         <version.lib.graalvm>21.3.0</version.lib.graalvm>
         <version.lib.graphql-java>15.0</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>15.0.0</version.lib.graphql-java.extended.scalars>
@@ -93,8 +93,11 @@
         <version.lib.jedis>3.6.3</version.lib.jedis>
         <version.lib.jersey>3.0.5</version.lib.jersey>
         <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
+        <version.lib.jms-api>2.0</version.lib.jms-api>
+        <version.lib.jsonb-api>1.0.2</version.lib.jsonb-api>
+        <version.lib.jsonp-api>1.1.6</version.lib.jsonp-api>
         <version.lib.jsonp-impl>2.0.1</version.lib.jsonp-impl>
-        <version.lib.junit>5.7.0</version.lib.junit>
+        <version.lib.junit>5.7.2</version.lib.junit>
         <version.lib.kafka>2.8.1</version.lib.kafka>
         <version.lib.log4j>2.17.1</version.lib.log4j>
         <version.lib.logback>1.2.10</version.lib.logback>
@@ -197,6 +200,11 @@
             </dependency>
 
             <!-- Section 1: direct third party dependencies -->
+            <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>jakarta.json</artifactId>
+            <version>${version.lib.jsonp-impl}</version>
+            </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
                 <artifactId>jersey-server</artifactId>

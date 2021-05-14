@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.tests.integration.dbclient.common.tests.transaction;
 
 import java.util.concurrent.CompletionException;
 import java.util.logging.Logger;
 
 import io.helidon.dbclient.DbClientException;
+import io.helidon.tests.integration.dbclient.common.ConfigIT;
 
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +46,7 @@ public class TransactionExceptionalStmtIT {
      */
     @Test
     public void testCreateNamedQueryNonExistentStmt() {
-        LOGGER.info(() -> "Starting test");
+        LOGGER.fine(() -> "Starting test testCreateNamedQueryNonExistentStmt");
         try {
             DB_CLIENT.inTransaction(tx -> tx
                     .createNamedQuery("select-pokemons-not-exists")
@@ -54,7 +56,7 @@ public class TransactionExceptionalStmtIT {
             LOGGER.warning(() -> "Test failed");
             fail("Execution of non existing statement shall cause an exception to be thrown.");
         } catch (DbClientException ex) {
-            LOGGER.info(() -> String.format("Expected exception: %s", ex.getMessage()));
+            LOGGER.fine(() -> String.format("Expected exception: %s", ex.getMessage()));
         }
     }
 
@@ -64,7 +66,7 @@ public class TransactionExceptionalStmtIT {
      */
     @Test
     public void testCreateNamedQueryNamedAndOrderArgsWithoutArgs() {
-        LOGGER.info(() -> "Starting test");
+        LOGGER.fine(() -> "Starting test testCreateNamedQueryNamedAndOrderArgsWithoutArgs");
         try {
             DB_CLIENT.inTransaction(tx -> tx
                     .createNamedQuery("select-pokemons-error-arg")
@@ -74,7 +76,7 @@ public class TransactionExceptionalStmtIT {
             LOGGER.warning(() -> "Test failed");
             fail("Execution of query with both named and ordered parameters without passing any shall fail.");
         } catch (DbClientException | CompletionException ex) {
-            LOGGER.info(() -> String.format("Expected exception: %s", ex.getMessage()));
+            LOGGER.fine(() -> String.format("Expected exception: %s", ex.getMessage()));
         }
     }
 
@@ -84,7 +86,7 @@ public class TransactionExceptionalStmtIT {
      */
     @Test
     public void testCreateNamedQueryNamedAndOrderArgsWithArgs() {
-        LOGGER.info(() -> "Starting test");
+        LOGGER.fine(() -> "Starting test testCreateNamedQueryNamedAndOrderArgsWithArgs");
         try {
             DB_CLIENT.inTransaction(tx -> tx
                     .createNamedQuery("select-pokemons-error-arg")
@@ -96,17 +98,16 @@ public class TransactionExceptionalStmtIT {
             LOGGER.warning(() -> "Test failed");
             fail("Execution of query with both named and ordered parameters without passing them shall fail.");
         } catch (DbClientException | CompletionException ex) {
-            LOGGER.info(() -> String.format("Expected exception: %s", ex.getMessage()));
+            LOGGER.fine(() -> String.format("Expected exception: %s", ex.getMessage()));
         }
     }
 
     /**
      * Verify that execution of query with named arguments throws an exception while trying to set ordered argument.
-     *
      */
     @Test
     public void testCreateNamedQueryNamedArgsSetOrderArg() {
-        LOGGER.info(() -> "Starting test");
+        LOGGER.fine(() -> "Starting test testCreateNamedQueryNamedArgsSetOrderArg");
         try {
             DB_CLIENT.inTransaction(tx -> tx
                     .createNamedQuery("select-pokemon-named-arg")
@@ -114,10 +115,13 @@ public class TransactionExceptionalStmtIT {
                     .execute())
                     .collectList()
                     .await();
-            LOGGER.warning(() -> "Test failed");
-            fail("Execution of query with named parameter with passing ordered parameter value shall fail.");
+            // It passes with Oracle DB which seems to be able to set named parameters values using JDBC PreparedStatement set.
+            if (ConfigIT.dbType != ConfigIT.DbType.ORACLE) {
+                LOGGER.warning(() -> "Test failed");
+                fail("Execution of query with named parameter with passing ordered parameter value shall fail.");
+            }
         } catch (DbClientException | CompletionException ex) {
-            LOGGER.info(() -> String.format("Expected exception: %s", ex.getMessage()));
+            LOGGER.fine(() -> String.format("Expected exception: %s", ex.getMessage()));
         }
     }
 
@@ -127,7 +131,7 @@ public class TransactionExceptionalStmtIT {
      */
     @Test
     public void testCreateNamedQueryOrderArgsSetNamedArg() {
-        LOGGER.info(() -> "Starting test");
+        LOGGER.fine(() -> "Starting test testCreateNamedQueryOrderArgsSetNamedArg");
         try {
             DB_CLIENT.inTransaction(tx -> tx
                     .createNamedQuery("select-pokemon-order-arg")
@@ -138,7 +142,7 @@ public class TransactionExceptionalStmtIT {
             LOGGER.warning(() -> "Test failed");
             fail("Execution of query with ordered parameter with passing named parameter value shall fail.");
         } catch (DbClientException | CompletionException ex) {
-            LOGGER.info(() -> String.format("Expected exception: %s", ex.getMessage()));
+            LOGGER.fine(() -> String.format("Expected exception: %s", ex.getMessage()));
         }
     }
 

@@ -1,0 +1,58 @@
+#
+# Copyright (c) 2021 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+server:
+  port: 0
+  host: 0.0.0.0
+
+db:
+  source: jdbc
+  connection:
+    url: ${db.url}
+    username: ${db.user}
+    password: ${db.password}
+  health-check:
+    type: query
+    statement: "SELECT 0 FROM DUAL"
+  statements:
+    # custom query ping statement
+    ping-query: "SELECT 0 FROM DUAL"
+    # database schema initialization statements
+    create-doc: "CREATE TABLE DOCUMENT (ID NUMBER(4) NOT NULL PRIMARY KEY, JSON BLOB NOT NULL)"
+    alter-doc: "ALTER TABLE DOCUMENT ADD CONSTRAINT DOC_JSON CHECK (JSON IS JSON)"
+    # database schema cleanup statements
+    drop-doc: "DROP TABLE DOCUMENT"
+    # data initialization statements
+    insert-doc: "INSERT INTO DOCUMENT (ID, JSON) VALUES (?, ?)"
+    # data initialization verification statements
+    select-count: "SELECT count(ID) AS COUNT FROM DOCUMENT"
+    # Select pokemon's name
+    select-pokemon-name: "SELECT json_value(JSON, '$.name') AS NAME FROM DOCUMENT WHERE ID = ?"
+    # Update pokemon's name
+    update-pokemon-name: "UPDATE DOCUMENT SET JSON = json_mergepatch(JSON, '{\"name\":\"Machoke\"}' ) WHERE ID = ?"
+    # Select pokemon as JSON
+    select-pokemon-json: "SELECT json_serialize(JSON) AS POKEMON FROM DOCUMENT WHERE ID = ?"
+    # Select date from "caught" parameter of JSON object
+    select-pokemon-caught: "SELECT json_value(JSON, '$.caught') AS CAUGHT FROM DOCUMENT WHERE ID = ?"
+
+    # 21c specific statements
+    # Select JSON document by ID
+    select-pokemon-by-id: "SELECT json_serialize(JSON) AS JSON FROM DOCUMENT WHERE ID = ?"
+
+# Tests configuration
+test:
+    # Whether database supports ping statement as DML (default value is true)
+    ping-dml: false

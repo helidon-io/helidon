@@ -21,7 +21,8 @@ server:
 db:
   source: jdbc
   connection:
-    url: jdbc:mariadb://${db.host}:${db.port}/${db.database}?useSSL=false&allowPublicKeyRetrieval=true
+#    url: jdbc:mariadb://${db.host}:${db.port}/${db.database}?useSSL=false&allowPublicKeyRetrieval=true
+    url: ${db.url}
     username: ${db.user}
     password: ${db.password}
   health-check:

@@ -32,12 +32,16 @@ final class JdbcExecuteContext extends DbClientContext {
     private final ExecutorService executorService;
     private final String dbType;
     private final CompletionStage<Connection> connection;
+    private final JdbcCustomizationsManager customizationsManager;
+    private final boolean caseSensitive;
 
     private JdbcExecuteContext(Builder builder) {
         super(builder);
         this.executorService = builder.executorService;
         this.dbType = builder.dbType;
         this.connection = builder.connection;
+        this.customizationsManager = builder.customizationsManager;
+        this.caseSensitive = builder.caseSensitive;
     }
 
     /**
@@ -60,6 +64,14 @@ final class JdbcExecuteContext extends DbClientContext {
         return connection;
     }
 
+    JdbcCustomizationsManager customizationsManager() {
+        return customizationsManager;
+    }
+
+    boolean caseSensitive() {
+        return caseSensitive;
+    }
+
     void addFuture(CompletableFuture<Long> queryFuture) {
         this.futures.add(queryFuture);
     }
@@ -79,6 +91,8 @@ final class JdbcExecuteContext extends DbClientContext {
         private ExecutorService executorService;
         private String dbType;
         private CompletionStage<Connection> connection;
+        private JdbcCustomizationsManager customizationsManager;
+        private boolean caseSensitive;
 
         @Override
         public JdbcExecuteContext build() {
@@ -99,5 +113,17 @@ final class JdbcExecuteContext extends DbClientContext {
             this.connection = connection;
             return this;
         }
+
+        Builder customizationsManager(JdbcCustomizationsManager customizationsManager) {
+            this.customizationsManager = customizationsManager;
+            return this;
+        }
+
+        Builder caseSensitive(boolean caseSensitive) {
+            this.caseSensitive = caseSensitive;
+            return this;
+        }
+
     }
+
 }

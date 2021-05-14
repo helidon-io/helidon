@@ -24,6 +24,7 @@ module io.helidon.dbclient.jsonp {
 
     exports io.helidon.dbclient.jsonp;
 
-    provides io.helidon.dbclient.spi.DbMapperProvider with io.helidon.dbclient.jsonp.JsonProcessingMapperProvider;
+    provides io.helidon.dbclient.spi.DbMapperProvider with io.helidon.dbclient.jsonp.JsonProcessingDbMapperProvider;
+    provides io.helidon.common.mapper.spi.MapperProvider with io.helidon.dbclient.jsonp.JsonProcessingMapperProvider;
 }
 

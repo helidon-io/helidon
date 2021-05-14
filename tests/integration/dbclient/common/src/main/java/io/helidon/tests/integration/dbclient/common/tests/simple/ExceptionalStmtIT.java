@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.tests.integration.dbclient.common.tests.simple;
 
 import java.util.concurrent.CompletionException;
@@ -20,6 +21,7 @@ import java.util.logging.Logger;
 
 import io.helidon.dbclient.DbClientException;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
+import io.helidon.tests.integration.dbclient.common.ConfigIT;
 
 import org.junit.jupiter.api.Test;
 
@@ -112,8 +114,11 @@ public class ExceptionalStmtIT extends AbstractIT {
                     .execute())
                     .collectList()
                     .await();
-            LOGGER.warning(() -> "Test failed");
-            fail("Execution of query with named parameter with passing ordered parameter value shall fail.");
+            // It passes with Oracle DB which seems to be able to set named parameters values using JDBC PreparedStatement set.
+            if (ConfigIT.dbType != ConfigIT.DbType.ORACLE) {
+                LOGGER.warning(() -> "Test failed");
+                fail("Execution of query with named parameter with passing ordered parameter value shall fail.");
+            }
         } catch (DbClientException | CompletionException ex) {
             LOGGER.info(() -> String.format("Expected exception: %s", ex.getMessage()));
         }

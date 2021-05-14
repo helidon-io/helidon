@@ -46,56 +46,72 @@ public class MongoDbExecute extends AbstractDbExecute implements DbExecute {
 
     @Override
     public DbStatementQuery createNamedQuery(String statementName, String statement) {
-        return new MongoDbStatementQuery(db,
-                                         DbStatementContext.create(clientContext,
-                                                                   DbStatementType.QUERY,
-                                                                   statementName,
-                                                                   statement));
+        return new MongoDbStatementQuery(
+                db,
+                DbStatementContext.create(clientContext,
+                        DbStatementType.QUERY,
+                        statementName,
+                        statement,
+                        true));
     }
 
     @Override
     public DbStatementGet createNamedGet(String statementName, String statement) {
-        return new MongoDbStatementGet(db,
-                                       DbStatementContext.create(clientContext,
-                                                                 DbStatementType.GET,
-                                                                 statementName,
-                                                                 statement));
+        return new MongoDbStatementGet(
+                db,
+                DbStatementContext.create(clientContext,
+                        DbStatementType.GET,
+                        statementName,
+                        statement,
+                        true));
     }
 
     @Override
     public DbStatementDml createNamedDmlStatement(String statementName, String statement) {
-        return new MongoDbStatementDml(db,
-                                       DbStatementContext.create(clientContext,
-                                                                 DbStatementType.DML,
-                                                                 statementName,
-                                                                 statement));
+        return new MongoDbStatementDml(
+                db,
+                DbStatementContext.create(
+                        clientContext,
+                        DbStatementType.DML,
+                        statementName,
+                        statement,
+                        true));
     }
 
     @Override
     public DbStatementDml createNamedInsert(String statementName, String statement) {
-        return new MongoDbStatementDml(db,
-                                       DbStatementContext.create(clientContext,
-                                                                 DbStatementType.INSERT,
-                                                                 statementName,
-                                                                 statement));
+        return new MongoDbStatementDml(
+                db,
+                DbStatementContext.create(
+                        clientContext,
+                        DbStatementType.INSERT,
+                        statementName,
+                        statement,
+                        true));
     }
 
     @Override
     public DbStatementDml createNamedUpdate(String statementName, String statement) {
-        return new MongoDbStatementDml(db,
-                                       DbStatementContext.create(clientContext,
-                                                                 DbStatementType.UPDATE,
-                                                                 statementName,
-                                                                 statement));
+        return new MongoDbStatementDml(
+                db,
+                DbStatementContext.create(
+                        clientContext,
+                        DbStatementType.UPDATE,
+                        statementName,
+                        statement,
+                        true));
     }
 
     @Override
     public DbStatementDml createNamedDelete(String statementName, String statement) {
-        return new MongoDbStatementDml(db,
-                                       DbStatementContext.create(clientContext,
-                                                                 DbStatementType.DELETE,
-                                                                 statementName,
-                                                                 statement));
+        return new MongoDbStatementDml(
+                db,
+                DbStatementContext.create(
+                        clientContext,
+                        DbStatementType.DELETE,
+                        statementName,
+                        statement,
+                        true));
     }
 
     // MongoDB internals are not blocking. Single instance is returned as already completed.

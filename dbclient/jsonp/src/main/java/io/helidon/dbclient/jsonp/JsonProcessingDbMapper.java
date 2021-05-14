@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.dbclient.jsonp;
 
 import java.math.BigDecimal;
@@ -37,7 +38,7 @@ import jakarta.json.JsonValue;
 /**
  * Json processing mapper.
  */
-public final class JsonProcessingMapper implements DbMapper<JsonObject> {
+public final class JsonProcessingDbMapper implements DbMapper<JsonObject> {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final Map<Class<?>, DbJsonWriter> JSON_WRITERS = new IdentityHashMap<>();
     private static final DbJsonWriter NUMBER_WRITER = (builder, name, value) -> builder.add(name, ((Number) value).longValue());
@@ -65,7 +66,7 @@ public final class JsonProcessingMapper implements DbMapper<JsonObject> {
         JSON_WRITERS.put(boolean.class, JSON_WRITERS.get(Boolean.class));
     }
 
-    private JsonProcessingMapper() {
+    private JsonProcessingDbMapper() {
     }
 
     /**
@@ -74,8 +75,8 @@ public final class JsonProcessingMapper implements DbMapper<JsonObject> {
      *
      * @return a new mapper
      */
-    public static JsonProcessingMapper create() {
-        return new JsonProcessingMapper();
+    public static JsonProcessingDbMapper create() {
+        return new JsonProcessingDbMapper();
     }
 
     /**

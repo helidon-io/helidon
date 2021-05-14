@@ -21,7 +21,8 @@ server:
 db:
   source: jdbc
   connection:
-    url: jdbc:sqlserver://${db.host}:${db.port};databaseName=${db.database}
+#    url: jdbc:sqlserver://${db.host}:${db.port};databaseName=${db.database}
+    url: ${db.url}
     username: ${db.user}
     password: ${db.password}
   health-check:

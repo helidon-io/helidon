@@ -69,6 +69,7 @@ public class SimpleUpdateIT extends AbstractIT {
             addPokemon(new Pokemon(++curId, "Diglett", TYPES.get(5)));               // BASE_ID+7
         } catch (Exception ex) {
             LOGGER.warning(() -> String.format("Exception in setup: %s", ex));
+            ex.printStackTrace();
             throw ex;
         }
     }

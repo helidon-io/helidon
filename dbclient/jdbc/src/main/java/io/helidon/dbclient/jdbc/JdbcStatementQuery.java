@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
+import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbColumn;
 import io.helidon.dbclient.DbMapperManager;
@@ -108,7 +109,8 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
                                                  dbMapperManager(),
                                                  mapperManager(),
                                                  queryFuture,
-                                                 rs));
+                                                 rs,
+                                                 context()));
             } catch (Throwable e) {
                 LOGGER.log(Level.FINEST,
                            String.format("Failed to execute query %s: %s", statement.toString(), e.getMessage()),
@@ -127,13 +129,15 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
             DbMapperManager dbMapperManager,
             MapperManager mapperManager,
             CompletableFuture<Long> queryFuture,
-            ResultSet resultSet) {
+            ResultSet resultSet,
+            DbStatementContext context) {
 
         return Multi.create(new JdbcDbRows(resultSet,
                                          executorService,
                                          dbMapperManager,
                                          mapperManager,
-                                         queryFuture)
+                                         queryFuture,
+                                         context)
                                   .publisher());
     }
 
@@ -196,18 +200,21 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
         private final MapperManager mapperManager;
         private final CompletableFuture<Long> queryFuture;
         private final ResultSet resultSet;
+        private final DbStatementContext context;
 
         private JdbcDbRows(ResultSet resultSet,
                            ExecutorService executorService,
                            DbMapperManager dbMapperManager,
                            MapperManager mapperManager,
-                           CompletableFuture<Long> queryFuture) {
+                           CompletableFuture<Long> queryFuture,
+                           DbStatementContext context) {
 
             this.executorService = executorService;
             this.dbMapperManager = dbMapperManager;
             this.mapperManager = mapperManager;
             this.queryFuture = queryFuture;
             this.resultSet = resultSet;
+            this.context = context;
         }
 
         Flow.Publisher<DbRow> publisher() {
@@ -221,7 +228,8 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
                                     resultSet,
                                     queryFuture,
                                     dbMapperManager,
-                                    mapperManager);
+                                    mapperManager,
+                                    context);
         }
 
         private void checkResult() {
@@ -238,18 +246,21 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
         private final CompletableFuture<Long> queryFuture;
         private final DbMapperManager dbMapperManager;
         private final MapperManager mapperManager;
+        private final DbStatementContext context;
 
         private RowPublisher(ExecutorService executorService,
                              ResultSet rs,
                              CompletableFuture<Long> queryFuture,
                              DbMapperManager dbMapperManager,
-                             MapperManager mapperManager) {
+                             MapperManager mapperManager,
+                             DbStatementContext context) {
 
             this.executorService = executorService;
             this.rs = rs;
             this.queryFuture = queryFuture;
             this.dbMapperManager = dbMapperManager;
             this.mapperManager = mapperManager;
+            this.context = context;
         }
 
         @Override
@@ -301,7 +312,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
                         }
                         for (long i = 0; i < nextElement; i++) {
                             if (rs.next()) {
-                                DbRow dbRow = createDbRow(rs, metadata, dbMapperManager, mapperManager);
+                                DbRow dbRow = createDbRow(rs, metadata, dbMapperManager, mapperManager, context);
                                 subscriber.onNext(dbRow);
                                 count++;
                             } else {
@@ -326,7 +337,8 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
         private DbRow createDbRow(ResultSet rs,
                                   Map<Long, DbColumn> metadata,
                                   DbMapperManager dbMapperManager,
-                                  MapperManager mapperManager) throws SQLException {
+                                  MapperManager mapperManager,
+                                  DbStatementContext context) throws SQLException {
             // read whole row
             // for each column
             Map<String, DbColumn> byStringsWithValues = new HashMap<>();
@@ -403,19 +415,31 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
                         return meta.name();
                     }
                 };
-                byStringsWithValues.put(meta.name(), withValue);
+                byStringsWithValues.put(context.caseSensitive() ? meta.name() : meta.name().toLowerCase(), withValue);
                 byNumbersWithValues.put(i, withValue);
             }
 
             return new DbRow() {
+
                 @Override
                 public DbColumn column(String name) {
-                    return byStringsWithValues.get(name);
+                    final String preparedName = context.caseSensitive() ? name : name.toLowerCase();
+                    final DbColumn column = byStringsWithValues.get(preparedName);
+                    if (column == null) {
+                        throw new DbClientException(String.format(
+                                "Column %s was not found in the database row", name));
+                    }
+                    return column;
                 }
 
                 @Override
                 public DbColumn column(int index) {
-                    return byNumbersWithValues.get(index);
+                    final DbColumn column = byNumbersWithValues.get(index);
+                    if (column == null) {
+                        throw new DbClientException(String.format(
+                                "Column with index %d was not found in the database row", index));
+                    }
+                    return column;
                 }
 
                 @Override

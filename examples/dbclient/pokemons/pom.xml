@@ -81,7 +81,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.db</groupId>
-            <artifactId>ojdbc</artifactId>
+            <artifactId>helidon-integrations-db-ojdbc</artifactId>
         </dependency>
 <!--
         <dependency>

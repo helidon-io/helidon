@@ -196,7 +196,7 @@ public class CheckMsSqlIT {
      */
     @Test
     public void testDmlStatementExecution() throws SQLException {
-        CheckIT.ConnectionBuilder builder = new CheckIT.ConnectionBuilder();
+        ConfigJDBC.ConnectionBuilder builder = new ConfigJDBC.ConnectionBuilder();
         String ping = CONFIG.get("db.health-check.statement").asString().get();
         String typeStr = CONFIG.get("db.health-check.type").asString().get();
         boolean pingDml = typeStr != null && "dml".equals(typeStr.toLowerCase());

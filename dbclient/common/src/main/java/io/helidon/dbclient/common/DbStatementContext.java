@@ -26,6 +26,8 @@ public class DbStatementContext {
     private final DbStatementType statementType;
     private final String statementName;
     private final String statementText;
+    // Database internal identifiers (table and column names) case sensitivity
+    private final boolean caseSensitive;
 
     /**
      * Create a new instance using a builder each implementation must extend.
@@ -37,6 +39,7 @@ public class DbStatementContext {
         this.statementType = builder.statementType;
         this.statementName = builder.statementName;
         this.statementText = builder.statementText;
+        this.caseSensitive = builder.caseSensitive;
     }
 
     /**
@@ -55,18 +58,21 @@ public class DbStatementContext {
      * @param statementType type of statement
      * @param statementName name of statement
      * @param statementText text of the statement to execute
+     * @param caseSensitive whether DbClient instance should be case sensitive or not
      *
      * @return a new statement context
      */
     public static DbStatementContext create(DbClientContext clientContext,
                                             DbStatementType statementType,
                                             String statementName,
-                                            String statementText) {
+                                            String statementText,
+                                            boolean caseSensitive) {
         return builder()
                 .clientContext(clientContext)
                 .statementType(statementType)
                 .statementName(statementName)
                 .statementText(statementText)
+                .caseSensitive(caseSensitive)
                 .build();
     }
 
@@ -103,6 +109,15 @@ public class DbStatementContext {
     }
 
     /**
+     * Database identifiers (table and column names) case sensitivity.
+     *
+     * @return database identifiers case sensitivity
+     */
+    public boolean caseSensitive() {
+        return caseSensitive;
+    }
+
+    /**
      * A fluent API builder to create {@link io.helidon.dbclient.common.DbStatementContext}.
      */
     public static final class Builder extends BuilderBase<Builder> implements io.helidon.common.Builder<Builder, DbStatementContext> {
@@ -126,6 +141,7 @@ public class DbStatementContext {
         private DbStatementType statementType;
         private String statementName;
         private String statementText;
+        private boolean caseSensitive;
 
         /**
          * A no-op constructor.
@@ -176,5 +192,18 @@ public class DbStatementContext {
             this.statementText = statementText;
             return me;
         }
+
+        /** Set DbClient instance case sensitivity (for column names, table names, etc.).
+         * Default value is {@code false}.
+         *
+         * @param caseSensitive whether DbClient instance should be case sensitive or not
+         * @return updated builder instance
+         */
+        public T caseSensitive(boolean caseSensitive) {
+            this.caseSensitive = caseSensitive;
+            return me;
+        }
+
     }
+
 }

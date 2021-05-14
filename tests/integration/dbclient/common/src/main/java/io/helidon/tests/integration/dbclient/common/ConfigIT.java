@@ -15,7 +15,6 @@
  */
 package io.helidon.tests.integration.dbclient.common;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -30,6 +29,13 @@ public class ConfigIT {
 
     private static final String DEFAULT_CONFIG_FILE="test.yaml";
 
+    /** Database type. */
+    public static DbType dbType = null;
+
+    public static final void initDbType(final String name) {
+        dbType = ConfigIT.DbType.getDbType(name);
+    }
+
     /**
      * Retrieve configuration file from {@code io.helidon.tests.integration.dbclient.config}
      * property if exists.
@@ -39,8 +45,34 @@ public class ConfigIT {
      */
     public static String configFile() {
         String configFile = System.getProperty(CONFIG_PROPERTY_NAME, DEFAULT_CONFIG_FILE);
-        LOGGER.info(() -> String.format("Configuration file: %s", configFile));
+        LOGGER.fine(() -> String.format("Configuration file: %s", configFile));
         return configFile;
+    }
+
+    public static enum DbType {
+        MYSQL("MySQL"),
+        MARIADB("MariaDB"),
+        PGSQL("Postgres"),
+        ORACLE("Oracle"),
+        MSSQL("Microsoft");
+
+        private final String name;
+
+        private DbType(final String name) {
+            this.name = name.toLowerCase();
+        }
+
+        public static DbType getDbType(final String name) {
+            for (DbType value : DbType.values()) {
+                if (name.toLowerCase().contains(value.name)) {
+                    LOGGER.finer(() -> String.format("Database type: %s", value.name));
+                    return value;
+                }
+            }
+            return null;
+        }
+
+
     }
 
 }

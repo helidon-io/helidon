@@ -25,7 +25,7 @@
         <version>3.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>ojdbc</artifactId>
+    <artifactId>helidon-integrations-db-ojdbc</artifactId>
     <name>Helidon Integrations DB Oracle JDBC</name>
     <description>JDBC driver for Oracle database with native-image support</description>
 

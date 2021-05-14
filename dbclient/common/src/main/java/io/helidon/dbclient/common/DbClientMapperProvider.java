@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.dbclient.common;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -43,10 +46,20 @@ public class DbClientMapperProvider implements MapperProvider {
     private static final Map<Class<?>, Map<Class<?>, Mapper<?, ?>>> MAPPERS = initMappers();
 
     private static Map<Class<?>, Map<Class<?>, Mapper<?, ?>>> initMappers() {
-        // All mappers index
-        Map<Class<?>, Map<Class<?>, Mapper<?, ?>>> mappers = new HashMap<>(3);
-        // * Mappers for java.sql.Timestamp source
-        Map<Class<?>, Mapper<Timestamp, Object>> sqlTimestampMap = new HashMap<>(4);
+        Map<Class<?>, Map<Class<?>, Mapper<?, ?>>> mappers = new HashMap<>(6);
+        mappers.put(Timestamp.class, timestampMappers());
+        mappers.put(java.sql.Date.class, sqlDateMappers());
+        mappers.put(java.sql.Time.class, sqlTimeMappers());
+        mappers.put(BigInteger.class, bigIntegerMappers());
+        mappers.put(BigDecimal.class, bigDecimalMappers());
+        mappers.put(Long.class, longMappers());
+
+        return Collections.unmodifiableMap(mappers);
+    }
+
+    // Mappers for java.sql.Timestamp source
+    private static Map<Class<?>, Mapper<?, ?>> timestampMappers() {
+        Map<Class<?>, Mapper<Timestamp, Object>> sqlTimestampMap = new HashMap<>(5);
         //   - Mapper for java.sql.Timestamp to java.util.Date
         sqlTimestampMap.put(
                 Date.class,
@@ -71,10 +84,11 @@ public class DbClientMapperProvider implements MapperProvider {
         sqlTimestampMap.put(
                 GregorianCalendar.class,
                 DbClientMapperProvider::sqlTimestampToGregorianCalendar);
-        mappers.put(
-                Timestamp.class,
-                Collections.unmodifiableMap(sqlTimestampMap));
-        // * Mappers for java.sql.Date source
+        return Collections.unmodifiableMap(sqlTimestampMap);
+    }
+
+    // Mappers for java.sql.Date source
+    private static Map<Class<?>, Mapper<?, ?>> sqlDateMappers() {
         Map<Class<?>, Mapper<java.sql.Date, Object>> sqlDateMap = new HashMap<>(2);
         //   - Mapper for java.sql.Date to java.util.Date
         sqlDateMap.put(
@@ -86,10 +100,11 @@ public class DbClientMapperProvider implements MapperProvider {
                 (java.sql.Date source) -> source != null
                         ? source.toLocalDate()
                         : null);
-        mappers.put(
-                java.sql.Date.class,
-                Collections.unmodifiableMap(sqlDateMap));
-        // * Mappers for java.sql.Time source
+        return Collections.unmodifiableMap(sqlDateMap);
+    }
+
+    // Mappers for java.sql.Time source
+    private static Map<Class<?>, Mapper<?, ?>> sqlTimeMappers() {
         Map<Class<?>, Mapper<java.sql.Time, Object>> sqlTimeMap = new HashMap<>(2);
         //   - Mapper for java.sql.Time to java.util.Date
         sqlTimeMap.put(
@@ -101,10 +116,93 @@ public class DbClientMapperProvider implements MapperProvider {
                 (java.sql.Time source) -> source != null
                         ? source.toLocalTime()
                         : null);
-        mappers.put(
-                java.sql.Time.class,
-                Collections.unmodifiableMap(sqlTimeMap));
-        return Collections.unmodifiableMap(mappers);
+        return Collections.unmodifiableMap(sqlTimeMap);
+    }
+
+    // Mappers for java.math.BigInteger source
+    private static Map<Class<?>, Mapper<?, ?>> bigIntegerMappers() {
+        Map<Class<?>, Mapper<BigInteger, Object>> bigIntegerMap = new HashMap<>(4);
+        //   - Mapper for BigInteger to Byte
+        bigIntegerMap.put(
+                Byte.class,
+                source -> source.byteValueExact());
+        //   - Mapper for BigInteger to Short
+        bigIntegerMap.put(
+                Short.class,
+                source -> source.shortValueExact());
+        //   - Mapper for BigInteger to Integer
+        bigIntegerMap.put(
+                Integer.class,
+                source -> source.intValueExact());
+        //   - Mapper for BigInteger to Long
+        bigIntegerMap.put(
+                Long.class,
+                source -> source.longValueExact());
+        return Collections.unmodifiableMap(bigIntegerMap);
+    }
+
+    // Mappers for java.math.BigDecimal source
+    private static Map<Class<?>, Mapper<?, ?>> bigDecimalMappers() {
+        Map<Class<?>, Mapper<BigDecimal, Object>> bigDecimalMap = new HashMap<>(4);
+        //   - Mapper for BigDecimal to Byte
+        bigDecimalMap.put(
+                Byte.class,
+                source -> source.byteValueExact());
+        //   - Mapper for BigDecimal to Short
+        bigDecimalMap.put(
+                Short.class,
+                source -> source.shortValueExact());
+        //   - Mapper for BigDecimal to Integer
+        bigDecimalMap.put(
+                Integer.class,
+                source -> source.intValueExact());
+        //   - Mapper for BigDecimal to Long
+        bigDecimalMap.put(
+                Long.class,
+                source -> source.longValueExact());
+        return Collections.unmodifiableMap(bigDecimalMap);
+    }
+
+    // Mappers for Long source
+    private static Map<Class<?>, Mapper<?, ?>> longMappers() {
+        Map<Class<?>, Mapper<Long, Object>> longMap = new HashMap<>(3);
+        //   - Mapper for Long to Byte
+        longMap.put(
+                Byte.class,
+                source -> {
+                    if (source < Byte.MIN_VALUE) {
+                        throw new ArithmeticException(String.format("Value of %d is too low for Byte", source));
+                    }
+                    if (source > Byte.MAX_VALUE) {
+                        throw new ArithmeticException(String.format("Value of %d is too high for Byte", source));
+                    }
+                    return source.byteValue();
+                });
+        //   - Mapper for Long to Short
+        longMap.put(
+                Short.class,
+                source -> {
+                    if (source < Short.MIN_VALUE) {
+                        throw new ArithmeticException(String.format("Value of %d is too low for Short", source));
+                    }
+                    if (source > Short.MAX_VALUE) {
+                        throw new ArithmeticException(String.format("Value of %d is too high for Short", source));
+                    }
+                    return source.shortValue();
+                });
+        //   - Mapper for Long to Integer
+        longMap.put(
+                Integer.class,
+                source -> {
+                    if (source < Integer.MIN_VALUE) {
+                        throw new ArithmeticException(String.format("Value of %d is too low for Integer", source));
+                    }
+                    if (source > Integer.MAX_VALUE) {
+                        throw new ArithmeticException(String.format("Value of %d is too high for Integer", source));
+                    }
+                    return source.intValue();
+                });
+        return Collections.unmodifiableMap(longMap);
     }
 
     @Override
