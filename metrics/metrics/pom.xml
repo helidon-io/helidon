@@ -95,8 +95,16 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
+                <artifactId>maven-surefire-plugin</artifactId>
                     <executions>
+                        <execution>
+                            <id>default-test</id>
+                            <configuration>
+                                <excludes>
+                                    <exclude>**/TestServerWithKeyPerformanceIndicatorMetrics.java</exclude>
+                                </excludes>
+                            </configuration>
+                        </execution>
                         <execution>
                             <!-- Run this test in default-test and also here with an env var set -->
                             <id>metrics-global-tags-set</id>
@@ -110,6 +118,18 @@
                             <environmentVariables>
                                 <MP_METRICS_TAGS>globalTag1=gVal1,globalTag2=gVal2</MP_METRICS_TAGS>
                             </environmentVariables>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <!-- Run in separate invocation so service loader gets the correct, non-default set-up. -->
+                            <id>key-performance-indicator-metrics-enabled</id>
+                            <goals>
+                                <goal>test</goal>
+                            </goals>
+                            <configuration>
+                                <includes>
+                                    <include>**/TestServerWithKeyPerformanceIndicatorMetrics.java</include>
+                                </includes>
                             </configuration>
                         </execution>
                     </executions>

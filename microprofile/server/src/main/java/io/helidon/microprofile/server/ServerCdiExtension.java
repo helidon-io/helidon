@@ -52,6 +52,7 @@ import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.microprofile.cdi.BuildTimeStart;
 import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
@@ -60,6 +61,7 @@ import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
@@ -103,6 +105,34 @@ public class ServerCdiExtension implements Extension {
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         serverBuilder.config(config.get("server"));
         this.config = config;
+    }
+
+    // Priority must ensure that these handlers are added before the MetricsSupport KPI metrics handler.
+    private void registerKpiMetricsDeferrableRequestHandlers(
+            @Observes @Priority(LIBRARY_BEFORE) @Initialized(ApplicationScoped.class)
+            Object event, BeanManager beanManager) {
+        JaxRsCdiExtension jaxRs = beanManager.getExtension(JaxRsCdiExtension.class);
+
+        List<JaxRsApplication> jaxRsApplications = jaxRs.applicationsToRun();
+        jaxRsApplications.forEach(it -> registerKpiMetricsDeferrableRequestContextSetterHandler(jaxRs, it));
+    }
+
+    private void registerKpiMetricsDeferrableRequestContextSetterHandler(JaxRsCdiExtension jaxRs,
+            JaxRsApplication applicationMeta) {
+        Optional<String> contextRoot = jaxRs.findContextRoot(config, applicationMeta);
+        Optional<String> namedRouting = jaxRs.findNamedRouting(config, applicationMeta);
+        boolean routingNameRequired = jaxRs.isNamedRoutingRequired(config, applicationMeta);
+
+        Routing.Builder routing = routingBuilder(namedRouting, routingNameRequired, applicationMeta.appName());
+
+        if (contextRoot.isPresent()) {
+            String contextRootString = contextRoot.get();
+            routing.any(contextRootString, KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
+        } else {
+            LOGGER.finer(() ->
+                    "JAX-RS application " + applicationMeta.appName() + " adding deferrable request KPI metrics context on '/'");
+            routing.any(KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
+        }
     }
 
     private void startServer(@Observes @Priority(PLATFORM_AFTER + 100) @Initialized(ApplicationScoped.class) Object event,
