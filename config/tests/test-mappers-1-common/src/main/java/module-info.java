@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * Integration tests of ConfigMapper implementations available in 'module-mappers-1-base' module.
+ */
 module io.helidon.config.tests.mappers1 {
 
     requires io.helidon.config.tests.module.mappers1;

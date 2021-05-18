@@ -15,6 +15,9 @@
  *
  */
 
+/**
+ * Support for Micrometer in Helidon MP.
+ */
 module io.helidon.integrations.micrometer.cdi {
 
     requires java.logging;

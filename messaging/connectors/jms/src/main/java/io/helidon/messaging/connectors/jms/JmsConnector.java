@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import javax.jms.Topic;
 
 import io.helidon.common.Builder;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
@@ -94,6 +95,24 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
      * Password used with ConnectionFactory.
      */
     protected static final String PASSWORD_ATTRIBUTE = "password";
+    /**
+     * Client identifier for JMS connection.
+     */
+    protected static final String CLIENT_ID_ATTRIBUTE = "client-id";
+    /**
+     * True for creating durable consumer (only for topic).
+     */
+    protected static final String DURABLE_ATTRIBUTE = "durable";
+    /**
+     * Subscriber name for durable consumer used to identify subscription.
+     */
+    protected static final String SUBSCRIBER_NAME_ATTRIBUTE = "subscriber-name";
+    /**
+     * If true then any messages published to the topic using this session's connection,
+     * or any other connection with the same client identifier,
+     * will not be added to the durable subscription.
+     */
+    protected static final String NON_LOCAL_ATTRIBUTE = "non-local";
 
     static final String ACK_MODE_ATTRIBUTE = "acknowledge-mode";
     static final String TRANSACTED_ATTRIBUTE = "transacted";
@@ -198,10 +217,16 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         scheduler.shutdown();
         executor.shutdown();
         try {
-            scheduler.awaitTermination(100, TimeUnit.MILLISECONDS);
-            executor.awaitTermination(100, TimeUnit.MILLISECONDS);
+            if (!scheduler.awaitTermination(1, TimeUnit.SECONDS)) {
+                scheduler.shutdownNow();
+            }
+            if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
         } catch (InterruptedException e) {
             LOGGER.log(Level.SEVERE, e, () -> "Error when awaiting scheduler termination.");
+            scheduler.shutdownNow();
+            executor.shutdownNow();
         }
         for (SessionMetadata e : sessionRegister.values()) {
             try {
@@ -303,12 +328,24 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         try {
             SessionMetadata sessionEntry = prepareSession(config, factory);
 
-            MessageConsumer consumer = sessionEntry
-                    .session()
-                    .createConsumer(
-                            createDestination(sessionEntry.session(), ctx),
-                            config.get(MESSAGE_SELECTOR_ATTRIBUTE).asString().orElse(null)
-                    );
+            Destination destination = createDestination(sessionEntry.session(), ctx);
+            String messageSelector = config.get(MESSAGE_SELECTOR_ATTRIBUTE).asString().orElse(null);
+            String subscriberName = config.get(SUBSCRIBER_NAME_ATTRIBUTE).asString().orElse(null);
+
+            MessageConsumer consumer;
+            if (config.get(DURABLE_ATTRIBUTE).asBoolean().orElse(false)) {
+                if (!(destination instanceof Topic)) {
+                    throw new MessagingException("Can't create durable consumer. Only topic can be durable!");
+                }
+                consumer = sessionEntry.session().createDurableSubscriber(
+                        (Topic) destination,
+                        subscriberName,
+                        messageSelector,
+                        config.get(NON_LOCAL_ATTRIBUTE).asBoolean().orElse(false));
+            } else {
+                consumer = sessionEntry.session().createConsumer(destination, messageSelector);
+            }
+
 
             BufferedEmittingPublisher<Message<?>> emitter = BufferedEmittingPublisher.create();
 
@@ -445,12 +482,17 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         } else {
             Optional<String> user = config.get(USERNAME_ATTRIBUTE).asString().asOptional();
             Optional<String> password = config.get(PASSWORD_ATTRIBUTE).asString().asOptional();
+            Optional<String> userId = config.get(CLIENT_ID_ATTRIBUTE).asString().asOptional();
 
             Connection connection;
             if (user.isPresent() && password.isPresent()) {
                 connection = factory.createConnection(user.get(), password.get());
             } else {
                 connection = factory.createConnection();
+            }
+
+            if (userId.isPresent()) {
+                connection.setClientID(userId.get());
             }
 
             boolean transacted = config.get(TRANSACTED_ATTRIBUTE)

@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.integrations.oci.connect.OciHttpSignature.SignatureRequest;
@@ -67,6 +68,8 @@ class OciOutboundSecurityProvider implements OutboundSecurityProvider {
             .tokenPrefix("Signature version=\"1\",")
             .tokenHeader("Authorization")
             .build();
+
+    private static final Logger LOGGER = Logger.getLogger(OciOutboundSecurityProvider.class.getName());
 
     private final AtomicReference<OciSignatureData> signatureData = new AtomicReference<>();
     private final OutboundConfig outboundConfig;
@@ -130,6 +133,8 @@ class OciOutboundSecurityProvider implements OutboundSecurityProvider {
         newHeaders.putAll(outboundEnv.headers());
 
         OciSignatureData sigData = signatureData.get();
+        LOGGER.finest("Creating request signature with kid: " + sigData.keyId());
+
         OciHttpSignature signature = OciHttpSignature.sign(SignatureRequest.builder()
                 .env(outboundEnv)
                 .privateKey(sigData.privateKey())
