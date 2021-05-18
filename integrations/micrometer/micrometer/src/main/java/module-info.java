@@ -15,6 +15,9 @@
  *
  */
 
+/**
+ * Support for Micrometer in Helidon SE.
+ */
 module io.helidon.integrations.micrometer {
 
     requires java.logging;

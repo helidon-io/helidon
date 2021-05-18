@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,12 +42,14 @@ import java.util.logging.Logger;
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
+import javax.enterprise.context.Initialized;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.AmbiguousResolutionException;
 import javax.enterprise.inject.Any;
 import javax.enterprise.inject.CreationException;
 import javax.enterprise.inject.InjectionException;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Vetoed;
 import javax.enterprise.inject.literal.InjectLiteral;
 import javax.enterprise.inject.literal.NamedLiteral;
@@ -2151,6 +2153,27 @@ public class JpaExtension implements Extension {
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
+        }
+    }
+
+    private static void onStartup(@Observes
+                                  @Initialized(ApplicationScoped.class)
+                                  @Priority(LIBRARY_BEFORE)
+                                  final Object event,
+                                  @ContainerManaged
+                                  final Instance<EntityManagerFactory> emfs) {
+        if (!emfs.isUnsatisfied()) {
+            for (final EntityManagerFactory emfProxy : emfs) {
+                // Container-managed EntityManagerFactory instances
+                // are client proxies, so we call a business method to
+                // force "inflation" of the proxied instance.  This,
+                // in turn, may run DDL and persistence provider
+                // validation if the persistence provider has been
+                // configured to do such things early (like
+                // Eclipselink with its eclipselink.deploy-on-startup
+                // property).
+                emfProxy.isOpen();
+            }
         }
     }
 

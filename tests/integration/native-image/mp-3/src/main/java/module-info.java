@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * Quickstart MicroProfile example.
+ */
 module helidon.tests.nimage.quickstartmp {
     requires java.logging;
     requires io.helidon.microprofile.bundle;
