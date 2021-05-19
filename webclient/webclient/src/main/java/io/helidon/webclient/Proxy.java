@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.configurable.LruCache;
 import io.helidon.config.Config;
 
 import io.netty.channel.ChannelHandler;
@@ -59,6 +60,10 @@ public class Proxy {
     private static final Pattern IP_V6_HOST = Pattern.compile("^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$");
     private static final Pattern IP_V6_HEX_HOST = Pattern
             .compile("^((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)::((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)$");
+
+    private static final LruCache<String, Boolean> IVP6_HOST_MATCH_RESULTS = LruCache.create();
+    private static final LruCache<String, Boolean> IVP6_IDENTIFIER_MATCH_RESULTS = LruCache.create();
+
     private final ProxyType type;
     private final String host;
     private final int port;
@@ -258,13 +263,19 @@ public class Proxy {
     }
 
     private static boolean isIpV6Identifier(String host) {
-        return IP_V6_IDENTIFIER.matcher(host).matches()
-                || IP_V6_HEX_IDENTIFIER.matcher(host).matches();
+        return IVP6_IDENTIFIER_MATCH_RESULTS.computeValue(host, () -> isIpV6IdentifierRegExp(host)).orElse(false);
+    }
+
+    private static Optional<Boolean> isIpV6IdentifierRegExp(String host) {
+        return Optional.of(IP_V6_IDENTIFIER.matcher(host).matches() || IP_V6_HEX_IDENTIFIER.matcher(host).matches());
     }
 
     private static boolean isIpV6Host(String host) {
-        return IP_V6_HOST.matcher(host).matches()
-                || IP_V6_HEX_HOST.matcher(host).matches();
+        return IVP6_HOST_MATCH_RESULTS.computeValue(host, () -> isIpV6HostRegExp(host)).orElse(false);
+    }
+
+    private static Optional<Boolean> isIpV6HostRegExp(String host) {
+        return Optional.of(IP_V6_HOST.matcher(host).matches() || IP_V6_HEX_HOST.matcher(host).matches());
     }
 
     /**
