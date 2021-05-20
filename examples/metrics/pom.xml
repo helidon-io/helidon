@@ -33,6 +33,7 @@
     <modules>
 
         <module>exemplar</module>
+        <module>kpi</module>
     </modules>
 
 </project>

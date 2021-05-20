@@ -44,6 +44,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
+import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -280,6 +281,8 @@ public class JerseySupport implements Service {
 
             requestContext.setWriter(responseWriter);
 
+            Optional<KeyPerformanceIndicatorSupport.DeferrableRequestContext> kpiMetricsContext =
+                    req.context().get(KeyPerformanceIndicatorSupport.DeferrableRequestContext.class);
             req.content()
                     .as(InputStream.class)
                     .thenAccept(is -> {
@@ -288,7 +291,8 @@ public class JerseySupport implements Service {
                         service.execute(() -> { // No need to use submit() since the future is not used.
                             try {
                                 LOGGER.finer("Handling in Jersey started.");
-
+                                kpiMetricsContext.ifPresent(
+                                        KeyPerformanceIndicatorSupport.DeferrableRequestContext::requestProcessingStarted);
                                 requestContext.setRequestScopedInitializer(injectionManager -> {
                                     injectionManager.<Ref<ServerRequest>>getInstance(REQUEST_TYPE).set(req);
                                     injectionManager.<Ref<ServerResponse>>getInstance(RESPONSE_TYPE).set(res);
@@ -416,6 +420,7 @@ public class JerseySupport implements Service {
      * Builder for convenient way to create {@link JerseySupport}.
      */
     public static final class Builder implements Configurable<Builder>, io.helidon.common.Builder<JerseySupport> {
+
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;
         private Config config = Config.empty();

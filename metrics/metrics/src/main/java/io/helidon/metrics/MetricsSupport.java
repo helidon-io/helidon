@@ -52,19 +52,20 @@ import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Handler;
+import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.MetricUnits;
+
+import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
+import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
+import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.LONG_RUNNING_REQUESTS_CONFIG_KEY;
+import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY;
 
 /**
  * Support for metrics for Helidon Web Server.
@@ -106,11 +107,14 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
 
     private final RegistryFactory rf;
 
+    private static KeyPerformanceIndicatorMetricsSettings kpiSettings;
+
     private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
 
-    private MetricsSupport(Builder builder) {
+    protected MetricsSupport(Builder builder) {
         super(LOGGER, builder, SERVICE_NAME);
         this.rf = builder.registryFactory.get();
+        kpiSettings = builder.kpiSettingsBuilder.build();
     }
 
     /**
@@ -139,6 +143,11 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
         return new MergingJsonObjectBuilder(delegate);
     }
 
+    // For testing
+    static KeyPerformanceIndicatorMetricsSettings keyPerformanceIndicatorMetricsConfig() {
+        return kpiSettings;
+    }
+
     /**
      * Create a new builder to construct an instance.
      *
@@ -152,6 +161,17 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
         Optional<MediaType> mediaType = headers.bestAccepted(MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON);
         return mediaType.orElse(null);
     }
+
+    /**
+     * Derives the name prefix for KPI metrics based on the routing name (if any).
+     *
+     * @param routingName the routing name (empty string if none)
+     * @return prefix for KPI metrics names incorporating the routing name
+     */
+    private static String metricsNamePrefix(String routingName) {
+        return (null == routingName ? "" : routingName + ".") + KeyPerformanceIndicatorMetricsImpls.METRICS_NAME_PREFIX + ".";
+    }
+
 
     private static void getAll(ServerRequest req, ServerResponse res, Registry registry) {
         if (registry.empty()) {
@@ -327,33 +347,27 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      */
     public void configureVendorMetrics(String routingName,
             Routing.Rules rules) {
-        String metricPrefix = (null == routingName ? "" : routingName + ".") + "requests.";
+        String metricPrefix = metricsNamePrefix(routingName);
 
-        /*
-         * For each metric, create the metric ID to harvest any config-generated
-         * tags.
-         */
-        Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
-        Counter totalCount = vendor.counter(Metadata.builder()
-                .withName(metricPrefix + "count")
-                .withDisplayName("Total number of HTTP requests")
-                .withDescription("Each request (regardless of HTTP method) will increase this counter")
-                .withType(MetricType.COUNTER)
-                .withUnit(MetricUnits.NONE)
-                .build());
-
-        Meter totalMeter = vendor.meter(Metadata.builder()
-                .withName(metricPrefix + "meter")
-                .withDisplayName("Meter for overall HTTP requests")
-                .withDescription("Each request will mark the meter to see overall throughput")
-                .withType(MetricType.METERED)
-                .withUnit(MetricUnits.NONE)
-                .build());
+        KeyPerformanceIndicatorSupport.Metrics kpiMetrics = KeyPerformanceIndicatorMetricsImpls.get(metricPrefix, kpiSettings);
 
         rules.any((req, res) -> {
-            totalCount.inc();
-            totalMeter.mark();
-            req.next();
+            KeyPerformanceIndicatorSupport.Context kpiContext = kpiContext(req);
+
+            kpiContext.requestHandlingStarted(kpiMetrics);
+            res.whenSent()
+                    .thenAccept(r -> kpiContext.requestProcessingCompleted(
+                            r.status().code() < 500))
+                    .exceptionallyAccept(t -> kpiContext.requestProcessingCompleted(false));
+            Exception exception = null;
+            try {
+                req.next();
+            } catch (Exception e) {
+                exception = e;
+                throw e;
+            } finally {
+                kpiContext.requestHandlingCompleted(exception == null);
+            }
         });
     }
 
@@ -409,8 +423,13 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      */
     @Override
     public void update(Routing.Rules rules) {
-        configureVendorMetrics(null, rules);
         configureEndpoint(rules);
+    }
+
+    private static KeyPerformanceIndicatorSupport.Context kpiContext(ServerRequest request) {
+        return request.context()
+                .get(KeyPerformanceIndicatorSupport.Context.class)
+                .orElseGet(KeyPerformanceIndicatorSupport.Context::create);
     }
 
     private void getByName(ServerRequest req, ServerResponse res, Registry registry) {
@@ -500,12 +519,14 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
     /**
      * A fluent API builder to build instances of {@link MetricsSupport}.
      */
-    public static final class Builder extends HelidonRestServiceSupport.Builder<MetricsSupport, Builder>
+    public static class Builder extends HelidonRestServiceSupport.Builder<MetricsSupport, Builder>
             implements io.helidon.common.Builder<MetricsSupport> {
 
         private Supplier<RegistryFactory> registryFactory;
+        private KeyPerformanceIndicatorMetricsSettings.Builder kpiSettingsBuilder =
+                KeyPerformanceIndicatorMetricsSettings.builder();
 
-        private Builder() {
+        protected Builder() {
             super(Builder.class, DEFAULT_CONTEXT);
         }
 
@@ -518,10 +539,14 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
 
         @Override
         public MetricsSupport build() {
+            return build(MetricsSupport::new);
+        }
+
+        protected <T extends MetricsSupport> T build(Function<Builder, T> factory) {
             if (null == registryFactory) {
                 registryFactory = () -> RegistryFactory.getInstance(config());
             }
-            return new MetricsSupport(this);
+            return factory.apply(this);
         }
 
         /**
@@ -529,13 +554,15 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
          *
          * @param config configuration instance
          * @return updated builder instance
-         * @see MetricsSupport for details about configuration keys
+         * @see KeyPerformanceIndicatorMetricsSettings.Builder Details about key
+         * performance metrics configuration
          */
         public Builder config(Config config) {
             super.config(config);
             if (!config.get(BaseRegistry.BASE_ENABLED_KEY).asBoolean().orElse(true)) {
                 LOGGER.finest("Metrics support for base metrics is disabled in configuration");
             }
+            config.get(KEY_PERFORMANCE_INDICATORS_CONFIG_KEY).ifExists(this::keyPerformanceIndicatorsMetricsConfig);
             return this;
         }
 
@@ -557,6 +584,37 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
          */
         public Builder registryFactory(RegistryFactory factory) {
             registryFactory = () -> factory;
+            return this;
+        }
+
+        /**
+         * Sets the builder for KPI metrics settings, overriding any previously-assigned settings.
+         *
+         * @param builder for the KPI metrics settings
+         * @return updated builder instance
+         */
+        public Builder keyPerformanceIndicatorsMetricsSettings(KeyPerformanceIndicatorMetricsSettings.Builder builder) {
+            this.kpiSettingsBuilder = builder;
+            return this;
+        }
+
+        /**
+         * Updates the KPI metrics config using the extended KPI metrics config node provided.
+         *
+         * @param kpiConfig Config node containing extended KPI metrics config
+         * @return updated builder instance
+         */
+        public Builder keyPerformanceIndicatorsMetricsConfig(Config kpiConfig) {
+            kpiConfig.get(KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY)
+                    .asBoolean()
+                    .ifPresent(kpiSettingsBuilder::extended);
+
+            Config longRunningRequestsConfig =
+                    kpiConfig.get(LONG_RUNNING_REQUESTS_CONFIG_KEY);
+            longRunningRequestsConfig.get(LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY)
+                    .asLong()
+                    .ifPresent(kpiSettingsBuilder::longRunningRequestThresholdMs);
+
             return this;
         }
     }
