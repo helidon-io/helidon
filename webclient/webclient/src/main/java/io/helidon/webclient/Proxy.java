@@ -61,8 +61,12 @@ public class Proxy {
     private static final Pattern IP_V6_HEX_HOST = Pattern
             .compile("^((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)::((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)$");
 
-    private static final LruCache<String, Boolean> IVP6_HOST_MATCH_RESULTS = LruCache.create();
-    private static final LruCache<String, Boolean> IVP6_IDENTIFIER_MATCH_RESULTS = LruCache.create();
+    private static final LruCache<String, Boolean> IVP6_HOST_MATCH_RESULTS = LruCache.<String, Boolean>builder()
+            .capacity(100)
+            .build();
+    private static final LruCache<String, Boolean> IVP6_IDENTIFIER_MATCH_RESULTS = LruCache.<String, Boolean>builder()
+            .capacity(100)
+            .build();
 
     private final ProxyType type;
     private final String host;
