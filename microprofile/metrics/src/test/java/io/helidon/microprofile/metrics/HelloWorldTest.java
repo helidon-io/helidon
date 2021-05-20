@@ -46,6 +46,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.microprofile.metrics.HelloWorldResource.MESSAGE_SIMPLE_TIMER;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -134,21 +135,6 @@ public class HelloWorldTest {
         SimpleTimer syntheticSimpleTimer = getSyntheticSimpleTimer("messageWithArg", String.class);
         assertThat("SimpleTimer from @SyntheticSimplyTimed", syntheticSimpleTimer, is(notNullValue()));
         assertThat("SimpleTimer from @SyntheticSimplyTimed count", syntheticSimpleTimer.getCount(), is(expectedSyntheticSimpleTimerCount));
-    }
-
-    @Test
-    public void checkMetricsVendorURL() {
-        Response response = webTarget
-                .path("metrics/vendor")
-                .request()
-                .accept(MediaType.APPLICATION_JSON_TYPE)
-                .get();
-
-        assertThat("Metrics /metrics/vendor URL HTTP status", response.getStatus(), is(Http.Status.OK_200.code()));
-
-        JsonObject vendorMetrics = response.readEntity(JsonObject.class);
-
-        assertThat("Vendor metric requests.count present", vendorMetrics.containsKey("requests.count"), is(true));
     }
 
     SimpleTimer getSyntheticSimpleTimer(String methodName, Class<?>... paramTypes) {

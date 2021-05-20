@@ -15,6 +15,9 @@
  *
  */
 
+/**
+ * Helidon SE OpenAPI Support.
+ */
 module io.helidon.openapi {
     requires java.logging;
 

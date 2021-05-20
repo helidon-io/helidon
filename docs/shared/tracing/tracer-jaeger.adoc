@@ -97,3 +97,5 @@ tracing:
       tag6: 741           # JAEGER_TAGS
 ----
 
+== Integrating with Jaeger Tracing
+Jaeger tracks its own behavior using metrics. See <<{jaeger-metrics-page-ref}, Metrics Support for Jaeger>> to read how to integrate Jaeger metrics with Helidon.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+/**
+ * Integration tests of ConfigMapper implementations available in 'module-mappers-1-base'
+ * as well as 'module-mappers-2-override' module.
+ */
 module io.helidon.config.tests.mappers2 {
 
     requires io.helidon.config.tests.module.mappers1;

@@ -14,6 +14,10 @@
  * limitations under the License.
  *
  */
+
+/**
+ * Support types for REST services.
+ */
 module io.helidon.servicecommon.rest {
 
     requires java.logging;

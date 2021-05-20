@@ -44,6 +44,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
+import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -282,6 +283,8 @@ public class JerseySupport implements Service {
 
             requestContext.setWriter(responseWriter);
 
+            Optional<KeyPerformanceIndicatorSupport.DeferrableRequestContext> kpiMetricsContext =
+                    req.context().get(KeyPerformanceIndicatorSupport.DeferrableRequestContext.class);
             req.content()
                     .as(InputStream.class)
                     .thenAccept(is -> {
@@ -294,6 +297,9 @@ public class JerseySupport implements Service {
                                 // Register Application instance in context in case there is more
                                 // than one application. Class SecurityFilter requires this.
                                 req.context().register(getApplication(resourceConfig));
+
+                                kpiMetricsContext.ifPresent(
+                                        KeyPerformanceIndicatorSupport.DeferrableRequestContext::requestProcessingStarted);
 
                                 requestContext.setRequestScopedInitializer(injectionManager -> {
                                     injectionManager.<Ref<ServerRequest>>getInstance(REQUEST_TYPE).set(req);
@@ -444,6 +450,7 @@ public class JerseySupport implements Service {
      * Builder for convenient way to create {@link JerseySupport}.
      */
     public static final class Builder implements Configurable<Builder>, io.helidon.common.Builder<JerseySupport> {
+
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;
         private Config config = Config.empty();

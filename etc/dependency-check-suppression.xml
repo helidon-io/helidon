@@ -137,4 +137,16 @@
    <cve>CVE-2021-21409</cve>
 </suppress>
 
+<!-- This CVE is against old versions of git and jgit, but the CPE spec for jgit
+     was changed and now appears to wildcard the version even though the CVE only
+     applies to versions "Up to (excluding) 08-12-2014". Ours is newer than that.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: org.eclipse.jgit-4.9.9.201903122025-r.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.jgit/org\.eclipse\.jgit@.*$</packageUrl>
+   <cve>CVE-2014-9390</cve>
+</suppress>
+
 </suppressions>
