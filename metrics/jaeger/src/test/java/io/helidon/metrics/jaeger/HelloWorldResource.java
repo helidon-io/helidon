@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.metrics.jaeger;
 
-/**
- * JUnit5 extension module to run CDI tests.
- */
-module io.helidon.microprofile.tests.junit5 {
+import javax.enterprise.context.RequestScoped;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 
-    requires io.helidon.microprofile.cdi;
-    requires io.helidon.config.mp;
-    requires io.helidon.config.yaml;
-    requires org.junit.jupiter.api;
-    requires transitive jakarta.enterprise.cdi.api;
-    requires transitive java.ws.rs;
+import org.eclipse.microprofile.opentracing.Traced;
 
-    exports io.helidon.microprofile.tests.junit5;
+@Traced
+@RequestScoped
+@Path("/helloworld")
+public class HelloWorldResource {
+
+    @GET
+    @Path("/hi")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String hello() {
+        return "Hello, World!";
+    }
 }

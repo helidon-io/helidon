@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,19 +12,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
-
 /**
- * JUnit5 extension module to run CDI tests.
+ * Helidon Jaeger metrics integration.
  */
-module io.helidon.microprofile.tests.junit5 {
+module io.helidon.metrics.jaeger {
 
-    requires io.helidon.microprofile.cdi;
-    requires io.helidon.config.mp;
-    requires io.helidon.config.yaml;
-    requires org.junit.jupiter.api;
-    requires transitive jakarta.enterprise.cdi.api;
-    requires transitive java.ws.rs;
+    requires java.logging;
+    requires io.helidon.metrics;
+    requires jaeger.core;
 
-    exports io.helidon.microprofile.tests.junit5;
+    provides io.jaegertracing.spi.MetricsFactory with io.helidon.metrics.jaeger.HelidonJaegerMetricsFactory;
 }
