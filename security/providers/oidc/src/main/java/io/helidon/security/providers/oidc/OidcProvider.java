@@ -91,6 +91,7 @@ import io.helidon.security.util.TokenHandler;
 public final class OidcProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final Logger LOGGER = Logger.getLogger(OidcProvider.class.getName());
 
+    private final boolean optional;
     private final OidcConfig oidcConfig;
     private final TokenHandler paramHeaderHandler;
 
@@ -102,6 +103,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     private final BiConsumer<StringBuilder, String> scopeAppender;
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
+        this.optional = builder.optional;
         this.oidcConfig = builder.oidcConfig;
         this.propagate = builder.propagate && (oidcOutboundConfig.hasOutbound());
         this.useJwtGroups = builder.useJwtGroups;
@@ -249,7 +251,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                 }
             }
         } catch (SecurityException e) {
-            return AuthenticationResponse.failed("Failed to extract one of the configured tokens", e);
+            return failOrAbstain("Failed to extract one of the configured tokens" + e);
         }
 
         if (token.isPresent()) {
@@ -364,7 +366,24 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         }
     }
 
+    private AuthenticationResponse failOrAbstain(String message) {
+        return optional ? AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description(message)
+                    .build() :
+                AuthenticationResponse.builder()
+                        .status(AuthenticationResponse.SecurityStatus.FAILURE)
+                        .description(message)
+                        .build();
+    }
+
     private AuthenticationResponse errorResponseNoRedirect(String code, String description, Http.Status status) {
+        if (optional) {
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description(description)
+                    .build();
+        }
         if (null == code) {
             return AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE)
@@ -569,6 +588,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
      * Builder for {@link io.helidon.security.providers.oidc.OidcProvider}.
      */
     public static final class Builder implements io.helidon.common.Builder<OidcProvider> {
+        private boolean optional = false;
         private OidcConfig oidcConfig;
         // identity propagation is disabled by default. In general we should not reuse the same token
         // for outbound calls, unless it is the same audience
@@ -633,6 +653,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
          * @return updated builder instance
          */
         public Builder config(Config config) {
+            config.get("optional").asBoolean().ifPresent(this::optional);
             if (null == oidcConfig) {
                 if (config.get("identity-uri").exists()) {
                     oidcConfig = OidcConfig.create(config);
@@ -680,6 +701,19 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
          */
         public Builder oidcConfig(OidcConfig config) {
             this.oidcConfig = config;
+            return this;
+        }
+
+        /**
+         * Whether authentication is required.
+         * By default, request will fail if the authentication cannot be verified.
+         * If set to false, request will process and this provider will abstain.
+         *
+         * @param optional whether authentication is optional (true) or required (false)
+         * @return updated builder instance
+         */
+        public Builder optional(boolean optional) {
+            this.optional = optional;
             return this;
         }
 

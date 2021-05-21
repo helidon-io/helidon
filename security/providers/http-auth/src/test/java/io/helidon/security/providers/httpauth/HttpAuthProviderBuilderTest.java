@@ -62,9 +62,11 @@ public class HttpAuthProviderBuilderTest {
         SecureUserStore us = userStore();
 
         security = Security.builder()
-                .addAuthenticationProvider(basicAuthProvider(us), "basic")
-                .addAuthenticationProvider(digestAuthProvider(false, us), "digest")
-                .addAuthenticationProvider(digestAuthProvider(true, us), "digest_old")
+                .addAuthenticationProvider(basicAuthProvider(false,us), "basic")
+                .addAuthenticationProvider(basicAuthProvider(true, us), "basic_optional")
+                .addAuthenticationProvider(digestAuthProvider(false, false, us), "digest")
+                .addAuthenticationProvider(digestAuthProvider(false, true, us), "digest_optional")
+                .addAuthenticationProvider(digestAuthProvider(true, false, us), "digest_old")
                 .build();
     }
 
@@ -85,15 +87,17 @@ public class HttpAuthProviderBuilderTest {
         };
     }
 
-    private static Builder<? extends AuthenticationProvider> basicAuthProvider(SecureUserStore us) {
+    private static Builder<? extends AuthenticationProvider> basicAuthProvider(boolean optional, SecureUserStore us) {
         return HttpBasicAuthProvider.builder()
                 .realm("mic")
+                .optional(optional)
                 .userStore(us);
     }
 
-    private static Builder<? extends AuthenticationProvider> digestAuthProvider(boolean old, SecureUserStore us) {
+    private static Builder<? extends AuthenticationProvider> digestAuthProvider(boolean old, boolean optional, SecureUserStore us) {
         HttpDigestAuthProvider.Builder builder = HttpDigestAuthProvider.builder()
                 .realm("mic")
+                .optional(optional)
                 .digestServerSecret("pwd".toCharArray())
                 .userStore(us);
 
@@ -108,6 +112,25 @@ public class HttpAuthProviderBuilderTest {
     public void init() {
         context = security.contextBuilder(String.valueOf(COUNTER.getAndIncrement()))
                 .build();
+    }
+
+    @Test
+    public void basicTestOptional() {
+        AuthenticationResponse response = context.atnClientBuilder().explicitProvider("basic_optional").buildAndGet();
+
+        assertThat(response.status().isSuccess(), is(false));
+        assertThat(response.status().name(), is(SecurityResponse.SecurityStatus.ABSTAIN.name()));
+        assertThat(response.statusCode().orElse(200), is(200));
+        assertThat(response.description().orElse(""), is("No authorization header"));
+
+        setHeader(context, HttpBasicAuthProvider.HEADER_AUTHENTICATION, buildBasic("jack", "invalid_passworrd"));
+        System.out.println("test");
+        response = context.atnClientBuilder().explicitProvider("basic_optional").buildAndGet();
+
+        assertThat(response.status().isSuccess(), is(false));
+        assertThat(response.status().name(), is(SecurityResponse.SecurityStatus.ABSTAIN.name()));
+        assertThat(response.statusCode().orElse(200), is(200));
+        assertThat(response.description().orElse(""), is("Invalid username or password"));
     }
 
     @Test
@@ -213,6 +236,28 @@ public class HttpAuthProviderBuilderTest {
         assertThat(getUsername(context), is("jill"));
         assertThat(context.isUserInRole("admin"), is(false));
         assertThat(context.isUserInRole("user"), is(true));
+    }
+
+    @Test
+    public void digestTestOptional() {
+        AuthenticationResponse response = context.atnClientBuilder()
+                .explicitProvider("digest_optional")
+                .buildAndGet();
+
+        assertThat(response.status().isSuccess(), is(false));
+        assertThat(response.status().name(), is(SecurityResponse.SecurityStatus.ABSTAIN.name()));
+        assertThat(response.statusCode().orElse(200), is(200));
+        assertThat(response.description().orElse(""), is("No authorization header"));
+
+        setHeader(context, HttpBasicAuthProvider.HEADER_AUTHENTICATION, buildDigest(HttpDigest.Qop.AUTH, "wrong", "user"));
+        response = context.atnClientBuilder()
+                .explicitProvider("digest_optional")
+                .buildAndGet();
+
+        assertThat(response.status().isSuccess(), is(false));
+        assertThat(response.status().name(), is(SecurityResponse.SecurityStatus.ABSTAIN.name()));
+        assertThat(response.statusCode().orElse(200), is(200));
+        assertThat(response.description().orElse(""), is("Invalid username or password"));
     }
 
     @Test

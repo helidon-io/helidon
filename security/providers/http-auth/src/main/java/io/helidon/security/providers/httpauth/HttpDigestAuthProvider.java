@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.httpauth;
 
+import java.lang.SecurityException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -34,13 +35,7 @@ import java.util.stream.Collectors;
 import javax.crypto.Cipher;
 
 import io.helidon.config.Config;
-import io.helidon.security.AuthenticationResponse;
-import io.helidon.security.Principal;
-import io.helidon.security.ProviderRequest;
-import io.helidon.security.Role;
-import io.helidon.security.SecurityEnvironment;
-import io.helidon.security.Subject;
-import io.helidon.security.SubjectType;
+import io.helidon.security.*;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.SynchronousProvider;
 
@@ -59,6 +54,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
 
     private final List<HttpDigest.Qop> digestQopOptions = new LinkedList<>();
     private final SecureUserStore userStore;
+    private final boolean optional;
     private final String realm;
     private final SubjectType subjectType;
     private final HttpDigest.Algorithm digestAlgorithm;
@@ -70,6 +66,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
 
     private HttpDigestAuthProvider(Builder builder) {
         this.userStore = builder.userStore;
+        this.optional = builder.optional;
         this.realm = builder.realm;
         this.subjectType = builder.subjectType;
         this.digestAlgorithm = builder.digestAlgorithm;
@@ -132,14 +129,14 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
         List<String> authorizationHeader = headers.get(HEADER_AUTHENTICATION);
 
         if (null == authorizationHeader) {
-            return fail("No " + HEADER_AUTHENTICATION + " header");
+            return failOrAbstain("No " + HEADER_AUTHENTICATION + " header");
         }
 
         return authorizationHeader.stream()
                 .filter(header -> header.toLowerCase().startsWith(DIGEST_PREFIX))
                 .findFirst()
                 .map(value -> validateDigestAuth(value, providerRequest.env()))
-                .orElseGet(() -> fail("Authorization header does not contain digest authentication: " + authorizationHeader));
+                .orElseGet(() -> failOrAbstain("Authorization header does not contain digest authentication: " + authorizationHeader));
 
     }
 
@@ -150,7 +147,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
                                                         env.method().toLowerCase());
         } catch (HttpAuthException e) {
             LOGGER.log(Level.FINEST, "Failed to process digest token", e);
-            return fail(e.getMessage());
+            return failOrAbstain(e.getMessage());
         }
         // decrypt
         byte[] bytes;
@@ -159,10 +156,10 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
         } catch (IllegalArgumentException e) {
             LOGGER.log(Level.FINEST, "Failed to base64 decode nonce", e);
             // not base 64
-            return fail("Nonce must be base64 encoded");
+            return failOrAbstain("Nonce must be base64 encoded");
         }
         if (bytes.length < 17) {
-            return fail("Invalid nonce length");
+            return failOrAbstain("Invalid nonce length");
         }
         byte[] salt = new byte[SALT_LENGTH];
         byte[] aesNonce = new byte[AES_NONCE_LENGTH];
@@ -178,16 +175,16 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
             long nonceTimestamp = HttpAuthUtil.toLong(timestampBytes, 0, timestampBytes.length);
             //validate nonce
             if ((System.currentTimeMillis() - nonceTimestamp) > digestNonceTimeoutMillis) {
-                return fail("Nonce timeout");
+                return failOrAbstain("Nonce timeout");
             }
         } catch (Exception e) {
             LOGGER.log(Level.FINEST, "Failed to validate nonce", e);
-            return fail("Invalid nonce value");
+            return failOrAbstain("Invalid nonce value");
         }
 
         // validate realm
         if (!realm.equals(token.getRealm())) {
-            return fail("Invalid realm");
+            return failOrAbstain("Invalid realm");
         }
 
         return userStore.user(token.getUsername())
@@ -200,19 +197,23 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
                             return AuthenticationResponse.successService(buildSubject(user));
                         }
                     } else {
-                        return fail("Invalid username or password");
+                        return failOrAbstain("Invalid username or password");
                     }
                 })
-                .orElse(fail("Invalid username or password"));
+                .orElse(failOrAbstain("Invalid username or password"));
     }
 
-    private AuthenticationResponse fail(String message) {
-        return AuthenticationResponse.builder()
-                .statusCode(UNAUTHORIZED_STATUS_CODE)
-                .responseHeader(HEADER_AUTHENTICATION_REQUIRED, buildChallenge())
-                .status(AuthenticationResponse.SecurityStatus.FAILURE)
-                .description(message)
-                .build();
+    private AuthenticationResponse failOrAbstain(String message) {
+        return optional ? AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description(message)
+                    .build() :
+                AuthenticationResponse.builder()
+                        .statusCode(UNAUTHORIZED_STATUS_CODE)
+                        .responseHeader(HEADER_AUTHENTICATION_REQUIRED, buildChallenge())
+                        .status(AuthenticationResponse.SecurityStatus.FAILURE)
+                        .description(message)
+                        .build();
     }
 
     private String buildChallenge() {
@@ -266,6 +267,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
         public static final long DEFAULT_DIGEST_NONCE_TIMEOUT = 24 * 60 * 60 * 1000;
         private final List<HttpDigest.Qop> digestQopOptions = new LinkedList<>();
         private SecureUserStore userStore = EMPTY_STORE;
+        private boolean optional = false;
         private String realm = "Helidon";
         private SubjectType subjectType = SubjectType.USER;
         private HttpDigest.Algorithm digestAlgorithm = HttpDigest.Algorithm.MD5;
@@ -282,6 +284,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          * @return updated builder instance
          */
         public Builder config(Config config) {
+            config.get("optional").asBoolean().ifPresent(this::optional);
             config.get("realm").asString().ifPresent(this::realm);
             config.get("users").as(ConfigUserStore::create).ifPresent(this::userStore);
             config.get("algorithm").asString().as(HttpDigest.Algorithm::valueOf).ifPresent(this::digestAlgorithm);
@@ -351,6 +354,19 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          */
         public Builder userStore(SecureUserStore store) {
             this.userStore = store;
+            return this;
+        }
+
+        /**
+         * Whether authentication is required.
+         * By default, request will fail if the authentication cannot be verified.
+         * If set to false, request will process and this provider will abstain.
+         *
+         * @param optional whether authentication is optional (true) or required (false)
+         * @return updated builder instance
+         */
+        public Builder optional(boolean optional) {
+            this.optional = optional;
             return this;
         }
 

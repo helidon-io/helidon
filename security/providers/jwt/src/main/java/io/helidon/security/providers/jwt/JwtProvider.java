@@ -149,22 +149,13 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         try {
             maybeToken = atnTokenHandler.extractToken(providerRequest.env().headers());
         } catch (Exception e) {
-            if (optional) {
-                // maybe the token is for somebody else
-                return AuthenticationResponse.abstain();
-            } else {
-                return AuthenticationResponse.failed("JWT header not available or in a wrong format", e);
-            }
+            return failOrAbstain("JWT header not available or in a wrong format" + e);
         }
 
         return maybeToken
                 .map(this::authenticateToken)
                 .orElseGet(() -> {
-                    if (optional) {
-                        return AuthenticationResponse.abstain();
-                    } else {
-                        return AuthenticationResponse.failed("JWT header not available or in a wrong format");
-                    }
+                    return failOrAbstain ("JWT header not available or in a wrong format");
                 });
     }
 
@@ -174,7 +165,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
             signedJwt = SignedJwt.parseToken(token);
         } catch (Exception e) {
             //invalid token
-            return AuthenticationResponse.failed("Invalid token", e);
+            return failOrAbstain("Invalid token" + e);
         }
         if (verifySignature) {
             Errors errors = signedJwt.verifySignature(verifyKeys, defaultJwk);
@@ -185,14 +176,25 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
                 if (validate.isValid()) {
                     return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
                 } else {
-                    return AuthenticationResponse.failed("Audience is invalid or missing: " + expectedAudience);
+                    return failOrAbstain("Audience is invalid or missing: " + expectedAudience);
                 }
             } else {
-                return AuthenticationResponse.failed(errors.toString());
+                return failOrAbstain(errors.toString());
             }
         } else {
             return AuthenticationResponse.success(buildSubject(signedJwt.getJwt(), signedJwt));
         }
+    }
+
+    private AuthenticationResponse failOrAbstain(String message) {
+        return optional ? AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description(message)
+                    .build() :
+                AuthenticationResponse.builder()
+                    .status(AuthenticationResponse.SecurityStatus.FAILURE)
+                    .description(message)
+                    .build();
     }
 
     Subject buildSubject(Jwt jwt, SignedJwt signedJwt) {
