@@ -73,6 +73,7 @@ import static io.helidon.config.mp.MpMetaConfig.MetaConfigSource;
 /**
  * Configuration builder.
  */
+@Deprecated
 public class MpConfigBuilder implements ConfigBuilder {
     private boolean useDefaultSources = false;
     private boolean useDiscoveredSources = false;

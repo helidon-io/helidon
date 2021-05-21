@@ -47,6 +47,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 /**
  * Implementation of the basic MicroProfile {@link org.eclipse.microprofile.config.Config} API.
  */
+@Deprecated
 public class MpConfigImpl implements Config {
     private static final Logger LOGGER = Logger.getLogger(MpConfigImpl.class.getName());
     // for references resolving
