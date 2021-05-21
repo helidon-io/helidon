@@ -58,7 +58,6 @@
         <version.lib.asm>6.0</version.lib.asm>
         <version.lib.checkstyle>8.29</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
         <version.lib.kafka-junit5>3.2.1</version.lib.kafka-junit5>
         <version.lib.netty.tcnative>2.0.36.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
@@ -873,11 +872,6 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-tcnative-boringssl-static</artifactId>
                 <version>${version.lib.netty.tcnative}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jgit</groupId>
-                <artifactId>org.eclipse.jgit</artifactId>
-                <version>${version.lib.jgit}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jgit</groupId>
