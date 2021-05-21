@@ -45,5 +45,6 @@
         <module>fault-tolerance</module>
         <module>threadpool</module>
         <module>multiport</module>
+        <module>rsocket</module>
     </modules>
 </project>
