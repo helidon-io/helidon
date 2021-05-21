@@ -184,7 +184,7 @@ metrics.key-performance-indicators.extended = true
 metrics.key-performance-indicators.long-running.threshold-ms = 2000
 ----
 
-//ifeval::["{h1Prefix}" == "SE"]
+ifeval::["{h1Prefix}" == "SE"]
 Your Helidon {h1Prefix} application can also control the behavior of the KPI metrics programmatically.
 
 . Prepare a `KeyPerformanceIndicatorSettings` object, using its builder, and then pass the builder when invoking the `MetricsSupport.Builder#keyPerformanceIndicatorMetricsSettings()` method.
