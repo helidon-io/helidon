@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -201,6 +201,24 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
     public void addCookie(SetCookie cookie) {
         Objects.requireNonNull(cookie, "Parameter 'cookie' is null!");
         add(Http.Header.SET_COOKIE, cookie.toString());
+    }
+
+    @Override
+    public void clearCookie(String name) {
+        SetCookie expiredCookie = SetCookie.builder(name, "deleted")
+                .path("/")
+                .expires(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("GMT+0")))
+                .build();
+
+        List<String> values = remove(Http.Header.SET_COOKIE);
+        if (values.size() == 0) {
+            addCookie(expiredCookie);
+        } else {
+            List<String> newValues = values.stream().map(v ->
+                SetCookie.parse(v).name().equals(name) ? expiredCookie.toString() : v)
+                    .collect(Collectors.toList());
+            put(Http.Header.SET_COOKIE, newValues);
+        }
     }
 
     @Override

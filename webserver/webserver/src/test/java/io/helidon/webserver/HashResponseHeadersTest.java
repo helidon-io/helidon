@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,6 +121,28 @@ public class HashResponseHeadersTest {
                                                            "who=me",
                                                            "itis=cool; Expires=Mon, 1 Jan 2080 00:00:00 GMT; Domain=oracle.com;"
                                                                    + " Path=/foo; Secure"));
+    }
+
+    @Test
+    public void addAndClearCookies() {
+        HashResponseHeaders h = new HashResponseHeaders(null);
+        h.addCookie("foo1", "bar1");
+        h.addCookie("foo2", "bar2");
+        assertThat(h.all(Http.Header.SET_COOKIE), contains(
+                "foo1=bar1",
+                "foo2=bar2"));
+        h.clearCookie("foo1");
+        assertThat(h.all(Http.Header.SET_COOKIE), contains(
+                "foo1=deleted; Expires=Thu, 1 Jan 1970 00:00:00 GMT; Path=/",
+                "foo2=bar2"));
+    }
+
+    @Test
+    public void clearCookie() {
+        HashResponseHeaders h = new HashResponseHeaders(null);
+        h.clearCookie("foo1");
+        assertThat(h.all(Http.Header.SET_COOKIE), contains(
+                "foo1=deleted; Expires=Thu, 1 Jan 1970 00:00:00 GMT; Path=/"));
     }
 
     @Test
