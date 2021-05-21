@@ -18,8 +18,8 @@
 
 :description: Helidon metrics
 :keywords: helidon, metrics, exemplar, prometheus, OpenMetrics
-:zipkin-page: ../../shared/tracing/tracer-zipkin.adoc
-:jaeger-page: ../../shared/tracing/tracer-jaeger.adoc
+:zipkinSharedPage: ../../shared/tracing/tracer-zipkin.adoc
+:jaegerSharedPage: ../../shared/tracing/tracer-jaeger.adoc
 :open-metrics-spec-exemplars: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#exemplars
 
 Add Helidon {h1Prefix} support for  link:{open-metrics-spec-exemplars}[OpenMetrics (Prometheus) exemplars] for histograms, counters, and simple timers to your application simply by adding dependencies to your project's `pom.xml`.
@@ -37,10 +37,10 @@ Declare the following dependency in your project:
 </dependency>
 ----
 
-Also, include either link:{zipkin-page}[Helidon Zipkin] or link:{jaeger-page}[Helidon Jaeger] support:
-include::{zipkin-page}[tag=zipkin-dependency]
+Also, include either xref:{zipkinPageRef}[Helidon Zipkin] or xref:{jaegerPageRef}[Helidon Jaeger] support:
+include::{zipkinSharedPage}[tag=zipkin-dependency]
 or
-include::{jaeger-page}[tag=jaeger-dependency]
+include::{jaegerSharedPage}[tag=jaeger-dependency]
 
 Be sure Zipkin or Jaeger, whichever you chose, is running and accessible to your server.
 
