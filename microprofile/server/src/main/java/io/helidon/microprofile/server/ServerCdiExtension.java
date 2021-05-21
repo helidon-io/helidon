@@ -60,6 +60,8 @@ import io.helidon.webserver.jersey.JerseySupport;
 import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.glassfish.jersey.internal.inject.InjectionManager;
+import org.glassfish.jersey.internal.inject.Injections;
 
 import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
@@ -222,7 +224,8 @@ public class ServerCdiExtension implements Extension {
         if (jaxRsApplications.isEmpty()) {
             LOGGER.warning("There are no JAX-RS applications or resources. Maybe you forgot META-INF/beans.xml file?");
         } else {
-            jaxRsApplications.forEach(it -> addApplication(jaxRs, it));
+            InjectionManager injectionManager = Injections.createInjectionManager();
+            jaxRsApplications.forEach(it -> addApplication(jaxRs, it, injectionManager));
         }
     }
 
@@ -317,7 +320,8 @@ public class ServerCdiExtension implements Extension {
         }
     }
 
-    private void addApplication(JaxRsCdiExtension jaxRs, JaxRsApplication applicationMeta) {
+    private void addApplication(JaxRsCdiExtension jaxRs, JaxRsApplication applicationMeta,
+                                InjectionManager injectionManager) {
         LOGGER.info("Registering JAX-RS Application: " + applicationMeta.appName());
 
         Optional<String> contextRoot = jaxRs.findContextRoot(config, applicationMeta);
@@ -334,7 +338,7 @@ public class ServerCdiExtension implements Extension {
 
         Routing.Builder routing = routingBuilder(namedRouting, routingNameRequired, applicationMeta.appName());
 
-        JerseySupport jerseySupport = jaxRs.toJerseySupport(jaxRsExecutorService, applicationMeta);
+        JerseySupport jerseySupport = jaxRs.toJerseySupport(jaxRsExecutorService, applicationMeta, injectionManager);
         if (contextRoot.isPresent()) {
             String contextRootString = contextRoot.get();
             LOGGER.fine(() -> "JAX-RS application " + applicationMeta.appName() + " registered on '" + contextRootString + "'");
