@@ -56,9 +56,9 @@ import io.helidon.security.integration.common.ResponseTracing;
 import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
+import io.helidon.webserver.ServerRequest;
 
 import org.glassfish.jersey.server.ExtendedUriInfo;
-import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerConfig;
 import org.glassfish.jersey.server.model.AbstractResourceModelVisitor;
 import org.glassfish.jersey.server.model.Invocable;
@@ -74,9 +74,48 @@ import org.glassfish.jersey.server.model.RuntimeResource;
 public class SecurityFilter extends SecurityFilterCommon implements ContainerRequestFilter, ContainerResponseFilter {
     private static final Logger LOGGER = Logger.getLogger(SecurityFilter.class.getName());
 
-    private final Map<Class<?>, SecurityDefinition> resourceClassSecurity = new ConcurrentHashMap<>();
-    private final Map<Method, SecurityDefinition> resourceMethodSecurity = new ConcurrentHashMap<>();
-    private final Map<String, SecurityDefinition> subResourceMethodSecurity = new ConcurrentHashMap<>();
+    /**
+     * Since Helidon supports multiple {@code Application} subclasses as well as resource
+     * sharing among them, the caching for security definitions is first keyed on the
+     * application class.
+     */
+    private final Map<Class<?>, CacheEntry> applicationClassCache = new ConcurrentHashMap<>();
+
+    /**
+     * Cache entry for main cache. Includes application class security definition as
+     * well as security definitions for resource classes, methods and sub-resources.
+     */
+    private static class CacheEntry {
+        private SecurityDefinition appClassSecurity;
+        private final Map<Class<?>, SecurityDefinition> resourceClassSecurity = new ConcurrentHashMap<>();
+        private final Map<Method, SecurityDefinition> resourceMethodSecurity = new ConcurrentHashMap<>();
+        private final Map<String, SecurityDefinition> subResourceMethodSecurity = new ConcurrentHashMap<>();
+    }
+
+    private CacheEntry appClassCacheEntry(Class<?> appClass) {
+        return applicationClassCache.computeIfAbsent(appClass, c -> {
+            SecurityDefinition appClassSecurity = securityForClass(c, null);
+            CacheEntry entry = new CacheEntry();
+            entry.appClassSecurity = appClassSecurity;
+            return entry;
+        });
+    }
+
+    private SecurityDefinition appClassSecurity(Class<?> appClass) {
+        return appClassCacheEntry(appClass).appClassSecurity;
+    }
+
+    private Map<Class<?>, SecurityDefinition> resourceClassSecurity(Class<?> appClass) {
+        return appClassCacheEntry(appClass).resourceClassSecurity;
+    }
+
+    private Map<Method, SecurityDefinition> resourceMethodSecurity(Class<?> appClass) {
+        return appClassCacheEntry(appClass).resourceMethodSecurity;
+    }
+
+    private Map<String, SecurityDefinition> subResourceMethodSecurity(Class<?> appClass) {
+        return appClassCacheEntry(appClass).subResourceMethodSecurity;
+    }
 
     @Context
     private ServerConfig serverConfig;
@@ -84,8 +123,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     @Context
     private SecurityContext securityContext;
 
-    // The filter is in singleton scope, so caching in an instance field is OK
-    private SecurityDefinition appWideSecurity;
+    @Context
+    private ServerRequest serverRequest;
 
     private final List<AnnotationAnalyzer> analyzers = new LinkedList<>();
 
@@ -122,13 +161,9 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
      */
     @PostConstruct
     public void postConstruct() {
-        Class<?> appClass = getOriginalApplication().getClass();
-
         // we must initialize the analyzers before using them in appWideSecurity
         Config analyzersConfig = config("jersey.analyzers");
         analyzers.forEach(analyzer -> analyzer.init(analyzersConfig));
-
-        this.appWideSecurity = securityForClass(appClass, null);
     }
 
     @Override
@@ -275,6 +310,15 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         return LOGGER;
     }
 
+    /**
+     * Creates security definition based on the annotations on a class and using a
+     * parent as a starting point. Obtains real class before processing to skip
+     * proxies.
+     *
+     * @param theClass class from which to create security definition
+     * @param parent base security definition or {@code null}
+     * @return security definition for the class
+     */
     private SecurityDefinition securityForClass(Class<?> theClass, SecurityDefinition parent) {
         Class<?> realClass = getRealClass(theClass);
         Authenticated atn = realClass.getAnnotation(Authenticated.class);
@@ -313,7 +357,6 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
             definition.analyzerResponse(analyzer, analyzerResponse);
         }
-
         return definition;
     }
 
@@ -323,7 +366,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
      * @param object The object.
      * @return Its class.
      */
-    private Class<?> getRealClass(Class<?> object) {
+    private static Class<?> getRealClass(Class<?> object) {
         Class<?> result = object;
         while (result.isSynthetic()) {
             result = result.getSuperclass();
@@ -344,6 +387,13 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         Class<?> obtainedClass = invokedResource.definitionClass()
                 .orElseThrow(() -> new SecurityException("Got definition method, cannot get definition class"));
         Class<?> definitionClass = getRealClass(obtainedClass);
+
+        // Get the application for this request in case there's more than one
+        Application appInstance = serverRequest.context().get(Application.class).get();
+
+        // Create and cache security definition for application
+        Class<?> appRealClass = getRealClass(appInstance.getClass());
+        SecurityDefinition appClassSecurity = appClassSecurity(appRealClass);
 
         if (definitionClass.getAnnotation(Path.class) == null) {
             // this is a sub-resource
@@ -377,13 +427,12 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
             String fullPath = fullPathBuilder.toString();
             // now full path can be used as a cache
-            if (subResourceMethodSecurity.containsKey(fullPath)) {
-                return subResourceMethodSecurity.get(fullPath);
+            if (subResourceMethodSecurity(appRealClass).containsKey(fullPath)) {
+                return subResourceMethodSecurity(appRealClass).get(fullPath);
             }
 
             // now process each definition method and class
-            SecurityDefinition current = appWideSecurity;
-
+            SecurityDefinition current = appClassSecurity;
             for (Method method : methodsToProcess) {
                 Class<?> clazz = method.getDeclaringClass();
                 current = securityForClass(clazz, current);
@@ -414,22 +463,22 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                 current = methodDef;
             }
 
-            subResourceMethodSecurity.put(fullPath, current);
+            subResourceMethodSecurity(appRealClass).put(fullPath, current);
             return current;
         }
 
-        if (resourceMethodSecurity.containsKey(definitionMethod)) {
-            return resourceMethodSecurity.get(definitionMethod);
+        if (resourceMethodSecurity(appRealClass).containsKey(definitionMethod)) {
+            return resourceMethodSecurity(appRealClass).get(definitionMethod);
         }
 
-        SecurityDefinition definition = this.resourceClassSecurity
-                .computeIfAbsent(definitionClass, aClass -> securityForClass(definitionClass, appWideSecurity));
+        SecurityDefinition resClassSecurity = resourceClassSecurity(appRealClass)
+                .computeIfAbsent(definitionClass, aClass -> securityForClass(definitionClass, appClassSecurity));
 
         Authenticated atn = definitionMethod.getAnnotation(Authenticated.class);
         Authorized atz = definitionMethod.getAnnotation(Authorized.class);
         Audited audited = definitionMethod.getAnnotation(Audited.class);
 
-        SecurityDefinition methodDef = definition.copyMe();
+        SecurityDefinition methodDef = resClassSecurity.copyMe();
         methodDef.add(atn);
         methodDef.add(atz);
         methodDef.add(audited);
@@ -444,11 +493,11 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                 .withMethodAnnotations(methodLevelAnnots)
                 .build());
 
-        resourceMethodSecurity.put(definitionMethod, methodDef);
+        resourceMethodSecurity(appRealClass).put(definitionMethod, methodDef);
 
         for (AnnotationAnalyzer analyzer : analyzers) {
             AnnotationAnalyzer.AnalyzerResponse analyzerResponse = analyzer.analyze(definitionMethod,
-                                                                                    definition.analyzerResponse(analyzer));
+                                                                                    resClassSecurity.analyzerResponse(analyzer));
 
             methodDef.analyzerResponse(analyzer, analyzerResponse);
         }
@@ -474,32 +523,6 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         for (Annotation annotation : annotations) {
             addToMap(annotation.annotationType(), customAnnotsMap, annotation);
         }
-    }
-
-    private Application getOriginalApplication() {
-        // Unfortunately the following logic is very "implementation aware". We need the original instance of
-        // javax.ws.rs.core.Application to get the @Authenticated annotation instance if present.
-        // Jersey server configuration is immutable and a defensive copy is done with every change.
-        // However, the original Application instance is always present and hidden deep in the ServerConfig implementation.
-
-        // ResourceConfig is always the implementation of ServerConfig
-        if (!(serverConfig instanceof ResourceConfig)) {
-            throw new IllegalStateException("Could not get Application instance. Incompatible version of Jersey?");
-        }
-
-        ResourceConfig resourceConfig = (ResourceConfig) serverConfig;
-        Application application = resourceConfig.getApplication();
-
-        while (application instanceof ResourceConfig) {
-            Application wrappedApplication = ((ResourceConfig) application).getApplication();
-            //noinspection ObjectEquality
-            if (wrappedApplication == application) {
-                break;
-            }
-            application = wrappedApplication;
-        }
-
-        return application;
     }
 
     // unit test method

@@ -41,5 +41,6 @@
         <module>mp-synthetic-app</module>
         <module>mp-compression</module>
         <module>request-scope</module>
+        <module>jax-rs-multiple-apps</module>
     </modules>
 </project>

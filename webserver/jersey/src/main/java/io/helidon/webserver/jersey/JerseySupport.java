@@ -44,6 +44,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
+import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -52,6 +53,7 @@ import io.helidon.webserver.Service;
 import io.opentracing.SpanContext;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.internal.MapPropertiesDelegate;
+import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.server.ApplicationHandler;
 import org.glassfish.jersey.server.ContainerRequest;
@@ -139,7 +141,8 @@ public class JerseySupport implements Service {
             builder.resourceConfig.register(AsyncExecutorProvider.create(builder.asyncExecutorService));
         }
         this.handler = new JerseyHandler(builder.resourceConfig);
-        this.appHandler = new ApplicationHandler(builder.resourceConfig, new ServerBinder(executorService));
+        this.appHandler = new ApplicationHandler(builder.resourceConfig, new ServerBinder(executorService),
+                builder.injectionManager);
         this.container = new HelidonJerseyContainer(appHandler, builder.resourceConfig);
 
         // This configuration via system properties is for the Jersey Client API. Any
@@ -280,6 +283,8 @@ public class JerseySupport implements Service {
 
             requestContext.setWriter(responseWriter);
 
+            Optional<KeyPerformanceIndicatorSupport.DeferrableRequestContext> kpiMetricsContext =
+                    req.context().get(KeyPerformanceIndicatorSupport.DeferrableRequestContext.class);
             req.content()
                     .as(InputStream.class)
                     .thenAccept(is -> {
@@ -288,6 +293,13 @@ public class JerseySupport implements Service {
                         service.execute(() -> { // No need to use submit() since the future is not used.
                             try {
                                 LOGGER.finer("Handling in Jersey started.");
+
+                                // Register Application instance in context in case there is more
+                                // than one application. Class SecurityFilter requires this.
+                                req.context().register(getApplication(resourceConfig));
+
+                                kpiMetricsContext.ifPresent(
+                                        KeyPerformanceIndicatorSupport.DeferrableRequestContext::requestProcessingStarted);
 
                                 requestContext.setRequestScopedInitializer(injectionManager -> {
                                     injectionManager.<Ref<ServerRequest>>getInstance(REQUEST_TYPE).set(req);
@@ -320,7 +332,29 @@ public class JerseySupport implements Service {
      * Once closed, this instance is no longer usable.
      */
     public void close() {
-        appHandler.onShutdown(container);
+        try {
+            appHandler.onShutdown(container);
+        } catch (IllegalStateException e) {
+            LOGGER.warning(() -> "Exception while shutting down Jersey's application handler " + e.getMessage());
+        }
+    }
+
+    /**
+     * Extracts the actual {@code Application} instance.
+     *
+     * @param resourceConfig the resource config
+     * @return the application
+     */
+    private static Application getApplication(ResourceConfig resourceConfig) {
+        Application application = resourceConfig;
+        while (application instanceof ResourceConfig) {
+            Application wrappedApplication = ((ResourceConfig) application).getApplication();
+            if (wrappedApplication == application) {
+                break;
+            }
+            application = wrappedApplication;
+        }
+        return application;
     }
 
     /**
@@ -416,10 +450,12 @@ public class JerseySupport implements Service {
      * Builder for convenient way to create {@link JerseySupport}.
      */
     public static final class Builder implements Configurable<Builder>, io.helidon.common.Builder<JerseySupport> {
+
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;
         private Config config = Config.empty();
         private ExecutorService asyncExecutorService;
+        private InjectionManager injectionManager;
 
         private Builder() {
             this(null);
@@ -562,6 +598,18 @@ public class JerseySupport implements Service {
          */
         public Builder config(Config config) {
             this.config = config;
+            return this;
+        }
+
+        /**
+         * Sets a Jersey injection manager to enable sharing across multiple JAX-RS
+         * applications in the same Helidon application.
+         *
+         * @param injectionManager the injection manager
+         * @return updated builder instance
+         */
+        public Builder injectionManager(InjectionManager injectionManager) {
+            this.injectionManager = injectionManager;
             return this;
         }
     }
