@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.security.providers.httpauth;
 
-import java.lang.SecurityException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -35,7 +34,14 @@ import java.util.stream.Collectors;
 import javax.crypto.Cipher;
 
 import io.helidon.config.Config;
-import io.helidon.security.*;
+import io.helidon.security.AuthenticationResponse;
+import io.helidon.security.Principal;
+import io.helidon.security.ProviderRequest;
+import io.helidon.security.Role;
+import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityResponse;
+import io.helidon.security.Subject;
+import io.helidon.security.SubjectType;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.SynchronousProvider;
 
@@ -136,7 +142,8 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
                 .filter(header -> header.toLowerCase().startsWith(DIGEST_PREFIX))
                 .findFirst()
                 .map(value -> validateDigestAuth(value, providerRequest.env()))
-                .orElseGet(() -> failOrAbstain("Authorization header does not contain digest authentication: " + authorizationHeader));
+                .orElseGet(() ->
+                        failOrAbstain("Authorization header does not contain digest authentication: " + authorizationHeader));
 
     }
 
@@ -205,9 +212,10 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
 
     private AuthenticationResponse failOrAbstain(String message) {
         return optional ? AuthenticationResponse.builder()
-                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
-                    .description(message)
-                    .build() :
+                        .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                        .description(message)
+                        .build()
+                :
                 AuthenticationResponse.builder()
                         .statusCode(UNAUTHORIZED_STATUS_CODE)
                         .responseHeader(HEADER_AUTHENTICATION_REQUIRED, buildChallenge())

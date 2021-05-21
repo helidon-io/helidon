@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.security.providers.httpauth;
 
-import java.lang.SecurityException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
@@ -31,7 +30,17 @@ import java.util.regex.Pattern;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
-import io.helidon.security.*;
+import io.helidon.security.AuthenticationResponse;
+import io.helidon.security.EndpointConfig;
+import io.helidon.security.OutboundSecurityResponse;
+import io.helidon.security.Principal;
+import io.helidon.security.ProviderRequest;
+import io.helidon.security.Role;
+import io.helidon.security.SecurityContext;
+import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityResponse;
+import io.helidon.security.Subject;
+import io.helidon.security.SubjectType;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.httpauth.spi.UserStoreService;
@@ -209,7 +218,8 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                 .filter(header -> header.toLowerCase().startsWith(BASIC_PREFIX))
                 .findFirst()
                 .map(this::validateBasicAuth)
-                .orElseGet(() -> failOrAbstain("Authorization header does not contain basic authentication: " + authorizationHeader));
+                .orElseGet(() ->
+                        failOrAbstain("Authorization header does not contain basic authentication: " + authorizationHeader));
     }
 
     private AuthenticationResponse validateBasicAuth(String basicAuthHeader) {
@@ -264,7 +274,8 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         return optional ? AuthenticationResponse.builder()
                 .status(SecurityResponse.SecurityStatus.ABSTAIN)
                 .description(message)
-                .build() :
+                .build()
+                :
             AuthenticationResponse.builder()
                 .statusCode(401)
                 .responseHeader(HEADER_AUTHENTICATION_REQUIRED, buildChallenge())

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,9 +154,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
 
         return maybeToken
                 .map(this::authenticateToken)
-                .orElseGet(() -> {
-                    return failOrAbstain ("JWT header not available or in a wrong format");
-                });
+                .orElseGet(() -> failOrAbstain("JWT header not available or in a wrong format"));
     }
 
     private AuthenticationResponse authenticateToken(String token) {
@@ -190,7 +188,8 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         return optional ? AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.ABSTAIN)
                     .description(message)
-                    .build() :
+                    .build()
+                :
                 AuthenticationResponse.builder()
                     .status(AuthenticationResponse.SecurityStatus.FAILURE)
                     .description(message)

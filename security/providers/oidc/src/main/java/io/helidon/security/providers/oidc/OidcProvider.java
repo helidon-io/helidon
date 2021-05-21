@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -368,9 +368,10 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
     private AuthenticationResponse failOrAbstain(String message) {
         return optional ? AuthenticationResponse.builder()
-                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
-                    .description(message)
-                    .build() :
+                        .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                        .description(message)
+                        .build()
+                :
                 AuthenticationResponse.builder()
                         .status(AuthenticationResponse.SecurityStatus.FAILURE)
                         .description(message)
