@@ -17,6 +17,7 @@
 package io.helidon.metrics;
 
 import javax.json.JsonObject;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -28,14 +29,18 @@ import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
 
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 
 public class TestServer {
@@ -46,11 +51,14 @@ public class TestServer {
 
     private static final MetricsSupport.Builder NORMAL_BUILDER = MetricsSupport.builder();
 
+    private static MetricsSupport metricsSupport;
+
     private WebClient.Builder webClientBuilder;
 
     @BeforeAll
     public static void startup() throws InterruptedException, ExecutionException, TimeoutException {
-        webServer = startServer(NORMAL_BUILDER);
+        metricsSupport = NORMAL_BUILDER.build();
+        webServer = startServer(metricsSupport, new GreetService());
     }
 
     @BeforeEach
@@ -65,20 +73,14 @@ public class TestServer {
         shutdownServer(webServer);
     }
 
-    static WebServer startServer(MetricsSupport.Builder builder) throws InterruptedException, ExecutionException,
-            TimeoutException {
-        return startServer(0, builder);
-    }
-
     static WebServer startServer(
-            int port,
-            MetricsSupport.Builder... builders) throws
+            Service... services) throws
             InterruptedException, ExecutionException, TimeoutException {
         WebServer result = WebServer.builder(
                 Routing.builder()
-                    .register(builders)
+                    .register(services)
                     .build())
-                .port(port)
+                .port(0)
                 .build()
                 .start()
                 .toCompletableFuture()
@@ -122,7 +124,34 @@ public class TestServer {
         JsonObject metrics = response.content().as(JsonObject.class).await();
         if (System.getenv("MP_METRICS_TAGS") == null) {
             // MP_METRICS_TAGS causes metrics to add tags to metric IDs. Just do this check in the simple case, without tags.
-            assertThat("Vendor metrics in returned entity", metrics.containsKey("requests.count"), is(true));
+            assertThat("Vendor metrics requests.count in returned entity", metrics.containsKey("requests.count"), is(true));
+            assertThat("Vendor metrics requests.meter in returned entity", metrics.containsKey("requests.meter"), is(true));
+
+            // Even accesses to the /metrics endpoint should affect the metrics. Make sure.
+            int count = metrics.getInt("requests.count");
+            assertThat("requests.count", count, is(greaterThan(0)));
+
+            JsonObject meter = metrics.getJsonObject("requests.meter");
+            int meterCount = meter.getInt("count");
+            assertThat("requests.meter count", meterCount, is(greaterThan(0)));
+
+            double meterRate = meter.getJsonNumber("meanRate").doubleValue();
+            assertThat("requests.meter meanRate", meterRate, is(greaterThan(0.0)));
         }
+    }
+
+    @Test
+    void checkKPIDisabledByDefault() {
+        boolean isKPIEnabled = MetricsSupport.keyPerformanceIndicatorMetricsConfig().isExtended();
+
+        MetricRegistry vendorRegistry = RegistryFactory.getInstance()
+                .getRegistry(MetricRegistry.Type.VENDOR);
+
+        Optional<ConcurrentGauge> inflightRequests =
+                vendorRegistry.getConcurrentGauges((metricID, metric) -> metricID.getName().endsWith(
+                        KeyPerformanceIndicatorMetricsImpls.INFLIGHT_REQUESTS_NAME))
+                        .values().stream()
+                        .findAny();
+        assertThat("In-flight concurrent gauge metric exists", inflightRequests.isPresent(), is(isKPIEnabled));
     }
 }
