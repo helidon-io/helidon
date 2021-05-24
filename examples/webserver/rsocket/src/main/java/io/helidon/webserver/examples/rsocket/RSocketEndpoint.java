@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.rsocket;
+package io.helidon.webserver.examples.rsocket;
 
+import io.helidon.webserver.rsocket.HelidonDuplexConnection;
+import io.helidon.webserver.rsocket.RoutedRSocket;
 import io.netty.buffer.ByteBuf;
 import io.rsocket.ConnectionSetupPayload;
-import io.rsocket.Payload;
 import io.rsocket.RSocket;
 import io.rsocket.SocketAcceptor;
 import io.rsocket.core.RSocketServer;
@@ -29,7 +30,6 @@ import io.rsocket.metadata.WellKnownMimeType;
 import io.rsocket.transport.ServerTransport.ConnectionAcceptor;
 import reactor.core.publisher.Mono;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,9 +48,6 @@ public class RSocketEndpoint extends Endpoint {
         this.connectionAcceptor = RSocketServer
                 .create()
                 .acceptor(new SocketAcceptor() {
-
-                    // TODO: Write down a rsocket client abstraction
-                    //       rsocketHelidon.route("rsocket-endpoint")
                     @Override
                     public Mono<RSocket> accept(ConnectionSetupPayload connectionSetupPayload, RSocket rSocket) {
 
@@ -58,25 +55,9 @@ public class RSocketEndpoint extends Endpoint {
 
                         Optional<String> connectionRouteOpt = extractRoute(connectionSetupPayload.metadata());
                         // http headers
-                        return Mono.just(new RSocket() {
-                            @Override
-                            public Mono<Void> fireAndForget(Payload payload) {
-
-                                Optional<String> connectionRouteOpt = extractRoute(payload.metadata());
-                                //extractDataMimeType(payload.metadata());
-                                System.out.println(StandardCharsets.UTF_8.decode(payload.getData()).toString());
-
-                                return Mono.empty();
-                            }
-
-                            @Override
-                            public Mono<Payload> requestResponse(Payload payload) {
-                                System.out.println(StandardCharsets.UTF_8.decode(payload.getData()).toString());
-                                return RSocket.super.requestResponse(payload);
-                            }
-                        });
+                        return Mono.just(RoutedRSocket.builder()
+                                .addRequestResponse("print", PrintRequestResponseHandler.class.getCanonicalName()).build());
                     }
-
 
                 })
                 .asConnectionAcceptor();
@@ -90,40 +71,6 @@ public class RSocketEndpoint extends Endpoint {
         boolean returnMany;
 
     }
-
-    // requestResponse
-    // fireAndForget
-    // requestStream
-//    private Single<Void> handleSomething(String data) {
-//
-//    }
-//
-//  // requestResponse
-//  // requestStream
-//  private Single<String> handleSomething(String data) {
-//
-//  }
-//
-//  // requestStream
-//  private Multi<String> handleSomething(String data) {
-//
-//  }
-//
-//  // requestChannel
-//  // requestStream (Multi is always of a single element)
-//  private Multi<String> handleSomething(Multi<String> datas) {
-//
-//  }
-//
-//  // requestChannel
-//  private Single<String> handleSomething(Multi<String> datas) {
-//
-//  }
-//
-//  // requestChannel
-//  private Single<Void> handleSomething(Multi<String> datas) {
-//
-//  }
 
 
     @Override

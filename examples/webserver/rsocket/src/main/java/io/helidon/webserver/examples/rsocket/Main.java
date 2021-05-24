@@ -25,7 +25,6 @@ import javax.websocket.server.ServerEndpointConfig;
 
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.rsocket.RSocketEndpoint;
 import io.helidon.webserver.tyrus.TyrusSupport;
 
 
@@ -46,7 +45,6 @@ public class Main {
         List<Class<? extends Encoder>> encoders = Collections.emptyList();
 
         return Routing.builder()
-                .register("/rest", new MessageQueueService())
                 .register("/rsocket",
                         TyrusSupport.builder().register(
                                 ServerEndpointConfig.Builder.create(RSocketEndpoint.class, "/board")

@@ -35,9 +35,9 @@ import javax.websocket.Session;
 public class HelidonDuplexConnection implements DuplexConnection {
 
     final Session session;
-    final Sinks.Empty<Void> onCloseSink;
+    public final Sinks.Empty<Void> onCloseSink;
 
-    HelidonDuplexConnection(Session session) {
+    public HelidonDuplexConnection(Session session) {
       this.onCloseSink = Sinks.empty();
       this.session = session;
     }
