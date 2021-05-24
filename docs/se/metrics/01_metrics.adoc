@@ -20,7 +20,7 @@
 :h1Prefix: SE
 :description: Helidon metrics
 :keywords: helidon, metrics
-:feature-name: DB Client
+:feature-name: Metrics
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 Helidon SE provides the following to support metrics:

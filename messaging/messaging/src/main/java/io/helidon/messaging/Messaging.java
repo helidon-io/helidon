@@ -94,7 +94,7 @@ public interface Messaging {
             if (connector instanceof IncomingConnectorFactory) {
                 this.messaging.addIncomingConnector((IncomingConnectorFactory) connector);
             }
-            if (connector instanceof IncomingConnectorFactory) {
+            if (connector instanceof OutgoingConnectorFactory) {
                 this.messaging.addOutgoingConnector((OutgoingConnectorFactory) connector);
             }
             return this;
