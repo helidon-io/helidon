@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     static final String BASIC_PREFIX = "basic ";
 
     private static final Logger LOGGER = Logger.getLogger(HttpBasicAuthProvider.class.getName());
-    private static final Pattern CREDENTIAL_PATTERN = Pattern.compile("(.*):(.*)");
+    static final Pattern CREDENTIAL_PATTERN = Pattern.compile("(.*?):(.*)");
 
     private final List<SecureUserStore> userStores;
     private final String realm;
