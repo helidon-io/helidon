@@ -29,6 +29,7 @@ import io.rsocket.metadata.WellKnownMimeType;
 import io.rsocket.transport.ServerTransport.ConnectionAcceptor;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,12 +64,14 @@ public class RSocketEndpoint extends Endpoint {
 
                                 Optional<String> connectionRouteOpt = extractRoute(payload.metadata());
                                 //extractDataMimeType(payload.metadata());
+                                System.out.println(StandardCharsets.UTF_8.decode(payload.getData()).toString());
 
                                 return Mono.empty();
                             }
 
                             @Override
                             public Mono<Payload> requestResponse(Payload payload) {
+                                System.out.println(StandardCharsets.UTF_8.decode(payload.getData()).toString());
                                 return RSocket.super.requestResponse(payload);
                             }
                         });

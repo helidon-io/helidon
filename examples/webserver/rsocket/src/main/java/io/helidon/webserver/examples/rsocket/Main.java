@@ -47,7 +47,7 @@ public class Main {
 
         return Routing.builder()
                 .register("/rest", new MessageQueueService())
-                .register("/websocket",
+                .register("/rsocket",
                         TyrusSupport.builder().register(
                                 ServerEndpointConfig.Builder.create(RSocketEndpoint.class, "/board")
                                         .encoders(encoders).build())

@@ -29,6 +29,7 @@ module io.helidon.webserver.rsocket {
     requires rsocket.core;
     requires reactor.core;
     requires io.netty.buffer;
+    requires org.reactivestreams;
 
     exports io.helidon.webserver.rsocket;
 }
