@@ -36,6 +36,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.HashParameters;
 import io.helidon.common.http.Http;
@@ -51,6 +52,9 @@ import io.helidon.common.reactive.Single;
 class HashResponseHeaders extends HashParameters implements ResponseHeaders {
 
     private static final String COMPLETED_EXCEPTION_MESSAGE = "Response headers are already completed (sent to the client)!";
+
+    private static final LazyValue<ZonedDateTime> START_OF_YEAR_1970 = LazyValue.create(
+            () -> ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("GMT+0")));
 
     // status is by default null, so we can check if it was explicitly set
     private volatile Http.ResponseStatus httpStatus;
@@ -207,7 +211,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
     public void clearCookie(String name) {
         SetCookie expiredCookie = SetCookie.builder(name, "deleted")
                 .path("/")
-                .expires(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("GMT+0")))
+                .expires(START_OF_YEAR_1970.get())
                 .build();
 
         List<String> values = remove(Http.Header.SET_COOKIE);
