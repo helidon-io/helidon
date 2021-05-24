@@ -39,5 +39,6 @@
         <module>tyrus</module>
         <module>cors</module>
         <module>static-content</module>
+        <module>rsocket</module>
     </modules>
 </project>
