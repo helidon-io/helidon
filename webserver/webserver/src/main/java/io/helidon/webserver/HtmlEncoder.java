@@ -26,7 +26,14 @@ public final class HtmlEncoder {
     private HtmlEncoder() {
     }
 
-    static String encode(String s){
+    /**
+     * Encode HTML string replacing the special characters by their corresponding
+     * entities.
+     *
+     * @param s string to encode.
+     * @return encoded string.
+     */
+    public static String encode(String s) {
         int n = s.length();
         StringBuilder result = new StringBuilder(n);
         for (int i = 0; i < n; i++) {
