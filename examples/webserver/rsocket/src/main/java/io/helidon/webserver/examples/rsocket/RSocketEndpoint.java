@@ -50,11 +50,6 @@ public class RSocketEndpoint extends Endpoint {
                 .acceptor(new SocketAcceptor() {
                     @Override
                     public Mono<RSocket> accept(ConnectionSetupPayload connectionSetupPayload, RSocket rSocket) {
-
-                        final String defaultMimeType = connectionSetupPayload.dataMimeType(); // octet / json / ...
-
-                        Optional<String> connectionRouteOpt = extractRoute(connectionSetupPayload.metadata());
-                        // http headers
                         return Mono.just(RoutedRSocket.builder()
                                 .addRequestResponse("print", PrintRequestResponseHandler.class.getCanonicalName()).build());
                     }
@@ -74,27 +69,5 @@ public class RSocketEndpoint extends Endpoint {
     @Override
     public void onClose(Session session, CloseReason closeReason) {
         connections.get(session.getId()).onCloseSink.tryEmitEmpty();
-    }
-
-    static Optional<String> extractRoute(ByteBuf metadata) {
-        final CompositeMetadata compositeMetadata = new CompositeMetadata(metadata, false);
-
-        for (Entry compositeMetadatum : compositeMetadata) {
-            final String key = compositeMetadatum.getMimeType();
-            final ByteBuf payload = compositeMetadatum.getContent();
-
-
-            if (WellKnownMimeType.MESSAGE_RSOCKET_ROUTING.getString().equals(key)) {
-                final RoutingMetadata routes = new RoutingMetadata(payload);
-
-                for (String route : routes) {
-                    //registry.findRoute(route);
-                    return Optional.of(route);
-                }
-            }
-
-            return Optional.empty();
-        }
-        return Optional.empty();
     }
 }
