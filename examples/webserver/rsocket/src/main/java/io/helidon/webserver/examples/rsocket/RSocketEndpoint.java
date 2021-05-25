@@ -64,15 +64,6 @@ public class RSocketEndpoint extends Endpoint {
     }
 
 
-    static class Handler {
-
-        Pattern antPattern;
-        boolean acceptMany;
-        boolean returnMany;
-
-    }
-
-
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
         final HelidonDuplexConnection connection = new HelidonDuplexConnection(session);

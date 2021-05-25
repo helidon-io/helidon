@@ -16,8 +16,6 @@
 
 package io.helidon.webserver.rsocket;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,7 +36,6 @@ public class RoutedRSocket implements RSocket {
     private final Map<String, FireAndForgetHandler<?>> fireAndForgetRoutes;
     private final Map<String, RequestStreamHandler<?>> requestStreamRoutes;
     private final Map<String, RequestChannelHandler<?>> requestChannelRoutes;
-    private final EncoderManager encoderRegistry;
     private String mimeType = WellKnownMimeType.APPLICATION_JSON.getString();
 
     RoutedRSocket(Map<String, RequestResponseHandler<?>> requestResponseRoutes,
@@ -49,7 +46,6 @@ public class RoutedRSocket implements RSocket {
         this.fireAndForgetRoutes = fireAndForgetRoutes;
         this.requestStreamRoutes = requestStreamRoutes;
         this.requestChannelRoutes = requestChannelRoutes;
-        encoderRegistry = new EncoderManager();
     }
 
     public static Builder builder() {
@@ -143,11 +139,7 @@ public class RoutedRSocket implements RSocket {
 
                 RequestResponseHandler<?> handler = requestResponseRoutes.get(route);
                 if (handler != null) {
-                    Class<?> persistentClass = getHandlerGenericParam(handler);
-
-                    Encoder encoder = getEncoder(metadatas);
-                    Object obj = encoder.decode(payload, persistentClass);
-                    return handleRequestResponse(handler, obj).map(encoder::encode);
+                    return handleRequestResponse(handler, payload);
                 }
             }
             return RSocket.super.requestResponse(payload);
@@ -156,23 +148,9 @@ public class RoutedRSocket implements RSocket {
         }
     }
 
-    private Class<?> getHandlerGenericParam(Object handler) {
-        for (Type itf : handler.getClass().getGenericInterfaces()) {
-            if (itf instanceof ParameterizedType) {
-                String itfRawtype = ((ParameterizedType) itf).getRawType().getTypeName();
-                if (itfRawtype.equals("io.helidon.webserver.rsocket.RequestResponseHandler")
-                        || itfRawtype.equals("io.helidon.webserver.rsocket.FireAndForgetHandler")
-                        || itfRawtype.equals("io.helidon.webserver.rsocket.RequestStreamHandler")
-                        || itfRawtype.equals("io.helidon.webserver.rsocket.RequestChannelHandler")) {
-                    return (Class<?>) ((ParameterizedType) itf).getActualTypeArguments()[0];
-                }
-            }
-        }
-        return null;
-    }
 
-    private <T> Mono<T> handleRequestResponse(RequestResponseHandler<T> handler, Object obj) {
-        return handler.handle((T) obj);
+    private <T> Mono<Payload> handleRequestResponse(RequestResponseHandler<T> handler, Object obj) {
+        return (Mono<Payload>)handler.handle((T) obj);
     }
 
     @Override
@@ -183,9 +161,7 @@ public class RoutedRSocket implements RSocket {
             if (route != null) {
                 FireAndForgetHandler<?> handler = fireAndForgetRoutes.get(route);
                 if (handler != null) {
-                    Class<?> persistentClass = getHandlerGenericParam(handler);
-                    Encoder encoder = getEncoder(metadatas);
-                    return handleFireAndForget(handler, encoder.decode(payload, persistentClass));
+                    return handleFireAndForget(handler, payload);
                 }
             }
             return RSocket.super.fireAndForget(payload);
@@ -206,9 +182,7 @@ public class RoutedRSocket implements RSocket {
             if (route != null) {
                 RequestStreamHandler<?> handler = requestStreamRoutes.get(route);
                 if (handler != null) {
-                    Class<?> persistentClass = getHandlerGenericParam(handler);
-                    Encoder encoder = getEncoder(metadatas);
-                    return handleRequestStream(handler, encoder.decode(payload, persistentClass)).map(encoder::encode);
+                    return handleRequestStream(handler, payload);
                 }
             }
             return RSocket.super.requestStream(payload);
@@ -217,8 +191,8 @@ public class RoutedRSocket implements RSocket {
         }
     }
 
-    private <T> Flux<T> handleRequestStream(RequestStreamHandler<T> handler, Object obj) {
-        return handler.handle((T) obj);
+    private <T> Flux<Payload> handleRequestStream(RequestStreamHandler<T> handler, Object obj) {
+        return (Flux<Payload>) handler.handle((T) obj);
     }
 
     @Override
@@ -236,10 +210,7 @@ public class RoutedRSocket implements RSocket {
                                     if (route != null) {
                                         RequestChannelHandler<?> handler = requestChannelRoutes.get(route);
                                         if (handler != null) {
-                                            Class<?> persistentClass = getHandlerGenericParam(handler);
-                                            Encoder encoder = getEncoder(metadatas);
-                                            return handleRequestChannel(handler,
-                                                    flows.map(pl -> encoder.decode(pl, persistentClass))).map(encoder::encode);
+                                            return handleRequestChannel(handler, payload);
                                         }
                                     }
                                 }
@@ -255,8 +226,8 @@ public class RoutedRSocket implements RSocket {
 
     }
 
-    private <T> Flux<T> handleRequestChannel(RequestChannelHandler<T> handler, Object obj) {
-        return handler.handle((Flux<T>) obj);
+    private <T> Flux<Payload> handleRequestChannel(RequestChannelHandler<T> handler, Object obj) {
+        return (Flux<Payload>) handler.handle((Flux<T>) obj);
     }
 
     private Map<String, TaggingMetadata> parseMetadata(Payload payload) {
@@ -274,19 +245,6 @@ public class RoutedRSocket implements RSocket {
             }
         }
         return metadataMap;
-    }
-
-    private Encoder getEncoder(Map<String, TaggingMetadata> metadatas) {
-        //PerStreamDataMimeTypes
-        TaggingMetadata mimetypeMetadata = metadatas.get(WellKnownMimeType.MESSAGE_RSOCKET_MIMETYPE.getString());
-        Encoder res = null;
-        if (mimetypeMetadata != null && mimetypeMetadata.iterator().hasNext()) {
-            res = encoderRegistry.getEncoder(mimetypeMetadata.iterator().next());
-        }
-        if (res != null)
-            return res;
-        // else encoder from ConnectionSetupPayload
-        return encoderRegistry.getEncoder(mimeType);
     }
 
     private String getRoute(Map<String, TaggingMetadata> metadatas) {
