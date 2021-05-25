@@ -30,7 +30,6 @@ module io.helidon.webserver.rsocket {
     requires reactor.core;
     requires io.netty.buffer;
     requires org.reactivestreams;
-    requires com.fasterxml.jackson.databind;
 
     exports io.helidon.webserver.rsocket;
 }
