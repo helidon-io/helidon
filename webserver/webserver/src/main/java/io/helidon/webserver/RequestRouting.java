@@ -302,7 +302,8 @@ class RequestRouting implements Routing {
             Crawler.Item nextItem = crawler.next();
             if (nextItem == null) {
                 // 404 error
-                nextNoCheck(new NotFoundException("No handler found for path: " + path()));
+                nextNoCheck(new NotFoundException("No handler found for path: "
+                        + HtmlEncoder.encode(path().toString())));
             } else {
                 try {
                     RoutedResponse nextResponse = new RoutedResponse(response);
