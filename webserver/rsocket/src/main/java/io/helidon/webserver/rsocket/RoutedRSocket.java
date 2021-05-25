@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 
+import io.helidon.common.reactive.Multi;
+import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
 import io.rsocket.ConnectionSetupPayload;
@@ -33,13 +35,13 @@ import reactor.core.publisher.Mono;
 
 public class RoutedRSocket implements RSocket {
     private final Map<String, RequestResponseHandler<?>> requestResponseRoutes;
-    private final Map<String, FireAndForgetHandler<?>> fireAndForgetRoutes;
+    private final Map<String, FireAndForgetHandler> fireAndForgetRoutes;
     private final Map<String, RequestStreamHandler<?>> requestStreamRoutes;
     private final Map<String, RequestChannelHandler<?>> requestChannelRoutes;
     private String mimeType = WellKnownMimeType.APPLICATION_JSON.getString();
 
     RoutedRSocket(Map<String, RequestResponseHandler<?>> requestResponseRoutes,
-                  Map<String, FireAndForgetHandler<?>> fireAndForgetRoutes,
+                  Map<String, FireAndForgetHandler> fireAndForgetRoutes,
                   Map<String, RequestStreamHandler<?>> requestStreamRoutes,
                   Map<String, RequestChannelHandler<?>> requestChannelRoutes) {
         this.requestResponseRoutes = requestResponseRoutes;
@@ -89,7 +91,7 @@ public class RoutedRSocket implements RSocket {
 
     public static final class Builder {
         private final Map<String, RequestResponseHandler<?>> requestResponseRoutes;
-        private final Map<String, FireAndForgetHandler<?>> fireAndForgetRoutes;
+        private final Map<String, FireAndForgetHandler> fireAndForgetRoutes;
         private final Map<String, RequestStreamHandler<?>> requestStreamRoutes;
         private final Map<String, RequestChannelHandler<?>> requestChannelRoutes;
 
@@ -107,7 +109,7 @@ public class RoutedRSocket implements RSocket {
         }
 
         public Builder addFireAndForget(String route, String handlerClassName) {
-            FireAndForgetHandler<?> handler = (FireAndForgetHandler<?>) getInstance(handlerClassName);
+            FireAndForgetHandler handler = (FireAndForgetHandler) getInstance(handlerClassName);
             fireAndForgetRoutes.put(route, handler);
             return this;
         }
@@ -159,7 +161,7 @@ public class RoutedRSocket implements RSocket {
             Map<String, TaggingMetadata> metadatas = parseMetadata(payload);
             String route = getRoute(metadatas);
             if (route != null) {
-                FireAndForgetHandler<?> handler = fireAndForgetRoutes.get(route);
+                FireAndForgetHandler handler = fireAndForgetRoutes.get(route);
                 if (handler != null) {
                     return handleFireAndForget(handler, payload);
                 }
@@ -170,8 +172,8 @@ public class RoutedRSocket implements RSocket {
         }
     }
 
-    private <T> Mono<Void> handleFireAndForget(FireAndForgetHandler<T> handler, Object obj) {
-        return handler.handle((T) obj);
+    private Mono<Void> handleFireAndForget(FireAndForgetHandler handler, Payload payload) {
+        return Mono.from(FlowAdapters.toPublisher(handler.handle(payload)));
     }
 
     @Override
@@ -191,8 +193,8 @@ public class RoutedRSocket implements RSocket {
         }
     }
 
-    private <T> Flux<Payload> handleRequestStream(RequestStreamHandler<T> handler, Object obj) {
-        return (Flux<Payload>) handler.handle((T) obj);
+    private Flux<Payload> handleRequestStream(RequestStreamHandler handler, Payload obj) {
+        return Flux.from(FlowAdapters.toPublisher(handler.handle(obj)));
     }
 
     @Override
@@ -204,13 +206,12 @@ public class RoutedRSocket implements RSocket {
                             try {
                                 payload = signal.get();
                                 if (payload != null) {
-
-                                    Map<String, TaggingMetadata> metadatas = parseMetadata(payload);
-                                    String route = getRoute(metadatas);
+                                    Map<String, TaggingMetadata> metadata = parseMetadata(payload);
+                                    String route = getRoute(metadata);
                                     if (route != null) {
                                         RequestChannelHandler<?> handler = requestChannelRoutes.get(route);
                                         if (handler != null) {
-                                            return handleRequestChannel(handler, payload);
+                                            return handleRequestChannel(handler, flows);
                                         }
                                     }
                                 }
@@ -226,8 +227,8 @@ public class RoutedRSocket implements RSocket {
 
     }
 
-    private <T> Flux<Payload> handleRequestChannel(RequestChannelHandler<T> handler, Object obj) {
-        return (Flux<Payload>) handler.handle((Flux<T>) obj);
+    private Flux<Payload> handleRequestChannel(RequestChannelHandler handler, Flux<Payload> payloads) {
+        return Flux.from(FlowAdapters.toPublisher(handler.handle(Multi.create(FlowAdapters.toFlowPublisher(payloads)))));
     }
 
     private Map<String, TaggingMetadata> parseMetadata(Payload payload) {

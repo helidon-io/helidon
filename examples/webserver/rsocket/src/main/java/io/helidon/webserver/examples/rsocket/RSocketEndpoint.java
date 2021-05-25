@@ -51,7 +51,8 @@ public class RSocketEndpoint extends Endpoint {
                     @Override
                     public Mono<RSocket> accept(ConnectionSetupPayload connectionSetupPayload, RSocket rSocket) {
                         return Mono.just(RoutedRSocket.builder()
-                                .addRequestResponse("print", PrintRequestResponseHandler.class.getCanonicalName()).build());
+                                .addRequestResponse("print", PrintRequestResponseHandler.class.getCanonicalName())
+                                .build());
                     }
 
                 })

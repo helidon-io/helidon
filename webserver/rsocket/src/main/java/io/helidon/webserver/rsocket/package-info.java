@@ -15,6 +15,6 @@
  */
 
 /**
- * Tyrus integration.
+ * RSocket integration.
  */
 package io.helidon.webserver.rsocket;

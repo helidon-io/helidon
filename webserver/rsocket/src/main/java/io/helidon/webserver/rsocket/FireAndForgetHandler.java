@@ -16,8 +16,19 @@
 
 package io.helidon.webserver.rsocket;
 
-import reactor.core.publisher.Mono;
+import io.helidon.common.reactive.Single;
+import io.rsocket.Payload;
 
-public interface FireAndForgetHandler<T> {
-    Mono<Void> handle(T payload);
+/**
+ * Fire And Forget Handler.
+ */
+public interface FireAndForgetHandler {
+
+    /**
+     * Handle the Fire And Forget Request.
+     *
+     * @param payload
+     * @return Single.
+     */
+    Single<Void> handle(Payload payload);
 }

@@ -16,8 +16,20 @@
 
 package io.helidon.webserver.rsocket;
 
-import reactor.core.publisher.Flux;
+import io.helidon.common.reactive.Multi;
 
+/**
+ * Request Channel Handler.
+ *
+ * @param <T> Type of Multi.
+ */
 public interface RequestChannelHandler<T> {
-    Flux<T> handle(Flux<T> payloads);
+
+    /**
+     * Handle Request Channel Request.
+     *
+     * @param payloads Multi.
+     * @return Multi.
+     */
+    Multi<T> handle(Multi<T> payloads);
 }

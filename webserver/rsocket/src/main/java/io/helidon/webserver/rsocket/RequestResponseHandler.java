@@ -16,8 +16,20 @@
 
 package io.helidon.webserver.rsocket;
 
-import reactor.core.publisher.Mono;
+import io.helidon.common.reactive.Single;
 
+/**
+ * Request Response Handler.
+ *
+ * @param <T>
+ */
 public interface RequestResponseHandler<T> {
-    Mono<T> handle(T payload);
+
+    /**
+     * Handle Request Response.
+     *
+     * @param payload
+     * @return Single of T.
+     */
+    Single<T> handle(T payload);
 }
