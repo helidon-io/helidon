@@ -17,6 +17,7 @@
 package io.helidon.microprofile.server;
 
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Member;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,10 +41,14 @@ import javax.enterprise.context.BeforeDestroyed;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
+import javax.enterprise.inject.spi.InjectionPoint;
+import javax.enterprise.inject.spi.ProcessProducer;
+import javax.enterprise.inject.spi.Producer;
 
 import io.helidon.common.Prioritized;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
@@ -385,6 +390,33 @@ public class ServerCdiExtension implements Extension {
         }
     }
 
+    private final Map<Service, AnnotatedMember<?>> producedServices = new HashMap<>();
+
+    private void registerServiceProducers(@Observes ProcessProducer<?, Service> pp) {
+        Producer<Service> producer = pp.getProducer();
+        AnnotatedMember<?> annotatedMember = pp.getAnnotatedMember();
+
+        pp.setProducer(new Producer<>() {
+            @Override
+            public Service produce(final CreationalContext<Service> ctx) {
+                Service service = producer.produce(ctx);
+                producedServices.put(service, annotatedMember);
+                return service;
+            }
+
+            @Override
+            public void dispose(final Service instance) {
+                producer.dispose(instance);
+            }
+
+            @Override
+            public Set<InjectionPoint> getInjectionPoints() {
+                return producer.getInjectionPoints();
+            }
+        });
+    }
+
+
     @SuppressWarnings("unchecked")
     private void registerWebServerServices(BeanManager beanManager) {
         List<Bean<?>> beans = prioritySort(beanManager.getBeans(Service.class));
@@ -416,31 +448,40 @@ public class ServerCdiExtension implements Extension {
     private void registerWebServerService(Class<?> serviceClass,
                                           Service service) {
 
-        RoutingPath rp = serviceClass.getAnnotation(RoutingPath.class);
-        RoutingName rn = serviceClass.getAnnotation(RoutingName.class);
+        RoutingPath rp;
+        RoutingName rn;
+        Config serviceConfig;
+
+        if (producedServices.containsKey(service)) {
+            // created with producer
+            AnnotatedMember<?> producerAnnotatedMember = producedServices.get(service);
+            rp = producerAnnotatedMember.getAnnotation(RoutingPath.class);
+            rn = producerAnnotatedMember.getAnnotation(RoutingName.class);
+            Member member = producerAnnotatedMember.getJavaMember();
+            serviceConfig = config.get(member.getDeclaringClass().getName() + "." + member.getName());
+        } else {
+            // standalone bean
+            rp = serviceClass.getAnnotation(RoutingPath.class);
+            rn = serviceClass.getAnnotation(RoutingName.class);
+            serviceConfig = config.get(serviceClass.getName());
+        }
 
         String path = (null == rp) ? null : rp.value();
         String routingName = (null == rn) ? null : rn.value();
         boolean routingNameRequired = (null != rn) && rn.required();
 
         // can override routing path from configuration
-        path = config.get(serviceClass.getName()
-                                  + "."
-                                  + RoutingPath.CONFIG_KEY_PATH)
+        path = serviceConfig.get(RoutingPath.CONFIG_KEY_PATH)
                 .asString()
                 .orElse(path);
 
         // can override routing name from configuration
-        routingName = config.get(serviceClass.getName()
-                                         + "."
-                                         + RoutingName.CONFIG_KEY_NAME)
+        routingName = serviceConfig.get(RoutingName.CONFIG_KEY_NAME)
                 .asString()
                 .orElse(routingName);
 
         // also whether the routing name is required can be overridden
-        routingNameRequired = config.get(serviceClass.getName()
-                                                 + "."
-                                                 + RoutingName.CONFIG_KEY_REQUIRED)
+        routingNameRequired = serviceConfig.get(RoutingName.CONFIG_KEY_REQUIRED)
                 .asBoolean()
                 .orElse(routingNameRequired);
 
