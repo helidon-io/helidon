@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,7 +208,8 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
      * @param message The message.
      */
     private static void send400BadRequest(ChannelHandlerContext ctx, String message) {
-        byte[] entity = message.getBytes(StandardCharsets.UTF_8);
+        String encoded = HtmlEncoder.encode(message);
+        byte[] entity = encoded.getBytes(StandardCharsets.UTF_8);
         FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, BAD_REQUEST, Unpooled.wrappedBuffer(entity));
         response.headers().add(HttpHeaderNames.CONTENT_TYPE, "text/plain");
         response.headers().add(HttpHeaderNames.CONTENT_LENGTH, entity.length);
