@@ -143,8 +143,7 @@ public class ServerCdiExtension implements Extension {
 
     private void recordBeanServices(@Observes ProcessManagedBean<? extends Service> pmb) {
         Class<? extends Service> cls = pmb.getAnnotatedBeanClass().getJavaClass();
-        String contextKey = cls.getName() + "." + cls.getName();
-        serviceBeans.put(pmb.getBean(), new RoutingConfiguration(pmb.getAnnotated(), contextKey));
+        serviceBeans.put(pmb.getBean(), new RoutingConfiguration(pmb.getAnnotated(), cls.getName()));
     }
 
     private void registerKpiMetricsDeferrableRequestContextSetterHandler(JaxRsCdiExtension jaxRs,
@@ -446,7 +445,7 @@ public class ServerCdiExtension implements Extension {
         String routingName = routingConf.routingName(config);
         boolean routingNameRequired = routingConf.required(config);
 
-        Routing.Rules routing = findRouting(service.getClass().getName(),
+        Routing.Rules routing = findRouting(routingConf.configContext(),
                 routingName,
                 routingNameRequired);
 

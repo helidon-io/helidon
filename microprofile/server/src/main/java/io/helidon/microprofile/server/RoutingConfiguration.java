@@ -21,7 +21,7 @@ import javax.enterprise.inject.spi.Annotated;
 import io.helidon.config.Config;
 
 class RoutingConfiguration {
-    private String routingName = null;
+    private String routingName = RoutingName.DEFAULT_NAME;
     private String routingPath = null;
     private boolean required = false;
     private final String contextConfigKey;
@@ -39,24 +39,28 @@ class RoutingConfiguration {
         }
     }
 
-    public String routingName(Config config) {
+    String routingName(Config config) {
         return config.get(contextConfigKey)
                 .get(RoutingName.CONFIG_KEY_NAME)
                 .asString()
                 .orElse(routingName);
     }
 
-    public String routingPath(Config config) {
+    String routingPath(Config config) {
         return config.get(contextConfigKey)
                 .get(RoutingPath.CONFIG_KEY_PATH)
                 .asString()
                 .orElse(routingPath);
     }
 
-    public boolean required(Config config) {
+    boolean required(Config config) {
         return config.get(contextConfigKey)
                 .get(RoutingName.CONFIG_KEY_REQUIRED)
                 .asBoolean()
                 .orElse(required);
+    }
+
+    String configContext() {
+        return contextConfigKey;
     }
 }
