@@ -136,4 +136,40 @@
    <cpe>cpe:/a:apache:httpclient</cpe>
 </suppress>
 
+<!-- These are suppressions for libthrift 0.12.0 that is brought in transitively by
+     jaeger-client 0.35.5. We can't upgrade libthrift because they broke compatibility
+     (see https://github.com/oracle/helidon/issues/3052). We can't upgrade jaeger-client
+     because this is the last version that supports opentracing 0.32.0. We can't upgrade
+     opentracing because future versions are incompatible with 0.32.0. We've
+     done these upgrades in Helidon 2.0 (since we could break compatibility in a
+     major release). But we can't do them in a 1.4.X micro release.
+     Fortunately these CVEs do not apply. See comments below.
+-->
+   <!-- this was fixed for the Java bindings in thrift version 0.11.0 so does not apply -->
+   <suppress>
+      <notes><![CDATA[
+   file name: libthrift-0.12.0.jar
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/org\.apache\.thrift/libthrift@.*$</packageUrl>
+      <cve>CVE-2019-0205</cve>
+   </suppress>
+
+   <!-- This is against the thrift Go Server. We are Java and jaeger-client uses the thrift client only -->
+   <suppress>
+      <notes><![CDATA[
+   file name: libthrift-0.12.0.jar
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/org\.apache\.thrift/libthrift@.*$</packageUrl>
+      <cve>CVE-2019-0210</cve>
+   </suppress>
+
+   <!-- This is against the thrift Server. jaeger-client uses the thrift client only -->
+   <suppress>
+      <notes><![CDATA[
+   file name: libthrift-0.12.0.jar
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/org\.apache\.thrift/libthrift@.*$</packageUrl>
+      <cve>CVE-2020-13949</cve>
+   </suppress>
+
 </suppressions>
