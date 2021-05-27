@@ -30,6 +30,8 @@ module io.helidon.webserver.rsocket {
     requires reactor.core;
     requires io.netty.buffer;
     requires org.reactivestreams;
+    requires io.helidon.webserver.tyrus;
+    requires tyrus.spi;
 
     exports io.helidon.webserver.rsocket;
 }

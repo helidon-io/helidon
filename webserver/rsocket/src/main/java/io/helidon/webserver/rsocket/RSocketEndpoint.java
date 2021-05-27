@@ -14,51 +14,27 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.examples.rsocket;
+package io.helidon.webserver.rsocket;
 
-import io.helidon.webserver.rsocket.HelidonDuplexConnection;
-import io.helidon.webserver.rsocket.RoutedRSocket;
-import io.netty.buffer.ByteBuf;
-import io.rsocket.ConnectionSetupPayload;
-import io.rsocket.RSocket;
-import io.rsocket.SocketAcceptor;
-import io.rsocket.core.RSocketServer;
-import io.rsocket.metadata.CompositeMetadata;
-import io.rsocket.metadata.CompositeMetadata.Entry;
-import io.rsocket.metadata.RoutingMetadata;
-import io.rsocket.metadata.WellKnownMimeType;
 import io.rsocket.transport.ServerTransport.ConnectionAcceptor;
-import reactor.core.publisher.Mono;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
 import javax.websocket.Session;
 
-public class RSocketEndpoint extends Endpoint {
+public abstract class RSocketEndpoint extends Endpoint {
 
-    final ConnectionAcceptor connectionAcceptor;
+    private ConnectionAcceptor connectionAcceptor;
     final Map<String, HelidonDuplexConnection> connections = new ConcurrentHashMap<>();
 
+    public abstract ConnectionAcceptor initConnection();
+
     public RSocketEndpoint() {
-        this.connectionAcceptor = RSocketServer
-                .create()
-                .acceptor(new SocketAcceptor() {
-                    @Override
-                    public Mono<RSocket> accept(ConnectionSetupPayload connectionSetupPayload, RSocket rSocket) {
-                        return Mono.just(RoutedRSocket.builder()
-                                .addRequestResponse("print", PrintRequestResponseHandler.class.getCanonicalName())
-                                .build());
-                    }
-
-                })
-                .asConnectionAcceptor();
+        connectionAcceptor = initConnection();
     }
-
 
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {

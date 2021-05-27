@@ -75,7 +75,7 @@ public class TyrusSupport implements Service {
         this.extensions = other.extensions;
     }
 
-    TyrusSupport(
+    protected TyrusSupport(
             WebSocketEngine engine,
             Set<Class<?>> endpointClasses,
             Set<ServerEndpointConfig> endpointConfigs,

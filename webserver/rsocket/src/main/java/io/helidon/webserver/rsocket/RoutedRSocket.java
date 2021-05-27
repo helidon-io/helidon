@@ -102,26 +102,26 @@ public class RoutedRSocket implements RSocket {
             this.requestChannelRoutes = new HashMap<>();
         }
 
-        public Builder addRequestResponse(String route, String handlerClassName) {
-            RequestResponseHandler<?> handler = (RequestResponseHandler<?>) getInstance(handlerClassName);
+        public Builder addRequestResponse(String route, Class<? extends RequestResponseHandler> handlerClass) {
+            RequestResponseHandler<?> handler = (RequestResponseHandler<?>) getInstance(handlerClass.getCanonicalName());
             requestResponseRoutes.put(route, handler);
             return this;
         }
 
-        public Builder addFireAndForget(String route, String handlerClassName) {
-            FireAndForgetHandler handler = (FireAndForgetHandler) getInstance(handlerClassName);
+        public Builder addFireAndForget(String route, Class<? extends  FireAndForgetHandler> handlerClass) {
+            FireAndForgetHandler handler = (FireAndForgetHandler) getInstance(handlerClass.getCanonicalName());
             fireAndForgetRoutes.put(route, handler);
             return this;
         }
 
-        public Builder addRequestStream(String route, String handlerClassName) {
-            RequestStreamHandler<?> handler = (RequestStreamHandler<?>) getInstance(handlerClassName);
+        public Builder addRequestStream(String route, Class<? extends RequestStreamHandler> handlerClass) {
+            RequestStreamHandler<?> handler = (RequestStreamHandler<?>) getInstance(handlerClass.getCanonicalName());
             requestStreamRoutes.put(route, handler);
             return this;
         }
 
-        public Builder addRequestChannel(String route, String handlerClassName) {
-            RequestChannelHandler<?> handler = (RequestChannelHandler<?>) getInstance(handlerClassName);
+        public Builder addRequestChannel(String route, Class<? extends RequestChannelHandler> handlerClass) {
+            RequestChannelHandler<?> handler = (RequestChannelHandler<?>) getInstance(handlerClass.getCanonicalName());
             requestChannelRoutes.put(route, handler);
             return this;
         }
