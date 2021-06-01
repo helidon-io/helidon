@@ -58,8 +58,6 @@
         <version.lib.asm>6.0</version.lib.asm>
         <version.lib.checkstyle>8.29</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <version.lib.jgit>4.9.9.201903122025-r</version.lib.jgit>
-        <version.lib.jsch>0.1.55</version.lib.jsch>
         <version.lib.kafka-junit5>3.2.1</version.lib.kafka-junit5>
         <version.lib.netty.tcnative>2.0.36.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
@@ -579,6 +577,13 @@
                     <configuration>
                         <updatePersistenceXml>false</updatePersistenceXml>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.eclipse.persistence</groupId>
+                            <artifactId>org.eclipse.persistence.jpa</artifactId>
+                            <version>${version.lib.eclipselink}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                   <groupId>org.hibernate.orm.tooling</groupId>
@@ -874,17 +879,6 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-tcnative-boringssl-static</artifactId>
                 <version>${version.lib.netty.tcnative}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jgit</groupId>
-                <artifactId>org.eclipse.jgit</artifactId>
-                <version>${version.lib.jgit}</version>
-            </dependency>
-            <!-- Used to update version used by jgit -->
-            <dependency>
-                <groupId>com.jcraft</groupId>
-                <artifactId>jsch</artifactId>
-                <version>${version.lib.jsch}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jgit</groupId>

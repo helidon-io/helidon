@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,14 +32,16 @@ import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MessagingTest {
 
@@ -253,6 +255,31 @@ public class MessagingTest {
     }
 
     @Test
+    void unknownIncomingConnector() {
+        LatchedTestData<CharSequence> testData =
+                new LatchedTestData<>(TestConnector.TEST_DATA.stream()
+                        .map(s -> (CharSequence) s)
+                        .collect(Collectors.toList()));
+
+        Channel<String> channel = Channel.create("from-test-connector");
+
+        HashMap<String, String> p = new HashMap<>();
+        p.put("mp.messaging.incoming." + channel.name() + ".connector", TestConnector.CONNECTOR_NAME);
+        Config config = Config.builder()
+                .sources(ConfigSources.create(p))
+                .build();
+
+        assertThrows(MessagingException.class, () -> Messaging.builder()
+                .config(config)
+                .subscriber(channel, ReactiveStreams.<Message<String>>builder()
+                        .peek(Message::ack)
+                        .map(Message::getPayload)
+                        .forEach(testData::add))
+                .build()
+                .start());
+    }
+
+    @Test
     void incomingFromStoppableConnector() {
         LatchedTestData<String> testData = new LatchedTestData<>(TestConnector.TEST_DATA);
 
@@ -301,6 +328,26 @@ public class MessagingTest {
                 .start();
 
         TestConnector.latch.await(200, TimeUnit.MILLISECONDS);
+    }
+
+    @Test
+    void unknownOutgoingConnector() throws InterruptedException {
+        Channel<String> channel = Channel.create("to-test-connector");
+
+        HashMap<String, String> p = new HashMap<>();
+        p.put("mp.messaging.outgoing." + channel.name() + ".connector", TestConnector.CONNECTOR_NAME);
+        Config config = Config.builder()
+                .sources(ConfigSources.create(p))
+                .disableSystemPropertiesSource()
+                .disableEnvironmentVariablesSource()
+                .build();
+
+        assertThrows(MessagingException.class, () -> Messaging.builder()
+                .config(config)
+                .publisher(channel, ReactiveStreams.fromIterable(TestConnector.TEST_DATA).map(Message::of))
+                .build()
+                .start()
+        );
     }
 
     @Test
@@ -409,5 +456,39 @@ public class MessagingTest {
                 "port=8888",
                 "url=http://source.com"
         )));
+    }
+
+
+    @Test
+    void connectorsTypeTest() throws InterruptedException {
+        LatchedTestData<CharSequence> testData =
+                new LatchedTestData<>(TestConnector.TEST_DATA.stream()
+                        .map(s -> (CharSequence) s)
+                        .collect(Collectors.toList()));
+
+        Channel<String> channelIn = Channel.create("from-test-connector");
+        Channel<String> channelOut = Channel.create("to-test-connector");
+
+        HashMap<String, String> p = new HashMap<>();
+        p.put("mp.messaging.incoming." + channelIn.name() + ".connector", TestConnector.IncomingOnlyTestConnector.CONNECTOR_NAME);
+        p.put("mp.messaging.outgoing." + channelOut.name() + ".connector", TestConnector.OutgoingOnlyTestConnector.CONNECTOR_NAME);
+        Config config = Config.builder()
+                .sources(ConfigSources.create(p))
+                .build();
+
+        Messaging.builder()
+                .config(config)
+                .connector(TestConnector.createIncomingOnly())
+                .connector(TestConnector.createOutgoingOnly())
+                .publisher(channelOut, ReactiveStreams.fromIterable(TestConnector.TEST_DATA).map(Message::of))
+                .subscriber(channelIn, ReactiveStreams.<Message<String>>builder()
+                        .peek(Message::ack)
+                        .map(Message::getPayload)
+                        .forEach(testData::add))
+                .build()
+                .start();
+
+        testData.assertEquals();
+        assertTrue(TestConnector.latch.await(500, TimeUnit.MILLISECONDS));
     }
 }

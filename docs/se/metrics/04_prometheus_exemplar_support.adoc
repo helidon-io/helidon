@@ -19,7 +19,8 @@
 :h1Prefix: SE
 :description: Helidon metrics
 :keywords: helidon, metrics, exemplar, prometheus, OpenMetrics
-
+:zipkinPageRef: se/tracing/02_zipkin.adoc
+:jaegerPageRef: se/tracing/03_jaeger.adoc
 = Metrics Support for Exemplars
 
 include::../../shared/metrics/prometheus-exemplar-support.adoc[]
