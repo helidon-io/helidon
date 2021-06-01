@@ -59,7 +59,7 @@
         <version.lib.jackson>2.10.5</version.lib.jackson>
         <version.lib.jackson-bom>2.10.5.20201202</version.lib.jackson-bom>
         <version.lib.jaegertracing>0.35.5</version.lib.jaegertracing>
-        <version.lib.jakarta-persistence-api>2.2.2</version.lib.jakarta-persistence-api>
+        <version.lib.jakarta-persistence-api>2.2.3</version.lib.jakarta-persistence-api>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.0</version.lib.jaxb-api>
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
@@ -68,7 +68,7 @@
         <version.lib.jboss-transaction-spi>7.6.0.Final</version.lib.jboss-transaction-spi>
         <version.lib.jedis>3.1.0</version.lib.jedis>
         <version.lib.jersey>2.33</version.lib.jersey>
-        <version.lib.jsonb-api>1.0.1</version.lib.jsonb-api>
+        <version.lib.jsonb-api>1.0.2</version.lib.jsonb-api>
         <version.lib.jsonp-api>1.1.2</version.lib.jsonp-api>
         <version.lib.jsonp-impl>1.1.2</version.lib.jsonp-impl>
         <version.lib.junit>5.6.2</version.lib.junit>
