@@ -43,78 +43,52 @@ public class Neo4jHealthCheck implements HealthCheck {
     /**
      * The Cypher statement used to verify Neo4j is up.
      */
-    private static final String CYPHER = "RETURN 1 AS result";
-
-    private static final SessionConfig DEFAULT_SESSION_CONFIG = SessionConfig.builder()
-            .withDefaultAccessMode(AccessMode.WRITE)
-            .build();
+    static final String CYPHER = "CALL dbms.components() YIELD name, edition WHERE name = 'Neo4j Kernel' RETURN edition";
 
     private final Driver driver;
 
-    @Inject
-        //will be ignored outside of CDI
+    @Inject //will be ignored out of CDI
     Neo4jHealthCheck(Driver driver) {
         this.driver = driver;
     }
 
-    /**
-     * To be used in SE context.
-     *
-     * @param driver create
-     * @return Driver
-     */
     public static Neo4jHealthCheck create(Driver driver) {
         return new Neo4jHealthCheck(driver);
     }
 
-    /**
-     * Applies the given ResultSummaryto the HealthCheckResponseBuilder builder and calls build
-     * afterwards.
-     *
-     * @param resultSummary the result summary returned by the server
-     * @param builder       the health builder to be modified
-     * @return the final HealthCheckResponse health check response
-     */
-    private static HealthCheckResponse buildStatusUp(ResultSummary resultSummary, HealthCheckResponseBuilder builder) {
-        ServerInfo serverInfo = resultSummary.server();
+    private HealthCheckResponse runHealthCheckQuery(HealthCheckResponseBuilder builder) {
 
-        builder.withData("server", serverInfo.version() + "@" + serverInfo.address());
+        try (Session session = this.driver.session()) {
 
-        String databaseName = resultSummary.database().name();
-        if (!(databaseName == null || databaseName.trim().isEmpty())) {
-            builder.withData("database", databaseName.trim());
+            return session.writeTransaction(tx -> {
+                var result = tx.run(CYPHER);
+
+                var edition = result.single().get("edition").asString();
+                var resultSummary = result.consume();
+                var serverInfo = resultSummary.server();
+
+                var responseBuilder = builder
+                        .withData("server", serverInfo.version() + "@" + serverInfo.address())
+                        .withData("edition", edition);
+
+                var databaseInfo = resultSummary.database();
+                if (!databaseInfo.name().trim().isBlank()) {
+                    responseBuilder.withData("database", databaseInfo.name().trim());
+                }
+
+                return responseBuilder.up().build();
+            });
         }
-
-        return builder.build();
     }
 
     @Override
     public HealthCheckResponse call() {
 
-        HealthCheckResponseBuilder builder = HealthCheckResponse.named("Neo4j connection health check").up();
+        var builder = HealthCheckResponse.named("Neo4j connection health check");
         try {
-            ResultSummary resultSummary;
-            // Retry one time when the session has been expired
-            try {
-                resultSummary = runHealthCheckQuery();
-            } catch (SessionExpiredException sessionExpiredException) {
-                resultSummary = runHealthCheckQuery();
-            }
-            return buildStatusUp(resultSummary, builder);
-        } catch (Exception e) {
-            return builder.down().withData("reason", e.getMessage()).build();
+            return runHealthCheckQuery(builder);
+        } catch (Exception ex) {
+            return builder.down().withData("reason", ex.getMessage()).build();
         }
-    }
-
-    private ResultSummary runHealthCheckQuery() {
-        // We use WRITE here to make sure UP is returned for a server that supports
-        // all possible workloads
-        if (driver != null) {
-            Session session = this.driver.session(DEFAULT_SESSION_CONFIG);
-
-            Result run = session.run(CYPHER);
-            return run.consume();
-        }
-        return null;
     }
 }
