@@ -23,13 +23,5 @@ import reactor.core.publisher.Mono;
 
 public class MyRSocketEndpoint extends RSocketEndpoint {
 
-    @Override
-    public ServerTransport.ConnectionAcceptor initConnection() {
-        return RSocketServer
-                .create()
-                .acceptor((connectionSetupPayload, rSocket) -> Mono.just(RoutedRSocket.builder()
-                        .addRequestResponse("print", PrintRequestResponseHandler.class)
-                        .build()))
-                .asConnectionAcceptor();
-    }
+
 }

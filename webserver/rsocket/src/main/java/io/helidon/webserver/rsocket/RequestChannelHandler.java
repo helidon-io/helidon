@@ -23,6 +23,7 @@ import io.helidon.common.reactive.Multi;
  *
  * @param <T> Type of Multi.
  */
+@FunctionalInterface
 public interface RequestChannelHandler<T> {
 
     /**

@@ -23,6 +23,7 @@ import io.helidon.common.reactive.Single;
  *
  * @param <T>
  */
+@FunctionalInterface
 public interface RequestResponseHandler<T> {
 
     /**

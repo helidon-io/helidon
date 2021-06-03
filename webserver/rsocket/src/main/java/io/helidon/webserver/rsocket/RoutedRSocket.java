@@ -90,10 +90,10 @@ public class RoutedRSocket implements RSocket {
     }
 
     public static final class Builder {
-        private final Map<String, RequestResponseHandler<?>> requestResponseRoutes;
-        private final Map<String, FireAndForgetHandler> fireAndForgetRoutes;
-        private final Map<String, RequestStreamHandler<?>> requestStreamRoutes;
-        private final Map<String, RequestChannelHandler<?>> requestChannelRoutes;
+        private Map<String, RequestResponseHandler<?>> requestResponseRoutes;
+        private Map<String, FireAndForgetHandler> fireAndForgetRoutes;
+        private Map<String, RequestStreamHandler<?>> requestStreamRoutes;
+        private Map<String, RequestChannelHandler<?>> requestChannelRoutes;
 
         public Builder() {
             this.requestResponseRoutes = new HashMap<>();
@@ -102,27 +102,24 @@ public class RoutedRSocket implements RSocket {
             this.requestChannelRoutes = new HashMap<>();
         }
 
-        public Builder addRequestResponse(String route, Class<? extends RequestResponseHandler> handlerClass) {
-            RequestResponseHandler<?> handler = (RequestResponseHandler<?>) getInstance(handlerClass.getCanonicalName());
-            requestResponseRoutes.put(route, handler);
+        public Builder requestResponseRoutes(String route, Map<String, RequestResponseHandler<?>> requestResponseRoutes) {
+            this.requestResponseRoutes = requestResponseRoutes;
             return this;
         }
 
-        public Builder addFireAndForget(String route, Class<? extends  FireAndForgetHandler> handlerClass) {
-            FireAndForgetHandler handler = (FireAndForgetHandler) getInstance(handlerClass.getCanonicalName());
-            fireAndForgetRoutes.put(route, handler);
+        public Builder fireAndForgetRoutes(String route, Map<String, FireAndForgetHandler> fireAndForgetRoutes) {
+            this.fireAndForgetRoutes = fireAndForgetRoutes;
             return this;
         }
 
-        public Builder addRequestStream(String route, Class<? extends RequestStreamHandler> handlerClass) {
-            RequestStreamHandler<?> handler = (RequestStreamHandler<?>) getInstance(handlerClass.getCanonicalName());
-            requestStreamRoutes.put(route, handler);
+        public Builder requestStreamRoutes(String route, Map<String, RequestStreamHandler<?>> requestStreamRoutes) {
+            this.requestStreamRoutes = requestStreamRoutes;
             return this;
         }
 
-        public Builder addRequestChannel(String route, Class<? extends RequestChannelHandler> handlerClass) {
-            RequestChannelHandler<?> handler = (RequestChannelHandler<?>) getInstance(handlerClass.getCanonicalName());
-            requestChannelRoutes.put(route, handler);
+
+        public Builder requestChannelRoutes(String route, Map<String, RequestStreamHandler<?>> requestStreamRoutes) {
+            this.requestStreamRoutes = requestStreamRoutes;
             return this;
         }
 
@@ -152,7 +149,7 @@ public class RoutedRSocket implements RSocket {
 
 
     private <T> Mono<Payload> handleRequestResponse(RequestResponseHandler<T> handler, Object obj) {
-        return (Mono<Payload>)handler.handle((T) obj);
+        return (Mono<Payload>) handler.handle((T) obj);
     }
 
     @Override

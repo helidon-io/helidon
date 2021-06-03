@@ -22,6 +22,7 @@ import io.rsocket.Payload;
 /**
  * Fire And Forget Handler.
  */
+@FunctionalInterface
 public interface FireAndForgetHandler {
 
     /**
