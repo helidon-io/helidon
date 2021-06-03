@@ -82,6 +82,48 @@ implementation. You can follow the guide below to incorporate the UI into this e
 1. Copy the contents in the sample index.html file from [here](https://github.com/graphql/graphiql/blob/main/packages/graphiql/README.md)
 into the file at `examples/microprofile/graphql/src/main/resources/web/index.html`
 
+   > Note: When running the above, if your do not see then GraphiQL UI, then copy the following into the above `index.html`
+
+   ```html
+   <html>
+     <head>
+       <title>Simple GraphiQL Example</title>
+       <link href="https://unpkg.com/graphiql/graphiql.min.css" rel="stylesheet" />
+     </head>
+     <body style="margin: 0;">
+       <div id="graphiql" style="height: 100vh;"></div>
+
+       <script
+         crossorigin
+         src="https://unpkg.com/react/umd/react.production.min.js"
+       ></script>
+       <script
+         crossorigin
+         src="https://unpkg.com/react-dom/umd/react-dom.production.min.js"
+       ></script>
+       <script
+         crossorigin
+         src="https://unpkg.com/graphiql/graphiql.min.js"
+       ></script>
+
+       <script>
+         const graphQLFetcher = graphQLParams =>
+           fetch('http://127.0.0.1:7001/graphql', {
+             method: 'post',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify(graphQLParams),
+           })
+             .then(response => response.json())
+             .catch(() => response.text());
+         ReactDOM.render(
+           React.createElement(GraphiQL, { fetcher: graphQLFetcher }),
+           document.getElementById('graphiql'),
+         );
+       </script>
+     </body>
+   </html>
+   ```
+
 1. Change the URL in the line `fetch('https://my/graphql', {` to `http://127.0.0.1:7001/graphql`
 
 1. Build and run the example using the instructions above.
