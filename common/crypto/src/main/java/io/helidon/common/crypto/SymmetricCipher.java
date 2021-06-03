@@ -131,7 +131,7 @@ public class SymmetricCipher implements CommonCipher {
      * Encrypt the message with the usage of provided parameters.
      *
      * @param algorithm algorithm to be used
-     * @param key       key used to message encryption
+     * @param key       key to encrypt message
      * @param iv        initialization vector
      * @param plain     message
      * @return encrypted message
@@ -145,7 +145,7 @@ public class SymmetricCipher implements CommonCipher {
      *
      * @param algorithm algorithm to be used
      * @param provider  provider of the algorithm
-     * @param key       key used to message encryption
+     * @param key       key to encrypt message
      * @param iv        initialization vector
      * @param plain     message
      * @return encrypted message
@@ -161,7 +161,7 @@ public class SymmetricCipher implements CommonCipher {
      *
      * @param algorithm algorithm to be used
      * @param provider  provider of the algorithm
-     * @param key       key used to message encryption
+     * @param key       key to encrypt message
      * @param params    cipher parameter object
      * @param plain     message
      * @return encrypted message
@@ -187,7 +187,7 @@ public class SymmetricCipher implements CommonCipher {
      * Decrypt the message with the usage of provided parameters.
      *
      * @param algorithm algorithm to be used
-     * @param key       key with was used to encrypt message
+     * @param key       key to decrypt message
      * @param iv        encrypted message initialization vector
      * @param encrypted encrypted message
      * @return decrypted message
@@ -201,7 +201,7 @@ public class SymmetricCipher implements CommonCipher {
      *
      * @param algorithm algorithm to be used
      * @param provider  algorithm provider
-     * @param key       key with was used to encrypt message
+     * @param key       key to decrypt message
      * @param iv        encrypted message initialization vector
      * @param encrypted encrypted message
      * @return decrypted message
@@ -217,7 +217,7 @@ public class SymmetricCipher implements CommonCipher {
      *
      * @param algorithm algorithm to be used
      * @param provider  algorithm provider
-     * @param key       key with was used to encrypt message
+     * @param key       key to decrypt message
      * @param params    cipher parameter object
      * @param encrypted encrypted message
      * @return decrypted message
