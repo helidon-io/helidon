@@ -14,6 +14,14 @@ public interface RSocketRouting {
         return new Builder();
     }
 
+    Map<String, RequestResponseHandler<?>> getRequestResponseRoutes();
+
+    Map<String, FireAndForgetHandler> getFireAndForgetRoutes();
+
+    Map<String, RequestStreamHandler<?>> getRequestStreamRoutes();
+
+    Map<String, RequestChannelHandler<?>> getRequestChannelRoutes();
+
     interface Rules {
 
         Rules register(RSocketService service);
@@ -35,6 +43,7 @@ public interface RSocketRouting {
         Rules requestStream(RequestStreamHandler handler);
 
         Rules requestStream(String pathParam, RequestStreamHandler handler);
+
 
     }
 
@@ -62,60 +71,63 @@ public interface RSocketRouting {
         }
 
         @Override
-        public Rules register(RSocketService service) {
-            return null;
+        public Builder register(RSocketService service) {
+            service.update(this);
+            return this;
         }
 
         @Override
-        public Rules register(String pathParam, RSocketService service) {
-            return null;
+        public Builder register(String pathParam, RSocketService service) {
+            //TODO: should we have routed param here according to rsocket spec?
+            service.update(this);
+            return this;
         }
 
         @Override
-        public Rules fireAndForget(FireAndForgetHandler handler) {
+        public Builder fireAndForget(FireAndForgetHandler handler) {
             fireAndForgetRoutes.put("", handler);
             return this;
         }
 
         @Override
-        public Rules fireAndForget(String pathParam, FireAndForgetHandler handler) {
-            fireAndForgetRoutes.put(pathParam,handler);
+        public Builder fireAndForget(String pathParam, FireAndForgetHandler handler) {
+            fireAndForgetRoutes.put(pathParam, handler);
             return this;
         }
 
         @Override
-        public Rules requestChannel(RequestChannelHandler handler) {
-            requestChannelRoutes.put("",handler);
+        public Builder requestChannel(RequestChannelHandler handler) {
+            requestChannelRoutes.put("", handler);
             return this;
         }
 
         @Override
-        public Rules requestChannel(String pathParam, RequestChannelHandler handler) {
+        public Builder requestChannel(String pathParam, RequestChannelHandler handler) {
             requestChannelRoutes.put(pathParam, handler);
             return this;
         }
 
         @Override
-        public Rules requestResponse(RequestResponseHandler handler) {
-            requestResponseRoutes.put("",handler);
+        public Builder requestResponse(RequestResponseHandler handler) {
+            requestResponseRoutes.put("", handler);
             return this;
         }
 
         @Override
-        public Rules requestResponse(String pathParam, RequestResponseHandler handler) {
-            requestResponseRoutes.put(pathParam,handler);
+        public Builder requestResponse(String pathParam, RequestResponseHandler handler) {
+            requestResponseRoutes.put(pathParam, handler);
             return this;
         }
 
         @Override
-        public Rules requestStream(RequestStreamHandler handler) {
-            requestStreamRoutes.put("",handler);
+        public Builder requestStream(RequestStreamHandler handler) {
+            requestStreamRoutes.put("", handler);
             return this;
         }
 
         @Override
-        public Rules requestStream(String pathParam, RequestStreamHandler handler) {
-            requestStreamRoutes.put(pathParam,handler);
+        public Builder requestStream(String pathParam, RequestStreamHandler handler) {
+            requestStreamRoutes.put(pathParam, handler);
             return this;
         }
     }

@@ -34,7 +34,7 @@ public class RSocketSupport extends TyrusSupport {
         super(other);
     }
 
-    RSocketSupport(
+    public RSocketSupport(
             WebSocketEngine engine,
             Set<Class<?>> endpointClasses,
             Set<ServerEndpointConfig> endpointConfigs,

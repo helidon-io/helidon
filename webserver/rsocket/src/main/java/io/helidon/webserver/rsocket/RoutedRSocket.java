@@ -58,32 +58,6 @@ public class RoutedRSocket implements RSocket {
         this.mimeType = mimetype;
     }
 
-    private static Class<?> loadClass(String className) {
-        try {
-            return Thread.currentThread().getContextClassLoader().loadClass(className);
-        } catch (ClassNotFoundException e) {
-            //silent fail
-        }
-        try {
-            return Class.forName(className);
-        } catch (ClassNotFoundException e) {
-            return null;
-        }
-    }
-
-    private static Object getInstance(String className) {
-        Class<?> classObj = loadClass(className);
-        if (classObj == null) {
-            return null;
-        }
-
-        try {
-            return classObj.getConstructor().newInstance();
-        } catch (ReflectiveOperationException | RuntimeException e) {
-            return null;
-        }
-    }
-
     public boolean isAuthValid(ConnectionSetupPayload setupPayload) {
         //TODO authentication...
         return true;
@@ -102,24 +76,24 @@ public class RoutedRSocket implements RSocket {
             this.requestChannelRoutes = new HashMap<>();
         }
 
-        public Builder requestResponseRoutes(String route, Map<String, RequestResponseHandler<?>> requestResponseRoutes) {
+        public Builder requestResponseRoutes(Map<String, RequestResponseHandler<?>> requestResponseRoutes) {
             this.requestResponseRoutes = requestResponseRoutes;
             return this;
         }
 
-        public Builder fireAndForgetRoutes(String route, Map<String, FireAndForgetHandler> fireAndForgetRoutes) {
+        public Builder fireAndForgetRoutes(Map<String, FireAndForgetHandler> fireAndForgetRoutes) {
             this.fireAndForgetRoutes = fireAndForgetRoutes;
             return this;
         }
 
-        public Builder requestStreamRoutes(String route, Map<String, RequestStreamHandler<?>> requestStreamRoutes) {
+        public Builder requestStreamRoutes(Map<String, RequestStreamHandler<?>> requestStreamRoutes) {
             this.requestStreamRoutes = requestStreamRoutes;
             return this;
         }
 
 
-        public Builder requestChannelRoutes(String route, Map<String, RequestStreamHandler<?>> requestStreamRoutes) {
-            this.requestStreamRoutes = requestStreamRoutes;
+        public Builder requestChannelRoutes(Map<String, RequestChannelHandler<?>> requestChannelRoutes) {
+            this.requestChannelRoutes = requestChannelRoutes;
             return this;
         }
 

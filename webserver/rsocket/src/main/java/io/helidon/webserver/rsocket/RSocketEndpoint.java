@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.rsocket;
 
+import io.helidon.webserver.rsocket.server.RSocketRouting;
 import io.rsocket.core.RSocketServer;
 import io.rsocket.transport.ServerTransport;
 import io.rsocket.transport.ServerTransport.ConnectionAcceptor;
@@ -27,20 +28,41 @@ import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
 import javax.websocket.Session;
+import javax.websocket.server.ServerEndpointConfig;
 
 public class RSocketEndpoint extends Endpoint {
 
-    private ConnectionAcceptor connectionAcceptor;
+    private static ConnectionAcceptor connectionAcceptor;
     final Map<String, HelidonDuplexConnection> connections = new ConcurrentHashMap<>();
 
+    private RSocketRouting routing;
+    private String path;
 
-    public ServerTransport.ConnectionAcceptor initConnection() {
-        return RSocketServer
+    public static RSocketEndpoint create(RSocketRouting routing, String path){
+        return new RSocketEndpoint(routing,path);
+    }
+
+    public RSocketEndpoint(){
+    }
+
+    private RSocketEndpoint(RSocketRouting routing, String path) {
+        this.routing = routing;
+        this.path = path;
+
+        connectionAcceptor = RSocketServer
                 .create()
                 .acceptor((connectionSetupPayload, rSocket) -> Mono.just(RoutedRSocket.builder()
-                        //add services
+                        .fireAndForgetRoutes(routing.getFireAndForgetRoutes())
+                        .requestChannelRoutes(routing.getRequestChannelRoutes())
+                        .requestResponseRoutes(routing.getRequestResponseRoutes())
+                        .requestStreamRoutes(routing.getRequestStreamRoutes())
                         .build()))
                 .asConnectionAcceptor();
+    }
+
+    public ServerEndpointConfig getEndPoint() {
+        return ServerEndpointConfig.Builder.create(this.getClass(), path)
+                .build();
     }
 
     @Override

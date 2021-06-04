@@ -27,6 +27,7 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.rsocket.RSocketEndpoint;
 import io.helidon.webserver.rsocket.RSocketSupport;
+import io.helidon.webserver.rsocket.server.RSocketRouting;
 
 
 /**
@@ -43,14 +44,19 @@ public class Main {
      * @return the new instance
      */
     static Routing createRouting() {
-        List<Class<? extends Encoder>> encoders = Collections.emptyList();
+
+        MyRSocketService myRSocketService = new MyRSocketService();
+
+        RSocketRouting rSocketRouting = RSocketRouting.builder()
+                .register(myRSocketService)
+                .build();
 
         return Routing.builder()
                 .register("/rsocket",
-                        RSocketSupport.builder().register(
-                                ServerEndpointConfig.Builder.create(MyRSocketEndpoint.class, "/board")
-                                        .encoders(encoders).build())
-                                .build())
+                        RSocketSupport.builder()
+                                .register(RSocketEndpoint.create(rSocketRouting, "/board")
+                                        .getEndPoint()
+                                ).build())
                 .build();
     }
 
