@@ -38,6 +38,10 @@
     <properties>
         <mainClass>io.helidon.demo.todos.backend.Main</mainClass>
         <version.lib.cassandra>3.10.2</version.lib.cassandra>
+        <version.cassandra.unit>4.3.1.0</version.cassandra.unit>
+        <version.datastax.driver.core>4.9.0</version.datastax.driver.core>
+        <version.datastax.driver.query.builder>4.9.0</version.datastax.driver.query.builder>
+        <version.codahale.metrics.core>3.0.2</version.codahale.metrics.core>
     </properties>
 
     <dependencyManagement>
@@ -98,25 +102,25 @@
         <dependency>
             <groupId>org.cassandraunit</groupId>
             <artifactId>cassandra-unit</artifactId>
-            <version>4.3.1.0</version>
+            <version>${version.cassandra.unit}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.datastax.oss</groupId>
             <artifactId>java-driver-core</artifactId>
-            <version>4.9.0</version>
+            <version>${version.datastax.driver.core}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.datastax.oss</groupId>
             <artifactId>java-driver-query-builder</artifactId>
-            <version>4.9.0</version>
+            <version>${version.datastax.driver.query.builder}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.codahale.metrics</groupId>
             <artifactId>metrics-core</artifactId>
-            <version>3.0.2</version>
+            <version>${version.codahale.metrics.core}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
