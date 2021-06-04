@@ -95,7 +95,7 @@
         <version.lib.reactivestreams>1.0.2</version.lib.reactivestreams>
         <version.lib.reactor>3.3.1.RELEASE</version.lib.reactor>
         <version.lib.slf4j>1.7.26</version.lib.slf4j>
-        <version.lib.smallrye-openapi>1.2.0</version.lib.smallrye-openapi>
+        <version.lib.smallrye-openapi>1.2.3</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>1.27</version.lib.snakeyaml>
         <version.lib.transaction-api>1.2</version.lib.transaction-api>
         <version.lib.typesafe-config>1.4.0</version.lib.typesafe-config>
