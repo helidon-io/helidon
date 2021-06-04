@@ -18,15 +18,20 @@ package io.helidon.microprofile.server;
 import javax.inject.Inject;
 
 import io.helidon.config.Config;
+import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddConfig;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.webserver.jersey.JerseySupport;
-import org.junit.jupiter.api.Test;
 
 import static org.glassfish.jersey.client.ClientProperties.IGNORE_EXCEPTION_RESPONSE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test that it is possible to override {@code IGNORE_EXCEPTION_RESPONSE} in
@@ -34,6 +39,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * for more information.
  */
 @HelidonTest
+@DisableDiscovery
+@AddExtension(ServerCdiExtension.class)
+@AddExtension(JaxRsCdiExtension.class)
+@AddExtension(CdiComponentProvider.class)
+@AddExtension(ConfigCdiExtension.class)
 @AddConfig(key = IGNORE_EXCEPTION_RESPONSE, value = "false")
 class JerseyPropertiesTest {
 
