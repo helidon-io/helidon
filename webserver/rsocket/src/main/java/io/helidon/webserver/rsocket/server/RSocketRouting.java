@@ -14,13 +14,13 @@ public interface RSocketRouting {
         return new Builder();
     }
 
-    Map<String, RequestResponseHandler<?>> getRequestResponseRoutes();
+    Map<String, RequestResponseHandler> getRequestResponseRoutes();
 
     Map<String, FireAndForgetHandler> getFireAndForgetRoutes();
 
-    Map<String, RequestStreamHandler<?>> getRequestStreamRoutes();
+    Map<String, RequestStreamHandler> getRequestStreamRoutes();
 
-    Map<String, RequestChannelHandler<?>> getRequestChannelRoutes();
+    Map<String, RequestChannelHandler> getRequestChannelRoutes();
 
     interface Rules {
 
@@ -49,10 +49,10 @@ public interface RSocketRouting {
 
     class Builder implements Rules, io.helidon.common.Builder<RSocketRouting> {
 
-        private final Map<String, RequestResponseHandler<?>> requestResponseRoutes;
+        private final Map<String, RequestResponseHandler> requestResponseRoutes;
         private final Map<String, FireAndForgetHandler> fireAndForgetRoutes;
-        private final Map<String, RequestStreamHandler<?>> requestStreamRoutes;
-        private final Map<String, RequestChannelHandler<?>> requestChannelRoutes;
+        private final Map<String, RequestStreamHandler> requestStreamRoutes;
+        private final Map<String, RequestChannelHandler> requestChannelRoutes;
 
 
         private Builder() {

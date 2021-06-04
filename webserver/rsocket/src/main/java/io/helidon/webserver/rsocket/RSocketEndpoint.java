@@ -18,7 +18,6 @@ package io.helidon.webserver.rsocket;
 
 import io.helidon.webserver.rsocket.server.RSocketRouting;
 import io.rsocket.core.RSocketServer;
-import io.rsocket.transport.ServerTransport;
 import io.rsocket.transport.ServerTransport.ConnectionAcceptor;
 import reactor.core.publisher.Mono;
 

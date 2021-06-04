@@ -17,14 +17,14 @@
 package io.helidon.webserver.rsocket;
 
 import io.helidon.common.reactive.Multi;
+import io.rsocket.Payload;
 
 /**
  * Request Channel Handler.
  *
- * @param <T> Type of Multi.
  */
 @FunctionalInterface
-public interface RequestChannelHandler<T> {
+public interface RequestChannelHandler {
 
     /**
      * Handle Request Channel Request.
@@ -32,5 +32,5 @@ public interface RequestChannelHandler<T> {
      * @param payloads Multi.
      * @return Multi.
      */
-    Multi<T> handle(Multi<T> payloads);
+    Multi<Payload> handle(Multi<Payload> payloads);
 }

@@ -17,20 +17,20 @@
 package io.helidon.webserver.rsocket;
 
 import io.helidon.common.reactive.Single;
+import io.rsocket.Payload;
 
 /**
  * Request Response Handler.
  *
- * @param <T>
  */
 @FunctionalInterface
-public interface RequestResponseHandler<T> {
+public interface RequestResponseHandler {
 
     /**
      * Handle Request Response.
      *
      * @param payload
-     * @return Single of T.
+     * @return Single of Payload.
      */
-    Single<T> handle(T payload);
+    Single<Payload> handle(Payload payload);
 }

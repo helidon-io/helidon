@@ -16,34 +16,31 @@
 
 package io.helidon.webserver.rsocket;
 
-import java.util.HashMap;
-import java.util.Map;
-
-
 import io.helidon.common.reactive.Multi;
-import org.reactivestreams.FlowAdapters;
-import org.reactivestreams.Publisher;
-
-import io.rsocket.ConnectionSetupPayload;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
 import io.rsocket.metadata.CompositeMetadata;
 import io.rsocket.metadata.TaggingMetadata;
 import io.rsocket.metadata.WellKnownMimeType;
+import org.reactivestreams.FlowAdapters;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class RoutedRSocket implements RSocket {
-    private final Map<String, RequestResponseHandler<?>> requestResponseRoutes;
+    private final Map<String, RequestResponseHandler> requestResponseRoutes;
     private final Map<String, FireAndForgetHandler> fireAndForgetRoutes;
-    private final Map<String, RequestStreamHandler<?>> requestStreamRoutes;
-    private final Map<String, RequestChannelHandler<?>> requestChannelRoutes;
+    private final Map<String, RequestStreamHandler> requestStreamRoutes;
+    private final Map<String, RequestChannelHandler> requestChannelRoutes;
     private String mimeType = WellKnownMimeType.APPLICATION_JSON.getString();
 
-    RoutedRSocket(Map<String, RequestResponseHandler<?>> requestResponseRoutes,
+    RoutedRSocket(Map<String, RequestResponseHandler> requestResponseRoutes,
                   Map<String, FireAndForgetHandler> fireAndForgetRoutes,
-                  Map<String, RequestStreamHandler<?>> requestStreamRoutes,
-                  Map<String, RequestChannelHandler<?>> requestChannelRoutes) {
+                  Map<String, RequestStreamHandler> requestStreamRoutes,
+                  Map<String, RequestChannelHandler> requestChannelRoutes) {
         this.requestResponseRoutes = requestResponseRoutes;
         this.fireAndForgetRoutes = fireAndForgetRoutes;
         this.requestStreamRoutes = requestStreamRoutes;
@@ -58,16 +55,12 @@ public class RoutedRSocket implements RSocket {
         this.mimeType = mimetype;
     }
 
-    public boolean isAuthValid(ConnectionSetupPayload setupPayload) {
-        //TODO authentication...
-        return true;
-    }
 
     public static final class Builder {
-        private Map<String, RequestResponseHandler<?>> requestResponseRoutes;
+        private Map<String, RequestResponseHandler> requestResponseRoutes;
         private Map<String, FireAndForgetHandler> fireAndForgetRoutes;
-        private Map<String, RequestStreamHandler<?>> requestStreamRoutes;
-        private Map<String, RequestChannelHandler<?>> requestChannelRoutes;
+        private Map<String, RequestStreamHandler> requestStreamRoutes;
+        private Map<String, RequestChannelHandler> requestChannelRoutes;
 
         public Builder() {
             this.requestResponseRoutes = new HashMap<>();
@@ -76,7 +69,7 @@ public class RoutedRSocket implements RSocket {
             this.requestChannelRoutes = new HashMap<>();
         }
 
-        public Builder requestResponseRoutes(Map<String, RequestResponseHandler<?>> requestResponseRoutes) {
+        public Builder requestResponseRoutes(Map<String, RequestResponseHandler> requestResponseRoutes) {
             this.requestResponseRoutes = requestResponseRoutes;
             return this;
         }
@@ -86,13 +79,13 @@ public class RoutedRSocket implements RSocket {
             return this;
         }
 
-        public Builder requestStreamRoutes(Map<String, RequestStreamHandler<?>> requestStreamRoutes) {
+        public Builder requestStreamRoutes(Map<String, RequestStreamHandler> requestStreamRoutes) {
             this.requestStreamRoutes = requestStreamRoutes;
             return this;
         }
 
 
-        public Builder requestChannelRoutes(Map<String, RequestChannelHandler<?>> requestChannelRoutes) {
+        public Builder requestChannelRoutes(Map<String, RequestChannelHandler> requestChannelRoutes) {
             this.requestChannelRoutes = requestChannelRoutes;
             return this;
         }
@@ -110,7 +103,7 @@ public class RoutedRSocket implements RSocket {
             String route = getRoute(metadatas);
             if (route != null) {
 
-                RequestResponseHandler<?> handler = requestResponseRoutes.get(route);
+                RequestResponseHandler handler = requestResponseRoutes.get(route);
                 if (handler != null) {
                     return handleRequestResponse(handler, payload);
                 }
@@ -122,8 +115,8 @@ public class RoutedRSocket implements RSocket {
     }
 
 
-    private <T> Mono<Payload> handleRequestResponse(RequestResponseHandler<T> handler, Object obj) {
-        return (Mono<Payload>) handler.handle((T) obj);
+    private Mono<Payload> handleRequestResponse(RequestResponseHandler handler, Payload payload) {
+        return Mono.from(FlowAdapters.toPublisher(handler.handle(payload)));
     }
 
     @Override
@@ -153,7 +146,7 @@ public class RoutedRSocket implements RSocket {
             Map<String, TaggingMetadata> metadatas = parseMetadata(payload);
             String route = getRoute(metadatas);
             if (route != null) {
-                RequestStreamHandler<?> handler = requestStreamRoutes.get(route);
+                RequestStreamHandler handler = requestStreamRoutes.get(route);
                 if (handler != null) {
                     return handleRequestStream(handler, payload);
                 }
@@ -180,7 +173,7 @@ public class RoutedRSocket implements RSocket {
                                     Map<String, TaggingMetadata> metadata = parseMetadata(payload);
                                     String route = getRoute(metadata);
                                     if (route != null) {
-                                        RequestChannelHandler<?> handler = requestChannelRoutes.get(route);
+                                        RequestChannelHandler handler = requestChannelRoutes.get(route);
                                         if (handler != null) {
                                             return handleRequestChannel(handler, flows);
                                         }
