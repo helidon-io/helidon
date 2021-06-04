@@ -148,7 +148,7 @@ public class PriorityBag<T> implements Iterable<T> {
 
     /**
      * Add an element to the bag.
-     *
+     * <p>
      * If the element's class is annotated with the {@link javax.annotation.Priority}
      * annotation then that value will be used to determine priority otherwise the
      * default priority value will be used.

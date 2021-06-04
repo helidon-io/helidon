@@ -192,7 +192,7 @@ public interface CircuitBreaker extends FtHandler {
         /**
          * These throwables will not be considered failures, all other will.
          * <p>
-         * Cannot be combined with {@link #applyOn}. </p>
+         * Cannot be combined with {@link #applyOn}.
          *
          * @param classes to consider successful
          * @return updated builder instance

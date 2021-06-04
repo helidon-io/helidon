@@ -136,7 +136,7 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
         private boolean requestDefaultBehaviorIfNone = false;
 
         /**
-         * Constructor.
+         * Default constructor.
          */
         protected Builder() {
         }

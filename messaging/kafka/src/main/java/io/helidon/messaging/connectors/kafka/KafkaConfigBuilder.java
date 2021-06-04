@@ -215,7 +215,6 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * <li>Valid Values: [latest, earliest, none]</li>
      * </ul>
      *
-     *
      * @param autoOffsetReset [latest, earliest, none]
      * @return this builder
      */

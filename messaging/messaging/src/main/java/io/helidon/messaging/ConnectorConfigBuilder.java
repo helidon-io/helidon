@@ -31,7 +31,7 @@ public abstract class ConnectorConfigBuilder implements Builder<Config> {
     private final Map<String, String> configuration = new HashMap<>();
 
     /**
-     * Consturctor.
+     * Default consturctor.
      */
     protected ConnectorConfigBuilder() {
     }

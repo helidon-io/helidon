@@ -24,8 +24,9 @@ import java.util.logging.LogRecord;
  * Log handler to support separation of access log to its own file.
  * <p>
  * This is used with Java Logging. For other frameworks, such as {@code slf4j} or {@code log4j} you can use a bridge for
- * Java Logging and configure a separate file using implementation specific configuration. </p>
- * <p>Java util logging configuration example using this handler:</p>
+ * Java Logging and configure a separate file using implementation specific configuration.
+ * <p>
+ * Java util logging configuration example using this handler:
  * <pre>
  * # Configure the log handler (uses the same configuration options as FileHandler, ignores formatter
  * io.helidon.webserver.accesslog.AccessLogHandler.level=FINEST
