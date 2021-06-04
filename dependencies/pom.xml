@@ -72,7 +72,7 @@
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
         <version.lib.jaxb-impl>2.3.2</version.lib.jaxb-impl>
         <version.lib.jaxrs-api>2.1.6</version.lib.jaxrs-api>
-        <version.lib.jboss.classfilewriter>1.2.4.Final</version.lib.jboss.classfilewriter>
+        <version.lib.jboss.classfilewriter>1.2.5.Final</version.lib.jboss.classfilewriter>
         <version.lib.jboss.logging>3.2.1.Final</version.lib.jboss.logging>
         <version.lib.jboss.transaction-api>1.0.0.Final</version.lib.jboss.transaction-api>
         <version.lib.jboss.transaction-spi>7.6.0.Final</version.lib.jboss.transaction-spi>
