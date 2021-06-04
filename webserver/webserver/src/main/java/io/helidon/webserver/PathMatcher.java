@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.Map;
  * <p>Matched URI path is always <b>decoded</b>, <b>{@link java.net.URI#normalize() normalized}</b> and
  * with <b>removed single ended slash</b> (if any).
  *
- * <h3><a id="pattern">Web Server Path Pattern</a></h3>
+ * <h2><a id="pattern">Web Server Path Pattern</a></h2>
  * While user can implement this interface to implement any specific needs the primary construction method is
  * {@link #create(String)} factory method. The method accepts <i>Web Server Path Pattern</i> format.
  *

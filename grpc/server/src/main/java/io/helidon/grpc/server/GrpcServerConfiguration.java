@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,6 +169,11 @@ public interface GrpcServerConfiguration {
         private Builder() {
         }
 
+        /**
+         * Create builder from config.
+         * @param config configuration to create builder from
+         * @return new builder
+         */
         public GrpcServerConfiguration.Builder config(Config config) {
             if (config == null) {
                 return this;
@@ -286,6 +291,10 @@ public interface GrpcServerConfiguration {
             return port;
         }
 
+        /**
+         * Get context.
+         * @return context
+         */
         public Context context() {
             return context;
         }

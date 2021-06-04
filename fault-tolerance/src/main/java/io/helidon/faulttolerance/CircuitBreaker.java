@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -192,7 +192,7 @@ public interface CircuitBreaker extends FtHandler {
         /**
          * These throwables will not be considered failures, all other will.
          * <p>
-         * Cannot be combined with {@link #applyOn}.
+         * Cannot be combined with {@link #applyOn}. </p>
          *
          * @param classes to consider successful
          * @return updated builder instance
@@ -208,7 +208,6 @@ public interface CircuitBreaker extends FtHandler {
 
         /**
          * This throwable will not be considered failure.
-         * <p>
          *
          * @param clazz to consider successful
          * @return updated builder instance

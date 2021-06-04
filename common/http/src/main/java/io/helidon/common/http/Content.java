@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import io.helidon.common.reactive.Single;
 /**
  * Represents an HTTP entity as a {@link Multi multi} of {@link DataChunk chunks} with specific
  * features.
- * <h3>Default publisher contract</h3>
+ * <h2>Default publisher contract</h2>
  * Default publisher accepts only single subscriber. Other subscribers receives
  * {@link Flow.Subscriber#onError(Throwable) onError()}.
  * <p>
@@ -36,11 +36,11 @@ import io.helidon.common.reactive.Single;
  * method call. Buffer can be reused by network infrastructure as soon as {@code onNext()} method returns.
  * This behavior can be inconvenient yet it helps to provide excellent performance.
  *
- * <h3>Publisher Overwrite.</h3>
+ * <h2>Publisher Overwrite.</h2>
  * It is possible to modify contract of the original publisher by registration of a new publisher using
  * {@link #registerFilter(Function)} method. It can be used to wrap or replace previously registered (or default) publisher.
  *
- * <h3>Entity Readers</h3>
+ * <h2>Entity Readers</h2>
  * It is possible to register function to convert publisher to {@link io.helidon.common.reactive.Single} of a single entity using
  * {@link #registerReader(Class, Reader)} or {@link #registerReader(Predicate, Reader)} methods. It
  * is then possible to use {@link #as(Class)} method to obtain such entity.

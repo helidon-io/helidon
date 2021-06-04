@@ -443,6 +443,7 @@ public interface IoMulti {
          *
          * @param timeout the maximum time to block
          * @param unit    the time unit of the timeout argument
+         * @return updated builder
          */
         public OutputStreamMultiBuilder timeout(long timeout, TimeUnit unit) {
             streamMulti.timeout(TimeUnit.MILLISECONDS.convert(timeout, unit));
@@ -459,6 +460,7 @@ public interface IoMulti {
          * </ul>
          *
          * @param requestCallback to be executed
+         * @return updated builder
          */
         public OutputStreamMultiBuilder onRequest(BiConsumer<Long, Long> requestCallback) {
             streamMulti.onRequest(requestCallback);

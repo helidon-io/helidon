@@ -81,6 +81,14 @@ public interface ChangeWatcher<T> {
          */
         ChangeEventType type();
 
+        /**
+         * Create a ChangeEvent.
+         * @param target target
+         * @param type change event type
+         * @param instant change time
+         * @param <T> type of ChangeEvent
+         * @return new ChangeEvent
+         */
         static <T> ChangeEvent<T> create(T target, ChangeEventType type, Instant instant) {
             return new ChangeEvent<>() {
                 @Override
@@ -105,6 +113,13 @@ public interface ChangeWatcher<T> {
             };
         }
 
+        /**
+         *  Create a ChangeEvent.
+         * @param target target
+         * @param type type supported
+         * @param <T> type of ChangeEvent
+         * @return new ChangeEvent
+         */
         static <T> ChangeEvent<T> create(T target, ChangeEventType type) {
             return create(target, type, Instant.now());
         }

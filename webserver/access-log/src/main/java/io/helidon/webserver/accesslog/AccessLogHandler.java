@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import java.util.logging.LogRecord;
  * Log handler to support separation of access log to its own file.
  * <p>
  * This is used with Java Logging. For other frameworks, such as {@code slf4j} or {@code log4j} you can use a bridge for
- * Java Logging and configure a separate file using implementation specific configuration.
- * <p>Java util logging configuration example using this handler:
+ * Java Logging and configure a separate file using implementation specific configuration. </p>
+ * <p>Java util logging configuration example using this handler:</p>
  * <pre>
  * # Configure the log handler (uses the same configuration options as FileHandler, ignores formatter
  * io.helidon.webserver.accesslog.AccessLogHandler.level=FINEST
@@ -42,7 +42,7 @@ public class AccessLogHandler extends FileHandler {
     /**
      * Construct a default {@code AccessLogHandler}.  This will be configured
      * entirely from {@link java.util.logging.LogManager} properties (or their default values).
-     * <p>
+     * 
      * @exception IOException if there are IO problems opening the files.
      * @exception SecurityException  if a security manager exists and if
      *             the caller does not have <code>LoggingPermission("control"))</code>.

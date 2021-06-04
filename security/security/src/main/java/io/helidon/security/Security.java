@@ -202,7 +202,7 @@ public class Security {
 
     /**
      * Creates new instance based on configuration values.
-     * <p>
+     * <br>
      *
      * @param config Config instance located on security configuration ("providers" is an expected child)
      * @return new instance.
@@ -216,7 +216,7 @@ public class Security {
 
     /**
      * Creates new instance based on configuration values.
-     * <p>
+     * <br>
      *
      * @param config Config instance located on security configuration ("providers" is an expected child)
      * @return new instance.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import io.helidon.config.spi.ConfigFilter;
  * will be resolved as:
  * <pre>
  * {@code message = "Hello Joachim!"}</pre>
- * <h1>How to Activate This Filter</h1>
+ * <h2>How to Activate This Filter</h2>
  * Use any of the following techniques to create a {@code ValueResolvingFilter} and
  * use it for config look-ups.
  * <ol>

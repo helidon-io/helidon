@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import io.helidon.media.common.MessageBodyWriters;
 /**
  * Represents HTTP Response.
  *
- * <h3>Lifecycle</h3>
+ * <h2>Lifecycle</h2>
  * HTTP response is send to the client in two or more steps (chunks). First contains {@link #status() HTTP status code}
  * and {@link ResponseHeaders headers}. First part can be send explicitly by calling {@link ResponseHeaders#send()}
  * method or implicitly by sending a first part of the the response content. As soon as first part is send it become immutable -

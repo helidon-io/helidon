@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,18 @@ public abstract class CompletionSingle<T> extends CompletionAwaitable<T> impleme
 
     private final CompletableFuture<Void> cancelFuture = new CompletableFuture<>();
 
+    /**
+     * Default constructor.
+     */
     protected CompletionSingle() {
         LazyValue<CompletableFuture<T>> lazyStage = LazyValue.create(this::toNullableStage);
         setOriginalStage(lazyStage::get);
     }
 
+    /**
+     * Convert to a nullable stage.
+     * @return nullable stage
+     */
     protected CompletableFuture<T> toNullableStage() {
         SingleToFuture<T> subscriber = new SingleToFuture<>(this, true);
         this.subscribe(subscriber);

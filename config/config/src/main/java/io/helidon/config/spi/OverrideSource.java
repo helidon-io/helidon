@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,7 +111,7 @@ public interface OverrideSource extends Source, Supplier<OverrideSource> {
         /**
          * Creates {@code OverrideData} from a {@code List} of {@code String}
          * pairs.
-         * <p>
+         * 
          * @param wildcards {@code List} of pairs of
          * <a href="#wildcardSupport">wildcard expressions</a> and corresponding
          * replacement values

@@ -92,8 +92,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * </tbody>
  * </table>
  *
- * <p>
- *
  * <table>
  *  <caption><b>Field formats</b></caption>
  *  <tr>
@@ -186,7 +184,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * </tbody>
  * </table>
  *
- * <p>
  */
 @Retention(RUNTIME)
 @Target({METHOD})

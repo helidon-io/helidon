@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import io.helidon.config.spi.MergingStrategy;
 import io.helidon.config.spi.OverrideSource;
 
 /**
- * <h1>Configuration</h1>
+ * <h2>Configuration</h2>
  * Immutable tree-structured configuration.
  * <h2>Loading Configuration</h2>
  * Load the default configuration using the {@link Config#create} method.
@@ -922,6 +922,11 @@ public interface Config {
         @Override
         String toString();
 
+        /**
+         * Get child.
+         * @param key formatted fully-qualified key
+         * @return child
+         */
         Key child(Key key);
 
         /**

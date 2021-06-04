@@ -143,6 +143,10 @@ abstract class MountRequest<T extends MountRequest<T>> extends VaultRequest<T> {
         }
     }
 
+    /**
+     * Set default mount path.
+     * @param defaultMount default mount path
+     */
     protected void defaultPath(String defaultMount) {
         if (path == null) {
             path = defaultMount;

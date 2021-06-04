@@ -157,6 +157,11 @@ public interface ConnectionPool {
                     .collect(Collectors.toList());
         }
 
+        /**
+         * Create builder from config.
+         * @param config configuration
+         * @return updated builder
+         */
         public Builder config(Config config) {
             Map<String, String> poolConfig = config.detach().asMap().get();
             poolConfig.forEach((key, value) -> {
@@ -182,38 +187,74 @@ public interface ConnectionPool {
             return this;
         }
 
+        /**
+         * Set url.
+         * @param url url
+         * @return updated builder
+         */
         public Builder url(String url) {
             this.url = url;
             return this;
         }
 
+        /**
+         * Set username.
+         * @param username user name
+         * @return updated builder
+         */
         public Builder username(String username) {
             this.username = username;
             return this;
         }
 
+        /**
+         * Set password.
+         * @param password password
+         * @return updated builder
+         */
         public Builder password(String password) {
             this.password = password;
             return this;
         }
 
+        /**
+         * Set properties.
+         * @param properties properties
+         * @return updated builder
+         */
         public Builder properties(Properties properties) {
             this.properties = properties;
             return this;
         }
 
+        /**
+         * Get properties.
+         * @return properties
+         */
         Properties properties() {
             return properties;
         }
 
+        /**
+         * Get URL.
+         * @return url
+         */
         String url() {
             return url;
         }
 
+        /**
+         * Get username.
+         * @return user name
+         */
         String username() {
             return username;
         }
 
+        /**
+         * Get password.
+         * @return password
+         */
         String password() {
             return password;
         }

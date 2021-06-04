@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -378,7 +378,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          *
          * This is a mandatory parameter.
          *
-         * @param consumerSupplier
+         * @param consumerSupplier supplier of Consumer
          * @return updated builder instance
          */
         public Builder<K, V> consumerSupplier(Supplier<Consumer<K, V>> consumerSupplier) {
@@ -391,7 +391,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          *
          * This is a mandatory parameter if topicPattern is empty.
          *
-         * @param topics
+         * @param topics list of topics to subscribe to
          * @return updated builder instance
          */
         public Builder<K, V> topics(List<String> topics) {
@@ -404,7 +404,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          *
          * This is a mandatory parameter if topics is empty.
          *
-         * @param topicPattern
+         * @param topicPattern topic pattern
          * @return updated builder instance
          */
         public Builder<K, V> topicPattern(Pattern topicPattern) {
@@ -418,7 +418,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          *
          * This is a mandatory parameter.
          *
-         * @param scheduler
+         * @param scheduler scheduler
          * @return updated builder instance
          */
         public Builder<K, V> scheduler(ScheduledExecutorService scheduler) {
@@ -430,7 +430,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          * Specifies the period in milliseconds between successive scheduler executions.
          * The default value is 100 milliseconds.
          *
-         * @param periodExecutions
+         * @param periodExecutions period of executions in milliseconds
          * @return updated builder instance
          */
         public Builder<K, V> periodExecutions(long periodExecutions) {
@@ -442,7 +442,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          * Specifies maximum time in milliseconds to block polling messages from Kafka.
          * The default value is 50 milliseconds.
          *
-         * @param pollTimeout
+         * @param pollTimeout poll timeout in milliseconds
          * @return updated builder instance
          */
         public Builder<K, V> pollTimeout(long pollTimeout) {
@@ -461,7 +461,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          * - For autoCommit = false and enable.auto.commit = true, all messages will be committed and
          * {@link KafkaMessage#ack()} will have no effect.
          *
-         * @param autoCommit
+         * @param autoCommit true to auto-commit message. False to commit on explicit ack.
          * @return updated builder instance
          */
         public Builder<K, V> autoCommit(boolean autoCommit) {
@@ -476,7 +476,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          *
          * The default value is Long.MAX_VALUE
          *
-         * @param ackTimeout
+         * @param ackTimeout ack timeout in milliseconds
          * @return updated builder instance
          */
         public Builder<K, V> ackTimeout(long ackTimeout) {
@@ -492,7 +492,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          * The intention of this value is to fail gracefully when there are many pending commits,
          * instead of failing with OutOfMemoryError.
          *
-         * @param limitNoAck
+         * @param limitNoAck maximum number of unacknowledged messages
          * @return updated builder instance
          */
         public Builder<K, V> limitNoAck(int limitNoAck) {

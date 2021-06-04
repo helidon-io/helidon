@@ -105,6 +105,10 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         return builder.build();
     }
 
+    /**
+     * Get dbClient.
+     * @return dbclient
+     */
     protected DbClient dbClient() {
         return dbClient;
     }

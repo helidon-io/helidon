@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,9 @@ import io.helidon.config.ConfigSources;
 public abstract class ConnectorConfigBuilder implements Builder<Config> {
     private final Map<String, String> configuration = new HashMap<>();
 
+    /**
+     * Consturctor.
+     */
     protected ConnectorConfigBuilder() {
     }
 
@@ -39,6 +42,12 @@ public abstract class ConnectorConfigBuilder implements Builder<Config> {
         return result;
     }
 
+    /**
+     * Set property.
+     * @param key key
+     * @param value value
+     * @return builder instance
+     */
     protected ConnectorConfigBuilder property(String key, String value) {
         configuration.put(key, value);
         return this;

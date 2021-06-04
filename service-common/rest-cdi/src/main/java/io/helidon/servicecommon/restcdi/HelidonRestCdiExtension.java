@@ -194,6 +194,12 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
                     .getJavaClass());
     }
 
+    /**
+     * Check if OwnProducerOrNonDefaultQualified.
+     * @param bean to check
+     * @param ownProducerClass producer class
+     * @return true if OwnProducerOrNonDefaultQualified
+     */
     protected boolean isOwnProducerOrNonDefaultQualified(Bean<?> bean, Class<?> ownProducerClass) {
         return ownProducerClass.equals(bean.getBeanClass())
                 || bean.getQualifiers()
@@ -219,6 +225,10 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
         recordProducerMember("recordProducerMethod", ppm.getAnnotatedProducerMethod(), ppm.getBean());
     }
 
+    /**
+     * Get producers.
+     * @return producers
+     */
     protected Map<Bean<?>, AnnotatedMember<?>> producers() {
         return producers;
     }
@@ -258,6 +268,10 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
         return defaultRouting;
     }
 
+    /**
+     * Get serviceSupport.
+     * @return serviceSupport
+     */
     protected T serviceSupport() {
         return serviceSupport;
     }
@@ -270,6 +284,11 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
      */
     protected static class WorkItemsManager<W> {
 
+        /**
+         * Create new WorkItemsManager.
+         * @param <W> type of WorkItemsManager
+         * @return new WorkItemsMAnager
+         */
         public static <W>  WorkItemsManager<W> create() {
             return new WorkItemsManager<>();
         }
@@ -279,6 +298,12 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
 
         private final Map<Executable, Map<Class<? extends Annotation>, Set<W>>> workItemsByExecutable = new HashMap<>();
 
+        /**
+         * Add a work item.
+         * @param executable executable
+         * @param annotationType annotation type
+         * @param workItem work item
+         */
         public void put(Executable executable, Class<? extends Annotation> annotationType, W workItem) {
             workItemsByExecutable
                     .computeIfAbsent(executable, e -> new HashMap<>())
@@ -286,6 +311,12 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
                     .add(workItem);
         }
 
+        /**
+         * Get work items by executable and annotation type.
+         * @param executable executable
+         * @param annotationType annotationType
+         * @return work items
+         */
         public Iterable<W> workItems(Executable executable, Class<? extends Annotation> annotationType) {
             return workItemsByExecutable
                     .getOrDefault(executable, Collections.emptyMap())

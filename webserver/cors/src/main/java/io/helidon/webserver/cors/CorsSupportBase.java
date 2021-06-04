@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,10 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
     private final String name;
     private final CorsSupportHelper<Q, R> helper;
 
+    /**
+     * Constructor.
+     * @param builder builder to construct from
+     */
     protected CorsSupportBase(Builder<Q, R, T, B> builder) {
         name = builder.name;
         builder.helperBuilder.name(builder.name);
@@ -90,15 +94,27 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
         helper.prepareResponse(requestAdapter, responseAdapter);
     }
 
+    /**
+     * Get helper.
+     * @return helper
+     */
     protected CorsSupportHelper<Q, R> helper() {
         return helper;
     }
 
+    /**
+     * Get partial description.
+     * @return description
+     */
     protected String describe() {
         // Partial toString implementation for use by subclasses
         return helper.toString();
     }
 
+    /**
+     * Get name.
+     * @return name
+     */
     protected String name() {
         return name;
     }
@@ -119,9 +135,16 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
         private final Aggregator.Builder aggregatorBuilder = helperBuilder.aggregatorBuilder();
         private boolean requestDefaultBehaviorIfNone = false;
 
+        /**
+         * Constructor.
+         */
         protected Builder() {
         }
 
+        /**
+         * Return builder.
+         * @return builder
+         */
         protected abstract B me();
 
         @Override
@@ -248,6 +271,10 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
             return this;
         }
 
+        /**
+         * Enables requestDefaultBehaviorIfNone.
+         * @return updated builder
+         */
         protected Builder requestDefaultBehaviorIfNone() {
             requestDefaultBehaviorIfNone = true;
             return this;

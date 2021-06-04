@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,7 +148,7 @@ public class PriorityBag<T> implements Iterable<T> {
 
     /**
      * Add an element to the bag.
-     * <p>
+     *
      * If the element's class is annotated with the {@link javax.annotation.Priority}
      * annotation then that value will be used to determine priority otherwise the
      * default priority value will be used.
@@ -170,7 +170,6 @@ public class PriorityBag<T> implements Iterable<T> {
 
     /**
      * Add an element to the bag with a specific priority.
-     * <p>
      *
      * @param value    the element to add
      * @param priority the priority of the element

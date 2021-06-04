@@ -296,7 +296,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
 
         /**
          * Load all properties for this thread pool from configuration.
-         * <p>
+         * <br>
          * <table class="config">
          * <caption>Optional Configuration Parameters</caption>
          * <tr>
@@ -341,7 +341,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          *     <td>Whether or not all core threads should be started when the pool is created.</td>
          * </tr>
          * </table>
-         * <p>
+         * <br>
          * <table class="config">
          * <caption>Experimental Configuration Parameters (<em>subject to change</em>)</caption>
          * <tr>

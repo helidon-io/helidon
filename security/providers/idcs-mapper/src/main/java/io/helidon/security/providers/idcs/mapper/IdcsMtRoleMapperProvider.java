@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -391,7 +391,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
 
         /**
          * Creates endpoints from provided OIDC configuration using default URIs.
-         * <p>
+         * 
          * <ul>
          * <li>For Asserter endpoint: {@code /admin/v1/Asserter}</li>
          * <li>For Token endpoint: {@code /oauth2/v1/token?IDCS_CLIENT_TENANT=}</li>

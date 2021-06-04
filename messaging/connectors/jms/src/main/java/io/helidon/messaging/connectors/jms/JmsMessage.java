@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -239,6 +239,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          * Set or replace JMS payload.
          *
          * @param payload new payload
+         * @return updated builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> payload(PAYLOAD payload) {
             message.setPayload(payload);
@@ -250,6 +251,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          *
          * @param name  the name of the JMS property
          * @param value boolean value to stored as JMS property
+         * @return updated builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> property(String name, boolean value) {
             properties.put(name, value);
@@ -261,6 +263,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          *
          * @param name  the name of the JMS property
          * @param value byte value to stored as JMS property
+         * @return updated builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> property(String name, byte value) {
             properties.put(name, value);
@@ -272,6 +275,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          *
          * @param name  the name of the JMS property
          * @param value short value to stored as JMS property
+         * @return updated builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> property(String name, short value) {
             properties.put(name, value);
@@ -283,6 +287,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          *
          * @param name  the name of the JMS property
          * @param value int value to stored as JMS property
+         * @return updated builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> property(String name, int value) {
             properties.put(name, value);
@@ -294,6 +299,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          *
          * @param name  the name of the JMS property
          * @param value long value to stored as JMS property
+         * @return updated builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> property(String name, long value) {
             properties.put(name, value);
@@ -305,6 +311,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          *
          * @param name  the name of the JMS property
          * @param value float value to stored as JMS property
+         * @return updated builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> property(String name, float value) {
             properties.put(name, value);
@@ -316,6 +323,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          *
          * @param name  the name of the JMS property
          * @param value double value to stored as JMS property
+         * @return updated builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> property(String name, double value) {
             properties.put(name, value);
@@ -327,6 +335,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          *
          * @param name  the name of the JMS property
          * @param value string value to be stored as JMS property
+         * @return updated builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> property(String name, String value) {
             properties.put(name, value);
@@ -337,7 +346,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          * Callback invoked when message is acknowledged.
          *
          * @param ack callback
-         * @return this builder
+         * @return updated builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> onAck(Supplier<CompletionStage<Void>> ack) {
             this.message.onAck(ack);
@@ -348,7 +357,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          * Custom mapper used by connector for mapping to {@link javax.jms.Message}.
          *
          * @param mapper supplying this message and {@link javax.jms.Session} for manual creation of {@link javax.jms.Message}
-         * @return this builder
+         * @return updated builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> customMapper(CustomMapper<PAYLOAD> mapper) {
             this.message.mapper(mapper);
@@ -359,7 +368,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          * Correlation ID for creating {@link javax.jms.Message}.
          *
          * @param correlationId provider specific or application specific correlation ID
-         * @return this builder
+         * @return updated builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> correlationId(String correlationId) {
             this.correlationId = correlationId;
@@ -370,7 +379,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          * Destination to which a reply to this message is expected.
          *
          * @param replyTo destination to reply to
-         * @return this builder
+         * @return updated builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> replyTo(Destination replyTo) {
             this.replyTo = replyTo;
@@ -381,7 +390,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          * JMS Message type.
          *
          * @param type the message type
-         * @return this builder
+         * @return updated builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> type(String type) {
             this.type = type;

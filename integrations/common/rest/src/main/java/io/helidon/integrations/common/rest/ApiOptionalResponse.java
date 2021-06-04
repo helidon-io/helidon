@@ -28,6 +28,11 @@ import java.util.function.Function;
 public class ApiOptionalResponse<R> extends ApiResponse {
     private final Optional<R> entity;
 
+    /**
+     * Construct from builder.
+     * @param builder builder to construct from
+     * @param entity optional entity
+     */
     protected ApiOptionalResponse(BuilderBase<?, ?, ?, ?> builder, Optional<R> entity) {
         super(builder);
 
