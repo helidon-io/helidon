@@ -79,10 +79,50 @@ Access the `/graphql` endpoint via `http://127.0.0.1:7001/graphql`:
 The [GraphiQL UI](https://github.com/graphql/graphiql), which provides a UI to execute GraphQL commands, is not included by default in Helidon's Microprofile GraphQL 
 implementation. You can follow the guide below to incorporate the UI into this example:
 
-1. Copy the contents in the sample index.html file from [here](https://github.com/graphql/graphiql/blob/main/packages/graphiql/README.md)
-into the file at `examples/microprofile/graphql/src/main/resources/web/index.html`
+1. Add the following contents to the sample `examples/microprofile/graphql/src/main/resources/web/index.html` file, which has been included below from [here](https://github.com/graphql/graphiql/blob/main/packages/graphiql/README.md)
+for convenience. 
 
-1. Change the URL in the line `fetch('https://my/graphql', {` to `http://127.0.0.1:7001/graphql`
+   ```html
+   <html>
+     <head>
+       <title>Simple GraphiQL Example</title>
+       <link href="https://unpkg.com/graphiql/graphiql.min.css" rel="stylesheet" />
+     </head>
+     <body style="margin: 0;">
+       <div id="graphiql" style="height: 100vh;"></div>
+
+       <script
+         crossorigin
+         src="https://unpkg.com/react/umd/react.production.min.js"
+       ></script>
+       <script
+         crossorigin
+         src="https://unpkg.com/react-dom/umd/react-dom.production.min.js"
+       ></script>
+       <script
+         crossorigin
+         src="https://unpkg.com/graphiql/graphiql.min.js"
+       ></script>
+
+       <script>
+         const graphQLFetcher = graphQLParams =>
+           fetch('http://127.0.0.1:7001/graphql', {
+             method: 'post',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify(graphQLParams),
+           })
+             .then(response => response.json())
+             .catch(() => response.text());
+         ReactDOM.render(
+           React.createElement(GraphiQL, { fetcher: graphQLFetcher }),
+           document.getElementById('graphiql'),
+         );
+       </script>
+     </body>
+   </html>
+   ```
+
+   > Note: If you copy the original file, change the URL in the line `fetch('https://my/graphql', {` to `http://127.0.0.1:7001/graphql`
 
 1. Build and run the example using the instructions above.
 
