@@ -185,16 +185,17 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
     }
 
     private AuthenticationResponse failOrAbstain(String message) {
-        if (optional)
+        if (optional) {
             return AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.ABSTAIN)
                     .description(message)
                     .build();
-        else
-           return AuthenticationResponse.builder()
-                   .status(AuthenticationResponse.SecurityStatus.FAILURE)
-                   .description(message)
-                   .build();
+        } else {
+            return AuthenticationResponse.builder()
+                    .status(AuthenticationResponse.SecurityStatus.FAILURE)
+                    .description(message)
+                    .build();
+        }
     }
 
     Subject buildSubject(Jwt jwt, SignedJwt signedJwt) {

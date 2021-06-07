@@ -271,18 +271,19 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     }
 
     private AuthenticationResponse failOrAbstain(String message) {
-        if (optional)
+        if (optional) {
             return AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.ABSTAIN)
                     .description(message)
                     .build();
-        else
+        } else {
             return AuthenticationResponse.builder()
                     .statusCode(401)
                     .responseHeader(HEADER_AUTHENTICATION_REQUIRED, buildChallenge())
                     .status(AuthenticationResponse.SecurityStatus.FAILURE)
                     .description(message)
                     .build();
+        }
     }
 
     private String buildChallenge() {

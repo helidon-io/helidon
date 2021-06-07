@@ -367,16 +367,17 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     }
 
     private AuthenticationResponse failOrAbstain(String message) {
-        if (optional)
+        if (optional) {
             return AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.ABSTAIN)
                     .description(message)
                     .build();
-        else
+        } else {
             return AuthenticationResponse.builder()
                     .status(AuthenticationResponse.SecurityStatus.FAILURE)
                     .description(message)
                     .build();
+        }
     }
 
     private AuthenticationResponse errorResponseNoRedirect(String code, String description, Http.Status status) {
