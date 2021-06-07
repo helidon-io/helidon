@@ -86,9 +86,8 @@ then your server will listen on that port.
 
 A main class is also required to start up the server and run the
 application. By default the Quickstart sample project uses the built-in
-Helidon main. In this guide you want to use your own main so you can have
-more control over the server initialization. So first define your own
-main class:
+Helidon main class. In this guide you want to use your own main class so you have
+more control over the server initialization. First define your own `Main`:
 
 [source,java]
 .src/main/java/io/helidon/examples/quickstart/mp/Main.java
