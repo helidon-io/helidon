@@ -211,17 +211,18 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
     }
 
     private AuthenticationResponse failOrAbstain(String message) {
-        return optional ? AuthenticationResponse.builder()
-                        .status(SecurityResponse.SecurityStatus.ABSTAIN)
-                        .description(message)
-                        .build()
-                :
-                AuthenticationResponse.builder()
-                        .statusCode(UNAUTHORIZED_STATUS_CODE)
-                        .responseHeader(HEADER_AUTHENTICATION_REQUIRED, buildChallenge())
-                        .status(AuthenticationResponse.SecurityStatus.FAILURE)
-                        .description(message)
-                        .build();
+        if (optional)
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description(message)
+                    .build();
+       else
+            return AuthenticationResponse.builder()
+                    .statusCode(UNAUTHORIZED_STATUS_CODE)
+                    .responseHeader(HEADER_AUTHENTICATION_REQUIRED, buildChallenge())
+                    .status(AuthenticationResponse.SecurityStatus.FAILURE)
+                    .description(message)
+                    .build();
     }
 
     private String buildChallenge() {
