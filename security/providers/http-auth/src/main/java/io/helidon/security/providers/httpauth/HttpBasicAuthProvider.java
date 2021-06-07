@@ -69,7 +69,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     static final String BASIC_PREFIX = "basic ";
 
     private static final Logger LOGGER = Logger.getLogger(HttpBasicAuthProvider.class.getName());
-    private static final Pattern CREDENTIAL_PATTERN = Pattern.compile("(.*):(.*)");
+    static final Pattern CREDENTIAL_PATTERN = Pattern.compile("(.*?):(.*)");
 
     private final List<SecureUserStore> userStores;
     private final boolean optional;

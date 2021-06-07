@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package io.helidon.messaging;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -148,7 +149,8 @@ class MessagingImpl implements Messaging {
             org.eclipse.microprofile.config.Config incomingConnectorConfig =
                     ConnectorConfigHelper.getConnectorConfig(channel.name(), connectorName, mergedConfig);
             channel.setPublisher(
-                    incomingConnectors.get(connectorName)
+                    Optional.ofNullable(incomingConnectors.get(connectorName))
+                            .orElseThrow(() -> new MessagingException("Unknown incoming connector " + connectorName))
                             .getPublisherBuilder(incomingConnectorConfig)
                             .buildRs());
         }
@@ -157,7 +159,8 @@ class MessagingImpl implements Messaging {
             org.eclipse.microprofile.config.Config outgoingConnectorConfig =
                     ConnectorConfigHelper.getConnectorConfig(channel.name(), connectorName, mergedConfig);
             channel.setSubscriber(
-                    outgoingConnectors.get(connectorName)
+                    Optional.ofNullable(outgoingConnectors.get(connectorName))
+                            .orElseThrow(() -> new MessagingException("Unknown outgoing connector " + connectorName))
                             .getSubscriberBuilder(outgoingConnectorConfig)
                             .build());
         }

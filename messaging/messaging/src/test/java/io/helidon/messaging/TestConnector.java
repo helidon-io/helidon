@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,14 @@ public class TestConnector implements IncomingConnectorFactory, OutgoingConnecto
         return new TestConnector();
     }
 
+    public static IncomingOnlyTestConnector createIncomingOnly() {
+        return new IncomingOnlyTestConnector();
+    }
+
+    public static OutgoingOnlyTestConnector createOutgoingOnly() {
+        return new OutgoingOnlyTestConnector();
+    }
+
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
         Optional<String> customPayload = config.getOptionalValue(TEST_PAYLOAD, String.class);
@@ -93,6 +101,48 @@ public class TestConnector implements IncomingConnectorFactory, OutgoingConnecto
         public ConfigBuilder port(int port) {
             super.property("port", String.valueOf(port));
             return this;
+        }
+    }
+
+    @Connector(IncomingOnlyTestConnector.CONNECTOR_NAME)
+    public static class IncomingOnlyTestConnector implements IncomingConnectorFactory, Stoppable {
+
+        public static final String CONNECTOR_NAME = "incoming-only-test-connector";
+        private final TestConnector testConnector;
+
+        public IncomingOnlyTestConnector() {
+            testConnector = new TestConnector();
+        }
+
+        @Override
+        public void stop() {
+            testConnector.stop();
+        }
+
+        @Override
+        public PublisherBuilder<? extends Message<?>> getPublisherBuilder(Config config) {
+            return testConnector.getPublisherBuilder(config);
+        }
+    }
+
+    @Connector(OutgoingOnlyTestConnector.CONNECTOR_NAME)
+    public static class OutgoingOnlyTestConnector implements OutgoingConnectorFactory, Stoppable {
+
+        public static final String CONNECTOR_NAME = "outgoing-only-test-connector";
+        final TestConnector testConnector;
+
+        public OutgoingOnlyTestConnector() {
+            testConnector = new TestConnector();
+        }
+
+        @Override
+        public void stop() {
+            testConnector.stop();
+        }
+
+        @Override
+        public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(Config config) {
+            return testConnector.getSubscriberBuilder(config);
         }
     }
 }
