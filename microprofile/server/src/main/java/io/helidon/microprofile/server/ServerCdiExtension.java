@@ -17,9 +17,13 @@
 package io.helidon.microprofile.server;
 
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +48,9 @@ import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
+import javax.enterprise.inject.spi.ProcessManagedBean;
+import javax.enterprise.inject.spi.ProcessProducerField;
+import javax.enterprise.inject.spi.ProcessProducerMethod;
 
 import io.helidon.common.Prioritized;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
@@ -95,6 +102,9 @@ public class ServerCdiExtension implements Extension {
     private volatile boolean started;
     private final List<JerseySupport> jerseySupports = new LinkedList<>();
 
+    private final Map<Bean<?>, RoutingConfiguration> serviceBeans
+            = Collections.synchronizedMap(new IdentityHashMap<>());
+
     private void buildTime(@Observes @BuildTimeStart Object event) {
         // update the status of server, as we may have been started without a builder being used
         // such as when cdi.Main or SeContainerInitializer are used
@@ -117,6 +127,23 @@ public class ServerCdiExtension implements Extension {
 
         List<JaxRsApplication> jaxRsApplications = jaxRs.applicationsToRun();
         jaxRsApplications.forEach(it -> registerKpiMetricsDeferrableRequestContextSetterHandler(jaxRs, it));
+    }
+
+    private void recordMethodProducedServices(@Observes ProcessProducerMethod<? extends Service, ?> ppm) {
+        Method m = ppm.getAnnotatedProducerMethod().getJavaMember();
+        String contextKey = m.getDeclaringClass().getName() + "." + m.getName();
+        serviceBeans.put(ppm.getBean(), new RoutingConfiguration(ppm.getAnnotated(), contextKey));
+    }
+
+    private void recordFieldProducedServices(@Observes ProcessProducerField<? extends Service, ?> ppf) {
+        Field f = ppf.getAnnotatedProducerField().getJavaMember();
+        String contextKey = f.getDeclaringClass().getName() + "." + f.getName();
+        serviceBeans.put(ppf.getBean(), new RoutingConfiguration(ppf.getAnnotated(), contextKey));
+    }
+
+    private void recordBeanServices(@Observes ProcessManagedBean<? extends Service> pmb) {
+        Class<? extends Service> cls = pmb.getAnnotatedBeanClass().getJavaClass();
+        serviceBeans.put(pmb.getBean(), new RoutingConfiguration(pmb.getAnnotated(), cls.getName()));
     }
 
     private void registerKpiMetricsDeferrableRequestContextSetterHandler(JaxRsCdiExtension jaxRs,
@@ -392,9 +419,8 @@ public class ServerCdiExtension implements Extension {
 
         for (Bean<?> bean : beans) {
             Bean<Object> objBean = (Bean<Object>) bean;
-            Class<?> aClass = objBean.getBeanClass();
             Service service = (Service) objBean.create(context);
-            registerWebServerService(aClass, service);
+            registerWebServerService(serviceBeans.remove(bean), service);
         }
     }
 
@@ -413,40 +439,15 @@ public class ServerCdiExtension implements Extension {
         return (null == prio) ? Prioritized.DEFAULT_PRIORITY : prio.value();
     }
 
-    private void registerWebServerService(Class<?> serviceClass,
-                                          Service service) {
+    private void registerWebServerService(RoutingConfiguration routingConf, Service service) {
 
-        RoutingPath rp = serviceClass.getAnnotation(RoutingPath.class);
-        RoutingName rn = serviceClass.getAnnotation(RoutingName.class);
+        String path = routingConf.routingPath(config);
+        String routingName = routingConf.routingName(config);
+        boolean routingNameRequired = routingConf.required(config);
 
-        String path = (null == rp) ? null : rp.value();
-        String routingName = (null == rn) ? null : rn.value();
-        boolean routingNameRequired = (null != rn) && rn.required();
-
-        // can override routing path from configuration
-        path = config.get(serviceClass.getName()
-                                  + "."
-                                  + RoutingPath.CONFIG_KEY_PATH)
-                .asString()
-                .orElse(path);
-
-        // can override routing name from configuration
-        routingName = config.get(serviceClass.getName()
-                                         + "."
-                                         + RoutingName.CONFIG_KEY_NAME)
-                .asString()
-                .orElse(routingName);
-
-        // also whether the routing name is required can be overridden
-        routingNameRequired = config.get(serviceClass.getName()
-                                                 + "."
-                                                 + RoutingName.CONFIG_KEY_REQUIRED)
-                .asBoolean()
-                .orElse(routingNameRequired);
-
-        Routing.Rules routing = findRouting(serviceClass.getName(),
-                                            routingName,
-                                            routingNameRequired);
+        Routing.Rules routing = findRouting(routingConf.configContext(),
+                routingName,
+                routingNameRequired);
 
         if ((null == path) || "/".equals(path)) {
             routing.register(service);
@@ -500,7 +501,7 @@ public class ServerCdiExtension implements Extension {
 
     /**
      * Helidon webserver routing builder that can be used to add routes to a named socket
-     *  of the webserver.
+     * of the webserver.
      *
      * @param name name of the named routing (should match a named socket configuration)
      * @return builder for routing of the named route
@@ -520,6 +521,7 @@ public class ServerCdiExtension implements Extension {
 
     /**
      * Current host the server is running on.
+     *
      * @return host of this server
      */
     public String host() {
