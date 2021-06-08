@@ -24,14 +24,9 @@ import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
-import org.neo4j.driver.AccessMode;
 import org.neo4j.driver.Driver;
-import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
-import org.neo4j.driver.SessionConfig;
-import org.neo4j.driver.exceptions.SessionExpiredException;
-import org.neo4j.driver.summary.ResultSummary;
-import org.neo4j.driver.summary.ServerInfo;
+
 
 /**
  * Health support module for Neo4j. Follows the standard MicroProfile HealthCheck pattern.
@@ -47,11 +42,22 @@ public class Neo4jHealthCheck implements HealthCheck {
 
     private final Driver driver;
 
+    /**
+     * Constructor for Health checks.
+     *
+     * @param driver Neo4j.
+     */
     @Inject //will be ignored out of CDI
     Neo4jHealthCheck(Driver driver) {
         this.driver = driver;
     }
 
+    /**
+     * Creates the Neo4j driver.
+     *
+     * @param driver Neo4j.
+     * @return Neo4jHealthCheck.
+     */
     public static Neo4jHealthCheck create(Driver driver) {
         return new Neo4jHealthCheck(driver);
     }
