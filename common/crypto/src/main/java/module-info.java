@@ -32,7 +32,7 @@
  * Encryption/Decryption:
  * <pre>
  *     <code>SymmetricCipher</code> - class which encrypts and decrypts provided message by symmetric cipher (AES, ChaCha20 etc.)
- *     <code>AsymmetricCipher</code> - class which encrypts and decrypts provided message by RSA
+ *     <code>AsymmetricCipher</code> - class which encrypts and decrypts provided message by asymmetric cipher (RSA)
  * </pre>
  */
 module io.helidon.common.crypto {
