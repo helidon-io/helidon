@@ -172,7 +172,7 @@ class BareResponseImpl implements BareResponse {
             boolean lengthSet = HttpUtil.isContentLengthSet(response);
             if (!lengthSet) {
                 lengthOptimization = status.code() == Http.Status.OK_200.code()
-                        && !HttpUtil.isTransferEncodingChunked(response);
+                        && !HttpUtil.isTransferEncodingChunked(response) && !isSseEventStream(headers);
                 HttpUtil.setTransferEncodingChunked(response, true);
             }
         }
@@ -194,6 +194,10 @@ class BareResponseImpl implements BareResponse {
     private boolean isWebSocketUpgrade(Http.ResponseStatus status, Map<String, List<String>> headers) {
         return status.code() == 101 && headers.containsKey("Upgrade")
                 && headers.get("Upgrade").contains("websocket");
+    }
+
+    private boolean isSseEventStream(Map<String, List<String>> headers) {
+        return headers.containsKey("Content-Type") && headers.get("Content-Type").contains("text/event-stream");
     }
 
     /**
