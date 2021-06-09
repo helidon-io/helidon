@@ -34,6 +34,9 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -78,22 +81,7 @@ public class ConfigCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(ConfigCdiExtension.class.getName());
     private static final Pattern SPLIT_PATTERN = Pattern.compile("(?<!\\\\),");
     private static final Pattern ESCAPED_COMMA_PATTERN = Pattern.compile("\\,", Pattern.LITERAL);
-    private static final Annotation CONFIG_PROPERTY_LITERAL = new ConfigProperty() {
-        @Override
-        public String name() {
-            return "";
-        }
-
-        @Override
-        public String defaultValue() {
-            return UNCONFIGURED_VALUE;
-        }
-
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return ConfigProperty.class;
-        }
-    };
+    private static final Annotation CONFIG_PROPERTY_LITERAL = new ConfigPropertyLiteral();
 
     // we must do manual boxing of primitive types, to make sure the injection points match
     // the producers
@@ -294,9 +282,29 @@ public class ConfigCdiExtension implements Extension {
                                         type2);
     }
 
-    private static <T> T withDefault(Config config, String key, Class<T> type, String defaultValue) {
-        return config.getOptionalValue(key, type)
-                .orElseGet(() -> convert(key, config, defaultValue, type));
+    private static <T> T withDefault(Config config, String key, Class<T> type, String configuredDefault) {
+        // our type may be one of the explicit optionals
+        if (OptionalInt.class.equals(type)) {
+            return type.cast(config.getOptionalValue(key, Integer.class)
+                                     .map(OptionalInt::of)
+                                     .orElseGet(OptionalInt::empty));
+        } else if (OptionalLong.class.equals(type)) {
+            return type.cast(config.getOptionalValue(key, Long.class)
+                                     .map(OptionalLong::of)
+                                     .orElseGet(OptionalLong::empty));
+        } else if (OptionalDouble.class.equals(type)) {
+            return type.cast(config.getOptionalValue(key, Double.class)
+                                     .map(OptionalDouble::of)
+                                     .orElseGet(OptionalDouble::empty));
+        }
+
+        Optional<String> stringValue = config.getOptionalValue(key, String.class);
+
+        if (stringValue.isEmpty()) {
+            return convert(key, config, configuredDefault, type);
+        }
+
+        return convert(key, config, stringValue.get(), type);
     }
 
     @SuppressWarnings("unchecked")

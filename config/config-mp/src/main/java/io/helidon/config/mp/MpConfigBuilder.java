@@ -47,6 +47,9 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.ServiceLoader;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
@@ -75,16 +78,76 @@ import static io.helidon.config.mp.MpMetaConfig.MetaConfigSource;
  */
 @Deprecated
 public class MpConfigBuilder implements ConfigBuilder {
-    private boolean useDefaultSources = false;
-    private boolean useDiscoveredSources = false;
-    private boolean useDiscoveredConverters = false;
+    private static final String DEFAULT_CONFIG_SOURCE = "META-INF/microprofile-config.properties";
 
     private final List<OrdinalSource> sources = new LinkedList<>();
     private final List<OrdinalConverter> converters = new LinkedList<>();
 
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
+    private boolean useDefaultSources = false;
+    private boolean useDiscoveredSources = false;
+    private boolean useDiscoveredConverters = false;
+    private String profile;
+
     MpConfigBuilder() {
+    }
+
+    private static File toFile(String value) {
+        return new File(value);
+    }
+
+    private static Path toPath(String value) {
+        return Paths.get(value);
+    }
+
+    private static Class<?> toClass(String stringValue) {
+        try {
+            return Class.forName(stringValue);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException("Failed to convert property " + stringValue + " to class", e);
+        }
+    }
+
+    private static char toChar(String stringValue) {
+        if (stringValue.length() != 1) {
+            throw new IllegalArgumentException("The string to map must be a single character, but is: " + stringValue);
+        }
+        return stringValue.charAt(0);
+    }
+
+    private static Class<?> getConverterType(Class<?> converterClass) {
+        Class<?> type = doGetType(converterClass);
+        if (null == type) {
+            throw new IllegalArgumentException("Converter " + converterClass + " must be a ParameterizedType.");
+        }
+        return type;
+    }
+
+    private static Class<?> doGetType(Class<?> clazz) {
+        if (clazz.equals(Object.class)) {
+            return null;
+        }
+
+        Type[] genericInterfaces = clazz.getGenericInterfaces();
+        for (Type genericInterface : genericInterfaces) {
+            if (genericInterface instanceof ParameterizedType) {
+                ParameterizedType pt = (ParameterizedType) genericInterface;
+                if (pt.getRawType().equals(Converter.class)) {
+                    Type[] typeArguments = pt.getActualTypeArguments();
+                    if (typeArguments.length != 1) {
+                        throw new IllegalStateException("Converter " + clazz + " must be a ParameterizedType.");
+                    }
+                    Type typeArgument = typeArguments[0];
+                    if (typeArgument instanceof Class) {
+                        return (Class<?>) typeArgument;
+                    }
+                    throw new IllegalStateException("Converter " + clazz + " must convert to a class, not " + typeArgument);
+                }
+            }
+        }
+
+        return doGetType(clazz.getSuperclass());
     }
 
     @Override
@@ -270,32 +333,129 @@ public class MpConfigBuilder implements ConfigBuilder {
 
     @Override
     public Config build() {
-        if (useDefaultSources) {
-            sources.add(new OrdinalSource(MpConfigSources.systemProperties(), 400));
-            sources.add(new OrdinalSource(MpConfigSources.environmentVariables(), 300));
-            // microprofile-config.properties
-            MpConfigSources.classPath(classLoader, "META-INF/microprofile-config.properties")
-                    .stream()
-                    .map(OrdinalSource::new)
-                    .forEach(sources::add);
+        // the build method MUST NOT modify builder state, as it may be called more than once
+        // there are three lists used by the configuration:
+        //  sources
+        //  converters
+        //  filters
+        List<OrdinalSource> ordinalSources = new LinkedList<>(sources);
+        List<OrdinalConverter> ordinalConverters = new LinkedList<>(converters);
+        List<MpConfigFilter> targetFilters = HelidonServiceLoader.create(ServiceLoader.load(MpConfigFilter.class))
+                .asList();
+
+        /*
+         Converters
+         */
+        addBuiltInConverters(ordinalConverters);
+        if (useDiscoveredConverters) {
+            addDiscoveredConverters(ordinalConverters);
         }
+
+        /*
+         Config sources
+         */
+        if (useDefaultSources) {
+            addDefaultSources(ordinalSources);
+        }
+        if (useDiscoveredSources) {
+            addDiscoveredSources(ordinalSources);
+        }
+
+        // now it is from lowest to highest
+        ordinalSources.sort(Comparator.comparingInt(o -> o.ordinal));
+        ordinalConverters.sort(Comparator.comparingInt(o -> o.ordinal));
+
+        // revert to have the first one the most significant
+        Collections.reverse(ordinalSources);
+        Collections.reverse(ordinalConverters);
+
+        List<ConfigSource> targetSources = new LinkedList<>();
+        HashMap<Class<?>, Converter<?>> targetConverters = new HashMap<>();
+
+        ordinalSources.forEach(ordinal -> targetSources.add(ordinal.source));
+        ordinalConverters.forEach(ordinal -> targetConverters.putIfAbsent(ordinal.type, ordinal.converter));
+
+        MpConfigImpl result = new MpConfigImpl(targetSources, targetConverters, targetFilters, profile);
+
+        // if we already have a profile configured, we have loaded it and can safely return
+        if (profile != null) {
+            return result;
+        }
+
+        // let's see if there is a profile configured
+        String configuredProfile = result.getOptionalValue("mp.config.profile", String.class).orElse(null);
+
+        // nope, return the result
+        if (configuredProfile == null) {
+            return result;
+        }
+
+        // yes, update it and re-build with profile information
+        profile(configuredProfile);
+
+        return build();
+    }
+
+    /**
+     * Configure an explicit profile name. Profile is used to load configuration (when default sources are enabled) from
+     * {@code microprofile-config-${profile}.properties} and to use properties named {@code %${profile}.propertyName}
+     * before the actual property name.
+     *
+     * @param profile name of the profile, such as {@code dev, test}
+     * @return updated builder instance
+     */
+    public MpConfigBuilder profile(String profile) {
+        this.profile = profile;
+        return this;
+    }
+
+    private void addDiscoveredSources(List<OrdinalSource> targetConfigSources) {
+        ServiceLoader.load(ConfigSource.class)
+                .forEach(it -> targetConfigSources.add(new OrdinalSource(it)));
+
+        ServiceLoader.load(ConfigSourceProvider.class)
+                .forEach(it -> it.getConfigSources(classLoader)
+                        .forEach(source -> targetConfigSources.add(new OrdinalSource(source))));
+    }
+
+    private void addDiscoveredConverters(List<OrdinalConverter> targetConverters) {
+        ServiceLoader.load(Converter.class)
+                .forEach(it -> targetConverters.add(new OrdinalConverter(it)));
+    }
+
+    private void addDefaultSources(List<OrdinalSource> targetConfigSources) {
+        if (useDefaultSources) {
+            // add default sources - system properties, environment variables and microprofile-config.properties
+            targetConfigSources.add(new OrdinalSource(MpConfigSources.systemProperties(), 400));
+            targetConfigSources.add(new OrdinalSource(MpConfigSources.environmentVariables(), 300));
+            // microprofile-config.properties
+            if (profile == null) {
+                MpConfigSources.classPath(classLoader, DEFAULT_CONFIG_SOURCE)
+                        .stream()
+                        .map(OrdinalSource::new)
+                        .forEach(targetConfigSources::add);
+            } else {
+                MpConfigSources.classPath(classLoader, DEFAULT_CONFIG_SOURCE, profile)
+                        .stream()
+                        .map(OrdinalSource::new)
+                        .forEach(targetConfigSources::add);
+            }
+        }
+    }
+
+    private void addBuiltInConverters(List<OrdinalConverter> converters) {
         // built-in converters - required by specification
         addBuiltIn(converters, Boolean.class, ConfigMappers::toBoolean);
-        addBuiltIn(converters, Boolean.TYPE, ConfigMappers::toBoolean);
         addBuiltIn(converters, Byte.class, Byte::parseByte);
-        addBuiltIn(converters, Byte.TYPE, Byte::parseByte);
         addBuiltIn(converters, Short.class, Short::parseShort);
-        addBuiltIn(converters, Short.TYPE, Short::parseShort);
         addBuiltIn(converters, Integer.class, Integer::parseInt);
-        addBuiltIn(converters, Integer.TYPE, Integer::parseInt);
+        addBuiltIn(converters, OptionalInt.class, MpConverters::toOptionalInt);
         addBuiltIn(converters, Long.class, Long::parseLong);
-        addBuiltIn(converters, Long.TYPE, Long::parseLong);
+        addBuiltIn(converters, OptionalLong.class, MpConverters::toOptionalLong);
         addBuiltIn(converters, Float.class, Float::parseFloat);
-        addBuiltIn(converters, Float.TYPE, Float::parseFloat);
         addBuiltIn(converters, Double.class, Double::parseDouble);
-        addBuiltIn(converters, Double.TYPE, Double::parseDouble);
+        addBuiltIn(converters, OptionalDouble.class, MpConverters::toOptionalDouble);
         addBuiltIn(converters, Character.class, MpConfigBuilder::toChar);
-        addBuiltIn(converters, Character.TYPE, MpConfigBuilder::toChar);
         addBuiltIn(converters, Class.class, MpConfigBuilder::toClass);
 
         // built-in converters - Helidon
@@ -338,41 +498,6 @@ public class MpConfigBuilder implements ConfigBuilder {
         addBuiltIn(converters, TimeZone.class, ConfigMappers::toTimeZone);
         // noinspection UseOfObsoleteDateTimeApi
         addBuiltIn(converters, SimpleTimeZone.class, ConfigMappers::toSimpleTimeZone);
-
-        if (useDiscoveredConverters) {
-            ServiceLoader.load(Converter.class)
-                    .forEach(it -> converters.add(new OrdinalConverter(it)));
-        }
-
-        if (useDiscoveredSources) {
-            ServiceLoader.load(ConfigSource.class)
-                    .forEach(it -> sources.add(new OrdinalSource(it)));
-
-            ServiceLoader.load(ConfigSourceProvider.class)
-                    .forEach(it -> {
-                        it.getConfigSources(classLoader)
-                                .forEach(source -> sources.add(new OrdinalSource(source)));
-                    });
-        }
-
-        // now it is from lowest to highest
-        sources.sort(Comparator.comparingInt(o -> o.ordinal));
-        converters.sort(Comparator.comparingInt(o -> o.ordinal));
-
-        // revert to have the first one the most significant
-        Collections.reverse(sources);
-        Collections.reverse(converters);
-
-        List<ConfigSource> sources = new LinkedList<>();
-        HashMap<Class<?>, Converter<?>> converters = new HashMap<>();
-
-        this.sources.forEach(ordinal -> sources.add(ordinal.source));
-        this.converters.forEach(ordinal -> converters.putIfAbsent(ordinal.type, ordinal.converter));
-
-        List<MpConfigFilter> filters = HelidonServiceLoader.create(ServiceLoader.load(MpConfigFilter.class))
-                .asList();
-
-        return new MpConfigImpl(sources, converters, filters);
     }
 
     private <T> void addBuiltIn(List<OrdinalConverter> converters, Class<T> clazz, Converter<T> converter) {
@@ -387,36 +512,13 @@ public class MpConfigBuilder implements ConfigBuilder {
         return this;
     }
 
-    private static File toFile(String value) {
-        return new File(value);
-    }
-
-    private static Path toPath(String value) {
-        return Paths.get(value);
-    }
-
-    private static Class<?> toClass(String stringValue) {
-        try {
-            return Class.forName(stringValue);
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Failed to convert property " + stringValue + " to class", e);
-        }
-    }
-
-    private static char toChar(String stringValue) {
-        if (stringValue.length() != 1) {
-            throw new IllegalArgumentException("The string to map must be a single character, but is: " + stringValue);
-        }
-        return stringValue.charAt(0);
-    }
-
     private static class OrdinalSource {
         private final int ordinal;
         private final ConfigSource source;
 
         private OrdinalSource(ConfigSource source) {
             this.source = source;
-            this.ordinal = findOrdinal(source);
+            this.ordinal = findOrdinal(source, ConfigSource.DEFAULT_ORDINAL);
         }
 
         private OrdinalSource(ConfigSource source, int ordinal) {
@@ -424,10 +526,10 @@ public class MpConfigBuilder implements ConfigBuilder {
             this.source = source;
         }
 
-        private static int findOrdinal(ConfigSource source) {
+        private static int findOrdinal(ConfigSource source, int defaultOrdinal) {
             int ordinal = source.getOrdinal();
             if (ordinal == ConfigSource.DEFAULT_ORDINAL) {
-                return Priorities.find(source, ConfigSource.DEFAULT_ORDINAL);
+                return Priorities.find(source, defaultOrdinal);
             }
             return ordinal;
         }
@@ -452,39 +554,5 @@ public class MpConfigBuilder implements ConfigBuilder {
         private OrdinalConverter(Converter<?> converter) {
             this(converter, getConverterType(converter.getClass()), Priorities.find(converter, 100));
         }
-    }
-
-    private static Class<?> getConverterType(Class<?> converterClass) {
-        Class<?> type = doGetType(converterClass);
-        if (null == type) {
-            throw new IllegalArgumentException("Converter " + converterClass + " must be a ParameterizedType.");
-        }
-        return type;
-    }
-
-    private static Class<?> doGetType(Class<?> clazz) {
-        if (clazz.equals(Object.class)) {
-            return null;
-        }
-
-        Type[] genericInterfaces = clazz.getGenericInterfaces();
-        for (Type genericInterface : genericInterfaces) {
-            if (genericInterface instanceof ParameterizedType) {
-                ParameterizedType pt = (ParameterizedType) genericInterface;
-                if (pt.getRawType().equals(Converter.class)) {
-                    Type[] typeArguments = pt.getActualTypeArguments();
-                    if (typeArguments.length != 1) {
-                        throw new IllegalStateException("Converter " + clazz + " must be a ParameterizedType.");
-                    }
-                    Type typeArgument = typeArguments[0];
-                    if (typeArgument instanceof Class) {
-                        return (Class<?>) typeArgument;
-                    }
-                    throw new IllegalStateException("Converter " + clazz + " must convert to a class, not " + typeArgument);
-                }
-            }
-        }
-
-        return doGetType(clazz.getSuperclass());
     }
 }

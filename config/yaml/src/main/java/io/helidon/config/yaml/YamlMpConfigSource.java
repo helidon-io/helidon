@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.helidon.config.ConfigException;
 
@@ -142,6 +143,11 @@ public class YamlMpConfigSource implements ConfigSource {
         }
 
         return sources;
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        return Collections.unmodifiableSet(properties.keySet());
     }
 
     @Override

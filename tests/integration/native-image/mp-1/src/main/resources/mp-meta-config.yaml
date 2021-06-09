@@ -14,18 +14,15 @@
 # limitations under the License.
 #
 
+config-profile: "test"
+
 sources:
   - type: "system-properties"
   - type: "environment-variables"
-  - type: "file"
-    properties:
-      optional: true
-      path: "mp-config.yaml"
-  - type: "classpath"
-    properties:
-      optional: true
-      resource: "application.yaml"
-  - type: "classpath"
-    properties:
-      resource: "META-INF/microprofile-config.properties"
+  - type: "yaml"
+    path: "mp-config.yaml"
+  - type: "yaml"
+    classpath: "application.yaml"
+  - type: "properties"
+    classpath: "META-INF/microprofile-config.properties"
 

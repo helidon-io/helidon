@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,15 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
@@ -118,6 +122,22 @@ public final class MpConfigSources {
         } catch (Exception e) {
             throw new ConfigException("Failed to load ", e);
         }
+    }
+
+    /**
+     * {@link java.util.Properties} config source based on a URL with a profile override.
+     * The URL is read just once, when the source is created and further changes to the underlying resource are
+     * ignored.
+     *
+     * @param url url of the properties file (any URL scheme supported by JVM can be used)
+     * @param profileUrl url of the properties file of profile specific configuration
+     * @return a new config source
+     */
+    public static ConfigSource create(URL url, URL profileUrl) {
+        ConfigSource defaultSource = create(url);
+        ConfigSource profileSource = create(profileUrl);
+
+        return composite(profileSource, defaultSource);
     }
 
     /**
@@ -229,6 +249,57 @@ public final class MpConfigSources {
     }
 
     /**
+     * Find all resources on classpath and return a config source for each with a profile.
+     * Order is kept as provided by class loader.
+     *
+     * The profile will be used to locate a source with {@code -${profile}} name, such as
+     * {@code microprofile-config-dev.properties} for dev profile.
+     *
+     * @param classLoader class loader to use to locate the resources
+     * @param resource resource to find
+     * @param profile configuration profile to use, must not be null
+     * @return a config source for each resource on classpath, empty if none found
+     */
+    public static List<ConfigSource> classPath(ClassLoader classLoader, String resource, String profile) {
+        Objects.requireNonNull(profile, "Profile must be defined");
+
+        List<ConfigSource> sources = new LinkedList<>();
+
+        try {
+            Enumeration<URL> baseResources = classLoader.getResources(resource);
+            Enumeration<URL> profileResources = classLoader.getResources(toProfileResource(resource, profile));
+
+            if (profileResources.hasMoreElements()) {
+                List<URL> profileResourceList = new LinkedList<>();
+                profileResources.asIterator()
+                        .forEachRemaining(profileResourceList::add);
+
+                baseResources.asIterator()
+                        .forEachRemaining(it -> {
+                            String pathBase = pathBase(it.toString());
+                            // we need to find profile that belongs to this
+                            for (URL url : profileResourceList) {
+                                String profilePathBase = pathBase(url.toString());
+                                if (pathBase.equals(profilePathBase)) {
+                                    sources.add(create(it, url));
+                                } else {
+                                    sources.add(create(it));
+                                }
+                            }
+                        });
+            } else {
+                baseResources
+                        .asIterator()
+                        .forEachRemaining(it -> sources.add(create(it)));
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read \"" + resource + "\" from classpath");
+        }
+
+        return sources;
+    }
+
+    /**
      * Config source based on a Helidon SE config source.
      * This is to support Helidon SE features in Helidon MP.
      *
@@ -254,5 +325,73 @@ public final class MpConfigSources {
      */
     public static ConfigSource create(Config config) {
         return new MpHelidonConfigSource(config);
+    }
+
+    /**
+     * Create a composite config source.
+     *
+     * @param main look for properties here first
+     * @param fallback if not found in main, look here
+     * @return a new config source
+     */
+    private static ConfigSource composite(ConfigSource main, ConfigSource fallback) {
+        String name = main.getName() + " (" + fallback.getName() + ")";
+
+        return new ConfigSource() {
+            @Override
+            public Set<String> getPropertyNames() {
+                Set<String> result = new HashSet<>(fallback.getPropertyNames());
+                result.addAll(main.getPropertyNames());
+
+                return result;
+            }
+
+            @Override
+            public String getValue(String propertyName) {
+                String value = main.getValue(propertyName);
+                if (value == null) {
+                    return fallback.getValue(propertyName);
+                }
+                return value;
+            }
+
+            @Override
+            public String getName() {
+                return name;
+            }
+
+            @Override
+            public Map<String, String> getProperties() {
+                Map<String, String> result = new HashMap<>(fallback.getProperties());
+                result.putAll(main.getProperties());
+
+                return result;
+            }
+        };
+    }
+
+    private static String pathBase(String path) {
+        int i = path.lastIndexOf('/');
+        int y = path.lastIndexOf('!');
+        int z = path.lastIndexOf(':');
+        int b = path.lastIndexOf('\\');
+
+        // we need the last index before the file name - so the highest number of all of the above
+        int max = Math.max(i, y);
+        max = Math.max(max, z);
+        max = Math.max(max, b);
+
+        if (max > -1) {
+            return path.substring(0, max);
+        }
+        return path;
+    }
+
+    private static String toProfileResource(String resource, String profile) {
+        int i = resource.lastIndexOf('.');
+        if (i > -1) {
+            return resource.substring(0, i) + "-" + profile + resource.substring(i);
+        }
+        return resource + "-" + profile;
     }
 }
