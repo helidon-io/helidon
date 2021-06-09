@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,45 +13,63 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.cdi.jpa;
+package io.helidon.integrations.jta.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
+import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 
-import javax.enterprise.inject.Vetoed;
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
 import javax.transaction.RollbackException;
 import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
 
-@Vetoed
-class XADataSourceWrappingDataSource extends AbstractDataSource {
+import io.helidon.integrations.jdbc.AbstractDataSource;
+
+/**
+ * An {@link AbstractDataSource} that adapts an {@link XADataSource}
+ * to the {@link javax.sql.DataSource} contract.
+ */
+public final class XADataSourceWrappingDataSource extends AbstractDataSource {
 
     private final XADataSource xaDataSource;
 
-    private final String dataSourceName;
+    private final IntSupplier transactionStatusSupplier;
 
-    private final TransactionManager tm;
+    private final Supplier<? extends Transaction> transactionSupplier;
 
-    XADataSourceWrappingDataSource(final XADataSource xaDataSource,
-                                   final String dataSourceName,
-                                   final TransactionManager transactionManager) {
+    /**
+     * Creates a new {@link XADataSourceWrappingDataSource}.
+     *
+     * @param xaDataSource the {@link XADataSource} to wrap; must not
+     * be {@code null}
+     *
+     * @param transactionStatusSupplier an {@link IntSupplier} that
+     * supplies the status of the current transaction, if any; must
+     * not be {@code null}
+     *
+     * @param transactionSupplier a {@link Supplier} of {@link
+     * Transaction} instances; must not be {@code null}
+     */
+    public XADataSourceWrappingDataSource(final XADataSource xaDataSource,
+                                          final IntSupplier transactionStatusSupplier,
+                                          final Supplier<? extends Transaction> transactionSupplier) {
         super();
-        this.xaDataSource = Objects.requireNonNull(xaDataSource);
-        this.dataSourceName = dataSourceName;
-        this.tm = Objects.requireNonNull(transactionManager);
+        this.xaDataSource = Objects.requireNonNull(xaDataSource, "xaDataSource");
+        this.transactionStatusSupplier = Objects.requireNonNull(transactionStatusSupplier, "transactionStatusSupplier");
+        this.transactionSupplier = Objects.requireNonNull(transactionSupplier, "transactionSupplier");
     }
 
-    @Override
+    @Override // AbstractDataSource
     public Connection getConnection() throws SQLException {
         return this.getConnection(null, null, true);
     }
 
-    @Override
+    @Override // AbstractDataSource
     public Connection getConnection(final String username, final String password) throws SQLException {
         return this.getConnection(username, password, false);
     }
@@ -66,14 +84,15 @@ class XADataSourceWrappingDataSource extends AbstractDataSource {
         } else {
             xaConnection = this.xaDataSource.getXAConnection(username, password);
         }
-        try {
-            if (this.tm.getStatus() == Status.STATUS_ACTIVE) {
-                final Transaction transaction = this.tm.getTransaction();
-                assert transaction != null;
-                transaction.enlistResource(xaConnection.getXAResource());
+        if (this.transactionStatusSupplier.getAsInt() == Status.STATUS_ACTIVE) {
+            final Transaction transaction = this.transactionSupplier.get();
+            if (transaction != null) {
+                try {
+                    transaction.enlistResource(xaConnection.getXAResource());
+                } catch (final RollbackException | SystemException exception) {
+                    throw new SQLException(exception.getMessage(), exception);
+                }
             }
-        } catch (final RollbackException | SystemException exception) {
-            throw new SQLException(exception.getMessage(), exception);
         }
         // I am not confident about this.  Note that the xaConnection
         // is not closed.  And yet, the end consumer knows nothing of
@@ -86,6 +105,5 @@ class XADataSourceWrappingDataSource extends AbstractDataSource {
         // Is that mandated anywhere?  I'm honestly not sure.
         return xaConnection.getConnection();
     }
-
 
 }

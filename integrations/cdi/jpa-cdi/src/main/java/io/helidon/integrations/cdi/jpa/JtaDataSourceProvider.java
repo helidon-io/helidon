@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,14 @@ import javax.sql.DataSource;
 import javax.sql.XADataSource;
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
+import javax.transaction.SystemException;
+import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import javax.transaction.TransactionScoped;
 import javax.transaction.TransactionSynchronizationRegistry;
+
+import io.helidon.integrations.jta.jdbc.JtaDataSource;
+import io.helidon.integrations.jta.jdbc.XADataSourceWrappingDataSource;
 
 @ApplicationScoped
 class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvider {
@@ -260,11 +265,28 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         throws SQLException {
         Objects.requireNonNull(xaDataSource);
         final DataSource returnValue =
-            this.dataSourcesByName.computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
-                                                   ignoredKey -> new XADataSourceWrappingDataSource(xaDataSource,
-                                                                                                    dataSourceName,
-                                                                                                    this.transactionManager));
+            this.dataSourcesByName
+            .computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
+                             ignoredKey -> new XADataSourceWrappingDataSource(xaDataSource,
+                                                                              this::getStatus,
+                                                                              this::getTransaction));
         return returnValue;
+    }
+
+    private int getStatus() {
+        try {
+            return this.transactionManager.getStatus();
+        } catch (final SystemException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
+    }
+
+    private Transaction getTransaction() {
+        try {
+            return this.transactionManager.getTransaction();
+        } catch (final SystemException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -303,9 +325,8 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         } else {
             returnValue =
                 this.dataSourcesByName.computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
-                                                       ignoredKey -> new JtaDataSource(dataSource,
-                                                                                       dataSourceName,
-                                                                                       this.transactionManager));
+                                                       ignoredKey -> new JtaDataSource(() -> dataSource,
+                                                                                       this::getStatus));
             this.registerSynchronizationIfTransactionIsActive(returnValue);
         }
         return returnValue;

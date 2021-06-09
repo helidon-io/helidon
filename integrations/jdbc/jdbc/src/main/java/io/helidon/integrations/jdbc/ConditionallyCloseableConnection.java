@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.cdi.jpa;
+package io.helidon.integrations.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -34,7 +34,7 @@ import java.sql.SQLException;
  *
  * @see #close()
  */
-class ConditionallyCloseableConnection extends DelegatingConnection {
+public class ConditionallyCloseableConnection extends DelegatingConnection {
 
 
     /*
@@ -73,7 +73,7 @@ class ConditionallyCloseableConnection extends DelegatingConnection {
      *
      * @see #setCloseable(boolean)
      */
-    ConditionallyCloseableConnection(final Connection delegate) {
+    protected ConditionallyCloseableConnection(final Connection delegate) {
         this(delegate, true);
     }
 
@@ -94,7 +94,7 @@ class ConditionallyCloseableConnection extends DelegatingConnection {
      *
      * @see DelegatingConnection#DelegatingConnection(Connection)
      */
-    ConditionallyCloseableConnection(final Connection delegate, final boolean closeable) {
+    protected ConditionallyCloseableConnection(final Connection delegate, final boolean closeable) {
         super(delegate);
         this.setCloseable(closeable);
     }
