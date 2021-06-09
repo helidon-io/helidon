@@ -231,6 +231,21 @@ public final class MpConfigSources {
      * Find all resources on classpath and return a config source for each.
      * Order is kept as provided by class loader.
      *
+     * The profile will be used to locate a source with {@code -${profile}} name, such as
+     * {@code microprofile-config-dev.properties} for dev profile.
+     *
+     * @param resource resource to find
+     * @param profile configuration profile to use, must not be null
+     * @return a config source for each resource on classpath, empty if none found
+     */
+    public static List<ConfigSource> classPath(String resource, String profile) {
+        return classPath(Thread.currentThread().getContextClassLoader(), resource, profile);
+    }
+
+    /**
+     * Find all resources on classpath and return a config source for each.
+     * Order is kept as provided by class loader.
+     *
      * @param classLoader class loader to use to locate the resources
      * @param resource resource to find
      * @return a config source for each resource on classpath, empty if none found
@@ -242,7 +257,7 @@ public final class MpConfigSources {
                     .asIterator()
                     .forEachRemaining(it -> sources.add(create(it)));
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to read \"" + resource + "\" from classpath");
+            throw new IllegalStateException("Failed to read \"" + resource + "\" from classpath", e);
         }
 
         return sources;
@@ -293,7 +308,7 @@ public final class MpConfigSources {
                         .forEachRemaining(it -> sources.add(create(it)));
             }
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to read \"" + resource + "\" from classpath");
+            throw new IllegalStateException("Failed to read \"" + resource + "\" from classpath", e);
         }
 
         return sources;
@@ -328,13 +343,15 @@ public final class MpConfigSources {
     }
 
     /**
-     * Create a composite config source.
+     * Create a composite config source that uses the main first, and if it does not find
+     * a property in main, uses fallback. This is useful to set up a config source with a profile,
+     * where the profile source is {@code main} and the non-profile source is {@code fallback}.
      *
      * @param main look for properties here first
      * @param fallback if not found in main, look here
      * @return a new config source
      */
-    private static ConfigSource composite(ConfigSource main, ConfigSource fallback) {
+    static ConfigSource composite(ConfigSource main, ConfigSource fallback) {
         String name = main.getName() + " (" + fallback.getName() + ")";
 
         return new ConfigSource() {

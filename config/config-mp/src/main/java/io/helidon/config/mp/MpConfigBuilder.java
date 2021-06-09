@@ -54,7 +54,10 @@ import java.util.ServiceLoader;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
@@ -78,6 +81,7 @@ import static io.helidon.config.mp.MpMetaConfig.MetaConfigSource;
  */
 @Deprecated
 public class MpConfigBuilder implements ConfigBuilder {
+    private static final Logger LOGGER = Logger.getLogger(MpConfigBuilder.class.getName());
     private static final String DEFAULT_CONFIG_SOURCE = "META-INF/microprofile-config.properties";
 
     private final List<OrdinalSource> sources = new LinkedList<>();
@@ -150,6 +154,14 @@ public class MpConfigBuilder implements ConfigBuilder {
         return doGetType(clazz.getSuperclass());
     }
 
+    private static String toProfileName(String fileName, String profile) {
+        int i = fileName.lastIndexOf('.');
+        if (i > -1) {
+            return fileName.substring(0, i) + "-" + profile + fileName.substring(i);
+        }
+        return fileName + "-" + profile;
+    }
+
     @Override
     public ConfigBuilder addDefaultSources() {
         useDefaultSources = true;
@@ -197,6 +209,10 @@ public class MpConfigBuilder implements ConfigBuilder {
     }
 
     void mpMetaConfig(io.helidon.config.Config meta) {
+        meta.get("profile")
+                .asString()
+                .ifPresent(this::profile);
+
         meta.get("add-discovered-sources")
                 .asBoolean()
                 .filter(it -> it)
@@ -267,6 +283,7 @@ public class MpConfigBuilder implements ConfigBuilder {
         return sourceFromMeta(config,
                               MpConfigSources::create,
                               MpConfigSources::classPath,
+                              MpConfigSources::classPath,
                               MpConfigSources::create);
     }
 
@@ -274,12 +291,14 @@ public class MpConfigBuilder implements ConfigBuilder {
         return sourceFromMeta(config,
                               YamlMpConfigSource::create,
                               YamlMpConfigSource::classPath,
+                              YamlMpConfigSource::classPath,
                               YamlMpConfigSource::create);
     }
 
     private List<ConfigSource> sourceFromMeta(io.helidon.config.Config config,
                                               Function<Path, ConfigSource> fromPath,
                                               Function<String, List<ConfigSource>> fromClasspath,
+                                              BiFunction<String, String, List<ConfigSource>> fromClasspathWithProfile,
                                               Function<URL, ConfigSource> fromUrl) {
 
         boolean optional = config.get("optional").asBoolean().orElse(false);
@@ -290,15 +309,25 @@ public class MpConfigBuilder implements ConfigBuilder {
         ConfigValue<Path> pathConfig = config.get("path").as(Path.class);
         if (pathConfig.isPresent()) {
             Path path = pathConfig.get();
-            if (Files.exists(path) && Files.isRegularFile(path)) {
-                return List.of(fromPath.apply(path));
+            List<ConfigSource> result = sourceFromPathMeta(path, fromPath);
+
+            if (!result.isEmpty()) {
+                return result;
             }
+            // else the file was not found, check optional
             location = "path " + path.toAbsolutePath();
         } else {
             ConfigValue<String> classpathConfig = config.get("classpath").as(String.class);
             if (classpathConfig.isPresent()) {
                 String classpath = classpathConfig.get();
-                List<ConfigSource> sources = fromClasspath.apply(classpath);
+                List<ConfigSource> sources;
+
+                if (profile == null) {
+                    sources = fromClasspath.apply(classpath);
+                } else {
+                    sources = fromClasspathWithProfile.apply(classpath, profile);
+                }
+
                 if (!sources.isEmpty()) {
                     return sources;
                 }
@@ -307,12 +336,17 @@ public class MpConfigBuilder implements ConfigBuilder {
                 ConfigValue<URL> urlConfig = config.get("url").as(URL.class);
                 if (urlConfig.isPresent()) {
                     URL url = urlConfig.get();
+                    List<ConfigSource> sources = null;
                     try {
-                        return List.of(fromUrl.apply(url));
+                        sources = sourceFromUrlMeta(url, fromUrl);
                     } catch (ConfigException e) {
-                        location = "url " + url;
                         cause = e;
                     }
+
+                    if (sources != null && !sources.isEmpty()) {
+                        return sources;
+                    }
+                    location = "url " + url;
                 } else {
                     throw new ConfigException("MP meta configuration does not contain config source location. Node: " + config
                             .key());
@@ -329,6 +363,75 @@ public class MpConfigBuilder implements ConfigBuilder {
         } else {
             throw new ConfigException(message, cause);
         }
+    }
+
+    private List<ConfigSource> sourceFromUrlMeta(URL url, Function<URL, ConfigSource> fromUrl) {
+        ConfigSource profileSource = null;
+        ConfigSource mainSource = null;
+        Exception cause = null;
+
+        if (profile != null) {
+            try {
+                String profileUrl = toProfileName(url.toString(), profile);
+                profileSource = fromUrl.apply(new URL(profileUrl));
+            } catch (Exception e) {
+                cause = e;
+            }
+        }
+
+        try {
+            mainSource = fromUrl.apply(url);
+            if (cause != null) {
+                LOGGER.log(Level.FINEST, "Failed to load profile URL resource, succeeded loading main from " + url, cause);
+            }
+        } catch (ConfigException e) {
+            if (cause != null) {
+                e.addSuppressed(cause);
+                throw e;
+            } else {
+                if (profileSource == null) {
+                    throw e;
+                } else {
+                    LOGGER.log(Level.FINEST, "Did not find main URL config source from " + url + ", have profile source", e);
+                }
+            }
+        }
+        return composite(mainSource, profileSource);
+    }
+
+    private List<ConfigSource> sourceFromPathMeta(Path path, Function<Path, ConfigSource> fromPath) {
+        ConfigSource profileSource = null;
+        ConfigSource mainSource = null;
+
+        if (profile != null) {
+            String fileName = toProfileName(path.getFileName().toString(), profile);
+            Path profileSpecific = path.resolveSibling(fileName);
+            if (Files.exists(profileSpecific) && Files.isRegularFile(profileSpecific)) {
+                profileSource = fromPath.apply(profileSpecific);
+            }
+        }
+
+        if (Files.exists(path) && Files.isRegularFile(path)) {
+            mainSource = fromPath.apply(path);
+        }
+
+        // now handle profile
+        return composite(mainSource, profileSource);
+    }
+
+    private List<ConfigSource> composite(ConfigSource mainSource, ConfigSource profileSource) {
+        // now handle profile
+        if (profileSource == null) {
+            if (mainSource == null) {
+                return List.of();
+            }
+            return List.of(mainSource);
+        }
+        if (mainSource == null) {
+            return List.of(profileSource);
+        }
+
+        return List.of(MpConfigSources.composite(profileSource, mainSource));
     }
 
     @Override
