@@ -325,8 +325,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         } else {
             returnValue =
                 this.dataSourcesByName.computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
-                                                       ignoredKey -> new JtaDataSource(() -> dataSource,
-                                                                                       this::getStatus));
+                                                       k -> new JtaDataSource(dataSource, this::getStatus));
             this.registerSynchronizationIfTransactionIsActive(returnValue);
         }
         return returnValue;
