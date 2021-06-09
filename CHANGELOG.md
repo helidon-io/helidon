@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [2.3.1-SNAPSHOT]
+### Compatibility
+Base64Value has been moved from `Helidon Integrations Common REST` module to the module `Helidon Common`. Due to that action, 
+import has changed from `io.helidon.integrations.common.rest.Base64Value` to `io.helidon.common.Base64Value`, but the class is
+the same.
+
 ## [2.3.0-SNAPSHOT]
 
 2.3.0 is a minor release of Helidon that contains bug fixes and enhancements. Notable enhancements:
