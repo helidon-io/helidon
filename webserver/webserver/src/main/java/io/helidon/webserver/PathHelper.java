@@ -16,8 +16,6 @@
 
 package io.helidon.webserver;
 
-import java.text.Normalizer;
-
 class PathHelper {
 
     private PathHelper() {
