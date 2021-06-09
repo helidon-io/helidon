@@ -35,18 +35,18 @@ Access the `/graphql` endpoint via `http://127.0.0.1:7001/graphql`:
     ```graphql
     type Mutation {
       "Create a task with the given description"
-      createTask(description: String): Task
+      createTask(description: String!): Task
       "Remove all completed tasks and return the tasks left"
       deleteCompletedTasks: [Task]
       "Delete a task and return the deleted task details"
-      deleteTask(id: String): Task
+      deleteTask(id: String!): Task
       "Update a task"
-      updateTask(completed: Boolean, description: String, id: String): Task
+      updateTask(completed: Boolean, description: String, id: String!): Task
     }
     
     type Query {
       "Return a given task"
-      findTask(id: String): Task
+      findTask(id: String!): Task
       "Query tasks and optionally specified only completed"
       tasks(completed: Boolean): [Task]
     }
