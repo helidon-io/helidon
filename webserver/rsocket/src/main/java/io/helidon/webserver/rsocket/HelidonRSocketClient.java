@@ -19,6 +19,9 @@ package io.helidon.webserver.rsocket;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
+import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
 import io.netty.buffer.ByteBuf;
@@ -81,10 +84,11 @@ public class HelidonRSocketClient implements Disposable {
     /**
      * Set source.
      *
-     * @return Mono with RSocket.
+     * @return Single with RSocket.
      */
-    public Mono<RSocket> source() {
-        return client.source();
+    public Single<RSocket> source() {
+        Mono<RSocket> source = client.source();
+        return Single.create(FlowAdapters.toFlowPublisher(source));
     }
 
     /**
@@ -152,61 +156,66 @@ public class HelidonRSocketClient implements Disposable {
     /**
      * Send Data via Fire and Forget method.
      *
-     * @param dataMono
-     * @return Mono
+     * @param dataSingle
+     * @return Single
      */
-    public Mono<Void> fireAndForget(Mono<ByteBuffer> dataMono) {
-        return client.fireAndForget(dataMono.map(data -> {
-            return DefaultPayload.create(data, getMetadata().nioBuffer());
-        }));
+    public Single<Void> fireAndForget(Single<ByteBuffer> dataSingle) {
+        Mono<Void> resultMono = client.fireAndForget(Mono
+                .from(FlowAdapters.toPublisher(dataSingle))
+                .map(data -> DefaultPayload.create(data, getMetadata().nioBuffer())));
+        return Single.create(FlowAdapters.toFlowPublisher(resultMono));
     }
 
     /**
-     *
      * Send Data via Request/Response method.
      *
-     * @param dataMono
-     * @return Mono with Payload.
+     * @param dataSingle
+     * @return Single with Payload.
      */
-    public Mono<Payload> requestResponse(Mono<ByteBuffer> dataMono) {
-        return client.requestResponse(dataMono.map(data -> {
-            return DefaultPayload.create(data, getMetadata().nioBuffer());
-        }));
+    public Single<Payload> requestResponse(Single<ByteBuffer> dataSingle) {
+        Mono<Payload> payloadMono = client.requestResponse(Mono
+                .from(FlowAdapters.toPublisher(dataSingle))
+                .map(data -> DefaultPayload.create(data, getMetadata().nioBuffer())));
+        return Single.create(FlowAdapters.toFlowPublisher(payloadMono));
     }
 
     /**
      * Send data via Request Stream.
      *
-     * @param dataMono
-     * @return Flux with payload.
+     * @param dataSingle
+     * @return Multi with payload.
      */
-    public Flux<Payload> requestStream(Mono<ByteBuffer> dataMono) {
-        return client.requestStream(dataMono.map(data -> {
-            return DefaultPayload.create(data, getMetadata().nioBuffer());
-        }));
+    public Multi<Payload> requestStream(Single<ByteBuffer> dataSingle) {
+        Flux<Payload> payloadFlux = client.requestStream(Mono
+                .from(FlowAdapters.toPublisher(dataSingle))
+                .map(data -> DefaultPayload.create(data, getMetadata().nioBuffer())));
+        return Multi.create(FlowAdapters.toFlowPublisher(payloadFlux));
+
     }
 
     /**
      * Send data via Request Channel.
      *
      * @param data
-     * @return Flux with payload.
+     * @return Multi with payload.
      */
-    public Flux<Payload> requestChannel(Publisher<ByteBuffer> data) {
-        return client.requestChannel(Flux.from(data).map(d-> {
-            return DefaultPayload.create(d, getMetadata().nioBuffer());
-        }));
+    public Multi<Payload> requestChannel(Publisher<ByteBuffer> data) {
+        Flux<Payload> payloadFlux = client.requestChannel(Flux
+                .from(data).map(d -> DefaultPayload.create(d, getMetadata().nioBuffer())));
+        return Multi.create(FlowAdapters.toFlowPublisher(payloadFlux));
     }
 
     /**
      * Push metadata.
-     * @param dataMono
-     * @return Mono.
+     *
+     * @param dataSingle
+     * @return Single.
      */
-    public Mono<Void> metadataPush(Mono<ByteBuffer> dataMono) {
-        return client.metadataPush(dataMono.map(data -> {
-            return DefaultPayload.create(data, getMetadata().nioBuffer());
-        }));
+    public Single<Void> metadataPush(Single<ByteBuffer> dataSingle) {
+        Mono<Void> voidMono = client.metadataPush(Mono
+                .from(FlowAdapters.toPublisher(dataSingle))
+                .map(data -> DefaultPayload.create(data, getMetadata().nioBuffer())));
+        return Single.create(FlowAdapters.toFlowPublisher(voidMono));
     }
 
     /**
