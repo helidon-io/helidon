@@ -18,21 +18,27 @@ package io.helidon.integrations.jta.jdbc;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.IntSupplier;
-import java.util.function.Supplier;
 
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
-import javax.transaction.RollbackException;
 import javax.transaction.Status;
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
+import javax.transaction.xa.XAResource;
 
 import io.helidon.integrations.jdbc.AbstractDataSource;
 
 /**
  * An {@link AbstractDataSource} that adapts an {@link XADataSource}
  * to the {@link javax.sql.DataSource} contract.
+ *
+ * <p>The {@link XADataSource} being adapted must guarantee that when
+ * {@link Connection#close() close()} is called on any {@link
+ * Connection} that an {@link XAConnection} supplied by the {@link
+ * XADataSource#getXAConnection()} method {@linkplain
+ * XAConnection#getConnection() supplies}, the closing operation is
+ * {@linkplain XAConnection#close() propagated to the
+ * <code>XAConnection</code>}, or undefined behavior will result.</p>
  */
 public final class XADataSourceWrappingDataSource extends AbstractDataSource {
 
@@ -40,7 +46,7 @@ public final class XADataSourceWrappingDataSource extends AbstractDataSource {
 
     private final IntSupplier transactionStatusSupplier;
 
-    private final Supplier<? extends Transaction> transactionSupplier;
+    private final Consumer<? super XAResource> resourceEnlister;
 
     /**
      * Creates a new {@link XADataSourceWrappingDataSource}.
@@ -52,16 +58,17 @@ public final class XADataSourceWrappingDataSource extends AbstractDataSource {
      * supplies the status of the current transaction, if any; must
      * not be {@code null}
      *
-     * @param transactionSupplier a {@link Supplier} of {@link
-     * Transaction} instances; must not be {@code null}
+     * @param resourceEnlister a {@link Consumer} of {@link
+     * XAResource} instances that enlists them in an active XA
+     * transaction; must not be {@code null}
      */
     public XADataSourceWrappingDataSource(final XADataSource xaDataSource,
                                           final IntSupplier transactionStatusSupplier,
-                                          final Supplier<? extends Transaction> transactionSupplier) {
+                                          final Consumer<? super XAResource> resourceEnlister) {
         super();
         this.xaDataSource = Objects.requireNonNull(xaDataSource, "xaDataSource");
         this.transactionStatusSupplier = Objects.requireNonNull(transactionStatusSupplier, "transactionStatusSupplier");
-        this.transactionSupplier = Objects.requireNonNull(transactionSupplier, "transactionSupplier");
+        this.resourceEnlister = Objects.requireNonNull(resourceEnlister, "resourceEnlister");
     }
 
     @Override // AbstractDataSource
@@ -85,13 +92,10 @@ public final class XADataSourceWrappingDataSource extends AbstractDataSource {
             xaConnection = this.xaDataSource.getXAConnection(username, password);
         }
         if (this.transactionStatusSupplier.getAsInt() == Status.STATUS_ACTIVE) {
-            final Transaction transaction = this.transactionSupplier.get();
-            if (transaction != null) {
-                try {
-                    transaction.enlistResource(xaConnection.getXAResource());
-                } catch (final RollbackException | SystemException exception) {
-                    throw new SQLException(exception.getMessage(), exception);
-                }
+            try {
+                this.resourceEnlister.accept(xaConnection.getXAResource());
+            } catch (final RuntimeException e) {
+                throw new SQLException(e.getMessage(), e);
             }
         }
         // I am not confident about this.  Note that the xaConnection

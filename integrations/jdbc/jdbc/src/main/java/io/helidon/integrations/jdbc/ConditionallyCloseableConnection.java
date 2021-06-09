@@ -73,7 +73,7 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      *
      * @see #setCloseable(boolean)
      */
-    protected ConditionallyCloseableConnection(final Connection delegate) {
+    public ConditionallyCloseableConnection(final Connection delegate) {
         this(delegate, true);
     }
 
@@ -94,7 +94,7 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      *
      * @see DelegatingConnection#DelegatingConnection(Connection)
      */
-    protected ConditionallyCloseableConnection(final Connection delegate, final boolean closeable) {
+    public ConditionallyCloseableConnection(final Connection delegate, final boolean closeable) {
         super(delegate);
         this.setCloseable(closeable);
     }
