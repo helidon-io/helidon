@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,26 +18,36 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
 
     <parent>
+        <artifactId>helidon-tests-integration-security</artifactId>
         <groupId>io.helidon.tests.integration</groupId>
-        <artifactId>helidon-tests-integration</artifactId>
         <version>2.3.1-SNAPSHOT</version>
     </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-    <packaging>pom</packaging>
-    <artifactId>helidon-tests-integration-security</artifactId>
-    <name>Helidon Integration Tests Security</name>
+    <artifactId>helidon-tests-integration-security-path-params</artifactId>
+    <name>Helidon Tests Integration Security Path Parameters</name>
 
     <description>
-        Security integration tests
+        Integration test for path parameters
     </description>
 
-    <modules>
-        <module>gh1487</module>
-        <module>gh2297</module>
-        <module>gh2455</module>
-        <module>path-params</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>
+
