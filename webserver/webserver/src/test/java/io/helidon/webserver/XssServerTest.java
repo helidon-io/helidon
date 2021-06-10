@@ -18,12 +18,9 @@ package io.helidon.webserver;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.utils.SocketHttpClient;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -31,44 +28,21 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-class XssServerTest {
-    private static final Logger LOGGER = Logger.getLogger(XssServerTest.class.getName());
-
-    private static WebServer webServer;
+class XssServerTest extends BaseServerTest {
 
     @BeforeAll
     static void startServer() throws Exception {
-        startServer(0);
-    }
-
-    @AfterAll
-    static void close() throws Exception {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
-        }
-    }
-
-    private static void startServer(int port) throws Exception {
-        webServer = WebServer.create(
-                ServerConfiguration.builder().port(port).build(),
-                Routing.builder()
-                        .get("/foo", (req, res) -> {
-                            res.send(HtmlEncoder.encode("<script>bad</script>"));
-                        })
-                        .build())
-                .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
-
-        LOGGER.info("Started server at: https://localhost:" + webServer.port());
+        startServer(0, Routing.builder()
+                .get("/foo", (req, res) -> {
+                    res.send(HtmlEncoder.encode("<script>bad</script>"));
+                })
+                .build());
     }
 
     @Test
     void testScriptInjection() throws Exception {
         String s = SocketHttpClient.sendAndReceive("/bar%3cscript%3eevil%3c%2fscript%3e",
-                Http.Method.GET, null, webServer);
+                Http.Method.GET, null, webServer());
         assertThat(s, not(containsString("<script>")));
         assertThat(s, not(containsString("</script>")));
     }
@@ -76,7 +50,7 @@ class XssServerTest {
     @Test
     void testScriptInjectionIllegalUrlChar() throws Exception {
         String s = SocketHttpClient.sendAndReceive("/bar<script/>evil</script>",
-                Http.Method.GET, null, webServer);
+                Http.Method.GET, null, webServer());
         assertThat(s, not(containsString("<script>")));
         assertThat(s, not(containsString("</script>")));
     }
@@ -85,7 +59,7 @@ class XssServerTest {
     void testScriptInjectionContentType() throws Exception {
         List<String> requestHeaders = Arrays.asList("Content-Type: <script>evil</script>");
         String s = SocketHttpClient.sendAndReceive("/foo",
-                Http.Method.GET, null, requestHeaders, webServer);
+                Http.Method.GET, null, requestHeaders, webServer());
         assertThat(s, not(containsString("<script>")));
         assertThat(s, not(containsString("</script>")));
     }
@@ -93,7 +67,7 @@ class XssServerTest {
     @Test
     void testResponseEncoding() throws Exception {
         String s = SocketHttpClient.sendAndReceive("/foo",
-                Http.Method.GET, null, webServer);
+                Http.Method.GET, null, webServer());
         assertThat(s, not(containsString("<script>")));
         assertThat(s, not(containsString("</script>")));
     }
