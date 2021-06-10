@@ -271,14 +271,14 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
             this.dataSourcesByName
             .computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
                              ignoredKey -> new XADataSourceWrappingDataSource(xaDataSource,
-                                                                              this::getStatus,
+                                                                              this::activeTransaction,
                                                                               this::enlistResource));
         return returnValue;
     }
 
-    private int getStatus() {
+    private boolean activeTransaction() {
         try {
-            return this.transactionManager.getStatus();
+            return this.transactionManager.getStatus() == Status.STATUS_ACTIVE;
         } catch (final SystemException e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
@@ -331,7 +331,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         } else {
             returnValue =
                 this.dataSourcesByName.computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
-                                                       k -> new JtaDataSource(dataSource, this::getStatus));
+                                                       k -> new JtaDataSource(dataSource, this::activeTransaction));
             this.registerSynchronizationIfTransactionIsActive(returnValue);
         }
         return returnValue;

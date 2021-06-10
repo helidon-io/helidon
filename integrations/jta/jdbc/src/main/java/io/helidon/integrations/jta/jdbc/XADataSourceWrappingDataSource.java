@@ -18,12 +18,11 @@ package io.helidon.integrations.jta.jdbc;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.IntSupplier;
 
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
-import javax.transaction.Status;
 import javax.transaction.xa.XAResource;
 
 import io.helidon.integrations.jdbc.AbstractDataSource;
@@ -44,7 +43,7 @@ public final class XADataSourceWrappingDataSource extends AbstractDataSource {
 
     private final XADataSource xaDataSource;
 
-    private final IntSupplier transactionStatusSupplier;
+    private final BooleanSupplier transactionIsActiveSupplier;
 
     private final Consumer<? super XAResource> resourceEnlister;
 
@@ -54,20 +53,20 @@ public final class XADataSourceWrappingDataSource extends AbstractDataSource {
      * @param xaDataSource the {@link XADataSource} to wrap; must not
      * be {@code null}
      *
-     * @param transactionStatusSupplier an {@link IntSupplier} that
-     * supplies the status of the current transaction, if any; must
-     * not be {@code null}
+     * @param transactionIsActiveSupplier a {@link BooleanSupplier}
+     * that returns {@code true} only if the current transaction, if
+     * any, is active; must not be {@code null}
      *
      * @param resourceEnlister a {@link Consumer} of {@link
      * XAResource} instances that enlists them in an active XA
      * transaction; must not be {@code null}
      */
     public XADataSourceWrappingDataSource(final XADataSource xaDataSource,
-                                          final IntSupplier transactionStatusSupplier,
+                                          final BooleanSupplier transactionIsActiveSupplier,
                                           final Consumer<? super XAResource> resourceEnlister) {
         super();
         this.xaDataSource = Objects.requireNonNull(xaDataSource, "xaDataSource");
-        this.transactionStatusSupplier = Objects.requireNonNull(transactionStatusSupplier, "transactionStatusSupplier");
+        this.transactionIsActiveSupplier = Objects.requireNonNull(transactionIsActiveSupplier, "transactionIsActiveSupplier");
         this.resourceEnlister = Objects.requireNonNull(resourceEnlister, "resourceEnlister");
     }
 
@@ -91,7 +90,7 @@ public final class XADataSourceWrappingDataSource extends AbstractDataSource {
         } else {
             xaConnection = this.xaDataSource.getXAConnection(username, password);
         }
-        if (this.transactionStatusSupplier.getAsInt() == Status.STATUS_ACTIVE) {
+        if (this.transactionIsActiveSupplier.getAsBoolean()) {
             try {
                 this.resourceEnlister.accept(xaConnection.getXAResource());
             } catch (final RuntimeException e) {

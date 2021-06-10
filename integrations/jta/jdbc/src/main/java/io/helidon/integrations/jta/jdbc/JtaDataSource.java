@@ -21,8 +21,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 import javax.sql.DataSource;
@@ -72,7 +72,7 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
 
     private final Supplier<? extends DataSource> delegateSupplier;
 
-    private final IntSupplier transactionStatusSupplier;
+    private final BooleanSupplier transactionIsActiveSupplier;
 
 
     /*
@@ -86,8 +86,9 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
      * @param dataSource the {@link DataSource} instance to which
      * operations will be delegated; must not be {@code null}
      *
-     * @param transactionStatusSupplier an {@link IntSupplier} that
-     * can supply a JTA transaction status; must not be {@code null}
+     * @param transactionIsActiveSupplier a {@link BooleanSupplier}
+     * that returns {@code true} only if the current transaction, if
+     * any, is active; must not be {@code null}
      *
      * @exception NullPointerException if either parameter is {@code
      * null}
@@ -95,8 +96,8 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
      * @see #JtaDataSource(Supplier, IntSupplier)
      */
     public JtaDataSource(final DataSource dataSource,
-                         final IntSupplier transactionStatusSupplier) {
-        this(() -> dataSource, transactionStatusSupplier);
+                         final BooleanSupplier transactionIsActiveSupplier) {
+        this(() -> dataSource, transactionIsActiveSupplier);
     }
 
     /**
@@ -106,17 +107,18 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
      * DataSource} instances to which operations will be delegated;
      * must not be {@code null}
      *
-     * @param transactionStatusSupplier an {@link IntSupplier} that
-     * can supply a JTA transaction status; must not be {@code null}
+     * @param transactionIsActiveSupplier an {@link IntSupplier} that
+     * that returns {@code true} only if the current transaction, if
+     * any, is active; must not be {@code null}
      *
      * @exception NullPointerException if either parameter is {@code
      * null}
      */
     public JtaDataSource(final Supplier<? extends DataSource> delegateSupplier,
-                         final IntSupplier transactionStatusSupplier) {
+                         final BooleanSupplier transactionIsActiveSupplier) {
         super();
         this.delegateSupplier = Objects.requireNonNull(delegateSupplier, "delegateSupplier");
-        this.transactionStatusSupplier = Objects.requireNonNull(transactionStatusSupplier, "transactionStatusSupplier");
+        this.transactionIsActiveSupplier = Objects.requireNonNull(transactionIsActiveSupplier, "transactionIsActiveSupplier");
     }
 
 
@@ -150,13 +152,11 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
      * RuntimeException}
      */
     public boolean registerWith(final Consumer<? super Synchronization> registrar) {
-        switch (this.transactionStatusSupplier.getAsInt()) {
-        case Status.STATUS_ACTIVE:
+        if (this.transactionIsActiveSupplier.getAsBoolean()) {
             registrar.accept(this);
             return true;
-        default:
-            return false;
         }
+        return false;
     }
 
     /**
@@ -377,11 +377,11 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
      *
      * @exception SQLException if an error occurs
      *
-     * @exception RuntimeException if the {@link IntSupplier} supplied
-     * at construction time that reports a transaction's status throws
-     * a {@link RuntimeException}, or if the {@link Supplier} supplied
-     * at construction time that retrieves a delegate {@link
-     * DataSource} throws a {@link RuntimeException}
+     * @exception RuntimeException if the {@link BooleanSupplier}
+     * supplied at construction time that reports a transaction's
+     * status throws a {@link RuntimeException}, or if the {@link
+     * Supplier} supplied at construction time that retrieves a
+     * delegate {@link DataSource} throws a {@link RuntimeException}
      *
      * @see DataSource#getConnection()
      *
@@ -452,11 +452,11 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
      *
      * @exception SQLException if an error occurs
      *
-     * @exception RuntimeException if the {@link IntSupplier} supplied
-     * at construction time that reports a transaction's status throws
-     * a {@link RuntimeException}, or if the {@link Supplier} supplied
-     * at construction time that retrieves a delegate {@link
-     * DataSource} throws a {@link RuntimeException}
+     * @exception RuntimeException if the {@link BooleanSupplier}
+     * supplied at construction time that reports a transaction's
+     * status throws a {@link RuntimeException}, or if the {@link
+     * Supplier} supplied at construction time that retrieves a
+     * delegate {@link DataSource} throws a {@link RuntimeException}
      *
      * @see DataSource#getConnection()
      *
@@ -531,11 +531,11 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
      *
      * @exception SQLException if an error occurs
      *
-     * @exception RuntimeException if the {@link IntSupplier} supplied
-     * at construction time that reports a transaction's status throws
-     * a {@link RuntimeException}, or if the {@link Supplier} supplied
-     * at construction time that retrieves a delegate {@link
-     * DataSource} throws a {@link RuntimeException}
+     * @exception RuntimeException if the {@link BooleanSupplier}
+     * supplied at construction time that reports a transaction's
+     * status throws a {@link RuntimeException}, or if the {@link
+     * Supplier} supplied at construction time that retrieves a
+     * delegate {@link DataSource} throws a {@link RuntimeException}
      *
      * @see DataSource#getConnection()
      *
@@ -546,7 +546,7 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
                                      final boolean useZeroArgumentForm)
         throws SQLException {
         final Connection returnValue;
-        if (this.transactionStatusSupplier.getAsInt() == Status.STATUS_ACTIVE) {
+        if (this.transactionIsActiveSupplier.getAsBoolean()) {
             final Map<Object, TransactionSpecificConnection> extantConnections =
                 CONNECTIONS_TL.get().computeIfAbsent(this, k -> new HashMap<>());
             final Object id;
