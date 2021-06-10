@@ -404,7 +404,9 @@ public class MpConfigBuilder implements ConfigBuilder {
         ConfigSource mainSource = null;
 
         if (profile != null) {
-            String fileName = toProfileName(path.getFileName().toString(), profile);
+            Path fileNamePath = path.getFileName();
+            String fileName = (fileNamePath == null ? "" : fileNamePath.toString());
+            fileName = toProfileName(fileName, profile);
             Path profileSpecific = path.resolveSibling(fileName);
             if (Files.exists(profileSpecific) && Files.isRegularFile(profileSpecific)) {
                 profileSource = fromPath.apply(profileSpecific);
