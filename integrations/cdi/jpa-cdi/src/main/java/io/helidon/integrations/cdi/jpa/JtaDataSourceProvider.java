@@ -271,7 +271,6 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
             this.dataSourcesByName
             .computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
                              ignoredKey -> new XADataSourceWrappingDataSource(xaDataSource,
-                                                                              this::activeTransaction,
                                                                               this::enlistResource));
         return returnValue;
     }
@@ -287,7 +286,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
     private void enlistResource(final XAResource resource) {
         try {
             final Transaction transaction = this.transactionManager.getTransaction();
-            if (transaction != null) {
+            if (transaction != null && transaction.getStatus() == Status.STATUS_ACTIVE) {
                 transaction.enlistResource(resource);
             }
         } catch (final RollbackException | SystemException e) {
