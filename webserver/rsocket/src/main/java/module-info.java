@@ -32,6 +32,9 @@ module io.helidon.webserver.rsocket {
     requires org.reactivestreams;
     requires io.helidon.webserver.tyrus;
     requires tyrus.spi;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.interceptor.api;
+    requires io.helidon.microprofile.server;
 
     exports io.helidon.webserver.rsocket;
 }
