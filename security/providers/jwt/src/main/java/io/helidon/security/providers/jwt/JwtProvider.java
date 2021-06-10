@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,23 +149,12 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         try {
             maybeToken = atnTokenHandler.extractToken(providerRequest.env().headers());
         } catch (Exception e) {
-            if (optional) {
-                // maybe the token is for somebody else
-                return AuthenticationResponse.abstain();
-            } else {
-                return AuthenticationResponse.failed("JWT header not available or in a wrong format", e);
-            }
+            return failOrAbstain("JWT header not available or in a wrong format" + e);
         }
 
         return maybeToken
                 .map(this::authenticateToken)
-                .orElseGet(() -> {
-                    if (optional) {
-                        return AuthenticationResponse.abstain();
-                    } else {
-                        return AuthenticationResponse.failed("JWT header not available or in a wrong format");
-                    }
-                });
+                .orElseGet(() -> failOrAbstain("JWT header not available or in a wrong format"));
     }
 
     private AuthenticationResponse authenticateToken(String token) {
@@ -174,7 +163,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
             signedJwt = SignedJwt.parseToken(token);
         } catch (Exception e) {
             //invalid token
-            return AuthenticationResponse.failed("Invalid token", e);
+            return failOrAbstain("Invalid token" + e);
         }
         if (verifySignature) {
             Errors errors = signedJwt.verifySignature(verifyKeys, defaultJwk);
@@ -185,13 +174,27 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
                 if (validate.isValid()) {
                     return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
                 } else {
-                    return AuthenticationResponse.failed("Audience is invalid or missing: " + expectedAudience);
+                    return failOrAbstain("Audience is invalid or missing: " + expectedAudience);
                 }
             } else {
-                return AuthenticationResponse.failed(errors.toString());
+                return failOrAbstain(errors.toString());
             }
         } else {
             return AuthenticationResponse.success(buildSubject(signedJwt.getJwt(), signedJwt));
+        }
+    }
+
+    private AuthenticationResponse failOrAbstain(String message) {
+        if (optional) {
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description(message)
+                    .build();
+        } else {
+            return AuthenticationResponse.builder()
+                    .status(AuthenticationResponse.SecurityStatus.FAILURE)
+                    .description(message)
+                    .build();
         }
     }
 

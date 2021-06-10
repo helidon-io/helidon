@@ -23,7 +23,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Response;
 
-import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.common.Base64Value;
 import io.helidon.integrations.vault.secrets.transit.CreateKey;
 import io.helidon.integrations.vault.secrets.transit.Decrypt;
 import io.helidon.integrations.vault.secrets.transit.DeleteKey;

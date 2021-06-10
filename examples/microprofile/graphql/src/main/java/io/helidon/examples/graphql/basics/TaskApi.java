@@ -51,7 +51,7 @@ public class TaskApi {
      */
     @Mutation
     @Description("Create a task with the given description")
-    public Task createTask(@Name("description") String description) {
+    public Task createTask(@Name("description") @NonNull String description) {
         if (description == null) {
             throw new IllegalArgumentException("Description must be provided");
         }
