@@ -54,15 +54,16 @@ class UriParamsServerTest extends BaseServerTest {
     }
 
     @Test
-    void testEndpointsWithParams() {
-        try {
-            String s = webClient().get()
-                    .path("shop;a=b")
-                    .request(String.class)
-                    .get();
-        } catch (ExecutionException | InterruptedException e) {
-            Throwable t = e.getCause();
-            assertThat(t, is(instanceOf(WebClientException.class)));
-        }
+    void testEndpointsWithParams() throws Exception {
+        String s = webClient().get()
+                .path("shop;a=b")
+                .request(String.class)
+                .get();
+        assertThat(s, is("shop"));
+        s = webClient().get()
+                .path("admin;a=b")
+                .request(String.class)
+                .get();
+        assertThat(s, is("admin"));
     }
 }
