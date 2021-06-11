@@ -579,6 +579,8 @@ public interface ServerConfiguration extends SocketConfiguration {
 
             defaultSocketBuilder.config(config);
 
+            config.get("host").asString().ifPresent(defaultSocketBuilder::host);
+
             DeprecatedConfig.get(config, "worker-count", "workers")
                     .asInt()
                     .ifPresent(this::workersCount);
