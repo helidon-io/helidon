@@ -16,6 +16,8 @@
 
 package io.helidon.integrations.common.rest;
 
+import io.helidon.common.Base64Value;
+
 /**
  * Implementation of a {@link io.helidon.integrations.common.rest.ApiRequest} that allows
  * free configuration of the JSON object.

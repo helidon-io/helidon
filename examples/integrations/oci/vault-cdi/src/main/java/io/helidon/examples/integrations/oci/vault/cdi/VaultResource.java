@@ -29,7 +29,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 
-import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.common.Base64Value;
 import io.helidon.integrations.oci.vault.CreateSecret;
 import io.helidon.integrations.oci.vault.Decrypt;
 import io.helidon.integrations.oci.vault.DeleteSecret;
