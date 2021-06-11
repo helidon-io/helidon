@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.rsocket.cdi;
+package io.helidon.microprofile.rsocket.cdi;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
@@ -24,14 +24,19 @@ import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.rsocket.RSocketSupport;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.UnsatisfiedResolutionException;
+import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.Extension;
@@ -92,23 +97,24 @@ public class RSocketCdiExtension implements Extension {
      * @param endpoint The endpoint.
      */
     private void endpointClasses(@Observes @WithAnnotations(RSocket.class) ProcessAnnotatedType<?> endpoint) {
-        LOGGER.finest(() -> "Annotated endpoint found " + endpoint.getAnnotatedType().getJavaClass());
+        LOGGER.info(() -> "Annotated endpoint found " + endpoint.getAnnotatedType().getJavaClass());
+
+        LOGGER.info("Methods:");
+        List<Method> methods = endpoint.getAnnotatedType().getMethods().stream().map(AnnotatedMethod::getJavaMember).collect(Collectors.toList());
+
+        for (Method method:methods){
+            LOGGER.info("Method: "+method.getName());
+            LOGGER.info("Has the following annotations");
+            for (Annotation annotation:method.getAnnotations()){
+                LOGGER.info(" - "+annotation.toString());
+            }
+        }
+
         appBuilder.annotatedEndpoint(endpoint.getAnnotatedType().getJavaClass());
     }
 
     /**
-     * Collects programmatic endpoints.
-     *
-     * @param endpoint The endpoint.
-     */
-    private void endpointConfig(@Observes ProcessAnnotatedType<? extends io.helidon.webserver.rsocket.RSocketEndpoint> endpoint) {
-        LOGGER.finest(() -> "Programmatic endpoint found " + endpoint.getAnnotatedType().getJavaClass());
-        appBuilder.programmaticEndpoint(endpoint.getAnnotatedType().getJavaClass());
-    }
-
-
-    /**
-     * Provides access to rsocket application.
+     * Provides access to RSocket application.
      *
      * @return Application.
      */
@@ -203,4 +209,5 @@ public class RSocketCdiExtension implements Extension {
                         .map(RoutingName::required))
                 .orElse(false);
     }
+
 }

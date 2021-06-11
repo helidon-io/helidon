@@ -68,14 +68,14 @@ public class TyrusSupport implements Service {
      *
      * @param other The other instance.
      */
-    protected TyrusSupport(TyrusSupport other) {
+    public TyrusSupport(TyrusSupport other) {
         this.engine = other.engine;
         this.endpointClasses = other.endpointClasses;
         this.endpointConfigs = other.endpointConfigs;
         this.extensions = other.extensions;
     }
 
-    protected TyrusSupport(
+    public TyrusSupport(
             WebSocketEngine engine,
             Set<Class<?>> endpointClasses,
             Set<ServerEndpointConfig> endpointConfigs,

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.rsocket.cdi;
+package io.helidon.microprofile.rsocket.cdi;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-/**
- * Application demonstrates combination of the RSocket and REST.
- *
- * <p>
- * Start with {@link io.helidon.webserver.examples.rsocket.Main} class.
- *
- * @see io.helidon.webserver.examples.rsocket.Main
- */
-package io.helidon.webserver.examples.rsocket;
+package io.helidon.microprofile.rsocket.cdi;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+public @interface RequestChannel {
+}

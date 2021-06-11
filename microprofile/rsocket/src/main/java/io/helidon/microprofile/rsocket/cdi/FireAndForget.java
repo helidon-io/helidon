@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.rsocket.cdi;
+package io.helidon.microprofile.rsocket.cdi;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -23,9 +23,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.TYPE)
+@Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@Inherited
 @Documented
-public @interface RSocket {
+@Inherited
+public @interface FireAndForget {
 }

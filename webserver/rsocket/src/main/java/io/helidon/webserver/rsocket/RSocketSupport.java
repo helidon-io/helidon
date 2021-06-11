@@ -30,7 +30,7 @@ public class RSocketSupport extends TyrusSupport {
      *
      * @param other The other instance.
      */
-    protected RSocketSupport(TyrusSupport other) {
+    public RSocketSupport(TyrusSupport other) {
         super(other);
     }
 

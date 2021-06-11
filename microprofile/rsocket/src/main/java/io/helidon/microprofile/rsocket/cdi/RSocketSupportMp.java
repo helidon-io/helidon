@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.rsocket.cdi;
+package io.helidon.microprofile.rsocket.cdi;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.webserver.rsocket.RSocketSupport;

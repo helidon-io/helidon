@@ -15,11 +15,6 @@
  */
 
 /**
- * Application demonstrates combination of the RSocket and REST.
- *
- * <p>
- * Start with {@link io.helidon.webserver.examples.rsocket.Main} class.
- *
- * @see io.helidon.webserver.examples.rsocket.Main
+ * RSocket integration.
  */
-package io.helidon.webserver.examples.rsocket;
+package io.helidon.microprofile.rsocket.cdi;

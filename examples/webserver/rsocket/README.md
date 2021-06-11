@@ -1,6 +1,6 @@
 # WebSocket Example
 
-This application demonstrates use of websockets and REST.
+This application demonstrates use of RSockets and REST.
 
 ## Build and run
 

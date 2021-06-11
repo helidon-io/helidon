@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+import io.helidon.microprofile.rsocket.cdi.RSocketCdiExtension;
+
 /**
  * RSocket integration.
  */
-module io.helidon.webserver.rsocket {
+module io.helidon.microprofile.rsocket.cdi {
     requires java.logging;
 
     requires static jakarta.enterprise.cdi.api;
@@ -35,7 +37,10 @@ module io.helidon.webserver.rsocket {
     requires tyrus.spi;
     requires io.helidon.microprofile.server;
     requires jakarta.interceptor.api;
+    requires io.helidon.webserver.rsocket;
 
-    exports io.helidon.webserver.rsocket;
-    exports io.helidon.webserver.rsocket.server;
+    exports io.helidon.microprofile.rsocket.cdi;
+
+
+    provides javax.enterprise.inject.spi.Extension with RSocketCdiExtension;
 }
