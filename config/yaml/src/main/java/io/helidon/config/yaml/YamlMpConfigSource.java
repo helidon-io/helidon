@@ -24,10 +24,14 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import io.helidon.config.ConfigException;
 
@@ -144,19 +148,87 @@ public class YamlMpConfigSource implements ConfigSource {
         return sources;
     }
 
-    @Override
-    public Map<String, String> getProperties() {
-        return Collections.unmodifiableMap(properties);
+    /**
+     * Create from YAML file(s) on classpath with profile support.
+     *
+     * @param resource resource name to locate on classpath (looks for all instances)
+     * @param profile name of the profile to use
+     * @return list of config sources discovered (may be zero length)
+     */
+    public static List<ConfigSource> classPath(String resource, String profile) {
+        Objects.requireNonNull(profile, "Profile must be defined");
+
+        List<ConfigSource> sources = new LinkedList<>();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+
+        try {
+            Enumeration<URL> baseResources = classLoader.getResources(resource);
+            Enumeration<URL> profileResources = classLoader.getResources(toProfileResource(resource, profile));
+
+            if (profileResources.hasMoreElements()) {
+                List<URL> profileResourceList = new LinkedList<>();
+                profileResources.asIterator()
+                        .forEachRemaining(profileResourceList::add);
+
+                baseResources.asIterator()
+                        .forEachRemaining(it -> {
+                            String pathBase = pathBase(it.toString());
+                            // we need to find profile that belongs to this
+                            for (URL url : profileResourceList) {
+                                String profilePathBase = pathBase(url.toString());
+                                if (pathBase.equals(profilePathBase)) {
+                                    sources.add(create(create(it), create(url)));
+                                } else {
+                                    sources.add(create(it));
+                                }
+                            }
+                        });
+            } else {
+                baseResources
+                        .asIterator()
+                        .forEachRemaining(it -> sources.add(create(it)));
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read YAML \"" + resource + "\" from classpath", e);
+        }
+
+        return sources;
     }
 
-    @Override
-    public String getValue(String propertyName) {
-        return properties.get(propertyName);
-    }
+    private static ConfigSource create(ConfigSource main, ConfigSource fallback) {
+        String name = main.getName() + " (" + fallback.getName() + ")";
 
-    @Override
-    public String getName() {
-        return name;
+        return new ConfigSource() {
+            @Override
+            public Set<String> getPropertyNames() {
+                Set<String> result = new HashSet<>(fallback.getPropertyNames());
+                result.addAll(main.getPropertyNames());
+
+                return result;
+            }
+
+            @Override
+            public String getValue(String propertyName) {
+                String value = main.getValue(propertyName);
+                if (value == null) {
+                    return fallback.getValue(propertyName);
+                }
+                return value;
+            }
+
+            @Override
+            public String getName() {
+                return name;
+            }
+
+            @Override
+            public Map<String, String> getProperties() {
+                Map<String, String> result = new HashMap<>(fallback.getProperties());
+                result.putAll(main.getProperties());
+
+                return result;
+            }
+        };
     }
 
     private static Map<String, String> fromMap(Map yamlMap) {
@@ -200,5 +272,50 @@ public class YamlMpConfigSource implements ConfigSource {
         }
 
         return prefix + "." + stringKey;
+    }
+
+    private static String pathBase(String path) {
+        int i = path.lastIndexOf('/');
+        int y = path.lastIndexOf('!');
+        int z = path.lastIndexOf(':');
+        int b = path.lastIndexOf('\\');
+
+        // we need the last index before the file name - so the highest number of all of the above
+        int max = Math.max(i, y);
+        max = Math.max(max, z);
+        max = Math.max(max, b);
+
+        if (max > -1) {
+            return path.substring(0, max);
+        }
+        return path;
+    }
+
+    private static String toProfileResource(String resource, String profile) {
+        int i = resource.lastIndexOf('.');
+        if (i > -1) {
+            return resource.substring(0, i) + "-" + profile + resource.substring(i);
+        }
+        return resource + "-" + profile;
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        return Collections.unmodifiableSet(properties.keySet());
+    }
+
+    @Override
+    public Map<String, String> getProperties() {
+        return Collections.unmodifiableMap(properties);
+    }
+
+    @Override
+    public String getValue(String propertyName) {
+        return properties.get(propertyName);
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }
