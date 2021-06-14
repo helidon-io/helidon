@@ -334,7 +334,7 @@ class BareResponseImpl implements BareResponse {
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
         this.subscription = subscription;
-        subscription.request(Long.MAX_VALUE);
+        subscription.request(2); // Because first chunk gets cached
     }
 
     @Override
@@ -349,6 +349,7 @@ class BareResponseImpl implements BareResponse {
                 } else {
                    prevRequestChunk = prevRequestChunk.thenRun(ctx::flush);
                 }
+                subscription.request(1);
                 return;
             }
 
@@ -431,6 +432,7 @@ class BareResponseImpl implements BareResponse {
             channelFuture = ctx.writeAndFlush(httpContent);
         } else {
             channelFuture = ctx.write(httpContent);
+            subscription.request(1);
         }
 
         return channelFuture
@@ -444,6 +446,9 @@ class BareResponseImpl implements BareResponse {
                         }
                     });
                     data.release();
+                    if (data.flush()) {
+                        subscription.request(1);
+                    }
                     LOGGER.finest(() -> log("Data chunk sent with result: %s", future.isSuccess()));
                 })
                 .addListener(completeOnFailureListener("Failure when sending a content!"))
