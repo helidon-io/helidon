@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.config.mp;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -34,6 +35,11 @@ class MpMapSource implements ConfigSource {
     }
 
     @Override
+    public Set<String> getPropertyNames() {
+        return Collections.unmodifiableSet(map.keySet());
+    }
+
+    @Override
     public Map<String, String> getProperties() {
         return Collections.unmodifiableMap(map);
     }
@@ -46,5 +52,10 @@ class MpMapSource implements ConfigSource {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String toString() {
+        return getName() + " (" + getOrdinal() + ")";
     }
 }

@@ -8,12 +8,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
 ## [2.3.1-SNAPSHOT]
+
+### MP Config Updates
+Features from MP Config 2.0 that are backward compatible were added in this release:
+
+1. Configuration profiles were added. You can now define a configuration profile (such as `dev`) using configuration property `mp.config.profile`. If such is defined, config will load default properties `microprofile-config-${profile}.properties`, and it will look for properties prefixed with `%${profile}-` first.
+3. `OptionalInt`, `OptionalLong`, and `OptionalDouble` were added as supported types
+
 ### Compatibility
 Base64Value has been moved from `Helidon Integrations Common REST` module to the module `Helidon Common`. Due to that action, 
 import has changed from `io.helidon.integrations.common.rest.Base64Value` to `io.helidon.common.Base64Value`, but the class is
 the same.
 
-## [2.3.0-SNAPSHOT]
+## [2.3.0]
 
 2.3.0 is a minor release of Helidon that contains bug fixes and enhancements. Notable enhancements:
 

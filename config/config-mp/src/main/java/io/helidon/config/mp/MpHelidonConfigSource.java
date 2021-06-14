@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.config.mp;
 
 import java.util.Map;
+import java.util.Set;
 
 import io.helidon.config.Config;
 
@@ -27,6 +28,11 @@ final class MpHelidonConfigSource implements ConfigSource {
 
     MpHelidonConfigSource(io.helidon.config.Config helidonConfig) {
         this.helidonConfig = helidonConfig;
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        return getProperties().keySet();
     }
 
     @Override
