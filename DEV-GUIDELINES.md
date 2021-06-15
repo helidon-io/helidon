@@ -5,6 +5,8 @@ This document provides a list of rules and best practices followed by project He
 Please follow these rules when contributing to the project, when refactoring existing code and when
 reviewing changes done by others.
 
+Some of these rules are enforced by checkstyle, some are checked during code reviews.
+
 **Exceptions to these rules should be documented clearly.**
 
 # General coding rules
@@ -34,7 +36,7 @@ reviewing changes done by others.
     5. Do not rely on java module system (JPMS/Jigsaw) to enforce visibility
     6. If a set of classes seems to require a separate package, it is a good candidate for a separate module
         1. Example: _there could be a package for each "abac" module in "abac" security provider. Even though these modules 
-            are mostly very small, these were extract to standalone modules, not to break the rule of flat package 
+            are mostly very small, these were extracted to standalone modules, not to break the rule of flat package 
             structure. In general this helps enforce the rule of separation of concerns - if you feel you need a new package, 
             in most cases you are putting together different concerns in a single module._
 2. Naming conventions of maven modules, maven module directories and package names are connected:
@@ -52,8 +54,7 @@ reviewing changes done by others.
 # Configuration and programmatic API
 1. **Everything that can be done using config, must be possible using programmatic approach through builders**
     1. Exceptions:
-        1. CDI components configured from a CDI Extension (we still have support for explicitly defining the extension in 
-                Server Builder)
+        1. CDI components configured from a CDI Extension
 1. Everything that can be done using builders should be possible also using configuration, 
         except for cases that would mandate usage of reflection 
         (such an exception may be configuration of Routing in WebServer - nevertheless we still may support 
@@ -124,11 +125,11 @@ Example: [io.helidon.security.providers.oidc.common.OidcConfig](security/provide
             
 Example: [io.helidon.security.providers.oidc.common.OidcConfig](security/providers/oidc-common/src/main/java/io/helidon/security/oidc/common/OidcConfig.java)
 
-# Java 9+ (Jigsaw/JPMS)
-1. Each java module has a module-info.java defined in a "java9" directory under src/main
-2. These are compiled as part of a build when run on a JDK version 9 or higher
-3. We only use java 8 source compatibility (with the sole exception of module-info.java mentioned above)
-    1. See useful helpers in common that provide some of the new nice features backported to java 8
+# JPMS
+1. Each java module that is released has a `module-info.java`
+2. Provided services of released modules are declared ONLY in `module-info.java`, `META-INF/services` is generated  
+        automatically by a Maven plugin. `META-INF/services` in sources of released modules will fail the build
+3. Javadoc is using modules, so do not forget to add javadoc to `module-info.java`
     
 # Testing
 
@@ -177,12 +178,13 @@ but: was "Requested value for configuration key 'list-1.1' is not present in the
 ```
 
 # Maven
-1. All third party versions are managed in root pom
+1. All third party versions are managed
     1. Plugins
-    2. Dependencies
+    2. Dependencies (`dependencies/pom.xml`)
 2. Adding a new third party dependency (or upgrading to a newer version) requires an 
     internal process to be carried out. In such cases a delay is to be expected when merging.
-3. When referencing other Helidon modules, use ${project.version} as a version
+3. There is no need to use a version when referencing other modules, as all modules are managed in bom/pom.xml, and that is
+    part of the maven tree
 4. In pom.xml of a module, always define a "name" tag and follow naming conventions already used
     1. For project module: Helidon ${module_name} Project
     2. For java module: Helidon ${module_name}
