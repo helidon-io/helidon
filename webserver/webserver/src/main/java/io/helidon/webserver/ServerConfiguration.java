@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -549,6 +549,10 @@ public interface ServerConfiguration extends SocketConfiguration {
         private SocketConfiguration.Builder configureSocket(Config config, SocketConfiguration.Builder soConfigBuilder) {
 
             config.get("port").asInt().ifPresent(soConfigBuilder::port);
+            // we use `host` in every MP example and it should be supported in SE as well
+            config.get("host").asString()
+                    .map(this::string2InetAddress)
+                    .ifPresent(soConfigBuilder::bindAddress);
             config.get("bind-address")
                     .asString()
                     .map(this::string2InetAddress)
