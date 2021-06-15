@@ -7,7 +7,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [1.4.9-SNAPSHOT]
 
-This is a bug fix release of Helidon. It contains fixes and a number of dependency upgrades.
+This is a bug fix release of Helidon 1. It contains fixes and dependency upgrades.
 We recommend all Helidon 1.4 users upgrade to this release.
 
 ### Fixes
