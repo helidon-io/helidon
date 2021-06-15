@@ -26,6 +26,8 @@ import javax.ws.rs.core.Response.Status;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,26 +40,25 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Unit test for {@link Main}.
+ * Unit test for MP multiport example.
  */
 @HelidonTest
 @AddConfig(key = "server.sockets.0.port", value = "0")      // Force ports to be dynamically allocated
 @AddConfig(key = "server.sockets.1.port", value = "0")
 class MainTest {
-
-    // Used for the default (public) port which HelidonTest will configure for us
-    @Inject
-    private WebTarget publicWebTarget;
-
-    // Used for other (private, admin) ports
-    private static Client client;
-
     // Port names
     private static final String ADMIN_PORT = "admin";
     private static final String PRIVATE_PORT = "private";
     private static final String PUBLIC_PORT = "default";
 
     private static final String BASE_URL = "http://localhost:";
+
+    // Used for other (private, admin) ports
+    private static Client client;
+
+    // Used for the default (public) port which HelidonTest will configure for us
+    @Inject
+    private WebTarget publicWebTarget;
 
     // Needed to get values of dynamically allocated admin and private ports
     @Inject
@@ -67,7 +68,7 @@ class MainTest {
         final String PUBLIC_PATH = "/hello";
         final String PRIVATE_PATH = "/private/hello";
         final String HEALTH_PATH = "/health";
-        final String METRICS_PATH = "/health";
+        final String METRICS_PATH = "/metrics";
 
         return List.of(
                 new Params(PUBLIC_PORT, PUBLIC_PATH, Status.OK),
@@ -92,18 +93,26 @@ class MainTest {
         client = ClientBuilder.newClient();
     }
 
+    @AfterAll
+    static void destroyClass() {
+        client.close();;
+    }
+
     @MethodSource("initParams")
     @ParameterizedTest
     public void testPortAccess(Params params) {
+        WebTarget webTarget;
 
-        WebTarget webTarget = publicWebTarget;
-        if (!PUBLIC_PORT.equals(params.portName)) {
+        if (params.portName.equals(PUBLIC_PORT)) {
+            webTarget = publicWebTarget;
+        } else {
             webTarget = client.target(BASE_URL + serverCdiExtension.port(params.portName));
         }
 
         Response response = webTarget.path(params.path)
                 .request()
                 .get();
+
         assertThat(webTarget.getUri() + " returned incorrect HTTP status",
                 response.getStatusInfo().toEnum(), is(params.httpStatus));
     }
