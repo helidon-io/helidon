@@ -2976,85 +2976,128 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-SmallRye OpenAPI 1.2.0 Red Hat, Inc.
+SmallRye OpenAPI 1.2.3 Red Hat, Inc.
 Apache 2.0
 Used by: [helidon-openapi]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
 SmallRye: MicroProfile OpenAPI Implementation (io.smallrye:smallrye-open-api)
 Copyright 2018 Red Hat, Inc.
-Copyright 2017,2018 Red Hat, Inc, and individual contributors.
+Copyright 2017,2019 Red Hat, Inc, and individual contributors.
 --------------------------------------------
 License Identifier: Apache-2.0
 --------------------------------------------
 --------------------------------------------
-"MicroProfile OpenAPI API" 1.1.2 (org.eclipse.microprofile.openapi:microprofile-openapi-api)
-Copyright 2017 SmartBear Software
-Copyright (c) 2017 Contributors to the Eclipse Foundation
-Apache License Version 2
+Fourth Party Runtime Dependencies
 --------------------------------------------
-"org.osgi:org.osgi.annotation.versioning" 1.0.0 (org.osgi:org.osgi.annotation.versioning)
-Copyright (c) OSGi Alliance (2013, 2014). All Rights Reserved.
-Copyright (c) OSGi Alliance (2013). All Rights Reserved.
-Apache License Version 2
+"MicroProfile OpenAPI API" (org.eclipse.microprofile.openapi:microprofile-openapi-api)
+  Copyright 2017 SmartBear Software
+  Copyright (c) 2017 Contributors to the Eclipse Foundation
+  Apache License Version 2
+
+  =========================================================================
+  ==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
+  ==  Version 2.0, in this case for MicroProfile OpenAPI                 ==
+  =========================================================================
+
+  The majority of this software were originally based on the following:
+  * Swagger Core
+    https://github.com/swagger-api/swagger-core
+    under Apache License, v2.0
+
+  SPDXVersion: SPDX-2.1
+  PackageName: Eclipse MicroProfile
+  PackageHomePage: http://www.eclipse.org/microprofile
+  PackageLicenseDeclared: Apache-2.0
+
+  PackageCopyrightText: <text>
+  Arthur De Magalhaes arthurdm@ca.ibm.com
+  </text>
 --------------------------------------------
-"MicroProfile Config API" 1.3 (org.eclipse.microprofile.config:microprofile-config-api)
-Copyright (c) 2009-2017 Contributors to the Eclipse Foundation
-Apache License Version 2
+"org.osgi:org.osgi.annotation.versioning" (org.osgi:org.osgi.annotation.versioning)
+  Copyright (c) OSGi Alliance (2013, 2014). All Rights Reserved.
+  Copyright (c) OSGi Alliance (2013). All Rights Reserved.
+  Apache License Version 2
 --------------------------------------------
-"Jackson-core" 2.9.8 (com.fasterxml.jackson.core:jackson-core)
-Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
-Copyright 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
-Apache License Version 2
+"MicroProfile Config API" (org.eclipse.microprofile.config:microprofile-config-api)
+  Copyright (c) 2009-2017 Contributors to the Eclipse Foundation
+  Apache License Version 2
+
+  =========================================================================
+  ==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
+  ==  Version 2.0, in this case for Microprofile Config                  ==
+  =========================================================================
+
+  This product includes software developed at
+  The Apache Software Foundation (http://www.apache.org/).
+
+  Portions of this software were originally based on the following:
+  * Apache DeltaSpike Config
+    https://deltaspike.apache.org
+    under Apache License, v2.0
+
+  SPDXVersion: SPDX-2.1
+  PackageName: Eclipse Microprofile
+  PackageHomePage: http://www.eclipse.org/microprofile
+  PackageLicenseDeclared: Apache-2.0
+
+  PackageCopyrightText: <text>
+  Mark Struberg struberg@apache.org,
+  Gerhard Petracek gpetracek@apache.org,
+  Romain Manni-Bucau rmannibucau@apache.org,
+  Ron Smeral rsmeral@apache.org,
+  Emily Jiang emijiang@uk.ibm.com,
+  Ondrej Mihalyi ondrej.mihalyi@gmail.com,
+  Gunnar Morling gunnar@hibernate.org
+  </text>
 --------------------------------------------
-"jackson-databind" 2.9.8 (com.fasterxml.jackson.core:jackson-databind)
-Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
-Copyright 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
-Apache License Version 2
+"Java Annotation Indexer" (org.jboss:jandex)
+  Copyright 2013,2014 Red Hat, Inc., and individual contributors
+  Apache License Version 2
 --------------------------------------------
-"Jackson-annotations" 2.9.0 (com.fasterxml.jackson.core:jackson-annotations)
-Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
-Copyright 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
-Apache License Version 2
+"JBoss Logging 3" (org.jboss.logging:jboss-logging)
+  Copyright 2010,2017 Red Hat, Inc.
+  Copyright 2010,2011 Red Hat, Inc., and individual contributors
+  Apache License Version 2
 --------------------------------------------
-"Jackson-dataformat-YAML" 2.9.8 (com.fasterxml.jackson.dataformat:jackson-dataformat-yaml)
-Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
-Copyright 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
-Apache License Version 2
+"ShrinkWrap API" (org.jboss.shrinkwrap:shrinkwrap-api)
+  Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
+  Apache License Version 2
+  Apache Commons Compress
+  Copyright 2002-2013 The Apache Software Foundation
+
+  This product includes software developed at
+  The Apache Software Foundation (http://www.apache.org/).
 --------------------------------------------
-"SnakeYAML" 1.23 (org.yaml:snakeyaml)
-Copyright 2003-2010 Christian d'Heureuse, Inventec Informatik AG, Zurich, Switzerland
-Copyright (c) 2008, http://www.snakeyaml.org
-Apache License Version 2
+"SnakeYAML" (org.yaml:snakeyaml)
+  Copyright 2003-2010 Christian d'Heureuse, Inventec Informatik AG, Zurich, Switzerland
+  Copyright (c) 2008, http://www.snakeyaml.org
+  Apache License Version 2
 --------------------------------------------
-"Java Annotation Indexer" 2.1.1.Final (org.jboss:jandex)
-Copyright 2013,2014 Red Hat, Inc., and individual contributors
-Apache License Version 2
---------------------------------------------
-"JBoss Logging 3" 3.3.2.Final (org.jboss.logging:jboss-logging)
-Copyright 2010,2017 Red Hat, Inc.
-Copyright 2010,2011 Red Hat, Inc., and individual contributors
-Apache License Version 2
---------------------------------------------
-"ShrinkWrap API" 1.2.6 (org.jboss.shrinkwrap:shrinkwrap-api)
-Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
-Apache License Version 2
---------------------------------------------
-"Apache Commons IO" 2.6 (commons-io:commons-io)
-Copyright 2002-2017 The Apache Software Foundation
-Apache License Version 2
---------------------------------------------
-"Apache Commons BeanUtils" 1.9.3 (commons-beanutils:commons-beanutils)
-Copyright 2000-2018 The Apache Software Foundation
-Apache License Version 2
---------------------------------------------
-"Apache Commons Logging" 1.2 (commons-logging:commons-logging)
-Copyright The Apache Software Foundation
-Apache License Version 2
---------------------------------------------
-"Apache Commons Collections" 3.2.2 (commons-collections:commons-collections)
-Copyright 2001-2018 The Apache Software Foundation
-Apache License Version 2
+"Jackson" (com.fasterxml.jackson.*:jackson-*)
+  com.fasterxml.jackson.core:jackson-databind
+  com.fasterxml.jackson.core:jackson-annotations
+  com.fasterxml.jackson.dataformat:jackson-dataformat-yaml
+  Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
+  Copyright 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
+  Apache License Version 2
+
+  # Jackson JSON processor
+
+  Jackson is a high-performance, Free/Open Source JSON processing library.
+  It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+  been in development since 2007.
+  It is currently developed by a community of developers.
+
+  ## Licensing
+
+  Jackson 2.x core and extension components are licensed under Apache License 2.0
+  To find the details that apply to this artifact see the accompanying LICENSE file.
+
+  ## Credits
+
+  A list of contributors may be found from CREDITS(-2.x) file, which is included
+  in some artifacts (usually source distributions); but is always available
+  from the source code management (SCM) system project uses.
 --------------------------------------------
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -3524,28 +3567,23 @@ License Identifier: Apache-2.0
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-netty 4.1.59.Final The Netty Project
+netty 4.1.63.Final The Netty Project
 Apache 2.0
 Used by: [helidon-webserver]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-The Netty Project
-netty-4.1.59.Final
-Copyright 2012,2019 The Netty Project
-Copyright 2011,2018 The Netty Project
-Copyright 2014,2017 The Netty Project
-Copyright 2012,2017 The Netty Project
-Copyright 2012,2016 The Netty Project
-Copyright 2014 Twitter, Inc.
-Copyright (c) 2011, Joe Walnes and contributors
-Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
-Copyright (c) 2004-2011 QOS.ch
-
+Netty (io.netty:netty-*)
+  Copyright 2012,2020 The Netty Project
+  Copyright 2014 Twitter, Inc.
+  Copyright (c) 2011, Joe Walnes and contributors
+  Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
+  Copyright (c) 2004-2011 QOS.ch
+--------------------------------------------
                             The Netty Project
                             =================
 
 Please visit the Netty web site for more information:
 
-  * http://netty.io/
+  * https://netty.io/
 
 Copyright 2014 The Netty Project
 
@@ -3553,7 +3591,7 @@ The Netty Project licenses this file to you under the Apache License,
 version 2.0 (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at:
 
-  http://www.apache.org/licenses/LICENSE-2.0
+  https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -3564,105 +3602,12 @@ under the License.
 Also, please refer to each LICENSE.<component>.txt file, which is located in
 the 'license' directory of the distribution file, for the license terms of the
 components that this product depends on.
-
 -------------------------------------------------------------------------------
 This product contains the extensions to Java Collections Framework which has
 been derived from the works by JSR-166 EG, Doug Lea, and Jason T. Greene:
 
   * LICENSE:
-    * Public Domain
-  * HOMEPAGE:
-    * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/
-    * http://viewvc.jboss.org/cgi-bin/viewvc.cgi/jbosscache/experimental/jsr166/
-
-This product contains a modified version of Robert Harder's Public Domain
-Base64 Encoder and Decoder, which can be obtained at:
-
-  * LICENSE:
-    * Public Domain
-  * HOMEPAGE:
-    * http://iharder.sourceforge.net/current/java/base64/
-
-This product contains a modified portion of 'Webbit', an event based
-WebSocket and HTTP server, which can be obtained at:
-
-  * COPYRIGHT:
-    Copyright (c) 2011, Joe Walnes, Aslak Hellesøy and contributors
-    All rights reserved.
-  * LICENSE:
-    * BSD License
-  * HOMEPAGE:
-    * https://github.com/joewalnes/webbit
-
-This product contains a modified portion of 'SLF4J', a simple logging
-facade for Java, which can be obtained at:
-
-  * COPYRIGHT:
-    Copyright (c) 2004-2007 QOS.ch
-    All rights reserved.
-  * LICENSE:
-    * MIT License
-  * HOMEPAGE:
-    * http://www.slf4j.org/
-
-This product contains a modified portion of 'Apache Harmony', an open source
-Java SE, which can be obtained at:
-
-  * COPYRIGHT:
-    Copyright 2006, 2010 The Apache Software Foundation.
-    This product includes software developed at
-    The Apache Software Foundation (http://www.apache.org/).
-  * LICENSE:
-    * Apache License 2.0
-  * HOMEPAGE:
-    * http://archive.apache.org/dist/harmony/
-
-This product contains a modified portion of 'jbzip2', a Java bzip2 compression
-and decompression library written by Matthew J. Francis. It can be obtained at:
-
-  * COPYRIGHT:
-    Copyright (c) 2010-2011 Matthew J. Francis and Contributors of the jbzip2 Project
-  * LICENSE:
-    * MIT License
-  * HOMEPAGE:
-    * https://code.google.com/p/jbzip2/
-
-This product contains a modified portion of 'libdivsufsort', a C API library to construct
-the suffix array and the Burrows-Wheeler transformed string for any input string of
-a constant-size alphabet written by Yuta Mori. It can be obtained at:
-
-  * COPYRIGHT:
-    Copyright (c) 2003-2008 Yuta Mori All Rights Reserved.
-  * LICENSE:
-    * MIT License
-  * HOMEPAGE:
-    * https://github.com/y-256/libdivsufsort
-
-This product contains a modified portion of Nitsan Wakart's 'JCTools', Java Concurrency Tools for the JVM,
- which can be obtained at:
-
-  * LICENSE:
-    * Apache License 2.0
-  * HOMEPAGE:
-    * https://github.com/JCTools/JCTools
-
-This product contains a modified portion of and optionally depends on 'Protocol Buffers', Google's data
-interchange format, which can be obtained at:
-
-  * COPYRIGHT:
-    Copyright 2013 Google Inc.  All rights reserved.
-    Code generated by the Protocol Buffer compiler is owned by the owner
-    of the input file used when generating it.  This code is not
-    standalone and requires a support library to be linked with it.  This
-    support library is itself covered by the above license.
-  * LICENSE:
-    * New BSD License
-  * HOMEPAGE:
-    * https://github.com/google/protobuf
-
---------------------------------------------------------------------------------
-Public Domain
-
+    * license/LICENSE.jsr166y.txt (Public Domain)
 The person or persons who have associated work with this document (the
 "Dedicator" or "Certifier") hereby either (a) certifies that, to the best of
 his knowledge, the work of authorship identified is in the public domain of
@@ -3689,20 +3634,64 @@ freely reproduced, distributed, transmitted, used, modified, built upon, or
 otherwise exploited by anyone for any purpose, commercial or non-commercial,
 and in any way, including by methods that have not yet been invented or
 conceived.
---------------------------------------------------------------------------------
-BSD License
-http://www.opensource.org/licenses/bsd-license
+  * HOMEPAGE:
+    * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/
+    * http://viewvc.jboss.org/cgi-bin/viewvc.cgi/jbosscache/experimental/jsr166/
 
-Redistribution and use in source and binary forms, with or 
-without modification, are permitted provided that the 
+This product contains a modified version of Robert Harder's Public Domain
+Base64 Encoder and Decoder, which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.base64.txt (Public Domain)
+The person or persons who have associated work with this document (the
+"Dedicator" or "Certifier") hereby either (a) certifies that, to the best of
+his knowledge, the work of authorship identified is in the public domain of
+the country from which the work is published, or (b) hereby dedicates whatever
+copyright the dedicators holds in the work of authorship identified below (the
+"Work") to the public domain. A certifier, moreover, dedicates any copyright
+interest he may have in the associated work, and for these purposes, is
+described as a "dedicator" below.
+
+A certifier has taken reasonable steps to verify the copyright status of this
+work. Certifier recognizes that his good faith efforts may not shield him from
+liability if in fact the work certified is not in the public domain.
+
+Dedicator makes this dedication for the benefit of the public at large and to
+the detriment of the Dedicator's heirs and successors. Dedicator intends this
+dedication to be an overt act of relinquishment in perpetuity of all present
+and future rights under copyright law, whether vested or contingent, in the
+Work. Dedicator understands that such relinquishment of all rights includes
+the relinquishment of all rights to enforce (by lawsuit or otherwise) those
+copyrights in the Work.
+
+Dedicator recognizes that, once placed in the public domain, the Work may be
+freely reproduced, distributed, transmitted, used, modified, built upon, or
+otherwise exploited by anyone for any purpose, commercial or non-commercial,
+and in any way, including by methods that have not yet been invented or
+conceived.
+  * HOMEPAGE:
+    * http://iharder.sourceforge.net/current/java/base64/
+
+This product contains a modified portion of 'Webbit', an event based
+WebSocket and HTTP server, which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.webbit.txt (BSD License)
+(BSD License: https://www.opensource.org/licenses/bsd-license)
+
+Copyright (c) 2011, Joe Walnes, Aslak Hellesøy and contributors
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the
 following conditions are met:
 
-* Redistributions of source code must retain the above 
-  copyright notice, this list of conditions and the 
+* Redistributions of source code must retain the above
+  copyright notice, this list of conditions and the
   following disclaimer.
 
 * Redistributions in binary form must reproduce the above
-  copyright notice, this list of conditions and the 
+  copyright notice, this list of conditions and the
   following disclaimer in the documentation and/or other
   materials provided with the distribution.
 
@@ -3711,22 +3700,245 @@ following conditions are met:
   derived from this software without specific prior written
   permission.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, 
-INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR 
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE 
-GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR 
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
 BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT 
-OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
---------------------------------------------------------------------------------
-New BSD License
+  * HOMEPAGE:
+    * https://github.com/joewalnes/webbit
+
+This product contains a modified portion of 'SLF4J', a simple logging
+facade for Java, which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.slf4j.txt (MIT License)
+/*
+ * Copyright (c) 2004-2007 QOS.ch
+ * All rights reserved.
+ *
+ * Permission is hereby granted, free  of charge, to any person obtaining
+ * a  copy  of this  software  and  associated  documentation files  (the
+ * "Software"), to  deal in  the Software without  restriction, including
+ * without limitation  the rights to  use, copy, modify,  merge, publish,
+ * distribute,  sublicense, and/or sell  copies of  the Software,  and to
+ * permit persons to whom the Software  is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The  above  copyright  notice  and  this permission  notice  shall  be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
+ * EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
+ * MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+  * HOMEPAGE:
+    * https://www.slf4j.org/
+
+This product contains a modified portion of 'Apache Harmony', an open source
+Java SE, which can be obtained at:
+
+  * NOTICE:
+    * license/NOTICE.harmony.txt
+Apache Harmony
+
+Copyright 2006, 2010 The Apache Software Foundation.
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+  * LICENSE:
+    * license/LICENSE.harmony.txt (Apache License 2.0)
+
+  * HOMEPAGE:
+    * https://archive.apache.org/dist/harmony/
+
+This product contains a modified portion of 'jbzip2', a Java bzip2 compression
+and decompression library written by Matthew J. Francis. It can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.jbzip2.txt (MIT License)
+Copyright (c) 2010-2011 Matthew J. Francis and Contributors of the jbzip2 Project
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+  * HOMEPAGE:
+    * https://code.google.com/p/jbzip2/
+
+This product contains a modified portion of 'libdivsufsort', a C API library to construct
+the suffix array and the Burrows-Wheeler transformed string for any input string of
+a constant-size alphabet written by Yuta Mori. It can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.libdivsufsort.txt (MIT License)
+Copyright (c) 2003-2008 Yuta Mori All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+  * HOMEPAGE:
+    * https://github.com/y-256/libdivsufsort
+
+This product contains a modified portion of Nitsan Wakart's 'JCTools', Java Concurrency Tools for the JVM,
+ which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.jctools.txt (ASL2 License)
+  * HOMEPAGE:
+    * https://github.com/JCTools/JCTools
+
+This product optionally depends on 'JZlib', a re-implementation of zlib in
+pure Java, which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.jzlib.txt (BSD style License)
+Copyright (c) 2000,2001,2002,2003,2004 ymnk, JCraft,Inc. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in
+     the documentation and/or other materials provided with the distribution.
+
+  3. The names of the authors may not be used to endorse or promote products
+     derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL JCRAFT,
+INC. OR ANY CONTRIBUTORS TO THIS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  * HOMEPAGE:
+    * http://www.jcraft.com/jzlib/
+
+This product optionally depends on 'Compress-LZF', a Java library for encoding and
+decoding data in LZF format, written by Tatu Saloranta. It can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.compress-lzf.txt (Apache License 2.0)
+Copyright 2009-2010 Ning, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+  * HOMEPAGE:
+    * https://github.com/ning/compress
+
+This product optionally depends on 'lz4', a LZ4 Java compression
+and decompression library written by Adrien Grand. It can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.lz4.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * https://github.com/jpountz/lz4-java
+
+This product optionally depends on 'lzma-java', a LZMA Java compression
+and decompression library, which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.lzma-java.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * https://github.com/jponge/lzma-java
+
+This product contains a modified portion of 'jfastlz', a Java port of FastLZ compression
+and decompression library written by William Kinney. It can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.jfastlz.txt (MIT License)
+The MIT License
+
+Copyright (c) 2009 William Kinney
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+  * HOMEPAGE:
+    * https://code.google.com/p/jfastlz/
+
+This product contains a modified portion of and optionally depends on 'Protocol Buffers', Google's data
+interchange format, which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.protobuf.txt (New BSD License)
+Protocol Buffers - Google's data interchange format
+Copyright 2013 Google Inc.  All rights reserved.
+https://developers.google.com/protocol-buffers/
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -3753,8 +3965,111 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
---------------------------------------------------------------------------------
-MIT License
+
+Code generated by the Protocol Buffer compiler is owned by the owner
+of the input file used when generating it.  This code is not
+standalone and requires a support library to be linked with it.  This
+support library is itself covered by the above license.
+  * HOMEPAGE:
+    * https://github.com/google/protobuf
+
+This product optionally depends on 'Snappy', a compression library produced
+by Google Inc, which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.snappy.txt (New BSD License)
+Copyright 2011, Google Inc.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+* Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+* Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  * HOMEPAGE:
+    * https://github.com/google/snappy
+
+This product optionally depends on 'JBoss Marshalling', an alternative Java
+serialization API, which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.jboss-marshalling.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * https://github.com/jboss-remoting/jboss-marshalling
+
+This product optionally depends on 'Apache Commons Logging', a logging
+framework, which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.commons-logging.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * https://commons.apache.org/logging/
+
+This product optionally depends on 'Apache Log4J', a logging framework, which
+can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.log4j.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * https://logging.apache.org/log4j/
+
+This product optionally depends on 'Aalto XML', an ultra-high performance
+non-blocking XML processor, which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.aalto-xml.txt (Apache License 2.0)
+This copy of Aalto XML processor is licensed under the
+Apache (Software) License, version 2.0 ("the License").
+See the License for details about distribution rights, and the
+specific rights regarding derivate works.
+
+You may obtain a copy of the License at:
+
+https://www.apache.org/licenses/
+
+A copy is also included with both the the downloadable source code package
+and jar that contains class bytecodes, as file "ASL 2.0". In both cases,
+that file should be located next to this file: in source distribution
+the location should be "release-notes/asl"; and in jar "META-INF/"
+  * HOMEPAGE:
+    * http://wiki.fasterxml.com/AaltoHome
+
+This product contains a modified version of 'HPACK', a Java implementation of
+the HTTP/2 HPACK algorithm written by Twitter. It can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.hpack.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * https://github.com/twitter/hpack
+
+This product contains a modified version of 'HPACK', a Java implementation of
+the HTTP/2 HPACK algorithm written by Cory Benfield. It can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.hyper-hpack.txt (MIT License)
+The MIT License (MIT)
+
+Copyright (c) 2014 Cory Benfield
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -3773,10 +4088,47 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
---------------------------------------------------------------------------------
-License Identifier: Apache-2.0
---------------------------------------------------------------------------------
+  * HOMEPAGE:
+    * https://github.com/python-hyper/hpack/
 
+This product contains a modified version of 'HPACK', a Java implementation of
+the HTTP/2 HPACK algorithm written by Tatsuhiro Tsujikawa. It can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.nghttp2-hpack.txt (MIT License)
+The MIT License
+
+Copyright (c) 2012, 2014, 2015, 2016 Tatsuhiro Tsujikawa
+Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  * HOMEPAGE:
+    * https://github.com/nghttp2/nghttp2/
+
+This product contains a modified portion of 'Apache Commons Lang', a Java library
+provides utilities for the java.lang API, which can be obtained at:
+
+  * LICENSE:
+    * license/LICENSE.commons-lang.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * https://commons.apache.org/proper/commons-lang/
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 opentracing-grpc 0.2.1 Opentracing.Io
@@ -3860,7 +4212,8 @@ The project maintains the following source code repositories:
 * https://github.com/eclipse-ee4j/jax-rpc-ri
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jakarta.json.bind:jakarta.json.bind-api 1.0.1
+Jakarta JSON Binding API (JSON-B) 1.0-1.0.2 Eclipse Foundation
+Eclipse Public License 2.0 + GPL v.2 with CPE
 Used by: [helidon-grpc-core, helidon-media-jsonb-server]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 1.  The follow files are available in source code form under the Eclipse Public License at:
@@ -3875,7 +4228,6 @@ Used by: [helidon-grpc-core, helidon-media-jsonb-server]
 3.  Any provisions of the Oracle license agreement that differ from the
     Eclipse Public License are offered by Oracle alone and not by any other party.
 _______________________________________________________________
-
 Jakarta JSON Binding API (JSON-B) (jakarta.json.bind:jakarta.json.bind-api)
   Copyright (c) 2015,2019 Oracle and/or its affiliates. All rights reserved.
   Copyright 2019 Eclipse Foundation. All Rights Reserved.
@@ -4198,56 +4550,43 @@ Jakarta JSON Processing API (JSON-P) (jakarta.json:jakarta.json-api)
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jakarta.persistence:jakarta.persistence-api 2.2.2
-Used by: [helidon-integrations-cdi-jpa-weld, helidon-integrations-cdi-jpa]
+Jakarta Persistence API (JPA API) 2.2.3 Eclipse Foundation
+Multiple Licenses
+Used by: [helidon-integrations-cdi-jpa, helidon-integrations-cdi-jpa-weld]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved. "
-This program and the accompanying materials are made available under the "
-terms of the Eclipse Distribution License v. 1.0, which is available at "
-http://www.eclipse.org/org/documents/edl-v10.php. "
-SPDX-License-Identifier: BSD-3-Clause "
+  Copyright (c) 2008,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright 2019 Eclipse Foundation. All rights reserved.
 
-# Notices for Jakarta Persistence
+Redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following
+conditions are met:
 
-This content is produced and maintained by the Jakarta Persistence
-project.
+- Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
 
-* Project home: https://projects.eclipse.org/projects/ee4j.jpa
+- Redistributions in binary form must reproduce the above
+  copyright notice, this list of conditions and the following
+  disclaimer in the documentation and/or other materials provided
+  with the distribution.
 
-## Trademarks
+- Neither the name of the Eclipse Foundation, Inc. nor the
+  names of its contributors may be used to endorse or promote
+  products derived from this software without specific prior
+  written permission.
 
- Jakarta Persistence is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0, or the Eclipse Distribution License v. 1.0
-which is available at http://www.eclipse.org/org/documents/edl-v10.php.
-
-SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
-
-## Source Code
-
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jpa-api
-
-## Cryptography
-
-Content may contain encryption software. The country in which you are currently
-may have restrictions on the import, possession, and use, and/or re-export to
-another country, of encryption software. BEFORE using any encryption software,
-please check the country's laws, regulations and policies concerning the import,
-possession, or use, and re-export of encryption software, to see if this is
-permitted.
-
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 org.eclipse:yasson 1.0.8

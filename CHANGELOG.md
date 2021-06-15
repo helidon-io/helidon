@@ -7,12 +7,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [1.4.9-SNAPSHOT]
 
-This is a bug fix release of Helidon. It contains fixes and a number of dependency upgrades.
+This is a bug fix release of Helidon 1. It contains fixes and dependency upgrades.
 We recommend all Helidon 1.4 users upgrade to this release.
 
 ### Fixes
 
-- TBD
+- WebServer: Honor binding address (host) when binding multiple ports. [3111](https://github.com/oracle/helidon/pull/3111)
+- WebServer: Ignore path parameters while matching routes in 1.x [3102](https://github.com/oracle/helidon/pull/3102)
+- WebServer: Encode paths returned as part of 400 and 404 responses [3055](https://github.com/oracle/helidon/pull/3055)
+- Dependencies: Upgrade netty [3079](https://github.com/oracle/helidon/pull/3079)
+- Dependencies: Upgrade Jakarta dependencies to match what is in 2.x [3062](https://github.com/oracle/helidon/pull/3062)
+- Dependencies: Update to SmallRye OpenAPI 1.2.3 for 1.x [3081](https://github.com/oracle/helidon/pull/3081)
+- Dependencies: revert libthrift forced upgrade for jaeger-client [3053](https://github.com/oracle/helidon/pull/3053)
 
 ## [1.4.8]
 
