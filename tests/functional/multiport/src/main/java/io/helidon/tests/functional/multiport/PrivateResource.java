@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,26 +15,25 @@
  */
 package io.helidon.tests.functional.multiport;
 
-import io.helidon.microprofile.server.Server;
+import javax.enterprise.context.RequestScoped;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
 
 /**
- * Runs helidon on two ports - one for admin, one for business logic.
+ * Simple resource.
  */
-public final class Main {
-    private static Server server;
-
-    private Main() {
-    }
+@RequestScoped
+@Path("/private")
+public class PrivateResource {
 
     /**
-     * Run the MP application on multiple ports.
-     * @param args ignored
+     * Return a private worldly greeting message.
+     *
+     * @return {@link String}
      */
-    public static void main(String[] args) {
-        server = Server.create().start();
-    }
-
-    static Server server() {
-        return server;
+    @Path("/hello")
+    @GET
+    public String helloWorld() {
+        return "Private Hello World!!";
     }
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,18 +14,20 @@
 # limitations under the License.
 #
 server:
-  port: 7001
+  port: 0
   host: "localhost"
   sockets:
     health:
-      port: 8001
-      bind-address: "localhost"
+      port: 0
+      # bind address is optional, if not defined, server host/bind-address will be used)
     metrics:
-      port: 8002
+      port: 0
+      bind-address: "localhost"
+    private:
+      port: 0
       bind-address: "localhost"
     nothing:
-      port: 8003
-      bind-address: "localhost"
+      port: 0
 
 health:
   # endpoint will be exposed on this named route

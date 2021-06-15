@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,26 +15,22 @@
  */
 package io.helidon.tests.functional.multiport;
 
-import io.helidon.microprofile.server.Server;
+import java.util.Set;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.ws.rs.core.Application;
+
+import io.helidon.common.CollectionsHelper;
+import io.helidon.microprofile.server.RoutingName;
 
 /**
- * Runs helidon on two ports - one for admin, one for business logic.
+ * Application to expose private resource.
  */
-public final class Main {
-    private static Server server;
-
-    private Main() {
-    }
-
-    /**
-     * Run the MP application on multiple ports.
-     * @param args ignored
-     */
-    public static void main(String[] args) {
-        server = Server.create().start();
-    }
-
-    static Server server() {
-        return server;
+@ApplicationScoped
+@RoutingName("private")
+public class PrivateApplication extends Application {
+    @Override
+    public Set<Class<?>> getClasses() {
+        return CollectionsHelper.setOf(PrivateResource.class);
     }
 }

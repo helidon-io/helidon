@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.HashMap;
@@ -201,8 +202,14 @@ class NettyWebServer implements WebServer {
                     break;
                 }
 
+                InetAddress bindAddress = socketConfig.bindAddress();
+                if (bindAddress == null) {
+                    // fall back to the server bind address
+                    bindAddress = configuration.bindAddress();
+                }
+
                 try {
-                    bootstrap.bind(configuration.bindAddress(), port).addListener(channelFuture -> {
+                    bootstrap.bind(bindAddress, port).addListener(channelFuture -> {
                         if (!channelFuture.isSuccess()) {
                             LOGGER.info(() -> "Channel '" + name + "' startup failed with message '"
                                     + channelFuture.cause().getMessage() + "'.");
