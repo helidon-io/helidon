@@ -116,7 +116,7 @@ assert secrets.get("password")                   // <4>
 <4> ...and the key `password` to `^ery$ecretP&ssword`.
 
 Remember that your application can process the contents of a given file
-as configuration. See the <<config/02_config-sources.adoc,config sources>> section
+as configuration. See the <<se/config/02_config-sources.adoc,config sources>> section
 and the link:{javadoc-base-url-api}/ConfigSources.html#file-java.lang.String-[`ConfigSources.file`]
 JavaDoc.
 
@@ -491,7 +491,7 @@ before using it to construct a `Config` tree. The config system interprets the m
 as directions for how to build a config tree, rather than as the config data itself.
 
 ==== Loading Config from an Implicit Meta-configuration File [[Config-Advanced-Config-MetaConfig]]
-The <<config/01_introduction.adoc,introduction>> section shows how to use
+The <<se/config/01_introduction.adoc,introduction>> section shows how to use
 `Config.create()` to load config from one of several possible default config files.
 That same method also searches for one of several possible default meta-config files
 from which to load config sources to be used for the default config.
@@ -538,7 +538,7 @@ Config config = MetaConfig.config(metaConfig); // <2>
 all the actual sources declared in the meta-configuration.
 
 == Configuration Key
-As described in the <<config/03_hierarchical-features.adoc#accessByKey,hierarchical features
+As described in the <<se/config/03_hierarchical-features.adoc#accessByKey,hierarchical features
 section>> each config node (except the root) has a non-null key. Here is the formal
 definition of what keys can be:
 [source,abnf]
@@ -614,8 +614,8 @@ before returning the value, according to _filters_, _overrides_, and
 _tokens_. The config system provides some built-in instances of these
 you can use, and you can add your own as described in the
 sections which describe
-<<config/07_extensions.adoc#Config-SPI-ConfigFilter,filters>> and
-<<config/07_extensions.adoc#Config-SPI-OverrideSource,overrides>>.
+<<se/config/07_extensions.adoc#Config-SPI-ConfigFilter,filters>> and
+<<se/config/07_extensions.adoc#Config-SPI-OverrideSource,overrides>>.
 
 Your application can add filters and overrides explicitly to a config builder
 and the config system by default uses the Java service loader mechanism to

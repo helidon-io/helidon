@@ -99,7 +99,7 @@ that source. This is called _polling_ in the Helidon API but specific change det
 algorithms might not use actual polling. You choose a specific
 link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`] for each
 config source you want to monitor. See the section on 
-<<config/07_extensions.adoc#Config-SPI-PollingStrategy,polling strategies>> in the
+<<se/config/07_extensions.adoc#Config-SPI-PollingStrategy,polling strategies>> in the
 config extensions doc page for more information.
 
 The config system provides some built-in polling strategies, exposed as these methods
