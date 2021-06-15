@@ -49,13 +49,14 @@ import static org.hamcrest.Matchers.is;
 public class BackpressureTest {
 
     private static final Logger LOGGER = Logger.getLogger(BackpressureTest.class.getName());
-    static final long TIMEOUT_SEC = 30;
+    static final long TIMEOUT_SEC = 40;
+    // 5 MB buffer size should be enough to cause incomplete write in Netty
+    static final int BUFFER_SIZE = 5 * 1024 * 1024;
 
     @Test
     void overloadEventLoopWithIoMulti() {
         Multi<DataChunk> pub = IoMulti.multiFromStreamBuilder(randomEndlessIs())
-                // 10 MB buffer size should be enough to cause incomplete write in Netty 
-                .byteBufferSize(10 * 1024 * 1024)
+                .byteBufferSize(BUFFER_SIZE)
                 .build()
                 .map(byteBuffer -> DataChunk.create(true, byteBuffer));
         overloadEventLoop(pub);
@@ -73,8 +74,7 @@ public class BackpressureTest {
             @Override
             public DataChunk next() {
                 try {
-                    // 10 MB buffer size should be enough to cause incomplete write in Netty
-                    return DataChunk.create(true, false, ByteBuffer.wrap(inputStream.readNBytes(10 * 1024 * 1024)));
+                    return DataChunk.create(true, false, ByteBuffer.wrap(inputStream.readNBytes(BUFFER_SIZE)));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
