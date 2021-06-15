@@ -49,8 +49,21 @@ final class MetaConfigFinder {
      * @see #CONFIG_PROFILE_ENVIRONMENT_VARIABLE
      */
     public static final String CONFIG_PROFILE_SYSTEM_PROPERTY = "config.profile";
+
+    /**
+     * System property used to set a configuration profile. This profile is then used to discover
+     * meta configuration named {@code config-profile-${config.profile}.xxx"}.
+     * This property is Helidon specific (in case the {@link #CONFIG_PROFILE_SYSTEM_PROPERTY} is
+     * in use by another component).
+     *
+     * @see #CONFIG_PROFILE_ENVIRONMENT_VARIABLE
+     * @see #CONFIG_PROFILE_SYSTEM_PROPERTY
+     */
+    public static final String HELIDON_CONFIG_PROFILE_SYSTEM_PROPERTY = "helidon.config.profile";
+
     /**
      * Environment variable used to set a configuration profile.
+     * Environment variable is the most significant.
      *
      * @see #CONFIG_PROFILE_SYSTEM_PROPERTY
      */
@@ -86,9 +99,12 @@ final class MetaConfigFinder {
         // check if meta configuration is configured using system property
         String metaConfigFile = System.getProperty(META_CONFIG_SYSTEM_PROPERTY);
         // check name of the profile
-        String profileName = System.getProperty(CONFIG_PROFILE_SYSTEM_PROPERTY);
+        String profileName = System.getenv(CONFIG_PROFILE_ENVIRONMENT_VARIABLE);
         if (profileName == null) {
-            profileName = System.getenv(CONFIG_PROFILE_ENVIRONMENT_VARIABLE);
+            profileName = System.getProperty(HELIDON_CONFIG_PROFILE_SYSTEM_PROPERTY);
+        }
+        if (profileName == null) {
+            profileName = System.getProperty(CONFIG_PROFILE_SYSTEM_PROPERTY);
         }
 
         if (metaConfigFile != null && profileName != null) {
