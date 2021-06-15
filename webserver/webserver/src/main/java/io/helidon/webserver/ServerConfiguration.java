@@ -550,7 +550,8 @@ public interface ServerConfiguration extends SocketConfiguration {
 
             config.get("port").asInt().ifPresent(soConfigBuilder::port);
             // we use `host` in every MP example and it should be supported in SE as well
-            config.get("host").asString()
+            config.get("host")
+                    .asString()
                     .map(this::string2InetAddress)
                     .ifPresent(soConfigBuilder::bindAddress);
             config.get("bind-address")
