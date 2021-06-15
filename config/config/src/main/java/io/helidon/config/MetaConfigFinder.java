@@ -38,6 +38,8 @@ import io.helidon.config.spi.ConfigSource;
 final class MetaConfigFinder {
     /**
      * System property used to set a file with meta configuration.
+     * This can also be used in combination with {@link #CONFIG_PROFILE_SYSTEM_PROPERTY}
+     * to define a custom location of profile specific files.
      */
     public static final String META_CONFIG_SYSTEM_PROPERTY = "io.helidon.config.meta-config";
     /**
@@ -82,29 +84,55 @@ final class MetaConfigFinder {
         Optional<ConfigSource> source;
 
         // check if meta configuration is configured using system property
-        String property = System.getProperty(META_CONFIG_SYSTEM_PROPERTY);
-        if (property == null) {
-            // look for a profile name, if meta configuration file is not defined
-            String profileName = System.getProperty(CONFIG_PROFILE_SYSTEM_PROPERTY);
-            if (profileName == null) {
-                profileName = System.getenv(CONFIG_PROFILE_ENVIRONMENT_VARIABLE);
+        String metaConfigFile = System.getProperty(META_CONFIG_SYSTEM_PROPERTY);
+        // check name of the profile
+        String profileName = System.getProperty(CONFIG_PROFILE_SYSTEM_PROPERTY);
+        if (profileName == null) {
+            profileName = System.getenv(CONFIG_PROFILE_ENVIRONMENT_VARIABLE);
+        }
+
+        if (metaConfigFile != null && profileName != null) {
+            // we have both profile name and meta configuration file defined
+            // this means we want to have a custom profile file (maybe a custom location) combined with a profile
+            int lastDot = metaConfigFile.lastIndexOf('.');
+            String metaWithProfile;
+            if (lastDot == 0) {
+                // .configuration -> dev.configuration
+                metaWithProfile = profileName + metaConfigFile.substring(lastDot);
+            } else if (lastDot > 0) {
+                // config/profile/profile.yaml -> config/profile/profile-dev.yaml
+                metaWithProfile = metaConfigFile.substring(0, lastDot) + "-" + profileName + metaConfigFile.substring(lastDot);
+            } else {
+                // config/configuration -> config/configuration-dev
+                metaWithProfile = metaConfigFile + "-" + profileName;
             }
+            source = findFile(metaWithProfile, "config profile");
+            if (source.isPresent()) {
+                return source;
+            }
+            source = findClasspath(cl, metaWithProfile, "config profile");
+            if (source.isPresent()) {
+                return source;
+            }
+            LOGGER.info("Custom profile file not found: " + metaWithProfile);
+        }
+        if (metaConfigFile == null) {
             if (profileName != null) {
                 return Optional.of(profileSource(supportedMediaType, cl, profileName, supportedSuffixes));
             }
         } else {
             // is it a file
-            source = findFile(property, "meta configuration");
+            source = findFile(metaConfigFile, "meta configuration");
             if (source.isPresent()) {
                 return source;
             }
             // so it is a classpath resource?
-            source = findClasspath(cl, property, "meta configuration");
+            source = findClasspath(cl, metaConfigFile, "meta configuration");
             if (source.isPresent()) {
                 return source;
             }
 
-            LOGGER.info("Meta configuration file not found: " + property);
+            LOGGER.info("Meta configuration file not found: " + metaConfigFile);
         }
 
         return findSource(supportedMediaType, cl, META_CONFIG_PREFIX, "meta configuration", supportedSuffixes)
