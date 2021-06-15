@@ -1,0 +1,302 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
+
+= Configuration Profiles
+:h1Prefix: SE
+:description: Helidon config profiles
+:keywords: helidon, config, profile
+:toc: preamble
+:toclevels: 4
+
+Configuration profiles provide a capability to prepare structure of configuration for each
+environment in advance, and then simply switch between these structures using a system property
+or an environment variable.
+
+== Profile options
+To choose a configuration profile to use at runtime, you can use:
+
+1. A system property `config.profile`
+2. An environment variable `HELIDON_CONFIG_PROFILE`
+
+There are two options how to define a profile configuration:
+
+1. Use a config source with a <<#Profile-Source,profile specific name>>
+2. Use a <<#Profile-File,profile file>> defining all configuration sources
+
+Configuration profiles can only be used when config is created using the `Config.create()` method without parameters. If you explicitly configure sources, profiles are ignored.
+
+== Profile Config Sources [[Profile-Source]]
+
+In case a profile is specified, config will load the profile specific default configuration source
+before the "main" source.
+
+Let's consider the selected profile is `dev`, and we have `yaml` configuration support on classpath;
+config will look for the following sources (in this order):
+
+1. `application-dev.yaml` on file system
+2. `application-dev.properties` on file system
+3. `application-dev.yaml` on classpath
+4. `application-dev.properties` on classpath
+5. `application.yaml` on file system
+6. `application.properties` on file system
+7. `application.yaml` on classpath
+8. `application.properties` on classpath
+
+== Profile Files [[Profile-File]]
+
+In case a profile is specified, config will look for a profile specific "meta configuration".
+
+Let's consider the selected profile is `dev`, and we have `yaml` configuration support on classpath;
+config will look for the following profiles (in this order):
+
+1. `config-profile-dev.yaml` on file system
+2. `config-profile-dev.properties` on file system
+3. `config-profile-dev.yaml` on classpath
+4. `config-profile-dev.properties` on classpath
+
+If any of these files is discovered, it would be used to set up the configuration. In case none is found,
+ the config falls back to <<#Profile Config Sources,profile specific config sources>>.
+
+The structure of the file is described below in <<#Profile File Format,profile file format>>.
+
+An example development profile using "inlined" configuration:
+[source,yaml]
+.Config profile `config-profile-dev.yaml`
+----
+sources:
+  - type: "inlined"
+    properties:
+      app.greeting: "Hello World"
+----
+
+An example of a profile using environment variables, system properties, classpath, and file configuration:
+[source,yaml]
+.Config profile `config-profile-prod.yaml`
+----
+sources:
+  - type: "environment-variables"
+  - type: "system-properties"
+  - type: "file"
+    properties:
+      path: "config/config-prod.yaml"
+  - type: "classpath"
+    properties:
+      resource: "application.yaml"
+----
+
+=== Profile File Format [[Config-Profile-Format]]
+Configuration profile provides similar options to the configuration builder.
+The profile file must contain at least the list of sources to use to load configuration from.
+
+The root `sources` property contains an array (ordered) of objects defining each config source to
+be used.
+Each element of the array must contain at least the `type` property, determining the
+config source type (such as `system-properties`, `file`). It may also contain a `properties`
+property with additional configuration of the config source.
+
+==== Built-in Types
+The config system supports these built-in types:
+
+.Built-in Types
+|===
+|Type |Use |Related `ConfigSources` Method |Required Properties
+
+|`system-properties` |System properties are a config source |`ConfigSources.systemProperties()` | n/a
+|`environment-variables` |Environment variables are a config source |`ConfigSources.environmentVariables()` | n/a
+|`classpath` |Specified resource is used as a config source |`ConfigSources.classpath(String)` | `resource` - path to the resource to load
+|`file` |Specified file is used as a config source |`ConfigSources.file(Path)` |`path` - path to the file to load
+|`directory` |Each file in directory used as config entry, with key = file name and value = file contents |`ConfigSources.directory(String)` |`path` - path to the directory to use
+|`url` |Specified URL is read as a config source |`ConfigSources.url(URL)` | `url` - URL from which to load the config
+|`inlined` |The whole configuration tree under `properties` is added as a configuration source (excluding the `properties` node) |n/a |n/a
+|`prefixed` |Associated config source is loaded with the specified prefix |`ConfigSources.prefixed(String,Supplier)` a|* `key` - key of config element in associated source to load
+* `type` - associated config source specification
+* `properties` - as needed to further qualify the associated config source
+|===
+
+Except for the `system-properties` and `environment-variables` types, the profile
+`properties` section for a source can also specify any optional settings for the
+corresponding config source type. The JavaDoc for the related config source
+type builders lists the supported properties for each type. (For example,
+link:{javadoc-base-url-api}/internal/FileConfigSource.FileBuilder.html[`FileConfigSource.FileBuilder`].)
+
+Here is example profile in YAML format. Note how the `properties` sections
+are at the same level as the `type` or `class` within a `sources` array entry.
+
+[source,yaml]
+.Profile `config-profile.yaml` illustrating all built-in sources available on the classpath
+----
+caching.enabled: false
+sources:
+  - type: "system-properties"
+  - type: "environment-variables"
+  - type: "directory"
+    properties:
+      path: "conf/secrets"
+      media-type-mapping:
+        yaml: "application/x-yaml"
+        password: "application/base64"
+      polling-strategy:
+        type: "regular"
+        properties:
+          interval: "PT15S"
+  - type: "url"
+    properties:
+      url: "http://config-service/my-config"
+      media-type: "application/hocon"
+      optional: true
+      retry-policy:
+        type: "repeat"
+        properties:
+          retries: 3
+  - type: "file"
+    properties:
+      optional: true
+      path: "conf/env.yaml"
+      change-watcher:
+        type: "file"
+        properties:
+          delay-millis: 5000
+  - type: "prefixed"
+    properties:
+      key: "app"
+      type: "classpath"
+      properties:
+        resource: "app.conf"
+  - type: "classpath"
+    properties:
+      resource: "application.conf"
+----
+
+Note that the example shows how your profile can configure optional features such as polling
+strategies and retry policies for config sources.
+
+==== Support for Custom Sources
+Profiles can be used to set up custom config sources as well as the built-in ones described above.
+
+Implement the `ConfigSourceProvider`
+[source,java]
+----
+public class MyConfigSourceProvider implements ConfigSourceProvider {
+    private static final String TYPE = "my-type";
+
+    @Override
+    public boolean supports(String type) {
+        return TYPE.equals(type);
+    }
+
+    @Override
+    public ConfigSource create(String type, Config metaConfig) {
+        // as we only support one in this implementation, we can just return it
+        return MyConfigSource.create(metaConfig);
+    }
+
+    @Override
+    public Set<String> supported() {
+        return Collections.singleton(TYPE);
+    }
+}
+----
+
+Register it as a java service loader service
+[source]
+.File `META-INF/services/io.helidon.config.spi.ConfigSourceProvider`
+----
+io.helidon.examples.MyConfigSourceProvider
+----
+
+And in `module-info.java` if using JPMS:
+[source,java]
+.File `module-info.java`
+----
+provides io.helidon.config.spi.ConfigSourceProvider with io.helidon.examples.MyConfigSourceProvider
+----
+
+Now you can use the following profile:
+[source,yaml]
+----
+sources:
+  - type: "system-properties"
+  - type: "environment-variables"
+  - type: "my-type"
+    properties:
+        my-property: "some-value"
+----
+
+Note that it is the `io.helidon.config.AbstractConfigSource` class that provides support for
+polling strategies, change watchers, and retry policies. If you create custom config sources that
+should also offer this support be sure they extend `AbstractConfigSource` and implement appropriate
+SPI interfaces (such as `io.helidon.config.spi.WatchableSource`) to support such features.
+
+==== Support for Custom Polling Strategies, Change Watchers, and Retry Policies
+
+Your config profile can include the set-up for polling strategies, change watchers, and retry
+policies if the config source supports them. Declare them in a way similar to
+how you declare the config sources themselves: by `type` and with
+accompanying `properties`.
+
+.Config Profile Support for Built-in Polling Strategies
+|===
+|Strategy Type |Usage |Properties
+
+|`regular`
+| Periodic polling - See link:{javadoc-base-url-api}/PollingStrategies.html#regular-java.time.Duration-[`PollingStrategies.regular`] method
+|`interval` (`Duration`) - indicating how often to poll; e.g., `PT15S` represents 15 seconds
+
+|===
+
+.Config Profile Support for Built-in Change Watchers
+|===
+|Type |Usage |Properties
+
+|`file`
+| Filesystem monitoring - See link:{javadoc-base-url-api}/PollingStrategies.html#watch-java.nio.file.Path-[`PollingStrategies.watch`] method
+| `initial-delay-millis` - delay between the start of the watcher and first check for changes
+
+|===
+
+.Config Profile Support for Built-in Retry Policies
+|===
+|Policy Type |Usage |Properties
+
+|`repeat`
+|Regularly-scheduled - see link:{javadoc-base-url-api}RetryPolicies.html#repeat-int-[`RetryPolicies.repeat`].
+a|`retries` (`int`) - number of retries to perform +
+
+Optional:
+
+* `delay` (`Duration`) - initial delay between retries
+* `delay-factor` (`double`) - `delay` is repeatedly multiplied by this each retry to compute
+the delay for each successive retry
+* `call-timeout` (`Duration`) - timeout for a single invocation to load the source
+* `overall-timeout` (`Duration`) - total timeout for all retry calls and delays
+|===
+
+To specify a custom polling strategy or custom retry policy, implement the interface
+and then implement the `io.helidon.config.spi.PollingStrategyProvider`,
+`io.helidon.config.spi.ChangeWatcherProvider`, or
+`io.helidon.config.spi.RetryPolicyProvider` to enable your custom implementations for
+profiles.
+You can then use any custom properties - these are provided as a `Config` instance to
+the `create` method of the Provider implementation.
+
+See link:{javadoc-base-url-api}/spi/RetryPolicy.html[`RetryPolicy`],
+link:{javadoc-base-url-api}/spi/RetryPolicy.html[`ChangeWatcher`], and
+link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`] JavaDoc
+sections.
