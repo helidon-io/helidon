@@ -16,15 +16,25 @@
 
 package io.helidon.microprofile.rsocket.cdi;
 
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.rsocket.FireAndForgetHandler;
+import io.helidon.webserver.rsocket.RSocketEndpoint;
 import io.helidon.webserver.rsocket.RSocketSupport;
+import io.helidon.webserver.rsocket.RequestChannelHandler;
+import io.helidon.webserver.rsocket.RequestResponseHandler;
+import io.helidon.webserver.rsocket.RequestStreamHandler;
+import io.helidon.webserver.rsocket.server.RSocketRouting;
+import io.rsocket.Payload;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
@@ -102,13 +112,74 @@ public class RSocketCdiExtension implements Extension {
         LOGGER.info("Methods:");
         List<Method> methods = endpoint.getAnnotatedType().getMethods().stream().map(AnnotatedMethod::getJavaMember).collect(Collectors.toList());
 
-        for (Method method:methods){
-            LOGGER.info("Method: "+method.getName());
+        RSocketRouting.Builder rSocketRoutingBuilder = RSocketRouting.builder();
+
+
+        for (Method method : methods) {
+            LOGGER.info("Method: " + method.getName());
             LOGGER.info("Has the following annotations");
-            for (Annotation annotation:method.getAnnotations()){
-                LOGGER.info(" - "+annotation.toString());
+            for (Annotation annotation : method.getAnnotations()) {
+                LOGGER.info(" - " + annotation.toString());
+
+                if (annotation.annotationType().equals(FireAndForget.class)) {
+                    rSocketRoutingBuilder.fireAndForget(
+                            payload -> {
+                                try {
+                                    return (Single<Void>) method.invoke(payload);
+                                } catch (IllegalAccessException e) {
+                                    e.printStackTrace();
+                                } catch (InvocationTargetException e) {
+                                    e.printStackTrace();
+                                }
+                                return Single.empty();
+                            });
+                } else if (annotation.annotationType().equals(RequestChannel.class)) {
+                    rSocketRoutingBuilder.requestChannel(payloads -> {
+                        try {
+                            return (Multi<Payload>) method.invoke(payloads);
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        } catch (InvocationTargetException e) {
+                            e.printStackTrace();
+                        }
+                        return Multi.empty();
+                    });
+                } else if (annotation.annotationType().equals(RequestResponse.class)) {
+                    rSocketRoutingBuilder.requestResponse(payload -> {
+                        try {
+                            return (Single<Payload>) method.invoke(payload);
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        } catch (InvocationTargetException e) {
+                            e.printStackTrace();
+                        }
+                        return Single.empty();
+                    });
+                } else if (annotation.annotationType().equals(RequestStream.class)){
+                    rSocketRoutingBuilder.requestStream(payload -> {
+                        try {
+                            return (Multi<Payload>) method.invoke(payload);
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        } catch (InvocationTargetException e) {
+                            e.printStackTrace();
+                        }
+                        return Multi.empty();
+                    });
+                }
             }
         }
+
+        RSocketRouting rSocketRouting = rSocketRoutingBuilder.build();
+
+        LOGGER.info("ROUTING: "+rSocketRouting.toString());
+
+        ServerCdiExtension serverCdiExtension = CDI.current().getBeanManager().getExtension(ServerCdiExtension.class);
+        serverCdiExtension.serverRoutingBuilder().register("/rsocket",
+                RSocketSupport.builder()
+                        .register(RSocketEndpoint.create(rSocketRouting, "/board")
+                                .getEndPoint()
+                        ).build());
 
         appBuilder.annotatedEndpoint(endpoint.getAnnotatedType().getJavaClass());
     }

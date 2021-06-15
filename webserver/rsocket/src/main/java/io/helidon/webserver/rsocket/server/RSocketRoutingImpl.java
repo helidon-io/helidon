@@ -44,4 +44,14 @@ public class RSocketRoutingImpl implements RSocketRouting {
     public Map<String, RequestChannelHandler> getRequestChannelRoutes() {
         return requestChannelRoutes;
     }
+
+    @Override
+    public String toString() {
+        return "RSocketRoutingImpl{" +
+                "requestResponseRoutes=" + requestResponseRoutes +
+                ", fireAndForgetRoutes=" + fireAndForgetRoutes +
+                ", requestStreamRoutes=" + requestStreamRoutes +
+                ", requestChannelRoutes=" + requestChannelRoutes +
+                '}';
+    }
 }
