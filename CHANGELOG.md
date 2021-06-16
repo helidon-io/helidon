@@ -16,7 +16,7 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 Features from MP Config 2.0 that are backward compatible were added in this release:
 
 1. Configuration profiles were added. You can now define a configuration profile (such as `dev`) using configuration property `mp.config.profile`. If such is defined, config will load default properties `microprofile-config-${profile}.properties`, and it will look for properties prefixed with `%${profile}-` first.
-3. `OptionalInt`, `OptionalLong`, and `OptionalDouble` were added as supported types
+2. `OptionalInt`, `OptionalLong`, and `OptionalDouble` were added as supported types
 
 ### Compatibility
 
