@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.9-SNAPSHOT]
+## [1.4.9]
 
 This is a bug fix release of Helidon 1. It contains fixes and dependency upgrades.
 We recommend all Helidon 1.4 users upgrade to this release.
@@ -749,7 +749,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[1.4.9-SNAPSHOT]: https://github.com/oracle/helidon/compare/1.4.8..helidon-1.x
+[1.4.9]: https://github.com/oracle/helidon/compare/1.4.8..1.4.9
 [1.4.8]: https://github.com/oracle/helidon/compare/1.4.7..1.4.8
 [1.4.7]: https://github.com/oracle/helidon/compare/1.4.6..1.4.7
 [1.4.6]: https://github.com/oracle/helidon/compare/1.4.5..1.4.6
