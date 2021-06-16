@@ -69,37 +69,31 @@ public class RSocketCdiExtension implements Extension {
 
     private ServerCdiExtension serverCdiExtension;
 
-    private final RSocketApplication.Builder appBuilder = RSocketApplication.builder();
+    RSocketRouting.Builder rSocketRoutingBuilder = RSocketRouting.builder();
+
 
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         this.config = config;
     }
 
-    private void startServer(@Observes @Priority(PLATFORM_AFTER + 100) @Initialized(ApplicationScoped.class) Object event,
+    private void startServer(@Observes @Priority(PLATFORM_AFTER + 99) @Initialized(ApplicationScoped.class) Object event,
                              BeanManager beanManager) {
         serverCdiExtension = beanManager.getExtension(ServerCdiExtension.class);
         registerRSockets();
     }
 
-    /**
-     * Collect application class extending {@code ServerApplicationConfig}.
-     *
-     * @param applicationClass Application class.
-     */
-    private void applicationClass(@Observes ProcessAnnotatedType<? extends ServerApplicationConfig> applicationClass) {
-        LOGGER.finest(() -> "Application class found " + applicationClass.getAnnotatedType().getJavaClass());
-        appBuilder.applicationClass(applicationClass.getAnnotatedType().getJavaClass());
+    private void registerRSockets() {
+        RSocketRouting rSocketRouting = rSocketRoutingBuilder.build();
+
+        LOGGER.info("ROUTING: "+rSocketRouting.toString());
+
+        serverCdiExtension.serverRoutingBuilder().register("/rsocket",
+                RSocketSupport.builder()
+                        .register(RSocketEndpoint.create(rSocketRouting, "/board")
+                                .getEndPoint()
+                        ).build());
     }
 
-    /**
-     * Overrides a rsocket application class.
-     *
-     * @param applicationClass Application class.
-     */
-    public void applicationClass(Class<? extends ServerApplicationConfig> applicationClass) {
-        LOGGER.finest(() -> "Using manually set application class  " + applicationClass);
-        appBuilder.updateApplicationClass(applicationClass);
-    }
 
     /**
      * Collect annotated endpoints.
@@ -109,27 +103,23 @@ public class RSocketCdiExtension implements Extension {
     private void endpointClasses(@Observes @WithAnnotations(RSocket.class) ProcessAnnotatedType<?> endpoint) {
         LOGGER.info(() -> "Annotated endpoint found " + endpoint.getAnnotatedType().getJavaClass());
 
-        LOGGER.info("Methods:");
+        LOGGER.finest("Methods:");
         List<Method> methods = endpoint.getAnnotatedType().getMethods().stream().map(AnnotatedMethod::getJavaMember).collect(Collectors.toList());
-
-        RSocketRouting.Builder rSocketRoutingBuilder = RSocketRouting.builder();
 
 
         for (Method method : methods) {
-            LOGGER.info("Method: " + method.getName());
-            LOGGER.info("Has the following annotations");
+            LOGGER.finest("Method: " + method.getName());
+            LOGGER.finest("Has the following annotations");
             for (Annotation annotation : method.getAnnotations()) {
-                LOGGER.info(" - " + annotation.toString());
+                LOGGER.finest(" - " + annotation.toString());
 
                 if (annotation.annotationType().equals(FireAndForget.class)) {
                     rSocketRoutingBuilder.fireAndForget(
                             payload -> {
                                 try {
                                     return (Single<Void>) method.invoke(payload);
-                                } catch (IllegalAccessException e) {
-                                    e.printStackTrace();
-                                } catch (InvocationTargetException e) {
-                                    e.printStackTrace();
+                                } catch (IllegalAccessException | InvocationTargetException e) {
+                                    LOGGER.severe(e.toString());
                                 }
                                 return Single.empty();
                             });
@@ -137,10 +127,8 @@ public class RSocketCdiExtension implements Extension {
                     rSocketRoutingBuilder.requestChannel(payloads -> {
                         try {
                             return (Multi<Payload>) method.invoke(payloads);
-                        } catch (IllegalAccessException e) {
-                            e.printStackTrace();
-                        } catch (InvocationTargetException e) {
-                            e.printStackTrace();
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            LOGGER.severe(e.toString());
                         }
                         return Multi.empty();
                     });
@@ -148,137 +136,23 @@ public class RSocketCdiExtension implements Extension {
                     rSocketRoutingBuilder.requestResponse(payload -> {
                         try {
                             return (Single<Payload>) method.invoke(payload);
-                        } catch (IllegalAccessException e) {
-                            e.printStackTrace();
-                        } catch (InvocationTargetException e) {
-                            e.printStackTrace();
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            LOGGER.severe(e.toString());
                         }
                         return Single.empty();
                     });
-                } else if (annotation.annotationType().equals(RequestStream.class)){
+                } else if (annotation.annotationType().equals(RequestStream.class)) {
                     rSocketRoutingBuilder.requestStream(payload -> {
                         try {
                             return (Multi<Payload>) method.invoke(payload);
-                        } catch (IllegalAccessException e) {
-                            e.printStackTrace();
-                        } catch (InvocationTargetException e) {
-                            e.printStackTrace();
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            LOGGER.severe(e.toString());
                         }
                         return Multi.empty();
                     });
                 }
             }
         }
-
-        RSocketRouting rSocketRouting = rSocketRoutingBuilder.build();
-
-        LOGGER.info("ROUTING: "+rSocketRouting.toString());
-
-        ServerCdiExtension serverCdiExtension = CDI.current().getBeanManager().getExtension(ServerCdiExtension.class);
-        serverCdiExtension.serverRoutingBuilder().register("/rsocket",
-                RSocketSupport.builder()
-                        .register(RSocketEndpoint.create(rSocketRouting, "/board")
-                                .getEndPoint()
-                        ).build());
-
-        appBuilder.annotatedEndpoint(endpoint.getAnnotatedType().getJavaClass());
+        LOGGER.info("Endpoints discovery completed");
     }
-
-    /**
-     * Provides access to RSocket application.
-     *
-     * @return Application.
-     */
-    RSocketApplication toRSocketApplication() {
-        return appBuilder.build();
-    }
-
-    private void registerRSockets() {
-        try {
-            RSocketApplication app = toRSocketApplication();
-
-            // If application present call its methods
-            RSocketSupport.Builder builder = RSocketSupport.builder();
-            Optional<Class<? extends ServerApplicationConfig>> appClass = app.applicationClass();
-
-            Optional<String> contextRoot = appClass.flatMap(c -> findContextRoot(config, c));
-            Optional<String> namedRouting = appClass.flatMap(c -> findNamedRouting(config, c));
-            boolean routingNameRequired = appClass.map(c -> isNamedRoutingRequired(config, c)).orElse(false);
-
-            Routing.Builder routing;
-            if (appClass.isPresent()) {
-                Class<? extends ServerApplicationConfig> c = appClass.get();
-
-                // Attempt to instantiate via CDI
-                ServerApplicationConfig instance = null;
-                try {
-                    instance = CDI.current().select(c).get();
-                } catch (UnsatisfiedResolutionException e) {
-                    // falls through
-                }
-
-                // Otherwise, we create instance directly
-                if (instance == null) {
-                    try {
-                        instance = c.getDeclaredConstructor().newInstance();
-                    } catch (Exception e) {
-                        throw new RuntimeException("Unable to instantiate rsocket application " + c, e);
-                    }
-                }
-
-                // Call methods in application class
-                Set<ServerEndpointConfig> endpointConfigs = instance.getEndpointConfigs(app.programmaticEndpoints());
-                Set<Class<?>> endpointClasses = instance.getAnnotatedEndpointClasses(app.annotatedEndpoints());
-
-                // Register classes and configs
-                endpointClasses.forEach(builder::register);
-                endpointConfigs.forEach(builder::register);
-
-                // Create routing builder
-                routing = serverCdiExtension.routingBuilder(namedRouting, routingNameRequired, c.getName());
-            } else {
-                // Direct registration without calling application class
-                app.annotatedEndpoints().forEach(builder::register);
-                app.programmaticEndpoints().forEach(builder::register);
-
-                // Create routing builder
-                routing = serverCdiExtension.serverRoutingBuilder();
-            }
-
-            // Finally register RSockets in Helidon routing
-            String rootPath = contextRoot.orElse(DEFAULT_RSOCKET_PATH);
-            LOGGER.info("Registering RSocket application at " + rootPath);
-            routing.register(rootPath, new RSocketSupportMp(builder.build()));
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Unable to load RSocket extension", e);
-        }
-    }
-
-    private Optional<String> findContextRoot(Config config,
-                                             Class<? extends ServerApplicationConfig> applicationClass) {
-        return config.get(applicationClass.getName() + "." + RoutingPath.CONFIG_KEY_PATH)
-                .asString()
-                .or(() -> Optional.ofNullable(applicationClass.getAnnotation(RoutingPath.class))
-                        .map(RoutingPath::value))
-                .map(path -> path.startsWith("/") ? path : ("/" + path));
-    }
-
-    private Optional<String> findNamedRouting(Config config,
-                                              Class<? extends ServerApplicationConfig> applicationClass) {
-        return config.get(applicationClass.getName() + "." + RoutingName.CONFIG_KEY_NAME)
-                .asString()
-                .or(() -> Optional.ofNullable(applicationClass.getAnnotation(RoutingName.class))
-                        .map(RoutingName::value))
-                .flatMap(name -> RoutingName.DEFAULT_NAME.equals(name) ? Optional.empty() : Optional.of(name));
-    }
-
-    private boolean isNamedRoutingRequired(Config config,
-                                           Class<? extends ServerApplicationConfig> applicationClass) {
-        return config.get(applicationClass.getName() + "." + RoutingName.CONFIG_KEY_REQUIRED)
-                .asBoolean()
-                .or(() -> Optional.ofNullable(applicationClass.getAnnotation(RoutingName.class))
-                        .map(RoutingName::required))
-                .orElse(false);
-    }
-
 }
