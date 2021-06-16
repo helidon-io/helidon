@@ -24,7 +24,7 @@
     <parent>
         <artifactId>helidon-microprofile-jwt-project</artifactId>
         <groupId>io.helidon.microprofile.jwt</groupId>
-        <version>1.4.9-SNAPSHOT</version>
+        <version>1.4.10-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-microprofile-jwt-auth-cdi</artifactId>
