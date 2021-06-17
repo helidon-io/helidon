@@ -28,4 +28,5 @@ import java.lang.annotation.Target;
 @Documented
 @Inherited
 public @interface FireAndForget {
+    String route() default "";
 }
