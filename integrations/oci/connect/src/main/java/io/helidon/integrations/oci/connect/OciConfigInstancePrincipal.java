@@ -78,7 +78,7 @@ public class OciConfigInstancePrincipal implements OciConfigProvider {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
     private static final JsonWriterFactory JSON_WRITER_FACTORY = Json.createWriterFactory(Map.of());
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
-    private final static HashDigest HASH_DIGEST = HashDigest.create(HashDigest.ALGORITHM_SHA_256);
+    private static final HashDigest HASH_DIGEST = HashDigest.create(HashDigest.ALGORITHM_SHA_256);
 
     private final AtomicReference<OciSignatureData> currentSignatureData = new AtomicReference<>();
     private final String region;

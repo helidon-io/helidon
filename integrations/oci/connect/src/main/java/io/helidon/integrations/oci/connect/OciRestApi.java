@@ -51,7 +51,7 @@ import io.helidon.webclient.security.WebClientSecurity;
  */
 public class OciRestApi extends RestApiBase {
     private static final Logger LOGGER = Logger.getLogger(OciRestApi.class.getName());
-    private final static HashDigest HASH_DIGEST = HashDigest.create(HashDigest.ALGORITHM_SHA_256);
+    private static final HashDigest HASH_DIGEST = HashDigest.create(HashDigest.ALGORITHM_SHA_256);
 
     private final BiFunction<String, String, String> formatFunction;
     private final OciOutboundSecurityProvider outboundProvider;
