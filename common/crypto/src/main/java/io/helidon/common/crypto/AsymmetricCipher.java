@@ -106,16 +106,52 @@ public class AsymmetricCipher implements CommonCipher {
         return new Builder();
     }
 
+    /**
+     * Encrypt the message with the provided public key and selected algorithm.
+     *
+     * @param algorithm algorithm name
+     * @param provider algorithm provider
+     * @param publicKey public key used for encryption
+     * @param message message to be encrypted
+     * @return encrypted message
+     */
+    public static Base64Value encrypt(String algorithm, String provider, PublicKey publicKey, Base64Value message) {
+        Objects.requireNonNull(algorithm, "Algorithm for encryption cannot be null");
+        Objects.requireNonNull(publicKey, "Public key cannot be null");
+        Objects.requireNonNull(message, "Message cannot be null");
+        try {
+            return performCryptoOperation(Cipher.ENCRYPT_MODE, algorithm, provider, publicKey, message);
+        } catch (Exception e) {
+            throw new CryptoException("Message could not be encrypted", e);
+        }
+    }
+
+    /**
+     * Decrypt the message with the provided private key and selected algorithm.
+     *
+     * @param algorithm algorithm name
+     * @param provider algorithm provider
+     * @param privateKey private key used for decryption
+     * @param message message to be decrypted
+     * @return decrypted message
+     */
+    public static Base64Value decrypt(String algorithm, String provider, PrivateKey privateKey, Base64Value message) {
+        Objects.requireNonNull(algorithm, "Algorithm for decryption cannot be null");
+        Objects.requireNonNull(privateKey, "Private key cannot be null");
+        Objects.requireNonNull(message, "Message cannot be null");
+        try {
+            return performCryptoOperation(Cipher.DECRYPT_MODE, algorithm, provider, privateKey, message);
+        } catch (Exception e) {
+            throw new CryptoException("Message could not be decrypted", e);
+        }
+    }
+
     @Override
     public Base64Value encrypt(Base64Value message) {
         if (publicKey == null) {
             throw new CryptoException("No public key present. Could not perform encrypt operation");
         }
-        try {
-            return performCryptoOperation(Cipher.ENCRYPT_MODE, publicKey, message);
-        } catch (Exception e) {
-            throw new CryptoException("Message could not be encrypted", e);
-        }
+        return encrypt(algorithm, provider, publicKey, message);
     }
 
     @Override
@@ -123,14 +159,11 @@ public class AsymmetricCipher implements CommonCipher {
         if (privateKey == null) {
             throw new CryptoException("No private key present. Could not perform decryption operation");
         }
-        try {
-            return performCryptoOperation(Cipher.DECRYPT_MODE, privateKey, encrypted);
-        } catch (Exception e) {
-            throw new CryptoException("Message could not be decrypted", e);
-        }
+        return decrypt(algorithm, provider, privateKey, encrypted);
     }
 
-    private Base64Value performCryptoOperation(int mode, Key key, Base64Value data) throws Exception {
+    private static Base64Value performCryptoOperation(int mode, String algorithm, String provider, Key key, Base64Value data)
+            throws Exception {
         Cipher cipher;
         if (provider == null) {
             cipher = Cipher.getInstance(algorithm);

@@ -30,13 +30,16 @@ import java.util.logging.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import io.helidon.common.Base64Value;
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.crypto.AsymmetricCipher;
+import io.helidon.common.crypto.PasswordKeyDerivation;
+import io.helidon.common.crypto.SymmetricCipher;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
@@ -57,7 +60,6 @@ public final class EncryptionUtil {
     private static final int HASH_ITERATIONS = 10000;
     private static final int KEY_LENGTH_LEGACY = 128;
     private static final int KEY_LENGTH = 256;
-    private static final int AUTHENTICATION_TAG_LENGTH = 128;
 
     private EncryptionUtil() {
         throw new IllegalStateException("Utility class");
@@ -77,10 +79,8 @@ public final class EncryptionUtil {
         Objects.requireNonNull(encryptedBase64, "Encrypted bytes must be provided for decryption (base64 encoded)");
 
         try {
-            Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
-            cipher.init(Cipher.DECRYPT_MODE, key);
-            byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(encryptedBase64));
-            return new String(decrypted, StandardCharsets.UTF_8);
+            Base64Value value = Base64Value.createFromEncoded(encryptedBase64);
+            return AsymmetricCipher.decrypt(AsymmetricCipher.ALGORITHM_RSA_ECB_OAEP256, null, key, value).toDecodedString();
         } catch (ConfigEncryptionException e) {
             throw e;
         } catch (Exception e) {
@@ -129,12 +129,9 @@ public final class EncryptionUtil {
         if (secret.getBytes(StandardCharsets.UTF_8).length > 190) {
             throw new ConfigEncryptionException("Secret value is too large. Maximum of 190 bytes is allowed.");
         }
-
         try {
-            Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, key);
-            byte[] encrypted = cipher.doFinal(secret.getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(encrypted);
+            Base64Value value = Base64Value.create(secret);
+            return AsymmetricCipher.encrypt(AsymmetricCipher.ALGORITHM_RSA_ECB_OAEP256, null, key, value).toBase64();
         } catch (Exception e) {
             throw new ConfigEncryptionException("Failed to encrypt using RSA key", e);
         }
@@ -170,21 +167,16 @@ public final class EncryptionUtil {
 
         byte[] salt = SECURE_RANDOM.get().generateSeed(SALT_LENGTH);
         byte[] nonce = SECURE_RANDOM.get().generateSeed(NONCE_LENGTH);
-
-        Cipher cipher = cipher(masterPassword, salt, nonce, Cipher.ENCRYPT_MODE);
-        // encrypt
-        byte[] encryptedMessageBytes;
-        try {
-            encryptedMessageBytes = cipher.doFinal(secret);
-        } catch (Exception e) {
-            throw new ConfigEncryptionException("Failed to encrypt", e);
-        }
+        byte[] key = PasswordKeyDerivation
+                .deriveKey("PBKDF2WithHmacSHA256", null, masterPassword, salt, HASH_ITERATIONS, KEY_LENGTH);
+        byte[] encrypted = SymmetricCipher.encrypt(SymmetricCipher.ALGORITHM_AES_GCM, key, nonce, Base64Value.create(secret))
+                .toBytes();
 
         // get bytes to base64 (salt + nonce + encrypted message)
-        byte[] bytesToEncode = new byte[encryptedMessageBytes.length + salt.length + nonce.length];
+        byte[] bytesToEncode = new byte[encrypted.length + salt.length + nonce.length];
         System.arraycopy(salt, 0, bytesToEncode, 0, salt.length);
         System.arraycopy(nonce, 0, bytesToEncode, salt.length, nonce.length);
-        System.arraycopy(encryptedMessageBytes, 0, bytesToEncode, nonce.length + salt.length, encryptedMessageBytes.length);
+        System.arraycopy(encrypted, 0, bytesToEncode, nonce.length + salt.length, encrypted.length);
 
         return Base64.getEncoder().encodeToString(bytesToEncode);
     }
@@ -196,21 +188,6 @@ public final class EncryptionUtil {
             SecretKeySpec spec = new SecretKeySpec(secretKeyFactory.generateSecret(keySpec).getEncoded(), "AES");
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(cipherMode, spec, new IvParameterSpec(salt));
-
-            return cipher;
-        } catch (Exception e) {
-            throw new ConfigEncryptionException("Failed to prepare a cipher instance", e);
-        }
-    }
-
-    private static Cipher cipher(char[] masterPassword, byte[] salt, byte[] nonce, int cipherMode)
-            throws ConfigEncryptionException {
-        try {
-            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-            KeySpec keySpec = new PBEKeySpec(masterPassword, salt, HASH_ITERATIONS, KEY_LENGTH);
-            SecretKeySpec spec = new SecretKeySpec(secretKeyFactory.generateSecret(keySpec).getEncoded(), "AES");
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(cipherMode, spec, new GCMParameterSpec(AUTHENTICATION_TAG_LENGTH, nonce));
 
             return cipher;
         } catch (Exception e) {
@@ -300,16 +277,10 @@ public final class EncryptionUtil {
             System.arraycopy(decodedBytes, SALT_LENGTH, nonce, 0, NONCE_LENGTH);
             System.arraycopy(decodedBytes, SALT_LENGTH + NONCE_LENGTH, encryptedBytes, 0, encryptedBytes.length);
 
-            // get cipher
-            Cipher cipher = cipher(masterPassword, salt, nonce, Cipher.DECRYPT_MODE);
-
-            // bytes with seed
-            byte[] decryptedBytes;
-            decryptedBytes = cipher.doFinal(encryptedBytes);
-            byte[] originalBytes = new byte[decryptedBytes.length];
-            System.arraycopy(decryptedBytes, 0, originalBytes, 0, originalBytes.length);
-
-            return originalBytes;
+            byte[] key = PasswordKeyDerivation
+                    .deriveKey("PBKDF2WithHmacSHA256", null, masterPassword, salt, HASH_ITERATIONS, KEY_LENGTH);
+            Base64Value encryptedValue = Base64Value.create(encryptedBytes);
+            return SymmetricCipher.decrypt(SymmetricCipher.ALGORITHM_AES_GCM, key, nonce, encryptedValue).toBytes();
         } catch (Throwable e) {
             throw new ConfigEncryptionException("Failed to decrypt value using AES. Returning clear text value as is: "
                                                         + encryptedBase64, e);

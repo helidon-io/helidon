@@ -20,9 +20,6 @@ import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.function.BiFunction;
@@ -32,7 +29,9 @@ import java.util.logging.Logger;
 
 import javax.json.JsonObject;
 
+import io.helidon.common.Base64Value;
 import io.helidon.common.Version;
+import io.helidon.common.crypto.HashDigest;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -52,6 +51,7 @@ import io.helidon.webclient.security.WebClientSecurity;
  */
 public class OciRestApi extends RestApiBase {
     private static final Logger LOGGER = Logger.getLogger(OciRestApi.class.getName());
+    private final static HashDigest HASH_DIGEST = HashDigest.create(HashDigest.ALGORITHM_SHA_256);
 
     private final BiFunction<String, String, String> formatFunction;
     private final OciOutboundSecurityProvider outboundProvider;
@@ -107,16 +107,6 @@ public class OciRestApi extends RestApiBase {
 
         LOGGER.fine("Using OCI Profile based configuration, as neither resource nor instance principal is available");
         return ConfigType.OCI_PROFILE;
-    }
-
-    static String computeSha256(byte[] requestBytes) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            digest.update(requestBytes);
-            return Base64.getEncoder().encodeToString(digest.digest());
-        } catch (NoSuchAlgorithmException e) {
-            throw new OciApiException("Failed to generate message digest", e);
-        }
     }
 
     @Override
@@ -308,7 +298,7 @@ public class OciRestApi extends RestApiBase {
         jsonWriterFactory().createWriter(baos).write(jsonObject);
 
         byte[] requestBytes = baos.toByteArray();
-        String sha256 = computeSha256(requestBytes);
+        String sha256 = HASH_DIGEST.digest(Base64Value.create(requestBytes)).toBase64();
         requestBuilder.headers(headers -> {
             headers.contentLength(requestBytes.length);
             headers.add("x-content-sha256", sha256);

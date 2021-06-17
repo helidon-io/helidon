@@ -22,6 +22,7 @@ module io.helidon.config.encryption {
 
     // for RSA encrypted keys
     requires transitive io.helidon.common.pki;
+    requires transitive io.helidon.common.crypto;
     requires transitive io.helidon.config;
 
     requires static io.helidon.config.mp;
