@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,14 +39,10 @@ public class EmitterTest {
         TestSubscriber<Integer> subscriber = new TestSubscriber<>();
         emitter.subscribe(subscriber);
 
-        emitter.emit(0);
-        assertBufferSize(emitter.bufferSize(), 1);
-        emitter.emit(1);
-        assertBufferSize(emitter.bufferSize(), 2);
-        emitter.emit(2);
-        assertBufferSize(emitter.bufferSize(), 3);
-        emitter.emit(3);
-        assertBufferSize(emitter.bufferSize(), 4);
+        assertBufferSize(emitter.emit(0), 1);
+        assertBufferSize(emitter.emit(1), 2);
+        assertBufferSize(emitter.emit(2), 3);
+        assertBufferSize(emitter.emit(3), 4);
 
         subscriber
                 .assertEmpty()
@@ -56,12 +52,10 @@ public class EmitterTest {
                 .assertItemCount(3)
                 .assertNotTerminated();
 
-        emitter.emit(4);
-        assertBufferSize(emitter.bufferSize(), 2);
+        assertBufferSize(emitter.emit(4), 2);
 
         emitter.completeNow();
 
-        assertBufferSize(emitter.bufferSize(), 0);
         subscriber.requestMax()
                 .assertValues(0, 1, 2)
                 .assertComplete();
@@ -172,15 +166,13 @@ public class EmitterTest {
                 .assertItemCount(3)
                 .assertNotTerminated();
 
-        emitter.emit(10);
-        assertThat(emitter.bufferSize(), is(equalTo(8)));
+        assertThat(emitter.emit(10), is(equalTo(8)));
 
         subscriber
                 .request(3)
                 .assertItemCount(6);
 
-        emitter.emit(11);
-        assertThat(emitter.bufferSize(), is(equalTo(6)));
+        assertThat(emitter.emit(11), is(equalTo(6)));
 
         subscriber.requestMax()
                 .assertNotTerminated();
