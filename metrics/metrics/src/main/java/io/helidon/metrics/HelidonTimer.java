@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -206,18 +207,62 @@ final class HelidonTimer extends MetricImpl implements Timer {
         myBuilder.add("fiveMinRate", getFiveMinuteRate());
         myBuilder.add("fifteenMinRate", getFifteenMinuteRate());
         Snapshot snapshot = getSnapshot();
-        myBuilder.add("min", snapshot.getMin());
-        myBuilder.add("max", snapshot.getMax());
-        myBuilder.add("mean", snapshot.getMean());
-        myBuilder.add("stddev", snapshot.getStdDev());
-        myBuilder.add("p50", snapshot.getMedian());
-        myBuilder.add("p75", snapshot.get75thPercentile());
-        myBuilder.add("p95", snapshot.get95thPercentile());
-        myBuilder.add("p98", snapshot.get98thPercentile());
-        myBuilder.add("p99", snapshot.get99thPercentile());
-        myBuilder.add("p999", snapshot.get999thPercentile());
+        // Convert snapshot output according to units.
+        long divisor = conversionFactor();
+        myBuilder.add("min", snapshot.getMin() / divisor);
+        myBuilder.add("max", snapshot.getMax() / divisor);
+        myBuilder.add("mean", snapshot.getMean() / divisor);
+        myBuilder.add("stddev", snapshot.getStdDev() / divisor);
+        myBuilder.add("p50", snapshot.getMedian() / divisor);
+        myBuilder.add("p75", snapshot.get75thPercentile() / divisor);
+        myBuilder.add("p95", snapshot.get95thPercentile() / divisor);
+        myBuilder.add("p98", snapshot.get98thPercentile() / divisor);
+        myBuilder.add("p99", snapshot.get99thPercentile() / divisor);
+        myBuilder.add("p999", snapshot.get999thPercentile() / divisor);
 
         builder.add(getName(), myBuilder.build());
+    }
+
+    private long conversionFactor() {
+        Units units = getUnits();
+        String metricUnit = units.getMetricUnit();
+        if (metricUnit == null) {
+            return 1;
+        }
+        long divisor = 1;
+        switch (metricUnit) {
+            case MetricUnits.NANOSECONDS:
+                divisor = 1;
+                break;
+
+            case MetricUnits.MICROSECONDS:
+                divisor = 1000;
+                break;
+
+            case MetricUnits.MILLISECONDS:
+                divisor = 1000 * 1000;
+                break;
+
+            case MetricUnits.SECONDS:
+                divisor = 1000 * 1000 * 1000;
+                break;
+
+            case MetricUnits.MINUTES:
+                divisor = 1000 * 1000 * 1000 * 60;
+                break;
+
+            case MetricUnits.HOURS:
+                divisor = 1000 * 1000 * 1000 * 60 * 60;
+                break;
+
+            case MetricUnits.DAYS:
+                divisor = 1000 * 1000 * 1000 * 60 * 60 * 24;
+                break;
+
+            default:
+                divisor = 1;
+        }
+        return divisor;
     }
 
     private static final class ContextImpl implements Context {
