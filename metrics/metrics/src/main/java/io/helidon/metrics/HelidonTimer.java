@@ -27,6 +27,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -137,18 +138,62 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate())
                 .add(jsonFullKey("fifteenMinRate", metricID), getFifteenMinuteRate());
         Snapshot snapshot = getSnapshot();
-        myBuilder = myBuilder.add(jsonFullKey("min", metricID), snapshot.getMin())
-                .add(jsonFullKey("max", metricID), snapshot.getMax())
-                .add(jsonFullKey("mean", metricID), snapshot.getMean())
-                .add(jsonFullKey("stddev", metricID), snapshot.getStdDev())
-                .add(jsonFullKey("p50", metricID), snapshot.getMedian())
-                .add(jsonFullKey("p75", metricID), snapshot.get75thPercentile())
-                .add(jsonFullKey("p95", metricID), snapshot.get95thPercentile())
-                .add(jsonFullKey("p98", metricID), snapshot.get98thPercentile())
-                .add(jsonFullKey("p99", metricID), snapshot.get99thPercentile())
-                .add(jsonFullKey("p999", metricID), snapshot.get999thPercentile());
+        // Convert snapshot output according to units.
+        long divisor = conversionFactor();
+        myBuilder = myBuilder.add(jsonFullKey("min", metricID), snapshot.getMin() / divisor)
+                .add(jsonFullKey("max", metricID), snapshot.getMax() / divisor)
+                .add(jsonFullKey("mean", metricID), snapshot.getMean() / divisor)
+                .add(jsonFullKey("stddev", metricID), snapshot.getStdDev() / divisor)
+                .add(jsonFullKey("p50", metricID), snapshot.getMedian() / divisor)
+                .add(jsonFullKey("p75", metricID), snapshot.get75thPercentile() / divisor)
+                .add(jsonFullKey("p95", metricID), snapshot.get95thPercentile() / divisor)
+                .add(jsonFullKey("p98", metricID), snapshot.get98thPercentile() / divisor)
+                .add(jsonFullKey("p99", metricID), snapshot.get99thPercentile() / divisor)
+                .add(jsonFullKey("p999", metricID), snapshot.get999thPercentile() / divisor);
 
         builder.add(metricID.getName(), myBuilder);
+    }
+
+    private long conversionFactor() {
+        Units units = getUnits();
+        String metricUnit = units.getMetricUnit();
+        if (metricUnit == null) {
+            return 1;
+        }
+        long divisor = 1;
+        switch (metricUnit) {
+            case MetricUnits.NANOSECONDS:
+                divisor = 1;
+                break;
+
+            case MetricUnits.MICROSECONDS:
+                divisor = 1000;
+                break;
+
+            case MetricUnits.MILLISECONDS:
+                divisor = 1000 * 1000;
+                break;
+
+            case MetricUnits.SECONDS:
+                divisor = 1000 * 1000 * 1000;
+                break;
+
+            case MetricUnits.MINUTES:
+                divisor = 1000 * 1000 * 1000 * 60;
+                break;
+
+            case MetricUnits.HOURS:
+                divisor = 1000 * 1000 * 1000 * 60 * 60;
+                break;
+
+            case MetricUnits.DAYS:
+                divisor = 1000 * 1000 * 1000 * 60 * 60 * 24;
+                break;
+
+            default:
+                divisor = 1;
+        }
+        return divisor;
     }
 
     void appendPrometheusTimerStatElement(StringBuilder sb,
