@@ -9,16 +9,62 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ## [2.3.1-SNAPSHOT]
 
+2.3.1 is a bug fix release of Helidon. It also includes some minor enhancements.
+
 ### MP Config Updates
+
 Features from MP Config 2.0 that are backward compatible were added in this release:
 
 1. Configuration profiles were added. You can now define a configuration profile (such as `dev`) using configuration property `mp.config.profile`. If such is defined, config will load default properties `microprofile-config-${profile}.properties`, and it will look for properties prefixed with `%${profile}-` first.
-3. `OptionalInt`, `OptionalLong`, and `OptionalDouble` were added as supported types
+2. `OptionalInt`, `OptionalLong`, and `OptionalDouble` were added as supported types
 
 ### Compatibility
-Base64Value has been moved from `Helidon Integrations Common REST` module to the module `Helidon Common`. Due to that action, 
-import has changed from `io.helidon.integrations.common.rest.Base64Value` to `io.helidon.common.Base64Value`, but the class is
-the same.
+
+2.3.1 is API compatible with 2.3.0.
+
+There has been one minor package change. `Base64Value` has been moved from `Helidon Integrations Common REST` module
+to the module `Helidon Common`. Due to that action, import has changed from
+`io.helidon.integrations.common.rest.Base64Value` to `io.helidon.common.Base64Value`, but the class is the same.
+
+### CHANGES
+
+- WebServer: Introduce backpressure to webserver [3108](https://github.com/oracle/helidon/pull/3108)
+- WebServer: support colons in passwords [3045](https://github.com/oracle/helidon/pull/3045)
+- WebServer: Ignore path parameters when matching routes [3097](https://github.com/oracle/helidon/pull/3097)
+- WebServer: Honor bind address and host in configuration [3105](https://github.com/oracle/helidon/pull/3105)
+- WebServer: Encode paths returned as part of 404 responses [3048](https://github.com/oracle/helidon/pull/3048)
+- WebServer: A few more cases of HTML encoding in error messages [3051](https://github.com/oracle/helidon/pull/3051)
+- WebServer: Adds convenience method to clear/invalidate a cookie [3037](https://github.com/oracle/helidon/pull/3037)
+- WebServer: 3086: Fix SSE event sending [3087](https://github.com/oracle/helidon/pull/3087)
+- WebClient: Host IPv6 matching is now cached [3028](https://github.com/oracle/helidon/pull/3028)
+- Tracing: Publish internal Jaeger tracing metrics via Helidon's metrics system [3000](https://github.com/oracle/helidon/pull/3000)
+- Test: Add support for YAML configuration in Helidon Junit 5 testing [3025](https://github.com/oracle/helidon/pull/3025)
+- Security: Helidon crypto module [2989](https://github.com/oracle/helidon/pull/2989)
+- Security: Add optional support to security providers [3039](https://github.com/oracle/helidon/pull/3039)
+- Reactive: Fix  Intermittent MultiFlatMapPublisherTest#multi [3068](https://github.com/oracle/helidon/pull/3068)
+- Reactive: BEP refactor [2285](https://github.com/oracle/helidon/pull/2285)
+- MicroProfile Server: Reactive routing via cdi provider [3050](https://github.com/oracle/helidon/pull/3050)
+- Metrics: Add extended key performance indicators metrics support [3021](https://github.com/oracle/helidon/pull/3021)
+- Messaging: Messaging connector type check [3044](https://github.com/oracle/helidon/pull/3044)
+- JPA: Ensure container-managed EntityManagerFactory contextual references are eagerly inflated [3018](https://github.com/oracle/helidon/pull/3018)
+- JDBC: Allow underscores in JDBC param names [3023](https://github.com/oracle/helidon/pull/3023)
+- JAX-RS: Single injection manager in use, we can only shut it down once. [3101](https://github.com/oracle/helidon/pull/3101)
+- JAX-RS: Allow sharing of same Jersey's injection manager across multiple JAX-RS applications [2988](https://github.com/oracle/helidon/pull/2988)
+- GraphQL: Upgrade GraphQL to support mp-graphql spec 1.1.0 [3065](https://github.com/oracle/helidon/pull/3065)
+- GraphQL: Minor update to README and add missing @NonNull on TaskApi [3091](https://github.com/oracle/helidon/pull/3091)
+- Docs: Upgrade javadoc-plugin. Silence  error for org.jboss.logging.annotations.Message$Format [3077](https://github.com/oracle/helidon/pull/3077)
+- Docs: Update Config Guide to describe how to change pom for custom main class [3083](https://github.com/oracle/helidon/pull/3083)
+- Docs: Fix various formatting and processing errors in doc files [3036](https://github.com/oracle/helidon/pull/3036)
+- Docs: Add missing javadoc to module-info files [3020](https://github.com/oracle/helidon/pull/3020)
+- Docs: added attribute for javadoc-base-url-api to fix broken links [3034](https://github.com/oracle/helidon/pull/3034)
+- Dependencies: Upgrade jgit to 5.11.1.202105131744-r [3040](https://github.com/oracle/helidon/pull/3040)
+- Dependencies: Upgrade jboss classfilewriter [3074](https://github.com/oracle/helidon/pull/3074)
+- Dependencies: Upgrade etcd4j to 2.18.0 [3043](https://github.com/oracle/helidon/pull/3043)
+- Dependencies: Update SmallRye OpenAPI to 1.2.3 for Helidon 2.x [3080](https://github.com/oracle/helidon/pull/3080)
+- Dependencies: Updates Eclipselink to 2.7.8 [3042](https://github.com/oracle/helidon/pull/3042)
+- Dependencies: Suppress jgit false positive [3015](https://github.com/oracle/helidon/pull/3015)
+- Config: MP Config profiles [3096](https://github.com/oracle/helidon/pull/3096)
+- Config: Deprecated classes made public on oversight [3038](https://github.com/oracle/helidon/pull/3038)
 
 ## [2.3.0]
 
