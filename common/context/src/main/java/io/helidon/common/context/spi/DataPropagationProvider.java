@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,9 @@ public interface DataPropagationProvider<T> {
 
     /**
      * Clears the propagated date from the new thread when it finishes.
+     *
+     * @param data dataa for propagation
      */
-    void clearData();
+    void clearData(T data);
 
 }
