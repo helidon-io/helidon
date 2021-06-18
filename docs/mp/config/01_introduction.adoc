@@ -23,10 +23,13 @@
 :spec-name: MicroProfile Config
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, config, encryption, reference
+:javadoc-base-url-api: {javadoc-base-url}/io.helidon.config/io/helidon/config/
 :h1Prefix: MP
 :feature-name: MicroProfile Config
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: true
+
+Helidon's MicroProfile Config, an implementation of Eclipse MicroProfile Config, enables you to configure your applications using MicroProfile’s config configuration sources and APIs.
 
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
@@ -57,6 +60,8 @@ instance programmatically.
 
 {spec-name} provides typed access to configuration values, using built-in converters, and `Converter` implementations located
 by Java Service Loader.
+
+{spec-name} supports a concept of configuration profiles. You can define a profile using the configuration property `mp.config.profile` (when using default configuration, this can be defined as a system property, environment variable or as a property in `microprofile-config.properties`). When a profile is defined, additional config source is loaded (`microprofile-config-profile.properties) and properties from profile have precedence over default properties. Profile properties can be defined using `%profile` prefix, such as `%dev.server.port`.
 
 ==== Using {spec-name} API
 
@@ -240,6 +245,6 @@ For more information on using Helidon Config APIs, see the Helidon SE Configurat
 
 == Additional Information
 
-- https://helidon.io/docs/latest/apidocs/io/helidon/config/spi/package-summary.html[Helidon Config SPI]
-- https://helidon.io/docs/latest/apidocs/io/helidon/config/package-summary.html[Helidon Config API]
-- https://download.eclipse.org/microprofile/microprofile-config-1.3/apidocs/[Eclipse MicroProfile API]
+- link:{javadoc-base-url-api}spi/package-summary.html[Helidon Config SPI]
+- link:{javadoc-base-url-api}package-summary.html[Helidon Config API]
+- link:https://download.eclipse.org/microprofile/microprofile-config-1.3/apidocs/[Eclispe MicroProfile API]

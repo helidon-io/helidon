@@ -19,9 +19,9 @@ server:
   sockets:
     - name: "private"
       port: 8081
-      bind-address: "localhost"
     - name: "admin"
       port: 8082
+      # bind address is optional, if not defined, server host will be used)
       bind-address: "localhost"
 
 # Metrics and health run on admin port

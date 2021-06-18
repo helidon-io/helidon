@@ -48,6 +48,10 @@
             <artifactId>helidon-common-key-util</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-crypto</artifactId>
+        </dependency>
+        <dependency>
             <!-- an implementation of a filter is part of this library - it only makes sense
             when MP config implementation is on the classpath, not needed or used otherwise
             -->

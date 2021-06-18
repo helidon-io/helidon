@@ -603,6 +603,11 @@
                 <artifactId>helidon-service-common-rest-cdi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-crypto</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- db client -->
             <dependency>
@@ -680,6 +685,12 @@
                 <!-- to add Jaeger support -->
                 <groupId>io.helidon.tracing</groupId>
                 <artifactId>helidon-tracing-jaeger</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <!-- to add Jaeger metrics integration -->
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics-jaeger</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

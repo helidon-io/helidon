@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.microprofile.metrics;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -40,6 +39,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 import java.util.Collections;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -65,6 +65,16 @@ public class HelloWorldResource {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private static ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+    static CountDownLatch slowRequestInProgress = null;
+
+    static void initSlowRequest() {
+        slowRequestInProgress = new CountDownLatch(1);
+    }
+
+    static void awaitSlowRequestStarted() throws InterruptedException {
+        slowRequestInProgress.await();
+    }
 
     @Inject
     MetricRegistry metricRegistry;
@@ -95,6 +105,9 @@ public class HelloWorldResource {
     @SimplyTimed(name = SLOW_MESSAGE_SIMPLE_TIMER, absolute = true)
     @Timed(name = SLOW_MESSAGE_TIMER, absolute = true)
     public void slowMessage(@Suspended AsyncResponse ar) {
+        if (slowRequestInProgress != null) {
+            slowRequestInProgress.countDown();
+        }
         executorService.execute(() -> {
             try {
                 TimeUnit.SECONDS.sleep(SLOW_DELAY_SECS);

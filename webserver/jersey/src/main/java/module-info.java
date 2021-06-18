@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
+
 /**
  * Jersey integration.
  */
@@ -33,6 +35,8 @@ module io.helidon.webserver.jersey {
     requires io.netty.buffer;
 
     exports io.helidon.webserver.jersey;
+
+    provides InjectionManagerFactory with io.helidon.webserver.jersey.HelidonHK2InjectionManagerFactory;
 
     // reflection access from jersey injection
     opens io.helidon.webserver.jersey to hk2.locator,hk2.utils;

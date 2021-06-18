@@ -46,7 +46,9 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 /**
  * Implementation of the basic MicroProfile {@link org.eclipse.microprofile.config.Config} API.
+ * @deprecated This is an internal class that was exposed accidentaly. It will be package local in next major release.
  */
+@Deprecated
 public class MpConfigImpl implements Config {
     private static final Logger LOGGER = Logger.getLogger(MpConfigImpl.class.getName());
     // for references resolving
@@ -63,17 +65,33 @@ public class MpConfigImpl implements Config {
     private static final Pattern SPLIT_PATTERN = Pattern.compile("(?<!\\\\),");
     private static final Pattern ESCAPED_COMMA_PATTERN = Pattern.compile("\\,", Pattern.LITERAL);
 
+    private static final Map<Class<?>, Class<?>> REPLACED_TYPES = new HashMap<>();
+
+    static {
+        REPLACED_TYPES.put(Byte.TYPE, Byte.class);
+        REPLACED_TYPES.put(Short.TYPE, Short.class);
+        REPLACED_TYPES.put(Integer.TYPE, Integer.class);
+        REPLACED_TYPES.put(Long.TYPE, Long.class);
+        REPLACED_TYPES.put(Float.TYPE, Float.class);
+        REPLACED_TYPES.put(Double.TYPE, Double.class);
+        REPLACED_TYPES.put(Boolean.TYPE, Boolean.class);
+        REPLACED_TYPES.put(Character.TYPE, Character.class);
+    }
+
     private final List<ConfigSource> sources = new LinkedList<>();
     private final HashMap<Class<?>, Converter<?>> converters = new LinkedHashMap<>();
     private final boolean valueResolving;
     private final List<MpConfigFilter> filters = new ArrayList<>();
+    private final String configProfile;
 
     MpConfigImpl(List<ConfigSource> sources,
                  HashMap<Class<?>, Converter<?>> converters,
-                 List<MpConfigFilter> filters) {
+                 List<MpConfigFilter> filters,
+                 String profile) {
         this.sources.addAll(sources);
         this.converters.putAll(converters);
         this.converters.putIfAbsent(String.class, value -> value);
+        this.configProfile = profile;
 
         this.valueResolving = getOptionalValue("helidon.config.value-resolving.enabled", Boolean.class)
                 .orElse(true);
@@ -98,6 +116,16 @@ public class MpConfigImpl implements Config {
     @SuppressWarnings("unchecked")
     @Override
     public <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType) {
+        if (configProfile == null) {
+            return optionalValue(propertyName, propertyType);
+        }
+
+        return optionalValue("%" + configProfile + "." + propertyName, propertyType)
+                .or(() -> optionalValue(propertyName, propertyType));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Optional<T> optionalValue(String propertyName, Class<T> propertyType) {
         // let's resolve arrays
         if (propertyType.isArray()) {
             Class<?> componentType = propertyType.getComponentType();
@@ -166,6 +194,24 @@ public class MpConfigImpl implements Config {
     }
 
     /**
+     * Unwrap into an implementation.
+     * This method will be added in MP Config 2.0.
+     *
+     * @param aClass class to unwrap to (only this class and {@link org.eclipse.microprofile.config.Config} are supported)
+     * @param <T> type of the class
+     * @return typed instance
+     */
+    public <T> T unwrap(Class<T> aClass) {
+        if (getClass().equals(aClass)) {
+            return aClass.cast(this);
+        }
+        if (aClass.equals(Config.class)) {
+            return aClass.cast(this);
+        }
+        throw new UnsupportedOperationException("Cannot unwrap config into " + aClass.getName());
+    }
+
+    /**
      * Return the {@link Converter} used by this instance to produce instances of the specified type from string values.
      *
      * This method is from a future version of MP Config specification and may changed before it
@@ -177,15 +223,67 @@ public class MpConfigImpl implements Config {
      */
     @SuppressWarnings("unchecked")
     public <T> Optional<Converter<T>> getConverter(Class<T> forType) {
+        if (forType.isArray()) {
+            Class<?> componentType = forType.getComponentType();
+            return findComponentConverter(componentType)
+                    .map(it -> toArrayConverter(forType, componentType, it));
+
+        } else {
+            return findComponentConverter(forType);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Optional<Converter<T>> findComponentConverter(Class<T> type) {
+        Class<T> forType = mapType(type);
+
         return converters.entrySet()
                 .stream()
                 .filter(it -> forType.isAssignableFrom(it.getKey()))
                 .findFirst()
                 .map(Map.Entry::getValue)
                 .map(it -> (Converter<T>) it)
+                .map(it -> (Converter<T>) value -> {
+                    if (value == null) {
+                        throw new NullPointerException("Null not allowed in MP converters. Converter for type " + forType
+                                .getName());
+                    }
+                    try {
+                        return it.convert(value);
+                    } catch (IllegalArgumentException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        throw new IllegalArgumentException("Cannot convert value", e);
+                    }
+                })
                 .or(() -> findImplicit(forType));
     }
 
+    // map from primitive to object types
+    @SuppressWarnings("unchecked")
+    private <T> Class<T> mapType(Class<T> original) {
+        Class<T> aClass = (Class<T>) REPLACED_TYPES.get(original);
+
+        return (aClass == null) ? original : aClass;
+    }
+
+    private <T> Converter<T> toArrayConverter(Class<T> type, Class<?> componentType, Converter<?> elementConverter) {
+        return configValue -> {
+            if (configValue == null) {
+                throw new NullPointerException("Null not allowed in MP converters. Converter for type " + type.getName());
+            }
+            String[] values = toArray(configValue);
+
+            Object array = Array.newInstance(componentType, values.length);
+
+            for (int i = 0; i < values.length; i++) {
+                String value = values[i];
+                Array.set(array, i, elementConverter.convert(value));
+            }
+
+            return type.cast(array);
+        };
+    }
     /**
      * Convert a String to a specific type.
      * This is a helper method to allow for processing of default values that cannot be typed (e.g. in annotations).
@@ -199,7 +297,7 @@ public class MpConfigImpl implements Config {
      */
     private <T> T convert(String propertyName, Class<T> type, String value) {
         try {
-            return findConverter(type)
+            return obtainConverter(type)
                     .convert(value);
         } catch (Exception e) {
             throw new IllegalArgumentException("Failed to convert property \""
@@ -286,12 +384,7 @@ public class MpConfigImpl implements Config {
     }
 
     @SuppressWarnings("unchecked")
-    <T> Converter<T> findConverter(Class<T> type) {
-        Converter<?> converter = converters.get(type);
-        if (null != converter) {
-            return (Converter<T>) converter;
-        }
-
+    <T> Converter<T> obtainConverter(Class<T> type) {
         return getConverter(type)
                 .orElseGet(() -> new FailingConverter<>(type));
     }

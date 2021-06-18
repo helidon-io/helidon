@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -199,6 +199,13 @@ public interface ResponseHeaders extends Headers {
      * @throws NullPointerException if {@code cookie} parameter is {@code null}
      */
     void addCookie(SetCookie cookie) throws NullPointerException;
+
+    /**
+     * Clears a cookie by adding a {@code Set-Cookie} header with an expiration date in the past.
+     *
+     * @param name name of the cookie.
+     */
+    void clearCookie(String name);
 
     /**
      * Register a {@link Consumer} which is executed just before headers are send. {@code Consumer} can made 'last minute

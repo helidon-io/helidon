@@ -553,6 +553,10 @@ final class FeatureCatalog {
             "Jaeger",
             "Jaeger tracer integration",
             "Tracing", "Jaeger");
+        add("io.helidon.metrics.jaeger",
+                "Jaeger metrics",
+                "Jaeger tracer metrics integration",
+                "Metrics", "Jaeger");
         add("io.helidon.tracing.jersey",
             "Jersey Server",
             "Tracing integration with Jersey server",
