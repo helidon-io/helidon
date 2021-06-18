@@ -21,11 +21,15 @@ import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ws.rs.core.Application;
@@ -102,6 +106,7 @@ public class JerseySupport implements Service {
     private static final Type RESPONSE_TYPE = (new GenericType<Ref<ServerResponse>>() { }).getType();
     private static final Type SPAN_CONTEXT_TYPE = (new GenericType<Ref<SpanContext>>() { }).getType();
     private static final AtomicReference<ExecutorService> DEFAULT_THREAD_POOL = new AtomicReference<>();
+    private static final Set<InjectionManager> INJECTION_MANAGERS = Collections.newSetFromMap(new WeakHashMap<>());
 
     private final ApplicationHandler appHandler;
     private final ExecutorService service;
@@ -160,6 +165,7 @@ public class JerseySupport implements Service {
     public void update(Routing.Rules routingRules) {
         routingRules.any(handler);
         appHandler.onStartup(container);
+        INJECTION_MANAGERS.add(appHandler.getInjectionManager());
     }
 
     /**
@@ -333,8 +339,13 @@ public class JerseySupport implements Service {
      */
     public void close() {
         try {
-            appHandler.onShutdown(container);
+            // injection manager may be shared, and as such should only be shutdown just once
+            InjectionManager injectionManager = appHandler.getInjectionManager();
+            if (INJECTION_MANAGERS.remove(injectionManager)) {
+                appHandler.onShutdown(container);
+            }
         } catch (IllegalStateException e) {
+            LOGGER.log(Level.FINEST, e, () -> "Exception during shutdown of Jersey");
             LOGGER.warning(() -> "Exception while shutting down Jersey's application handler " + e.getMessage());
         }
     }

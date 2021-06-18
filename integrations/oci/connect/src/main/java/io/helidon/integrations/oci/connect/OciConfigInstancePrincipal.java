@@ -21,7 +21,6 @@ import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
-import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.CertificateEncodingException;
@@ -52,8 +51,10 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonWriterFactory;
 
+import io.helidon.common.Base64Value;
 import io.helidon.common.Version;
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.crypto.HashDigest;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.pki.KeyConfig;
@@ -77,6 +78,7 @@ public class OciConfigInstancePrincipal implements OciConfigProvider {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
     private static final JsonWriterFactory JSON_WRITER_FACTORY = Json.createWriterFactory(Map.of());
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+    private static final HashDigest HASH_DIGEST = HashDigest.create(HashDigest.ALGORITHM_SHA_256);
 
     private final AtomicReference<OciSignatureData> currentSignatureData = new AtomicReference<>();
     private final String region;
@@ -144,10 +146,9 @@ public class OciConfigInstancePrincipal implements OciConfigProvider {
 
     private static String fingerprint(X509Certificate leafCertificate) {
         try {
-            byte[] encoded = leafCertificate.getEncoded();
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] digest = md.digest(encoded);
-            return hexEncode(digest, ":");
+            Base64Value encoded = Base64Value.create(leafCertificate.getEncoded());
+            Base64Value digest = HASH_DIGEST.digest(encoded);
+            return hexEncode(digest.toBytes(), ":");
         } catch (Exception e) {
             throw new OciApiException("Failed to get certificate fingerprint " + leafCertificate, e);
         }
@@ -283,7 +284,7 @@ public class OciConfigInstancePrincipal implements OciConfigProvider {
         JSON_WRITER_FACTORY.createWriter(baos).write(jsonRequest);
 
         byte[] requestBytes = baos.toByteArray();
-        String sha256 = OciRestApi.computeSha256(requestBytes);
+        String sha256 = HASH_DIGEST.digest(Base64Value.create(requestBytes)).toBase64();
 
         return federationClient.post()
                                .path("/v1/x509")

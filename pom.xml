@@ -58,6 +58,8 @@
         <version.lib.asm>6.0</version.lib.asm>
         <version.lib.checkstyle>8.29</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
+        <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
+        <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
         <version.lib.kafka-junit5>3.2.1</version.lib.kafka-junit5>
         <version.lib.netty.tcnative>2.0.36.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
@@ -102,7 +104,7 @@
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
-        <version.plugin.javadoc>3.2.0</version.plugin.javadoc>
+        <version.plugin.javadoc>3.3.0</version.plugin.javadoc>
         <version.plugin.jaxb>0.14.0</version.plugin.jaxb>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
@@ -1149,6 +1151,13 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                                 <sourceFileExclude>**/*_.java</sourceFileExclude>
                                 <sourceFileExclude>**/io/grpc/stub/**/*.java</sourceFileExclude>
                             </sourceFileExcludes>
+                            <additionalDependencies>
+                                <additionalDependency>
+                                    <groupId>org.jboss.logging</groupId>
+                                    <artifactId>jboss-logging-annotations</artifactId>
+                                    <version>${version.lib.jboss-logging-annotations}</version>
+                                </additionalDependency>
+                            </additionalDependencies>
                         </configuration>
                         <reports>
                             <report>aggregate-no-fork</report>

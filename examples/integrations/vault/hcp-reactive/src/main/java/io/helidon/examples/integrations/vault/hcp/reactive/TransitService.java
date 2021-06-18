@@ -18,7 +18,7 @@ package io.helidon.examples.integrations.vault.hcp.reactive;
 
 import java.util.List;
 
-import io.helidon.integrations.common.rest.Base64Value;
+import io.helidon.common.Base64Value;
 import io.helidon.integrations.vault.secrets.transit.CreateKey;
 import io.helidon.integrations.vault.secrets.transit.Decrypt;
 import io.helidon.integrations.vault.secrets.transit.DecryptBatch;

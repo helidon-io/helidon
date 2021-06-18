@@ -17,6 +17,7 @@
 package io.helidon.webserver;
 
 import java.net.BindException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.HashMap;
@@ -240,9 +241,14 @@ class NettyWebServer implements WebServer {
                     // break because one of the previous channels already failed
                     break;
                 }
+                InetAddress bindAddress = socketConfig.bindAddress();
+                if (bindAddress == null) {
+                    // fall back to the server bind address
+                    bindAddress = configuration.bindAddress();
+                }
 
                 try {
-                    bootstrap.bind(configuration.bindAddress(), port).addListener(channelFuture -> {
+                    bootstrap.bind(bindAddress, port).addListener(channelFuture -> {
                         if (!channelFuture.isSuccess()) {
                             LOGGER.info(() -> "Channel '" + name + "' startup failed with message '"
                                     + channelFuture.cause().getMessage() + "'.");

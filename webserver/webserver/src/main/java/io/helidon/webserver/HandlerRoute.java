@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.http.Http;
+
+import static io.helidon.webserver.PathHelper.extractPathParams;
 
 /**
  * Represents a single routable {@link Handler} in the {@link Routing}.
@@ -139,14 +141,14 @@ class HandlerRoute implements Route {
     }
 
     /**
-     * Matches this against a URI path.
+     * Matches this against a URI path. Drops any path parameters before matching.
      *
      * @param path resolved and normalized URI path to test against.
      * @return a {@link PathMatcher.Result} of the test.
      * @throws NullPointerException in case that {@code path} parameter is {@code null}.
      */
     public PathMatcher.Result match(CharSequence path) {
-        return pathMatcher.match(path);
+        return pathMatcher.match(extractPathParams(path.toString()));
     }
 
     @Override

@@ -21,10 +21,10 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.Base64Value;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
-import io.helidon.integrations.common.rest.Base64Value;
 import io.helidon.security.spi.DigestProvider;
 import io.helidon.security.spi.EncryptionProvider;
 import io.helidon.security.spi.ProviderConfig;

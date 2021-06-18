@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,15 +66,20 @@ class ServerSseTest {
 
     @Test
     void testSse() throws Exception {
-        innerTest("test1", connClosedFuture);
+        innerTest("test1", connClosedFuture, 4);
     }
 
     @Test
     void testSseMulti() throws Exception {
-        innerTest("test2", multiTestFuture);
+        innerTest("test2", multiTestFuture, 4);
     }
 
-    private void innerTest(String endpoint, CompletableFuture<Void> future) throws InterruptedException {
+    @Test
+    void testSseSingleEvent() throws Exception {
+        innerTest("test3", null, 1);
+    }
+
+    private void innerTest(String endpoint, CompletableFuture<Void> future, int eventNum) throws InterruptedException {
         Server server = Server.builder()
                 .addApplication("/", new TestApplication1())
                 .build();
@@ -84,7 +89,7 @@ class ServerSseTest {
             // Set up SSE event source
             WebTarget target = client.target("http://localhost:" + server.port()).path(endpoint).path("sse");
             SseEventSource sseEventSource = SseEventSource.target(target).build();
-            CountDownLatch count = new CountDownLatch(4);
+            CountDownLatch count = new CountDownLatch(eventNum);
             sseEventSource.register(event -> {
                 event.readData(String.class);
                 count.countDown();
@@ -96,10 +101,12 @@ class ServerSseTest {
             sseEventSource.close();
 
             // Wait for server to detect connection closed
-            try {
-                future.get(2000, TimeUnit.MILLISECONDS);
-            } catch (Exception e) {
-                fail("Closing of SSE connection not detected!");
+            if (future != null) {
+                try {
+                    future.get(2000, TimeUnit.MILLISECONDS);
+                } catch (Exception e) {
+                    fail("Closing of SSE connection not detected!");
+                }
             }
         } finally {
             server.stop();
@@ -109,7 +116,7 @@ class ServerSseTest {
     private final class TestApplication1 extends Application {
         @Override
         public Set<Object> getSingletons() {
-            return Set.of(new TestResource1(), new TestResource2());
+            return Set.of(new TestResource1(), new TestResource2(), new TestResource3());
         }
     }
 
@@ -148,6 +155,20 @@ class ServerSseTest {
                     .map(String::valueOf)
                     .onCancel(() -> multiTestFuture.complete(null))
                     .subscribe(sub);
+        }
+    }
+
+    @Path("/test3")
+    public final class TestResource3 {
+
+        SseEventSink eventSink;
+
+        @GET
+        @Path("sse")
+        @Produces(MediaType.SERVER_SENT_EVENTS)
+        public void listenToEvents(@Context SseEventSink eventSink, @Context Sse sse) {
+            this.eventSink = eventSink;
+            eventSink.send(sse.newEvent("hello"));
         }
     }
 }

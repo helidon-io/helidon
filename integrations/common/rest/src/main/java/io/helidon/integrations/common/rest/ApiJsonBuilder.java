@@ -28,6 +28,8 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
+import io.helidon.common.Base64Value;
+
 /**
  * Common base class for builders that construct a JSON object.
  *

@@ -22,11 +22,11 @@ import java.util.Properties;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.Base64Value;
+import io.helidon.common.crypto.SymmetricCipher;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.config.encryption.ConfigEncryptionException;
 import io.helidon.config.encryption.ConfigProperties;
-import io.helidon.config.encryption.EncryptionUtil;
 import io.helidon.security.spi.EncryptionProvider;
 import io.helidon.security.spi.ProviderConfig;
 import io.helidon.security.spi.SecretsProvider;
@@ -37,8 +37,6 @@ import io.helidon.security.spi.SecretsProvider;
  */
 public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.SecretConfig>,
                                             EncryptionProvider<ConfigVaultProvider.EncryptionConfig> {
-
-    private static final String CIPHER_TEXT_PREFIX_V2 = "helidon:2:";
 
     private final Optional<EncryptionSupport> aesEncryption;
 
@@ -137,16 +135,12 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
         }
 
         private static EncryptionSupport encryptionSupport(char[] password) {
+            SymmetricCipher symmetricCipher = SymmetricCipher.create(password);
             Function<byte[], Single<String>> encrypt = bytes -> {
-                return Single.just(CIPHER_TEXT_PREFIX_V2 + EncryptionUtil.encryptAesBytes(password, bytes));
+                return Single.just(symmetricCipher.encryptToString(Base64Value.create(bytes)));
             };
             Function<String, Single<byte[]>> decrypt = cipherText -> {
-                if (cipherText.startsWith(CIPHER_TEXT_PREFIX_V2)) {
-                    String base64 = cipherText.substring(CIPHER_TEXT_PREFIX_V2.length());
-                    return Single.just(EncryptionUtil.decryptAesBytes(password, base64));
-                } else {
-                    return Single.error(new ConfigEncryptionException("Invalid cipher text"));
-                }
+                return Single.just(symmetricCipher.decryptFromString(cipherText).toBytes());
             };
             return EncryptionSupport.create(encrypt, decrypt);
         }

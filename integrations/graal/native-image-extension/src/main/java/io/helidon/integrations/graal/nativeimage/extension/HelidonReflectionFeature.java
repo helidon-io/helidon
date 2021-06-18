@@ -210,6 +210,8 @@ public class HelidonReflectionFeature implements Feature {
         addJaxRsConversions(context, "javax.ws.rs.QueryParam");
         addJaxRsConversions(context, "javax.ws.rs.PathParam");
         addJaxRsConversions(context, "javax.ws.rs.HeaderParam");
+        addJaxRsConversions(context, "javax.ws.rs.MatrixParam");
+        addJaxRsConversions(context, "javax.ws.rs.BeanParam");
     }
 
     private void addJaxRsConversions(BeforeAnalysisContext context, String annotation) {
