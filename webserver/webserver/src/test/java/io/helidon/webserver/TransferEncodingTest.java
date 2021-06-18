@@ -24,7 +24,6 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.utils.SocketHttpClient;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -70,6 +69,13 @@ public class TransferEncodingTest {
                             String payload = "It works!";
                             res.send(payload);
                         })
+                        .get("/empty", (req, res) -> {
+                            res.send();
+                        })
+                        .get("/emptychunked", (req, res) -> {
+                            res.headers().add("transfer-encoding", "chunked");
+                            res.send();
+                        })
                         .build())
                 .build()
                 .start()
@@ -80,7 +86,31 @@ public class TransferEncodingTest {
     }
 
     /**
-     * Test content length.
+     * Test content length when no payload in response.
+     *
+     * @throws Exception If an error occurs.
+     */
+    @Test
+    public void testEmptyContentLength() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/empty", Http.Method.GET, null, webServer);
+        Map<String, String> headers = cutHeaders(s);
+        assertThat(headers, hasEntry("content-length", "0"));
+    }
+
+    /**
+     * Test when no payload in response but response was forced to chunked.
+     *
+     * @throws Exception If an error occurs.
+     */
+    @Test
+    public void testEmptyChunked() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/emptychunked", Http.Method.GET, null, webServer);
+        Map<String, String> headers = cutHeaders(s);
+        assertThat(headers, hasEntry("transfer-encoding", "chunked"));
+    }
+
+    /**
+     * Test content length
      *
      * @throws Exception If an error occurs.
      */
