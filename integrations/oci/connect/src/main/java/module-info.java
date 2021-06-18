@@ -21,6 +21,7 @@ module io.helidon.integrations.oci.connect {
     requires java.logging;
 
     requires io.helidon.common;
+    requires io.helidon.common.crypto;
     requires io.helidon.common.pki;
     requires io.helidon.faulttolerance;
     requires io.helidon.media.jsonp;

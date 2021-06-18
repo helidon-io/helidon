@@ -603,6 +603,11 @@
                 <artifactId>helidon-service-common-rest-cdi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-crypto</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- db client -->
             <dependency>
