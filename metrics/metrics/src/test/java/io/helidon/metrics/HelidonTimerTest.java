@@ -17,12 +17,15 @@
 package io.helidon.metrics;
 
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import javax.json.Json;
+import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
@@ -213,6 +216,35 @@ class HelidonTimerTest {
                                                           + "/index.html\n"
                                                           + "application:response_time_seconds_count 200"));
     }
+
+    @Test
+    void testUnitsOnHistogram() {
+        TestClock testClock = TestClock.create();
+        String timerName = "jsonDataUnitsTimer";
+        Metadata metadata = new Metadata(
+                timerName,
+                "Response time test",
+                "Server response time for checking histo units",
+                MetricType.TIMER,
+                MetricUnits.MILLISECONDS);
+
+        HelidonTimer helidonTimer = HelidonTimer.create(MetricRegistry.Type.APPLICATION.getName(), metadata, testClock);
+
+        Stream.of(24L, 28L, 32L, 36L)
+                .forEach(value -> {
+                    testClock.addNanos(450, TimeUnit.MILLISECONDS);
+                    helidonTimer.update(value, TimeUnit.MILLISECONDS);
+                });
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        helidonTimer.jsonData(builder);
+        JsonObject jsonObject = builder.build();
+        JsonObject metricObject = jsonObject.getJsonObject(timerName);
+        assertThat("Metric JSON object", metricObject, is(notNullValue()));
+        JsonNumber jsonNumber = metricObject.getJsonNumber("min");
+        assertThat("Min JSON value", jsonNumber, is(notNullValue()));
+        assertThat("Min histo value", jsonNumber.longValue(), is(24L));
+    }
+
 
     private void withTolerance(String field, double actual, double expectedValue) {
         double min = expectedValue * 0.999;
