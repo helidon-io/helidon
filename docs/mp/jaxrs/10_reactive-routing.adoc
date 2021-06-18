@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ You can assign a reactive service to a named routing (and as a result to a named
 either an annotation or configuration (or both to override the value from annotation).
 
 ===== Annotation `@RoutingName`
-You can annotated a service with this annotation to assign it to a specific named routing,
+You can annotate a service bean with this annotation to assign it to a specific named routing,
 that is (most likely) going to be bound to a specific port.
 
 The annotation has two attributes:
@@ -74,10 +74,11 @@ is not configured.
 
 ===== Configuration override of routing name
 
-For each service class you can define the routing name and its required flag by specifying a configuration
-option `class-name.routing-name.name` and `class-name.routing-name.required`.
+For each service bean you can define the routing name and its required flag by specifying a configuration
+option `bean-class-name.routing-name.name` and `bean-class-name.routing-name.required`.
+For service beans produced with producer method replace `bean-class-name` with `class-name.producer-method-name`.
 
-Example (YAML) configuration for a class `io.helidon.examples.AdminService` that changes the
+Example (YAML) configuration for a service bean `io.helidon.examples.AdminService` that changes the
 routing name to `management` and its required flag to `false`:
 
 [source,yaml]

@@ -85,8 +85,9 @@ For example, if you specify a custom server port in `META-INF/microprofile-confi
 then your server will listen on that port.
 
 A main class is also required to start up the server and run the
-application. If you don't use Helidon's built-in main class you can
-define your own:
+application. By default the Quickstart sample project uses the built-in
+Helidon main class. In this guide you want to use your own main class so you have
+more control over the server initialization. First define your own `Main`:
 
 [source,java]
 .src/main/java/io/helidon/examples/quickstart/mp/Main.java
@@ -118,6 +119,18 @@ server and prints out a message with the listen address.
 this class has an empty no-args constructor to make sure this class
 cannot be instantiated.
 <2> The MicroProfile server is started with the default configuration.
+
+Next change the project's `pom.xml` to use your main class:
+
+[source,xml]
+.pom.xml
+----
+    <properties>
+        <mainClass>io.helidon.examples.quickstart.mp.Main</mainClass>
+    </properties>
+----
+
+This property will be used to set the `Main-Class` attribute in the application jar's MANIFEST.
 
 In your application code, Helidon uses the default configuration when you create a `Server` object without a custom `Config` object.
 See the following code from the project you created.

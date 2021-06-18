@@ -20,8 +20,8 @@ import java.util.Optional;
 
 import javax.json.JsonObject;
 
+import io.helidon.common.Base64Value;
 import io.helidon.integrations.common.rest.ApiEntityResponse;
-import io.helidon.integrations.common.rest.Base64Value;
 import io.helidon.integrations.oci.connect.OciApiException;
 import io.helidon.integrations.oci.connect.OciRequestBase;
 

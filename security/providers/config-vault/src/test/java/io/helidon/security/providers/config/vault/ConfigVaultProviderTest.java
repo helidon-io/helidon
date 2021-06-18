@@ -18,8 +18,8 @@ package io.helidon.security.providers.config.vault;
 
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.common.crypto.CryptoException;
 import io.helidon.config.Config;
-import io.helidon.config.encryption.ConfigEncryptionException;
 import io.helidon.security.Security;
 
 import org.junit.jupiter.api.Assertions;
@@ -70,10 +70,10 @@ class ConfigVaultProviderTest {
         assertThat(new String(decrypted), is(secretString));
 
         // now make sure we used a different password
-        Assertions.assertThrows(ConfigEncryptionException.class,
+        Assertions.assertThrows(CryptoException.class,
                                 () -> security.decrypt("config-vault-override", encryptedDefault).await());
 
-        Assertions.assertThrows(ConfigEncryptionException.class,
+        Assertions.assertThrows(CryptoException.class,
                                 () -> security.decrypt("config-vault-default", encryptedOverride).await());
     }
 

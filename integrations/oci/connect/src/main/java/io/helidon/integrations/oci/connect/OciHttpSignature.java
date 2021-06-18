@@ -18,21 +18,18 @@ package io.helidon.integrations.oci.connect;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.Signature;
-import java.security.SignatureException;
 import java.security.interfaces.RSAPrivateKey;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Base64;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.Base64Value;
+import io.helidon.common.crypto.Signature;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.providers.httpsign.HttpSignatureException;
 import io.helidon.security.providers.httpsign.SignedHeadersConfig;
@@ -49,8 +46,6 @@ class OciHttpSignature {
     private final List<String> headers;
     private String base64Signature;
 
-    private byte[] signatureBytes;
-
     OciHttpSignature(String keyId, List<String> headers) {
         this.keyId = keyId;
         this.headers = headers;
@@ -60,11 +55,10 @@ class OciHttpSignature {
         OciHttpSignature signature = new OciHttpSignature(request.keyId,
                                                           request.headersToSign);
 
-        signature.signatureBytes = signature.signRsaSha256(request.env,
-                                                           request.privateKey,
-                                                           request.newHeaders);
-
-        signature.base64Signature = Base64.getEncoder().encodeToString(signature.signatureBytes);
+        Base64Value signedValue = signature.signRsaSha256(request.env,
+                                                          request.privateKey,
+                                                          request.newHeaders);
+        signature.base64Signature = signedValue.toBase64();
 
         return signature;
     }
@@ -76,15 +70,13 @@ class OciHttpSignature {
                 + "signature=\"" + base64Signature + "\"";
     }
 
-    private byte[] signRsaSha256(SecurityEnvironment env, RSAPrivateKey privateKey, Map<String, List<String>> newHeaders) {
-        try {
-            Signature signature = Signature.getInstance("SHA256withRSA");
-            signature.initSign(privateKey);
-            signature.update(getBytesToSign(env, newHeaders));
-            return signature.sign();
-        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
-            throw new HttpSignatureException(e);
-        }
+    private Base64Value signRsaSha256(SecurityEnvironment env, RSAPrivateKey privateKey, Map<String, List<String>> newHeaders) {
+        Signature signature = Signature.builder()
+                .privateKey(privateKey)
+                .algorithm(Signature.ALGORITHM_SHA256_RSA)
+                .build();
+
+        return signature.digest(Base64Value.create(getBytesToSign(env, newHeaders)));
     }
 
     private byte[] getBytesToSign(SecurityEnvironment env, Map<String, List<String>> newHeaders) {

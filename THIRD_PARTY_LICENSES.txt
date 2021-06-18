@@ -196,17 +196,28 @@ Fourth Party Dependencies
   Multi License: Eclipse Public License - v 2.0, GPL Version 2 + CPE
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-EclipseLink 2.7.5 Eclipse Foundation
+EclipseLink JPA 2.7.8 Eclipse Foundation
 Multiple Licenses
 Used by: [helidon-integrations-cdi-eclipselink]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-  Copyright (c) 1998,2019 Oracle and/or its affiliates. All rights reserved.
+EclipseLink JPA (org.eclipse.persistence:org.eclipse.persistence.jpa)
   Copyright (c) 1998,2018 Oracle and/or its affiliates, IBM Corporation. All rights reserved.
   Copyright (c) 1998,2018 IBM and/or its affiliates. All rights reserved.
+  Copyright (c) 1998,2020 Oracle and/or its affiliates. All rights reserved.
   Copyright (c) 2000, 2015 -2011 INRIA, France Telecom
+  Copyright (c) 1998,2020 IBM Corporation. All rights reserved.
   Copyright (c) 1998,2019 IBM Corporation and/or its affiliates. All rights reserved.
-  Copyright (c) 1998,2019 IBM Corporation. All rights reserved.
   Copyright (c) 1998,2018 Hans Harz, Andrew Rustleund, IBM Corporation. All rights reserved.
+--------------------------------------------
+This program and the accompanying materials are made available under
+the terms of the Eclipse Public License v. 2.0 which is available at
+https://www.eclipse.org/legal/epl-2.0, or the Eclipse Distribution License v1.0
+which is available at https://www.eclipse.org/org/documents/edl-v10.php.
+
+SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
+--------------------------------------------
+License Identifier: EPL-2.0
+--------------------------------------------
 
 Eclipse Distribution License - v 1.0
 Copyright (c) 2007, Eclipse Foundation, Inc. and its licensors.
@@ -273,24 +284,24 @@ Fourth Party Dependencies
 --------------------------------------------
 "EclipseLink Core" (org.eclipse.persistence:org.eclipse.persistence.core)
   Copyright (c) 2009,2016 SAP, IBM Corporation. All rights reserved.
-  Copyright (c) 1998,2019 IBM and/or its affiliates. All rights reserved.
+  Copyright (c) 1998,2020 Oracle and/or its affiliates. All rights reserved.
   Copyright (c) 1998,2019 SAP. All rights reserved.
+  Copyright (c) 1998,2020 IBM and/or its affiliates. All rights reserved.
   Copyright (c) 2009,2018 Markus Karg, SAP. All rights reserved.
+  Copyright (c) 1998,2020 IBM Corporation. All rights reserved.
   Copyright (c) 2019 Payara Services Ltd.
   Copyright (c) 2011,2018 Jenzabar, Inc. All rights reserved.
-  Copyright (c) 1998,2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 1998,2020 IBM Corporation and/or its affiliates. All rights reserved.
   Copyright (c) 1998,2015 Sei Syvalta. All rights reserved.
   Copyright (c) 2012,2018 Pervasive Software Inc. All Rights Reserved.
   Copyright (c) 2012,2018 Oracle and/or its affiliates. All Rights Reserved.
+  Copyright (c) 1998,2020 Oracle, IBM Corporation, and/or its affiliates. All rights reserved.
   Copyright (c) 2010 Frank Schwarz. All rights reserved.
   Copyright (c) 2009,2018 Fujitsu Limited. All rights reserved.
-  Copyright (c) 1998,2019 IBM Corporation and/or its affiliates. All rights reserved.
-  Copyright (c) 1998,2019 IBM Corporation. All rights reserved.
   Copyright (c) 2008 Markus KARG(markus-karg@users.sourceforge.net).
   Eclipse Public License - 2.0
   Eclipse Distribution License - v 1.0
 --------------------------------------------
-
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Extended Scalars for graphql-java 15.0.0 Brad Baker
 MIT
@@ -2693,131 +2704,99 @@ Apache License, version 2.0
 License Identifier: Apache-2.0
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-JGit 4.9.9.201903122025-r Eclipse Foundation
+JGit Core 5.11.1.202105131744-r Eclipse Foundation
 Eclipse Distribution License 1.0
 Used by: [helidon-config-git]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-JGit (org.eclipse.jgit:org.eclipse.jgit)
-  Copyright (C) 2011,2013 Google Inc., and others.
-  Copyright (C) 2010, 2013, Mathias Kinzler <mathias.kinzler@sap.com>
-  Copyright (C) 2015, Ivan Motsch <ivan.motsch@bsiag.com>
-  Copyright (C) 2010, Matt Fischer <matt.fischer@garmin.com>
-  Copyright (C) 2006- 2007, Shawn O. Pearce <spearce@spearce.org>
+JGit - Core (org.eclipse.jgit:org.eclipse.jgit)
+  Copyright (C) 2011, Abhishek Bhatnagar <abhatnag@redhat.com> and others
   Copyright (C) 2009, Alex Blewitt <alex.blewitt@gmail.com>
+  Copyright (C) 2014, Alexey Kuznetsov <axet@me.com>
+  Copyright (C) 2019- 2020, Andre Bossert <andre.bossert@siemens.com>
+  Copyright (C) 2014,2021 Andrey Loskutov <loskutov@gmx.de> and others
+  Copyright (C) 2014, André de Oliveira <andre.oliveira@liferay.com> and others
+  Copyright (C) 2014, Arthur Daussy <arthur.daussy@obeo.fr> and others
+  Copyright (C) 2014, Axel Richard <axel.richard@obeo.fr> and others
+  Copyright (C) 2008, Charles O'Farrell <charleso@charleso.org>
+  Copyright (C) 2010,2021 Chris Aniszczyk <caniszczyk@gmail.com> and others
+  Copyright (C) 2009,2020 Christian Halstrick <christian.halstrick@sap.com> and others
+  Copyright (C) 2013, CloudBees, Inc. and others
   Copyright (C) 2009,2010 Constantine Plotnikov <constantine.plotnikov@gmail.com>
-  Copyright (C) 2010, Chrisian Halstrick <christian.halstrick@sap.com> and
-  Copyright (C) 2011, Stefan Lay <stefan.lay@.com>
-  Copyright (C) 2018, Google LLC.
+  Copyright (C) 2012, Daniel Megert <daniel_megert@ch.ibm.com> and others
+  Copyright (C) 2007, Dave Watson <dwatson@mimvista.com>
+  Copyright (C) 2017,2018 David Pursehouse <david.pursehouse@gmail.com> and others
+  Copyright (C) 2015,2017 Ericsson and others
+  Copyright (C) 2008, Florian Köberle <florianskarten@web.de> and others
+  Copyright (C) 2011, GEBIT Solutions and others
+  Copyright (C) 2010, Garmin International
+  Copyright (C) 2011,2019 GitHub Inc. and others
+  Copyright (C) 2008,2020 Google Inc. and others
+  Copyright (C) 2013, Gunnar Wagenknecht
+  Copyright (C) 2013,2014 Gustaf Lundh <gustaf.lundh@sonymobile.com> and others
+  Copyright (C) 2011,2020 IBM Corporation and others
+  Copyright (C) 2009, Igor Fedorenko <igor@ifedorenko.com>
   Copyright (C) 2008, Imran M Yousuf <imyousuf@smartitengineering.com>
-  Copyright (C) 2015, Patrick Steinhardt <ps@pks.im>
-  Copyright (C) 2010, Jens Baumgart <jens.baumgart@sap.com>
-  Copyright (C) 2014, Axel Richard <axel.richard@obeo.fr>
-  Copyright (C) 2011, Abhishek Bhatnagar <abhatnag@redhat.com>
+  Copyright (C) 2015,2020 Ivan Motsch <ivan.motsch@bsiag.com> and others
+  Copyright (C) 2016,2020 JGit contributors
+  Copyright (C) 2010, Jens Baumgart <jens.baumgart@sap.com> and others
+  Copyright (C) 2009,2010 JetBrains s.r.o. and others
+  Copyright (C) 2008- 2020, Johannes E. Schindelin <johannes.schindelin@gmx.de> and others
+  Copyright (C) 2009, Johannes Schindelin <johannes.schindelin@gmx.de> and others
+  Copyright (C) 2008,2009 Jonas Fonseca <fonseca@diku.dk>
+  Copyright (C) 2015, Kaloyan Raev <kaloyan.r@zend.com> and others
+  Copyright (C) 2011, Ketan Padegaonkar <ketanpadegaonkar@gmail.com> and others
+  Copyright (c) 2014, Konrad Kügler and others
+  Copyright (C) 2018, Konrad Windszus <konrad_w@gmx.de> and others
+  Copyright (C) 2016, Laurent Delaigue <laurent.delaigue@obeo.fr> and others
+  Copyright (C) 2014 Laurent Goujon <lgoujon@twitter.com> and others
+  Copyright 2017 Marc Stevens <marc@marc-stevens.nl>, Dan Shumow <danshu@microsoft.com>
+  Copyright (C) 2010,2019 Marc Strapetz <marc.strapetz@syntevo.com>
+  Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com> and others
+  Copyright (C) 2009, Mark Struberg <struberg@yahoo.de>
+  Copyright (C) 2018, Markus Duft <markus.duft@ssi-schaefer.com> and others
+  Copyright (C) 2010,2020 Mathias Kinzler <mathias.kinzler@sap.com> and others
+  Copyright (C) 2010, Matt Fischer <matt.fischer@garmin.com> and others
+  Copyright (C) 2010,2020 Matthias Sohn <matthias.sohn@sap.com> and others
+  Copyright (C) 2020, Michael Dardis. and others
   Copyright (C) 2008, Mike Ralphson <mike@abacus.co.uk>
   Copyright (C) 2009, Mykola Nikishov <mn@mn.com.ua>
-  Copyright (C) 2008-2011 2012, Google Inc.
-  Copyright (C) 2008- 2009, Shawn O. Pearce <spearce@spearce.org>
-  Copyright (C) 2014 Laurent Goujon <lgoujon@twitter.com>
-  Copyright (C) 2011- 2013, Chris Aniszczyk <caniszczyk@gmail.com>
-  Copyright (C) 2009,2017 Christian Halstrick <christian.halstrick@sap.com>
-  Copyright (C) 2010- 2012, Christian Halstrick <christian.halstrick@sap.com>
-  Copyright (C) 2014, André de Oliveira <andre.oliveira@liferay.com>
-  Copyright (C) 2010,2013 Stefan Lay <stefan.lay@sap.com> and
-  Copyright (C) 2008,2009 Jonas Fonseca <fonseca@diku.dk>
-  Copyright (C) 2010, Chris Aniszczyk <caniszczyk@gmail.com> and
-  Copyright (C) 2009, Mark Struberg <struberg@yahoo.de>
-  Copyright (C) 2013,2014 Gustaf Lundh <gustaf.lundh@sonymobile.com>
-  Copyright (C) 2009, Google, Inc.
-  Copyright (C) 2008, Charles O'Farrell <charleso@charleso.org>
-  Copyright (C) 2009,2013 Robin Rosenberg
-  Copyright (C) 2009, Vasyl' Vavrychuk <vvavrychuk@gmail.com>
-  Copyright (C) 2008, Roger C. Soares <rogersoares@intelinet.com.br>
-  Copyright (C) 2007-2008 2009, Robin Rosenberg <robin.rosenberg@dewire.com>
-  Copyright (C) 2010,2015 Christian Halstrick <christian.halstrick@sap.com> and
-  Copyright (C) 2011,2014 Robin Stocker <robin@nibor.org>
-  Copyright (C) 2015,2017 Ericsson
-  Copyright (C) 2008, Thad Hughes <thadh@thad.corp.google.com>
-  Copyright (C) 2009,2017 Matthias Sohn <matthias.sohn@sap.com>
-  Copyright (C) 2010- 2014, Stefan Lay <stefan.lay@sap.com>
-  Copyright (C) 2016, Laurent Delaigue <laurent.delaigue@obeo.fr>
-  Copyright (C) 2011, Tomasz Zarna <Tomasz.Zarna@pl.ibm.com>
-  Copyright (C) 2013, CloudBees, Inc.
-  Copyright (c) 2014, Konrad Kügler
-  Copyright (C) 2012- 2013, Robin Rosenberg
-  Copyright 2017 Marc Stevens <marc@marc-stevens.nl>, Dan Shumow <danshu@microsoft.com>
-  Copyright (C) 2010-2011 2012, Robin Stocker <robin@nibor.org>
-  Copyright (C) 2006,2015 Shawn O. Pearce <spearce@spearce.org>
-  Copyright (C) 2008- 2011, Google Inc.
-  Copyright (C) 2010,2017 Red Hat Inc.
-  Copyright (C) 2009, Tor Arne Vestbø <torarnv@gmail.com>
-  Copyright (C) 2011, Philipp Thun <philipp.thun@sap.com>
-  Copyright (C) 2014, Arthur Daussy <arthur.daussy@obeo.fr>
-  Copyright (C) 2011, Roberto Tyley <roberto.tyley@gmail.com>
-  Copyright (C) 2008,2017 Google Inc.
-  Copyright (C) 2017 Two Sigma Open Source
-  Copyright (C) 2010, Mathias Kinzler <mathias.kinzler@sap.com> and
-  Copyright (C) 2009,2013 Sasa Zivkov <sasa.zivkov@sap.com>
-  Copyright (C) 2008- 2009, Google Inc.
-  Copyright (C) 2011, GEBIT Solutions
-  Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
-  Copyright (C) 2008, Florian Köberle <florianskarten@web.de>
-  Copyright (C) 2012, Daniel Megert <daniel_megert@ch.ibm.com>
-  Copyright (C) 2008-2010 2013, Google Inc.
-  Copyright (C) 2015, Ivan Motsch <ivan.motsch@bsiag.com>,
-  Copyright (C) 2006- 2017, Shawn O. Pearce <spearce@spearce.org>
-  Copyright (C) 2013, Gunnar Wagenknecht
-  Copyright (C) 2011,2012 Google Inc. and others.
-  Copyright (C) 2010, Garmin International
-  Copyright (C) 2011, Chris Aniszczyk <zx@redhat.com>
-  Copyright (C) 2008- 2016, Google Inc.
-  Copyright (C) 2011,2012 IBM Corporation and others.
-  Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>,
-  Copyright (C) 2009, Robin Rosenberg <robin.rosenberg@gmail.com>
-  Copyright (C) 2006-2007 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
-  Copyright (C) 2014,2017 Andrey Loskutov <loskutov@gmx.de>
-  Copyright (C) 2008- 2009, Johannes E. Schindelin <johannes.schindelin@gmx.de>
-  Copyright (C) 2010, Stefan Lay <stefan.lay@sap.com>
-  Copyright (C) 2007 The Guava Authors
-  Copyright (C) 2007,2013 Robin Rosenberg <robin.rosenberg@dewire.com>
-  Copyright (C) 2008, Florian Koeberle <florianskarten@web.de>
-  Copyright (C) 2006-2007 2010, Robin Rosenberg <robin.rosenberg@dewire.com>
-  Copyright (C) 2010,2013 Mathias Kinzler <mathias.kinzler@sap.com>
-  Copyright (C) 2012,2016 Matthias Sohn <matthias.sohn@sap.com> and
-  Copyright (C) 2007, Dave Watson <dwatson@mimvista.com>
-  Copyright (C) 2008-2009 2010, Google Inc.
-  Copyright (C) 2015, Kaloyan Raev <kaloyan.r@zend.com>
-  Copyright (C) 2009, Yann Simon <yann.simon.fr@gmail.com>
-  Copyright (C) 2010- 2012, Matthias Sohn <matthias.sohn@sap.com>
-  Copyright (C) 2012 Christian Halstrick
-  Copyright (C) 2012, Research In Motion Limited
-  Copyright (C) 2011, Christoph Brill <egore911@egore911.de>
-  Copyright (C) 2011, Ketan Padegaonkar <ketanpadegaonkar@gmail.com>
-  Copyright (C) 2010,2013 Marc Strapetz <marc.strapetz@syntevo.com>
-  Copyright (C) 2008, 2017, Google Inc.
-  Copyright (C) 2011- 2013, Robin Rosenberg <robin.rosenberg@dewire.com>
-  Copyright (C) 2010,2017 Chris Aniszczyk <caniszczyk@gmail.com>
-  Copyright (C) 2006- 2008, Shawn O. Pearce <spearce@spearce.org>
-  Copyright (C) 2009,2010 JetBrains s.r.o.
-  Copyright (C) 2011,2017 GitHub Inc.
-  Copyright (C) 2017, Thomas Wolf <thomas.wolf@paranor.ch>
   Copyright (C) 2017, Obeo (mathieu.cartaud@obeo.fr)
-  Copyright (c) 2017:
-  Copyright (C) 2006- 2012, Shawn O. Pearce <spearce@spearce.org>
-  Copyright (C) 2014,2015 Obeo.
-  Copyright (C) 2017, David Pursehouse <david.pursehouse@gmail.com>
-  Copyright (C) 2010, Christian Halstrick <christian.halstrick@sap.com>,
-  Copyright (C) 2009, Johannes Schindelin <johannes.schindelin@gmx.de>
-  Copyright (C) 2014, Alexey Kuznetsov <axet@me.com>
-  Copyright (C) 2014, Sasa Zivkov <sasa.zivkov@sap.com>, SAP AG
-  Copyright (C) 2011, 2012, IBM Corporation and others.
-  Copyright (C) 2008, Robin Rosenberg <robin.rosenberg.lists@dewire.com>
-  Copyright (C) 2017, Wim Jongman <wim.jongman@remainsoftware.com>
-  Copyright (C) 2016, Mark Ingram <markdingram@gmail.com>
-  Copyright (C) 2009, Igor Fedorenko <igor@ifedorenko.com>
-  Copyright (C) 2006- 2007, Robin Rosenberg <robin.rosenberg@dewire.com>
+  Copyright (C) 2014,2015 Obeo. and others
+  Copyright (C) 2015, Patrick Steinhardt <ps@pks.im> and others
+  Copyright (C) 2011, Philipp Thun <philipp.thun@sap.com> and others
+  Copyright (c) 2021 Qualcomm Innovation Center, Inc.
+  Copyright (C) 2010,2021 Red Hat Inc. and others
+  Copyright (C) 2012,2021 Research In Motion Limited and others
+  Copyright (C) 2011, Roberto Tyley <roberto.tyley@gmail.com> and others
+  Copyright (C) 2008- 2018, Robin Rosenberg <robin.rosenberg@dewire.com>
+  Copyright (C) 2012- 2021, Robin Rosenberg and others
+  Copyright (C) 2011,2013 Robin Stocker <robin@nibor.org>
+  Copyright (C) 2013,2014 Robin Stocker <robin@nibor.org> and others
+  Copyright (C) 2010-2011 2012, Robin Stocker <robin@nibor.org> and others
+  Copyright (C) 2008, Roger C. Soares <rogersoares@intelinet.com.br>
+  Copyright (C) 2018,2021 Salesforce and others
+  Copyright (C) 2009,2013 Sasa Zivkov <sasa.zivkov@sap.com>
+  Copyright (C) 2014, Sasa Zivkov <sasa.zivkov@sap.com>, SAP AG and others
+  Copyright (C) 2006,2020 Shawn O. Pearce <spearce@spearce.org> and others
+  Copyright (C) 2010- 2014, Stefan Lay <stefan.lay@sap.com>
+  Copyright (C) 2008, Thad Hughes <thadh@thad.corp.google.com> and others
+  Copyright (C) 2009, The Android Open Source Project
+  Copyright (C) 2007 The Guava Authors
+  Copyright (C) 2017,2021 Thomas Wolf <thomas.wolf@paranor.ch> and others
+  Copyright (C) 2011, Tomasz Zarna <Tomasz.Zarna@pl.ibm.com> and others
+  Copyright (C) 2009, Tor Arne Vestbø <torarnv@gmail.com> and others
+  Copyright (C) 2017, Two Sigma Open Source and others
+  Copyright (C) 2009, Vasyl' Vavrychuk <vvavrychuk@gmail.com> and others
+  Copyright (C) 2017, Wim Jongman <wim.jongman@remainsoftware.com> and others
+  Copyright (C) 2009, Yann Simon <yann.simon.fr@gmail.com> and others
+  Copyright (C) 2011,2020 Christoph Brill <egore911@egore911.de> and others
+
+
 --------------------------------------------
-Eclipse Distribution License - v 1.0
-Copyright (c) 2007, Eclipse Foundation, Inc. and its licensors.
+This program and the accompanying materials are made available
+under the terms of the Eclipse Distribution License v1.0 which
+accompanies this distribution, is reproduced below, and is
+available at http://www.eclipse.org/org/documents/edl-v10.php
 
 All rights reserved.
 
@@ -2851,39 +2830,11 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
---------------------------------------------
-Fourth Party Dependencies
---------------------------------------------
-"JSch" 0.1.54 (com.jcraft:jsch)
-  Copyright (c) 2002-2016 ymnk, JCraft,Inc. All rights reserved.
-  BSD-style license
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-  1. Redistributions of source code must retain the above copyright notice,
-     this list of conditions and the following disclaimer.
-
-  2. Redistributions in binary form must reproduce the above copyright
-     notice, this list of conditions and the following disclaimer in
-     the documentation and/or other materials provided with the distribution.
-
-  3. The names of the authors may not be used to endorse or promote products
-     derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES,
-INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL JCRAFT,
-INC. OR ANY CONTRIBUTORS TO THIS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
-OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 --------------------------------------------
-"SLF4J API Module" 1.7.2 (org.slf4j:slf4j-api)
+Fourth Party Runtime Dependencies
+--------------------------------------------
+"SLF4J API Module" (org.slf4j:slf4j-api)
   Copyright (c) 2004-2011 QOS.ch
 
 The MIT License SPDX short identifier: MIT
@@ -2908,30 +2859,96 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 --------------------------------------------
-"JavaEWAH" 1.1.6 (com.googlecode.javaewah:JavaEWAH)
-  Copyright 2009- 2016, Daniel Lemire, Cliff Moon, David McIntosh, Robert Becho, Google Inc., Veronika Zenz, Owen Kaser, Gregory Ssi-Yan-Kai, Rory Graves
+"JavaEWAH" (com.googlecode.javaewah:JavaEWAH)
+  Copyright 2009- 2016, Daniel Lemire, Cliff Moon, David McIntosh, Robert Becho, Google Inc.,
+                        Veronika Zenz, Owen Kaser, Gregory Ssi-Yan-Kai, Rory Graves
   Copyright 2012, Google Inc.
-  Apache License Version 2.0
+License Identifier: Apache-2.0
 --------------------------------------------
-"Apache HttpClient" 4.3.6 (org.apache.httpcomponents:httpclient)
-  Copyright 1999-2019 The Apache Software Foundation
-  Apache License Version 2.0
---------------------------------------------
-"Apache HttpCore" 4.3.3 (org.apache.httpcomponents:httpcore)
-  Copyright 2005-2018 The Apache Software Foundation
-  Apache License Version 2.0
---------------------------------------------
-"Commons Logging" 1.1.3 (commons-logging:commons-logging)
-  Copyright 2003-2016 The Apache Software Foundation
-  Apache License Version 2.0
---------------------------------------------
-"Commons Codec" 1.6 (commons-codec:commons-codec)
-  Copyright 2002-2019 The Apache Software Foundation
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Jaeger Tracing Client 1.1.0 The Jaeger Authors
+Apache 2.0
+Used by: [helidon-tracing-jaeger]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Jaeger Tracing Client
+  Copyright (c) 2018, The Jaeger Authors
   Apache License Version 2.0
 --------------------------------------------
 License Identifier: Apache-2.0
 --------------------------------------------
+Fourth Party Dependencies
+--------------------------------------------
+"SLF4J API Module" (org.slf4j:slf4j-api)
+  Copyright (c) 2004-2011 QOS.ch
 
+The MIT License SPDX short identifier: MIT
+
+Further resources on the MIT License Copyright <YEAR> <COPYRIGHT HOLDER>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+--------------------------------------------
+"Apache Thrift" (org.apache.thrift:libthrift)
+Apache Thrift
+Copyright (C) 2006 - 2019, The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+Apache License Version 2.0
+--------------------------------------------
+"okhttp" (com.squareup.okhttp3:okhttp)
+  Copyright (C) 2018 Square, Inc.
+  Apache License Version 2.0
+--------------------------------------------
+"Okio" (com.squareup.okio:okio)
+  Copyright (C) 2019 Square, Inc.
+  Apache License Version 2.0
+--------------------------------------------
+"org.jetbrains.kotlin:kotlin-stdlib" (org.jetbrains.kotlin:kotlin-stdlib)
+  Copyright 2010-2018 JetBrains s.r.o. and Kotlin Programming Language contributors.
+  Apache License Version 2.0
+--------------------------------------------
+"org.jetbrains.kotlin:kotlin-stdlib-common" (org.jetbrains.kotlin:kotlin-stdlib-common)
+  Copyright 2010-2018 JetBrains s.r.o. and Kotlin Programming Language contributors.
+  Apache License Version 2.0
+--------------------------------------------
+"OpenTracing API" (io.opentracing:opentracing-api)
+  Copyright 2016-2019 The OpenTracing Authors
+  Apache License Version 2.0
+--------------------------------------------
+"OpenTracing-util" (io.opentracing:opentracing-util)
+  Copyright 2016-2019 The OpenTracing Authors
+  Apache License Version 2.0
+--------------------------------------------
+"OpenTracing-noop"  (io.opentracing:opentracing-noop)
+  Copyright 2016-2019 The OpenTracing Authors
+  Apache License Version 2.0
+--------------------------------------------
+"Gson" (com.google.code.gson:gson)
+  Copyright (C) 2017,2018 The Gson authors
+  Copyright (C) 2008,2014 Google Inc.
+  Copyright (C) 2010 The Android Open Source Project
+  Apache License Version 2.0
+--------------------------------------------
+"Tracer resolver" (io.opentracing.contrib:opentracing-tracerresolver)
+  Copyright 2017-2019 The OpenTracing Authors
+  Apache License Version 2.0
+--------------------------------------------
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jaeger Tracing Client 1.1.0 The Jaeger Authors
 Apache 2.0
@@ -5932,11 +5949,12 @@ This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-SmallRye OpenAPI 1.2.0 Red Hat, Inc.
+SmallRye OpenAPI 1.2.3 Red Hat, Inc.
 Apache 2.0
 Used by: [helidon-openapi]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
- Copyright 2018 Red Hat, Inc.
+SmallRye: MicroProfile OpenAPI Implementation (io.smallrye:smallrye-open-api)
+  Copyright 2018 Red Hat, Inc.
   Copyright 2017,2019 Red Hat, Inc, and individual contributors.
 --------------------------------------------
 License Identifier: Apache-2.0
@@ -5947,6 +5965,25 @@ Fourth Party Runtime Dependencies
   Copyright 2017 SmartBear Software
   Copyright (c) 2017 Contributors to the Eclipse Foundation
   Apache License Version 2
+
+  =========================================================================
+  ==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
+  ==  Version 2.0, in this case for MicroProfile OpenAPI                 ==
+  =========================================================================
+
+  The majority of this software were originally based on the following:
+  * Swagger Core
+    https://github.com/swagger-api/swagger-core
+    under Apache License, v2.0
+
+  SPDXVersion: SPDX-2.1
+  PackageName: Eclipse MicroProfile
+  PackageHomePage: http://www.eclipse.org/microprofile
+  PackageLicenseDeclared: Apache-2.0
+
+  PackageCopyrightText: <text>
+  Arthur De Magalhaes arthurdm@ca.ibm.com
+  </text>
 --------------------------------------------
 "org.osgi:org.osgi.annotation.versioning" (org.osgi:org.osgi.annotation.versioning)
   Copyright (c) OSGi Alliance (2013, 2014). All Rights Reserved.
@@ -5956,11 +5993,34 @@ Fourth Party Runtime Dependencies
 "MicroProfile Config API" (org.eclipse.microprofile.config:microprofile-config-api)
   Copyright (c) 2009-2017 Contributors to the Eclipse Foundation
   Apache License Version 2
---------------------------------------------
-"Jackson" (com.fasterxml.jackson.core:jackson-*)
-  Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
-  Copyright 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
-  Apache License Version 2
+
+  =========================================================================
+  ==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
+  ==  Version 2.0, in this case for Microprofile Config                  ==
+  =========================================================================
+
+  This product includes software developed at
+  The Apache Software Foundation (http://www.apache.org/).
+
+  Portions of this software were originally based on the following:
+  * Apache DeltaSpike Config
+    https://deltaspike.apache.org
+    under Apache License, v2.0
+
+  SPDXVersion: SPDX-2.1
+  PackageName: Eclipse Microprofile
+  PackageHomePage: http://www.eclipse.org/microprofile
+  PackageLicenseDeclared: Apache-2.0
+
+  PackageCopyrightText: <text>
+  Mark Struberg struberg@apache.org,
+  Gerhard Petracek gpetracek@apache.org,
+  Romain Manni-Bucau rmannibucau@apache.org,
+  Ron Smeral rsmeral@apache.org,
+  Emily Jiang emijiang@uk.ibm.com,
+  Ondrej Mihalyi ondrej.mihalyi@gmail.com,
+  Gunnar Morling gunnar@hibernate.org
+  </text>
 --------------------------------------------
 "Java Annotation Indexer" (org.jboss:jandex)
   Copyright 2013,2014 Red Hat, Inc., and individual contributors
@@ -5974,19 +6034,43 @@ Fourth Party Runtime Dependencies
 "ShrinkWrap API" (org.jboss.shrinkwrap:shrinkwrap-api)
   Copyright 2009,2012 Red Hat Middleware LLC, and individual contributors
   Apache License Version 2
+  Apache Commons Compress
+  Copyright 2002-2013 The Apache Software Foundation
+
+  This product includes software developed at
+  The Apache Software Foundation (http://www.apache.org/).
 --------------------------------------------
 "SnakeYAML" (org.yaml:snakeyaml)
   Copyright 2003-2010 Christian d'Heureuse, Inventec Informatik AG, Zurich, Switzerland
   Copyright (c) 2008, http://www.snakeyaml.org
   Apache License Version 2
 --------------------------------------------
+"Jackson" (com.fasterxml.jackson.*:jackson-*)
+  com.fasterxml.jackson.core:jackson-databind
+  com.fasterxml.jackson.core:jackson-annotations
+  com.fasterxml.jackson.dataformat:jackson-dataformat-yaml
+  Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
+  Copyright 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
+  Apache License Version 2
 
+  # Jackson JSON processor
 
+  Jackson is a high-performance, Free/Open Source JSON processing library.
+  It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+  been in development since 2007.
+  It is currently developed by a community of developers.
 
+  ## Licensing
 
+  Jackson 2.x core and extension components are licensed under Apache License 2.0
+  To find the details that apply to this artifact see the accompanying LICENSE file.
 
+  ## Credits
 
-
+  A list of contributors may be found from CREDITS(-2.x) file, which is included
+  in some artifacts (usually source distributions); but is always available
+  from the source code management (SCM) system project uses.
+--------------------------------------------
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 SnakeYAML 1.27 SnakeYAML.org
 Apache 2.0
@@ -6295,17 +6379,16 @@ Apache License Version 2
 --------------------------------------------------------------------------------
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-etcd4j 2.17.0 Jurriaan Mous
+etcd4j 2.18.0 Jurriaan Mous
 Apache 2.0
 Used by: [helidon-config-etcd]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 etcd4j (org.mousio:etcd4j)
   Copyright (c) 2015, Jurriaan Mous and contributors as indicated by the @author tags.
-  Apache License Version 2.0
 --------------------------------------------
 License Identifier: Apache-2.0
 --------------------------------------------
-Fourth Party Dependencies
+Fourth Party Runtime Dependencies
 --------------------------------------------
 "minimal-json" (com.eclipsesource.minimal-json:minimal-json)
   Copyright (c) 2013,2017 EclipseSource.
@@ -6334,35 +6417,96 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --------------------------------------------
 "SLF4J API Module" (org.slf4j:slf4j-api)
   Copyright (c) 2004-2011 QOS.ch
-  The MIT License
+
+The MIT License SPDX short identifier: MIT
+
+Further resources on the MIT License Copyright <YEAR> <COPYRIGHT HOLDER>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 --------------------------------------------
-"Netty" (io.netty:netty-*)
-  Copyright 2015,2016 The Netty Project
-  Copyright (c) 2011, Joe Walnes and contributors
-  Copyright 2012,2017 The Netty Project
-  Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
-  Copyright 2011,2018 The Netty Project
+"Netty"
+  io.netty:netty-codec-dns
+  io.netty:netty-codec-http
+  io.netty:netty-handler
+  io.netty:netty-resolver-dns
+  Copyright 2011,2019 The Netty Project
   Copyright (c) 2004-2011 QOS.ch
-  Copyright 2014,2018 The Netty Project
-  Apache License Version 2.0
+  Copyright (c) 2011, Joe Walnes and contributors
+  Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
+
+  Copyright 2014 The Netty Project
+
+  The Netty Project licenses this file to you under the Apache License,
+  version 2.0 (the "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at:
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and limitations
+  under the License.
 --------------------------------------------
 "Jackson"
+  com.fasterxml.jackson.core:jackson-core
+  com.fasterxml.jackson.core:jackson-databind
+  com.fasterxml.jackson.core:jackson-annotations
+  com.fasterxml.jackson.module:jackson-module-afterburner
   Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
-  Apache License Version 2.0
+  # Jackson JSON processor
+
+  Jackson is a high-performance, Free/Open Source JSON processing library.
+  It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+  been in development since 2007.
+  It is currently developed by a community of developers.
+
+  ## Licensing
+
+  Jackson 2.x core and extension components are licensed under Apache License 2.0
+  To find the details that apply to this artifact see the accompanying LICENSE file.
+
+  ## Credits
+
+  A list of contributors may be found from CREDITS(-2.x) file, which is included
+  in some artifacts (usually source distributions); but is always available
+  from the source code management (SCM) system project uses.
 --------------------------------------------
 "json-flattener" (com.github.wnameless:json-flattener)
   Copyright 2015,2018 Wei-Ming Wu
-  Apache License Version 2.0
+  Apache License 2.0
 --------------------------------------------
 "Apache Commons Text" (org.apache.commons:commons-text)
-  Copyright 2001-2019 The Apache Software Foundation
-  Apache License Version 2.0
+  Copyright 2014-2020 The Apache Software Foundation
+
+  This product includes software developed at
+  The Apache Software Foundation (https://www.apache.org/).
+  Apache License 2.0
 --------------------------------------------
 "Apache Commons Lang" (org.apache.commons:commons-lang3)
-  Copyright 2001-2019 The Apache Software Foundation
-  Apache License Version 2.0
---------------------------------------------
+  Apache Commons Lang
+  Copyright 2001-2021 The Apache Software Foundation
 
+  This product includes software developed at
+  The Apache Software Foundation (https://www.apache.org/).
+  Apache License 2.0
+--------------------------------------------
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 graphql-java 15.0 Facebook, Inc
 MIT

@@ -38,5 +38,6 @@
         <module>gh1487</module>
         <module>gh2297</module>
         <module>gh2455</module>
+        <module>path-params</module>
     </modules>
 </project>

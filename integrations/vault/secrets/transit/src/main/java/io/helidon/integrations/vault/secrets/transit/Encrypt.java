@@ -18,10 +18,10 @@ package io.helidon.integrations.vault.secrets.transit;
 
 import javax.json.JsonObject;
 
+import io.helidon.common.Base64Value;
 import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.common.rest.ApiException;
 import io.helidon.integrations.common.rest.ApiJsonParser;
-import io.helidon.integrations.common.rest.Base64Value;
 import io.helidon.integrations.vault.VaultRequest;
 import io.helidon.integrations.vault.VaultResponse;
 
@@ -110,8 +110,8 @@ public final class Encrypt {
          *
          * @param value value to encrypt
          * @return updated request
-         * @see io.helidon.integrations.common.rest.Base64Value#create(String)
-         * @see io.helidon.integrations.common.rest.Base64Value#create(byte[])
+         * @see Base64Value#create(String)
+         * @see Base64Value#create(byte[])
          */
         public Request data(Base64Value value) {
             return add("plaintext", value.toBase64());
