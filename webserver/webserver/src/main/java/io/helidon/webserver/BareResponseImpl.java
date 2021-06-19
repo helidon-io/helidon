@@ -334,12 +334,13 @@ class BareResponseImpl implements BareResponse {
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
         this.subscription = subscription;
-        subscription.request(2); // Because first chunk gets cached
+        subscription.request(1);
     }
 
     @Override
     public void onNext(DataChunk data) {
         if (internallyClosed.get()) {
+            subscription.request(1);
             throw new IllegalStateException("Response is already closed!");
         }
         if (data != null) {
@@ -355,6 +356,7 @@ class BareResponseImpl implements BareResponse {
 
             if (lengthOptimization && firstChunk == null) {
                 firstChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
+                subscription.request(1);
                 return;
             }
 
@@ -445,8 +447,9 @@ class BareResponseImpl implements BareResponse {
                             writeFuture.completeExceptionally(future.cause());
                         }
                     });
+                    boolean flush = data.flush();
                     data.release();
-                    if (data.flush()) {
+                    if (flush) {
                         subscription.request(1);
                     }
                     LOGGER.finest(() -> log("Data chunk sent with result: %s", future.isSuccess()));
