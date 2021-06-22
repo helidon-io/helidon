@@ -7,7 +7,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [2.3.1-SNAPSHOT]
+## [2.3.1]
 
 2.3.1 is a bug fix release of Helidon. It also includes some minor enhancements.
 
@@ -42,8 +42,8 @@ to the module `Helidon Common`. Due to that action, import has changed from
 - Security: Helidon crypto module [2989](https://github.com/oracle/helidon/pull/2989)
 - Security: Add optional support to security providers [3039](https://github.com/oracle/helidon/pull/3039)
 - Reactive: Fix  Intermittent MultiFlatMapPublisherTest#multi [3068](https://github.com/oracle/helidon/pull/3068)
-- Reactive: BEP refactor [2285](https://github.com/oracle/helidon/pull/2285)
 - MicroProfile Server: Reactive routing via cdi provider [3050](https://github.com/oracle/helidon/pull/3050)
+- Metrics: Adjust JSON timer histogram output using the units (if any) that were set on the timer [3132](https://github.com/oracle/helidon/pull/3132)
 - Metrics: Add extended key performance indicators metrics support [3021](https://github.com/oracle/helidon/pull/3021)
 - Messaging: Messaging connector type check [3044](https://github.com/oracle/helidon/pull/3044)
 - JPA: Ensure container-managed EntityManagerFactory contextual references are eagerly inflated [3018](https://github.com/oracle/helidon/pull/3018)
@@ -52,6 +52,7 @@ to the module `Helidon Common`. Due to that action, import has changed from
 - JAX-RS: Allow sharing of same Jersey's injection manager across multiple JAX-RS applications [2988](https://github.com/oracle/helidon/pull/2988)
 - GraphQL: Upgrade GraphQL to support mp-graphql spec 1.1.0 [3065](https://github.com/oracle/helidon/pull/3065)
 - GraphQL: Minor update to README and add missing @NonNull on TaskApi [3091](https://github.com/oracle/helidon/pull/3091)
+- Examples: Silence Weld's INFO logging on quickstart examples [3131](https://github.com/oracle/helidon/pull/3131)
 - Docs: Upgrade javadoc-plugin. Silence  error for org.jboss.logging.annotations.Message$Format [3077](https://github.com/oracle/helidon/pull/3077)
 - Docs: Update Config Guide to describe how to change pom for custom main class [3083](https://github.com/oracle/helidon/pull/3083)
 - Docs: Fix various formatting and processing errors in doc files [3036](https://github.com/oracle/helidon/pull/3036)
@@ -1420,7 +1421,8 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.3.0]: https://github.com/oracle/helidon/compare/2.2.2...HEAD
+[2.3.1]: https://github.com/oracle/helidon/compare/2.3.0...2.3.1
+[2.3.0]: https://github.com/oracle/helidon/compare/2.2.2...2.3.0
 [2.2.2]: https://github.com/oracle/helidon/compare/2.2.1...2.2.2
 [2.2.1]: https://github.com/oracle/helidon/compare/2.2.0...2.2.1
 [2.2.0]: https://github.com/oracle/helidon/compare/2.1.0...2.2.0
