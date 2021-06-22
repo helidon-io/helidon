@@ -45,7 +45,8 @@ public interface DataPropagationProvider<T> {
      * method is deprecated in favor of {@link #clearData(Object)}.
      */
     @Deprecated
-    void clearData();
+    default void clearData() {
+    }
 
     /**
      * Clears the propagated data from the new thread when it finishes.
