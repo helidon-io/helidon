@@ -45,7 +45,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 NOTE: If you follow these instructions on how to
 https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#two[Generate an API Signing Key],
-keep in mind that Helidon does not currently support passphrase-protected private keys in PKCS#1 format.
+be advised that Helidon does not currently support passphrase-protected private keys in PKCS#1 format.
 If generating a private key using those instructions, use the _no passphrase_ option.
 
 ===  Using Helidon MP Properties Configuration
