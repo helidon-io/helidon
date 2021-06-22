@@ -119,6 +119,13 @@ public interface SocketConfiguration {
     Set<String> enabledSslProtocols();
 
     /**
+     * Return the allowed cipher suite of the TLS. If empty set is returned, the default cipher suite is used.
+     *
+     * @return the allowed cipher suite
+     */
+    Set<String> allowedCipherSuite();
+
+    /**
      * Whether to require client authentication or not.
      *
      * @return client authentication

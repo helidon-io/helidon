@@ -73,6 +73,11 @@ class ServerBasicConfig implements ServerConfiguration {
     }
 
     @Override
+    public Set<String> allowedCipherSuite() {
+        return socketConfig.allowedCipherSuite();
+    }
+
+    @Override
     public ClientAuthentication clientAuth() {
         return socketConfig.clientAuth();
     }
@@ -176,6 +181,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final int receiveBufferSize;
         private final SSLContext sslContext;
         private final Set<String> enabledSslProtocols;
+        private final Set<String> allowedCipherSuite;
         private final String name;
         private final boolean enabled;
         private final ClientAuthentication clientAuth;
@@ -211,10 +217,12 @@ class ServerBasicConfig implements ServerConfiguration {
                 this.sslContext = webServerTls.sslContext();
                 this.enabledSslProtocols = new HashSet<>(webServerTls.enabledTlsProtocols());
                 this.clientAuth = webServerTls.clientAuth();
+                this.allowedCipherSuite = webServerTls.cipherSuite();
             } else {
                 this.sslContext = null;
                 this.enabledSslProtocols = Set.of();
                 this.clientAuth = ClientAuthentication.NONE;
+                this.allowedCipherSuite = Set.of();
             }
         }
 
@@ -251,6 +259,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public Set<String> enabledSslProtocols() {
             return enabledSslProtocols;
+        }
+
+        @Override
+        public Set<String> allowedCipherSuite() {
+            return allowedCipherSuite;
         }
 
         @Override
