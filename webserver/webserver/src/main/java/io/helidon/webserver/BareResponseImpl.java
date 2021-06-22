@@ -334,12 +334,13 @@ class BareResponseImpl implements BareResponse {
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
         this.subscription = subscription;
-        subscription.request(Long.MAX_VALUE);
+        subscription.request(1);
     }
 
     @Override
     public void onNext(DataChunk data) {
         if (internallyClosed.get()) {
+            subscription.request(1);
             throw new IllegalStateException("Response is already closed!");
         }
         if (data != null) {
@@ -349,11 +350,13 @@ class BareResponseImpl implements BareResponse {
                 } else {
                    prevRequestChunk = prevRequestChunk.thenRun(ctx::flush);
                 }
+                subscription.request(1);
                 return;
             }
 
             if (lengthOptimization && firstChunk == null) {
                 firstChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
+                subscription.request(1);
                 return;
             }
 
@@ -431,6 +434,7 @@ class BareResponseImpl implements BareResponse {
             channelFuture = ctx.writeAndFlush(httpContent);
         } else {
             channelFuture = ctx.write(httpContent);
+            subscription.request(1);
         }
 
         return channelFuture
@@ -443,7 +447,11 @@ class BareResponseImpl implements BareResponse {
                             writeFuture.completeExceptionally(future.cause());
                         }
                     });
+                    boolean flush = data.flush();
                     data.release();
+                    if (flush) {
+                        subscription.request(1);
+                    }
                     LOGGER.finest(() -> log("Data chunk sent with result: %s", future.isSuccess()));
                 })
                 .addListener(completeOnFailureListener("Failure when sending a content!"))
