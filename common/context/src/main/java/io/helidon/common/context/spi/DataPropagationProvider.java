@@ -16,7 +16,7 @@
 package io.helidon.common.context.spi;
 
 /**
- * This is SPI provider which helps user to propagate values from one thread to another.
+ * This is an SPI provider which helps user to propagate values from one thread to another.
  *
  * Every provider has its method {@link #data()} invoked before thread switch, to obtain
  * value for propagation. After the thread is switched, the new thread executes
@@ -41,10 +41,19 @@ public interface DataPropagationProvider<T> {
     void propagateData(T data);
 
     /**
-     * Clears the propagated date from the new thread when it finishes.
-     *
-     * @param data dataa for propagation
+     * Clears the propagated data from the new thread when it finishes. This
+     * method is deprecated in favor of {@link #clearData(Object)}.
      */
-    void clearData(T data);
+    @Deprecated
+    void clearData();
+
+    /**
+     * Clears the propagated data from the new thread when it finishes.
+     *
+     * @param data data for propagation
+     */
+    default void clearData(T data) {
+        clearData();
+    }
 
 }
