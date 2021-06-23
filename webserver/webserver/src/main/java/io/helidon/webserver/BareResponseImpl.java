@@ -282,18 +282,17 @@ class BareResponseImpl implements BareResponse {
     private void writeLastContent(final Throwable throwable, final ChannelFutureListener closeAction) {
         boolean chunked = true;
         if (lengthOptimization) {
-            if (firstChunk != null) {
-                if (throwable == null) {
-                    HttpUtil.setTransferEncodingChunked(response, false);
-                    HttpUtil.setContentLength(response, firstChunk.remaining());
-                    chunked = false;
-                } else {
-                    //headers not sent yet
-                    response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-                    //We are not using CombinedHttpHeaders
-                    response.headers()
-                            .set(HttpHeaderNames.TRAILER, Response.STREAM_STATUS + "," + Response.STREAM_RESULT);
-                }
+            if (throwable == null) {
+                int length = (firstChunk == null ? 0 : firstChunk.remaining());
+                HttpUtil.setTransferEncodingChunked(response, false);
+                HttpUtil.setContentLength(response, length);
+                chunked = false;
+            } else {
+                //headers not sent yet
+                response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                //We are not using CombinedHttpHeaders
+                response.headers()
+                        .set(HttpHeaderNames.TRAILER, Response.STREAM_STATUS + "," + Response.STREAM_RESULT);
             }
             initWriteResponse();
         }
