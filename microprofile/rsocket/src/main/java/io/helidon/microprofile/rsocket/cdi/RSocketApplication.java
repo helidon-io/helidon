@@ -32,6 +32,7 @@ public final class RSocketApplication {
     private Set<Class<?>> annotatedEndpoints;
     private Set<Class<? extends Endpoint>> programmaticEndpoints;
 
+
     private RSocketApplication(Builder builder) {
         this.applicationClass = builder.applicationClass;
         this.annotatedEndpoints = builder.annotatedEndpoints;

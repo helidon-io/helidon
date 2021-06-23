@@ -23,10 +23,19 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation for RSocket class.
+ */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
 public @interface RSocket {
+
+    /**
+     * Set path.
+     *
+     * @return String
+     */
     String path() default "/";
 }

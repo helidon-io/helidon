@@ -8,6 +8,9 @@ import io.helidon.webserver.rsocket.RequestStreamHandler;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * RSocket routing.
+ */
 public interface RSocketRouting {
 
     static Builder builder() {
@@ -23,6 +26,9 @@ public interface RSocketRouting {
     Map<String, RequestChannelHandler> getRequestChannelRoutes();
 
 
+    /**
+     * Rules for RSocket routing.
+     */
     interface Rules {
 
         Rules register(RSocketService service);
@@ -63,6 +69,11 @@ public interface RSocketRouting {
             this.requestChannelRoutes = new HashMap<>();
         }
 
+        /**
+         * Return RSocketRouting implementation.
+         *
+         * @return {@link RSocketRouting}
+         */
         @Override
         public RSocketRouting build() {
             return new RSocketRoutingImpl(requestResponseRoutes,
@@ -71,67 +82,129 @@ public interface RSocketRouting {
                     requestChannelRoutes);
         }
 
+        /**
+         * Register {@link RSocketService} service.
+         *
+         * @param service
+         * @return Builder
+         */
         @Override
         public Builder register(RSocketService service) {
             service.update(this);
             return this;
         }
 
+        /**
+         * Register {@link RSocketService} service.
+         *
+         * @param pathParam
+         * @param service
+         * @return Builder
+         */
         @Override
         public Builder register(String pathParam, RSocketService service) {
-            //TODO: should we have routed param here according to rsocket spec?
             service.update(this);
             return this;
         }
 
+        /**
+         * Register Fire and Forget method handler.
+         *
+         * @param handler
+         * @return Builder
+         */
         @Override
         public Builder fireAndForget(FireAndForgetHandler handler) {
             fireAndForgetRoutes.put("", handler);
             return this;
         }
 
+        /**
+         * Register Fire and Forget method handler.
+         *
+         * @param handler
+         * @param pathParam
+         * @return Builder
+         */
         @Override
         public Builder fireAndForget(String pathParam, FireAndForgetHandler handler) {
             fireAndForgetRoutes.put(pathParam, handler);
             return this;
         }
 
+        /**
+         * Register Request Channel method handler.
+         *
+         * @param handler
+         * @return Builder
+         */
         @Override
         public Builder requestChannel(RequestChannelHandler handler) {
             requestChannelRoutes.put("", handler);
             return this;
         }
 
+        /**
+         * Register Request Channel method handler.
+         *
+         * @param handler
+         * @param pathParam
+         * @return Builder
+         */
         @Override
         public Builder requestChannel(String pathParam, RequestChannelHandler handler) {
             requestChannelRoutes.put(pathParam, handler);
             return this;
         }
 
+        /**
+         * Register Request Response method handler.
+         *
+         * @param handler
+         * @return Builder
+         */
         @Override
         public Builder requestResponse(RequestResponseHandler handler) {
             requestResponseRoutes.put("", handler);
             return this;
         }
 
+        /**
+         * Register Request Response method handler.
+         *
+         * @param handler
+         * @param pathParam
+         * @return Builder
+         */
         @Override
         public Builder requestResponse(String pathParam, RequestResponseHandler handler) {
             requestResponseRoutes.put(pathParam, handler);
             return this;
         }
 
+        /**
+         * Register Request Stream method handler.
+         *
+         * @param handler
+         * @return Builder
+         */
         @Override
         public Builder requestStream(RequestStreamHandler handler) {
             requestStreamRoutes.put("", handler);
             return this;
         }
 
+        /**
+         * Register Request Stream method handler.
+         *
+         * @param handler
+         * @param pathParam
+         * @return Builder
+         */
         @Override
         public Builder requestStream(String pathParam, RequestStreamHandler handler) {
             requestStreamRoutes.put(pathParam, handler);
             return this;
         }
     }
-
-
 }

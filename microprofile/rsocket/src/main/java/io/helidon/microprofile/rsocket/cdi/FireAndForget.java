@@ -23,10 +23,18 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation for Fire and Forget method.
+ */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
 public @interface FireAndForget {
+    /**
+     * Set routing.
+     *
+     * @return String
+     */
     String route() default "";
 }

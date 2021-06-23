@@ -30,6 +30,9 @@ import reactor.core.publisher.Mono;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Since currently RSocket does not have API for routing, we provide our own.
+ */
 public class RoutedRSocket implements RSocket {
     private final Map<String, RequestResponseHandler> requestResponseRoutes;
     private final Map<String, FireAndForgetHandler> fireAndForgetRoutes;
@@ -37,6 +40,14 @@ public class RoutedRSocket implements RSocket {
     private final Map<String, RequestChannelHandler> requestChannelRoutes;
     private String mimeType = WellKnownMimeType.APPLICATION_JSON.getString();
 
+    /**
+     * Constructor for routed RSocket.
+     *
+     * @param requestResponseRoutes
+     * @param fireAndForgetRoutes
+     * @param requestStreamRoutes
+     * @param requestChannelRoutes
+     */
     RoutedRSocket(Map<String, RequestResponseHandler> requestResponseRoutes,
                   Map<String, FireAndForgetHandler> fireAndForgetRoutes,
                   Map<String, RequestStreamHandler> requestStreamRoutes,
@@ -47,21 +58,35 @@ public class RoutedRSocket implements RSocket {
         this.requestChannelRoutes = requestChannelRoutes;
     }
 
+    /**
+     * Builder for RoutedRSocket.
+     *
+     * @return Builder
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Set Mime type.
+     * @param mimetype
+     */
     public void setMimeType(String mimetype) {
         this.mimeType = mimetype;
     }
 
-
+    /**
+     * Builder for RoutedRSocket
+     */
     public static final class Builder {
         private Map<String, RequestResponseHandler> requestResponseRoutes;
         private Map<String, FireAndForgetHandler> fireAndForgetRoutes;
         private Map<String, RequestStreamHandler> requestStreamRoutes;
         private Map<String, RequestChannelHandler> requestChannelRoutes;
 
+        /**
+         * Constructor for Builder.
+         */
         public Builder() {
             this.requestResponseRoutes = new HashMap<>();
             this.fireAndForgetRoutes = new HashMap<>();
@@ -69,33 +94,67 @@ public class RoutedRSocket implements RSocket {
             this.requestChannelRoutes = new HashMap<>();
         }
 
+        /**
+         * Set RequestResponse routes.
+         *
+         * @param requestResponseRoutes
+         * @return Builder
+         */
         public Builder requestResponseRoutes(Map<String, RequestResponseHandler> requestResponseRoutes) {
             this.requestResponseRoutes = requestResponseRoutes;
             return this;
         }
 
+        /**
+         * Set Fire and Forget routes.
+         *
+         * @param fireAndForgetRoutes
+         * @return Builder
+         */
         public Builder fireAndForgetRoutes(Map<String, FireAndForgetHandler> fireAndForgetRoutes) {
             this.fireAndForgetRoutes = fireAndForgetRoutes;
             return this;
         }
 
+        /**
+         * Set Request Stream routes.
+         *
+         * @param requestStreamRoutes
+         * @return Builder
+         */
         public Builder requestStreamRoutes(Map<String, RequestStreamHandler> requestStreamRoutes) {
             this.requestStreamRoutes = requestStreamRoutes;
             return this;
         }
 
-
+        /**
+         * Set Request Channel routes.
+         *
+         * @param requestChannelRoutes
+         * @return Builder
+         */
         public Builder requestChannelRoutes(Map<String, RequestChannelHandler> requestChannelRoutes) {
             this.requestChannelRoutes = requestChannelRoutes;
             return this;
         }
 
+        /**
+         * Create RoutedRSocket.
+         *
+         * @return {@link RoutedRSocket}
+         */
         public RoutedRSocket build() {
             return new RoutedRSocket(requestResponseRoutes, fireAndForgetRoutes, requestStreamRoutes, requestChannelRoutes);
         }
 
     }
 
+    /**
+     * Handle Request Response.
+     *
+     * @param payload
+     * @return Mono<Payload>
+     */
     @Override
     public Mono<Payload> requestResponse(Payload payload) {
         try {
@@ -119,6 +178,12 @@ public class RoutedRSocket implements RSocket {
         return Mono.from(FlowAdapters.toPublisher(handler.handle(payload)));
     }
 
+    /**
+     * Handle Fire and Forget.
+     *
+     * @param payload
+     * @return Mono<Void>
+     */
     @Override
     public Mono<Void> fireAndForget(Payload payload) {
         try {
@@ -140,6 +205,12 @@ public class RoutedRSocket implements RSocket {
         return Mono.from(FlowAdapters.toPublisher(handler.handle(payload)));
     }
 
+    /**
+     * Handle Request Stream.
+     *
+     * @param payload
+     * @return Flux<Payload>
+     */
     @Override
     public Flux<Payload> requestStream(Payload payload) {
         try {
@@ -161,6 +232,12 @@ public class RoutedRSocket implements RSocket {
         return Flux.from(FlowAdapters.toPublisher(handler.handle(obj)));
     }
 
+    /**
+     * Handle Request Channel.
+     *
+     * @param payloads
+     * @return Flux<Payload>
+     */
     @Override
     public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
         return Flux.from(payloads)

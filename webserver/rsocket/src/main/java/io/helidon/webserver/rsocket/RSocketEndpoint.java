@@ -67,12 +67,19 @@ public class RSocketEndpoint extends Endpoint {
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
         final HelidonDuplexConnection connection = new HelidonDuplexConnection(session);
+        session.setMaxIdleTimeout(0);
         connections.put(session.getId(), connection);
         connectionAcceptor.apply(connection).subscribe();
+        connection.onClose().doFinally(__ -> connections.remove(session.getId())).subscribe();
     }
 
     @Override
     public void onClose(Session session, CloseReason closeReason) {
-        connections.get(session.getId()).onCloseSink.tryEmitEmpty();
+        connections.get(session.getId()).dispose();
+    }
+
+    @Override
+    public void onError(Session session, Throwable thr) {
+        connections.get(session.getId()).dispose();
     }
 }

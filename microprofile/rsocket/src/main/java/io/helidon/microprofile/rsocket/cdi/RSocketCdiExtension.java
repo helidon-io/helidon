@@ -60,16 +60,24 @@ public class RSocketCdiExtension implements Extension {
 
     private ServerCdiExtension serverCdiExtension;
 
-    //private RSocketRouting.Builder rSocketRoutingBuilder = RSocketRouting.builder();
-
     private Map<Class, Map<Annotation, Method>> methodMap = new HashMap<>();
 
     private Map<String, RSocketRouting.Builder> routingMap = new HashMap<>();
 
+    /**
+     * Read Configuration.
+     * @param config
+     */
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         this.config = config;
     }
 
+    /**
+     * Register configured RSockets.
+     *
+     * @param event
+     * @param beanManager
+     */
     private void startServer(@Observes @Priority(PLATFORM_AFTER + 99) @Initialized(ApplicationScoped.class) Object event,
                              BeanManager beanManager) {
         serverCdiExtension = beanManager.getExtension(ServerCdiExtension.class);
@@ -199,7 +207,7 @@ public class RSocketCdiExtension implements Extension {
     }
 
     @SuppressWarnings("unchecked")
-    static <T> T lookup(Bean<?> bean, BeanManager beanManager) {
+    private static <T> T lookup(Bean<?> bean, BeanManager beanManager) {
         javax.enterprise.context.spi.Context context = beanManager.getContext(bean.getScope());
         Object instance = context.get(bean);
         if (instance == null) {

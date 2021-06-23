@@ -24,6 +24,9 @@ import javax.websocket.Extension;
 
 import javax.websocket.server.ServerEndpointConfig;
 
+/**
+ * RSocket support based on Tyrus support.
+ */
 public class RSocketSupport extends TyrusSupport {
     /**
      * Create from another instance.
@@ -34,6 +37,14 @@ public class RSocketSupport extends TyrusSupport {
         super(other);
     }
 
+    /**
+     * Create RSocketSupport.
+     *
+     * @param engine
+     * @param endpointClasses
+     * @param endpointConfigs
+     * @param extensions
+     */
     public RSocketSupport(
             WebSocketEngine engine,
             Set<Class<?>> endpointClasses,
