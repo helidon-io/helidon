@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.microprofile</groupId>
         <artifactId>helidon-microprofile-project</artifactId>
-        <version>2.3.1-SNAPSHOT</version>
+        <version>2.3.2-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.microprofile.openapi</groupId>
     <artifactId>helidon-microprofile-openapi</artifactId>
