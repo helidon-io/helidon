@@ -38,7 +38,7 @@ mvn package
 Usually you can then run the example using:
 
 ```
-mvn exec:java
+mvn exec:exec
 ```
 
 But always see the example's `README` for details.
