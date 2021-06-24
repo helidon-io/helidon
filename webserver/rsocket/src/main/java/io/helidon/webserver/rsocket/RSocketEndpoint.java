@@ -21,6 +21,7 @@ import io.rsocket.core.RSocketServer;
 import io.rsocket.transport.ServerTransport.ConnectionAcceptor;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.websocket.CloseReason;
@@ -29,26 +30,43 @@ import javax.websocket.EndpointConfig;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpointConfig;
 
+/**
+ * RSocket endpoint class.
+ */
 public class RSocketEndpoint extends Endpoint {
 
-    private static ConnectionAcceptor connectionAcceptor;
+    private static Map<String,ConnectionAcceptor> connectionAcceptorMap = new HashMap<>();
     final Map<String, HelidonDuplexConnection> connections = new ConcurrentHashMap<>();
 
-    private RSocketRouting routing;
     private String path;
 
+    /**
+     * Factory method to create {@link RSocketEndpoint}
+     *
+     * @param routing
+     * @param path
+     * @return {@link RSocketEndpoint}
+     */
     public static RSocketEndpoint create(RSocketRouting routing, String path){
         return new RSocketEndpoint(routing,path);
     }
 
+    /**
+     * Empty public constructor.
+     */
     public RSocketEndpoint(){
+        //Empty constructor required for Tyrus
     }
 
+    /**
+     * Private cconstructor.
+     * @param routing
+     * @param path
+     */
     private RSocketEndpoint(RSocketRouting routing, String path) {
-        this.routing = routing;
         this.path = path;
 
-        connectionAcceptor = RSocketServer
+        ConnectionAcceptor connectionAcceptor = RSocketServer
                 .create()
                 .acceptor((connectionSetupPayload, rSocket) -> Mono.just(RoutedRSocket.builder()
                         .fireAndForgetRoutes(routing.getFireAndForgetRoutes())
@@ -57,27 +75,48 @@ public class RSocketEndpoint extends Endpoint {
                         .requestStreamRoutes(routing.getRequestStreamRoutes())
                         .build()))
                 .asConnectionAcceptor();
+
+        connectionAcceptorMap.put(path,connectionAcceptor);
     }
 
+
+    /**
+     * Returns the created and configured RSocket Endpoint.
+     */
     public ServerEndpointConfig getEndPoint() {
         return ServerEndpointConfig.Builder.create(this.getClass(), path)
                 .build();
     }
 
+    /**
+     * Function called on connection open, used to organize sessions.
+     * @param session
+     * @param endpointConfig
+     */
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
         final HelidonDuplexConnection connection = new HelidonDuplexConnection(session);
-        session.setMaxIdleTimeout(0);
         connections.put(session.getId(), connection);
-        connectionAcceptor.apply(connection).subscribe();
-        connection.onClose().doFinally(__ -> connections.remove(session.getId())).subscribe();
+        connectionAcceptorMap.get(session.getRequestURI().getPath()).apply(connection).subscribe();
+        connection.onClose().doFinally(con -> connections.remove(session.getId())).subscribe();
     }
 
+    /**
+     * Function called on connection close, used to dispose resources.
+     *
+     * @param session
+     * @param closeReason
+     */
     @Override
     public void onClose(Session session, CloseReason closeReason) {
         connections.get(session.getId()).dispose();
     }
 
+    /**
+     * Function called on Error received, cleans up the resources.
+     * @param session
+     * @param thr
+     */
     @Override
     public void onError(Session session, Throwable thr) {
         connections.get(session.getId()).dispose();
