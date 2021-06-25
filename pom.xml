@@ -696,7 +696,7 @@
                     <artifactId>helidon-services-plugin</artifactId>
                     <version>${version.plugin.helidon-build-tools}</version>
                     <configuration>
-                        <mode>overwrite</mode>
+                        <mode>fail</mode>
                     </configuration>
                 </plugin>
             </plugins>
