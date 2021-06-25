@@ -222,7 +222,9 @@ class BareResponseImpl implements BareResponse {
             responseFuture.complete(this);
         } else {
             LOGGER.finer(() -> log("Response completion failed %s", throwable));
-            Optional.ofNullable(subscription).ifPresent(Flow.Subscription::cancel);
+            if (subscription != null) {
+                subscription.cancel();
+            }
             internallyClosed.set(true);
             responseFuture.completeExceptionally(throwable);
         }
@@ -236,8 +238,8 @@ class BareResponseImpl implements BareResponse {
      */
     private void completeInternal(Throwable throwable) {
         boolean wasClosed = !internallyClosed.compareAndSet(false, true);
-        if(wasClosed){
-            Optional.ofNullable(subscription).ifPresent(Flow.Subscription::cancel);
+        if (wasClosed && subscription != null) {
+            subscription.cancel();
         }
         orderedWrite(() -> completeInternalPipe(wasClosed, throwable));
     }
