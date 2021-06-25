@@ -28,8 +28,12 @@ module io.helidon.integrations.oci.objectstorage {
 
     requires io.helidon.integrations.common.rest;
     requires io.helidon.common.http;
+    requires io.helidon.health;
+    requires io.helidon.health.common;
 
-
+    requires static jakarta.enterprise.cdi.api;
+    requires static jakarta.inject.api;
+    requires java.logging;
 
     exports io.helidon.integrations.oci.objectstorage;
 

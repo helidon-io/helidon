@@ -41,6 +41,7 @@ class OciObjectStorageRxImpl implements OciObjectStorageRx {
         this.endpoint = Optional.ofNullable(builder.endpoint());
     }
 
+
     @Override
     public Single<ApiOptionalResponse<GetObjectRx.Response>> getObject(GetObject.Request request) {
         String namespace = namespace(request);
@@ -82,6 +83,18 @@ class OciObjectStorageRxImpl implements OciObjectStorageRx {
         objectStorage(request);
 
         return restApi.post(apiPath, request, RenameObject.Response.builder());
+    }
+
+    @Override
+    public Single<ApiOptionalResponse<GetObjectRx.Response>> getBucket(GetObject.Request request) {
+        String namespace = namespace(request);
+        String apiPath = "/n/" + namespace + "/b/" + request.bucket();
+
+        objectStorage(request);
+
+        return restApi
+                .getPublisher(apiPath, request, ApiOptionalResponse.<Multi<DataChunk>, GetObjectRx.Response>apiResponseBuilder()
+                        .entityProcessor(GetObjectRx.Response::create));
     }
 
     private String namespace(ObjectRequest<?> request) {

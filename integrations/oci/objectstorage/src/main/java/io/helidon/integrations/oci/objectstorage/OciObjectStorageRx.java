@@ -109,6 +109,14 @@ public interface OciObjectStorageRx {
     Single<RenameObject.Response> renameObject(RenameObject.Request request);
 
     /**
+     * Gets the metadata of a bucket.
+     *
+     * @param request get bucket request
+     * @return future with response or error
+     */
+    Single<ApiOptionalResponse<GetObjectRx.Response>> getBucket(GetObject.Request request);
+
+    /**
      * Fluent API Builder for {@link io.helidon.integrations.oci.objectstorage.OciObjectStorageRx}.
      */
     class Builder implements io.helidon.common.Builder<OciObjectStorageRx> {

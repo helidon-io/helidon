@@ -21,7 +21,7 @@ import java.nio.channels.ReadableByteChannel;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
 
 /**
- * Blocking OCI Vault API.
+ * Blocking OCI ObjectStorage API.
  * All methods block the current thread. This implementation is not suitable for reactive programming.
  * Use {@link io.helidon.integrations.oci.objectstorage.OciObjectStorageRx} in reactive code.
  */
@@ -71,4 +71,12 @@ public interface OciObjectStorage {
      * @return future with response or error
      */
     RenameObject.Response renameObject(RenameObject.Request request);
+
+    /**
+     * Gets the metadata of a bucket.
+     *
+     * @param request get bucket request
+     * @return future with response or error
+     */
+    ApiOptionalResponse<GetObject.Response> getBucket(GetObject.Request request);
 }

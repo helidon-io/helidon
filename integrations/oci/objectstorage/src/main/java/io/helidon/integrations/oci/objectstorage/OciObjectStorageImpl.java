@@ -52,4 +52,10 @@ class OciObjectStorageImpl implements OciObjectStorage {
         return delegate.renameObject(request)
                 .await();
     }
+
+    @Override
+    public ApiOptionalResponse<GetObject.Response> getBucket(GetObject.Request request) {
+        return delegate.getObject(request).await()
+                .map(reactiveResponse -> GetObject.Response.create(reactiveResponse.bytePublisher()));
+    }
 }

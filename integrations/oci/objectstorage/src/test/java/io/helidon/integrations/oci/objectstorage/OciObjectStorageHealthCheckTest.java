@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-/**
- * Example of integration with OCI object storage in reactive application.
- */
-module io.helidon.examples.integrations.oci.objectstorage.reactive {
-    requires io.helidon.common.http;
-    requires io.helidon.integrations.oci.objectstorage;
-    requires io.helidon.webserver;
-    requires io.helidon.health;
+package io.helidon.integrations.oci.objectstorage;
 
-    exports io.helidon.examples.integrations.oci.objecstorage.reactive;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+
+class OciObjectStorageHealthCheckTest {
+
+    @Test
+    void testHealthCheck() {
+        OciObjectStorageHealthCheck healthCheck = OciObjectStorageHealthCheck.builder().build();
+        assertThat(healthCheck.validate(), is(true));
+    }
 }
