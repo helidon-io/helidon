@@ -59,11 +59,6 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
-            <scope>runtime</scope>
-        </dependency>
     </dependencies>
 
     <build>
