@@ -100,7 +100,6 @@ final class DefaultAuditProvider implements AuditProvider {
             return;
         }
 
-        String tracingId = event.tracingId();
         AuditSource auditSource = event.auditSource();
 
         StringBuilder locationInfo = new StringBuilder();
@@ -118,7 +117,7 @@ final class DefaultAuditProvider implements AuditProvider {
                 + " "
                 + event.eventType()
                 + " "
-                + tracingId
+                + event.tracingId()
                 + " "
                 + event.getClass().getSimpleName()
                 + " "
