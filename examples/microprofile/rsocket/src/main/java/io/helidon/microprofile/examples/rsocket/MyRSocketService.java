@@ -2,11 +2,11 @@ package io.helidon.microprofile.examples.rsocket;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-import io.helidon.microprofile.rsocket.cdi.FireAndForget;
-import io.helidon.microprofile.rsocket.cdi.RSocket;
-import io.helidon.microprofile.rsocket.cdi.RequestChannel;
-import io.helidon.microprofile.rsocket.cdi.RequestResponse;
-import io.helidon.microprofile.rsocket.cdi.RequestStream;
+import io.helidon.microprofile.rsocket.FireAndForget;
+import io.helidon.microprofile.rsocket.RSocket;
+import io.helidon.microprofile.rsocket.RequestChannel;
+import io.helidon.microprofile.rsocket.RequestResponse;
+import io.helidon.microprofile.rsocket.RequestStream;
 import io.rsocket.Payload;
 import io.rsocket.util.ByteBufPayload;
 

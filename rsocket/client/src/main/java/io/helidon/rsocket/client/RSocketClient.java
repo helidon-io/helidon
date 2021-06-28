@@ -29,7 +29,6 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
-import io.rsocket.core.RSocketClient;
 import io.rsocket.metadata.AuthMetadataCodec;
 import io.rsocket.metadata.CompositeMetadataCodec;
 import io.rsocket.metadata.RoutingMetadata;
@@ -45,8 +44,8 @@ import reactor.core.publisher.Mono;
 /**
  * Helidon RSocket client.
  */
-public class HelidonRSocketClient implements Disposable {
-    private RSocketClient client;
+public class RSocketClient implements Disposable {
+    private io.rsocket.core.RSocketClient client;
     private String mimeType;
     private String route;
     private WellKnownAuthType authType = null;
@@ -59,7 +58,7 @@ public class HelidonRSocketClient implements Disposable {
      *
      * @param client RSocketClient.
      */
-    public HelidonRSocketClient(RSocketClient client) {
+    public RSocketClient(io.rsocket.core.RSocketClient client) {
         this.client = client;
     }
 

@@ -1074,6 +1074,17 @@
                 <artifactId>helidon-integrations-neo4j-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <!-- RSocket -->
+            <dependency>
+                <groupId>io.helidon.rsocket</groupId>
+                <artifactId>helidon-rsocket-server</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile</groupId>
+                <artifactId>helidon-microprofile-rsocket</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Helidon tests tools -->
             <dependency>
                 <groupId>io.helidon.tests.integration.tools</groupId>

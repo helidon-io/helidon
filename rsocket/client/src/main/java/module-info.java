@@ -15,26 +15,17 @@
  */
 
 /**
- * RSocket integration.
+ * RSocket client.
  */
-module io.helidon.rsocket.server {
+module io.helidon.rsocket.client {
     requires java.logging;
 
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
-    requires static jakarta.activation;
-
-    requires io.helidon.common.context;
-    requires io.helidon.common.mapper;
-    requires io.helidon.common.reactive;
     requires rsocket.core;
     requires reactor.core;
     requires io.netty.buffer;
     requires org.reactivestreams;
-    requires io.helidon.webserver.tyrus;
-    requires tyrus.spi;
-    requires io.helidon.microprofile.server;
-    requires jakarta.interceptor.api;
+    requires io.helidon.common.reactive;
 
-    exports io.helidon.rsocket.server;
+
+    exports io.helidon.rsocket.client;
 }

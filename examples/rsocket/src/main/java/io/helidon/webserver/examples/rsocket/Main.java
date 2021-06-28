@@ -18,11 +18,11 @@ package io.helidon.webserver.examples.rsocket;
 
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.rsocket.server.RSocketEndpoint;
+import io.helidon.rsocket.server.RSocketRouting;
+import io.helidon.rsocket.server.RSocketSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.rsocket.RSocketEndpoint;
-import io.helidon.webserver.rsocket.RSocketSupport;
-import io.helidon.webserver.rsocket.server.RSocketRouting;
 
 
 /**

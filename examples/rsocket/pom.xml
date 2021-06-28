@@ -25,7 +25,7 @@
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-se</artifactId>
         <version>2.3.1-SNAPSHOT</version>
-        <relativePath>../../../applications/se/pom.xml</relativePath>
+        <relativePath>../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.webserver</groupId>
     <artifactId>helidon-examples-webserver-rsocket</artifactId>
@@ -43,7 +43,6 @@
         <dependency>
             <groupId>io.helidon.rsocket</groupId>
             <artifactId>helidon-rsocket-server</artifactId>
-            <version>2.3.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

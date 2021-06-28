@@ -2,8 +2,8 @@ package io.helidon.webserver.examples.rsocket;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-import io.helidon.webserver.rsocket.server.RSocketRouting;
-import io.helidon.webserver.rsocket.server.RSocketService;
+import io.helidon.rsocket.server.RSocketRouting;
+import io.helidon.rsocket.server.RSocketService;
 import io.rsocket.Payload;
 import io.rsocket.util.ByteBufPayload;
 

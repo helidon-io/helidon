@@ -15,6 +15,6 @@
  */
 
 /**
- * RSocket integration.
+ * RSocket client.
  */
-package io.helidon.rsocket.server;
+package io.helidon.rsocket.client;

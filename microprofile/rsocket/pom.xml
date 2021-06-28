@@ -34,11 +34,14 @@
         <dependency>
             <groupId>io.helidon.rsocket</groupId>
             <artifactId>helidon-rsocket-server</artifactId>
-            <version>2.3.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.server</groupId>
+            <artifactId>helidon-microprofile-server</artifactId>
         </dependency>
     </dependencies>
 

@@ -19,9 +19,6 @@
  */
 module io.helidon.rsocket.server {
     requires java.logging;
-
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
     requires static jakarta.activation;
 
     requires io.helidon.common.context;
@@ -33,8 +30,6 @@ module io.helidon.rsocket.server {
     requires org.reactivestreams;
     requires io.helidon.webserver.tyrus;
     requires tyrus.spi;
-    requires io.helidon.microprofile.server;
-    requires jakarta.interceptor.api;
 
     exports io.helidon.rsocket.server;
 }
