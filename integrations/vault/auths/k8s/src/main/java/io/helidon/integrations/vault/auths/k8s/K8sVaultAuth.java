@@ -123,8 +123,9 @@ public class K8sVaultAuth implements VaultAuth {
         vaultBuilder.baseNamespace().ifPresent(loginVaultBuilder::baseNamespace);
 
         Vault loginVault = loginVaultBuilder.build();
+        String methodPath = config.get("auth.k8s.path").asString().orElse(K8sAuthRx.AUTH_METHOD.defaultPath());
 
-        LOGGER.info("Authenticated Vault " + address + " using k8s, role \"" + roleName + "\"");
+        LOGGER.info("Authenticated Vault " + address + "/" + methodPath + " using k8s, role \"" + roleName + "\"");
         return Optional.of(K8sRestApi.k8sBuilder()
                                    .webClientBuilder(webclient -> {
                                        webclient.baseUri(address + "/v1");
@@ -133,7 +134,7 @@ public class K8sVaultAuth implements VaultAuth {
                                        vaultBuilder.webClientUpdater().accept(webclient);
                                    })
                                    .faultTolerance(vaultBuilder.ftHandler())
-                                   .auth(loginVault.auth(K8sAuthRx.AUTH_METHOD))
+                                   .auth(loginVault.auth(K8sAuthRx.AUTH_METHOD, methodPath))
                                    .roleName(roleName)
                                    .jwtToken(jwtToken)
                                    .build());
