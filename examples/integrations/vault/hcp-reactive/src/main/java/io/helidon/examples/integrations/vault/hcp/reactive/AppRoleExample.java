@@ -37,7 +37,7 @@ class AppRoleExample {
     private static final String SECRET_PATH = "approle/example/secret";
     private static final String ROLE_NAME = "approle_role";
     private static final String POLICY_NAME = "approle_policy";
-    public static final String CUSTOM_APP_ROLE_PATH = "customapprole";
+    private static final String CUSTOM_APP_ROLE_PATH = "customapprole";
 
     private final Vault tokenVault;
     private final Config config;
