@@ -30,12 +30,14 @@ import io.helidon.integrations.vault.auths.approle.CreateAppRole;
 import io.helidon.integrations.vault.auths.approle.GenerateSecretId;
 import io.helidon.integrations.vault.secrets.kv2.Kv2Secret;
 import io.helidon.integrations.vault.secrets.kv2.Kv2SecretsRx;
+import io.helidon.integrations.vault.sys.EnableAuth;
 import io.helidon.integrations.vault.sys.SysRx;
 
 class AppRoleExample {
     private static final String SECRET_PATH = "approle/example/secret";
     private static final String ROLE_NAME = "approle_role";
     private static final String POLICY_NAME = "approle_policy";
+    public static final String CUSTOM_APP_ROLE_PATH = "customapprole";
 
     private final Vault tokenVault;
     private final Config config;
@@ -80,11 +82,8 @@ class AppRoleExample {
     }
 
     private Single<ApiResponse> disableAppRoleAuth() {
-        if (1 == 1) {
-            return Single.empty();
-        }
         return sys.deletePolicy(POLICY_NAME)
-                .flatMapSingle(ignored -> sys.disableAuth(AppRoleAuthRx.AUTH_METHOD.defaultPath()));
+                .flatMapSingle(ignored -> sys.disableAuth(CUSTOM_APP_ROLE_PATH));
     }
 
     private Single<String> enableAppRoleAuth() {
@@ -92,18 +91,21 @@ class AppRoleExample {
         AtomicReference<String> secretId = new AtomicReference<>();
 
         // enable the method
-        return sys.enableAuth(AppRoleAuthRx.AUTH_METHOD)
+        return sys.enableAuth(EnableAuth.Request.builder()
+                                      .auth(AppRoleAuthRx.AUTH_METHOD)
+                                      // must be aligned with path configured in application.yaml
+                                      .path(CUSTOM_APP_ROLE_PATH))
                 // add policy
                 .flatMapSingle(ignored -> sys.createPolicy(POLICY_NAME, VaultPolicy.POLICY))
-                .flatMapSingle(ignored -> tokenVault.auth(AppRoleAuthRx.AUTH_METHOD)
+                .flatMapSingle(ignored -> tokenVault.auth(AppRoleAuthRx.AUTH_METHOD, CUSTOM_APP_ROLE_PATH)
                         .createAppRole(CreateAppRole.Request.builder()
                                                .roleName(ROLE_NAME)
                                                .addTokenPolicy(POLICY_NAME)
                                                .tokenExplicitMaxTtl(Duration.ofMinutes(1))))
-                .flatMapSingle(ignored -> tokenVault.auth(AppRoleAuthRx.AUTH_METHOD)
+                .flatMapSingle(ignored -> tokenVault.auth(AppRoleAuthRx.AUTH_METHOD, CUSTOM_APP_ROLE_PATH)
                         .readRoleId(ROLE_NAME))
                 .peek(it -> it.ifPresent(roleId::set))
-                .flatMapSingle(ignored -> tokenVault.auth(AppRoleAuthRx.AUTH_METHOD)
+                .flatMapSingle(ignored -> tokenVault.auth(AppRoleAuthRx.AUTH_METHOD, CUSTOM_APP_ROLE_PATH)
                         .generateSecretId(GenerateSecretId.Request.builder()
                                                   .roleName(ROLE_NAME)
                                                   .addMetadata("name", "helidon")))
@@ -115,6 +117,7 @@ class AppRoleExample {
                     appRoleVault = Vault.builder()
                             .config(config)
                             .addVaultAuth(AppRoleVaultAuth.builder()
+                                                  .path(CUSTOM_APP_ROLE_PATH)
                                                   .appRoleId(roleId.get())
                                                   .secretId(secretId.get())
                                                   .build())
