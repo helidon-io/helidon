@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2016, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,26 +18,23 @@
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
-        <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon</groupId>
         <version>2.3.1-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-project</artifactId>
-    <name>Helidon WebServer Project</name>
+
+    <groupId>io.helidon.rsocket</groupId>
+    <artifactId>helidon-rsocket-project</artifactId>
+    <name>Helidon RSocket Project</name>
     <packaging>pom</packaging>
 
     <modules>
-        <module>webserver</module>
-        <module>jersey</module>
-        <module>test-support</module>
-        <module>access-log</module>
-        <module>tyrus</module>
-        <module>cors</module>
-        <module>static-content</module>
+        <module>server</module>
     </modules>
 </project>

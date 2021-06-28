@@ -16,12 +16,7 @@
 
 package io.helidon.webserver.examples.rsocket;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-
-import javax.websocket.Encoder;
-import javax.websocket.server.ServerEndpointConfig;
 
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;

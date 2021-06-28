@@ -41,8 +41,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-rsocket</artifactId>
+            <groupId>io.helidon.rsocket</groupId>
+            <artifactId>helidon-rsocket-server</artifactId>
             <version>2.3.1-SNAPSHOT</version>
         </dependency>
     </dependencies>

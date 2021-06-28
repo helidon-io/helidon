@@ -22,23 +22,41 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.microprofile</groupId>
-        <artifactId>helidon-microprofile-project</artifactId>
+        <groupId>io.helidon.rsocket</groupId>
+        <artifactId>helidon-rsocket-project</artifactId>
         <version>2.3.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-microprofile-rsocket</artifactId>
-    <name>Helidon MicroProfile RSocket</name>
+    <artifactId>helidon-rsocket-server</artifactId>
+    <name>Helidon RSocket server</name>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.rsocket</groupId>
-            <artifactId>helidon-rsocket-server</artifactId>
-            <version>2.3.1-SNAPSHOT</version>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-tyrus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.rsocket</groupId>
+            <artifactId>rsocket-core</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <version>2.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.server</groupId>
+            <artifactId>helidon-microprofile-server</artifactId>
         </dependency>
     </dependencies>
 
