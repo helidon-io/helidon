@@ -23,6 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
+import io.helidon.config.DeprecatedConfig;
 import io.helidon.security.spi.AuditProvider;
 
 /**
@@ -39,7 +40,11 @@ final class DefaultAuditProvider implements AuditProvider {
 
     private DefaultAuditProvider(Config config) {
         // config node is already located on the security node
-        this.auditLogger = Logger.getLogger(config.get("audit.defaultProvider.logger").asString().orElse("AUDIT"));
+        this.auditLogger = Logger.getLogger(DeprecatedConfig.get(config,
+                                                                 "audit.defaultProvider.logger",
+                                                                 "security.audit.defaultProvider.logger")
+                                                    .asString()
+                                                    .orElse("AUDIT"));
 
         this.failureLevel = level(config, "failure", Level.FINEST);
         this.successLevel = level(config, "success", Level.FINEST);
