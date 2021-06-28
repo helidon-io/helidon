@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.rsocket.server;
+package io.helidon.rsocket.client;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;
