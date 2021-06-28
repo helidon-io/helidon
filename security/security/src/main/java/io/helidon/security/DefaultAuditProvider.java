@@ -40,6 +40,7 @@ final class DefaultAuditProvider implements AuditProvider {
     private DefaultAuditProvider(Config config) {
         // config node is already located on the security node
         this.auditLogger = Logger.getLogger(config.get("audit.defaultProvider.logger").asString().orElse("AUDIT"));
+
         this.failureLevel = level(config, "failure", Level.FINEST);
         this.successLevel = level(config, "success", Level.FINEST);
         this.infoLevel = level(config, "info", Level.FINEST);
@@ -49,7 +50,7 @@ final class DefaultAuditProvider implements AuditProvider {
     }
 
     private Level level(Config config, String auditSeverity, Level defaultLevel) {
-        return config.get("audit.defaultProvider.level.failure")
+        return config.get("audit.defaultProvider.level." + auditSeverity)
                 .asString()
                 .map(Level::parse)
                 .orElse(defaultLevel);
@@ -65,7 +66,6 @@ final class DefaultAuditProvider implements AuditProvider {
     }
 
     private void audit(TracedAuditEvent event) {
-        String tracingId = event.tracingId();
         Level level;
 
         switch (event.severity()) {
@@ -91,15 +91,16 @@ final class DefaultAuditProvider implements AuditProvider {
             break;
         }
 
-        logEvent(tracingId, event, level);
+        logEvent(event, level);
     }
 
-    private void logEvent(String tracingId, TracedAuditEvent event, Level level) {
+    private void logEvent(TracedAuditEvent event, Level level) {
         if (!auditLogger.isLoggable(level)) {
             // no need to create the message when the message would not be logged
             return;
         }
 
+        String tracingId = event.tracingId();
         AuditSource auditSource = event.auditSource();
 
         StringBuilder locationInfo = new StringBuilder();
