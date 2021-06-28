@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,13 +30,34 @@ import io.helidon.security.spi.AuditProvider;
  */
 final class DefaultAuditProvider implements AuditProvider {
     private final Logger auditLogger;
+    private final Level failureLevel;
+    private final Level successLevel;
+    private final Level infoLevel;
+    private final Level warnLevel;
+    private final Level errorLevel;
+    private final Level auditFailureLevel;
 
-    private DefaultAuditProvider(String loggerName) {
-        this.auditLogger = Logger.getLogger(loggerName);
+    private DefaultAuditProvider(Config config) {
+        // config node is already located on the security node
+        this.auditLogger = Logger.getLogger(config.get("audit.defaultProvider.logger").asString().orElse("AUDIT"));
+
+        this.failureLevel = level(config, "failure", Level.FINEST);
+        this.successLevel = level(config, "success", Level.FINEST);
+        this.infoLevel = level(config, "info", Level.FINEST);
+        this.warnLevel = level(config, "warn", Level.WARNING);
+        this.errorLevel = level(config, "error", Level.SEVERE);
+        this.auditFailureLevel = level(config, "audit-failure", Level.SEVERE);
     }
 
-    public static DefaultAuditProvider create(Config config) {
-        return new DefaultAuditProvider(config.get("security.audit.defaultProvider.logger").asString().orElse("AUDIT"));
+    private Level level(Config config, String auditSeverity, Level defaultLevel) {
+        return config.get("audit.defaultProvider.level." + auditSeverity)
+                .asString()
+                .map(Level::parse)
+                .orElse(defaultLevel);
+    }
+
+    static DefaultAuditProvider create(Config config) {
+        return new DefaultAuditProvider(config);
     }
 
     @Override
@@ -45,31 +66,40 @@ final class DefaultAuditProvider implements AuditProvider {
     }
 
     private void audit(TracedAuditEvent event) {
-        String tracingId = event.tracingId();
+        Level level;
+
         switch (event.severity()) {
         case FAILURE:
+            level = failureLevel;
+            break;
         case SUCCESS:
+            level = successLevel;
+            break;
         case INFO:
-            //trace info
-            logEvent(tracingId, event, Level.FINEST);
+            level = infoLevel;
             break;
         case WARN:
-            //warning - something is not right, so let's log it
-            logEvent(tracingId, event, Level.WARNING);
+            level = warnLevel;
             break;
         case ERROR:
-            //error - definitely a problem, log as severe
-            logEvent(tracingId, event, Level.SEVERE);
+            level = errorLevel;
             break;
         case AUDIT_FAILURE:
         default:
             //audit failure - something wrong with auditing mechanism...
-            logEvent(tracingId, event, Level.SEVERE);
+            level = auditFailureLevel;
             break;
         }
+
+        logEvent(event, level);
     }
 
-    private void logEvent(String tracingId, TracedAuditEvent event, Level level) {
+    private void logEvent(TracedAuditEvent event, Level level) {
+        if (!auditLogger.isLoggable(level)) {
+            // no need to create the message when the message would not be logged
+            return;
+        }
+
         AuditSource auditSource = event.auditSource();
 
         StringBuilder locationInfo = new StringBuilder();
@@ -87,7 +117,7 @@ final class DefaultAuditProvider implements AuditProvider {
                 + " "
                 + event.eventType()
                 + " "
-                + tracingId
+                + event.tracingId()
                 + " "
                 + event.getClass().getSimpleName()
                 + " "
