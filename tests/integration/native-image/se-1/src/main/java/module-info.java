@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ module helidon.tests.integration.nativeimage.se1 {
     requires io.helidon.webserver.tyrus;
     requires io.helidon.webclient;
     requires helidon.tests.integration.nativeimage.staticcontent;
+    requires io.helidon.webserver.staticcontent;
 
     opens web;
 

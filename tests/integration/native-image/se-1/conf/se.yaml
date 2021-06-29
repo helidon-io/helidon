@@ -14,9 +14,6 @@
 # limitations under the License.
 #
 
-app:
-  greeting: "SE Hallo"
-
 security:
   provider-policy:
     type: "COMPOSITE"
