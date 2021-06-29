@@ -20,11 +20,12 @@ import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -133,10 +134,7 @@ class NettyWebServer implements WebServer {
 
             ServerBootstrap bootstrap = new ServerBootstrap();
 
-            SslContext sslContext = createSslContext(soConfig.ssl(),
-                    soConfig.enabledSslProtocols(),
-                    soConfig.allowedCipherSuite(),
-                    soConfig.clientAuth());
+            SslContext sslContext = soConfig.tls().map(this::createSslContext).orElse(null);
 
             if (soConfig.backlog() > 0) {
                 bootstrap.option(ChannelOption.SO_BACKLOG, soConfig.backlog());
@@ -162,12 +160,11 @@ class NettyWebServer implements WebServer {
         }
     }
 
-    private SslContext createSslContext(SSLContext context,
-                                        Set<String> enabledProtocols,
-                                        Set<String> cipherSuite,
-                                        ClientAuthentication clientAuth) {
+    private SslContext createSslContext(WebServerTls webServerTls) {
         // Transform java SSLContext into Netty SslContext
+        SSLContext context = webServerTls.sslContext();
         if (context != null) {
+            Collection<String> enabledProtocols = webServerTls.enabledTlsProtocols();
             String[] protocols;
             if (enabledProtocols.isEmpty()) {
                 protocols = null;
@@ -187,10 +184,11 @@ class NettyWebServer implements WebServer {
                         ApplicationProtocolNames.HTTP_1_1);
             }
 
+            Set<String> cipherSuite = webServerTls.cipherSuite();
             return new JdkSslContext(
                     context, false, cipherSuite.isEmpty() ? null : cipherSuite,
                     IdentityCipherSuiteFilter.INSTANCE, appProtocolConfig,
-                    clientAuth.nettyClientAuth(), protocols, false);
+                    webServerTls.clientAuth().nettyClientAuth(), protocols, false);
         }
         return null;
     }
@@ -445,6 +443,7 @@ class NettyWebServer implements WebServer {
 
     @Override
     public void updateTls(WebServerTls tls, String socketName) {
+        Objects.requireNonNull(tls, "Tls could not be updated. WebServerTls is required to be non-null");
         HttpInitializer httpInitializer = initializers.get(socketName);
         if (httpInitializer == null) {
             throw new IllegalStateException("Unknown socket name: " + socketName);
@@ -452,10 +451,7 @@ class NettyWebServer implements WebServer {
             if (!tls.enabled()) {
                 throw new IllegalStateException("Tls could not be updated. WebServerTls is required to be enabled");
             }
-            SslContext context = createSslContext(tls.sslContext(),
-                    new HashSet<>(tls.enabledTlsProtocols()),
-                    tls.cipherSuite(),
-                    tls.clientAuth());
+            SslContext context = createSslContext(tls);
             httpInitializer.updateSslContext(context);
         }
     }

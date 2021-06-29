@@ -113,6 +113,11 @@ class ServerBasicConfig implements ServerConfiguration {
     }
 
     @Override
+    public Optional<WebServerTls> tls() {
+        return socketConfig.tls();
+    }
+
+    @Override
     public int maxHeaderSize() {
         return socketConfig.maxHeaderSize();
     }
@@ -179,6 +184,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final int backlog;
         private final int timeoutMillis;
         private final int receiveBufferSize;
+        private final WebServerTls webServerTls;
         private final SSLContext sslContext;
         private final Set<String> enabledSslProtocols;
         private final Set<String> allowedCipherSuite;
@@ -211,8 +217,9 @@ class ServerBasicConfig implements ServerConfiguration {
             this.initialBufferSize = builder.initialBufferSize();
             this.enableCompression = builder.enableCompression();
             this.maxPayloadSize = builder.maxPayloadSize();
-
             WebServerTls webServerTls = builder.tlsConfig();
+            this.webServerTls = webServerTls.enabled() ? webServerTls : null;
+
             if (webServerTls.enabled()) {
                 this.sslContext = webServerTls.sslContext();
                 this.enabledSslProtocols = new HashSet<>(webServerTls.enabledTlsProtocols());
@@ -249,6 +256,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public int receiveBufferSize() {
             return receiveBufferSize;
+        }
+
+        @Override
+        public Optional<WebServerTls> tls() {
+            return Optional.ofNullable(webServerTls);
         }
 
         @Override
