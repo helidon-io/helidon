@@ -35,7 +35,7 @@ To choose a configuration profile to use at runtime, you can use:
 1. A system property `config.profile`
 2. An environment variable `HELIDON_CONFIG_PROFILE`
 
-There are two options how to define a profile configuration:
+There are two ways to define a profile configuration:
 
 1. Use a config source with a <<#Profile-Source,profile specific name>>
 2. Use a <<#Profile-File,profile file>> defining all configuration sources
@@ -44,7 +44,7 @@ Configuration profiles can only be used when config is created using the `Config
 
 == Profile Config Sources [[Profile-Source]]
 
-In case a profile is specified, config will load the profile specific default configuration source
+If a profile is specified, config will load the profile-specific default configuration source
 before the "main" source.
 
 Let's consider the selected profile is `dev`, and we have `yaml` configuration support on classpath;
@@ -61,7 +61,7 @@ config will look for the following sources (in this order):
 
 == Profile Files [[Profile-File]]
 
-In case a profile is specified, config will look for a profile specific "meta configuration".
+If a profile is specified, config will look for a profile-specific "meta configuration".
 
 Let's consider the selected profile is `dev`, and we have `yaml` configuration support on classpath;
 config will look for the following profiles (in this order):
@@ -81,8 +81,9 @@ In case you need to customize the location of the profile file, you can use the 
 config looks for file `config/profile-dev.yaml` when `dev` profile is configured.
 
 === Profile File Format [[Config-Profile-Format]]
+
 Configuration profile provides similar options to the configuration builder.
-The profile file must contain at least the list of sources to use to load configuration from.
+The profile file must contain at least the list of sources from which configuration can be loaded.
 
 The root `sources` property contains an array (ordered) of objects defining each config source to
 be used.
@@ -140,7 +141,7 @@ corresponding config source type. The JavaDoc for the related config source
 type builders lists the supported properties for each type. (For example,
 link:{javadoc-base-url-api}/internal/FileConfigSource.FileBuilder.html[`FileConfigSource.FileBuilder`].)
 
-Here is example profile in YAML format. Note how the `properties` sections
+Here is an example profile in YAML format. Note how the `properties` sections
 are at the same level as the `type` or `class` within a `sources` array entry.
 
 [source,yaml]
@@ -293,9 +294,10 @@ the delay for each successive retry
 |===
 
 To specify a custom polling strategy or custom retry policy, implement the interface
-and then implement the `io.helidon.config.spi.PollingStrategyProvider`,
-`io.helidon.config.spi.ChangeWatcherProvider`, or
-`io.helidon.config.spi.RetryPolicyProvider` to enable your custom implementations for
+(`io.helidon.config.spi.PollingStrategy`, `io.helidon.config.spi.ChangeWatcher`,
+ or `io.helidon.config.spi.RetryPolicy`), and then implement the provider interface
+(`io.helidon.config.spi.PollingStrategyProvider`, `io.helidon.config.spi.ChangeWatcherProvider`, or
+`io.helidon.config.spi.RetryPolicyProvider`) to enable your custom implementations for
 profiles.
 You can then use any custom properties - these are provided as a `Config` instance to
 the `create` method of the Provider implementation.

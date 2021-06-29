@@ -402,7 +402,7 @@ Config config = Config.create(
 ----
 <1> Use `PollingStrategies.regular(Duration duration)` to monitor for config changes.
 
-You can also implemention your own polling strategy by implementing
+You can also implement your own polling strategy by implementing
 link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`]. See
 the <<se/config/05_mutability-support.adoc,mutability support>> and
 <<se/config/07_extensions.adoc#Config-SPI-PollingStrategy,polling strategy>> discussions.
