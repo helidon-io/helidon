@@ -233,7 +233,6 @@ class BareResponseImpl implements BareResponse {
      * @param throwable if {@code not-null} then this response is completed exceptionally.
      */
     private void completeInternal(Throwable throwable) {
-        Thread.dumpStack();
         boolean wasClosed = !internallyClosed.compareAndSet(false, true);
         orderedWrite(() -> completeInternalPipe(wasClosed, throwable));
     }
