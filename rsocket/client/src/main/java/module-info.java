@@ -25,6 +25,8 @@ module io.helidon.rsocket.client {
     requires io.netty.buffer;
     requires org.reactivestreams;
     requires io.helidon.common.reactive;
+    requires io.helidon.common;
+    requires rsocket.transport.netty;
 
 
     exports io.helidon.rsocket.client;

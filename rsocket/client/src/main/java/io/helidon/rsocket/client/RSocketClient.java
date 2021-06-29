@@ -16,14 +16,8 @@
 
 package io.helidon.rsocket.client;
 
-import java.nio.ByteBuffer;
-import java.util.Collections;
-
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-import org.reactivestreams.FlowAdapters;
-import org.reactivestreams.Publisher;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
@@ -36,29 +30,41 @@ import io.rsocket.metadata.TaggingMetadata;
 import io.rsocket.metadata.TaggingMetadataCodec;
 import io.rsocket.metadata.WellKnownAuthType;
 import io.rsocket.metadata.WellKnownMimeType;
+import io.rsocket.transport.netty.client.WebsocketClientTransport;
 import io.rsocket.util.DefaultPayload;
+import org.reactivestreams.FlowAdapters;
+import org.reactivestreams.Publisher;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.util.Collections;
+
 
 /**
  * Helidon RSocket client.
  */
 public class RSocketClient implements Disposable {
     private io.rsocket.core.RSocketClient client;
-    private String mimeType;
     private String route;
     private WellKnownAuthType authType = null;
+    private String mimeType;
     private String username;
     private String password;
     private String token;
 
+
+    public static Builder builder() {
+        return new Builder();
+    }
     /**
      * RSocket Client constructor.
      *
      * @param client RSocketClient.
      */
-    public RSocketClient(io.rsocket.core.RSocketClient client) {
+    private RSocketClient(io.rsocket.core.RSocketClient client) {
         this.client = client;
     }
 
@@ -222,5 +228,86 @@ public class RSocketClient implements Disposable {
      */
     public void dispose() {
         client.dispose();
+    }
+
+
+    public static class Builder implements io.helidon.common.Builder<RSocketClient> {
+
+        private String route;
+        private WellKnownAuthType authType = null;
+        private String mimeType = WellKnownMimeType.TEXT_PLAIN.getString();
+        private String username;
+        private String password;
+        private String token;
+        private String websocket;
+        private String uri;
+        private int port;
+
+        @Override
+        public RSocketClient build() {
+            RSocket rSocket = io.rsocket.core.RSocketConnector.create()
+                    .metadataMimeType(mimeType)
+                    .connect(WebsocketClientTransport.create(URI.create(websocket)))
+                    .block();
+
+            io.rsocket.core.RSocketClient client = io.rsocket.core.RSocketClient.from(rSocket);
+            RSocketClient result = new RSocketClient(client);
+
+            if (route != null || !route.isEmpty()) {
+                result.route = route;
+                result.authType = authType;
+                result.mimeType = mimeType;
+                result.username = username;
+                result.password = password;
+                result.token = token;
+
+            }
+            return result;
+        }
+
+        public Builder route(String route) {
+            this.route = route;
+            return this;
+        }
+
+        public Builder authType(WellKnownAuthType authType) {
+            this.authType = authType;
+            return this;
+        }
+
+        public Builder mimeType(String mimeType) {
+            this.mimeType = mimeType;
+            return this;
+        }
+
+        public Builder username(String username) {
+            this.username = username;
+            return this;
+        }
+
+        public Builder password(String password) {
+            this.password = password;
+            return this;
+        }
+
+        public Builder token(String token) {
+            this.token = token;
+            return this;
+        }
+
+        public Builder websocket(String websocket) {
+            this.websocket = websocket;
+            return this;
+        }
+
+        public Builder uri(String uri) {
+            this.uri = uri;
+            return this;
+        }
+
+        public Builder port(int port) {
+            this.port = port;
+            return this;
+        }
     }
 }
