@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,12 @@ package io.helidon.webserver;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import javax.net.ssl.SSLContext;
 
 import io.helidon.common.http.ContextualRegistry;
 
@@ -102,6 +105,26 @@ public interface WebServer {
      * @return a listen port; or {@code -1} if socket name is unknown or the server socket is not active
      */
     int port(String socketName);
+
+    /**
+     * Update the TLS configuration of the default socket {@link ServerConfiguration#DEFAULT_SOCKET_NAME}.
+     *
+     * @param tls new TLS configuration
+     * @throws IllegalStateException if {@link WebServerTls#sslContext()} returns {@code null} or
+     * if {@link SocketConfiguration#ssl()} returns {@code null}
+     */
+    void updateTls(WebServerTls tls);
+
+    /**
+     * Update the TLS configuration of the named socket.
+     *
+     * @param tls new TLS configuration
+     * @param socketName specific named socket name
+     * @throws IllegalStateException if {@link WebServerTls#sslContext()} returns {@code null} or
+     * if {@link SocketConfiguration#ssl()} returns {@code null}
+     */
+    void updateTls(WebServerTls tls, String socketName);
+
 
     /**
      * Creates a new instance from a provided configuration and a routing.

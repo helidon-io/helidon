@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,20 @@
 package io.helidon.webserver;
 
 
+import java.security.Principal;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLPeerUnverifiedException;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.webserver.HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
@@ -41,18 +46,21 @@ import io.netty.handler.codec.http2.Http2ServerUpgradeCodec;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AsciiString;
+import io.netty.util.AttributeKey;
+import io.netty.util.concurrent.Future;
 
 /**
  * The HttpInitializer.
  */
 class HttpInitializer extends ChannelInitializer<SocketChannel> {
     private static final Logger LOGGER = Logger.getLogger(HttpInitializer.class.getName());
+    static final AttributeKey<String> CLIENT_CERTIFICATE_NAME = AttributeKey.valueOf("client_certificate_name");
 
-    private final SslContext sslContext;
     private final NettyWebServer webServer;
     private final SocketConfiguration soConfig;
     private final Routing routing;
     private final Queue<ReferenceHoldingQueue<DataChunk>> queues = new ConcurrentLinkedQueue<>();
+    private volatile SslContext sslContext;
 
     HttpInitializer(SocketConfiguration soConfig,
                     SslContext sslContext,
@@ -62,6 +70,10 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         this.routing = routing;
         this.sslContext = sslContext;
         this.webServer = webServer;
+    }
+
+    SocketConfiguration socketConfiguration() {
+        return soConfig;
     }
 
     private void clearQueues() {
@@ -75,15 +87,24 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         });
     }
 
+    void updateSslContext(SslContext context) {
+        if (sslContext == null) {
+            throw new IllegalStateException("Current TLS context is not set, update not allowed");
+        }
+        sslContext = context;
+    }
+
     @Override
     public void initChannel(SocketChannel ch) {
         final ChannelPipeline p = ch.pipeline();
 
         SSLEngine sslEngine = null;
-        if (sslContext != null) {
-            SslHandler sslHandler = sslContext.newHandler(ch.alloc());
+        SslContext context = sslContext;
+        if (context != null) {
+            SslHandler sslHandler = context.newHandler(ch.alloc());
             sslEngine = sslHandler.engine();
             p.addLast(sslHandler);
+            sslHandler.handshakeFuture().addListener(future -> obtainClientCN(future, ch, sslHandler));
         }
 
         // Set up HTTP/2 pipeline if feature is enabled
@@ -123,6 +144,40 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
 
         // Cleanup queues as part of event loop
         ch.eventLoop().execute(this::clearQueues);
+    }
+
+    /**
+     * Sets {@code CERTIFICATE_NAME} in socket channel.
+     *
+     * @param future future passed to listener
+     * @param ch the socket channel
+     * @param sslHandler the SSL handler
+     */
+    private void obtainClientCN(Future<? super Channel> future, SocketChannel ch, SslHandler sslHandler) {
+        if (future.cause() == null) {
+            try {
+                Certificate[] peerCertificates = sslHandler.engine().getSession().getPeerCertificates();
+                if (peerCertificates.length >= 1) {
+                    Certificate certificate = peerCertificates[0];
+                    X509Certificate cert = (X509Certificate) certificate;
+                    Principal principal = cert.getSubjectDN();
+
+                    int start = principal.getName().indexOf("CN=");
+                    String tmpName = "Unknown CN";
+                    if (start >= 0) {
+                        tmpName = principal.getName().substring(start + 3);
+                        int end = tmpName.indexOf(",");
+                        if (end > 0) {
+                            tmpName = tmpName.substring(0, end);
+                        }
+                    }
+                    ch.attr(CLIENT_CERTIFICATE_NAME).set(tmpName);
+                }
+            } catch (SSLPeerUnverifiedException ignored) {
+                //User not authenticated. Client authentication probably set to OPTIONAL or NONE
+            }
+
+        }
     }
 
     private static final class HelidonEventLogger extends ChannelInboundHandlerAdapter {

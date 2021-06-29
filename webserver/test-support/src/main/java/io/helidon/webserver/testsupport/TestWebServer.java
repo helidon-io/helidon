@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.concurrent.CompletionStage;
 import io.helidon.common.http.ContextualRegistry;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerTls;
 
 /**
  * Kind of WebServer mock for tests.
@@ -71,5 +72,15 @@ class TestWebServer implements WebServer {
     @Override
     public int port(String name) {
         return 0;
+    }
+
+    @Override
+    public void updateTls(WebServerTls tls) {
+
+    }
+
+    @Override
+    public void updateTls(WebServerTls tls, String socketName) {
+
     }
 }
