@@ -6,6 +6,6 @@ This application demonstrates use of RSockets and REST.
 
 ```bash
 mvn package
-java -jar target/helidon-examples-webserver-rsocket.jar
+java -jar target/helidon-examples-rsocket-server.jar
 ```
 

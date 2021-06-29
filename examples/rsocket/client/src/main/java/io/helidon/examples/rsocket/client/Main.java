@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.examples.rsocket;
+package io.helidon.examples.rsocket.client;
 
 import java.util.concurrent.CompletableFuture;
 
-import io.helidon.rsocket.server.RSocketEndpoint;
-import io.helidon.rsocket.server.RSocketRouting;
-import io.helidon.rsocket.server.RSocketSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -40,24 +37,16 @@ public class Main {
      */
     static Routing createRouting() {
 
-        MyRSocketService myRSocketService = new MyRSocketService();
-
-        RSocketRouting rSocketRouting = RSocketRouting.builder()
-                .register(myRSocketService)
-                .build();
+        RSocketClientService rSocketClientService = new RSocketClientService();
 
         return Routing.builder()
-                .register("/rsocket",
-                        RSocketSupport.builder()
-                                .register(RSocketEndpoint.create(rSocketRouting, "/board")
-                                        .getEndPoint()
-                                ).build())
+                .register(rSocketClientService)
                 .build();
     }
 
     static WebServer startWebServer() {
         WebServer server = WebServer.builder(createRouting())
-                .port(8080)
+                .port(8081)
                 .build();
 
         // Start webserver

@@ -1081,6 +1081,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.rsocket</groupId>
+                <artifactId>helidon-rsocket-client</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.microprofile</groupId>
                 <artifactId>helidon-microprofile-rsocket</artifactId>
                 <version>${helidon.version}</version>

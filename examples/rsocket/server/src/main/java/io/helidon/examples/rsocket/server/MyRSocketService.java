@@ -1,4 +1,4 @@
-package io.helidon.webserver.examples.rsocket;
+package io.helidon.examples.rsocket.server;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
