@@ -15,6 +15,8 @@
  */
 package io.helidon.tests.integration.nativeimage.mp2;
 
+import java.util.logging.Logger;
+
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -30,6 +32,8 @@ import static io.helidon.common.http.Http.Status.OK_200;
  * Main class of this integration test.
  */
 public final class Mp2Main {
+    private static final Logger LOGGER = Logger.getLogger(Mp2Main.class.getName());
+
     /**
      * Cannot be instantiated.
      */
