@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-examples-project</artifactId>
         <groupId>io.helidon.examples</groupId>
-        <version>1.4.9-SNAPSHOT</version>
+        <version>1.4.9</version>
     </parent>
     <groupId>io.helidon.examples.health</groupId>
     <artifactId>helidon-examples-health-project</artifactId>
