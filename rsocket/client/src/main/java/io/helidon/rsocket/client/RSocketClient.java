@@ -18,6 +18,7 @@ package io.helidon.rsocket.client;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
+import io.helidon.config.Config;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
@@ -66,6 +67,10 @@ public class RSocketClient implements Disposable {
      */
     private RSocketClient(io.rsocket.core.RSocketClient client) {
         this.client = client;
+    }
+
+    public static RSocketClient create(Config config){
+        return builder().config(config).build();
     }
 
     /**
@@ -263,6 +268,23 @@ public class RSocketClient implements Disposable {
 
             }
             return result;
+        }
+
+        /**
+         * Get setup data from the configuration.
+         *
+         * @param config
+         * @return Build
+         */
+        public Builder config(Config config) {
+            config.get("authentication.username").asString().ifPresent(this::username);
+            config.get("authentication.password").asString().ifPresent(this::password);
+            config.get("route").asString().ifPresent(this::route);
+            config.get("websocket").asString().ifPresent(this::websocket);
+            config.get("mime").asString().ifPresent(this::mimeType);
+            config.get("uri").asString().ifPresent(this::uri);
+            config.get("port").asInt().ifPresent(this::port);
+            return this;
         }
 
         public Builder route(String route) {

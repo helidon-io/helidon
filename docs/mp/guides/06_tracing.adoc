@@ -415,7 +415,7 @@ public class GreetingProvider {
     }
 }
 ----
-<1> The `getMessage` method will be traced since it is externally invoked by `GreetResource`.
+<1> The `getMessage` method will be traced since it is externally invoked by `RSocketResource`.
 <2> The `getMessage2` method will not be traced, even with the @Traced annotation, since it is called internally by `getMessage`.
 
 [source,bash]

@@ -160,7 +160,7 @@ the startup sequence. You can set the `mainClass` property to
 `io.helidon.microprofile.cdi.Main` and it will use Helidon's default
 main class.
 
-The `GreetResource` is defined in the `GreetResource.java` class as shown
+The `RSocketResource` is defined in the `GreetResource.java` class as shown
 below: 
 
 [source,java]
@@ -397,7 +397,7 @@ public class GreetingProvider {
  This method demonstrates how to read configuration information into
  the application.  A getter and setter are also included in this class.
 
-The `GreetResource` must be updated to use this value instead of the 
+The `RSocketResource` must be updated to use this value instead of the
  hard coded response.  Make the following updates to that class:
 
 [source,java]

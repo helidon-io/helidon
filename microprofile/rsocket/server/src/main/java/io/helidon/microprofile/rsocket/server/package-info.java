@@ -15,20 +15,6 @@
  */
 
 /**
- * RSocket client.
+ * RSocket integration.
  */
-module io.helidon.rsocket.client {
-    requires java.logging;
-
-    requires rsocket.core;
-    requires reactor.core;
-    requires io.netty.buffer;
-    requires org.reactivestreams;
-    requires io.helidon.common.reactive;
-    requires io.helidon.common;
-    requires rsocket.transport.netty;
-    requires io.helidon.config;
-
-
-    exports io.helidon.rsocket.client;
-}
+package io.helidon.microprofile.rsocket.server;
