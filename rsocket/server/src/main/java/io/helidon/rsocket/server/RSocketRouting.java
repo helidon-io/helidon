@@ -12,13 +12,13 @@ public interface RSocketRouting {
         return new Builder();
     }
 
-    Map<String, RequestResponseHandler> getRequestResponseRoutes();
+    Map<String, RequestResponseHandler> requestResponseRoutes();
 
-    Map<String, FireAndForgetHandler> getFireAndForgetRoutes();
+    Map<String, FireAndForgetHandler> fireAndForgetRoutes();
 
-    Map<String, RequestStreamHandler> getRequestStreamRoutes();
+    Map<String, RequestStreamHandler> requestStreamRoutes();
 
-    Map<String, RequestChannelHandler> getRequestChannelRoutes();
+    Map<String, RequestChannelHandler> requestChannelRoutes();
 
 
     /**

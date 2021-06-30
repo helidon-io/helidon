@@ -21,22 +21,22 @@ public class RSocketRoutingImpl implements RSocketRouting {
     }
 
     @Override
-    public Map<String, RequestResponseHandler> getRequestResponseRoutes() {
+    public Map<String, RequestResponseHandler> requestResponseRoutes() {
         return requestResponseRoutes;
     }
 
     @Override
-    public Map<String, FireAndForgetHandler> getFireAndForgetRoutes() {
+    public Map<String, FireAndForgetHandler> fireAndForgetRoutes() {
         return fireAndForgetRoutes;
     }
 
     @Override
-    public Map<String, RequestStreamHandler> getRequestStreamRoutes() {
+    public Map<String, RequestStreamHandler> requestStreamRoutes() {
         return requestStreamRoutes;
     }
 
     @Override
-    public Map<String, RequestChannelHandler> getRequestChannelRoutes() {
+    public Map<String, RequestChannelHandler> requestChannelRoutes() {
         return requestChannelRoutes;
     }
 

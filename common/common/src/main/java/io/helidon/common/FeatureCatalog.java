@@ -586,6 +586,20 @@ final class FeatureCatalog {
                         .name("Neo4j Metrics")
                         .description("Metrics for Neo4j integration")
                         .path("Neo4j", "Metrics"));
+        add("io.helidon.rsocket.server",
+                FeatureDescriptor.builder()
+                        .name("RSocket Server support")
+                        .description("Helidon Server RSocket support")
+                        .path("RSocket Server")
+                        .experimental(true)
+                        .nativeSupported(false));
+        add("io.helidon.rsocket.client",
+                FeatureDescriptor.builder()
+                        .name("RSocket Client support")
+                        .description("Helidon Client RSocket support")
+                        .path("RSocket Client")
+                        .experimental(true)
+                        .nativeSupported(false));
         add("io.helidon.webclient",
             FeatureDescriptor.builder()
                     .name("Web Client")

@@ -68,10 +68,10 @@ public class RSocketEndpoint extends Endpoint {
         ConnectionAcceptor connectionAcceptor = RSocketServer
                 .create()
                 .acceptor((connectionSetupPayload, rSocket) -> Mono.just(RoutedRSocket.builder()
-                        .fireAndForgetRoutes(routing.getFireAndForgetRoutes())
-                        .requestChannelRoutes(routing.getRequestChannelRoutes())
-                        .requestResponseRoutes(routing.getRequestResponseRoutes())
-                        .requestStreamRoutes(routing.getRequestStreamRoutes())
+                        .fireAndForgetRoutes(routing.fireAndForgetRoutes())
+                        .requestChannelRoutes(routing.requestChannelRoutes())
+                        .requestResponseRoutes(routing.requestResponseRoutes())
+                        .requestStreamRoutes(routing.requestStreamRoutes())
                         .build()))
                 .asConnectionAcceptor();
 
