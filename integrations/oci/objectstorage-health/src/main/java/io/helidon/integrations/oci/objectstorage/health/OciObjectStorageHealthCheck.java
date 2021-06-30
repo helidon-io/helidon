@@ -73,6 +73,9 @@ public final class OciObjectStorageHealthCheck implements HealthCheck {
     }
 
     private OciObjectStorageHealthCheck(Builder builder) {
+        Objects.requireNonNull(builder.bucket);
+        Objects.requireNonNull(builder.namespace);
+
         this.timeout = builder.timeout;
         this.bucket = builder.bucket;
         this.namespace = builder.namespace;
@@ -80,8 +83,6 @@ public final class OciObjectStorageHealthCheck implements HealthCheck {
         if (builder.ociObjectStorage != null) {
             this.ociObjectStorage = builder.ociObjectStorage;
         } else {
-            Objects.requireNonNull(this.bucket);
-            Objects.requireNonNull(this.namespace);
             // This requires OCI configuration in ~/.oci/config
             this.ociObjectStorage = OciObjectStorageRx.builder()
                     .namespace(namespace)
