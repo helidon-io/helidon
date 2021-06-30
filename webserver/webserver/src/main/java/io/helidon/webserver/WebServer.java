@@ -19,12 +19,9 @@ package io.helidon.webserver;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import javax.net.ssl.SSLContext;
 
 import io.helidon.common.http.ContextualRegistry;
 
