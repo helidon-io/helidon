@@ -15,12 +15,9 @@
  */
 
 /**
- * OCI Object Storage integration.
- *
- * @see io.helidon.integrations.oci.objectstorage.OciObjectStorage
- * @see io.helidon.integrations.oci.objectstorage.OciObjectStorageRx
+ * OCI Object Storage Health.
  */
-module io.helidon.integrations.oci.objectstorage {
+module io.helidon.integrations.oci.objectstorage.health {
     requires transitive java.json;
     requires transitive io.helidon.common.reactive;
     requires transitive io.helidon.integrations.oci.connect;
@@ -28,17 +25,15 @@ module io.helidon.integrations.oci.objectstorage {
 
     requires io.helidon.integrations.common.rest;
     requires io.helidon.common.http;
+    requires io.helidon.health;
+    requires io.helidon.health.common;
+    requires io.helidon.integrations.oci.objectstorage;
 
+    requires static microprofile.config.api;
     requires static jakarta.enterprise.cdi.api;
     requires static jakarta.inject.api;
     requires java.logging;
 
-    exports io.helidon.integrations.oci.objectstorage;
+    exports io.helidon.integrations.oci.objectstorage.health;
 
-    // this is the intended usage, deprecation is to warn about accidental usage in code
-    //noinspection deprecation
-    provides io.helidon.integrations.oci.connect.spi.InjectionProvider
-            with io.helidon.integrations.oci.objectstorage.OciObjectStorageInjectionProvider;
-
-    opens io.helidon.integrations.oci.objectstorage to weld.core.impl, io.helidon.microprofile.cdi;
 }

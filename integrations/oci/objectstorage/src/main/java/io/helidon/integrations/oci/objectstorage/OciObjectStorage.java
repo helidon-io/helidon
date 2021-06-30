@@ -78,5 +78,5 @@ public interface OciObjectStorage {
      * @param request get bucket request
      * @return future with response or error
      */
-    ApiOptionalResponse<GetObject.Response> getBucket(GetObject.Request request);
+    ApiOptionalResponse<GetBucket.Response> getBucket(GetBucket.Request request);
 }

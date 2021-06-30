@@ -86,15 +86,16 @@ class OciObjectStorageRxImpl implements OciObjectStorageRx {
     }
 
     @Override
-    public Single<ApiOptionalResponse<GetObjectRx.Response>> getBucket(GetObject.Request request) {
+    public Single<ApiOptionalResponse<GetBucketRx.Response>> getBucket(GetBucket.Request request) {
         String namespace = namespace(request);
         String apiPath = "/n/" + namespace + "/b/" + request.bucket();
 
         objectStorage(request);
 
         return restApi
-                .getPublisher(apiPath, request, ApiOptionalResponse.<Multi<DataChunk>, GetObjectRx.Response>apiResponseBuilder()
-                        .entityProcessor(GetObjectRx.Response::create));
+                .getPublisher(apiPath, request,
+                        ApiOptionalResponse.<Multi<DataChunk>, GetBucketRx.Response>apiResponseBuilder()
+                            .entityProcessor(GetBucketRx.Response::create));
     }
 
     private String namespace(ObjectRequest<?> request) {

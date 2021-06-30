@@ -14,25 +14,34 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.oci.objectstorage;
+package io.helidon.integrations.oci.objectstorage.health;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.health.common.BuiltInHealthCheck;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
+import io.helidon.integrations.oci.objectstorage.GetBucket;
+import io.helidon.integrations.oci.objectstorage.GetBucketRx;
+import io.helidon.integrations.oci.objectstorage.OciObjectStorageRx;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Liveness;
 
 import static io.helidon.common.http.Http.Status.OK_200;
+import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 /**
  * Liveness check for an OCI's ObjectStorage bucket. Reads configuration to
@@ -44,48 +53,52 @@ import static io.helidon.common.http.Http.Status.OK_200;
 public final class OciObjectStorageHealthCheck implements HealthCheck {
     private static final Logger LOGGER = Logger.getLogger(OciObjectStorageHealthCheck.class.getName());
 
-    private static final int DEFAULT_TIMEOUT_SECONDS = 10;
-
+    @Inject
+    @ConfigProperty(name = "oci.objectstorage.bucket")
     private String bucket;
+
+    @Inject
+    @ConfigProperty(name = "oci.objectstorage.namespace")
     private String namespace;
-    private int timeout;
+
+    @Inject
+    @ConfigProperty(name = "oci.objectstorage.health.timeout-millis", defaultValue = "10000")
+    private long timeoutMillis;
+
+    private Duration timeout;
+
     private OciObjectStorageRx ociObjectStorage;
 
     private OciObjectStorageHealthCheck() {
-        this.timeout = DEFAULT_TIMEOUT_SECONDS;
-        Config ociConfig = Config.create().get("oci");
-        this.bucket = ociConfig.get("objectstorage.bucket").asString().orElse(null);
-        this.namespace = ociConfig.get("objectstorage.namespace").asString().get();
-        // This requires OCI configuration in ~/.oci/config
-        this.ociObjectStorage = OciObjectStorageRx.create(ociConfig);
     }
 
     private OciObjectStorageHealthCheck(Builder builder) {
         this.timeout = builder.timeout;
         this.bucket = builder.bucket;
         this.namespace = builder.namespace;
-        this.ociObjectStorage = builder.ociObjectStorage;
 
-        Config ociConfig = builder.config;
-        if (ociConfig == null) {
-            ociConfig = Config.create().get("oci");
-        }
-        if (this.timeout == -1) {
-            this.timeout = ociConfig.get("objectstorage.healthcheck.timeout")
-                    .asInt().orElse(DEFAULT_TIMEOUT_SECONDS);
-        }
-        if (this.namespace == null) {
-            this.namespace = ociConfig.get("objectstorage.namespace").asString().get();
-        }
-        if (this.bucket == null) {
-            this.bucket = ociConfig.get("objectstorage.bucket").asString().orElse(null);
-        }
-        if (this.ociObjectStorage == null) {
+        if (builder.ociObjectStorage != null) {
+            this.ociObjectStorage = builder.ociObjectStorage;
+        } else {
+            Objects.requireNonNull(this.bucket);
+            Objects.requireNonNull(this.namespace);
             // This requires OCI configuration in ~/.oci/config
-            this.ociObjectStorage = OciObjectStorageRx.create(ociConfig);
+            this.ociObjectStorage = OciObjectStorageRx.builder()
+                    .namespace(namespace)
+                    .build();
         }
     }
 
+    @PostConstruct
+    private void initialize() {
+        Objects.requireNonNull(this.bucket);
+        Objects.requireNonNull(this.namespace);
+        this.timeout = Duration.of(timeoutMillis, MILLIS);
+        // This requires OCI configuration in ~/.oci/config
+        this.ociObjectStorage = OciObjectStorageRx.builder()
+                .namespace(namespace)
+                .build();
+    }
 
     /**
      * Internal validation method used for testing. Does not attempt to connect
@@ -101,7 +114,7 @@ public final class OciObjectStorageHealthCheck implements HealthCheck {
         } catch (NullPointerException e) {
             return false;
         }
-        return timeout > 0;
+        return timeout.toMillis() > 0;
     }
 
     /**
@@ -116,10 +129,11 @@ public final class OciObjectStorageHealthCheck implements HealthCheck {
     /**
      * Create an instance.
      *
+     * @param config the config.
      * @return an instance.
      */
-    public static OciObjectStorageHealthCheck create() {
-        return builder().build();
+    public static OciObjectStorageHealthCheck create(Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -134,10 +148,10 @@ public final class OciObjectStorageHealthCheck implements HealthCheck {
         HealthCheckResponseBuilder builder = HealthCheckResponse.named("objectStorage");
         if (bucket != null) {
             // Attempt to retrieve bucket's metadata
-            Single<ApiOptionalResponse<GetObjectRx.Response>> single =
-                    ociObjectStorage.getBucket(GetObject.Request.builder().bucket(bucket));
+            Single<ApiOptionalResponse<GetBucketRx.Response>> single =
+                    ociObjectStorage.getBucket(GetBucket.Request.builder().bucket(bucket));
             try {
-                ApiOptionalResponse<GetObjectRx.Response> r = single.get(timeout, TimeUnit.SECONDS);
+                ApiOptionalResponse<GetBucketRx.Response> r = single.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
                 builder.state(r.status().equals(OK_200));
                 LOGGER.fine(() -> "OCI ObjectStorage health check for bucket " + bucket
                         + " returned status code " + r.status().code());
@@ -159,10 +173,11 @@ public final class OciObjectStorageHealthCheck implements HealthCheck {
      */
     public static final class Builder implements io.helidon.common.Builder<OciObjectStorageHealthCheck> {
 
-        private Config config;
+        private static final Duration DEFAULT_TIMEOUT_SECONDS = Duration.of(10, SECONDS);
+
         private String bucket;
         private String namespace;
-        private int timeout = -1;
+        private Duration timeout = DEFAULT_TIMEOUT_SECONDS;
         private OciObjectStorageRx ociObjectStorage;
 
         private Builder() {
@@ -180,20 +195,31 @@ public final class OciObjectStorageHealthCheck implements HealthCheck {
          * @return the builder.
          */
         public Builder config(Config config) {
-            this.config = config;
-            Config timeout = config.get("objectstorage.healthcheck.timeout");
-            timeout.asInt().ifPresent(this::timeout);
+            config.get("oci.objectstorage.healthcheck.timeout-millis").asLong().ifPresent(this::timeoutMillis);
+            config.get("oci.objectstorage.namespace").asString().ifPresent(this::namespace);
+            config.get("oci.objectstorage.bucket").asString().ifPresent(this::bucket);
+            return this;
+        }
+
+        /**
+         * Set timeout.
+         *
+         * @param timeout the timeout.
+         * @return the builder.
+         */
+        public Builder timeout(Duration timeout) {
+            this.timeout = timeout;
             return this;
         }
 
         /**
          * Set timeout in millis.
          *
-         * @param timeout timeout in millis.
+         * @param millis the timeout in millis.
          * @return the builder.
          */
-        public Builder timeout(int timeout) {
-            this.timeout = timeout;
+        public Builder timeoutMillis(long millis) {
+            timeout(Duration.of(millis, MILLIS));
             return this;
         }
 
