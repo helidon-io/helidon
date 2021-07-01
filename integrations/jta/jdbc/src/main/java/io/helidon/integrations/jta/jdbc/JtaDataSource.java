@@ -107,7 +107,7 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
      * DataSource} instances to which operations will be delegated;
      * must not be {@code null}
      *
-     * @param transactionIsActiveSupplier an {@link BooleanSupplier} that 
+     * @param transactionIsActiveSupplier an {@link BooleanSupplier} that
      * returns {@code true} only if the current transaction, if any, is
      * active; must not be {@code null}
      *
