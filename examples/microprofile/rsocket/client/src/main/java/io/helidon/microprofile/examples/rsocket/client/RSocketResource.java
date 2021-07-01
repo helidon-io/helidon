@@ -17,6 +17,7 @@
 package io.helidon.microprofile.examples.rsocket.client;
 
 import io.helidon.common.reactive.Single;
+import io.helidon.microprofile.rsocket.client.CustomRSocket;
 import io.helidon.rsocket.client.RSocketClient;
 import io.rsocket.Payload;
 
@@ -25,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -38,10 +40,12 @@ import javax.ws.rs.core.MediaType;
 public class RSocketResource {
 
     private RSocketClient client;
+    private RSocketClient anotherClient;
 
     @Inject
-    public RSocketResource(RSocketClient client) {
+    public RSocketResource(RSocketClient client, @CustomRSocket("custom")RSocketClient anotherClient) {
         this.client = client;
+        this.anotherClient = anotherClient;
     }
 
     /**
@@ -56,4 +60,16 @@ public class RSocketResource {
         return payload.get().getDataUtf8();
     }
 
+    /**
+     * Return a worldly greeting message.
+     *
+     * @return text
+     */
+    @GET
+    @Path("/another")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getAnotherMessage() throws ExecutionException, InterruptedException {
+        Single<Payload> payload = anotherClient.requestResponse(Single.just(ByteBuffer.wrap("Hello Another World!".getBytes(StandardCharsets.UTF_8))));
+        return payload.get().getDataUtf8();
+    }
 }

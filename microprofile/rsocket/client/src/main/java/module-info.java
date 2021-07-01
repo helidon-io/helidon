@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.microprofile.rsocket.client.RSocketClientCDIExtension;
-
 /**
  * RSocket client integration.
  */
@@ -39,6 +37,4 @@ module io.helidon.microprofile.rsocket.client {
 
     exports io.helidon.microprofile.rsocket.client;
 
-
-    provides javax.enterprise.inject.spi.Extension with RSocketClientCDIExtension;
 }
