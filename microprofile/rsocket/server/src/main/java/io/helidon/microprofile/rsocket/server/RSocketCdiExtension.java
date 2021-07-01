@@ -142,7 +142,7 @@ public class RSocketCdiExtension implements Extension {
                 Method method = annotatedEntry.getValue();
 
                 if (annotation.annotationType().equals(FireAndForget.class)) {
-                    rSocketRoutingBuilder.fireAndForget(((FireAndForget) annotation).route(),
+                    rSocketRoutingBuilder.fireAndForget(((FireAndForget) annotation).value(),
                             payload -> {
                                 try {
                                     return (Single<Void>) method.invoke(rsocketInstance, payload);
@@ -153,7 +153,7 @@ public class RSocketCdiExtension implements Extension {
                             });
 
                 } else if (annotation.annotationType().equals(RequestChannel.class)) {
-                    rSocketRoutingBuilder.requestChannel(((RequestChannel) annotation).route(),
+                    rSocketRoutingBuilder.requestChannel(((RequestChannel) annotation).value(),
                             payloads -> {
                                 try {
                                     return (Multi<Payload>) method.invoke(rsocketInstance, payloads);
@@ -163,7 +163,7 @@ public class RSocketCdiExtension implements Extension {
                                 return Multi.empty();
                             });
                 } else if (annotation.annotationType().equals(RequestResponse.class)) {
-                    rSocketRoutingBuilder.requestResponse(((RequestResponse) annotation).route(),
+                    rSocketRoutingBuilder.requestResponse(((RequestResponse) annotation).value(),
                             payload -> {
                                 try {
                                     return (Single<Payload>) method.invoke(rsocketInstance, payload);
@@ -173,7 +173,7 @@ public class RSocketCdiExtension implements Extension {
                                 return Single.empty();
                             });
                 } else if (annotation.annotationType().equals(RequestStream.class)) {
-                    rSocketRoutingBuilder.requestStream(((RequestStream) annotation).route(),
+                    rSocketRoutingBuilder.requestStream(((RequestStream) annotation).value(),
                             payload -> {
                                 try {
                                     return (Multi<Payload>) method.invoke(rsocketInstance, payload);
@@ -185,7 +185,7 @@ public class RSocketCdiExtension implements Extension {
                 }
             }
 
-            routingMap.put(rsocketInstance.getClass().getAnnotation(RSocket.class).path(), rSocketRoutingBuilder);
+            routingMap.put(rsocketInstance.getClass().getAnnotation(RSocket.class).value(), rSocketRoutingBuilder);
             LOGGER.info("Instance to method wiring completed!");
         }
     }

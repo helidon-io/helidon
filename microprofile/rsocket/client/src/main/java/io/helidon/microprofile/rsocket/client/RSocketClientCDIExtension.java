@@ -44,6 +44,8 @@ public class RSocketClientCDIExtension implements Extension {
                 .name(io.helidon.rsocket.client.RSocketClient.class.getName())
                 .beanClass(io.helidon.rsocket.client.RSocketClient.class)
                 .createWith(creationContext -> {
+
+
                     org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
                     Config helidonConfig = MpConfig.toHelidonConfig(config).get(RSOCKET_CONFIG_NAME_PREFIX);
 

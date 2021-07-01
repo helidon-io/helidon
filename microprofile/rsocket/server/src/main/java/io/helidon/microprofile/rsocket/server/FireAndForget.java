@@ -36,5 +36,5 @@ public @interface FireAndForget {
      *
      * @return String
      */
-    String route() default "";
+    String value() default "";
 }

@@ -37,5 +37,5 @@ public @interface RSocket {
      *
      * @return String
      */
-    String path() default "/";
+    String value() default "/";
 }

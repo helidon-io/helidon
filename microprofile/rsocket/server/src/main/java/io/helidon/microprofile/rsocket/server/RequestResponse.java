@@ -37,5 +37,5 @@ public @interface RequestResponse {
      *
      * @return String
      */
-    String route() default "";
+    String value() default "";
 }

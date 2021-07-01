@@ -30,35 +30,35 @@ import javax.enterprise.context.ApplicationScoped;
 /**
  * Example RSocket server.
  */
-@RSocket(path = "/mypath")
+@RSocket("/mypath")
 @ApplicationScoped
 public class MyRSocketService {
 
-    @FireAndForget(route = "print")
+    @FireAndForget("print")
     public Single<Void> printPayload(Payload payload) {
         System.out.println("Payload: " + payload.getDataUtf8());
         return Single.empty();
     }
 
-    @FireAndForget(route = "print2")
+    @FireAndForget("print2")
     public Single<Void> printPayload2(Payload payload) {
         System.out.println("Second Payload: " + payload.getDataUtf8());
         return Single.empty();
     }
 
-    @RequestResponse(route = "print")
+    @RequestResponse("print")
     public Single<Payload> printAndRespond(Payload payload){
         System.out.println("received: " +payload.getDataUtf8());
         return Single.just(ByteBufPayload.create("backfire!"));
     }
 
-    @RequestStream(route = "print")
+    @RequestStream("print")
     public Multi<Payload> printStream(Payload payload){
         String data = payload.getDataUtf8();
         return Multi.range(1,10).map(e->ByteBufPayload.create(e+": "+data));
     }
 
-    @RequestChannel(route = "print")
+    @RequestChannel("print")
     public Multi<Payload> printChannel(Multi<Payload> payloads) {
         System.out.println("Hello!");
         return payloads.map(Payload::getDataUtf8).log()

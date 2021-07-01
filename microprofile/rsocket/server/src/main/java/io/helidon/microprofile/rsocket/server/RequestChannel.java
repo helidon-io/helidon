@@ -37,5 +37,5 @@ public @interface RequestChannel {
      *
      * @return String
      */
-    String route() default "";
+    String value() default "";
 }

@@ -37,5 +37,5 @@ public @interface RequestStream {
      *
      * @return String
      */
-    String route() default "";
+    String value() default "";
 }
