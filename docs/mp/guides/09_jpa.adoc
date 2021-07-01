@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,22 +20,20 @@
 :h1Prefix: MP
 :description: Helidon MP JPA Guide
 :keywords: helidon, guide, transaction, jpa, microprofile
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide shows how to configure and use the
 https://jakarta.ee/specifications/persistence/2.2/[Java Persistence
 API (JPA)] from within a Helidon MP application.
 
 == What You Need
+For this 30 minute tutrial, you'll need the following:
 
-|===
-|About 30 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|<<mp/guides/07_datasource.adoc,An understanding of named data source support in Helidon MP>>
-|<<mp/guides/08_jta.adoc,An understanding of transaction support in Helidon MP>>
-|An understanding of JPA itself
-|===
+include::{common-page-prefix-inc}[tag=common-prereqs-curl]
 
-== What You'll Do
+
+
+== Overview
 
 By following this guide, you’ll enhance a bare-bones Helidon MP
 application to use JPA, with automatic transaction support, backed by
@@ -43,6 +41,10 @@ https://www.eclipse.org/eclipselink/#jpa[EclipseLink], to access an
 in-memory https://www.h2database.com/html/main.html[H2
 database]. You’ll see how to install the relevant dependencies and add
 JPA-related code to your application.
+
+NOTE: This guide assumes that you have read the following:
+ <<mp/guides/07_datasource.adoc,An understanding of named data source support in Helidon MP>> and 
+ <<mp/guides/08_jta.adoc,An understanding of transaction support in Helidon MP>>.
 
 == Use the Maven Archetype to Generate a Helidon MP Application
 

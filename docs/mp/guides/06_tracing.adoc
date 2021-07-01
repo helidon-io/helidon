@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,17 +21,15 @@
 :description: Helidon tracing
 :keywords: helidon, tracing, microprofile, guide
 :toc:
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide describes how to create a sample MicroProfile (MP) project
 that can be used to run some basic examples using tracing with Helidon MP.
 
-== What you need
+== What You Need
+For this 30 minute tutorial, you will need the following:
 
-[width=50%,role="flex, sm7"]
-|===
-|About 30 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|===
+include::{common-page-prefix-inc}[tag=common-prereqs]
 
 == Introduction
 
@@ -41,21 +39,23 @@ which helps you identify performance and operational issues.  Helidon MP include
 through the https://opentracing.io[OpenTracing API].  Tracing is integrated with WebServer, gRPC Server,
 and Security using either the https://zipkin.io[Zipkin] or https://www.jaegertracing.io[Jaeger] tracers.
 
-=== Tracing concepts
+=== Tracing Concepts
 
 This section explains a few concepts that you need to understand before you get started with tracing.
-In the context of this document, a service is synonymous with an application.
-A _span_ is the basic unit of work done within a single service, on a single host.
-Every span has a name, starting timestamp, and duration.  For example, the work done by a REST endpoint is a span.
+
+* In the context of this document, a _service_ is synonymous with an application.
+* A _span_ is the basic unit of work done within a single service, on a single host.
+Every span has a name, starting timestamp, and duration.  
+For example, the work done by a REST endpoint is a span.
 A span is associated to a single service, but its descendants can belong to different services and hosts.
-A _trace_ contains a collection of spans from one or more services, running on one or more hosts. For example,
+* A _trace_ contains a collection of spans from one or more services, running on one or more hosts. For example,
 if you trace a service endpoint that calls another service, then the trace would contain spans from both services.
 Within a trace, spans are organized as a directed acyclic graph (DAG) and
 can belong to multiple services, running on multiple hosts.  The _OpenTracing Data Model_ describes the details
 at https://opentracing.io/specification[The OpenTracing Semantic Specification].
 Spans are automatically created by Helidon as needed during execution of the REST request.
 
-== Getting started with tracing
+== Getting Started with Tracing
 
 The examples in this guide demonstrate how to integrate tracing with helidon, how to view traces, how to trace
 across multiple services, and how to integrate with tracing with Kubernetes.  All examples use Zipkin and traces
@@ -83,7 +83,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 cd helidon-quickstart-mp
 ----
 
-=== Setup Zipkin
+=== Set up Zipkin
 
 First, you need to run the Zipkin tracer.  Helidon will communicate with this tracer at runtime.
 
@@ -115,7 +115,7 @@ curl http://localhost:9411/health // <1>
 <1> Invoke the Zipkin REST API to check the Zipkin server health.
 <2> All `status` fields should be `UP`.
 
-=== Enable Tracing in your Helidon application
+=== Enable tracing in your Helidon application
 
 Update the pom.xml file and add the following Zipkin dependency to the `<dependencies>`
 section (*not* `<dependencyManagement>`).  This will enable Helidon to use Zipkin at the
@@ -156,9 +156,9 @@ curl http://localhost:8080/greet
 ----
 
 
-=== Viewing tracing using Zipkin REST API
+=== View tracing using Zipkin REST API
 
-Because you had tracing enabled, the previous `/greet` endpoint invocation resulted in a new trace being created.
+Because tracing is now enabled, the previous `/greet` endpoint invocation resulted in a new trace being created.
 Let's get the trace data that was generated using the Zipkin API.  First, get the service information.
 
 NOTE: Helidon automatically enables tracing for JAX-RS resources methods so you don't need to use annotations with JAX-RS.
@@ -235,48 +235,37 @@ results to a specific time window.
 <2> The request will return seven spans, one for each name, along with an unnamed JSON node, which
 has the status.
 
-=== Viewing tracing using Zipkin UI
+=== View tracing using Zipkin UI
 
-The tracing output data is verbose and can be difficult to interpret using the REST API, especially since it represents
-a structure of spans.  Zipkin provides a web-based UI at http://localhost:9411/zipkin, where you can see a visual
-representation of the same data and the relationship between spans within a trace.  If you see a `Lens UI` button at the top center then
-click on it and it will take you to the specific UI used by this guide.
+The tracing output data is verbose and can be difficult to interpret using the REST API, especially since it represents a structure of spans.  Zipkin provides a web-based UI at http://localhost:9411/zipkin, where you can see a visual representation of the same data and the relationship between spans within a trace.  If you see a `Lens UI` button at the top center then click on it and it will take you to the specific UI used by this guide.
 
-Click on the UI refresh button (the search icon) as shown in the image below.  Notice that you can change the look-back time
-to restrict the trace list.
+Click on the UI refresh button (the search icon) as shown in the image below.  Notice that you can change the look-back time to restrict the trace list.
 
 .Trace refresh
 image::guides/12_tracing_refresh.png[Trace Refresh]
 
 
-The image below shows the trace summary, including start time and duration of each trace. There are two traces,
-each one generated in response to a `curl http://localhost:8080/greet` invocation.  The oldest trace will have a much
-longer duration since there is one-time initialization that occurs.
+The image below shows the trace summary, including start time and duration of each trace. There are two traces, each one generated in response to a `curl http://localhost:8080/greet` invocation. The oldest trace will have a much longer duration since there is one-time initialization that occurs.
 
 .Tracing list view
 image::guides/12_tracing_top.png[Traces]
 
-Click on a trace and you will see the trace detail page where the spans are listed.  You can clearly
-see the root span and the relationship among all the spans in the trace, along with timing information.
+Click on a trace and you will see the trace detail page where the spans are listed.  You can clearly see the root span and the relationship among all the spans in the trace, along with timing information.
 
 .Trace detail page
 image::guides/12_tracing_detail.png[Trace Detail]
 
-NOTE: A parent span might not depend on the result of the child. This is called a `FollowsFrom` reference, see
-https://github.com/opentracing/specification/blob/master/specification.md[Open Tracing Semantic Spec].  Notice, the
-last span which writes the response after the root span ends, falls into this category.
+NOTE: A parent span might not depend on the result of the child. This is called a `FollowsFrom` reference, see https://github.com/opentracing/specification/blob/master/specification.md[Open Tracing Semantic Spec].  Notice, the last span which writes the response after the root span ends, falls into this category.
 
-You can examine span details by clicking on the span row.  Refer to the image below, which shows the `security` span details, including timing information.
-You can see times for each space relative to the root span.  These rows are annotated with `Server Start` and `Server Finish`, as shown in the third column.
+You can examine span details by clicking on the span row.  Refer to the image below, which shows the `security` span details, including timing information. You can see times for each space relative to the root span.  These rows are annotated with `Server Start` and `Server Finish`, as shown in the third column.
 
 .Span detail page
 image::guides/12_tracing_span_detail.png[Span Details]
 
 
-=== Enabling Tracing on CDI beans
+=== Enable tracing on CDI beans
 
-So far, you have used tracing with JAX-RS without needing to annotate.  You can enable tracing on other CDI beans, either at the class level
-or at the method level, as shown by the following examples.
+So far in this tutorial you have used tracing with JAX-RS without needing to annotate.  You can enable tracing on other CDI beans, either at the class level or at the method level, as shown by the following examples.
 
 ==== Tracing at the method level
 
@@ -385,8 +374,7 @@ curl -X GET "http://localhost:9411/api/v2/spans?serviceName=helidon-mp-1" -H "ac
 
 You can refresh the UI view and drill down the trace to see the new spans.
 
-NOTE: Methods invoked directly by your code are not enabled for tracing, even if you explicitly annotate them with @Traced.
-Tracing only works for methods invoked on CDI beans. See the example below.
+NOTE: Methods invoked directly by your code are not enabled for tracing, even if you explicitly annotate them with @Traced. Tracing only works for methods invoked on CDI beans. See the example below.
 
 [source,java]
 .Update the `GreetingProvider` class with the following code:
@@ -432,12 +420,10 @@ curl -X GET "http://localhost:9411/api/v2/spans?serviceName=helidon-mp-1" -H "ac
 ----
 <1> The `getMessage` method is traced, but `getMessage2` is not.
 
-=== Tracing across services
+=== Trace across services
 
-Helidon automatically traces across services, providing that the services use the same tracer, for example, the same instance of Zipkin.
-This means a single trace can include spans from multiple services and hosts.  OpenTracing uses a `SpanContext` to
-propagate tracing information across process boundaries.  When you make client API calls, Helidon will
-internally call OpenTracing APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
+Helidon automatically traces across services as long as the services use the same tracer, for example, the same instance of Zipkin.
+This means a single trace can include spans from multiple services and hosts.  OpenTracing uses a `SpanContext` to propagate tracing information across process boundaries.  When you make client API calls, Helidon will internally call OpenTracing APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
 
 To demonstrate distributed tracing, you will need to create a second project, where the server listens on port 8081.
 Create a new root directory to hold this new project, then do the following steps, similar to
@@ -584,8 +570,7 @@ Click on the trace with two services to see the detail view.
 .Tracing across multiple services detail view
 image::guides/12_tracing_detail_2_services.png[Traces]
 
-In the image above, you can see that the trace includes spans from two services. You will notice there is a gap before the sixth span,
-which is a `get` operation. This is a one-time client initialization delay.  Run the `/outbound` curl command again and look at the new trace to
+In the image above, you can see that the trace includes spans from two services. You will notice there is a gap before the sixth span, which is a `get` operation. This is a one-time client initialization delay.  Run the `/outbound` curl command again and look at the new trace to
 see that the delay no longer exists.
 
 You can now stop your second service, it is no longer used in this guide.

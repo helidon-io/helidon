@@ -16,6 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 == Introduction
 
@@ -27,11 +28,9 @@ In this guide you will learn how to build a native image locally on your machine
 
 == What You Need
 
-|===
-|About 10 minutes
-| <<about/03_prerequisites.adoc,Helidon Prerequisites>>
-| GraalVM CE https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.0.0[21.0.0]
-|===
+For this 10 minute tutorial, you will need the following:
+
+include::{common-page-prefix-inc}[tag=common-prereqs-graal]
 
 == Install GraalVM and the Native Image Command
 

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,17 +21,16 @@
 :description: Helidon tracing
 :keywords: helidon, tracing, microprofile, guide
 :toc:
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide describes how to create a sample Helidon SE project
 that can be used to run some basic examples using tracing with a Helidon SE application.
 
-== What you need
+== What You Need
 
-[width=50%,role="flex, sm7"]
-|===
-|About 30 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|===
+For this 30 minute tutorial, you will need the following:
+
+include::{common-page-prefix-inc}[tag=common-prereqs]
 
 == Introduction
 
@@ -41,7 +40,7 @@ which helps you identify performance and operational issues.  Helidon SE include
 through the https://opentracing.io[OpenTracing API].  Tracing is integrated with WebServer, gRPC Server,
 and Security using either the https://zipkin.io[Zipkin] or https://www.jaegertracing.io[Jaeger] tracers.
 
-=== Tracing concepts
+=== Tracing Concepts
 
 This section explains a few concepts that you need to understand before you get started with tracing.
 In the context of this document, a service is synonymous with an application.

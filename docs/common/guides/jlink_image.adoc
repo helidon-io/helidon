@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+
 == Introduction
 
 JDK 9 introduced the https://docs.oracle.com/en/java/javase/11/tools/jlink.html[`jlink`]
@@ -26,16 +28,15 @@ Helidon application resulting in a smaller, better performing runtime.
 In this guide you will learn how to build a custom runtime image locally on your machine,
 as well as how to build it in a Docker image.
 
-== What You Need
 
-|===
-|About 10 minutes
-| <<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|===
+== What You Need
+For this 10 minute tutorial, you will need the following:
+
+include::{common-page-prefix-inc}[tag=common-prereqs]
 
 == Verify JDK
 
-JDK 11 or newer is required.
+As noted in the prerequisites above, JDK 11 or newer is required.
 
 [source,bash]
 ----

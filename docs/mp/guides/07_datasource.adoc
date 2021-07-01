@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,22 +20,21 @@
 :h1Prefix: MP
 :description: Helidon MP Data Source Guide
 :keywords: helidon, guide, datasource, microprofile
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+
 
 This guide shows how to configure and use named
 https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`DataSource`]s
 in your Helidon MP application.
 
 == What You Need
+For this 20 minute tutorial, you will need the following:
 
-|===
-|About 20 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|`curl` (for testing)
-|===
+include::{common-page-prefix-inc}[tag=common-prereqs-curl]
 
-== What You'll Do
+== Overview
 
-By following this guide, you'll enhance a bare-bones Helidon MP
+By following this guide you'll enhance a bare-bones Helidon MP
 application to access an in-memory
 https://www.h2database.com/html/main.html[H2 database] database.
 You'll see how to install the relevant dependencies, set up and
