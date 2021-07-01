@@ -16,21 +16,27 @@
 
 package io.helidon.webserver;
 
-import io.helidon.common.context.Context;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigException;
-import io.helidon.config.DeprecatedConfig;
-import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
-
-import javax.net.ssl.SSLContext;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
+
+import javax.net.ssl.SSLContext;
+
+import io.helidon.common.context.Context;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
+import io.helidon.config.DeprecatedConfig;
+
+import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
 
 /**
  * {@link WebServer} configuration.

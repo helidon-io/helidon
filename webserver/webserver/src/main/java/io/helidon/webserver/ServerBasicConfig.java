@@ -16,12 +16,18 @@
 
 package io.helidon.webserver;
 
-import io.helidon.common.context.Context;
-import io.opentracing.Tracer;
+import java.net.InetAddress;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
-import java.net.InetAddress;
-import java.util.*;
+
+import io.helidon.common.context.Context;
+
+import io.opentracing.Tracer;
 
 /**
  * Basic implementation of the {@link ServerConfiguration}.
