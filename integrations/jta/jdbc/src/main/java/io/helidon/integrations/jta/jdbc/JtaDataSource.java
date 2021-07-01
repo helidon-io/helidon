@@ -93,7 +93,7 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
      * @exception NullPointerException if either parameter is {@code
      * null}
      *
-     * @see #JtaDataSource(Supplier, IntSupplier)
+     * @see #JtaDataSource(Supplier, BooleanSupplier)
      */
     public JtaDataSource(final DataSource dataSource,
                          final BooleanSupplier transactionIsActiveSupplier) {
@@ -107,9 +107,9 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
      * DataSource} instances to which operations will be delegated;
      * must not be {@code null}
      *
-     * @param transactionIsActiveSupplier an {@link IntSupplier} that
-     * that returns {@code true} only if the current transaction, if
-     * any, is active; must not be {@code null}
+     * @param transactionIsActiveSupplier an {@link BooleanSupplier} that 
+     * returns {@code true} only if the current transaction, if any, is
+     * active; must not be {@code null}
      *
      * @exception NullPointerException if either parameter is {@code
      * null}
