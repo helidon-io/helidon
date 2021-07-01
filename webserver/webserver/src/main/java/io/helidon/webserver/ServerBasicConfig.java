@@ -16,19 +16,12 @@
 
 package io.helidon.webserver;
 
-import java.net.InetAddress;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import io.helidon.common.context.Context;
+import io.opentracing.Tracer;
 
 import javax.net.ssl.SSLContext;
-
-import io.helidon.common.context.Context;
-
-import io.opentracing.Tracer;
+import java.net.InetAddress;
+import java.util.*;
 
 /**
  * Basic implementation of the {@link ServerConfiguration}.
@@ -185,12 +178,8 @@ class ServerBasicConfig implements ServerConfiguration {
         private final int timeoutMillis;
         private final int receiveBufferSize;
         private final WebServerTls webServerTls;
-        private final SSLContext sslContext;
-        private final Set<String> enabledSslProtocols;
-        private final Set<String> allowedCipherSuite;
         private final String name;
         private final boolean enabled;
-        private final ClientAuthentication clientAuth;
         private final int maxHeaderSize;
         private final int maxInitialLineLength;
         private final int maxChunkSize;
@@ -219,18 +208,6 @@ class ServerBasicConfig implements ServerConfiguration {
             this.maxPayloadSize = builder.maxPayloadSize();
             WebServerTls webServerTls = builder.tlsConfig();
             this.webServerTls = webServerTls.enabled() ? webServerTls : null;
-
-            if (webServerTls.enabled()) {
-                this.sslContext = webServerTls.sslContext();
-                this.enabledSslProtocols = new HashSet<>(webServerTls.enabledTlsProtocols());
-                this.clientAuth = webServerTls.clientAuth();
-                this.allowedCipherSuite = webServerTls.cipherSuite();
-            } else {
-                this.sslContext = null;
-                this.enabledSslProtocols = Set.of();
-                this.clientAuth = ClientAuthentication.NONE;
-                this.allowedCipherSuite = Set.of();
-            }
         }
 
         @Override
@@ -265,22 +242,22 @@ class ServerBasicConfig implements ServerConfiguration {
 
         @Override
         public SSLContext ssl() {
-            return sslContext;
+            return tls().map(WebServerTls::sslContext).orElse(null);
         }
 
         @Override
         public Set<String> enabledSslProtocols() {
-            return enabledSslProtocols;
+            return tls().map(WebServerTls::enabledTlsProtocols).map(Set::copyOf).orElseGet(Set::of);
         }
 
         @Override
         public Set<String> allowedCipherSuite() {
-            return allowedCipherSuite;
+            return tls().map(WebServerTls::cipherSuite).orElseGet(Set::of);
         }
 
         @Override
         public ClientAuthentication clientAuth() {
-            return clientAuth;
+            return tls().map(WebServerTls::clientAuth).orElse(ClientAuthentication.NONE);
         }
 
         @Override

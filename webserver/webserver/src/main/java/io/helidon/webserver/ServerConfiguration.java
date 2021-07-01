@@ -16,27 +16,21 @@
 
 package io.helidon.webserver;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
-import java.util.logging.Logger;
-
-import javax.net.ssl.SSLContext;
-
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.DeprecatedConfig;
-
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
+
+import javax.net.ssl.SSLContext;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 /**
  * {@link WebServer} configuration.
@@ -133,8 +127,10 @@ public interface ServerConfiguration extends SocketConfiguration {
      * Additional named server socket configuration is accessible through
      * the {@link #socket(String)} and {@link #sockets()} methods.
      *
+     * @deprecated use {@code tls().sslContext()} instead. This method will be removed at 3.0.0 version.
      * @return a SSL context to use
      */
+    @Deprecated(since = "2.3.1", forRemoval = true)
     @Override
     SSLContext ssl();
 
