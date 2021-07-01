@@ -53,12 +53,6 @@ public final class ObjectStorageCdiMain {
         // configure
         configProvider.registerConfig(mpConfig, null);
 
-        // update system properties - required for health check built from config
-        System.setProperty("oci.properties.objectstorage-bucket",
-                mpConfig.getValue("oci.properties.objectstorage-bucket", String.class));
-        System.setProperty("oci.properties.objectstorage-namespace",
-                mpConfig.getValue("oci.properties.objectstorage-namespace", String.class));
-
         // start CDI
         Main.main(args);
     }

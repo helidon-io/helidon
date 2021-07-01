@@ -29,10 +29,6 @@ module io.helidon.integrations.oci.objectstorage {
     requires io.helidon.integrations.common.rest;
     requires io.helidon.common.http;
 
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
-    requires java.logging;
-
     exports io.helidon.integrations.oci.objectstorage;
 
     // this is the intended usage, deprecation is to warn about accidental usage in code

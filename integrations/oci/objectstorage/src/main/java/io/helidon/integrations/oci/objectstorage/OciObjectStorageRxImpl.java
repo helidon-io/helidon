@@ -19,6 +19,8 @@ package io.helidon.integrations.oci.objectstorage;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 
+import javax.json.JsonObject;
+
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
@@ -40,7 +42,6 @@ class OciObjectStorageRxImpl implements OciObjectStorageRx {
         this.hostPrefix = builder.hostPrefix();
         this.endpoint = Optional.ofNullable(builder.endpoint());
     }
-
 
     @Override
     public Single<ApiOptionalResponse<GetObjectRx.Response>> getObject(GetObject.Request request) {
@@ -86,16 +87,20 @@ class OciObjectStorageRxImpl implements OciObjectStorageRx {
     }
 
     @Override
-    public Single<ApiOptionalResponse<GetBucketRx.Response>> getBucket(GetBucket.Request request) {
-        String namespace = namespace(request);
+    public Single<ApiOptionalResponse<GetBucket.Response>> getBucket(GetBucket.Request request) {
+        String namespace = request.namespace()
+                .or(() -> defaultNamespace)
+                .orElseThrow(() -> new OciApiException("Namespace must be defined for Object Storage requests either "
+                                                               + "in configuration of Object Storage, or on request."));
+
         String apiPath = "/n/" + namespace + "/b/" + request.bucket();
 
         objectStorage(request);
 
-        return restApi
-                .getPublisher(apiPath, request,
-                        ApiOptionalResponse.<Multi<DataChunk>, GetBucketRx.Response>apiResponseBuilder()
-                            .entityProcessor(GetBucketRx.Response::create));
+        return restApi.get(apiPath,
+                           request,
+                           ApiOptionalResponse.<JsonObject, GetBucket.Response>apiResponseBuilder()
+                                   .entityProcessor(GetBucket.Response::create));
     }
 
     private String namespace(ObjectRequest<?> request) {

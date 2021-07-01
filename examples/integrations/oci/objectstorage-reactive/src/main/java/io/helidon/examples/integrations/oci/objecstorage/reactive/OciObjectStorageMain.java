@@ -16,8 +16,6 @@
 
 package io.helidon.examples.integrations.oci.objecstorage.reactive;
 
-import java.time.Duration;
-
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
@@ -28,7 +26,6 @@ import io.helidon.webserver.WebServer;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
-import static java.time.temporal.ChronoUnit.SECONDS;
 
 /**
  * Main class of the example.
@@ -64,8 +61,7 @@ public final class OciObjectStorageMain {
         // setup ObjectStorage health check
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(OciObjectStorageHealthCheck.builder()
-                        .ociObjectStorageRx(ociObjectStorage)
-                        .timeout(Duration.of(5, SECONDS))
+                        .ociObjectStorage(ociObjectStorage)
                         .bucket(bucketName)
                         .namespace(namespace)
                         .build())

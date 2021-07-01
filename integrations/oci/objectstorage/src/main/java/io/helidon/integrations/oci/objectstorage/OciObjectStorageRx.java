@@ -114,7 +114,7 @@ public interface OciObjectStorageRx {
      * @param request get bucket request
      * @return future with response or error
      */
-    Single<ApiOptionalResponse<GetBucketRx.Response>> getBucket(GetBucket.Request request);
+    Single<ApiOptionalResponse<GetBucket.Response>> getBucket(GetBucket.Request request);
 
     /**
      * Fluent API Builder for {@link io.helidon.integrations.oci.objectstorage.OciObjectStorageRx}.

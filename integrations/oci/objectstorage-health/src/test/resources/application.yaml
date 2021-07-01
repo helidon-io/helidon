@@ -19,6 +19,6 @@ server:
 
 oci:
   objectstorage:
-    namespace: "idv5cxr1uqqk"
+    namespace: "namespace"
     bucket: "main"
 

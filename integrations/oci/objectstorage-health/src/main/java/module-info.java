@@ -36,4 +36,5 @@ module io.helidon.integrations.oci.objectstorage.health {
 
     exports io.helidon.integrations.oci.objectstorage.health;
 
+    opens io.helidon.integrations.oci.objectstorage.health to weld.core.impl, io.helidon.microprofile.cdi;
 }
