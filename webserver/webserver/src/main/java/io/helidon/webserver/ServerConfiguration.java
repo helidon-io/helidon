@@ -133,8 +133,10 @@ public interface ServerConfiguration extends SocketConfiguration {
      * Additional named server socket configuration is accessible through
      * the {@link #socket(String)} and {@link #sockets()} methods.
      *
+     * @deprecated use {@code tls().sslContext()} instead. This method will be removed at 3.0.0 version.
      * @return a SSL context to use
      */
+    @Deprecated(since = "2.3.1", forRemoval = true)
     @Override
     SSLContext ssl();
 

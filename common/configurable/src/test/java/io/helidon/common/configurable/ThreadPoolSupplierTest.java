@@ -34,6 +34,7 @@ import io.helidon.config.ConfigSources;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -50,19 +51,25 @@ class ThreadPoolSupplierTest {
 
     @BeforeAll
     static void initClass() {
-        defaultInstance = ThreadPoolSupplier.create().getThreadPool();
+        defaultInstance = ensureOurExecutor(ThreadPoolSupplier.create().getThreadPool());
 
-        builtInstance = ThreadPoolSupplier.builder()
+        builtInstance = ensureOurExecutor(ThreadPoolSupplier.builder()
                                           .threadNamePrefix("thread-pool-unit-test-")
                                           .corePoolSize(2)
                                           .daemon(true)
                                           .prestart(true)
                                           .queueCapacity(10)
                                           .build()
-                                          .getThreadPool();
+                                          .getThreadPool());
 
-        configuredInstance = ThreadPoolSupplier.create(Config.create().get("unit.thread-pool"))
-                                               .getThreadPool();
+        configuredInstance = ensureOurExecutor(ThreadPoolSupplier.create(Config.create().get("unit.thread-pool"))
+                                               .getThreadPool());
+    }
+
+    private static ThreadPoolExecutor ensureOurExecutor(ExecutorService threadPool) {
+        // thread pool should be our implementation, unless Loom virtual threads are used
+        assertThat(threadPool, instanceOf(ThreadPoolExecutor.class));
+        return (ThreadPoolExecutor) threadPool;
     }
 
     @Test
