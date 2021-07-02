@@ -110,9 +110,7 @@ public class SslCipherSuiteTest {
                                 return connection;
                             }
                         }));
-        clientFirst = ClientBuilder.newBuilder()
-                .withConfig(clientConfig)
-                .build();
+        clientFirst = ClientBuilder.newClient(clientConfig);
 
         clientConfig = new ClientConfig()
                 .connectorProvider(new HttpUrlConnectorProvider().connectionFactory(
@@ -129,9 +127,7 @@ public class SslCipherSuiteTest {
                         }));
 
 
-        clientSecond = ClientBuilder.newBuilder()
-                .withConfig(clientConfig)
-                .build();
+        clientSecond = ClientBuilder.newClient(clientConfig);
     }
 
     private static Routing createDefaultSocketRouting() {
@@ -207,44 +203,37 @@ public class SslCipherSuiteTest {
 
         @Override
         public Socket createSocket(Socket socket, String s, int i, boolean b) throws IOException {
-            SSLSocket tmp = (SSLSocket) factory.createSocket(socket, s, i, b);
-            tmp.setEnabledCipherSuites(cipherSuite);
-            return tmp;
+            return setCipherSuites((SSLSocket) factory.createSocket(socket, s, i, b));
         }
 
         @Override
         public Socket createSocket() throws IOException {
-            SSLSocket tmp = (SSLSocket) factory.createSocket();
-            tmp.setEnabledCipherSuites(cipherSuite);
-            return tmp;
+            return setCipherSuites((SSLSocket) factory.createSocket());
         }
 
         @Override
-        public Socket createSocket(String s, int i) throws IOException, UnknownHostException {
-            SSLSocket tmp = (SSLSocket) factory.createSocket(s, i);
-            tmp.setEnabledCipherSuites(cipherSuite);
-            return tmp;
+        public Socket createSocket(String s, int i) throws IOException {
+            return setCipherSuites((SSLSocket) factory.createSocket(s, i));
         }
 
         @Override
-        public Socket createSocket(String s, int i, InetAddress inetAddress, int i1) throws IOException, UnknownHostException {
-            SSLSocket tmp = (SSLSocket) factory.createSocket(s, i, inetAddress, i1);
-            tmp.setEnabledCipherSuites(cipherSuite);
-            return tmp;
+        public Socket createSocket(String s, int i, InetAddress inetAddress, int i1) throws IOException {
+            return setCipherSuites((SSLSocket) factory.createSocket(s, i, inetAddress, i1));
         }
 
         @Override
         public Socket createSocket(InetAddress inetAddress, int i) throws IOException {
-            SSLSocket tmp = (SSLSocket) factory.createSocket(inetAddress, i);
-            tmp.setEnabledCipherSuites(cipherSuite);
-            return tmp;
+            return setCipherSuites((SSLSocket) factory.createSocket(inetAddress, i));
         }
 
         @Override
         public Socket createSocket(InetAddress inetAddress, int i, InetAddress inetAddress1, int i1) throws IOException {
-            SSLSocket tmp = (SSLSocket) factory.createSocket(inetAddress, i, inetAddress1, i1);
-            tmp.setEnabledCipherSuites(cipherSuite);
-            return tmp;
+            return setCipherSuites((SSLSocket) factory.createSocket(inetAddress, i, inetAddress1, i1));
+        }
+
+        private Socket setCipherSuites(SSLSocket sslSocket) {
+            sslSocket.setEnabledCipherSuites(cipherSuite);
+            return sslSocket;
         }
     }
 
