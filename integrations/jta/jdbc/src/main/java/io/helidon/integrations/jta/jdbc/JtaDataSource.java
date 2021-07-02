@@ -202,7 +202,7 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
             break;
         default:
             badStatusException = new IllegalArgumentException("Unexpected transaction status after completion: " + status);
-            consumer = JtaDataSource::sink;
+            consumer = null;
             break;
         }
 
@@ -218,10 +218,10 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
         if (extantConnectionsMap != null) {
             final Collection<? extends TransactionSpecificConnection> extantConnections = extantConnectionsMap.values();
             try {
-                if (badStatusException != null) {
-                    throw badStatusException;
-                } else {
+                if (badStatusException == null) {
                     complete(extantConnections, consumer);
+                } else {
+                    throw badStatusException;
                 }
             } finally {
                 extantConnections.clear();
