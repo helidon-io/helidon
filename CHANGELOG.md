@@ -5,12 +5,15 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.10-SNAPSHOT]
+## [1.4.10]
 
-This is a bug fix release of Helidon 1. It contains fixes and dependency upgrades.
-We recommend all Helidon 1.4 users upgrade to this release.
+This is a bug fix release of Helidon. We recommend all Helidon 1.4 users upgrade to this release.
 
 ### Fixes
+
+- Configure Cipher suite support [3173](https://github.com/oracle/helidon/pull/3173)
+- Reloadable server certificates [3163](https://github.com/oracle/helidon/pull/3163)
+- Adjust JSON timer histogram output using units set on the timer [3133](https://github.com/oracle/helidon/pull/3133)
 
 ## [1.4.9]
 
