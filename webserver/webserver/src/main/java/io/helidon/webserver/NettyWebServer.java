@@ -115,7 +115,10 @@ class NettyWebServer implements WebServer {
             SocketConfiguration soConfig = entry.getValue();
             ServerBootstrap bootstrap = new ServerBootstrap();
 
-            SslContext sslContext = createSslContext(soConfig.ssl(), soConfig.enabledSslProtocols(), soConfig.clientAuth());
+            SslContext sslContext = createSslContext(soConfig.ssl(),
+                                                     soConfig.enabledSslProtocols(),
+                                                     soConfig.clientAuth(),
+                                                     soConfig.cipherSuite());
 
             if (soConfig.backlog() > 0) {
                 bootstrap.option(ChannelOption.SO_BACKLOG, soConfig.backlog());
@@ -141,7 +144,10 @@ class NettyWebServer implements WebServer {
         }
     }
 
-    private SslContext createSslContext(SSLContext context, Set<String> enabledProtocols, ClientAuthentication clientAuth) {
+    private SslContext createSslContext(SSLContext context,
+                                        Set<String> enabledProtocols,
+                                        ClientAuthentication clientAuth,
+                                        Set<String> cipherSuite) {
         // Transform java SSLContext into Netty SslContext
         if (context != null) {
             String[] protocols;
@@ -164,7 +170,7 @@ class NettyWebServer implements WebServer {
             }
 
             return new JdkSslContext(
-                    context, false, null,
+                    context, false, cipherSuite.isEmpty() ? null : cipherSuite,
                     IdentityCipherSuiteFilter.INSTANCE, appProtocolConfig,
                     clientAuth.nettyClientAuth(), protocols, false);
         }
@@ -408,7 +414,8 @@ class NettyWebServer implements WebServer {
             }
             SslContext context = createSslContext(tls.sslContext(),
                                                   new HashSet<>(httpInitializer.socketConfiguration().enabledSslProtocols()),
-                                                  tls.clientAuth());
+                                                  tls.clientAuth(),
+                                                  tls.cipherSuite());
             httpInitializer.updateSslContext(context);
         }
     }

@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class WebServerTlsTest {
     private static final Config CONFIG = Config.builder().sources(ConfigSources.classpath("config-with-ssl2.conf")).build();
 
-    private static final Logger LOGGER = Logger.getLogger(SslTest.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(WebServerTlsTest.class.getName());
 
     private static WebServer webServer;
     private static Client clientFirst;

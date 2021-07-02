@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import java.net.InetAddress;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -106,6 +107,13 @@ public interface SocketConfiguration {
     ClientAuthentication clientAuth();
 
     /**
+     * Allowed cipher suite of the socket TLS.
+     *
+     * @return cipher suite
+     */
+    Set<String> cipherSuite();
+
+    /**
      * Maximal size of all headers combined.
      *
      * @return size in bytes
@@ -157,6 +165,7 @@ public interface SocketConfiguration {
         private InetAddress bindAddress = null;
         private SSLContext sslContext = null;
         private final Set<String> enabledSslProtocols = new HashSet<>();
+        private Set<String> allowedCipherSuite = new HashSet<>();
         private int backlog = 0;
         private int timeoutMillis = 0;
         private int receiveBufferSize = 0;
@@ -298,6 +307,21 @@ public interface SocketConfiguration {
         }
 
         /**
+         * Configures allowed SSL cipher suite.
+         *
+         * @param cipherSuite allowed cipher suite
+         * @return this builder
+         */
+        public Builder allowedCipherSuite(List<String> cipherSuite) {
+            Objects.requireNonNull(cipherSuite);
+            if (cipherSuite.isEmpty()) {
+                throw new IllegalStateException("Allowed cipher suite has to have at least one cipher specified");
+            }
+            this.allowedCipherSuite = Collections.unmodifiableSet(new HashSet<>(cipherSuite));
+            return this;
+        }
+
+        /**
          * Maximal number of bytes of all header values combined. When a bigger value is received, a
          * {@link io.helidon.common.http.Http.Status#BAD_REQUEST_400}
          * is returned.
@@ -380,6 +404,10 @@ public interface SocketConfiguration {
 
         Set<String> enabledSslProtocols() {
             return enabledSslProtocols;
+        }
+
+        Set<String> cipherSuite() {
+            return allowedCipherSuite;
         }
 
         int backlog() {
