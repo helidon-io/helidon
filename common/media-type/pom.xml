@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.common</groupId>
         <artifactId>helidon-common-project</artifactId>
-        <version>1.4.10-SNAPSHOT</version>
+        <version>1.4.10</version>
     </parent>
     <artifactId>helidon-common-media-type</artifactId>
 

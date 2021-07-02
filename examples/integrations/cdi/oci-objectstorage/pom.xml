@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>1.4.10-SNAPSHOT</version>
+        <version>1.4.10</version>
         <relativePath>../../../../applications/mp/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.integrations.cdi</groupId>

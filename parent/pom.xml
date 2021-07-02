@@ -22,7 +22,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon</groupId>
     <artifactId>helidon-parent</artifactId>
-    <version>1.4.10-SNAPSHOT</version>
+    <version>1.4.10</version>
     <packaging>pom</packaging>
 
     <name>Helidon Parent</name>
