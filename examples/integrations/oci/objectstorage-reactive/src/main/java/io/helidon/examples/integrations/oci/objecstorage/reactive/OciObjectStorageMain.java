@@ -18,7 +18,9 @@ package io.helidon.examples.integrations.oci.objecstorage.reactive;
 
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
+import io.helidon.health.HealthSupport;
 import io.helidon.integrations.oci.objectstorage.OciObjectStorageRx;
+import io.helidon.integrations.oci.objectstorage.health.OciObjectStorageHealthCheck;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -54,10 +56,21 @@ public final class OciObjectStorageMain {
 
         // the following parameters are required
         String bucketName = ociConfig.get("objectstorage").get("bucket").asString().get();
+        String namespace = ociConfig.get("objectstorage").get("namespace").asString().get();
+
+        // setup ObjectStorage health check
+        HealthSupport health = HealthSupport.builder()
+                .addLiveness(OciObjectStorageHealthCheck.builder()
+                        .ociObjectStorage(ociObjectStorage)
+                        .bucket(bucketName)
+                        .namespace(namespace)
+                        .build())
+                .build();
 
         WebServer.builder()
                 .config(config.get("server"))
                 .routing(Routing.builder()
+                                 .register(health)
                                  .register("/files", new ObjectStorageService(ociObjectStorage, bucketName)))
                 .build()
                 .start()

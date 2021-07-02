@@ -36,6 +36,7 @@
         <module>connect</module>
         <module>telemetry</module>
         <module>objectstorage</module>
+        <module>objectstorage-health</module>
         <module>vault</module>
         <module>cdi</module>
     </modules>

@@ -15,23 +15,26 @@
  */
 
 /**
- * Example of integration with OCI object storage in a CDI application.
+ * OCI Object Storage Health.
  */
-module io.helidon.examples.integrations.oci.objectstorage.cdi {
-    requires java.ws.rs;
-    requires java.json.bind;
-    requires jakarta.inject.api;
-    requires microprofile.config.api;
+module io.helidon.integrations.oci.objectstorage.health {
+    requires transitive java.json;
+    requires transitive io.helidon.common.reactive;
+    requires transitive io.helidon.integrations.oci.connect;
+    requires transitive io.helidon.config;
 
-    requires io.helidon.config.yaml;
-    requires io.helidon.common.http;
     requires io.helidon.integrations.common.rest;
-    requires io.helidon.integrations.oci.cdi;
+    requires io.helidon.common.http;
+    requires io.helidon.health;
+    requires io.helidon.health.common;
     requires io.helidon.integrations.oci.objectstorage;
-    requires io.helidon.microprofile.cdi;
-    requires io.helidon.integrations.oci.objectstorage.health;
 
-    exports io.helidon.examples.integrations.oci.objectstorage.cdi;
+    requires static microprofile.config.api;
+    requires static jakarta.enterprise.cdi.api;
+    requires static jakarta.inject.api;
+    requires java.logging;
 
-    opens io.helidon.examples.integrations.oci.objectstorage.cdi to weld.core.impl, io.helidon.microprofile.cdi;
+    exports io.helidon.integrations.oci.objectstorage.health;
+
+    opens io.helidon.integrations.oci.objectstorage.health to weld.core.impl, io.helidon.microprofile.cdi;
 }

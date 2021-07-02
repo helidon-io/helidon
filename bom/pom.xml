@@ -878,6 +878,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-oci-objectstorage-health</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.graal</groupId>
                 <artifactId>helidon-graal-native-image-extension</artifactId>
                 <version>${helidon.version}</version>
@@ -915,6 +920,11 @@
             <dependency>
                 <groupId>io.helidon.integrations.oci</groupId>
                 <artifactId>helidon-integrations-oci-objectstorage</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-objectstorage-health</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

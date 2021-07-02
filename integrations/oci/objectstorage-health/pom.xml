@@ -25,15 +25,15 @@
         <version>2.3.2-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-integrations-oci-objectstorage</artifactId>
-    <name>Helidon Integrations OCI Object Storage</name>
+    <artifactId>helidon-integrations-oci-objectstorage-health</artifactId>
+    <name>Helidon Integrations OCI Object Storage Health Check</name>
 
-    <description>OCI Object Storage Support</description>
+    <description>OCI Object Storage Health Check Support</description>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-connect</artifactId>
+            <artifactId>helidon-integrations-oci-objectstorage</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -42,6 +42,14 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
