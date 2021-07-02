@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,11 @@ class ServerBasicConfig implements ServerConfiguration {
     @Override
     public ClientAuthentication clientAuth() {
         return socketConfig.clientAuth();
+    }
+
+    @Override
+    public Set<String> cipherSuite() {
+        return socketConfig.cipherSuite();
     }
 
     @Override
@@ -157,6 +162,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final int receiveBufferSize;
         private final SSLContext sslContext;
         private final Set<String> enabledSslProtocols;
+        private final Set<String> cipherSuite;
         private final ClientAuthentication clientAuth;
         private final int maxHeaderSize;
         private final int maxInitialLineLength;
@@ -184,6 +190,7 @@ class ServerBasicConfig implements ServerConfiguration {
             this.initialBufferSize = builder.initialBufferSize();
             this.clientAuth = builder.clientAuth();
             this.sslContext = builder.sslContext();
+            this.cipherSuite = builder.cipherSuite();
             this.enabledSslProtocols = new HashSet<>(builder.enabledSslProtocols());
 
         }
@@ -221,6 +228,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public Set<String> enabledSslProtocols() {
             return enabledSslProtocols;
+        }
+
+        @Override
+        public Set<String> cipherSuite() {
+            return cipherSuite;
         }
 
         @Override

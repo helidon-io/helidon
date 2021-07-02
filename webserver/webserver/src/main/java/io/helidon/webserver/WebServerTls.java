@@ -16,7 +16,11 @@
 
 package io.helidon.webserver;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
@@ -30,10 +34,12 @@ public final class WebServerTls {
 
     private final SSLContext sslContext;
     private final ClientAuthentication clientAuth;
+    private final Set<String> cipherSuite;
 
     private WebServerTls(Builder builder) {
         this.sslContext = builder.sslContext;
         this.clientAuth = builder.clientAuth;
+        this.cipherSuite = Collections.unmodifiableSet(new HashSet<>(builder.cipherSuite));
     }
 
     /**
@@ -63,6 +69,10 @@ public final class WebServerTls {
         return clientAuth;
     }
 
+    Set<String> cipherSuite() {
+        return cipherSuite;
+    }
+
     /**
      * Fluent API builder for {@link WebServerTls}.
      */
@@ -70,6 +80,7 @@ public final class WebServerTls {
 
         private SSLContext sslContext;
         private ClientAuthentication clientAuth;
+        private Set<String> cipherSuite = new HashSet<>();
 
         private Builder() {
             clientAuth = ClientAuthentication.NONE;
@@ -88,6 +99,7 @@ public final class WebServerTls {
          */
         public Builder config(Config config) {
             config.get("client-auth").asString().ifPresent(this::clientAuth);
+            config.get("cipher-suite").asList(String.class).ifPresent(this::allowedCipherSuite);
             sslContext = SSLContextBuilder.create(config);
             return this;
         }
@@ -116,6 +128,22 @@ public final class WebServerTls {
          */
         public Builder sslContext(SSLContext context) {
             this.sslContext = context;
+            return this;
+        }
+
+        /**
+         * Set allowed cipher suite. If an empty collection is set, an exception is thrown since
+         * it is required to support at least some ciphers.
+         *
+         * @param cipherSuite allowed cipher suite
+         * @return an updated builder
+         */
+        public Builder allowedCipherSuite(List<String> cipherSuite) {
+            Objects.requireNonNull(cipherSuite);
+            if (cipherSuite.isEmpty()) {
+                throw new IllegalStateException("Allowed cipher suite has to have at least one cipher specified");
+            }
+            this.cipherSuite = Collections.unmodifiableSet(new HashSet<>(cipherSuite));
             return this;
         }
 

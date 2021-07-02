@@ -270,6 +270,17 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         /**
+         * Configures allowed SSL cipher suite.
+         *
+         * @param cipherSuite allowed cipher suite
+         * @return this builder
+         */
+        public Builder allowedCipherSuite(List<String> cipherSuite) {
+            defaultSocketBuilder.allowedCipherSuite(cipherSuite);
+            return this;
+        }
+
+        /**
          * Sets server port. If port is {@code 0} or less then any available ephemeral port will be used.
          * <p>
          * Configuration key: {@code port}
@@ -567,13 +578,17 @@ public interface ServerConfiguration extends SocketConfiguration {
             config.get("max-chunk-size").asInt().ifPresent(soConfigBuilder::maxChunkSize);
             config.get("validate-headers").asBoolean().ifPresent(soConfigBuilder::validateHeaders);
             config.get("initial-buffer-size").asInt().ifPresent(soConfigBuilder::initialBufferSize);
+            config.get("client-auth").asString().ifPresent(soConfigBuilder::clientAuth);
 
             // ssl
             Config sslConfig = config.get("ssl");
             if (sslConfig.exists()) {
                 try {
                     soConfigBuilder.ssl(SSLContextBuilder.create(sslConfig));
-                    config.get("client-auth").asString().ifPresent(soConfigBuilder::clientAuth);
+                    config.get("client-auth").asString()
+                            .or(() -> sslConfig.get("client-auth").asString().asOptional())
+                            .ifPresent(soConfigBuilder::clientAuth);
+                    sslConfig.get("cipher-suite").asList(String.class).ifPresent(soConfigBuilder::allowedCipherSuite);
                 } catch (IllegalStateException e) {
                     throw new ConfigException("Cannot load SSL configuration.", e);
                 }
