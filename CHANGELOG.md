@@ -759,7 +759,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[1.4.10]: https://github.com/oracle/helidon/compare/1.4.8..1.4.10-SNAPSHOT
+[1.4.10]: https://github.com/oracle/helidon/compare/1.4.9..1.4.10
 [1.4.9]: https://github.com/oracle/helidon/compare/1.4.8..1.4.9
 [1.4.8]: https://github.com/oracle/helidon/compare/1.4.7..1.4.8
 [1.4.7]: https://github.com/oracle/helidon/compare/1.4.6..1.4.7
