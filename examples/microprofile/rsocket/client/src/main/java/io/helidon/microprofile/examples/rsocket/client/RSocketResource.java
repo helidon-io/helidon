@@ -26,7 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -43,7 +42,7 @@ public class RSocketResource {
     private RSocketClient anotherClient;
 
     @Inject
-    public RSocketResource(RSocketClient client, @CustomRSocket("custom")RSocketClient anotherClient) {
+    public RSocketResource(RSocketClient client, @CustomRSocket("custom") RSocketClient anotherClient) {
         this.client = client;
         this.anotherClient = anotherClient;
     }
@@ -57,7 +56,8 @@ public class RSocketResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String getDefaultMessage() throws ExecutionException, InterruptedException {
         Single<Payload> payload = client.requestResponse(Single.just(ByteBuffer.wrap("Hello World!".getBytes(StandardCharsets.UTF_8))));
-        return payload.get().getDataUtf8();
+        String result = payload.get().getDataUtf8();
+        return result;
     }
 
     /**

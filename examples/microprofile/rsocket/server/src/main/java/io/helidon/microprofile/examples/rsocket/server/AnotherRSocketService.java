@@ -46,7 +46,7 @@ public class AnotherRSocketService {
         return Single.empty();
     }
 
-    @RequestResponse("print")
+    @RequestResponse("request-response")
     public Single<Payload> printAndRespond(Payload payload){
         System.out.println("received from another: " +payload.getDataUtf8());
         return Single.just(ByteBufPayload.create("Another backfire!"));

@@ -21,6 +21,7 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.CompositeByteBuf;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
@@ -51,6 +52,7 @@ public class RSocketClient implements Disposable {
     private io.rsocket.core.RSocketClient client;
     private String route;
     private WellKnownAuthType authType = null;
+    private String metadataMimeType;
     private String mimeType;
     private String username;
     private String password;
@@ -135,14 +137,14 @@ public class RSocketClient implements Disposable {
         }
 
         if (mimeType != null) {
-            TaggingMetadata mimeMetadata = TaggingMetadataCodec.createTaggingMetadata(ByteBufAllocator.DEFAULT,
-                    WellKnownMimeType.MESSAGE_RSOCKET_MIMETYPE.getString(), Collections.singletonList(mimeType));
+//            TaggingMetadata mimeMetadata = TaggingMetadataCodec.createTaggingMetadata(ByteBufAllocator.DEFAULT,
+//                    WellKnownMimeType.MESSAGE_RSOCKET_MIMETYPE.getString(), Collections.singletonList(mimeType));
             CompositeMetadataCodec.encodeAndAddMetadata(metadata,
                     ByteBufAllocator.DEFAULT,
                     WellKnownMimeType.MESSAGE_RSOCKET_MIMETYPE,
-                    mimeMetadata.getContent());
+                    ByteBufUtil.writeUtf8(ByteBufAllocator.DEFAULT, mimeType));
             //reset per stream mime type
-            mimeType = null;
+            //mimeType = null;
         }
         if (authType == WellKnownAuthType.SIMPLE) {
             ByteBuf byteBuf = AuthMetadataCodec.encodeSimpleMetadata(ByteBufAllocator.DEFAULT,
@@ -240,7 +242,8 @@ public class RSocketClient implements Disposable {
 
         private String route;
         private WellKnownAuthType authType = null;
-        private String mimeType = WellKnownMimeType.TEXT_PLAIN.getString();
+        private String mimeType = WellKnownMimeType.TEXT_PLAIN.toString();
+        private String metadataMimeType=WellKnownMimeType.MESSAGE_RSOCKET_COMPOSITE_METADATA.toString();
         private String username;
         private String password;
         private String token;
@@ -251,7 +254,8 @@ public class RSocketClient implements Disposable {
         @Override
         public RSocketClient build() {
             RSocket rSocket = io.rsocket.core.RSocketConnector.create()
-                    .metadataMimeType(mimeType)
+                    .dataMimeType(mimeType)
+                    .metadataMimeType(metadataMimeType)
                     .connect(WebsocketClientTransport.create(URI.create(websocket)))
                     .block();
 
@@ -281,9 +285,11 @@ public class RSocketClient implements Disposable {
             config.get("authentication.password").asString().ifPresent(this::password);
             config.get("route").asString().ifPresent(this::route);
             config.get("websocket").asString().ifPresent(this::websocket);
-            config.get("mime").asString().ifPresent(this::mimeType);
+            config.get("mimeType").asString().ifPresent(this::mimeType);
+            config.get("metadataMimeType").asString().ifPresent(this::metadataMimeType);
             config.get("uri").asString().ifPresent(this::uri);
             config.get("port").asInt().ifPresent(this::port);
+
             return this;
         }
 
@@ -299,6 +305,11 @@ public class RSocketClient implements Disposable {
 
         public Builder mimeType(String mimeType) {
             this.mimeType = mimeType;
+            return this;
+        }
+
+        public Builder metadataMimeType(String metadataMimeType) {
+            this.metadataMimeType = metadataMimeType;
             return this;
         }
 
