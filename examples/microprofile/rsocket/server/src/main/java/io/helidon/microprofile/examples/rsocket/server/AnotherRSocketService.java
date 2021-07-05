@@ -16,7 +16,6 @@
 package io.helidon.microprofile.examples.rsocket.server;
 
 import io.helidon.common.reactive.Multi;
-import io.helidon.common.reactive.Single;
 import io.helidon.microprofile.rsocket.server.FireAndForget;
 import io.helidon.microprofile.rsocket.server.RSocket;
 import io.helidon.microprofile.rsocket.server.RequestChannel;
@@ -25,6 +24,8 @@ import io.helidon.microprofile.rsocket.server.RequestStream;
 import io.rsocket.Payload;
 import io.rsocket.util.ByteBufPayload;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import javax.enterprise.context.ApplicationScoped;
 
 /**
@@ -35,21 +36,21 @@ import javax.enterprise.context.ApplicationScoped;
 public class AnotherRSocketService {
 
     @FireAndForget("print")
-    public Single<Void> printPayload(Payload payload) {
+    public CompletableFuture<Void> printPayload(Payload payload) {
         System.out.println("Payload from another: " + payload.getDataUtf8());
-        return Single.empty();
+        return CompletableFuture.completedFuture(null);
     }
 
     @FireAndForget("print2")
-    public Single<Void> printPayload2(Payload payload) {
+    public CompletableFuture<Void> printPayload2(Payload payload) {
         System.out.println("Second Payload from another: " + payload.getDataUtf8());
-        return Single.empty();
+        return CompletableFuture.completedFuture(null);
     }
 
-    @RequestResponse("request-response")
-    public Single<Payload> printAndRespond(Payload payload){
+    @RequestResponse("print")
+    public CompletableFuture<Payload> printAndRespond(Payload payload){
         System.out.println("received from another: " +payload.getDataUtf8());
-        return Single.just(ByteBufPayload.create("Another backfire!"));
+        return CompletableFuture.supplyAsync(()->ByteBufPayload.create("Another backfire!"));
     }
 
     @RequestStream("stream")

@@ -33,6 +33,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.annotation.Priority;
@@ -145,7 +146,12 @@ public class RSocketCdiExtension implements Extension {
                     rSocketRoutingBuilder.fireAndForget(((FireAndForget) annotation).value(),
                             payload -> {
                                 try {
-                                    return (Single<Void>) method.invoke(rsocketInstance, payload);
+                                    if (method.getReturnType().equals(Single.class)) {
+                                        return (Single<Void>) method.invoke(rsocketInstance, payload);
+                                    } else if (method.getReturnType().equals(CompletableFuture.class)){
+                                        CompletableFuture<Void> result = (CompletableFuture<Void>) method.invoke(rsocketInstance, payload);
+                                        return Single.create(result);
+                                    }
                                 } catch (IllegalAccessException | InvocationTargetException e) {
                                     LOGGER.severe(e.toString());
                                 }
@@ -166,7 +172,12 @@ public class RSocketCdiExtension implements Extension {
                     rSocketRoutingBuilder.requestResponse(((RequestResponse) annotation).value(),
                             payload -> {
                                 try {
-                                    return (Single<Payload>) method.invoke(rsocketInstance, payload);
+                                    if (method.getReturnType().equals(Single.class)) {
+                                        return (Single<Payload>) method.invoke(rsocketInstance, payload);
+                                    } else if (method.getReturnType().equals(CompletableFuture.class)){
+                                        CompletableFuture<Payload> result = (CompletableFuture<Payload>) method.invoke(rsocketInstance, payload);
+                                        return Single.create(result);
+                                    }
                                 } catch (IllegalAccessException | InvocationTargetException e) {
                                     LOGGER.severe(e.toString());
                                 }
