@@ -16,10 +16,12 @@
 
 package io.helidon.common.reactive;
 
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -34,31 +36,16 @@ import java.util.function.Consumer;
  */
 public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
 
+    private final AtomicReference<State> state = new AtomicReference<>(State.READY_TO_EMIT);
     private final ConcurrentLinkedQueue<T> buffer = new ConcurrentLinkedQueue<>();
-    private volatile Throwable error;
+    private final EmittingPublisher<T> emitter = new EmittingPublisher<>();
+    private final AtomicLong deferredDrains = new AtomicLong(0);
+    private final AtomicBoolean draining = new AtomicBoolean(false);
+    private final AtomicBoolean subscribed = new AtomicBoolean(false);
+    private final AtomicReference<Throwable> error = new AtomicReference<>();
     private BiConsumer<Long, Long> requestCallback = null;
     private Consumer<? super T> onEmitCallback = null;
-    private Consumer<? super T> onCleanup = null;
-    private Consumer<? super Throwable> onAbort = null;
-    private volatile Flow.Subscriber<? super T> subscriber;
-    // state: two bits, b1 b0, tell:
-    // b0: 0/1 is not started/started (a subscriber arrived)
-    // b1: 0/1 is not stopped/stopped (a publisher completed)
-    // You can start and stop asynchronously and in any order
-    private final AtomicInteger state = new AtomicInteger();
-    // assert: contenders is initially non-zero, so nothing can be done until onSubscribe has
-    //         been signalled; observe drain() after onSubscribe
-    private final AtomicInteger contenders = new AtomicInteger(1);
-    private final AtomicLong requested = new AtomicLong();
-    // assert: ignorePending is set to enter terminal state as soon as possible: behave like
-    //         the buffer is empty
-    private volatile boolean ignorePending;
-
-    // assert: emitted is accessed single-threadedly
-    private long emitted;
-    // assert: observing cancelled, but not ignorePending, is possible only if cancel() races
-    //         against a completion (isCancelled() and isComplete() are both true)
-    private boolean cancelled;
+    private boolean safeToSkipBuffer = false;
 
     protected BufferedEmittingPublisher() {
     }
@@ -74,39 +61,26 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     @Override
-    public void subscribe(final Flow.Subscriber<? super T> sub) {
-        if (stateChange(1)) {
-            MultiError.<T>create(new IllegalStateException("Only single subscriber is allowed!"))
-                    .subscribe(sub);
+    public void subscribe(final Flow.Subscriber<? super T> subscriber) {
+        Objects.requireNonNull(subscriber, "subscriber is null");
+
+        if (!subscribed.compareAndSet(false, true)) {
+            subscriber.onSubscribe(SubscriptionHelper.CANCELED);
+            subscriber.onError(new IllegalStateException("Only single subscriber is allowed!"));
             return;
         }
 
-        sub.onSubscribe(new Flow.Subscription() {
-            public void request(long n) {
-                if (n < 1) {
-                    abort(new IllegalArgumentException("Expected request() with a positive increment"));
-                    return;
-                }
-                long curr;
-                do {
-                    curr = requested.get();
-                } while (curr != Long.MAX_VALUE
-                        && !requested.compareAndSet(curr, Long.MAX_VALUE - curr > n ? curr + n : Long.MAX_VALUE));
-                if (requestCallback != null) {
-                    requestCallback.accept(n, curr);
-                }
-                maybeDrain();
+        emitter.onSubscribe(() -> state.get().drain(this));
+        emitter.onRequest((n, cnt) -> {
+            if (requestCallback != null) {
+                requestCallback.accept(n, cnt);
             }
-
-            public void cancel() {
-                cancelled = true;
-                ignorePending = true;
-                maybeDrain();
-                abort(null);
-            }
+            state.get().drain(this);
         });
-        subscriber = sub;
-        drain(); // assert: contenders lock is already acquired
+        emitter.onCancel(() -> state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED));
+
+        // subscriber is already validated
+        emitter.unsafeSubscribe(subscriber);
     }
 
     /**
@@ -120,7 +94,11 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
      * @param requestCallback to be executed
      */
     public void onRequest(BiConsumer<Long, Long> requestCallback) {
-        this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
+        if (this.requestCallback == null) {
+            this.requestCallback = requestCallback;
+        } else {
+            this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
+        }
     }
 
     /**
@@ -132,188 +110,71 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
      * @param onEmitCallback to be executed
      */
     public void onEmit(Consumer<T> onEmitCallback) {
-        this.onEmitCallback = ConsumerChain.combine(this.onEmitCallback, onEmitCallback);
-    }
-
-    /**
-     * Callback executed to clean up the buffer, when the Publisher terminates without passing
-     * ownership of buffered items to anyone (fail, completeNow, or the Subscription is cancelled).
-     * <p>
-     * Use case: items buffered require handling their lifecycle, like releasing resources, or
-     * returning to a pool.
-     * <p>
-     * Calling onCleanup multiple times will ensure that each of the provided Consumers gets a
-     * chance to look at the items in the buffer. Usually you do not want to release the same
-     * resource to a pool more than once, so you should usually want to ensure you pass one and
-     * only one callback to onCleanup. For this reason, do not use together with clearBuffer,
-     * unless you know how to have idempotent resource lifecycle management.
-     *
-     * @param onCleanup callback executed to clean up the buffer
-     */
-    public void onCleanup(Consumer<? super T> onCleanup) {
-        this.onCleanup = ConsumerChain.combine(this.onCleanup, onCleanup);
-    }
-
-    /**
-     * Callback executed when this Publisher fails or is cancelled in a way that the entity performing
-     * emit() may be unaware of.
-     * <p>
-     * Use case: emit() is issued only if onRequest is received; these will cease upon a failed request
-     * or when downstream requests cancellation. onAbort is going to let the entity issuing emit()
-     * know that no more onRequest are forthcoming (albeit they may still happen, the items emitted
-     * after onAbort will likely be discarded, and not emitted items will not be missed).
-     * <p>
-     * In essence the pair of onRequest and onAbort make up the interface like that of a Processor's
-     * Subscription's request and cancel. The difference is only the API and the promise: we allow
-     * emit() to not heed backpressure (for example, when upstream is really unable to heed
-     * backpressure without introducing a buffer of its own, like is the case with many transformations
-     * of the form Publisher&lt;T&gt;-&gt;Publisher&lt;Publisher&lt;T&gt;&gt;).
-     * <p>
-     * In the same vein there really is no restriction as to when onAbort callback can be called - there
-     * is no requirement for this Publisher to establish exactly whether the entity performing emit()
-     * is aware of the abort (say, a fail), or not. It is only required to ensure that the failures it
-     * generates (and not merely forwards to downstream) and cancellations it received, get propagated
-     * to the callback.
-     *
-     * @param onAbort callback executed when this Publisher fails or is cancelled
-     */
-    public void onAbort(Consumer<? super Throwable> onAbort) {
-        this.onAbort = ConsumerChain.combine(this.onAbort, onAbort);
-    }
-
-    private void abort(Throwable th) {
-        if (th != null) {
-            fail(th);
-        }
-        if (onAbort != null) {
-            onAbort.accept(th);
+        if (this.onEmitCallback == null) {
+            this.onEmitCallback = onEmitCallback;
+        } else {
+            this.onEmitCallback = ConsumerChain.combine(this.onEmitCallback, onEmitCallback);
         }
     }
 
     /**
      * Emit item to the stream, if there is no immediate demand from downstream,
      * buffer item for sending when demand is signaled.
-     * No-op after downstream enters terminal state. (Cancelled subscription or received onError/onComplete)
      *
      * @param item to be emitted
+     * @return actual size of the buffer, value should be used as informative and can change asynchronously
+     * @throws IllegalStateException if cancelled, completed of failed
      */
-    public void emit(final T item) {
-        boolean locked = false;
-        int s = state.get();
-        if (s == 1) {
-            // assert: attempt fast path only if started, and not stopped
-            locked = contenders.get() == 0 && contenders.compareAndSet(0, 1);
-        }
-
-        // assert: this condition is the same as the loop on slow path in drain(), except the buffer
-        //         isEmpty - the condition when we can skip adding, and immediately removing the item
-        //         from the buffer, without loss of FIFO order.
-        if (locked && !ignorePending && requested.get() > emitted && buffer.isEmpty()) {
-            try {
-                subscriber.onNext(item);
-                if (onEmitCallback != null) {
-                    onEmitCallback.accept(item);
-                }
-                emitted++;
-            } catch (RuntimeException re) {
-                // assert: fail is re-entrant (will succeed even while the contenders lock has been acquired)
-                abort(re);
-            } finally {
-                drain();
-            }
-            return;
-        }
-
-        // assert: if ignorePending, buffer cleanup will happen in the future
-        buffer.add(item);
-        if (locked) {
-            drain();
-        } else {
-            maybeDrain();
-        }
+    public int emit(final T item) {
+        return state.get().emit(this, item);
     }
 
     /**
      * Send {@code onError} signal downstream, regardless of the buffer content.
      * Nothing else can be sent downstream after calling fail.
-     * No-op after downstream enters terminal state. (Cancelled subscription or received onError/onComplete)
-     * <p>
-     * If several fail are invoked in quick succession or concurrently, no guarantee
-     * which of them ends up sent to downstream.
+     * {@link BufferedEmittingPublisher#emit(Object)} throws {@link IllegalStateException} after calling fail.
      *
      * @param throwable Throwable to be sent downstream as onError signal.
      */
     public void fail(Throwable throwable) {
-        // assert: delivering a completion signal discarding the whole buffer takes precedence over normal
-        //         completion - that is, if complete() has been called, but onComplete has not been delivered
-        //         yet, onError will be signalled instead, discarding the entire buffer.
-        //         Otherwise the downstream may not be able to establish orderly processing: fail() can be
-        //         forced as part of a borken request(), failed onNext, onRequest or onEmit callbacks. These
-        //         indicate the conditions where downstream may not reach a successful request() or cancel,
-        //         thus blocking the progress of the Publisher.
-        error = throwable;
-        completeNow();
-    }
-
-    /**
-     * Send onComplete to downstream after it consumes the entire buffer. Intervening fail invocations
-     * can end up sending onError instead of onComplete.
-     * No-op after downstream enters terminal state. (Cancelled subscription or received onError/onComplete)
-     */
-    public void complete() {
-        // assert: transition the state to stopped, and see if it is started; if not started, maybeDrain is futile
-        // assert: if cancelled can be observed, let's not race against it to change the state - let the state
-        //    remain cancelled; this does not preclude the possibility of isCancelled switching to false, just makes
-        //    it a little more predictable in single-threaded cases
-        // assert: even if cancelled, enter maybeDrain to ensure the cleanup occurs (complete is entrant from
-        //    completeNow and fail)
-        if (cancelled || stateChange(2)) {
-            maybeDrain();
+        error.set(throwable);
+        if (state.compareAndSet(State.READY_TO_EMIT, State.FAILED)) {
+            emitter.fail(throwable);
         }
     }
 
-    private boolean stateChange(int s) {
-        int curr;
-        do {
-            curr = state.get();
-        } while ((curr & s) != s && !state.compareAndSet(curr, curr + s));
-        return (curr & 1) > 0;
+    /**
+     * Drain the buffer, in case of not sufficient demands wait for more requests,
+     * then send {@code onComplete} signal to downstream.
+     * {@link BufferedEmittingPublisher#emit(Object)} throws {@link IllegalStateException} after calling complete.
+     */
+    public void complete() {
+        if (state.compareAndSet(State.READY_TO_EMIT, State.COMPLETING)) {
+            //drain buffer then complete
+            State.READY_TO_EMIT.drain(this);
+        }
     }
 
     /**
      * Send {@code onComplete} signal downstream immediately, regardless of the buffer content.
      * Nothing else can be sent downstream after calling {@link BufferedEmittingPublisher#completeNow()}.
-     * No-op after downstream enters terminal state. (Cancelled subscription or received onError/onComplete)
+     * {@link BufferedEmittingPublisher#emit(Object)} throws {@link IllegalStateException} after calling completeNow.
      */
     public void completeNow() {
-        ignorePending = true;
-        complete();
+        if (state.compareAndSet(State.READY_TO_EMIT, State.COMPLETED)) {
+            emitter.complete();
+        }
     }
 
     /**
      * Clear whole buffer, invoke consumer for each item before discarding it.
-     * Use case: items in the buffer require discarding properly, freeing up some resources, or returning them
-     * to a pool.
-     * <p>
-     * It is the caller's responsibility to ensure there are no concurrent invocations of clearBuffer, and
-     * that there will be no emit calls in the future, as the items processed by those invocations may not be
-     * consumed properly.
-     * <p>
-     * It is recommended that onCleanup is set up instead of using clearBuffer. Do not use together with onCleanup.
      *
      * @param consumer to be invoked for each item
      */
     public void clearBuffer(Consumer<T> consumer) {
-        // I recommend deprecating this method altogether
-
-        // Accessing buffer concurrently with drain() is inherently broken: everyone assumes that if buffer
-        // is not empty, then buffer.poll() returns non-null value (this promise is broken), and everyone
-        // assumes that polling buffer returns items in FIFO order (this promise is broken).
-        //while (!buffer.isEmpty()) {
-        //    consumer.accept(buffer.poll());
-        //}
-        onCleanup(consumer);
-        completeNow(); // this is the current behaviour
+        while (!buffer.isEmpty()) {
+            consumer.accept(buffer.poll());
+        }
     }
 
     /**
@@ -322,7 +183,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
      * @return true if so
      */
     public boolean isUnbounded() {
-        return requested.get() == Long.MAX_VALUE;
+        return this.emitter.isUnbounded();
     }
 
     /**
@@ -332,54 +193,28 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
      * @return true if demand is higher than 0
      */
     public boolean hasRequests() {
-        return requested.get() > emitted;
+        return this.emitter.hasRequests();
     }
 
     /**
      * Check if publisher sent {@code onComplete} signal downstream.
      * Returns {@code true} right after calling {@link BufferedEmittingPublisher#completeNow()}
-     * (with a caveat)
      * but after calling {@link BufferedEmittingPublisher#complete()} returns
      * {@code false} until whole buffer has been drained.
-     * <p>
-     * The caveat is that completeNow() does not guarantee that the onComplete signal is sent
-     * before returning from completeNow() - it is only guaranteed to be sent as soon as it can be done.
      *
      * @return true if so
      */
     public boolean isCompleted() {
-        // The caveat above means only that the current implementation guarantees onComplete is sent
-        // before completeNow returns in single-threaded cases. When concurrent emit() or request()
-        // race against completeNow, completeNow may return without entering drain() - but the concurrent
-        // calls guarantee onComplete will be called as soon as they observe the buffer is empty.
-        //
-        // We don't want to say this in the public documentation as this is implementation detail.
-        //
-        // A subtle logical statement: if onError or onComplete has been signalled to downstream,
-        //   isCompleted is true. But it is also true if cancel() precluded sending the signal
-        //   to downstream.
-        //
-        //   The current implementation is: isCompleted is true if and only if no more onNext signals
-        //   will be sent to downstream and no cancellation was requested.
-        //
-        // assert: once isCompleted becomes true, it stays true
-        // question: what should it be, if complete() was called, but not onSubscribe()?
-        return buffer.isEmpty() && state.get() > 1;
+        return this.state.get() == State.COMPLETED;
     }
 
     /**
      * Check if publisher is in terminal state CANCELLED.
-     * <p>
-     * It is for information only. It is not guaranteed to tell what happened to downstream, if there
-     * were a concurrent cancellation and a completion.
      *
      * @return true if so
      */
     public boolean isCancelled() {
-        // a stricter logic can be implemented, but is the complication warranted?
-
-        // assert: once isCancelled becomes true, isCancelled || isCompleted stays true
-        return ignorePending && cancelled && !isCompleted();
+        return this.state.get() == State.CANCELLED;
     }
 
     /**
@@ -392,95 +227,154 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         return buffer.size();
     }
 
-    /**
-     * Override, if you prefer to do cleanup in a uniform way, instead of requiring everyone
-     * to register a onCleanup.
-     * <p>
-     * Use case: a subclass that offers an implementation of BufferedEmittingPublisher&lt;T&gt; for
-     * a certain type of resource T.
-     */
-    protected void cleanup() {
-        if (onCleanup == null) {
-            buffer.clear();
-        } else {
-            while (!buffer.isEmpty()) {
-                onCleanup.accept(buffer.poll());
+    private void drainBuffer() {
+        deferredDrains.incrementAndGet();
+
+        long drains;
+        do {
+            if (draining.getAndSet(true)) {
+                //other thread already draining
+                return;
+            }
+            drains = deferredDrains.getAndUpdate(d -> d == 0 ? 0 : d - 1);
+            if (drains > 0) {
+                // in case of parallel drains invoked by request
+                // increasing demand during draining
+                actualDrain();
+                drains--;
+            }
+            draining.set(false);
+            // changed while draining, try again
+        } while (drains < deferredDrains.get());
+    }
+
+    private void actualDrain() {
+        while (!buffer.isEmpty()) {
+            if (emitter.emit(buffer.peek())) {
+                if (onEmitCallback != null) {
+                    onEmitCallback.accept(buffer.poll());
+                } else {
+                    buffer.poll();
+                }
+            } else {
+                break;
             }
         }
-    }
-
-    private void maybeDrain() {
-        // assert: if not started, will not post too many emit() and complete() to overflow the
-        //         counter
-        if (contenders.getAndIncrement() == 0) {
-            drain();
+        if (buffer.isEmpty()
+                && state.compareAndSet(State.COMPLETING, State.COMPLETED)) {
+            // Buffer drained, time for complete
+            emitter.complete();
         }
     }
 
-    // Key design principles:
-    // - all operations on downstream are executed whilst "holding the lock".
-    //   The lock acquisition is the ability to transition the value of contenders from zero to 1.
-    // - any changes to state are followed by maybeDrain, so the thread inside drain() can notice
-    //   that some state change has occurred:
-    //   - ignorePending
-    //     - error
-    //     - cancelled
-    //   - requested
-    //   - buffer contents
-    private void drain() {
-        IllegalStateException ise = null;
-        for (int cont = 1; cont > 0; cont = contenders.addAndGet(-cont)) {
-            boolean terminateNow = ignorePending;
+    private int emitOrBuffer(T item) {
+        synchronized (this) {
             try {
-                while (!terminateNow && requested.get() > emitted && !buffer.isEmpty()) {
-                    T item = buffer.poll();
-                    subscriber.onNext(item);
+                if (buffer.isEmpty() && emitter.emit(item)) {
+                    // Buffer drained, emit successful
+                    // saved time by skipping buffer
                     if (onEmitCallback != null) {
                         onEmitCallback.accept(item);
                     }
-                    emitted++;
-                    terminateNow = ignorePending;
+                    return 0;
+                } else {
+                    // safe slower path thru buffer
+                    buffer.add(item);
+                    state.get().drain(this);
+                    return buffer.size();
                 }
-            } catch (RuntimeException re) {
-                abort(re);
-            }
-
-            if (terminateNow) {
-                cleanup();
-            }
-
-            if (terminateNow || isCompleted()) {
-                try {
-                    // assert: cleanup in finally
-                    if (!cancelled) {
-                        cancelled = true;
-                        if (error != null) {
-                            subscriber.onError(error);
-                        } else {
-                            subscriber.onComplete();
-                        }
-                    }
-                } catch (Throwable th) {
-                    // assert: catch all throwables, to ensure the lock is released properly
-                    //         and buffer cleanup remains reachable
-                    // assert: this line is reachable only once: all subsequent iterations
-                    //         will observe cancelled == true
-                    ise = new IllegalStateException(th);
-                } finally {
-                    error = null;
-                    subscriber = null;
-                    requestCallback = null;
-                    onEmitCallback = null;
+            } finally {
+                // If unbounded, check only once if buffer is empty
+                if (!safeToSkipBuffer && isUnbounded() && buffer.isEmpty()) {
+                    safeToSkipBuffer = true;
                 }
             }
         }
+    }
 
-        if (ise != null) {
-            // assert: this violates the reactive spec, but this is what the tests expect.
-            //         Observe that there is no guarantee where the exception will be thrown -
-            //         it may happen during request(), which is expected to finish without
-            //         throwing
-            throw ise;
+    private int unboundedEmitOrBuffer(T item) {
+        // Not reachable unless unbounded req was made
+        // and buffer is empty
+        if (emitter.emit(item)) {
+            // Emit successful
+            if (onEmitCallback != null) {
+                onEmitCallback.accept(item);
+            }
+            return 0;
+        } else {
+            // Emitter can be only in terminal state
+            // buffer for later retrieval by clearBuffer()
+            buffer.add(item);
+            return buffer.size();
         }
+    }
+
+
+    private enum State {
+        READY_TO_EMIT {
+            @Override
+            <T> int emit(BufferedEmittingPublisher<T> publisher, T item) {
+                if (publisher.safeToSkipBuffer) {
+                    return publisher.unboundedEmitOrBuffer(item);
+                }
+                return publisher.emitOrBuffer(item);
+            }
+
+            @Override
+            <T> void drain(final BufferedEmittingPublisher<T> publisher) {
+                publisher.drainBuffer();
+            }
+        },
+        CANCELLED {
+            @Override
+            <T> int emit(BufferedEmittingPublisher<T> publisher, T item) {
+                throw new IllegalStateException("Emitter is cancelled!");
+            }
+
+            @Override
+            <T> void drain(final BufferedEmittingPublisher<T> publisher) {
+                //noop
+            }
+        },
+        FAILED {
+            @Override
+            <T> int emit(BufferedEmittingPublisher<T> publisher, T item) {
+                throw new IllegalStateException("Emitter is in failed state!");
+            }
+
+            @Override
+            <T> void drain(final BufferedEmittingPublisher<T> publisher) {
+                //Can't happen twice, internal emitter keeps the state too
+                publisher.emitter.fail(publisher.error.get());
+            }
+        },
+        COMPLETING {
+            @Override
+            <T> int emit(BufferedEmittingPublisher<T> publisher, T item) {
+                throw new IllegalStateException("Emitter is completing!");
+            }
+
+            @Override
+            <T> void drain(final BufferedEmittingPublisher<T> publisher) {
+                State.READY_TO_EMIT.drain(publisher);
+            }
+        },
+        COMPLETED {
+            @Override
+            <T> int emit(BufferedEmittingPublisher<T> publisher, T item) {
+                throw new IllegalStateException("Emitter is completed!");
+            }
+
+            @Override
+            <T> void drain(final BufferedEmittingPublisher<T> publisher) {
+                //Can't happen twice, internal emitter keeps the state too
+                publisher.emitter.complete();
+            }
+        };
+
+        abstract <T> int emit(BufferedEmittingPublisher<T> publisher, T item);
+
+        abstract <T> void drain(BufferedEmittingPublisher<T> publisher);
+
     }
 }

@@ -20,7 +20,9 @@
 module io.helidon.examples.integrations.oci.objectstorage.reactive {
     requires io.helidon.common.http;
     requires io.helidon.integrations.oci.objectstorage;
+    requires io.helidon.integrations.oci.objectstorage.health;
     requires io.helidon.webserver;
+    requires io.helidon.health;
 
     exports io.helidon.examples.integrations.oci.objecstorage.reactive;
 }

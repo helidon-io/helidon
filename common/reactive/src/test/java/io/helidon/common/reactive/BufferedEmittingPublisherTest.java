@@ -24,6 +24,7 @@ import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -198,7 +199,8 @@ public class BufferedEmittingPublisherTest {
         publisher.emit(15L);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(not(nullValue())));
-        assertThat(subscriber.getLastError(), is(instanceOf(UnsupportedOperationException.class))); // not sure why the rewrapping was required
+        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        assertThat(subscriber.getLastError().getCause(), is(instanceOf(UnsupportedOperationException.class)));
     }
 
     @Test
@@ -236,8 +238,30 @@ public class BufferedEmittingPublisherTest {
             }
         };
         publisher.subscribe(subscriber);
-        publisher.emit(0L);
-        assertThat(publisher.bufferSize(), is(equalTo(0))); // not sure why throwing anything was done - it is an unsafe practice in a concurrent setting
-        assertThat(publisher.isCancelled(), is(equalTo(true)));
+        assertThrows(IllegalStateException.class, () -> publisher.emit(0L));
+    }
+
+    @Test
+    void flatMapping() {
+        final int STREAM_SIZE = 1_000_000;
+        AtomicInteger cnt = new AtomicInteger();
+        ExecutorService exec = Executors.newFixedThreadPool(32);
+        Single<Void> promise = Multi.range(0, STREAM_SIZE)
+                .flatMap(it -> {
+                    BufferedEmittingPublisher<Integer> flatMapped = new BufferedEmittingPublisher<>();
+                    exec.submit(() -> {
+                        flatMapped.emit(it);
+                        flatMapped.complete();
+                    });
+                    return flatMapped;
+                })
+                .forEach(unused -> cnt.incrementAndGet());
+
+        try {
+            promise.await(10, TimeUnit.SECONDS);
+            assertThat(cnt.get(), is(equalTo(STREAM_SIZE)));
+        } finally {
+            exec.shutdown();
+        }
     }
 }

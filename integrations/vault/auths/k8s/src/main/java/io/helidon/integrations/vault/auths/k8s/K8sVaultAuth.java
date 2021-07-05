@@ -42,6 +42,7 @@ public class K8sVaultAuth implements VaultAuth {
     private final String serviceAccountToken;
     private final String tokenRole;
     private final String tokenLocation;
+    private final String methodPath;
 
     /**
      * Constructor required for Java Service Loader.
@@ -53,12 +54,14 @@ public class K8sVaultAuth implements VaultAuth {
         this.serviceAccountToken = null;
         this.tokenRole = null;
         this.tokenLocation = "/var/run/secrets/kubernetes.io/serviceaccount/token";
+        this.methodPath = null;
     }
 
     private K8sVaultAuth(Builder builder) {
         this.serviceAccountToken = builder.serviceAccountToken;
         this.tokenRole = builder.tokenRole;
         this.tokenLocation = builder.tokenLocation;
+        this.methodPath = builder.path;
     }
 
     /**
@@ -123,8 +126,12 @@ public class K8sVaultAuth implements VaultAuth {
         vaultBuilder.baseNamespace().ifPresent(loginVaultBuilder::baseNamespace);
 
         Vault loginVault = loginVaultBuilder.build();
+        String methodPath = Optional.ofNullable(this.methodPath)
+                .orElseGet(() -> config.get("auth.k8s.path")
+                        .asString()
+                        .orElse(K8sAuthRx.AUTH_METHOD.defaultPath()));
 
-        LOGGER.info("Authenticated Vault " + address + " using k8s, role \"" + roleName + "\"");
+        LOGGER.info("Authenticated Vault " + address + "/" + methodPath + " using k8s, role \"" + roleName + "\"");
         return Optional.of(K8sRestApi.k8sBuilder()
                                    .webClientBuilder(webclient -> {
                                        webclient.baseUri(address + "/v1");
@@ -133,7 +140,7 @@ public class K8sVaultAuth implements VaultAuth {
                                        vaultBuilder.webClientUpdater().accept(webclient);
                                    })
                                    .faultTolerance(vaultBuilder.ftHandler())
-                                   .auth(loginVault.auth(K8sAuthRx.AUTH_METHOD))
+                                   .auth(loginVault.auth(K8sAuthRx.AUTH_METHOD, methodPath))
                                    .roleName(roleName)
                                    .jwtToken(jwtToken)
                                    .build());
@@ -146,6 +153,7 @@ public class K8sVaultAuth implements VaultAuth {
         private String serviceAccountToken;
         private String tokenRole;
         private String tokenLocation = "/var/run/secrets/kubernetes.io/serviceaccount/token";
+        private String path;
 
         private Builder() {
         }
@@ -185,6 +193,19 @@ public class K8sVaultAuth implements VaultAuth {
          */
         public Builder tokenLocation(String tokenLocation) {
             this.tokenLocation = tokenLocation;
+            return this;
+        }
+
+        /**
+         * Custom method path.
+         *
+         * @param path path of the k8s method, defaults to
+         *          {@link io.helidon.integrations.vault.auths.k8s.K8sAuthRx#AUTH_METHOD}
+         *          default path
+         * @return updated builder
+         */
+        public Builder path(String path) {
+            this.path = path;
             return this;
         }
     }
