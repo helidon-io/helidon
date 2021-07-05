@@ -26,6 +26,7 @@ import io.helidon.rsocket.server.RSocketRouting;
 import io.helidon.rsocket.server.RSocketSupport;
 import io.helidon.webserver.tyrus.TyrusSupport;
 import io.rsocket.Payload;
+import org.reactivestreams.FlowAdapters;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -34,8 +35,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
@@ -67,6 +70,7 @@ public class RSocketCdiExtension implements Extension {
 
     /**
      * Read Configuration.
+     *
      * @param config
      */
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
@@ -148,7 +152,7 @@ public class RSocketCdiExtension implements Extension {
                                 try {
                                     if (method.getReturnType().equals(Single.class)) {
                                         return (Single<Void>) method.invoke(rsocketInstance, payload);
-                                    } else if (method.getReturnType().equals(CompletableFuture.class)){
+                                    } else if (method.getReturnType().equals(CompletableFuture.class)) {
                                         CompletableFuture<Void> result = (CompletableFuture<Void>) method.invoke(rsocketInstance, payload);
                                         return Single.create(result);
                                     }
@@ -162,7 +166,18 @@ public class RSocketCdiExtension implements Extension {
                     rSocketRoutingBuilder.requestChannel(((RequestChannel) annotation).value(),
                             payloads -> {
                                 try {
-                                    return (Multi<Payload>) method.invoke(rsocketInstance, payloads);
+                                    if (method.getReturnType().equals(Multi.class)) {
+                                        if (payloads instanceof Flow.Publisher) {
+                                            return (Multi<Payload>) method.invoke(rsocketInstance, Multi.create(payloads));
+                                        }
+                                        return (Multi<Payload>) method.invoke(rsocketInstance, payloads);
+                                    }
+                                    if (method.getReturnType().equals(Flow.Publisher.class)) {
+                                        if (payloads instanceof Flow.Publisher) {
+                                            return Multi.create((Flow.Publisher<Payload>) method.invoke(rsocketInstance, Multi.create(payloads)));
+                                        }
+                                        Multi.create((Flow.Publisher<Payload>) method.invoke(rsocketInstance, payloads));
+                                    }
                                 } catch (IllegalAccessException | InvocationTargetException e) {
                                     LOGGER.severe(e.toString());
                                 }
@@ -174,7 +189,7 @@ public class RSocketCdiExtension implements Extension {
                                 try {
                                     if (method.getReturnType().equals(Single.class)) {
                                         return (Single<Payload>) method.invoke(rsocketInstance, payload);
-                                    } else if (method.getReturnType().equals(CompletableFuture.class)){
+                                    } else if (method.getReturnType().equals(CompletableFuture.class)) {
                                         CompletableFuture<Payload> result = (CompletableFuture<Payload>) method.invoke(rsocketInstance, payload);
                                         return Single.create(result);
                                     }
@@ -187,7 +202,13 @@ public class RSocketCdiExtension implements Extension {
                     rSocketRoutingBuilder.requestStream(((RequestStream) annotation).value(),
                             payload -> {
                                 try {
-                                    return (Multi<Payload>) method.invoke(rsocketInstance, payload);
+                                    if (method.getReturnType().equals(Multi.class)) {
+                                        return (Multi<Payload>) method.invoke(rsocketInstance, payload);
+                                    } else if (method.getReturnType().equals(Stream.class)) {
+                                        Stream<Payload> stream = (Stream<Payload>) method.invoke(rsocketInstance, payload);
+                                        return Multi.create(stream);
+                                    }
+
                                 } catch (IllegalAccessException | InvocationTargetException e) {
                                     LOGGER.severe(e.toString());
                                 }

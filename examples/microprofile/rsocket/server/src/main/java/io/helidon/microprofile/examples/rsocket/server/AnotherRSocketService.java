@@ -23,9 +23,13 @@ import io.helidon.microprofile.rsocket.server.RequestResponse;
 import io.helidon.microprofile.rsocket.server.RequestStream;
 import io.rsocket.Payload;
 import io.rsocket.util.ByteBufPayload;
+import org.reactivestreams.FlowAdapters;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.enterprise.context.ApplicationScoped;
 
 /**
@@ -54,14 +58,15 @@ public class AnotherRSocketService {
     }
 
     @RequestStream("stream")
-    public Multi<Payload> printStream(Payload payload){
+    public Stream<Payload> printStream(Payload payload){
         String data = payload.getDataUtf8();
-        return Multi.range(1,10).map(e->ByteBufPayload.create(e+": "+data));
+        return IntStream.range(1,10).mapToObj(e->ByteBufPayload.create(e+": "+data));
     }
 
+    //There is no good way to convert to streams. Flow.Publisher used.
     @RequestChannel("channel")
-    public Multi<Payload> printChannel(Multi<Payload> payloads) {
-        return payloads.map(Payload::getDataUtf8).log()
+    public Flow.Publisher<Payload> printChannel(Flow.Publisher<Payload> payloads) {
+        return Multi.create(payloads).map(Payload::getDataUtf8).log()
                 .onCompleteResumeWith(Multi.range(1,10)
                         .map(Object::toString)).map(e->ByteBufPayload.create(""+e));
     }
