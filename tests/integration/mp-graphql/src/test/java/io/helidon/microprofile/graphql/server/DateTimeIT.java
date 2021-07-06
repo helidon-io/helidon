@@ -248,10 +248,6 @@ class DateTimeIT extends AbstractGraphQlCdiIT {
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("echoLocalDate"), is("1968-02-17"));
 
-        mapResults = getAndAssertResult(executionContext.execute("mutation { echoLocalDateAU(dateArgument: \"17/02/1968\") }"));
-        assertThat(mapResults.size(), is(1));
-        assertThat(mapResults.get("echoLocalDateAU"), is("17 Feb. 1968"));
-
         mapResults = getAndAssertResult(executionContext.execute("mutation { echoLocalDateGB(dateArgument: \"17/02/1968\") }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("echoLocalDateGB"), is("17 Feb 1968"));
@@ -259,10 +255,6 @@ class DateTimeIT extends AbstractGraphQlCdiIT {
         mapResults = getAndAssertResult(executionContext.execute("query { queryLocalDateGB }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("queryLocalDateGB"), is("17 Feb 1968"));
-
-        mapResults = getAndAssertResult(executionContext.execute("query { queryLocalDateAU }"));
-        assertThat(mapResults.size(), is(1));
-        assertThat(mapResults.get("queryLocalDateAU"), is("17 Feb. 1968"));
 
         Map<String, Object> results = executionContext.execute("mutation { echoLocalDate(dateArgument: \"Today\") }");
         List<Map<String, Object>> listErrors = (List<Map<String, Object>>) results.get(ERRORS);
@@ -281,7 +273,7 @@ class DateTimeIT extends AbstractGraphQlCdiIT {
         mapResults = getAndAssertResult(
                 executionContext.execute("query { transformedDate }"));
         assertThat(mapResults, is(notNullValue()));
-        assertThat(mapResults.get("transformedDate"), is("16 Aug. 2016"));
+        assertThat(mapResults.get("transformedDate"), is("16 Aug 2016"));
     }
 
     @Test
