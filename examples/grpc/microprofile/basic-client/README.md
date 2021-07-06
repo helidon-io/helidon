@@ -22,5 +22,5 @@ mvn package
 Ensure that the server in [Basic Implicit gRPC Server example](../basic-server-implicit/README.md) is started.
 Then in this module run:
 ```
-mvn exec:java
+mvn exec:exec
 ```

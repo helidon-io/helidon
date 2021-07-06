@@ -25,7 +25,7 @@ mvn package
 ## Run
 
 ```
-mvn exec:java
+mvn exec:exec
 ```
 
 Then the services can be accessed on the gRPC endpoint `localhost:1408`

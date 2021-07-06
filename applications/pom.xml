@@ -141,8 +141,13 @@
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>${version.plugin.exec}</version>
                     <configuration>
-                        <!--suppress MavenModelInspection -->
-                        <mainClass>${mainClass}</mainClass>
+                        <executable>java</executable>
+                        <longClasspath>true</longClasspath>
+                        <arguments>
+                            <argument>-classpath</argument>
+                            <classpath/>
+                            <argument>${mainClass}</argument>
+                        </arguments>
                     </configuration>
                 </plugin>
                 <plugin>
