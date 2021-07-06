@@ -24,17 +24,19 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlID;
 import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlRootElement;
+
+import io.helidon.common.http.Headers;
+import io.helidon.webclient.WebClientRequestHeaders;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 
@@ -115,15 +117,16 @@ class Lra {
         lra.isChild = true;
     }
 
-    MultivaluedMap<String, Object> headers() {
-        MultivaluedMap<String, Object> multivaluedMap = new MultivaluedHashMap<>(4);
-        multivaluedMap.add(LRA_HTTP_CONTEXT_HEADER, lraId);
-        multivaluedMap.add(LRA_HTTP_ENDED_CONTEXT_HEADER, lraId);
-        Optional.ofNullable(parentId)
-                .map(URI::toASCIIString)
-                .ifPresent(s -> multivaluedMap.add(LRA_HTTP_PARENT_CONTEXT_HEADER, s));
-        multivaluedMap.add(LRA_HTTP_RECOVERY_HEADER, lraId);
-        return multivaluedMap;
+    Function<WebClientRequestHeaders, Headers> headers() {
+        return headers -> {
+            headers.add(LRA_HTTP_CONTEXT_HEADER, lraId);
+            headers.add(LRA_HTTP_ENDED_CONTEXT_HEADER, lraId);
+            Optional.ofNullable(parentId)
+                    .map(URI::toASCIIString)
+                    .ifPresent(s -> headers.add(LRA_HTTP_PARENT_CONTEXT_HEADER, s));
+            headers.add(LRA_HTTP_RECOVERY_HEADER, lraId);
+            return headers;
+        };
     }
 
     synchronized void close() {
@@ -191,7 +194,7 @@ class Lra {
     synchronized boolean tryForget() {
         return trySendForgetLRA();
     }
-    
+
     private boolean trySendForgetLRA() {
         boolean allFinished = true;
         for (Participant participant : participants) {
@@ -235,7 +238,7 @@ class Lra {
             this.status().compareAndSet(LRAStatus.Cancelling, LRAStatus.Cancelled);
         }
     }
-    
+
     private boolean trySendAfterLRA() {
         boolean allSent = true;
         for (Participant participant : participants) {

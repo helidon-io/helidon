@@ -254,6 +254,7 @@ public class Coordinator {
 
     /**
      * Blocks until next recovery cycle is finished.
+     *
      * @return 200
      */
     @GET
@@ -272,7 +273,7 @@ public class Coordinator {
                 .await();
     }
 
-    @FixedRate(value = 500, timeUnit = TimeUnit.MILLISECONDS)
+    @FixedRate(value = 300, timeUnit = TimeUnit.MILLISECONDS)
     void tick() {
         lraPersistentRegistry.stream().forEach(lra -> {
             if (lra.isReadyToDelete()) {

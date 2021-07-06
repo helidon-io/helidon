@@ -31,17 +31,15 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
@@ -146,9 +144,6 @@ class Participant {
     @XmlJavaTypeAdapter(Link.JaxbAdapter.class)
     private final List<Link> compensatorLinks = new ArrayList<>(5);
 
-    @XmlTransient
-    private final Client client = ClientBuilder.newBuilder().build();
-
     void parseCompensatorLinks(String compensatorLinks) {
         Stream.of(compensatorLinks.split(","))
                 .filter(s -> !s.isBlank())
@@ -237,14 +232,15 @@ class Participant {
                 }
             }
 
-            Response response = client.target(endpointURI.get())
-                    .request()
+            WebClientResponse response = WebClient.builder()
+                    .baseUri(endpointURI.get())
+                    .build()
+                    .put()
                     .headers(lra.headers())
-                    .async()
-                    .put(Entity.text(LRAStatus.Cancelled.name()))
-                    .get(500, TimeUnit.MILLISECONDS);
+                    .submit(LRAStatus.Cancelled.name())
+                    .await(500, TimeUnit.MILLISECONDS);
 
-            switch (response.getStatus()) {
+            switch (response.status().code()) {
                 // complete or compensated
                 case 200:
                 case 410:
@@ -263,7 +259,7 @@ class Participant {
                 case 404:
                 case 503:
                 default:
-                    throw new Exception(response.getStatusInfo() + " " + response.getStatusInfo().getReasonPhrase());
+                    throw new Exception(response.status().code() + " " + response.status().reasonPhrase());
             }
 
         } catch (Exception e) {
@@ -312,14 +308,16 @@ class Participant {
                     return true;
                 }
             }
-            Response response = client.target(endpointURI.get())
-                    .request()
+            WebClientResponse response = WebClient
+                    .builder()
+                    .baseUri(endpointURI.get())
+                    .build()
+                    .put()
                     .headers(lra.headers())
-                    .async()
-                    .put(Entity.text(LRAStatus.Closed.name()))
-                    .get(500, TimeUnit.MILLISECONDS);
+                    .submit(LRAStatus.Closed.name())
+                    .await(500, TimeUnit.MILLISECONDS);
 
-            switch (response.getStatus()) {
+            switch (response.status().code()) {
                 // complete or compensated
                 case 200:
                 case 410:
@@ -335,7 +333,7 @@ class Participant {
                 case 404:
                 case 503:
                 default:
-                    throw new Exception(response.getStatusInfo() + " " + response.getStatusInfo().getReasonPhrase());
+                    throw new Exception(response.status().code() + " " + response.status().reasonPhrase());
             }
 
         } catch (Exception e) {
@@ -361,13 +359,15 @@ class Participant {
         try {
             Optional<URI> afterURI = getAfterURI();
             if (afterURI.isPresent() && afterLRACalled.compareAndSet(AfterLraStatus.NOT_SENT, AfterLraStatus.SENDING)) {
-                Response response = client.target(afterURI.get())
-                        .request()
+                WebClientResponse response = WebClient.builder()
+                        .baseUri(afterURI.get())
+                        .build()
+                        .put()
                         .headers(lra.headers())
-                        .buildPut(Entity.text(lra.status().get().name()))
-                        .invoke();
-                int status = response.getStatus();
-                if (status == 200) {
+                        .submit(lra.status().get().name())
+                        .await(500, TimeUnit.MILLISECONDS);
+
+                if (response.status().code() == 200) {
                     afterLRACalled.set(AfterLraStatus.SENT);
                 } else if (remainingAfterLraAttempts.decrementAndGet() <= 0) {
                     afterLRACalled.set(AfterLraStatus.SENT);
@@ -384,15 +384,22 @@ class Participant {
         Optional<URI> statusURI = this.getStatusURI();
         if (statusURI.isPresent()) {
             try {
-                Response response = client.target(statusURI.get())
+                WebClientResponse response = WebClient
+                        .builder()
+                        .baseUri(statusURI.get())
+                        .build()
+                        .get()
+                        .headers(h -> {
+                            // Dont send parent!
+                            h.add(LRA_HTTP_CONTEXT_HEADER, lra.lraId());
+                            h.add(LRA_HTTP_RECOVERY_HEADER, lra.lraId());
+                            h.add(LRA_HTTP_ENDED_CONTEXT_HEADER, lra.lraId());
+                            return h;
+                        })
                         .request()
-                        // Dont send parent!
-                        .header(LRA_HTTP_CONTEXT_HEADER, lra.lraId())
-                        .header(LRA_HTTP_RECOVERY_HEADER, lra.lraId())
-                        .header(LRA_HTTP_ENDED_CONTEXT_HEADER, lra.lraId())
-                        .buildGet().invoke();
-                int responseStatus = response.getStatus();
-                switch (responseStatus) {
+                        .await(500, TimeUnit.MILLISECONDS);
+
+                switch (response.status().code()) {
                     case 202:
                         return Optional.of(inProgressStatus);
                     case 410: //GONE
@@ -404,7 +411,7 @@ class Participant {
                                 new Object[] {503, status.get()});
                         return Optional.empty();
                     default:
-                        ParticipantStatus reportedStatus = valueOf(response.readEntity(String.class));
+                        ParticipantStatus reportedStatus = valueOf(response.content().as(String.class).await());
                         Status currentStatus = status.get();
                         if (currentStatus.validateNextStatus(reportedStatus)) {
                             return Optional.of(reportedStatus);
@@ -424,15 +431,20 @@ class Participant {
     boolean sendForget(Lra lra) {
         if (!forgetCalled.compareAndSet(ForgetStatus.NOT_SENT, ForgetStatus.SENDING)) return false;
         try {
-            Response response = client.target(getForgetURI().get())
-                    .request()
+            WebClientResponse response = WebClient
+                    .builder()
+                    .baseUri(getForgetURI().get())
+                    .build()
+                    .delete()
                     .headers(lra.headers())
-                    .buildDelete().invoke();
-            int responseStatus = response.getStatus();
+                    .submit()
+                    .await(500, TimeUnit.MILLISECONDS);
+
+            int responseStatus = response.status().code();
             if (responseStatus == 200 || responseStatus == 410) {
                 forgetCalled.set(ForgetStatus.SENT);
             } else {
-                throw new Exception("Unexpected response from participant " + response.getStatus());
+                throw new Exception("Unexpected response from participant " + response.status().code());
             }
         } catch (Throwable e) {
             LOGGER.log(Level.WARNING, "Unable to send forget of lra {0} to {1}",

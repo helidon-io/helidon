@@ -27,4 +27,5 @@ module io.helidon.microprofile.lra.coordinator {
     requires io.helidon.common.reactive;
     requires io.helidon.microprofile.scheduling;
     requires microprofile.config.api;
+    requires io.helidon.webclient;
 }

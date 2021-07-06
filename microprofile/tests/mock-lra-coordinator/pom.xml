@@ -41,6 +41,10 @@
             <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.scheduling</groupId>
             <artifactId>helidon-microprofile-scheduling</artifactId>
         </dependency>
