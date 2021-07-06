@@ -50,6 +50,10 @@ vault:
       k8s:
         enabled: false
       app-role:
+        # this is not needed, as we use a builder,
+        # it is here to show how this could be used to define a
+        # custom path for vault authentication (same can be done for k8s)
+        path: "customapprole"
         enabled: true
       token:
         enabled: false

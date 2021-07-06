@@ -17,13 +17,16 @@
 package io.helidon.metrics;
 
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import javax.json.Json;
+import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
@@ -239,5 +242,35 @@ class HelidonTimerTest {
                 fail("Failed after simulating " + i + " hours");
             }
         }
+    }
+
+    @Test
+    void testUnitsOnHistogram() {
+        TestClock testClock = TestClock.create();
+        String timerName = "jsonDataUnitsTimer";
+        Metadata metadata = Metadata.builder()
+                .withName(timerName)
+                .withDisplayName("Response time test")
+                .withDescription("Server response time for checking histo units")
+                .withType(MetricType.TIMER)
+                .withUnit(MetricUnits.MILLISECONDS)
+                .build();
+
+        HelidonTimer helidonTimer = HelidonTimer.create(MetricRegistry.Type.APPLICATION.getName(), metadata, testClock);
+
+        Stream.of(24L, 28L, 32L, 36L)
+                .forEach(value -> {
+                    testClock.addNanos(450, TimeUnit.MILLISECONDS);
+                    helidonTimer.update(value, TimeUnit.MILLISECONDS);
+                });
+        MetricID timerID = new MetricID(timerName);
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        helidonTimer.jsonData(builder, timerID);
+        JsonObject jsonObject = builder.build();
+        JsonObject metricObject = jsonObject.getJsonObject(timerName);
+        assertThat("Metric JSON object", metricObject, is(notNullValue()));
+        JsonNumber jsonNumber = metricObject.getJsonNumber("min");
+        assertThat("Min JSON value", jsonNumber, is(notNullValue()));
+        assertThat("Min histo value", jsonNumber.longValue(), is(24L));
     }
 }

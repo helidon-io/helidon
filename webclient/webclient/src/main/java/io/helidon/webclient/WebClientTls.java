@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
@@ -37,6 +38,7 @@ public class WebClientTls {
     private final PrivateKey clientPrivateKey;
     private final List<X509Certificate> certificates;
     private final List<X509Certificate> clientCertificateChain;
+    private final Set<String> allowedCipherSuite;
     private final SSLContext sslContext;
 
     private WebClientTls(Builder builder) {
@@ -46,6 +48,7 @@ public class WebClientTls {
         this.clientPrivateKey = builder.clientPrivateKey;
         this.clientCertificateChain = builder.clientCertificateChain;
         this.sslContext = builder.sslContext;
+        this.allowedCipherSuite = builder.allowedCipherSuite;
     }
 
     /**
@@ -115,6 +118,15 @@ public class WebClientTls {
         return Optional.ofNullable(sslContext);
     }
 
+    /**
+     * Allowed cipher suite.
+     *
+     * @return allowed cipher suite
+     */
+    Set<String> allowedCipherSuite() {
+        return allowedCipherSuite;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -129,13 +141,19 @@ public class WebClientTls {
                 && Objects.equals(clientPrivateKey, that.clientPrivateKey)
                 && Objects.equals(certificates, that.certificates)
                 && Objects.equals(clientCertificateChain, that.clientCertificateChain)
+                && Objects.equals(allowedCipherSuite, that.allowedCipherSuite)
                 && Objects.equals(sslContext, that.sslContext);
     }
 
     @Override
     public int hashCode() {
-        return Objects
-                .hash(trustAll, disableHostnameVerification, clientPrivateKey, certificates, clientCertificateChain, sslContext);
+        return Objects.hash(trustAll,
+                            disableHostnameVerification,
+                            clientPrivateKey,
+                            certificates,
+                            clientCertificateChain,
+                            allowedCipherSuite,
+                            sslContext);
     }
 
     /**
@@ -148,6 +166,7 @@ public class WebClientTls {
         private PrivateKey clientPrivateKey;
         private List<X509Certificate> certificates = new ArrayList<>();
         private List<X509Certificate> clientCertificateChain = new ArrayList<>();
+        private Set<String> allowedCipherSuite = Set.of();
         private SSLContext sslContext;
 
         private Builder() {
@@ -212,6 +231,21 @@ public class WebClientTls {
         }
 
         /**
+         * Set allowed cipher suite for the client.
+         *
+         * @param allowedCipherSuite cipher suite
+         * @return updated builder instance
+         */
+        public Builder allowedCipherSuite(List<String> allowedCipherSuite) {
+            Objects.requireNonNull(allowedCipherSuite, "Allowed cipher suite cannot be null");
+            if (allowedCipherSuite.isEmpty()) {
+                throw new IllegalStateException("Allowed cipher suite has to have at least one cipher specified");
+            }
+            this.allowedCipherSuite = Set.copyOf(allowedCipherSuite);
+            return this;
+        }
+
+        /**
          * Configure a metric from configuration.
          * The following configuration key are used:
          * <table>
@@ -237,6 +271,11 @@ public class WebClientTls {
          *     <td>Trust store which contains trusted certificates. If set, replaces those present by default</td>
          * </tr>
          * <tr>
+         *     <td>server.cipher-suite</td>
+         *     <td>{@code no default}</td>
+         *     <td>List of allowed ciphers. If set, replaces those present by default</td>
+         * </tr>
+         * <tr>
          *     <td>client.keystore</td>
          *     <td>{@code no default}</td>
          *     <td>Client key store name/location</td>
@@ -251,6 +290,7 @@ public class WebClientTls {
             serverConfig.get("disable-hostname-verification").asBoolean().ifPresent(this::disableHostnameVerification);
             serverConfig.get("trust-all").asBoolean().ifPresent(this::trustAll);
             serverConfig.as(KeyConfig::create).ifPresent(this::certificateTrustStore);
+            serverConfig.get("cipher-suite").asList(String.class).ifPresent(this::allowedCipherSuite);
 
             config.get("client").as(KeyConfig::create).ifPresent(this::clientKeyStore);
             return this;
