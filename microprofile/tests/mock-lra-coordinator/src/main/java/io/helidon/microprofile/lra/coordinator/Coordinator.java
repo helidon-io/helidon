@@ -278,27 +278,25 @@ public class Coordinator {
             if (lra.isReadyToDelete()) {
                 lraPersistentRegistry.remove(lra.lraId());
             } else {
-                synchronized (this) {
-                    if (LRAStatus.Cancelling == lra.status().get()) {
-                        LOGGER.log(Level.FINE, "Recovering {0}", lra.lraId());
-                        lra.cancel();
-                    }
-                    if (LRAStatus.Closing == lra.status().get()) {
-                        LOGGER.log(Level.FINE, "Recovering {0}", lra.lraId());
-                        lra.close();
-                    }
-                    if (lra.checkTimeout() && lra.status().get().equals(LRAStatus.Active)) {
-                        LOGGER.log(Level.FINE, "Timeouting {0} ", lra.lraId());
-                        lra.timeout();
-                    }
-                    if (Set.of(LRAStatus.Closed, LRAStatus.Cancelled).contains(lra.status().get())) {
-                        // If a participant is unable to complete or compensate immediately or because of a failure
-                        // then it must remember the fact (by reporting its' status via the @Status method)
-                        // until explicitly told that it can clean up using this @Forget annotation.
-                        LOGGER.log(Level.FINE, "Forgetting {0} {1}", new Object[] {lra.status().get(), lra.lraId()});
-                        lra.tryForget();
-                        lra.trySendAfterLRA();
-                    }
+                if (LRAStatus.Cancelling == lra.status().get()) {
+                    LOGGER.log(Level.FINE, "Recovering {0}", lra.lraId());
+                    lra.cancel();
+                }
+                if (LRAStatus.Closing == lra.status().get()) {
+                    LOGGER.log(Level.FINE, "Recovering {0}", lra.lraId());
+                    lra.close();
+                }
+                if (lra.checkTimeout() && lra.status().get().equals(LRAStatus.Active)) {
+                    LOGGER.log(Level.FINE, "Timeouting {0} ", lra.lraId());
+                    lra.timeout();
+                }
+                if (Set.of(LRAStatus.Closed, LRAStatus.Cancelled).contains(lra.status().get())) {
+                    // If a participant is unable to complete or compensate immediately or because of a failure
+                    // then it must remember the fact (by reporting its' status via the @Status method)
+                    // until explicitly told that it can clean up using this @Forget annotation.
+                    LOGGER.log(Level.FINE, "Forgetting {0} {1}", new Object[] {lra.status().get(), lra.lraId()});
+                    lra.tryForget();
+                    lra.tryAfter();
                 }
             }
         });

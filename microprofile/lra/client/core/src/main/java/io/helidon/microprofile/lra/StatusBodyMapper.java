@@ -36,7 +36,7 @@ import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
-class StatusBodyMapper implements MessageBodyReader<Enum>, MessageBodyWriter<Enum<?>> {
+class   StatusBodyMapper implements MessageBodyReader<Enum>, MessageBodyWriter<Enum<?>> {
 
     private static final Set<Class<?>> SUPPORTED_TYPES = Set.of(
             LRAStatus.class,

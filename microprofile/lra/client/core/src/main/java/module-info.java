@@ -33,6 +33,9 @@ module io.helidon.microprofile.lra {
     requires jakarta.interceptor.api;
     requires jersey.common;
     requires io.helidon.microprofile.lra.coordinator.client;
+    requires io.helidon.common.serviceloader;
+
+    uses io.helidon.microprofile.lra.coordinator.client.CoordinatorClient;
 
     provides javax.enterprise.inject.spi.Extension with LraCdiExtension;
     provides org.glassfish.jersey.internal.spi.AutoDiscoverable with LraAutoDiscoverable;

@@ -19,6 +19,7 @@ package io.helidon.microprofile.lra.coordinator.client;
 
 import java.net.URI;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 
@@ -40,6 +41,15 @@ public interface CoordinatorClient {
      * Values of enum {@link java.util.concurrent.TimeUnit} are expected.
      */
     String CONF_KEY_COORDINATOR_TIMEOUT_UNIT = "mp.lra.coordinator.timeout-unit";
+
+    /**
+     * Initialization of the properties provided by LRA client.
+     *
+     * @param coordinatorUri url of the coordinator
+     * @param timeout        general timeout for coordinator calls
+     * @param timeoutUnit    timeout unit for coordinator calls
+     */
+    void init(String coordinatorUri, long timeout, TimeUnit timeoutUnit);
 
     /**
      * Ask coordinator to start new LRA and return its id.

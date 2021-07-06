@@ -23,12 +23,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Response;
 
 import io.helidon.microprofile.lra.coordinator.client.CoordinatorClient;
+import io.helidon.microprofile.lra.coordinator.client.CoordinatorConnectionException;
 
 import org.jboss.jandex.AnnotationInstance;
 
@@ -64,68 +66,72 @@ class LraAnnotationHandler implements AnnotationHandler {
 
         URI lraId = null;
         URI parentLraId = null;
-        switch (annotation.value()) {
-            case NESTED:
-                if (existingLraId.isPresent()) {
-                    parentLraId = existingLraId.get();
-                    reqCtx.getHeaders().putSingle(LRA_HTTP_PARENT_CONTEXT_HEADER, existingLraId.get().toASCIIString());
-                    lraId = coordinatorClient.start(existingLraId.get(), clientId, timeLimit);
-                    coordinatorClient.join(lraId, timeLimit, participant)
-                            .map(URI::toASCIIString)
-                            .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
-                } else {
+        try {
+            switch (annotation.value()) {
+                case NESTED:
+                    if (existingLraId.isPresent()) {
+                        parentLraId = existingLraId.get();
+                        reqCtx.getHeaders().putSingle(LRA_HTTP_PARENT_CONTEXT_HEADER, existingLraId.get().toASCIIString());
+                        lraId = coordinatorClient.start(existingLraId.get(), clientId, timeLimit);
+                        coordinatorClient.join(lraId, timeLimit, participant)
+                                .map(URI::toASCIIString)
+                                .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
+                    } else {
+                        lraId = coordinatorClient.start(null, clientId, timeLimit);
+                        coordinatorClient.join(lraId, timeLimit, participant)
+                                .map(URI::toASCIIString)
+                                .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
+                    }
+                    break;
+                case NEVER:
+                    if (existingLraId.isPresent()) {
+                        // If called inside an LRA context, i.e., the method is not executed
+                        // and a 412 Precondition Failed is returned
+                        reqCtx.abortWith(Response.status(Response.Status.PRECONDITION_FAILED).build());
+                        return;
+                    }
+                    break;
+                case NOT_SUPPORTED:
+                    reqCtx.getHeaders().remove(LRA_HTTP_CONTEXT_HEADER);
+                    return;
+                case SUPPORTS:
+                    if (existingLraId.isPresent()) {
+                        coordinatorClient.join(existingLraId.get(), timeLimit, participant)
+                                .map(URI::toASCIIString)
+                                .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
+                        lraId = existingLraId.get();
+                        break;
+                    }
+                    break;
+                case MANDATORY:
+                    if (existingLraId.isEmpty()) {
+                        // If called outside an LRA context the method is not executed and a
+                        // 412 Precondition Failed HTTP status code is returned to the caller
+                        reqCtx.abortWith(Response.status(Response.Status.PRECONDITION_FAILED).build());
+                        return;
+                    }
+                    // existing lra, fall thru to required
+                case REQUIRED:
+                    if (existingLraId.isPresent()) {
+                        coordinatorClient.join(existingLraId.get(), timeLimit, participant)
+                                .map(URI::toASCIIString)
+                                .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
+                        lraId = existingLraId.get();
+                        break;
+                    }
+                    // non existing lra, fall thru to requires_new
+                case REQUIRES_NEW:
                     lraId = coordinatorClient.start(null, clientId, timeLimit);
                     coordinatorClient.join(lraId, timeLimit, participant)
                             .map(URI::toASCIIString)
                             .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
-                }
-                break;
-            case NEVER:
-                if (existingLraId.isPresent()) {
-                    // If called inside an LRA context, i.e., the method is not executed
-                    // and a 412 Precondition Failed is returned
-                    reqCtx.abortWith(Response.status(Response.Status.PRECONDITION_FAILED).build());
-                    return;
-                }
-                break;
-            case NOT_SUPPORTED:
-                reqCtx.getHeaders().remove(LRA_HTTP_CONTEXT_HEADER);
-                return;
-            case SUPPORTS:
-                if (existingLraId.isPresent()) {
-                    coordinatorClient.join(existingLraId.get(), timeLimit, participant)
-                            .map(URI::toASCIIString)
-                            .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
-                    lraId = existingLraId.get();
                     break;
-                }
-                break;
-            case MANDATORY:
-                if (existingLraId.isEmpty()) {
-                    // If called outside an LRA context the method is not executed and a
-                    // 412 Precondition Failed HTTP status code is returned to the caller
-                    reqCtx.abortWith(Response.status(Response.Status.PRECONDITION_FAILED).build());
-                    return;
-                }
-                // existing lra, fall thru to required
-            case REQUIRED:
-                if (existingLraId.isPresent()) {
-                    coordinatorClient.join(existingLraId.get(), timeLimit, participant)
-                            .map(URI::toASCIIString)
-                            .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
-                    lraId = existingLraId.get();
-                    break;
-                }
-                // non existing lra, fall thru to requires_new
-            case REQUIRES_NEW:
-                lraId = coordinatorClient.start(null, clientId, timeLimit);
-                coordinatorClient.join(lraId, timeLimit, participant)
-                        .map(URI::toASCIIString)
-                        .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
-                break;
-            default:
-                LOGGER.severe("Unsupported LRA type " + annotation.value() + " on method " + method.getName());
-                reqCtx.abortWith(Response.status(500).build());
+                default:
+                    LOGGER.severe("Unsupported LRA type " + annotation.value() + " on method " + method.getName());
+                    reqCtx.abortWith(Response.status(500).build());
+            }
+        } catch (CoordinatorConnectionException e) {
+            throw new WebApplicationException(e.getMessage(), e.getCause(), e.status());
         }
         lraId = lraId != null ? lraId : existingLraId.orElse(null);
         if (lraId != null) {

@@ -315,8 +315,9 @@ class Participant {
             Response response = client.target(endpointURI.get())
                     .request()
                     .headers(lra.headers())
-                    .buildPut(Entity.text(LRAStatus.Closed.name()))
-                    .invoke();
+                    .async()
+                    .put(Entity.text(LRAStatus.Closed.name()))
+                    .get(500, TimeUnit.MILLISECONDS);
 
             switch (response.getStatus()) {
                 // complete or compensated

@@ -1,3 +1,5 @@
+import io.helidon.microprofile.lra.coordinator.client.narayana.NarayanaClient;
+
 /*
  * Copyright (c) 2021 Oracle and/or its affiliates.
  *
@@ -16,11 +18,12 @@
  */
 module io.helidon.microprofile.lra.coordinator.client.narayana {
     requires java.logging;
-    requires jakarta.enterprise.cdi.api;
-    requires jakarta.inject.api;
-    requires java.ws.rs;
     requires microprofile.config.api;
     requires microprofile.lra.api;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.lra.coordinator.client;
+    requires io.helidon.webclient;
+
+    provides io.helidon.microprofile.lra.coordinator.client.CoordinatorClient
+            with io.helidon.microprofile.lra.coordinator.client.narayana.NarayanaClient;
 }

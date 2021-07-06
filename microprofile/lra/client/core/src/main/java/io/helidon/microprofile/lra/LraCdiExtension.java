@@ -27,9 +27,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,7 +45,6 @@ import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.WithAnnotations;
-import javax.inject.Named;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -55,7 +52,6 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.lra.coordinator.client.CoordinatorClient;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
@@ -83,8 +79,7 @@ public class LraCdiExtension implements Extension {
     private final Config config = (Config) ConfigProvider.getConfig();
 
     private final Indexer indexer;
-    private final String configuredCoordinatorClient;
-    private IndexView index = null;
+    private IndexView index;
     private final ClassLoader classLoader;
 
     private static final Set<Class<? extends Annotation>> EXPECTED_ANNOTATIONS = Set.of(
@@ -97,6 +92,7 @@ public class LraCdiExtension implements Extension {
     private static final Set<Class<? extends Annotation>> EXCLUDED_ANNOTATIONS = Set.of(PUT.class, Path.class);
 
     private final Set<Class<?>> beanTypesWithCdiLRAMethods = new HashSet<>();
+    private final Map<Class<?>, Bean<?>> lraCdiBeanReferences = new HashMap<>();
 
     /**
      * Initialize MicroProfile Long Running Actions CDI extension.
@@ -104,7 +100,6 @@ public class LraCdiExtension implements Extension {
     public LraCdiExtension() {
         indexer = new Indexer();
         classLoader = Thread.currentThread().getContextClassLoader();
-        configuredCoordinatorClient = config.get("mp.lra.coordinator.client").as(String.class).orElse(null);
         // Needs to be always indexed
         Set.of(LRA.class,
                 AfterLRA.class,
@@ -184,29 +179,6 @@ public class LraCdiExtension implements Extension {
                 });
     }
 
-    void chooseCoordinatorClient(@Observes ProcessAnnotatedType<CoordinatorClient> pat) {
-        Class<CoordinatorClient> clazz = pat.getAnnotatedType().getJavaClass();
-        if (CoordinatorClient.class.isAssignableFrom(clazz)) {
-            // Exclude coordinators only when there is configured specific one
-            if (configuredCoordinatorClient != null) {
-                String name = Optional.ofNullable(pat.getAnnotatedType().getAnnotation(Named.class))
-                        .map((Function<Named, Object>) Named::value)
-                        .map(String::valueOf)
-                        // No @Named annotation, default with class simple name
-                        .orElseGet(clazz::getSimpleName);
-                if (!configuredCoordinatorClient.equals(name)) {
-                    // There is configured different client name, skip this one
-                    LOGGER.log(Level.WARNING, "Excluding coordinator client {0}, configured client is {1}",
-                            new Object[] {name, configuredCoordinatorClient});
-                    pat.veto();
-                }
-            }
-        }
-    }
-
-
-    private final Map<Class<?>, Bean<?>> lraCdiBeanReferences = new HashMap<>();
-
     private void cdiLRABeanReferences(@Observes ProcessManagedBean<?> event) {
         if (beanTypesWithCdiLRAMethods.contains(event.getBean().getBeanClass())) {
             lraCdiBeanReferences.put(event.getBean().getBeanClass(), event.getBean());
@@ -250,7 +222,7 @@ public class LraCdiExtension implements Extension {
     void runtimeIndex(DotName fqdn) {
         if (fqdn == null) return;
         LOGGER.fine("Indexing " + fqdn);
-        ClassInfo classInfo = null;
+        ClassInfo classInfo;
         try {
             classInfo = indexer.index(classLoader.getResourceAsStream(fqdn.toString().replace('.', '/') + ".class"));
             // look also for extended classes

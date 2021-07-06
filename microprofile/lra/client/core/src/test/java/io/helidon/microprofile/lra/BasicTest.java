@@ -31,8 +31,6 @@ import java.util.concurrent.TimeoutException;
 
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
@@ -66,6 +64,8 @@ import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
@@ -97,9 +97,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @AddBean(ParticipantService.class)
 @AddBean(HandlerService.class)
 @AddBean(ParticipantApp.class)
+@AddBean(CoordinatorLocatorService.class)
 @AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_URL, value = "http://localhost:8070/lra-coordinator")
-// Coordinator flavor
-@AddBean(NarayanaClient.class)
 // Test resources
 @AddBean(TestApplication.class)
 @AddBean(JaxRsCompleteOrCompensate.class)
@@ -475,15 +474,20 @@ public class BasicTest {
 
     private void waitForRecovery(URI lraId) {
         for (int i = 0; i < 10; i++) {
-            Client client = ClientBuilder.newClient();
-            try {
-                Response response = client
-                        .target("http://localhost:8070/lra-coordinator")
+            WebClient client = WebClient.builder()
+                    .baseUri("http://localhost:8070/lra-coordinator")
+                    .build();
+            
+                WebClientResponse response = client
+                        .get()
                         .path("recovery")
-                        .request()
-                        .get();
+                        .submit()
+                        .await(TIMEOUT_SEC, TimeUnit.SECONDS);
 
-                String recoveringLras = response.readEntity(String.class);
+                String recoveringLras = response
+                        .content()
+                        .as(String.class)
+                        .await(TIMEOUT_SEC, TimeUnit.SECONDS);
                 response.close();
                 if (!recoveringLras.contains(lraId.toASCIIString())) {
                     System.out.println("LRA is no longer among those recovering " + lraId.toASCIIString());
@@ -491,9 +495,6 @@ public class BasicTest {
                     break;
                 }
                 System.out.println("Waiting for recovery attempt #" + i + " LRA is still waiting: " + recoveringLras);
-            } finally {
-                client.close();
-            }
         }
     }
 }
