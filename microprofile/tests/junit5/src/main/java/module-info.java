@@ -21,7 +21,7 @@ module io.helidon.microprofile.tests.junit5 {
 
     requires io.helidon.microprofile.cdi;
     requires io.helidon.config.mp;
-    requires io.helidon.config.yaml;
+    requires io.helidon.config.yaml.mp;
     requires org.junit.jupiter.api;
     requires transitive jakarta.enterprise.cdi.api;
     requires transitive java.ws.rs;

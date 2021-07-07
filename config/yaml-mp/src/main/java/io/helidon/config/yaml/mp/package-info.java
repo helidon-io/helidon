@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,9 @@
  * limitations under the License.
  */
 
-import io.helidon.config.yaml.YamlConfigParser;
-
 /**
- * YAML Parser implementation.
+ * YAML config source for MicroProfile config.
+ *
+ * @see io.helidon.config Configuration API
  */
-module io.helidon.config.yaml {
-
-    requires java.logging;
-
-    requires org.yaml.snakeyaml;
-
-    requires transitive io.helidon.config;
-    requires io.helidon.common;
-
-    exports io.helidon.config.yaml;
-
-    provides io.helidon.config.spi.ConfigParser with YamlConfigParser;
-}
+package io.helidon.config.yaml.mp;

@@ -29,7 +29,7 @@ import javax.enterprise.inject.se.SeContainer;
 import javax.inject.Inject;
 
 import io.helidon.config.mp.MpConfigSources;
-import io.helidon.config.yaml.YamlMpConfigSource;
+import io.helidon.config.yaml.mp.YamlMpConfigSource;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.auths.k8s.ConfigureK8s;
 import io.helidon.integrations.vault.auths.k8s.CreateRole;

@@ -24,7 +24,7 @@
 
     <Match>
         <!-- Paths come from config/code -->
-        <Class name="io.helidon.config.yaml.YamlMpConfigSource"/>
+        <Class name="io.helidon.config.yaml.mp.YamlMpConfigSource"/>
         <Method name="create"/>
         <Bug pattern=" URLCONNECTION_SSRF_FD"/>
     </Match>
