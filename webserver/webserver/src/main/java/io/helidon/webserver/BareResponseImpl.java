@@ -221,6 +221,9 @@ class BareResponseImpl implements BareResponse {
             responseFuture.complete(this);
         } else {
             LOGGER.finer(() -> log("Response completion failed %s", throwable));
+            if (subscription != null) {
+                subscription.cancel();
+            }
             internallyClosed.set(true);
             responseFuture.completeExceptionally(throwable);
         }
@@ -234,6 +237,9 @@ class BareResponseImpl implements BareResponse {
      */
     private void completeInternal(Throwable throwable) {
         boolean wasClosed = !internallyClosed.compareAndSet(false, true);
+        if (wasClosed && subscription != null) {
+            subscription.cancel();
+        }
         orderedWrite(() -> completeInternalPipe(wasClosed, throwable));
     }
 
@@ -332,35 +338,34 @@ class BareResponseImpl implements BareResponse {
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-        this.subscription = subscription;
+        if (this.subscription != null) {
+            subscription.cancel();
+            return;
+        }
+        this.subscription = Objects.requireNonNull(subscription, "subscription is null");
         subscription.request(1);
     }
 
     @Override
     public void onNext(DataChunk data) {
-        if (internallyClosed.get()) {
+        Objects.requireNonNull(data, "DataChunk is null");
+        if (data.isFlushChunk()) {
+            if (prevRequestChunk == null) {
+                ctx.flush();
+            } else {
+                prevRequestChunk = prevRequestChunk.thenRun(ctx::flush);
+            }
             subscription.request(1);
-            throw new IllegalStateException("Response is already closed!");
+            return;
         }
-        if (data != null) {
-            if (data.isFlushChunk()) {
-                if (prevRequestChunk == null) {
-                   ctx.flush();
-                } else {
-                   prevRequestChunk = prevRequestChunk.thenRun(ctx::flush);
-                }
-                subscription.request(1);
-                return;
-            }
 
-            if (lengthOptimization && firstChunk == null) {
-                firstChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
-                subscription.request(1);
-                return;
-            }
-
-            orderedWrite(() -> onNextPipe(data));
+        if (lengthOptimization && firstChunk == null) {
+            firstChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
+            subscription.request(1);
+            return;
         }
+
+        orderedWrite(() -> onNextPipe(data));
     }
 
     /**
@@ -460,18 +465,13 @@ class BareResponseImpl implements BareResponse {
 
     @Override
     public void onError(Throwable thr) {
+        Objects.requireNonNull(thr, "throwable is null");
         completeInternal(thr);
-        if (subscription != null) {
-            subscription.cancel();
-        }
     }
 
     @Override
     public void onComplete() {
         completeInternal(null);
-        if (subscription != null) {
-            subscription.cancel();
-        }
     }
 
     @Override
