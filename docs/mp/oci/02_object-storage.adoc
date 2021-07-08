@@ -182,3 +182,37 @@ public Response delete(@PathParam("file-name") String fileName) {
 
 <1> Use `deleteObject` function and configure a `DeleteObject.Request.builder()` to submit the delete request
 <2> Return the result
+
+== Object Storage Health Check
+
+If your Helidon application depends on Object Storage accessibility, you may consider setting
+up a health check to verify connectivity with an OCI bucket. To do so, first add the following
+dependency in your pom file:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.oci</groupId>
+    <artifactId>helidon-integrations-oci-objectstorage-health</artifactId>
+</dependency>
+----
+
+By adding this dependency to your application, you get a (built-in) health check automatically
+registered for you. This health check is controlled by the Config properties `oci.objectstorage.namespace`
+and `oci.objectstorage.bucket`, in addition to the user-specific configuration under `~/.oci/config`.
+
+When executed, this health check will _ping_ the bucket to make sure it is accessible in your
+environment. For more information about health checks see <<mp/health/01_introduction.adoc,
+MicroProfile Health>>.
+
+
+
+
+
+
+
+
+
+
+
+
