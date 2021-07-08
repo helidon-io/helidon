@@ -204,15 +204,3 @@ and `oci.objectstorage.bucket`, in addition to the user-specific configuration u
 When executed, this health check will _ping_ the bucket to make sure it is accessible in your
 environment. For more information about health checks see <<mp/health/01_introduction.adoc,
 MicroProfile Health>>.
-
-
-
-
-
-
-
-
-
-
-
-

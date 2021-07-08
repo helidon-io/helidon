@@ -256,4 +256,3 @@ Routing routing = Routing.builder()
 When executed, this health check will _ping_ the bucket to make sure it is accessible in your
 environment. For more information about health checks see <<se/health/01_health.adoc,
 Health Checks>>.
-
