@@ -58,6 +58,15 @@ public class RSocketEndpoint extends Endpoint {
     }
 
     /**
+     * Get all connection information.
+     *
+     * @return
+     */
+    public static Map<String,ConnectionAcceptor> connectionAcceptorMap(){
+        return connectionAcceptorMap;
+    }
+
+    /**
      * Private constructor.
      * @param routing
      * @param path

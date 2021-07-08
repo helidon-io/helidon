@@ -44,6 +44,18 @@
             <groupId>io.helidon.rsocket</groupId>
             <artifactId>helidon-rsocket-server</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health-checks</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.rsocket</groupId>
+            <artifactId>helidon-rsocket-health</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

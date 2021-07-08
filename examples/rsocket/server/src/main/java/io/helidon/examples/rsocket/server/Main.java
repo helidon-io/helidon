@@ -18,6 +18,9 @@ package io.helidon.examples.rsocket.server;
 
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.health.HealthSupport;
+import io.helidon.health.checks.HealthChecks;
+import io.helidon.rsocket.health.RSocketHealthCheck;
 import io.helidon.rsocket.server.RSocketEndpoint;
 import io.helidon.rsocket.server.RSocketRouting;
 import io.helidon.rsocket.server.RSocketSupport;
@@ -46,16 +49,25 @@ public class Main {
                 .register(myRSocketService)
                 .build();
 
-        return Routing.builder()
+        HealthSupport health = HealthSupport.builder()
+                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .addLiveness(RSocketHealthCheck.create())   // Adds RSocket checks
+                .build();
+
+        Routing build = Routing.builder()
+                .register(health)
                 .register("/rsocket",
                         RSocketSupport.builder()
                                 .register(RSocketEndpoint.create(rSocketRouting, "/board")
                                         .getEndPoint()
                                 ).build())
                 .build();
+
+        return build;
     }
 
     static WebServer startWebServer() {
+
         WebServer server = WebServer.builder(createRouting())
                 .port(8080)
                 .build();

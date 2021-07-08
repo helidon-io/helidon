@@ -38,5 +38,6 @@
         <module>server</module>
         <module>client</module>
         <module>metrics</module>
+        <module>health</module>
     </modules>
 </project>

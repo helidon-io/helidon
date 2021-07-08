@@ -1095,6 +1095,16 @@
                 <artifactId>helidon-microprofile-rsocket-client</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.rsocket</groupId>
+                <artifactId>helidon-rsocket-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.rsocket</groupId>
+                <artifactId>helidon-rsocket-health</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Helidon tests tools -->
             <dependency>
                 <groupId>io.helidon.tests.integration.tools</groupId>

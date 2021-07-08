@@ -39,6 +39,14 @@
             <groupId>io.helidon.microprofile.rsocket</groupId>
             <artifactId>helidon-microprofile-rsocket-server</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.health</groupId>
+            <artifactId>helidon-microprofile-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.rsocket</groupId>
+            <artifactId>helidon-rsocket-health</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
