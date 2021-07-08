@@ -169,6 +169,7 @@
         <module>media</module>
         <module>webserver</module>
         <module>security</module>
+        <module>lra</module>
         <module>microprofile</module>
         <module>tracing</module>
         <module>bundles</module>

@@ -20,17 +20,31 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.microprofile</groupId>
-        <artifactId>helidon-microprofile-project</artifactId>
+        <groupId>io.helidon.lra</groupId>
+        <artifactId>helidon-lra-coordinator-client-project</artifactId>
         <version>2.3.2-SNAPSHOT</version>
     </parent>
 
-    <groupId>io.helidon.microprofile.lra</groupId>
-    <artifactId>helidon-microprofile-lra-project</artifactId>
-    <name>Helidon MicroProfile Long Running Actions Parent</name>
-    <packaging>pom</packaging>
+    <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
+    <name>Helidon LRA Coordinator Narayana Client</name>
 
-    <modules>
-        <module>jax-rs</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>org.eclipse.microprofile.lra</groupId>
+            <artifactId>microprofile-lra-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.lra</groupId>
+            <artifactId>helidon-lra-coordinator-client-spi</artifactId>
+        </dependency>
+    </dependencies>
 </project>

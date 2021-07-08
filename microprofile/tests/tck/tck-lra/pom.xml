@@ -31,13 +31,12 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.lra</groupId>
-            <artifactId>helidon-microprofile-lra-client</artifactId>
-            <version>${project.version}</version>
+            <artifactId>helidon-microprofile-lra</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.lra</groupId>
-            <artifactId>helidon-microprofile-lra-client-narayana</artifactId>
+            <groupId>io.helidon.lra</groupId>
+            <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -66,8 +65,8 @@
             </activation>
             <dependencies>
                 <dependency>
-                    <groupId>io.helidon.microprofile.lra</groupId>
-                    <artifactId>helidon-mock-lra-coordinator</artifactId>
+                    <groupId>io.helidon.lra</groupId>
+                    <artifactId>helidon-lra-coordinator-server</artifactId>
                     <version>${project.version}</version>
                     <scope>test</scope>
                 </dependency>

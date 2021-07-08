@@ -46,11 +46,11 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.lra</groupId>
-            <artifactId>helidon-microprofile-lra-client</artifactId>
+            <artifactId>helidon-microprofile-lra</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.lra</groupId>
-            <artifactId>helidon-microprofile-lra-client-narayana</artifactId>
+            <groupId>io.helidon.lra</groupId>
+            <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
