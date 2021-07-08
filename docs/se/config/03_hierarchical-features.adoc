@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ and `VALUE`.
 The following example is in link:https://github.com/lightbend/config/blob/master/HOCON.md[HOCON] 
 (human-optimized config object notation) format.
 The config system supports HOCON as an 
-<<config/08_supported-formats.adoc#Config-ModuleHocon,extension module>>.
+<<se/config/08_supported-formats.adoc#Config-ModuleHocon,extension module>>.
 
 [source,hocon]
 .HOCON `application.conf` file
@@ -292,7 +292,7 @@ Sometimes it can be convenient to write part of your application to deal with
 configuration without it knowing if or where the relevant configuration is plugged into
 a larger config tree. 
 
-For example, the <<config/01_introduction.adoc#create-simple-config-props,`application.properties`>>
+For example, the <<se/config/01_introduction.adoc#create-simple-config-props,`application.properties`>>
 from the introduction section contains several settings prefixed with `web` such as `web.page-size`.
 Perhaps in another config source the same information might be stored as
 `server.web.page-size`:

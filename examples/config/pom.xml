@@ -37,6 +37,7 @@
         <module>mapping</module>
         <module>overrides</module>
         <module>sources</module>
+        <module>profiles</module>
     </modules>
 
 </project>
