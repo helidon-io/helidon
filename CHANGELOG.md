@@ -9,11 +9,46 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ## [2.4.0-SNAPSHOT]
 
+This is a minor release of Helidon. It contains bug fixes and enhancements.
+
 ### Compatibility
-`YamlMpConfigSource` has been moved to module `io.helidon.config:helidon-config-yaml-mp`. This is due to wrong JPMS definition where we could not provide a service of an optional dependency. To fix the dependency graph (so we do not depend on MP config from SE config), we had to create a new module.
+
+2.4.0 is generally API compatible with 2.3.0. There has been a change that might impact a small number of our users:
+
+
+* `YamlMpConfigSource` has been moved to module `io.helidon.config:helidon-config-yaml-mp`. This is due to wrong JPMS definition where we could not provide a service of an optional dependency. To fix the dependency graph (so we do not depend on MP config from SE config), we had to create a new module.
 If you use this class directly, please update your dependencies (this may not be required, as it is on classpath of all MP applications), and change the package to `io.helidon.config.yaml.mp`.
 
 ### CHANGES
+
+## [2.3.2]
+
+This is a bug fix release of Helidon. It contains bug fixes and minor enhancements. We recommend all Helidon 2.x users upgrade to this release.
+
+### Compatibility
+
+2.3.2 is API compatible with 2.3.0.
+
+### CHANGES
+
+- Health: Health check for OCI ObjectStorage that works in SE and MP [3157](https://github.com/oracle/helidon/pull/3157)
+- Logging: Fix Bug #3032 with SLF4J dependancy [3047](https://github.com/oracle/helidon/pull/3047)
+- Metrics: Correct the reported Prometheus metric type for ConcurrentGauge metrics [3160](https://github.com/oracle/helidon/pull/3160)
+- Metrics: Fix incorrect handling of omitted display name (and description) revealed by gRPC [3178](https://github.com/oracle/helidon/pull/3178)
+- Security: Allowed cipher suite can now be specified for WebServer and WebClient [3144](https://github.com/oracle/helidon/pull/3144)
+- Security: Audit does not format message if not loggable. [3156](https://github.com/oracle/helidon/pull/3156) [3162](https://github.com/oracle/helidon/pull/3162)
+- Tests: Fixed failing mp-graphql integration test when using JDK17 (#3100) [3176](https://github.com/oracle/helidon/pull/3176)
+- Tracing: Improved handling of Jaeger spans/scopes across threads [3134](https://github.com/oracle/helidon/pull/3134)
+- Utils: Loom support moved to ThreadPoolSupplier [3164](https://github.com/oracle/helidon/pull/3164)
+- Vault: Custom path for Vault auth methods [3161](https://github.com/oracle/helidon/pull/3161)
+- WebServer: Reactive streams compliant BareResponseImpl [3153](https://github.com/oracle/helidon/pull/3153)
+- WebServer: Set content-length to 0 if empty response [3135](https://github.com/oracle/helidon/pull/3135)
+- Docs: Fixed typos in link [3167](https://github.com/oracle/helidon/pull/3167)
+- Docs: New note about the generation of passphrase protected PKCS#1 keys [3145](https://github.com/oracle/helidon/pull/3145)
+- Documentation SE : OIDC Postman extension [2740](https://github.com/oracle/helidon/pull/2740)
+- Examples: Fix for exec:java to exec:exec [3148](https://github.com/oracle/helidon/pull/3148)
+- Examples: Remove jakarta.activation dependency from examples and archetypes [3155](https://github.com/oracle/helidon/pull/3155)
+
 
 ## [2.3.1]
 
