@@ -45,32 +45,33 @@
             <version>1.0-RC3</version>
         </dependency>
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-ri</artifactId>
-            <version>3.0.0</version>
-            <type>pom</type>
+            <groupId>io.helidon.lra</groupId>
+            <artifactId>helidon-lra-coordinator-server</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.shrinkwrap</groupId>
             <artifactId>shrinkwrap-api</artifactId>
             <version>1.2.6</version>
         </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-ri</artifactId>
+            <version>3.0.0</version>
+            <type>pom</type>
+        </dependency>
     </dependencies>
 
     <profiles>
         <profile>
-            <id>mock-coordinator</id>
+            <id>internal-coordinator</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>io.helidon.lra</groupId>
-                    <artifactId>helidon-lra-coordinator-server</artifactId>
-                    <version>${project.version}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
+            <properties>
+                <tck.lra.coordinator.url>http://localhost:8071/lra-coordinator</tck.lra.coordinator.url>
+            </properties>
         </profile>
     </profiles>
     

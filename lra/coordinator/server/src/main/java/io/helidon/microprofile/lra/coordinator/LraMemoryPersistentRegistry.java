@@ -17,51 +17,38 @@
 
 package io.helidon.microprofile.lra.coordinator;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+
 import io.helidon.common.reactive.Multi;
 
-/**
- * Persistable lra registry.
- */
-public interface LraPersistentRegistry {
+class LraMemoryPersistentRegistry implements LraPersistentRegistry {
 
-    /**
-     * Load persisted Lras.
-     */
-    void load();
+    private final Map<String, Lra> lraMap = Collections.synchronizedMap(new HashMap<>());
 
-    /**
-     * Persist Lras.
-     */
-    void save();
+    public Lra get(String lraId) {
+        return lraMap.get(lraId);
+    }
 
-    /**
-     * Get Lra by id.
-     *
-     * @param lraId to look for
-     * @return lra if exist
-     */
-    Lra get(String lraId);
+    public void put(String key, Lra lra) {
+        lraMap.put(key, lra);
+    }
 
-    /**
-     * Add new Lra.
-     *
-     * @param lraId id of new lra
-     * @param lra   Lra
-     */
-    void put(String lraId, Lra lra);
+    public void remove(String key) {
+        lraMap.remove(key);
+    }
 
-    /**
-     * Remove lra by id.
-     *
-     * @param lraId of the Lra to be removed
-     */
-    void remove(String lraId);
+    public Multi<Lra> stream() {
+        return Multi.create(new HashSet<>(lraMap.values()));
+    }
 
-    /**
-     * Stream of all Lras.
-     *
-     * @return stream of all the Lras
-     */
-    Multi<Lra> stream();
+    public void load() {
 
+    }
+
+    public void save() {
+
+    }
 }

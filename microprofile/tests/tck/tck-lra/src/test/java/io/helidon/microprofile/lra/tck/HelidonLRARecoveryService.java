@@ -32,13 +32,13 @@ public class HelidonLRARecoveryService implements LRARecoveryService {
     private static final Logger LOGGER = Logger.getLogger(HelidonLRARecoveryService.class.getName());
 
     private static final String coordinatorUrl =
-            System.getProperty("lra.coordinator.url", "http://localhost:8070/lra-coordinator");
+            System.getProperty("lra.coordinator.url", CoordinatorDeployer.LOCAL_COORDINATOR_URL);
 
     @Override
     public void waitForCallbacks(URI lraId) {
-        if (CoordinatorDeployer.USE_MOCK_COODINATOR) {
-            // mock coordinator has simple recovery loop
-            // narayana does recovery with backoff, this would take ages
+        if (CoordinatorDeployer.LOCAL_COORDINATOR_URL.equals(coordinatorUrl)) {
+            // Helidon coordinator has simple recovery loop
+            // Narayana does recovery with backoff, this would take ages
             try {
                 this.waitForRecovery(lraId);
             } catch (LRACallbackException e) {

@@ -25,10 +25,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Entity;
@@ -38,10 +39,9 @@ import javax.ws.rs.core.UriBuilder;
 
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.common.reactive.Single;
-import io.helidon.microprofile.config.ConfigCdiExtension;
-import io.helidon.microprofile.lra.coordinator.Coordinator;
-import io.helidon.microprofile.lra.coordinator.CoordinatorApplication;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
+import io.helidon.microprofile.config.ConfigCdiExtension;
+import io.helidon.microprofile.lra.coordinator.CoordinatorService;
 import io.helidon.microprofile.lra.resources.CdiCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.CdiNestedCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.CommonAfter;
@@ -54,9 +54,9 @@ import io.helidon.microprofile.lra.resources.StartAndAfter;
 import io.helidon.microprofile.lra.resources.TestApplication;
 import io.helidon.microprofile.lra.resources.Timeout;
 import io.helidon.microprofile.lra.resources.Work;
-import io.helidon.microprofile.scheduling.SchedulingCdiExtension;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.RoutingName;
+import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
@@ -65,13 +65,13 @@ import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
+import io.helidon.webserver.Service;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.hamcrest.core.AnyOf;
 import org.hamcrest.core.IsNull;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -109,13 +109,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @AddBean(RecoveryStatus.class)
 @AddBean(CdiNestedCompleteOrCompensate.class)
 @AddBean(JaxRsNestedCompleteOrCompensate.class)
-// Mock coordinator
+// Coordinator
 // comment out below annotations to use external coordinator
-@AddBean(Coordinator.class)
-@AddBean(CoordinatorApplication.class)
-@AddExtension(SchedulingCdiExtension.class)
-@AddConfig(key = "io.helidon.microprofile.lra.coordinator.CoordinatorApplication."
-        + RoutingName.CONFIG_KEY_NAME, value = "coordinator")
 @AddConfig(key = "server.sockets.0.name", value = "coordinator")
 @AddConfig(key = "server.sockets.0.port", value = "8070")
 @AddConfig(key = "server.sockets.0.bind-address", value = "localhost")
@@ -123,9 +118,24 @@ public class BasicTest {
 
     private static final long TIMEOUT_SEC = 10L;
 
-    private static ScheduledExecutorService executor;
     private final Map<String, CompletableFuture<URI>> completionMap = new HashMap<>();
 
+    @Produces
+    @ApplicationScoped
+    @RoutingName(value = "coordinator", required = true)
+    @RoutingPath("/lra-coordinator")
+    public Service coordinatorService() {
+        return CoordinatorService.create();
+    }
+    
+    @Inject
+    CoordinatorClient coordinatorClient;
+
+    @BeforeEach
+    void setUp() {
+        completionMap.clear();
+    }
+    
     @SuppressWarnings("unchecked")
     public synchronized <T> CompletableFuture<T> getCompletable(String key, URI lraId) {
         String combinedKey = key + Optional.ofNullable(lraId).map(URI::toASCIIString).orElse("");
@@ -143,24 +153,6 @@ public class BasicTest {
 
     public <T> T await(String key) {
         return Single.<T>create(getCompletable(key), true).await(TIMEOUT_SEC, TimeUnit.SECONDS);
-    }
-
-    @Inject
-    CoordinatorClient coordinatorClient;
-
-    @BeforeAll
-    static void beforeAll() {
-        executor = ScheduledThreadPoolSupplier.create().get();
-    }
-
-    @BeforeEach
-    void setUp() {
-        completionMap.clear();
-    }
-
-    @AfterAll
-    static void afterAll() {
-        executor.shutdownNow();
     }
 
     @Test
@@ -476,24 +468,24 @@ public class BasicTest {
             WebClient client = WebClient.builder()
                     .baseUri("http://localhost:8070/lra-coordinator")
                     .build();
-            
-                WebClientResponse response = client
-                        .get()
-                        .path("recovery")
-                        .submit()
-                        .await(TIMEOUT_SEC, TimeUnit.SECONDS);
 
-                String recoveringLras = response
-                        .content()
-                        .as(String.class)
-                        .await(TIMEOUT_SEC, TimeUnit.SECONDS);
-                response.close();
-                if (!recoveringLras.contains(lraId.toASCIIString())) {
-                    System.out.println("LRA is no longer among those recovering " + lraId.toASCIIString());
-                    // intended LRA is not longer among those recovering
-                    break;
-                }
-                System.out.println("Waiting for recovery attempt #" + i + " LRA is still waiting: " + recoveringLras);
+            WebClientResponse response = client
+                    .get()
+                    .path("recovery")
+                    .submit()
+                    .await(TIMEOUT_SEC, TimeUnit.SECONDS);
+
+            String recoveringLras = response
+                    .content()
+                    .as(String.class)
+                    .await(TIMEOUT_SEC, TimeUnit.SECONDS);
+            response.close();
+            if (!recoveringLras.contains(lraId.toASCIIString())) {
+                System.out.println("LRA is no longer among those recovering " + lraId.toASCIIString());
+                // intended LRA is not longer among those recovering
+                break;
+            }
+            System.out.println("Waiting for recovery attempt #" + i + " LRA is still waiting: " + recoveringLras);
         }
     }
 }

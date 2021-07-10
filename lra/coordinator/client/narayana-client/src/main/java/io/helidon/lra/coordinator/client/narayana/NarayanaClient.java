@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *  
+ *
  */
 package io.helidon.lra.coordinator.client.narayana;
 
@@ -261,13 +261,13 @@ public class NarayanaClient implements CoordinatorClient {
      */
     private String compensatorLinks(Participant p) {
         return Map.of(
-                        "compensate", p.compensate(),
-                        "complete", p.complete(),
-                        "forget", p.forget(),
-                        "leave", p.leave(),
-                        "after", p.after(),
-                        "status", p.status()
-                )
+                "compensate", p.compensate(),
+                "complete", p.complete(),
+                "forget", p.forget(),
+                "leave", p.leave(),
+                "after", p.after(),
+                "status", p.status()
+        )
                 .entrySet()
                 .stream()
                 .filter(e -> e.getValue().isPresent())

@@ -1,5 +1,3 @@
-import io.helidon.lra.coordinator.client.narayana.NarayanaClient;
-
 /*
  * Copyright (c) 2021 Oracle and/or its affiliates.
  *

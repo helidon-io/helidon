@@ -18,12 +18,15 @@ package io.helidon.microprofile.lra.coordinator;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -34,6 +37,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlID;
 import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 
 import io.helidon.common.http.Headers;
 import io.helidon.webclient.WebClientRequestHeaders;
@@ -53,18 +57,21 @@ class Lra {
 
     private long timeout;
     private URI parentId;
-    private final Set<String> compensatorLinks = new HashSet<>();
+    private final Set<String> compensatorLinks = Collections.synchronizedSet(new HashSet<>());
 
     @XmlID
     private String lraId;
 
     @XmlIDREF
-    private final List<Lra> children = new ArrayList<>();
+    private final List<Lra> children = Collections.synchronizedList(new ArrayList<>());
 
     @XmlElement
     private final List<Participant> participants = new CopyOnWriteArrayList<>();
 
     private final AtomicReference<LRAStatus> status = new AtomicReference<>(LRAStatus.Active);
+
+    @XmlTransient
+    private final Lock lock = new ReentrantLock();
 
     private boolean isChild;
     private long whenReadyToDelete = 0;
@@ -97,7 +104,7 @@ class Lra {
         return timeout > 0 && timeout < System.currentTimeMillis();
     }
 
-    synchronized void addParticipant(String compensatorLink) {
+    void addParticipant(String compensatorLink) {
         if (compensatorLinks.add(compensatorLink)) {
             Participant participant = new Participant();
             participant.parseCompensatorLinks(compensatorLink);
@@ -105,14 +112,14 @@ class Lra {
         }
     }
 
-    synchronized void removeParticipant(String compensatorUrl) {
+    void removeParticipant(String compensatorUrl) {
         Set<Participant> forRemove = participants.stream()
                 .filter(p -> p.equalCompensatorUris(compensatorUrl))
                 .collect(Collectors.toSet());
         forRemove.forEach(participants::remove);
     }
 
-    synchronized void addChild(Lra lra) {
+    void addChild(Lra lra) {
         children.add(lra);
         lra.isChild = true;
     }
@@ -129,24 +136,30 @@ class Lra {
         };
     }
 
-    synchronized void close() {
+    void close() {
         Set<LRAStatus> allowedStatuses = Set.of(LRAStatus.Active, LRAStatus.Closing);
         if (LRAStatus.Closing != status.updateAndGet(old -> allowedStatuses.contains(old) ? LRAStatus.Closing : old)) {
             LOGGER.warning("Can't close LRA, it's already " + status.get().name() + " " + this.lraId);
             return;
         }
-        sendComplete();
-        // needs to go before nested close, so we know if nested was already closed
-        // or not(non closed nested can't get @Forget call)
-        forgetNested();
-        for (Lra nestedLra : children) {
-            nestedLra.close();
+        if (lock.tryLock()) {
+            try {
+                sendComplete();
+                // needs to go before nested close, so we know if nested was already closed
+                // or not(non closed nested can't get @Forget call)
+                forgetNested();
+                for (Lra nestedLra : children) {
+                    nestedLra.close();
+                }
+                trySendAfterLRA();
+                markForDeletion();
+            } finally {
+                lock.unlock();
+            }
         }
-        trySendAfterLRA();
-        markForDeletion();
     }
 
-    synchronized void cancel() {
+    void cancel() {
         Set<LRAStatus> allowedStatuses = Set.of(LRAStatus.Active, LRAStatus.Cancelling);
         if (LRAStatus.Cancelling != status.updateAndGet(old -> allowedStatuses.contains(old) ? LRAStatus.Cancelling : old)
                 && !isChild) { // nested can be compensated even if closed
@@ -156,20 +169,32 @@ class Lra {
         for (Lra nestedLra : children) {
             nestedLra.cancel();
         }
-        sendCancel();
-        trySendAfterLRA();
-        trySendForgetLRA();
-        markForDeletion();
+        if (lock.tryLock()) {
+            try {
+                sendCancel();
+                trySendAfterLRA();
+                trySendForgetLRA();
+                markForDeletion();
+            } finally {
+                lock.unlock();
+            }
+        }
     }
 
-    synchronized void timeout() {
+    void timeout() {
         for (Lra nestedLra : children) {
             if (nestedLra.participants.stream().anyMatch(p -> p.state().isFinal() || p.isListenerOnly())) {
                 nestedLra.timeout();
             }
         }
         cancel();
-        trySendAfterLRA();
+        if (lock.tryLock()) {
+            try {
+                trySendAfterLRA();
+            } finally {
+                lock.unlock();
+            }
+        }
     }
 
     private boolean forgetNested() {
@@ -187,12 +212,26 @@ class Lra {
     }
 
 
-    synchronized boolean tryAfter() {
-        return trySendAfterLRA();
+    boolean tryAfter() {
+        if (lock.tryLock()) {
+            try {
+                return trySendAfterLRA();
+            } finally {
+                lock.unlock();
+            }
+        }
+        return false;
     }
 
-    synchronized boolean tryForget() {
-        return trySendForgetLRA();
+    boolean tryForget() {
+        if (lock.tryLock()) {
+            try {
+                return trySendForgetLRA();
+            } finally {
+                lock.unlock();
+            }
+        }
+        return false;
     }
 
     private boolean trySendForgetLRA() {

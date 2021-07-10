@@ -30,58 +30,37 @@ import org.jboss.arquillian.container.spi.event.container.BeforeStart;
 import org.jboss.arquillian.container.spi.event.container.BeforeUnDeploy;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 
 public class CoordinatorDeployer {
 
-    static final boolean USE_MOCK_COODINATOR;
-
-    static {
-        boolean mockAvailable = false;
-        try {
-            Class.forName("io.helidon.microprofile.lra.coordinator.Coordinator");
-            mockAvailable = true;
-        } catch (ClassNotFoundException e) {
-            // Mock coordinator not on the classpath
-        }
-        USE_MOCK_COODINATOR = mockAvailable;
-    }
+    static final String COORDINATOR_ROUTING_NAME = "coordinator";
+    static final String COORDINATOR_REGISTRY = "target/mock-coordinator/lra-registry";
+    static final String LOCAL_COORDINATOR_URL = "http://localhost:8071/lra-coordinator";
 
     public void beforeStart(@Observes BeforeStart event, Container container) throws Exception {
         HelidonDeployableContainer helidonContainer = (HelidonDeployableContainer) container.getDeployableContainer();
         HelidonContainerConfiguration containerConfig = helidonContainer.getContainerConfig();
 
-        String coordinatorUrl = System.getProperty("lra.coordinator.url", "http://localhost:8070/lra-coordinator");
+        Files.deleteIfExists(Paths.get(COORDINATOR_REGISTRY));
+
+        String coordinatorUrl = System.getProperty("lra.coordinator.url", LOCAL_COORDINATOR_URL);
+
         containerConfig.set("mp.lra.coordinator.url", coordinatorUrl);
-
-        if (!USE_MOCK_COODINATOR) return;
-
-        Files.deleteIfExists(Paths.get("target/mock-coordinator/lra-registry"));
-
-        containerConfig.set("lra.tck.coordinator.persist", "true");
-        containerConfig.set("server.sockets.0.name", "coordinator");
-        containerConfig.set("server.sockets.0.port", "8070");
+        containerConfig.set("mp.lra.coordinator.registry", COORDINATOR_REGISTRY);
+        containerConfig.set("server.sockets.0.name", COORDINATOR_ROUTING_NAME);
+        containerConfig.set("server.sockets.0.port", "8071");
         containerConfig.set("server.sockets.0.bind-address", "localhost");
 
         JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class)
-                .addAsManifestResource(new StringAsset(
-                        "<beans xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
-                                "       xmlns=\"http://xmlns.jcp.org/xml/ns/javaee\"\n" +
-                                "       xsi:schemaLocation=\"http://xmlns.jcp.org/xml/ns/javaee\n" +
-                                "                           http://xmlns.jcp.org/xml/ns/javaee/beans_2_0.xsd\"\n" +
-                                "       version=\"2.0\"\n" +
-                                "       bean-discovery-mode=\"annotated\">\n" +
-                                "</beans>"), "beans.xml");
-
+                .addClass(CoordinatorAppService.class);
 
         helidonContainer.getAdditionalArchives().add(javaArchive);
 
     }
 
     public void beforeUndeploy(@Observes BeforeUnDeploy event, Container container) throws DeploymentException {
-        if (!USE_MOCK_COODINATOR) return;
-        // Gracefully stop the container so mock coordinator gets the chance to persist lra registry
+        // Gracefully stop the container so coordinator gets the chance to persist lra registry
         try {
             CDI<Object> current = CDI.current();
             ((SeContainer) current).close();

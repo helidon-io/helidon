@@ -17,9 +17,9 @@
 package io.helidon.microprofile.lra.coordinator;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -31,12 +31,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.ws.rs.core.Link;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
@@ -60,7 +57,8 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVER
 @XmlAccessorType(XmlAccessType.FIELD)
 class Participant {
 
-    private static final int RETRY_CNT = 30;
+    private static final int RETRY_CNT = 60;
+    private static final int SYNCHRONOUS_RETRY_CNT = 5;
 
     private static final Logger LOGGER = Logger.getLogger(Participant.class.getName());
     private final AtomicReference<CompensateStatus> compensateCalled = new AtomicReference<>(CompensateStatus.NOT_SENT);
@@ -140,54 +138,52 @@ class Participant {
         NOT_SENT, SENDING, SENT;
     }
 
-    @XmlElement
-    @XmlJavaTypeAdapter(Link.JaxbAdapter.class)
-    private final List<Link> compensatorLinks = new ArrayList<>(5);
+    private final Map<String, URI> compensatorLinks = new HashMap<>();
 
     void parseCompensatorLinks(String compensatorLinks) {
         Stream.of(compensatorLinks.split(","))
                 .filter(s -> !s.isBlank())
                 .map(Link::valueOf)
-                .forEach(this.compensatorLinks::add);
+                .forEach(link -> this.compensatorLinks.put(link.rel(), link.uri()));
     }
 
-    Optional<Link> getCompensatorLink(String rel) {
-        return compensatorLinks.stream().filter(l -> rel.equals(l.getRel())).findFirst();
+    Optional<URI> getCompensatorLink(String rel) {
+        return Optional.ofNullable(compensatorLinks.get(rel));
     }
 
     /**
      * Invoked when closed 200, 202, 409, 410.
      */
     public Optional<URI> getCompleteURI() {
-        return getCompensatorLink("complete").map(Link::getUri);
+        return getCompensatorLink("complete");
     }
 
     /**
      * Invoked when cancelled 200, 202, 409, 410.
      */
     public Optional<URI> getCompensateURI() {
-        return getCompensatorLink("compensate").map(Link::getUri);
+        return getCompensatorLink("compensate");
     }
 
     /**
      * Invoked when finalized 200.
      */
     public Optional<URI> getAfterURI() {
-        return getCompensatorLink("after").map(Link::getUri);
+        return getCompensatorLink("after");
     }
 
     /**
      * Invoked when cleaning up 200, 410.
      */
     public Optional<URI> getForgetURI() {
-        return getCompensatorLink("forget").map(Link::getUri);
+        return getCompensatorLink("forget");
     }
 
     /**
      * Directly updates status of participant 200, 202, 410.
      */
     public Optional<URI> getStatusURI() {
-        return getCompensatorLink("status").map(Link::getUri);
+        return getCompensatorLink("status");
     }
 
     Status state() {
@@ -208,175 +204,187 @@ class Participant {
 
     boolean sendCancel(Lra lra) {
         Optional<URI> endpointURI = getCompensateURI();
-        if (!sendingStatus.compareAndSet(SendingStatus.NOT_SENDING, SendingStatus.SENDING)) return false;
-        if (!compensateCalled.compareAndSet(CompensateStatus.NOT_SENT, CompensateStatus.SENDING)) return false;
-        try {
-            if (!status.get().equals(Status.ACTIVE)) {// call for client status only on retries
-                // If the participant does not support idempotency then it MUST be able to report its status
-                // by annotating one of the methods with the @Status annotation which should report the status
-                // in case we can't retrieve status from participant just retry n times
-                ParticipantStatus reportedClientStatus = retrieveStatus(lra, Compensating).orElse(null);
-                if (reportedClientStatus == Compensated) {
-                    LOGGER.log(Level.INFO, "Participant reports it is compensated.");
-                    status.set(Status.COMPENSATED);
-                    return true;
-                } else if (reportedClientStatus == FailedToCompensate) {
-                    LOGGER.log(Level.INFO, "Participant reports it failed to compensate.");
-                    status.set(Status.FAILED_TO_COMPENSATE);
-                    return true;
-                } else if (remainingCloseAttempts.decrementAndGet() <= 0) {
-                    LOGGER.log(Level.INFO, "Participant didnt report final status after {0} status call retries.",
-                            new Object[] {RETRY_CNT});
-                    status.set(Status.FAILED_TO_COMPENSATE);
-                    return true;
+        for (int i = 0; i < SYNCHRONOUS_RETRY_CNT; i++) {
+            if (!sendingStatus.compareAndSet(SendingStatus.NOT_SENDING, SendingStatus.SENDING)) return false;
+            if (!compensateCalled.compareAndSet(CompensateStatus.NOT_SENT, CompensateStatus.SENDING)) return false;
+            try {
+                if (!status.get().equals(Status.ACTIVE)) {// call for client status only on retries
+                    // If the participant does not support idempotency then it MUST be able to report its status
+                    // by annotating one of the methods with the @Status annotation which should report the status
+                    // in case we can't retrieve status from participant just retry n times
+                    ParticipantStatus reportedClientStatus = retrieveStatus(lra, Compensating).orElse(null);
+                    if (reportedClientStatus == Compensated) {
+                        LOGGER.log(Level.INFO, "Participant reports it is compensated.");
+                        status.set(Status.COMPENSATED);
+                        return true;
+                    } else if (reportedClientStatus == FailedToCompensate) {
+                        LOGGER.log(Level.INFO, "Participant reports it failed to compensate.");
+                        status.set(Status.FAILED_TO_COMPENSATE);
+                        return true;
+                    } else if (remainingCloseAttempts.decrementAndGet() <= 0) {
+                        LOGGER.log(Level.INFO, "Participant didnt report final status after {0} status call retries.",
+                                new Object[] {RETRY_CNT});
+                        status.set(Status.FAILED_TO_COMPENSATE);
+                        return true;
+                    }
                 }
+
+                WebClientResponse response = WebClient.builder()
+                        .baseUri(endpointURI.get())
+                        .build()
+                        .put()
+                        .headers(lra.headers())
+                        .submit(LRAStatus.Cancelled.name())
+                        .await(500, TimeUnit.MILLISECONDS);
+
+                switch (response.status().code()) {
+                    // complete or compensated
+                    case 200:
+                    case 410:
+                        LOGGER.log(Level.INFO, "Compensated participant of LRA {0} {1}",
+                                new Object[] {lra.lraId(), this.getCompensateURI()});
+                        status.set(Status.COMPENSATED);
+                        compensateCalled.set(CompensateStatus.SENT);
+                        return true;
+
+                    // retryable
+                    case 202:
+                        // Still compensating, check with @Status later
+                        this.status.set(Status.CLIENT_COMPENSATING);
+                        return false;
+                    case 409:
+                    case 404:
+                    case 503:
+                    default:
+                        throw new Exception(response.status().code() + " " + response.status().reasonPhrase());
+                }
+
+            } catch (Exception e) {
+                if (remainingCloseAttempts.decrementAndGet() <= 0) {
+                    LOGGER.log(Level.WARNING, "Failed to compensate participant of LRA {0} {1} {2}",
+                            new Object[] {lra.lraId(), this.getCompensateURI(), e.getMessage()});
+                    status.set(Status.FAILED_TO_COMPENSATE);
+                } else {
+                    status.set(Status.COMPENSATING);
+                }
+
+            } finally {
+                sendingStatus.set(SendingStatus.NOT_SENDING);
+                compensateCalled.compareAndSet(CompensateStatus.SENDING, CompensateStatus.NOT_SENT);
             }
-
-            WebClientResponse response = WebClient.builder()
-                    .baseUri(endpointURI.get())
-                    .build()
-                    .put()
-                    .headers(lra.headers())
-                    .submit(LRAStatus.Cancelled.name())
-                    .await(500, TimeUnit.MILLISECONDS);
-
-            switch (response.status().code()) {
-                // complete or compensated
-                case 200:
-                case 410:
-                    LOGGER.log(Level.INFO, "Compensated participant of LRA {0} {1}",
-                            new Object[] {lra.lraId(), this.getCompensateURI()});
-                    status.set(Status.COMPENSATED);
-                    compensateCalled.set(CompensateStatus.SENT);
-                    return true;
-
-                // retryable
-                case 202:
-                    // Still compensating, check with @Status later
-                    this.status.set(Status.CLIENT_COMPENSATING);
-                    return false;
-                case 409:
-                case 404:
-                case 503:
-                default:
-                    throw new Exception(response.status().code() + " " + response.status().reasonPhrase());
-            }
-
-        } catch (Exception e) {
-            if (remainingCloseAttempts.decrementAndGet() <= 0) {
-                LOGGER.log(Level.WARNING, "Failed to compensate participant of LRA {0} {1} {2}",
-                        new Object[] {lra.lraId(), this.getCompensateURI(), e.getMessage()});
-                status.set(Status.FAILED_TO_COMPENSATE);
-            } else {
-                status.set(Status.COMPENSATING);
-            }
-
-        } finally {
-            sendingStatus.set(SendingStatus.NOT_SENDING);
-            compensateCalled.compareAndSet(CompensateStatus.SENDING, CompensateStatus.NOT_SENT);
         }
         return false;
     }
 
     boolean sendComplete(Lra lra) {
         Optional<URI> endpointURI = getCompleteURI();
-        if (!sendingStatus.compareAndSet(SendingStatus.NOT_SENDING, SendingStatus.SENDING)) return false;
-        try {
-            if (status.get().isFinal()) {
-                return true;
-            } else if (!status.get().equals(Status.ACTIVE)) {// call for client status only on retries
-                // If the participant does not support idempotency then it MUST be able to report its status
-                // by annotating one of the methods with the @Status annotation which should report the status
-                // in case we can't retrieve status from participant just retry n times
-                ParticipantStatus reportedClientStatus = retrieveStatus(lra, Completing).orElse(null);
-                if (reportedClientStatus == Completed) {
-                    LOGGER.log(Level.INFO, "Participant reports it is completed.");
-                    status.set(Status.COMPLETED);
+        for (int i = 0; i < SYNCHRONOUS_RETRY_CNT; i++) {
+            if (!sendingStatus.compareAndSet(SendingStatus.NOT_SENDING, SendingStatus.SENDING)) return false;
+            try {
+                if (status.get().isFinal()) {
                     return true;
-                } else if (reportedClientStatus == FailedToComplete) {
-                    LOGGER.log(Level.INFO, "Participant reports it failed to complete.");
-                    status.set(Status.FAILED_TO_COMPLETE);
-                    return true;
-                } else if (reportedClientStatus == Completing) {
-                    LOGGER.log(Level.INFO, "Participant reports it is still completing.");
-                    status.set(Status.CLIENT_COMPLETING);
-                    return false;
-                } else if (remainingCloseAttempts.decrementAndGet() <= 0) {
-                    LOGGER.log(Level.INFO, "Participant didnt report final status after {0} status call retries.",
-                            new Object[] {RETRY_CNT});
-                    status.set(Status.FAILED_TO_COMPLETE);
-                    return true;
+                } else if (!status.get().equals(Status.ACTIVE)) {// call for client status only on retries
+                    // If the participant does not support idempotency then it MUST be able to report its status
+                    // by annotating one of the methods with the @Status annotation which should report the status
+                    // in case we can't retrieve status from participant just retry n times
+                    ParticipantStatus reportedClientStatus = retrieveStatus(lra, Completing).orElse(null);
+                    if (reportedClientStatus == Completed) {
+                        LOGGER.log(Level.INFO, "Participant reports it is completed.");
+                        status.set(Status.COMPLETED);
+                        return true;
+                    } else if (reportedClientStatus == FailedToComplete) {
+                        LOGGER.log(Level.INFO, "Participant reports it failed to complete.");
+                        status.set(Status.FAILED_TO_COMPLETE);
+                        return true;
+                    } else if (reportedClientStatus == Completing) {
+                        LOGGER.log(Level.INFO, "Participant reports it is still completing.");
+                        status.set(Status.CLIENT_COMPLETING);
+                        return false;
+                    } else if (remainingCloseAttempts.decrementAndGet() <= 0) {
+                        LOGGER.log(Level.INFO, "Participant didnt report final status after {0} status call retries.",
+                                new Object[] {RETRY_CNT});
+                        status.set(Status.FAILED_TO_COMPLETE);
+                        return true;
+                    }
                 }
-            }
-            WebClientResponse response = WebClient
-                    .builder()
-                    .baseUri(endpointURI.get())
-                    .build()
-                    .put()
-                    .headers(lra.headers())
-                    .submit(LRAStatus.Closed.name())
-                    .await(500, TimeUnit.MILLISECONDS);
+                WebClientResponse response = WebClient
+                        .builder()
+                        .baseUri(endpointURI.get())
+                        .build()
+                        .put()
+                        .headers(lra.headers())
+                        .submit(LRAStatus.Closed.name())
+                        .await(500, TimeUnit.MILLISECONDS);
 
-            switch (response.status().code()) {
-                // complete or compensated
-                case 200:
-                case 410:
-                    status.set(Status.COMPLETED);
-                    return true;
+                switch (response.status().code()) {
+                    // complete or compensated
+                    case 200:
+                    case 410:
+                        status.set(Status.COMPLETED);
+                        return true;
 
-                // retryable
-                case 202:
-                    // Still completing, check with @Status later
-                    this.status.set(Status.CLIENT_COMPLETING);
-                    return false;
-                case 409:
-                case 404:
-                case 503:
-                default:
-                    throw new Exception(response.status().code() + " " + response.status().reasonPhrase());
-            }
+                    // retryable
+                    case 202:
+                        // Still completing, check with @Status later
+                        this.status.set(Status.CLIENT_COMPLETING);
+                        return false;
+                    case 409:
+                    case 404:
+                    case 503:
+                    default:
+                        throw new Exception(response.status().code() + " " + response.status().reasonPhrase());
+                }
 
-        } catch (Exception e) {
-            if (remainingCloseAttempts.decrementAndGet() <= 0) {
-                LOGGER.log(Level.WARNING, "Failed to complete participant of LRA {0} {1} {2}",
-                        new Object[] {lra.lraId(), this.getCompleteURI(), e.getMessage()});
-                status.set(Status.FAILED_TO_COMPLETE);
-            } else {
-                status.set(Status.COMPLETING);
+            } catch (Exception e) {
+                if (remainingCloseAttempts.decrementAndGet() <= 0) {
+                    LOGGER.log(Level.WARNING, "Failed to complete participant of LRA {0} {1} {2}",
+                            new Object[] {lra.lraId(), this.getCompleteURI(), e.getMessage()});
+                    status.set(Status.FAILED_TO_COMPLETE);
+                } else {
+                    status.set(Status.COMPLETING);
+                }
+            } finally {
+                sendingStatus.set(SendingStatus.NOT_SENDING);
             }
-        } finally {
-            sendingStatus.set(SendingStatus.NOT_SENDING);
         }
         return false;
     }
 
     boolean trySendAfterLRA(Lra lra) {
-        // Participant in right state
-        if (!isInEndStateOrListenerOnly()) return false;
-        // LRA in right state
-        if (!(Set.of(LRAStatus.Closed, LRAStatus.Cancelled).contains(lra.status().get()))) return false;
+        for (int i = 0; i < SYNCHRONOUS_RETRY_CNT; i++) {
+            // Participant in right state
+            if (!isInEndStateOrListenerOnly()) return false;
+            // LRA in right state
+            if (!(Set.of(LRAStatus.Closed, LRAStatus.Cancelled).contains(lra.status().get()))) return false;
 
-        try {
-            Optional<URI> afterURI = getAfterURI();
-            if (afterURI.isPresent() && afterLRACalled.compareAndSet(AfterLraStatus.NOT_SENT, AfterLraStatus.SENDING)) {
-                WebClientResponse response = WebClient.builder()
-                        .baseUri(afterURI.get())
-                        .build()
-                        .put()
-                        .headers(lra.headers())
-                        .submit(lra.status().get().name())
-                        .await(500, TimeUnit.MILLISECONDS);
+            try {
+                Optional<URI> afterURI = getAfterURI();
+                if (afterURI.isPresent() && afterLRACalled.compareAndSet(AfterLraStatus.NOT_SENT, AfterLraStatus.SENDING)) {
+                    WebClientResponse response = WebClient.builder()
+                            .baseUri(afterURI.get())
+                            .build()
+                            .put()
+                            .headers(lra.headers())
+                            .submit(lra.status().get().name())
+                            .await(500, TimeUnit.MILLISECONDS);
 
-                if (response.status().code() == 200) {
+                    if (response.status().code() == 200) {
+                        afterLRACalled.set(AfterLraStatus.SENT);
+                    } else if (remainingAfterLraAttempts.decrementAndGet() <= 0) {
+                        afterLRACalled.set(AfterLraStatus.SENT);
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Error when sending after lra", e);
+                if (remainingAfterLraAttempts.decrementAndGet() <= 0) {
                     afterLRACalled.set(AfterLraStatus.SENT);
-                } else if (remainingAfterLraAttempts.decrementAndGet() <= 0) {
-                    afterLRACalled.set(AfterLraStatus.SENT);
+                } else {
+                    afterLRACalled.set(AfterLraStatus.NOT_SENT);
                 }
             }
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error when sending after lra", e);
+            if (afterLRACalled.get() == AfterLraStatus.SENT) return true;
         }
-        return afterLRACalled.get() == AfterLraStatus.SENT;
+        return false;
     }
 
 
@@ -460,12 +468,12 @@ class Participant {
                 .collect(Collectors.toSet());
 
         for (Link link : links) {
-            Optional<Link> participantsLink = getCompensatorLink(link.getRel());
+            Optional<URI> participantsLink = getCompensatorLink(link.rel());
             if (participantsLink.isEmpty()) {
                 continue;
             }
 
-            if (Objects.equals(participantsLink.get().getUri(), link.getUri())) {
+            if (Objects.equals(participantsLink.get(), link.uri())) {
                 return true;
             }
         }

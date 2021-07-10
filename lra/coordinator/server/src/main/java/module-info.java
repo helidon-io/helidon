@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,13 +20,13 @@
  */
 module io.helidon.microprofile.lra.coordinator {
     requires java.logging;
-    requires java.ws.rs;
     requires microprofile.lra.api;
-    requires jakarta.enterprise.cdi.api;
-    requires jakarta.inject.api;
     requires io.helidon.common.reactive;
-    requires io.helidon.microprofile.scheduling;
-    requires microprofile.config.api;
     requires io.helidon.webclient;
-    requires io.helidon.microprofile.server;
+    requires io.helidon.metrics;
+    requires io.helidon.health;
+    requires io.helidon.health.checks;
+    requires io.helidon.scheduling;
+    requires java.sql;
+    requires java.xml.bind;
 }
