@@ -309,8 +309,8 @@ filters, overrides, mappers, whether or not environment variables and Java
 system properties serve as config sources. The JavaDoc explains how to use the 
 link:{javadoc-base-url-api}/Config.Builder.html[`Config.Builder`].
 +
-or
-* creating a <<config/06_advanced-configuration.adoc#Config-Advanced-metaconfig,meta-configuration>>
+* using a <<se/config/09_config-profiles.adoc,config profile>> to choose the sources to be used
+* creating a <<se/config/06_advanced-configuration.adoc#Config-Advanced-metaconfig, meta-configuration>>
 file on the runtime classpath or file system to control how the config system prepares the
 default configuration.
 
@@ -325,26 +325,26 @@ other config topics.
 |===
 | Topic |Documentation
 
-| Where config comes from |<<config/02_config-sources.adoc,Config sources>>,
-<<config/06_advanced-configuration.adoc#metaconfig,meta-configuration>>
-| What format config data is expressed in |<<config/02_config-sources.adoc#parsers,Config parsers>>, 
-<<config/08_supported-formats.adoc,supported formats>>
-| How to filter, override, and dereference values |<<config/06_advanced-configuration.adoc#filters-and-overrides,Filters and overrides>>
-| What happens when config data changes |<<config/05_mutability-support.adoc#polling,Config polling>>
-| How to deal with loading errors |<<config/02_config-sources.adoc#retry,Config retry policies>>
+| Where config comes from |<<se/config/02_config-sources.adoc,Config sources>>,<<se/config/09_config-profiles.adoc,Config Profiles>>,
+<<se/config/06_advanced-configuration.adoc#Config-Advanced-metaconfig,meta-configuration>>
+| What format config data is expressed in |<<se/config/02_config-sources.adoc#parsers,Config parsers>>,
+<<se/config/08_supported-formats.adoc,supported formats>>
+| How to filter, override, and dereference values |<<se/config/06_advanced-configuration.adoc#filters-and-overrides,Filters and overrides>>
+| What happens when config data changes |<<se/config/05_mutability-support.adoc#polling,Config polling>>
+| How to deal with loading errors |<<se/config/02_config-sources.adoc#retry,Config retry policies>>
 |===
 
 .Accessing Configuration Data
 |===
 | Topic |Documentation
 
-| How config data is translated into Java types |<<config/04_property-mapping.adoc,Config mappers>>
-| How to navigate config trees |<<config/03_hierarchical-features.adoc,Navigation>>
+| How config data is translated into Java types |<<se/config/04_property-mapping.adoc,Config mappers>>
+| How to navigate config trees |<<se/config/03_hierarchical-features.adoc,Navigation>>
 |===
 
 .Extending and Fine-tuning the Config System
 |===
 | Topic |Documentation 
 
-| Writing extensions |<<config/07_extensions.adoc,Extensions>>
+| Writing extensions |<<se/config/07_extensions.adoc,Extensions>>
 |===

@@ -28,6 +28,8 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.spi.ConfigNode.ListNode;
+import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 
 /**
@@ -36,8 +38,36 @@ import io.helidon.config.spi.ConfigSource;
 final class MetaConfigFinder {
     /**
      * System property used to set a file with meta configuration.
+     * This can also be used in combination with {@link #CONFIG_PROFILE_SYSTEM_PROPERTY}
+     * to define a custom location of profile specific files.
      */
     public static final String META_CONFIG_SYSTEM_PROPERTY = "io.helidon.config.meta-config";
+    /**
+     * System property used to set a configuration profile. This profile is then used to discover
+     * meta configuration named {@code config-profile-${config.profile}.xxx"}.
+     *
+     * @see #CONFIG_PROFILE_ENVIRONMENT_VARIABLE
+     */
+    public static final String CONFIG_PROFILE_SYSTEM_PROPERTY = "config.profile";
+
+    /**
+     * System property used to set a configuration profile. This profile is then used to discover
+     * meta configuration named {@code config-profile-${config.profile}.xxx"}.
+     * This property is Helidon specific (in case the {@link #CONFIG_PROFILE_SYSTEM_PROPERTY} is
+     * in use by another component).
+     *
+     * @see #CONFIG_PROFILE_ENVIRONMENT_VARIABLE
+     * @see #CONFIG_PROFILE_SYSTEM_PROPERTY
+     */
+    public static final String HELIDON_CONFIG_PROFILE_SYSTEM_PROPERTY = "helidon.config.profile";
+
+    /**
+     * Environment variable used to set a configuration profile.
+     * Environment variable is the most significant.
+     *
+     * @see #CONFIG_PROFILE_SYSTEM_PROPERTY
+     */
+    public static final String CONFIG_PROFILE_ENVIRONMENT_VARIABLE = "HELIDON_CONFIG_PROFILE";
 
     private static final Logger LOGGER = Logger.getLogger(MetaConfigFinder.class.getName());
     private static final List<String> CONFIG_SUFFIXES = List.of("yaml", "conf", "json", "properties");
@@ -67,23 +97,138 @@ final class MetaConfigFinder {
         Optional<ConfigSource> source;
 
         // check if meta configuration is configured using system property
-        String property = System.getProperty(META_CONFIG_SYSTEM_PROPERTY);
-        if (null != property) {
+        String metaConfigFile = System.getProperty(META_CONFIG_SYSTEM_PROPERTY);
+        // check name of the profile
+        String profileName = System.getenv(CONFIG_PROFILE_ENVIRONMENT_VARIABLE);
+        if (profileName == null) {
+            profileName = System.getProperty(HELIDON_CONFIG_PROFILE_SYSTEM_PROPERTY);
+        }
+        if (profileName == null) {
+            profileName = System.getProperty(CONFIG_PROFILE_SYSTEM_PROPERTY);
+        }
+
+        if (metaConfigFile != null && profileName != null) {
+            // we have both profile name and meta configuration file defined
+            // this means we want to have a custom profile file (maybe a custom location) combined with a profile
+            int lastDot = metaConfigFile.lastIndexOf('.');
+            String metaWithProfile;
+            if (lastDot == 0) {
+                // .configuration -> dev.configuration
+                metaWithProfile = profileName + metaConfigFile.substring(lastDot);
+            } else if (lastDot > 0) {
+                // config/profile/profile.yaml -> config/profile/profile-dev.yaml
+                metaWithProfile = metaConfigFile.substring(0, lastDot) + "-" + profileName + metaConfigFile.substring(lastDot);
+            } else {
+                // config/configuration -> config/configuration-dev
+                metaWithProfile = metaConfigFile + "-" + profileName;
+            }
+            source = findFile(metaWithProfile, "config profile");
+            if (source.isPresent()) {
+                return source;
+            }
+            source = findClasspath(cl, metaWithProfile, "config profile");
+            if (source.isPresent()) {
+                return source;
+            }
+            LOGGER.info("Custom profile file not found: " + metaWithProfile);
+        }
+        if (metaConfigFile == null) {
+            if (profileName != null) {
+                return Optional.of(profileSource(supportedMediaType, cl, profileName, supportedSuffixes));
+            }
+        } else {
             // is it a file
-            source = findFile(property, "meta configuration");
+            source = findFile(metaConfigFile, "meta configuration");
             if (source.isPresent()) {
                 return source;
             }
             // so it is a classpath resource?
-            source = findClasspath(cl, property, "meta configuration");
+            source = findClasspath(cl, metaConfigFile, "meta configuration");
             if (source.isPresent()) {
                 return source;
             }
 
-            LOGGER.info("Meta configuration file not found: " + property);
+            LOGGER.info("Meta configuration file not found: " + metaConfigFile);
         }
 
-        return findSource(supportedMediaType, cl, META_CONFIG_PREFIX, "meta configuration", supportedSuffixes);
+        return findSource(supportedMediaType, cl, META_CONFIG_PREFIX, "meta configuration", supportedSuffixes)
+                .or(() -> findSource(supportedMediaType, cl, "config-profile.", "config profile", supportedSuffixes));
+    }
+
+    private static ConfigSource profileSource(Function<String, Boolean> supportedMediaType,
+                                              ClassLoader cl,
+                                              String profileName,
+                                              List<String> supportedSuffixes) {
+        // first try to find the profile itself
+        // default name is `config-profile.xxx`, we start with `config-profile-${profile}.xxx`
+        String profileFileName = "config-profile-" + profileName + ".";
+        // first find files for each supported suffix (first one wins)
+        for (String supportedSuffix : supportedSuffixes) {
+            Optional<ConfigSource> profile = findFile(profileFileName + supportedSuffix, "config profile");
+            if (profile.isPresent()) {
+                return profile.get();
+            }
+        }
+        // now let's do the same thing with classpath
+        for (String supportedSuffix : supportedSuffixes) {
+            Optional<ConfigSource> profile = findClasspath(cl, profileFileName + supportedSuffix, "config profile");
+            if (profile.isPresent()) {
+                return profile.get();
+            }
+        }
+        // we did not find a config profile, let's create one with the usual suspects
+        // to make things easier, let's try both application.xxx and META-INF/microprofile-config.properties
+        ListNode.Builder sourceListBuilder = ListNode.builder();
+
+        sourceListBuilder.addObject(ObjectNode.builder().addValue("type", "environment-variables").build())
+                .addObject(ObjectNode.builder().addValue("type", "system-properties").build());
+
+        // all profile files
+        for (String supportedSuffix : supportedSuffixes) {
+            addFile(sourceListBuilder, "application-" + profileName, supportedSuffix);
+        }
+
+        // all profile classpath
+        for (String supportedSuffix : supportedSuffixes) {
+            addClasspath(sourceListBuilder, "application-" + profileName, supportedSuffix);
+        }
+
+        // all main files
+        for (String supportedSuffix : supportedSuffixes) {
+            addFile(sourceListBuilder, "application", supportedSuffix);
+        }
+
+        // all main classpath
+        for (String supportedSuffix : supportedSuffixes) {
+            addClasspath(sourceListBuilder, "application", supportedSuffix);
+        }
+
+        addClasspath(sourceListBuilder, "META-INF/microprofile-config-" + profileName, "properties");
+        addClasspath(sourceListBuilder, "META-INF/microprofile-config", "properties");
+
+        return ConfigSources.create(ObjectNode.builder()
+                                            .addList("sources", sourceListBuilder.build())
+                                            .build());
+    }
+
+    private static void addClasspath(ListNode.Builder sourceListBuilder, String fileName, String supportedSuffix) {
+        sourceListBuilder.addObject(ObjectNode.builder()
+                                            .addValue("type", "classpath")
+                                            .addObject("properties", ObjectNode.builder()
+                                                    .addValue("resource", fileName + "." + supportedSuffix)
+                                                    .addValue("optional", "true")
+                                                    .build())
+                                            .build());
+    }
+
+    private static void addFile(ListNode.Builder sourceListBuilder, String fileName, String supportedSuffix) {
+        sourceListBuilder.addObject(ObjectNode.builder()
+                                            .addValue("type", "file")
+                                            .addObject("properties", ObjectNode.builder()
+                                                    .addValue("path", fileName + "." + supportedSuffix)
+                                                    .addValue("optional", "true")
+                                                    .build())
+                                            .build());
     }
 
     private static Optional<ConfigSource> findSource(Function<String, Boolean> supportedMediaType,

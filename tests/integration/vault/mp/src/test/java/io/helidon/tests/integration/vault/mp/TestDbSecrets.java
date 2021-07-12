@@ -26,7 +26,7 @@ import java.util.Optional;
 import javax.inject.Inject;
 
 import io.helidon.config.mp.MpConfigSources;
-import io.helidon.config.yaml.YamlMpConfigSource;
+import io.helidon.config.yaml.mp.YamlMpConfigSource;
 import io.helidon.integrations.vault.cdi.VaultCdiExtension;
 import io.helidon.integrations.vault.secrets.database.DbCreateRole;
 import io.helidon.integrations.vault.secrets.database.DbCredentials;

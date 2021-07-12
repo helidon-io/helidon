@@ -5,6 +5,12 @@
         },
         {
             "pattern": "meta-config.yaml"
+        },
+        {
+            "pattern": "config-profile.yaml"
+        },
+        {
+            "pattern": "config-profile-.*\\.yaml$"
         }
     ]
 }

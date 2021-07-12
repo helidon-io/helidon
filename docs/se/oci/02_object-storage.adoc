@@ -212,3 +212,47 @@ private void delete(ServerRequest req, ServerResponse res) {
 
 <1> Use `deleteObject` function and configure a `DeleteObject.Request.builder()` to submit the delete request
 <2> The request is made in asynchronous way; a `Single` is returned
+
+== Object Storage Health Check
+
+If your Helidon application depends on Object Storage accessibility, you may consider setting
+up a health check to verify connectivity with an OCI bucket. To do so, first add the following
+dependency in your pom file:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.oci</groupId>
+    <artifactId>helidon-integrations-oci-objectstorage-health</artifactId>
+</dependency>
+----
+
+In order to register the new health check in Helidon SE, create an instance of `HealthSupport`
+and configure it as shown next:
+
+[source,java]
+----
+HealthSupport health = HealthSupport.builder()
+    .addLiveness(OciObjectStorageHealthCheck.builder()
+                                            .ociObjectStorage(ociObjectStorage)
+                                            .bucket(bucketName)
+                                            .namespace(namespace)
+                                            .build())
+    .build();
+----
+
+where `ociObjectStorage`, `bucketName` and `namespace` are as required for any other
+Object Storage access. Finally, include your newly created `HealthSupport` object
+as part of your application's routing:
+
+[source,java]
+----
+Routing routing = Routing.builder()
+                         .register(health)
+                         // other routes here
+                         .build();
+----
+
+When executed, this health check will _ping_ the bucket to make sure it is accessible in your
+environment. For more information about health checks see <<se/health/01_health.adoc,
+Health Checks>>.
