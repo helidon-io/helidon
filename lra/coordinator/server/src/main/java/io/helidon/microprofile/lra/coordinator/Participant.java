@@ -35,6 +35,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import io.helidon.config.Config;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 
@@ -138,7 +139,16 @@ class Participant {
         NOT_SENT, SENDING, SENT;
     }
 
+    private long timeout;
+
     private final Map<String, URI> compensatorLinks = new HashMap<>();
+
+    Participant() {
+    }
+
+    Participant(Config config) {
+        timeout = config.get("mp.lra.coordinator.timeout").asLong().orElse(500L);
+    }
 
     void parseCompensatorLinks(String compensatorLinks) {
         Stream.of(compensatorLinks.split(","))
@@ -208,7 +218,8 @@ class Participant {
             if (!sendingStatus.compareAndSet(SendingStatus.NOT_SENDING, SendingStatus.SENDING)) return false;
             if (!compensateCalled.compareAndSet(CompensateStatus.NOT_SENT, CompensateStatus.SENDING)) return false;
             try {
-                if (!status.get().equals(Status.ACTIVE)) {// call for client status only on retries
+                // call for client status only on retries and when status uri is known
+                if (!status.get().equals(Status.ACTIVE) && getStatusURI().isPresent()) {
                     // If the participant does not support idempotency then it MUST be able to report its status
                     // by annotating one of the methods with the @Status annotation which should report the status
                     // in case we can't retrieve status from participant just retry n times
@@ -235,7 +246,9 @@ class Participant {
                         .put()
                         .headers(lra.headers())
                         .submit(LRAStatus.Cancelled.name())
-                        .await(500, TimeUnit.MILLISECONDS);
+                        .await(timeout, TimeUnit.MILLISECONDS);
+                // When timeout occur we loose track of the participant status
+                // next retry will attempt to retrieve participant status if status uri is available
 
                 switch (response.status().code()) {
                     // complete or compensated
@@ -283,7 +296,8 @@ class Participant {
             try {
                 if (status.get().isFinal()) {
                     return true;
-                } else if (!status.get().equals(Status.ACTIVE)) {// call for client status only on retries
+                    // call for client status only on retries and when status uri is known
+                } else if (!status.get().equals(Status.ACTIVE) && getStatusURI().isPresent()) {
                     // If the participant does not support idempotency then it MUST be able to report its status
                     // by annotating one of the methods with the @Status annotation which should report the status
                     // in case we can't retrieve status from participant just retry n times
@@ -314,7 +328,9 @@ class Participant {
                         .put()
                         .headers(lra.headers())
                         .submit(LRAStatus.Closed.name())
-                        .await(500, TimeUnit.MILLISECONDS);
+                        .await(timeout, TimeUnit.MILLISECONDS);
+                // When timeout occur we loose track of the participant status
+                // next retry will attempt to retrieve participant status if status uri is available
 
                 switch (response.status().code()) {
                     // complete or compensated
@@ -366,7 +382,7 @@ class Participant {
                             .put()
                             .headers(lra.headers())
                             .submit(lra.status().get().name())
-                            .await(500, TimeUnit.MILLISECONDS);
+                            .await(timeout, TimeUnit.MILLISECONDS);
 
                     if (response.status().code() == 200) {
                         afterLRACalled.set(AfterLraStatus.SENT);
@@ -389,51 +405,56 @@ class Participant {
 
 
     Optional<ParticipantStatus> retrieveStatus(Lra lra, ParticipantStatus inProgressStatus) {
-        Optional<URI> statusURI = this.getStatusURI();
-        if (statusURI.isPresent()) {
-            try {
-                WebClientResponse response = WebClient
-                        .builder()
-                        .baseUri(statusURI.get())
-                        .build()
-                        .get()
-                        .headers(h -> {
-                            // Dont send parent!
-                            h.add(LRA_HTTP_CONTEXT_HEADER, lra.lraId());
-                            h.add(LRA_HTTP_RECOVERY_HEADER, lra.lraId());
-                            h.add(LRA_HTTP_ENDED_CONTEXT_HEADER, lra.lraId());
-                            return h;
-                        })
-                        .request()
-                        .await(500, TimeUnit.MILLISECONDS);
+        URI statusURI = this.getStatusURI().get();
+        try {
+            WebClientResponse response = WebClient
+                    .builder()
+                    .baseUri(statusURI)
+                    .build()
+                    .get()
+                    .headers(h -> {
+                        // Dont send parent!
+                        h.add(LRA_HTTP_CONTEXT_HEADER, lra.lraId());
+                        h.add(LRA_HTTP_RECOVERY_HEADER, lra.lraId());
+                        h.add(LRA_HTTP_ENDED_CONTEXT_HEADER, lra.lraId());
+                        return h;
+                    })
+                    .request()
+                    .await(timeout, TimeUnit.MILLISECONDS);
 
-                switch (response.status().code()) {
-                    case 202:
-                        return Optional.of(inProgressStatus);
-                    case 410: //GONE
-                        //Completing -> FailedToComplete ...
-                        return status.get().failedFinalStatus();
-                    case 503:
-                    case 500:
-                        LOGGER.log(Level.SEVERE, "Client reports unexpected status {0}, current participant state is {1}",
-                                new Object[] {503, status.get()});
+            int code = response.status().code();
+            switch (code) {
+                case 202:
+                    return Optional.of(inProgressStatus);
+                case 410: //GONE
+                    //Completing -> FailedToComplete ...
+                    return status.get().failedFinalStatus();
+                case 503:
+                case 500:
+                    throw new IllegalStateException(String.format("Client reports unexpected status code %s, "
+                            + "current participant state is %s, "
+                            + "lra: %s"
+                            + "status uri: %s", code, status.get(), lra.lraId(), statusURI.toASCIIString()));
+                default:
+                    ParticipantStatus reportedStatus = valueOf(response.content().as(String.class).await());
+                    Status currentStatus = status.get();
+                    if (currentStatus.validateNextStatus(reportedStatus)) {
+                        return Optional.of(reportedStatus);
+                    } else {
+                        LOGGER.log(Level.WARNING,
+                                "Client reports unexpected status {0}, "
+                                        + "current participant state is {1}, "
+                                        + "lra: {2}"
+                                        + "status uri: {3}",
+                                new Object[] {reportedStatus, currentStatus, lra.lraId(), statusURI.toASCIIString()});
                         return Optional.empty();
-                    default:
-                        ParticipantStatus reportedStatus = valueOf(response.content().as(String.class).await());
-                        Status currentStatus = status.get();
-                        if (currentStatus.validateNextStatus(reportedStatus)) {
-                            return Optional.of(reportedStatus);
-                        } else {
-                            LOGGER.log(Level.WARNING, "Client reports unexpected status {0}, current participant state is {1}",
-                                    new Object[] {reportedStatus, currentStatus});
-                            return Optional.empty();
-                        }
-                }
-            } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Error when getting participant status. " + statusURI, e);
+                    }
             }
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Error when getting participant status. " + statusURI, e);
+            // skip dependent compensation call, another retry with status call might be luckier
+            throw e;
         }
-        return Optional.empty();
     }
 
     boolean sendForget(Lra lra) {
@@ -446,7 +467,7 @@ class Participant {
                     .delete()
                     .headers(lra.headers())
                     .submit()
-                    .await(500, TimeUnit.MILLISECONDS);
+                    .await(timeout, TimeUnit.MILLISECONDS);
 
             int responseStatus = response.status().code();
             if (responseStatus == 200 || responseStatus == 410) {

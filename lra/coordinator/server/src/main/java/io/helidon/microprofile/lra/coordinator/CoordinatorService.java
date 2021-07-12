@@ -29,6 +29,7 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.scheduling.FixedRateInvocation;
 import io.helidon.scheduling.Scheduling;
+import io.helidon.scheduling.Task;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -56,21 +57,39 @@ public class CoordinatorService implements Service {
     private final LraPersistentRegistry lraPersistentRegistry;
 
     private final String coordinatorURL;
+    private Config config;
+    private Task scheduled;
 
     CoordinatorService(LraPersistentRegistry lraPersistentRegistry, Config config) {
         this.lraPersistentRegistry = lraPersistentRegistry;
         coordinatorURL = config.get("mp.lra.coordinator.url").asString().orElse("http://localhost:8070/lra-coordinator");
+        this.config = config;
         init();
     }
 
     private void init() {
         lraPersistentRegistry.load();
-        Scheduling.fixedRateBuilder()
+        scheduled = Scheduling.fixedRateBuilder()
                 .delay(300)
                 .initialDelay(200)
                 .timeUnit(TimeUnit.MILLISECONDS)
                 .task(this::tick)
                 .build();
+    }
+
+    /**
+     * Gracefully shutdown coordinator.
+     */
+    public void shutdown() {
+        scheduled.executor().shutdown();
+        try {
+            if (!scheduled.executor().awaitTermination(5, TimeUnit.SECONDS)) {
+                LOGGER.log(Level.WARNING, "Shutdown of the scheduled task took too long.");
+            }
+        } catch (InterruptedException e) {
+            LOGGER.log(Level.WARNING, "Shutdown of the scheduled task was interrupted.", e);
+        }
+        lraPersistentRegistry.save();
     }
 
     @Override
@@ -104,13 +123,13 @@ public class CoordinatorService implements Service {
         if (!parentLRA.isEmpty()) {
             Lra parent = lraPersistentRegistry.get(parentLRA.replace(coordinatorURL, ""));
             if (parent != null) {
-                Lra childLra = new Lra(lraUUID, URI.create(parentLRA));
+                Lra childLra = new Lra(lraUUID, URI.create(parentLRA), this.config);
                 childLra.setupTimeout(timeLimit);
                 lraPersistentRegistry.put(lraUUID, childLra);
                 parent.addChild(childLra);
             }
         } else {
-            Lra newLra = new Lra(lraUUID);
+            Lra newLra = new Lra(lraUUID, config);
             newLra.setupTimeout(timeLimit);
             lraPersistentRegistry.put(lraUUID, newLra);
         }

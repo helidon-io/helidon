@@ -17,7 +17,7 @@ wget https://search.maven.org/remotecontent?filepath=org/jboss/narayana/rts/lra-
 && java -Dquarkus.http.port=8070 -jar narayana-coordinator.jar
 ```
 
-Run the TCKs with external Narayana like coordinator on port `8070` by disabling default `mock-coordinator` maven
+Run the TCKs with external Narayana like coordinator on port `8070` by setting custom `mock-coordinator` maven
 profile.
 
 #### Run tests

@@ -20,7 +20,7 @@ package io.helidon.microprofile.lra.tck;
 import java.util.Properties;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.BeforeDestroyed;
+import javax.enterprise.context.Destroyed;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
@@ -63,7 +63,7 @@ public class CoordinatorAppService {
         return coordinatorService.get();
     }
 
-    private void whenApplicationTerminates(@Observes @BeforeDestroyed(ApplicationScoped.class) final Object event) {
-        persistentRegistry.get().save();
+    private void whenApplicationTerminates(@Observes @Destroyed(ApplicationScoped.class) final Object event) {
+        coordinatorService.get().shutdown();
     }
 }

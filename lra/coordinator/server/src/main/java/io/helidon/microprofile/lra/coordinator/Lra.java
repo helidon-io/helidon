@@ -40,6 +40,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import io.helidon.common.http.Headers;
+import io.helidon.config.Config;
 import io.helidon.webclient.WebClientRequestHeaders;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
@@ -62,6 +63,9 @@ class Lra {
     @XmlID
     private String lraId;
 
+    @XmlTransient
+    private Config config;
+
     @XmlIDREF
     private final List<Lra> children = Collections.synchronizedList(new ArrayList<>());
 
@@ -76,13 +80,15 @@ class Lra {
     private boolean isChild;
     private long whenReadyToDelete = 0;
 
-    Lra(String lraUUID) {
+    Lra(String lraUUID, Config config) {
         lraId = lraUUID;
+        this.config = config;
     }
 
-    Lra(String lraUUID, URI parentId) {
+    Lra(String lraUUID, URI parentId, Config config) {
         lraId = lraUUID;
         this.parentId = parentId;
+        this.config = config;
     }
 
     Lra() {
@@ -106,7 +112,7 @@ class Lra {
 
     void addParticipant(String compensatorLink) {
         if (compensatorLinks.add(compensatorLink)) {
-            Participant participant = new Participant();
+            Participant participant = new Participant(config);
             participant.parseCompensatorLinks(compensatorLink);
             participants.add(participant);
         }
