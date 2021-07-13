@@ -25,6 +25,34 @@
 
 A Config Source provides configuration values from different sources such as property files and user classes that are registered by the application.
 
+Helidon configuration sources can use different formats for the configuration data. You can specify the format on a per-source bases, mixing and matching formats as required.
+
+The following configuration sources can be used to retrieve the configuration:
+
+[cols="3,5"]
+|===
+|Source |Description
+
+|System properties   |A mutable source that uses `System.getProperties()` to obtain configuration values.
+
+|Environment variables   |An immutable source that uses `System.env()` to obtain configuration values and resolves aliases as defined by the MicroProfile Config specification.
+
+|`META-INF/microprofile-config.properties`   |The properties config source as defined by MicroProfile Config specification.
+
+|File    |Creates the source from a properties file on the file system with `MpConfigSources.create(Path)`.
+
+|URL    |Creates the source from properties from an URL with `MpConfigSources.create(URL)`.
+
+|`Map<String, String>`   |Creates the source from a Map with `MpConfigSources.create(Map)`.
+
+|`Properties`    |Creates the source directly from Properties with `MpConfigSources.create(Properties)`.
+
+|File on classpath    |Creates the source from a properties file on classpath with `MpConfigSources.classpath(String)`.
+
+|YAML    |Creates the source from YAML using `YamlMpConfigSource.create(Path)` or `YamlMpConfigSource.create(URL)`.
+
+|===
+
 == Understanding the Ordering of Default Config Sources
 
 The default MicroProfile Config Sources are:
@@ -40,7 +68,6 @@ from low-priority Config Source.
 
 This helps to customize the configuration of Config Sources using external Config Source
 if an external Config Source has higher ordinal values than the built-in Config Sources of the application.
-
 
 == Creating Custom Config Sources
 
@@ -118,14 +145,15 @@ To create an in-memory source from properties with custom name, use `create(Stri
 
 |===
 
-=== Example
+=== Create Custom Map MicroProfile Config Source
+You can create Microprofile Config Source from a map.
 
 [source,java]
 .Create MicroProfile Config Source based on Environment Variables and Custom Map
 ----
 ConfigProviderResolver resolver = ConfigProviderResolver.instance();
 
-org.eclipse.microprofile.config.Config Config config = resolver.getBuilder().getBuilder() <1>
+org.eclipse.microprofile.config.Config config = resolver.getBuilder().getBuilder() <1>
         .withSources(MpConfigSources.environmentVariables()) <2>
         .withSources(MpConfigSources.create(Map.of("key","value"))) <3>
         .build(); <4>
@@ -138,6 +166,63 @@ resolver.registerConfig(config, null); <5>
 <4> Builds the MicroProfile Config Source.
 <5> Registers the config, so it can be used by other components
 
+=== Create Yaml MicroProfile Config Source
+
+You can create Yaml Microprofile Config Source from a path or a URL. When you create a MicroProfile instance from the builder,
+the `YamlMpConfigSource` allows you to create a custom Config Source and register
+it with the builder.
+
+[source,java]
+.Create YamlMPConfigSource from a path
+----
+ConfigProviderResolver.instance().newBuilder()
+        .withSources(YamlMpConfigSource.create(path))
+        .build()
+----
+
+== Creating MicroProfile Config Sources from meta-config
+
+Instead of directly specifying the configuration sources in your code, you can use meta-configuration in a file that declares
+the configuration sources, and their attributes as mentioned in <<mp/config/01_introduction.adoc,Microprofile Config>>
+
+When used, the Microprofile Config uses configuration sources and flags configured in the meta configuration file.
+
+If a file named `mp-meta-config.yaml`, or `mp-meta-config.properties` is in the current directory or
+on the classpath, and there is no explicit setup of configuration in the code, the configuration will
+be loaded from the `meta-config` file.
+The location of the file can be overridden using system property `io.helidon.config.mp.meta-config`,
+or environment variable `HELIDON_MP_META_CONFIG`
+
+[source,yaml]
+.Example of a YAML meta configuration file:
+----
+add-discovered-sources: true <1>
+add-discovered-converters: false <2>
+add-default-sources: false <3>
+
+sources:
+  - type: "environment-variables" <4>
+  - type: "system-properties" <5>
+  - type: "properties" <6>
+    path: "/conf/prod.properties" <7>
+    ordinal: 50 <8>
+    optional: true <9>
+  - type: "yaml"  <10>
+    classpath: "META-INF/database.yaml" <11>
+
+----
+
+<1> If configured to `true`, config sources discovered through service loader will be added
+<2> If configured to `true`, converters discovered through service loader will be added
+<3> If configured to `true`, default config sources (system properties, environment variables, and `META-INF/microprofile-config.properties) will be added
+<4> Loads the environment variables config source.
+<5> Loads the system properties config source.
+<6> Loads a properties file
+<7> Location of the file: `/conf/prod.properties` on the file system
+<8> Custom ordinal, if not defined, the value defined in the file, or default value is used. The source precedence order is the order of appearance in the file.
+<9> The file is optional (if not optional and no file is found, the bootstrap fails)
+<10> Loads a YAML file
+<11> Location of the file: `META-INF/database.yaml` on the classpath
 
 == Creating MicroProfile Config Source from Helidon SE Config Source
 
@@ -157,30 +242,16 @@ To use advanced Helidon SE features in Helidon MP, create MicroProfile Config So
 The latest config version is queried each time  `org.eclipse.microprofile.config.spi.ConfigSource#getValue(String)` is called.
 
 ----
+io.helidon.config.Config helidonConfig = io.helidon.config.Config.builder()
+                .addSource(ConfigSources.create(Map.of("key", "value"))) <1>
+                .build();
 ConfigProviderResolver.instance();
 Config config = ConfigProviderResolver.instance()
                 .getBuilder()
-                .withSources(MpConfigSources.create(helidonConfig)) <1>
+                .withSources(MpConfigSources.create(helidonConfig)) <2>
                 .build();
 ----
 
-<1> Creates a MicroProfile config instance using Helidon Config.
-
-
-== Create Yaml MicroProfile Config Source Programatically
-
-You can create Yaml Microprofile Config Source from a path or a URL. When you create a MicroProfile instance from the builder,
-the `YamlMpConfigSource` allows you to create a custom Config Source and register
-it with the builder.
-
-
-=== Example
-
-[source,java]
-.Create YamlMPConfigSource from a path 
-----
-ConfigProviderResolver.instance().newBuilder()
-        .withSources(YamlMpConfigSource.create(path))
-        .build()
-----
+<1> Creates a config source from Helidon Config.
+<2> Creates a MicroProfile config instance using Helidon Config.
 

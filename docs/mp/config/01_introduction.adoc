@@ -41,13 +41,11 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
         </dependency>
 ----
 
-== About {spec-name}
+== Overview
 
 Helidon MicroProfile Config is an implementation of https://github.com/eclipse/microprofile-config/[Eclipse MicroProfile Config].
-You can configure your applications using MicroProfile's config configuration sources and APIs.
-
-You can also extend the configuration using MicroProfile SPI to add custom `ConfigSource` and `Converter` by implementing the
-`org.eclipse.microprofile.config.spi.ConfigSource` and `org.eclipse.microprofile.config.spi.Converter` interfaces respectively.
+You can configure your applications using MicroProfile's config configuration sources and APIs. You can also extend the
+configuration using MicroProfile SPI to add custom `ConfigSource` and `Converter`.
 
 === {spec-name} Features
 
@@ -60,8 +58,6 @@ instance programmatically.
 
 {spec-name} provides typed access to configuration values, using built-in converters, and `Converter` implementations located
 by Java Service Loader.
-
-{spec-name} supports a concept of configuration profiles. You can define a profile using the configuration property `mp.config.profile` (when using default configuration, this can be defined as a system property, environment variable or as a property in `microprofile-config.properties`). When a profile is defined, additional config source is loaded (`microprofile-config-profile.properties) and properties from profile have precedence over default properties. Profile properties can be defined using `%profile` prefix, such as `%dev.server.port`.
 
 ==== Using {spec-name} API
 
@@ -98,6 +94,13 @@ server.port=8080
 server.host=0.0.0.0
 ----
 
+==== {spec-name} Profiles
+
+{spec-name} supports a concept of configuration profiles. You can define a profile using the configuration property `mp.config.profile`
+(when using default configuration, this can be defined as a system property, environment variable or as a property in `microprofile-config.properties`).
+When a profile is defined, additional config source is loaded (`microprofile-config-profile.properties`) and properties from profile have precedence over
+default properties. Profile properties can be defined using `%profile` prefix, such as `%dev.server.port`.
+
 === Helidon {spec-name} Features
 
 Helidon MicroProfile Config offers the following features on top of the specification:
@@ -118,7 +121,7 @@ service-2: "${uri}/service2"
 * *Encryption* +
 You can encrypt secrets using a master password and store them in a configuration file.
 The config encryption filter in MicroProfile Config is enabled by default.
-For more information, see <<security/03_configuration-secrets.adoc,Configuration Secrets>>.
+For more information, see <<mp/security/03_configuration-secrets.adoc,Configuration Secrets>>.
 
 [source,properties]
 .Example of encrypted secrets
@@ -133,52 +136,12 @@ client_secret=${CLEAR=known_password}
 ----
 
 * *Meta Configuration* +
-You can configure the Config using Helidon MP Config meta configuration feature.
-This is a Helidon specific feature available since version 2.3.0.
+You can configure the Config using Helidon MP Config meta configuration feature. The meta-config allows configuration of config sources and other
+configuration options, including addition of discovered sources and converters.
 
-When used, the {spec-name} uses configuration sources and flags configured in the meta configuration file.
+This is a Helidon specific feature available since version 2.3.0. See <<mp/config/02_MP_config_sources.adoc,Microprofile Config Sources>> for detailed information.
 
-The meta-config allows configuration of config sources and other configuration options,
-including addition of discovered sources and converters.
-
-If a file named `mp-meta-config.yaml`, or `mp-meta-config.properties` is in the current directory or
-on the classpath, and there is no explicit setup of configuration in the code, the configuration will
-be loaded from the `meta-config` file.
-The location of the file can be overridden using system property `io.helidon.config.mp.meta-config`,
-    or environment variable `HELIDON_MP_META_CONFIG`
-
-[source,yaml]
-.Example of a YAML meta configuration file:
-----
-add-discovered-sources: true <1>
-add-discovered-converters: false <2>
-add-default-sources: false <3>
-
-sources:
-  - type: "environment-variables" <4>
-  - type: "system-properties" <5>
-  - type: "properties" <6>
-    path: "/conf/prod.properties" <7>
-    ordinal: 50 <8>
-    optional: true <9>
-  - type: "yaml"  <10>
-    classpath: "META-INF/database.yaml" <11>
-
-----
-
-<1> If configured to `true`, config sources discovered through service loader will be added
-<2> If configured to `true`, converters discovered through service loader will be added
-<3> If configured to `true`, default config sources (system properties, environment variables, and `META-INF/microprofile-config.properties) will be added
-<4> Loads the environment variables config source.
-<5> Loads the system properties config source.
-<6> Loads a properties file
-<7> Location of the file: `/conf/prod.properties` on the file system
-<8> Custom ordinal, if not defined, the value defined in the file, or default value is used
-<9> The file is optional (if not optional and no file is found, the bootstrap fails)
-<10> Loads a YAML file
-<11> Location of the file: `META-INF/database.yaml` on the classpath
-
-For backward compatibility, we will support usage of Helidon SE meta-configuration until version 3.0.0. Using this approach causes behavior that is not compatible with {spec-name} specification.
+NOTE: For backward compatibility, we will support usage of Helidon SE meta-configuration until version 3.0.0. Using this approach causes behavior that is not compatible with {spec-name} specification.
 
 == Guides
 
@@ -191,57 +154,6 @@ For backward compatibility, we will support usage of Helidon SE meta-configurati
 Step-by-step guide about using {spec-name} in your Helidon MP application.
 --
 ====
-
-== Using MicroProfile Config Sources
-
-The following configuration sources can be used to retrieve the configuration:
-
-[cols="3,5"]
-|===
-|Source |Description
-
-|System properties   |A mutable source that uses `System.getProperties()` to obtain configuration values.
-
-|Environment variables   |An immutable source that uses `System.env()` to obtain configuration values and resolves aliases as defined by the MicroProfile Config specification.
-
-|`META-INF/microprofile-config.properties`   |The properties config source as defined by MicroProfile Config specification.
-
-|`application.yaml`    |The Helidon default configuration source.
-
-|File    |Creates the source from a properties file on the file system with `MpConfigSources.create(Path)`.
-
-|URL    |Creates the source from properties from an URL with `MpConfigSources.create(URL)`.
-
-|`Map<String, String>`   |Creates the source from a Map with `MpConfigSources.create(Map)`.
-
-|`Properties`    |Creates the source directly from Properties with `MpConfigSources.create(Properties)`.
-
-|File on classpath    |Creates the source from a properties file on classpath with `MpConfigSources.classpath(String)`.
-
-|YAML    |Creates the source from YAML using `YamlMpConfigSource.create(Path)` or `YamlMpConfigSource.create(URL)`.
-
-|===
-
-== Using Helidon Config APIs
-
-You can use `MpConfigSources.create(helidonConfig)` to create a config source from Helidon config and then use it to create a MicroProfile instance.
-
-[source,java]
-----
-io.helidon.config.Config helidonConfig = io.helidon.config.Config.builder()
-                .addSource(ConfigSources.create(Map.of("key", "value"))) <1>
-                .build();
-
-Config config = ConfigProviderResolver.instance()
-                .getBuilder()
-                .withSources(MpConfigSources.create(helidonConfig)) <2>
-                .build();
-----
-
-<1> Creates a config source from Helidon Config.
-<2> Creates a MicroProfile Config instance.
-
-For more information on using Helidon Config APIs, see the Helidon SE Configuration documentation.
 
 == Additional Information
 
