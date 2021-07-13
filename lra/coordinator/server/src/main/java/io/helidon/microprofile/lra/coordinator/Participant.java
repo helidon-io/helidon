@@ -431,10 +431,15 @@ class Participant {
                     return status.get().failedFinalStatus();
                 case 503:
                 case 500:
-                    throw new IllegalStateException(String.format("Client reports unexpected status code %s, "
-                            + "current participant state is %s, "
-                            + "lra: %s"
-                            + "status uri: %s", code, status.get(), lra.lraId(), statusURI.toASCIIString()));
+                    throw new IllegalStateException(String.format("Client reports unexpected status %s %s, "
+                                    + "current participant state is %s, "
+                                    + "lra: %s"
+                                    + "status uri: %s",
+                            code,
+                            response.content().as(String.class),
+                            status.get(),
+                            lra.lraId(),
+                            statusURI.toASCIIString()));
                 default:
                     ParticipantStatus reportedStatus = valueOf(response.content().as(String.class).await());
                     Status currentStatus = status.get();
