@@ -39,7 +39,7 @@ public class Slf4jMdcPropagator implements DataPropagationProvider<Map<String, S
     }
 
     @Override
-    public void clearData() {
+    public void clearData(Map<String, String> data) {
         MDC.clear();
     }
 

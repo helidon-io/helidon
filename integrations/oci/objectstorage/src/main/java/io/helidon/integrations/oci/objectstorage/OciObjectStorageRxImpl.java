@@ -19,6 +19,8 @@ package io.helidon.integrations.oci.objectstorage;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 
+import javax.json.JsonObject;
+
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
@@ -82,6 +84,23 @@ class OciObjectStorageRxImpl implements OciObjectStorageRx {
         objectStorage(request);
 
         return restApi.post(apiPath, request, RenameObject.Response.builder());
+    }
+
+    @Override
+    public Single<ApiOptionalResponse<GetBucket.Response>> getBucket(GetBucket.Request request) {
+        String namespace = request.namespace()
+                .or(() -> defaultNamespace)
+                .orElseThrow(() -> new OciApiException("Namespace must be defined for Object Storage requests either "
+                                                               + "in configuration of Object Storage, or on request."));
+
+        String apiPath = "/n/" + namespace + "/b/" + request.bucket();
+
+        objectStorage(request);
+
+        return restApi.get(apiPath,
+                           request,
+                           ApiOptionalResponse.<JsonObject, GetBucket.Response>apiResponseBuilder()
+                                   .entityProcessor(GetBucket.Response::create));
     }
 
     private String namespace(ObjectRequest<?> request) {

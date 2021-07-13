@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.config.yaml;
+package io.helidon.config.yaml.mp;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -36,6 +36,8 @@ import java.util.Set;
 import io.helidon.config.ConfigException;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  * MicroProfile {@link org.eclipse.microprofile.config.spi.ConfigSource} that can be used
@@ -72,6 +74,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * names.2=third
  * </pre>
  */
+@SuppressWarnings("rawtypes")
 public class YamlMpConfigSource implements ConfigSource {
     private final Map<String, String> properties;
     private final String name;
@@ -120,7 +123,7 @@ public class YamlMpConfigSource implements ConfigSource {
      * @return config source loaded from the content
      */
     public static ConfigSource create(String name, Reader content) {
-        Map yamlMap = YamlConfigParser.toMap(content);
+        Map yamlMap = toMap(content);
         if (yamlMap == null) { // empty source
             return new YamlMpConfigSource(name, Map.of());
         }
@@ -317,5 +320,12 @@ public class YamlMpConfigSource implements ConfigSource {
     @Override
     public String getName() {
         return name;
+    }
+
+    static Map toMap(Reader reader) {
+        // the default of Snake YAML is a Map, safe constructor makes sure we never deserialize into anything
+        // harmful
+        Yaml yaml = new Yaml(new SafeConstructor());
+        return (Map) yaml.loadAs(reader, Object.class);
     }
 }

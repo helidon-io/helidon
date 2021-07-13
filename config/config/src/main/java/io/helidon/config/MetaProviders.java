@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -265,6 +265,7 @@ final class MetaProviders {
         private static final String DIRECTORY_TYPE = "directory";
         private static final String URL_TYPE = "url";
         private static final String PREFIXED_TYPE = "prefixed";
+        private static final String INLINED_TYPE = "inlined";
 
         private static final Map<String, Function<Config, ConfigSource>> BUILT_INS = new HashMap<>();
 
@@ -277,6 +278,7 @@ final class MetaProviders {
             BUILT_INS.put(DIRECTORY_TYPE, DirectoryConfigSource::create);
             BUILT_INS.put(URL_TYPE, UrlConfigSource::create);
             BUILT_INS.put(PREFIXED_TYPE, PrefixedConfigSource::create);
+            BUILT_INS.put(INLINED_TYPE, InlinedConfigSource::create);
         }
 
         @Override

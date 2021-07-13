@@ -36,9 +36,9 @@ class HttpRequestScopedPublisher extends BufferedEmittingPublisher<DataChunk> {
         this.holdingQueue = holdingQueue;
     }
 
-    public void emit(ByteBuf data) {
+    public int emit(ByteBuf data) {
         try {
-            super.emit(new ByteBufRequestChunk(data, holdingQueue));
+            return super.emit(new ByteBufRequestChunk(data, holdingQueue));
         } finally {
             holdingQueue.release();
         }
@@ -46,7 +46,7 @@ class HttpRequestScopedPublisher extends BufferedEmittingPublisher<DataChunk> {
 
     /**
      * Clear and release any {@link io.helidon.common.http.DataChunk DataChunk} hanging in
-     * the buffer. Try self-subscribe in case no one subscribed and unreleased {@link io.netty.buffer.ByteBuf ByteBufs}
+     * the buffer. Try self subscribe in case no one subscribed and unreleased {@link io.netty.buffer.ByteBuf ByteBufs}
      * are hanging in the netty pool.
      */
     public void clearAndRelease() {

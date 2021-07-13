@@ -48,6 +48,11 @@
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
     <Match>
+        <!-- Path from config/code/system property, not openly from user -->
+        <Class name="io.helidon.config.MetaConfigFinder"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+    <Match>
         <!-- Path from config/code, not openly from user -->
         <Class name="io.helidon.config.ClasspathConfigSource"/>
         <Bug pattern="URLCONNECTION_SSRF_FD"/>
