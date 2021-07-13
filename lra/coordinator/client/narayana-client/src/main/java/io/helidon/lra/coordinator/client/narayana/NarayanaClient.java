@@ -74,7 +74,7 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public URI start(URI parentLRA, String clientID, Long timeout) {
-        RuntimeException lastError = null;
+        RuntimeException lastError = new IllegalStateException();
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {
             try {
                 WebClientResponse response = webClient
@@ -102,7 +102,7 @@ public class NarayanaClient implements CoordinatorClient {
                         .or(() -> response.headers().first(LRA_HTTP_CONTEXT_HEADER))
                         .orElseThrow(() ->
                                 new IllegalArgumentException("Coordinator needs to return lraId either as 'Location' or "
-                                + "'Long-Running-Action' header."));
+                                        + "'Long-Running-Action' header."));
                 return parseLRAId(lraId);
             } catch (CoordinatorConnectionException e) {
                 lastError = e;
@@ -115,7 +115,7 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public void cancel(URI lraId) {
-        RuntimeException lastError = null;
+        RuntimeException lastError = new IllegalStateException();
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {
             try {
                 WebClientResponse response = webClient
@@ -136,7 +136,7 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public void close(URI lraId) {
-        RuntimeException lastError = null;
+        RuntimeException lastError = new IllegalStateException();
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {
             try {
                 WebClientResponse response = webClient
@@ -165,7 +165,7 @@ public class NarayanaClient implements CoordinatorClient {
     public Optional<URI> join(URI lraId,
                               Long timeLimit,
                               Participant participant) {
-        RuntimeException lastError = null;
+        RuntimeException lastError = new IllegalStateException();
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {
             try {
                 String links = compensatorLinks(participant);
@@ -205,7 +205,7 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public void leave(URI lraId, Participant participant) {
-        RuntimeException lastError = null;
+        RuntimeException lastError = new IllegalStateException();
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {
             try {
                 WebClientResponse response = webClient
@@ -235,7 +235,7 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public LRAStatus status(URI lraId) {
-        RuntimeException lastError = null;
+        RuntimeException lastError = new IllegalStateException();
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {
             try {
                 WebClientResponse response = webClient
