@@ -32,6 +32,10 @@ that can be used to run some basic examples using WebClient.
 |<<about/03_prerequisites.adoc,Helidon Prerequisites>>
 |===
 
+* <<WebClient features,WebClient features>>
+* <<WebClient usage,WebClient usage>>
+* <<WebClient Metrics,WebClient Metrics>>
+
 === WebClient features
 
 Helidon WebClient is used to perform Http REST request to target endpoint and handle their response. Built in a reactive
@@ -43,7 +47,7 @@ and are subject to change.
 The WebClient main features:
 
     * *Reactive*:
-As mentioned, the code execution is not blocked by waiting for server response when a request is perform. To avoid
+As mentioned, the code execution is not blocked by waiting for server response when a request is performed. To avoid
 memory overflow, the client request the amount of data to allocate the right size.
 
     * *User-friendly*:
@@ -87,7 +91,7 @@ cd helidon-quickstart-se
 The Helidon quickstart is a greeting application supporting several HTTP requests such as GET and PUT. Using it will
 be time saving and allow us to focus on the WebClient features and how to use it.
 
-==== Modify dependency
+==== Modify pom dependency
 
 In the pom.xml, remove the test scope under the WebClient dependency as it will be used not only in the tests.
 
@@ -138,8 +142,8 @@ WebClient webClient = WebClient.builder()
 <1> Uri from which all request will be executed.
 <2> Register a support for Jsonp.
 
-By default, Helidon quickstart run on the host localhost and port 8080. If you changed these values, make sure to modify
-them in the Uri as well.
+By default, Helidon quickstart run on the host localhost and port 8080. If you changed these values in configuration
+files, make sure to modify them in the Uri as well.
 Once build, the WebClient can be used to send a GET request to the greeting application.
 
 [source,java]
@@ -161,7 +165,6 @@ The path method joins `/greet` to the WebClient base Uri. The target Uri for thi
 `http://localhost:8080/greet` where the response should be a greeting message. As the response will be printed in the
 console, a String is more convenient than the default return type for the request. The default type is WebClientResponse
 which contains response code, headers and non-handled entity.
-
 
 ==== Run the application
 
@@ -252,8 +255,8 @@ webClient.put()     // <2>
 
 According to the quickstart documentation, a Json object can be sent to the application to change the greeting following
 this structure: `{"greeting" : "value"}`. The first three lines of code create the JsonObject with the required content.
-This time, we use the put and submit methods to push the new greeting. The best way to check that the modification is
-done correctly is to get greeting and display it to the console. `thenCompose` method will execute a GET request after
+This time, we use the put and submit methods to push the new greeting. One way to check the greeting modification
+is to get greeting and display it to the console. `thenCompose` method will execute a GET request after
 the PUT request is executed.
 
 [source,bash]
@@ -303,36 +306,37 @@ import org.eclipse.microprofile.metrics|.Counter;
 
 public static void main(String[] args) {
 
-    MetricRegistry METRIC_FACTORY = RegistryFactory.getInstance()
+    MetricRegistry metricFactory = RegistryFactory.getInstance()
             .getRegistry(MetricRegistry.Type.APPLICATION);
 
-    String metricName = "metric.GET.localhost";           // <1>
+    String metricName = "metric.GET.localhost";             // <1>
 
-    Counter counter = METRIC_FACTORY|.counter(metricName);  // <2>
-                                    |.meter(metricName)
-                                    |.timer(metricName)
-                                    |.concurrentGauge(metricName)
+    Counter counter = metricFactory|.counter(metricName);   // <2>
+                                   |.meter(metricName)
+                                   |.timer(metricName)
+                                   |.concurrentGauge(metricName)
 
     WebClientService clientServiceMetric = WebClientMetrics|.counter()
                                                            |.meter()
                                                            |.timer()
                                                            |.gaugeInProgress()
-                    .methods(Http.Method.GET)  // OPTIONAL
-                    .success(true)  // OPTIONAL
-                    .errors(true)   // OPTIONAL
-                    .description("Metric Description") // OPTIONAL
+
+                    .methods(Http.Method.GET)           // OPTIONAL
+                    .success(true)                      // OPTIONAL
+                    .errors(true)                       // OPTIONAL
+                    .description("Metric Description")  // OPTIONAL
                     .nameFormat("counter.%1$s.%2$s")
-                    .build();                               // <3>
+                    .build();                           // <3>
 ----
 <1> Choose the metric name.
-<2> Create a metric from `METRIC_FACTORY`.
+<2> Create a metric from `metricFactory`.
 <3> Build a Web Client Service for counting the GET requests.
 
 The metric name can indicate what is measured. In this example, the metric target GET requests on the localhost.
 In order to pass this information to the webclient, the `nameFormat` method extracts it from the metric name.
 Otherwise, the metric name can also have nothing in common with its job. In this case, the methods with `OPTIONAL`
 comment can be used. The `methods` will target the Http request type of your choice. `success` and `error` will
-respectively measure request if they are successful or failing, and `description` to add a metric description.
+respectively measure request if they are successful or failed, and `description` add a metric description.
 
 [source,java]
 .Add the metric service to the WebClient:
@@ -353,7 +357,7 @@ Simply use the `addService` method to add the metric to the WebClient on which t
 System.out.println(metricName + ": " + counter.getCount());
 ----
 
-To quickly check you set up metrics correctly, print the counter at the end of the main method. In this guide, the
+To quickly check metrics are set up correctly, print the counter at the end of the main method. In this guide, the
 WebClient uses GET and PUT requests, so metrics can be applied on.
 
 ==== Set up metrics with configuration files
