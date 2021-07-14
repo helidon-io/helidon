@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ import io.opentracing.util.GlobalTracer;
  *     <tr>
  *         <td>{@code sampler-type}</td>
  *         <td>library default</td>
- *         <td>Sampler type ({@code probabilistic}, {@code ratelimiting}, or {@code remote}</td>
+ *         <td>Sampler type ({@code const}, {@code probabilistic}, {@code ratelimiting}, or {@code remote})</td>
  *     </tr>
  *     <tr>
  *         <td>{@code sampler-param}</td>
