@@ -30,6 +30,7 @@ module io.helidon.rsocket.server {
     requires org.reactivestreams;
     requires io.helidon.webserver.tyrus;
     requires tyrus.spi;
+    requires rsocket.transport.netty;
 
     exports io.helidon.rsocket.server;
 }

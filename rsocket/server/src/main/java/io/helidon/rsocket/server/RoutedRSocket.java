@@ -59,6 +59,18 @@ public class RoutedRSocket implements RSocket {
     }
 
     /**
+     * Construct from RSocket Routing.
+     *
+     * @param rSocketRouting
+     */
+    RoutedRSocket(RSocketRouting rSocketRouting){
+        this.requestResponseRoutes = rSocketRouting.requestResponseRoutes();
+        this.fireAndForgetRoutes = rSocketRouting.fireAndForgetRoutes();
+        this.requestStreamRoutes = rSocketRouting.requestStreamRoutes();
+        this.requestChannelRoutes = rSocketRouting.requestChannelRoutes();
+    }
+
+    /**
      * Builder for RoutedRSocket.
      *
      * @return Builder
@@ -92,6 +104,14 @@ public class RoutedRSocket implements RSocket {
             this.fireAndForgetRoutes = new HashMap<>();
             this.requestStreamRoutes = new HashMap<>();
             this.requestChannelRoutes = new HashMap<>();
+        }
+
+        public Builder rSocketRouting(RSocketRouting rSocketRouting){
+            this.requestResponseRoutes = rSocketRouting.requestResponseRoutes();
+            this.fireAndForgetRoutes = rSocketRouting.fireAndForgetRoutes();
+            this.requestStreamRoutes = rSocketRouting.requestStreamRoutes();
+            this.requestChannelRoutes = rSocketRouting.requestChannelRoutes();
+            return this;
         }
 
         /**

@@ -18,8 +18,8 @@
  * Application demonstrates combination of the RSocket and REST.
  *
  * <p>
- * Start with {@link io.helidon.examples.rsocket.server.Main} class.
+ * Start with {@link io.helidon.examples.rsocket.server.MainWS} class.
  *
- * @see io.helidon.examples.rsocket.server.Main
+ * @see io.helidon.examples.rsocket.server.MainWS
  */
 package io.helidon.examples.rsocket.server;

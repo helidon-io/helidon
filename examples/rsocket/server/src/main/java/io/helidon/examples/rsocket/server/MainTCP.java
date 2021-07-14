@@ -16,59 +16,64 @@
 
 package io.helidon.examples.rsocket.server;
 
-import java.util.concurrent.CompletableFuture;
-
-import io.helidon.health.HealthSupport;
-import io.helidon.health.checks.HealthChecks;
-import io.helidon.rsocket.health.RSocketHealthCheck;
-import io.helidon.rsocket.server.RSocketEndpoint;
+import io.helidon.rsocket.server.HelidonTcpRSocketServer;
 import io.helidon.rsocket.server.RSocketRouting;
-import io.helidon.rsocket.server.RSocketSupport;
-import io.helidon.webserver.Routing;
+import io.helidon.rsocket.server.RoutedRSocket;
 import io.helidon.webserver.WebServer;
+
+import java.util.concurrent.CompletableFuture;
 
 
 /**
  * Application demonstrates combination of websocket and REST.
  */
-public class Main {
+public class MainTCP {
 
-    private Main() {
+    private MainTCP() {
     }
 
-    /**
-     * Creates new {@link Routing}.
-     *
-     * @return the new instance
-     */
-    static Routing createRouting() {
+    static RSocketRouting rSocketRouting() {
 
         MyRSocketService myRSocketService = new MyRSocketService();
-
         RSocketRouting rSocketRouting = RSocketRouting.builder()
                 .register(myRSocketService)
                 .build();
-
-        HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
-                .addLiveness(RSocketHealthCheck.create())   // Adds RSocket checks
-                .build();
-
-        Routing build = Routing.builder()
-                .register(health)
-                .register("/rsocket",
-                        RSocketSupport.builder()
-                                .register(RSocketEndpoint.create(rSocketRouting, "/board")
-                                        .getEndPoint()
-                                ).build())
-                .build();
-
-        return build;
+        return rSocketRouting;
     }
+
 
     static WebServer startWebServer() {
 
-        WebServer server = WebServer.builder(createRouting())
+// 1 the easiest option to start with tcp
+//        RSocketServer.create()
+//            .acceptor((payload, rsocket) -> Mono.just(RoutedRSocket.builder().build()))
+//            .bindNow(TcpServerTransport.create(9090));
+
+
+//        ServerTransport.ConnectionAcceptor connectionAcceptor = RSocketServer.create()
+//                .asConnectionAcceptor();
+//
+//
+//
+//        TcpServer server = TcpServer.builder()
+//                .config1
+//                .config1
+//                .config1
+//                .build(connection -> {
+//                    connectionAcceptor.apply(new TcpHelidonDuplexConnection()).subscribe();
+//                });
+
+        HelidonTcpRSocketServer rSocketServer = HelidonTcpRSocketServer.builder()
+                .port(9090)
+                .rsocket(RoutedRSocket
+                        .builder()
+                        .rSocketRouting(rSocketRouting())
+                        .build())
+                .build();
+
+        rSocketServer.start();
+
+        WebServer server = WebServer.builder()
                 .port(8080)
                 .build();
 

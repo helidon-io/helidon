@@ -36,13 +36,17 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.examples.rsocket.server.Main</mainClass>
+        <mainClass>io.helidon.examples.rsocket.server.MainWS</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.rsocket</groupId>
             <artifactId>helidon-rsocket-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.rsocket</groupId>
+            <artifactId>rsocket-transport-netty</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.health</groupId>
