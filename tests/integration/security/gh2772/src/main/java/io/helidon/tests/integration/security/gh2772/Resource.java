@@ -19,6 +19,8 @@ package io.helidon.tests.integration.security.gh2772;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 
+import io.helidon.security.annotations.Authenticated;
+
 /**
  * JAX-RS Resource.
  */
@@ -30,6 +32,7 @@ public class Resource {
      * @return returns hello
      */
     @GET
+    @Authenticated
     public String hello() {
         return "Hello World";
     }

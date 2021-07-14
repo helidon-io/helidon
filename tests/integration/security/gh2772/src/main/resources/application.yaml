@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,28 +15,28 @@
 #
 server.port: 0
 security:
+  config:
+    require-encryption: false
+  provider-policy:
+    type: "COMPOSITE"
+    authentication:
+      - name: "http-digest-auth"
+        flag: "SUFFICIENT"
+      - name: "http-basic-auth"
+        flag: "SUFFICIENT"
   providers:
-    - abac:
-    - http-basic-auth:
-        realm: "helidon"
-        optional: true
-        users:
-          - login: "success"
-            password: "password"
-            roles: ["admin"]
-          - login: "fail"
-            password: "password"
     - http-digest-auth:
         realm: "helidon"
         optional: true
         server-secret: "aPassword"
         users:
-          - login: "jack"
-            password: "password"
+          - login: "digest"
+            password: "${CLEAR=digest}"
             roles: ["user", "admin"]
-          - login: "jill"
-            password: "password"
-            roles: ["user"]
-          - login: "john"
-            password: "password"
-            roles: []
+    - http-basic-auth:
+        realm: "helidon"
+        optional: true
+        users:
+          - login: "basic"
+            password: "${CLEAR=basic}"
+            roles: ["user", "admin"]

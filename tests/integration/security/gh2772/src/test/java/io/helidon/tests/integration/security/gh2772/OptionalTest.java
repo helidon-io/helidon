@@ -18,16 +18,12 @@ package io.helidon.tests.integration.security.gh2772;
 
 import java.util.Base64;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
+import javax.inject.Inject;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.http.Http;
-import io.helidon.microprofile.server.Server;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -36,45 +32,54 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Unit test for gh2772.
  */
+@HelidonTest
 class OptionalTest {
-    private static Server server;
-    private static Client client;
-    private static WebTarget resourceTarget;
-    private static WebTarget metricTarget;
+    @Inject
+    private WebTarget webTarget;
 
-    @BeforeAll
-    static void initClass() {
-        server = Server.create()
-                .start();
-
-        client = ClientBuilder.newClient();
-
-        int port = server.port();
-        String baseUri = "http://localhost:" + port;
-        resourceTarget = client.target(baseUri + "/greet");
-    }
-
-    @AfterAll
-    static void destroyClass() {
-        if (server != null) {
-            server.stop();
-        }
-
-        if (client != null) {
-            client.close();
-        }
-    }
-
+    /*
+     * Both auth provider will abstain since we are not passing Auth headers,
+     * and with all abstain, composite will return 401.
+     */
     @Test
     void testResourceEndpoint() {
-        String response = resourceTarget.request()
-                .get(String.class);
+        Response response = webTarget
+                .path("/greet")
+                .request()
+                .get(Response.class);
+        assertThat(response.getStatus(), is(Response.Status.UNAUTHORIZED.getStatusCode()));
+    }
 
-        assertThat(response, is("Hello World"));
+    /*
+     * Digest auth provider will abstain but basic will work and we get e2e call done.
+     */
+    @Test
+    void testResourceEndpointBasic() {
+        Response response = webTarget
+                .path("/greet")
+                .request()
+                .header("Authorization", basic("basic"))
+                .get(Response.class);
+        assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+        assertThat(response.readEntity(String.class), is("Hello World"));
+    }
+
+    /*
+     * We are passing Auth headers with wrong user info for basic auth so both provider will abastain,
+     * and with all abstain, composite will return 401.
+     */
+    @Test
+    void testResourceEndpointBasicFail() {
+        Response response = webTarget
+                .path("/greet")
+                .request()
+                .header("Authorization", basic("fail"))
+                .get(Response.class);
+        assertThat(response.getStatus(), is(Response.Status.UNAUTHORIZED.getStatusCode()));
     }
 
     private String basic(String user) {
-        String uap = user + ":password";
+        String uap = user + ":basic";
         return "basic " + Base64.getEncoder().encodeToString(uap.getBytes());
     }
 }
