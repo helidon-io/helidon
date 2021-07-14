@@ -49,7 +49,7 @@ class TestJaegerMetrics {
     private MetricRegistry vendorRegistry;
 
     @Test
-    void checkForJaegerMetrics() throws InterruptedException {
+    void checkForJaegerMetrics() {
         String hello = webTarget
                 .path("/helloworld/hi")
                 .request(MediaType.TEXT_PLAIN)
