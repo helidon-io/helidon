@@ -32,6 +32,7 @@ import io.rsocket.metadata.TaggingMetadata;
 import io.rsocket.metadata.TaggingMetadataCodec;
 import io.rsocket.metadata.WellKnownAuthType;
 import io.rsocket.metadata.WellKnownMimeType;
+import io.rsocket.transport.netty.client.TcpClientTransport;
 import io.rsocket.transport.netty.client.WebsocketClientTransport;
 import io.rsocket.util.DefaultPayload;
 import org.reactivestreams.FlowAdapters;
@@ -249,15 +250,24 @@ public class RSocketClient implements Disposable {
         private String token;
         private String websocket;
         private String uri;
-        private int port;
+        private int port = 9090;
 
         @Override
         public RSocketClient build() {
-            RSocket rSocket = io.rsocket.core.RSocketConnector.create()
-                    .dataMimeType(mimeType)
-                    .metadataMimeType(metadataMimeType)
-                    .connect(WebsocketClientTransport.create(URI.create(websocket)))
-                    .block();
+            RSocket rSocket;
+            if (uri != null && !uri.isEmpty()) {
+                rSocket = io.rsocket.core.RSocketConnector.create()
+                        .dataMimeType(mimeType)
+                        .metadataMimeType(metadataMimeType)
+                        .connect(WebsocketClientTransport.create(URI.create(websocket)))
+                        .block();
+            } else {
+                rSocket = io.rsocket.core.RSocketConnector.create()
+                        .dataMimeType(mimeType)
+                        .metadataMimeType(metadataMimeType)
+                        .connect(TcpClientTransport.create(uri,port))
+                        .block();
+            }
 
             io.rsocket.core.RSocketClient client = io.rsocket.core.RSocketClient.from(rSocket);
             RSocketClient result = new RSocketClient(client);
