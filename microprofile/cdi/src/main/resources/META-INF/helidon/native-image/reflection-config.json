@@ -16,6 +16,7 @@
         "javax.enterprise.context.BeforeDestroyed"
     ],
     "classes": [
+        "javax.enterprise.event.ObserverException"
     ],
     "exclude": [
     ]
