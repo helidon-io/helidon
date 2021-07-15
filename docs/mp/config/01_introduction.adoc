@@ -41,7 +41,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
         </dependency>
 ----
 
-== Overview
+== About {spec-name}
 
 Helidon MicroProfile Config is an implementation of https://github.com/eclipse/microprofile-config/[Eclipse MicroProfile Config].
 You can configure your applications using MicroProfile's config configuration sources and APIs. You can also extend the
