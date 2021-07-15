@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -47,12 +48,12 @@ class CacheManagerImpl implements CacheManager {
         }
     }
 
-    private final Map<String, CacheConfig> config;
+    private final Map<String, CacheConfiguration> config;
     private final Map<String, CompletableFuture<CacheImpl<?, ?>>> caches = new HashMap<>();
     private final Map<String, AtomicBoolean> closed = new HashMap<>();
     private final Map<String, AtomicBoolean> requested = new HashMap<>();
 
-    private CacheManagerImpl(Map<String, CacheConfig> config) {
+    private CacheManagerImpl(Map<String, CacheConfiguration> config) {
         this.config = config;
         for (String name : config.keySet()) {
             caches.put(name, new CompletableFuture<>());
@@ -62,7 +63,7 @@ class CacheManagerImpl implements CacheManager {
     }
 
     public static CacheManager create(Config config) {
-        Map<String, CacheConfig> configs = new HashMap<>();
+        Map<String, CacheConfiguration> configs = new HashMap<>();
         config.asNodeList()
                 .ifPresent(nodes -> {
                     for (Config node : nodes) {
@@ -73,7 +74,7 @@ class CacheManagerImpl implements CacheManager {
                                 .asString()
                                 .orElseThrow(() -> new CacheException("Key 'type' is required in cache configuration"));
                         Config properties = node.get("properties");
-                        configs.put(name, new CacheConfig(name, type, properties));
+                        configs.put(name, new CacheConfiguration(name, type, properties));
                     }
                 });
         return new CacheManagerImpl(configs);
@@ -81,29 +82,29 @@ class CacheManagerImpl implements CacheManager {
 
     @Override
     public <K, V> Single<Cache<K, V>> cache(String name) {
-        return getCache(name, null);
+        return getCache(name, CacheConfig.create());
     }
-
 
     @SuppressWarnings("unchecked")
     @Override
-    public <K, V> Single<Cache<K, V>> cache(String name, CacheLoader<K, V> loader) {
-        return getCache(name, loader);
+    public <K, V> Single<Cache<K, V>> cache(String name, CacheConfig<K, V> config) {
+        return getCache(name, config);
     }
 
     @SuppressWarnings("unchecked")
-    private <K, V> Single<Cache<K, V>> getCache(String name, CacheLoader<K, V> loader) {
+    private <K, V> Single<Cache<K, V>> getCache(String name, CacheConfig<K, V> cacheConfig) {
         if (requested.containsKey(name)) {
             AtomicBoolean isRequested = requested.get(name);
             if (isRequested.compareAndSet(false, true)) {
-                CacheConfig cacheConfig = config.get(name);
-                String type = cacheConfig.type;
-                Config config = cacheConfig.properties;
+                CacheConfiguration cacheConfiguration = this.config.get(name);
+                String type = cacheConfiguration.type;
+                Config config = cacheConfiguration.properties;
 
+                CacheConfig<K, V> usedConfig = cacheConfig == null ? CacheConfig.create() : cacheConfig;
                 for (CacheProvider provider : PROVIDERS) {
                     if (type.equals(provider.type())) {
-                        return provider.createCache(this, config, name)
-                                .map(cacheSpi -> wrap(provider, cacheSpi, loader))
+                        return provider.createCache(this, config, name, usedConfig)
+                                .map(cacheSpi -> wrap(provider, cacheSpi, usedConfig))
                                 .peek(cache -> caches.get(name).complete(cache))
                                 .map(it -> it);
                     }
@@ -117,9 +118,10 @@ class CacheManagerImpl implements CacheManager {
                                 return Single.error(new CacheException("Cache \"" + name + "\" is closed"));
                             }
 
-                            if (loader != null) {
-                                CacheLoader<?, ?> configuredLoader = it.getLoader();
-                                if (configuredLoader != loader) {
+                            Optional<CacheLoader<K, V>> maybeLoader = cacheConfig.loader();
+                            if (maybeLoader.isPresent()) {
+                                CacheLoader<?, ?> configuredLoader = maybeLoader.get();
+                                if (configuredLoader != it.getLoader()) {
                                     LOGGER.warning("Cache loader should only be configured on the first request to"
                                                            + " obtain a cache. Further loaders are ignored");
                                 }
@@ -132,15 +134,12 @@ class CacheManagerImpl implements CacheManager {
         }
     }
 
-
     private <K, V> CacheImpl<K, V> wrap(CacheProvider provider,
-                                        CacheSpi<Object, Object> cacheSpi,
-                                        CacheLoader<K, V> loader) {
-        if (loader == null) {
-            return new CacheImpl<>(this, provider, cacheSpi);
-        } else {
-            return new LoaderBackedCacheImpl<>(this, provider, cacheSpi, loader);
-        }
+                                        CacheSpi<K, V> cacheSpi,
+                                        CacheConfig<K, V> cacheConfig) {
+        return cacheConfig.loader()
+                .map(loader -> (CacheImpl<K, V>) new LoaderBackedCacheImpl<K, V>(this, provider, cacheSpi, loader))
+                .orElseGet(() -> new CacheImpl<>(this, provider, cacheSpi));
     }
 
     @Override
@@ -160,12 +159,12 @@ class CacheManagerImpl implements CacheManager {
         return result;
     }
 
-    private static class CacheConfig {
+    private static class CacheConfiguration {
         private final String name;
         private final String type;
         private final Config properties;
 
-        private CacheConfig(String name, String type, Config properties) {
+        private CacheConfiguration(String name, String type, Config properties) {
             this.name = name;
             this.type = type;
             this.properties = properties;

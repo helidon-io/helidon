@@ -34,11 +34,12 @@ import io.helidon.caching.annotation.CacheValue;
 @CacheName("simple-cache")
 public class CachedBean {
     private final AtomicInteger counter = new AtomicInteger();
-    private final Cache<Integer, String> cache;
+    private final Cache<Integer, Integer> cache;
 
     @Inject
-    CachedBean(@CacheName("loader-cache") Cache<Integer, String> cache) {
+    CachedBean(@CacheName("loader-cache") Cache<Integer, Integer> cache) {
         this.cache = cache;
+        System.out.println(cache.get(79).await());
     }
 
     @CacheGet

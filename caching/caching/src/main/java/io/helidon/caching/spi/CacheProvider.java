@@ -16,6 +16,7 @@
 
 package io.helidon.caching.spi;
 
+import io.helidon.caching.CacheConfig;
 import io.helidon.caching.CacheManager;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -23,6 +24,10 @@ import io.helidon.config.Config;
 public interface CacheProvider {
     String type();
 
-    <K, V> Single<CacheSpi<K, V>> createCache(CacheManager manager, Config config, String name);
+    <K, V> Single<CacheSpi<K, V>> createCache(CacheManager manager,
+                                              Config config,
+                                              String name,
+                                              CacheConfig<K, V> configuration);
+
     Single<Void> closeCache(CacheSpi<?, ?> toClose);
 }

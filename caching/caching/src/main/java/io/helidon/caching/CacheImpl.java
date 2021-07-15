@@ -29,11 +29,10 @@ class CacheImpl<K, V> implements Cache<K, V> {
     private final CacheProvider provider;
     private final CacheSpi<K, V> cacheSpi;
 
-    @SuppressWarnings("unchecked")
-    CacheImpl(CacheManagerImpl cacheManager, CacheProvider provider, CacheSpi<Object, Object> cacheSpi) {
+    CacheImpl(CacheManagerImpl cacheManager, CacheProvider provider, CacheSpi<K, V> cacheSpi) {
         this.cacheManager = cacheManager;
         this.provider = provider;
-        this.cacheSpi = (CacheSpi<K, V>) cacheSpi;
+        this.cacheSpi = cacheSpi;
     }
 
     @Override

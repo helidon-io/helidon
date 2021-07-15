@@ -43,6 +43,7 @@ import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
+import javax.enterprise.inject.spi.ProcessBean;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
@@ -50,13 +51,17 @@ import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.enterprise.util.AnnotationLiteral;
 
 import io.helidon.caching.Cache;
+import io.helidon.caching.CacheConfig;
+import io.helidon.caching.CacheManager;
 import io.helidon.caching.annotation.CacheGet;
 import io.helidon.caching.annotation.CacheKey;
 import io.helidon.caching.annotation.CacheName;
 import io.helidon.caching.annotation.CacheValue;
 import io.helidon.common.GenericType;
+import io.helidon.config.Config;
 
 public class CachingCdiExtension implements Extension {
+    private final Map<String, Class<? extends CacheConfig<?, ?>>> cacheConfigs = new HashMap<>();
     private final Map<String, MethodInterceptorInfo> interceptorCache = new HashMap<>();
     private final Set<TypeAndName> types = new HashSet<>();
 
@@ -64,16 +69,51 @@ public class CachingCdiExtension implements Extension {
         return interceptorCache.get(methodCacheKey(method));
     }
 
+    @SuppressWarnings("unchecked")
+    void processConfigurators(@Observes ProcessBean<?> beanEvent) {
+        CacheName cacheNameAnnot = beanEvent.getAnnotated().getAnnotation(CacheName.class);
+
+        if (cacheNameAnnot == null) {
+            return;
+        }
+
+        Type type = beanEvent.getAnnotated().getBaseType();
+        if (type instanceof Class<?>) {
+            if (CacheConfig.class.isAssignableFrom((Class<?>) type)) {
+                String cacheName = cacheNameAnnot.value();
+                Class<? extends CacheConfig<?, ?>> existingConfigurator = cacheConfigs.get(cacheName);
+                if (existingConfigurator != null) {
+                    throw new DeploymentException("There are two CacheConfigs defined for cache named \"" + cacheName + "\"."
+                                                          + " " + existingConfigurator.getName() + ", and " + type);
+                }
+                this.cacheConfigs.put(cacheName, (Class<? extends CacheConfig<?, ?>>) type);
+            }
+        }
+    }
+
     void bbd(@Observes BeforeBeanDiscovery bbd) {
         bbd.addInterceptorBinding(CacheGet.class);
         bbd.addAnnotatedType(InterceptCacheGet.class, InterceptCacheGet.class.getName())
                 .add(CacheGetLiteral.INSTANCE)
                 .add(Dependent.Literal.INSTANCE);
-        bbd.addAnnotatedType(Caches.class, Caches.class.getName())
-                .add(ApplicationScoped.Literal.INSTANCE);
     }
 
     void abd(@Observes AfterBeanDiscovery abd) {
+        abd.addBean()
+                .addType(Caches.class)
+                .id(Caches.class.getName())
+                .scope(ApplicationScoped.class)
+                .produceWith(instance -> {
+                    Map<String, CacheConfig<?, ?>> cacheConfigInstances = new HashMap<>();
+
+                    for (Map.Entry<String, Class<? extends CacheConfig<?, ?>>> entry : cacheConfigs.entrySet()) {
+                        cacheConfigInstances.put(entry.getKey(), instance.select(entry.getValue()).get());
+                    }
+                    Config config = instance.select(Config.class).get();
+                    CacheManager cacheManager = CacheManager.create(config.get("caches"));
+                    return new Caches(cacheManager, cacheConfigInstances);
+                });
+
         for (TypeAndName typeAndName : types) {
             Type type = typeAndName.type;
             String name = typeAndName.name;

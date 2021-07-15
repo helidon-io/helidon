@@ -31,7 +31,7 @@ class LoaderBackedCacheImpl<K, V> extends CacheImpl<K, V> {
 
     LoaderBackedCacheImpl(CacheManagerImpl cacheManager,
                           CacheProvider provider,
-                          CacheSpi<Object, Object> cacheSpi,
+                          CacheSpi<K, V> cacheSpi,
                           CacheLoader<K, V> loader) {
         super(cacheManager, provider, cacheSpi);
         this.loader = loader;

@@ -16,26 +16,29 @@
 
 package io.helidon.caching.cdi;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
+import java.util.Map;
 
 import io.helidon.caching.Cache;
+import io.helidon.caching.CacheConfig;
 import io.helidon.caching.CacheManager;
-import io.helidon.config.Config;
 
 class Caches {
-    private final Instance<Object> cdi;
-    private final Config config;
-    private final CacheManager cacheManager;
 
-    @Inject
-    Caches(Instance<Object> cdi, Config config) {
-        this.cdi = cdi;
-        this.config = config;
-        this.cacheManager = CacheManager.create(config.get("caches"));
+    private final CacheManager cacheManager;
+    private final Map<String, CacheConfig<?, ?>> configMap;
+
+    Caches(CacheManager cacheManager, Map<String, CacheConfig<?, ?>> configMap) {
+        this.cacheManager = cacheManager;
+        this.configMap = configMap;
     }
 
+    @SuppressWarnings("unchecked")
     Cache<Object, Object> cache(String name) {
-        return cacheManager.cache(name).await();
+        CacheConfig<?, ?> cacheConfig = configMap.get(name);
+        if (cacheConfig == null) {
+            return cacheManager.cache(name).await();
+        } else {
+            return (Cache<Object, Object>) cacheManager.cache(name, cacheConfig).await();
+        }
     }
 }

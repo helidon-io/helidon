@@ -17,6 +17,7 @@
 package io.helidon.examples.caching.memory;
 
 import io.helidon.caching.Cache;
+import io.helidon.caching.CacheConfig;
 import io.helidon.caching.CacheManager;
 import io.helidon.caching.SimpleLoader;
 import io.helidon.config.Config;
@@ -32,7 +33,7 @@ public class Main {
                 .<Integer, String>cache("simple-cache")
                 .await();
         Cache<Integer, String> loaderCache = cacheManager
-                .<Integer, String>cache("loader-cache", SimpleLoader.create(key -> "v-" + key))
+                .<Integer, String>cache("loader-cache", CacheConfig.create(SimpleLoader.create(key -> "v-" + key)))
                 .await();
 
         WebServer webServer = WebServer.builder()

@@ -25,7 +25,7 @@ public interface CacheManager {
     }
 
     <K, V> Single<Cache<K, V>> cache(String name);
-    <K, V> Single<Cache<K, V>> cache(String name, CacheLoader<K, V> loader);
+    <K, V> Single<Cache<K, V>> cache(String name, CacheConfig<K, V> config);
 
     Single<Void> close();
 }

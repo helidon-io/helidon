@@ -31,7 +31,10 @@ class InMemoryCacheProvider implements CacheProvider {
     }
 
     @Override
-    public <K, V> Single<CacheSpi<K, V>> createCache(CacheManager manager, Config config, String name) {
+    public <K, V> Single<CacheSpi<K, V>> createCache(CacheManager manager,
+                                                     Config config,
+                                                     String name,
+                                                     CacheConfig<K, V> configuration) {
         return Single.just(new InMemoryCache<>(name,
                                                LruCache.<K, V>builder()
                                                        .config(config)
