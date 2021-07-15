@@ -272,7 +272,7 @@ public class RSocketClient implements Disposable {
             io.rsocket.core.RSocketClient client = io.rsocket.core.RSocketClient.from(rSocket);
             RSocketClient result = new RSocketClient(client);
 
-            if (route != null || !route.isEmpty()) {
+            if (route != null && !route.isEmpty()) {
                 result.route = route;
                 result.authType = authType;
                 result.mimeType = mimeType;

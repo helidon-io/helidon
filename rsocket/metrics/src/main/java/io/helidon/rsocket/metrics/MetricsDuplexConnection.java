@@ -27,6 +27,7 @@ import io.rsocket.frame.FrameType;
 import io.rsocket.plugins.DuplexConnectionInterceptor.Type;
 
 import java.net.SocketAddress;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -51,23 +52,22 @@ final class MetricsDuplexConnection implements DuplexConnection {
     private final FrameCounters frameCounters;
 
     MetricsDuplexConnection(
-            Type connectionType, DuplexConnection delegate, MetricRegistry meterRegistry, Tag... tags) {
+            Type connectionType, DuplexConnection delegate, MetricRegistry metricsRegistry, Tag... tags) {
 
         Objects.requireNonNull(connectionType, "connectionType must not be null");
         this.delegate = Objects.requireNonNull(delegate, "delegate must not be null");
-        Objects.requireNonNull(meterRegistry, "meterRegistry must not be null");
+        Objects.requireNonNull(metricsRegistry, "metricsRegistry must not be null");
 
-        Tag[] closeTags = Stream.of(tags, new Tag("connection.type", connectionType.name()))
-                .toArray(Tag[]::new);
+        Tag[] closeTags = Stream.concat(Arrays.stream(tags),Stream.of(new Tag("connectionType", connectionType.name()))).toArray(Tag[]::new);
         this.close =
-                meterRegistry.counter(
-                        "rsocket.duplex.connection.close",
+                metricsRegistry.counter(
+                        "rsocketDuplexConnectionClose",
                         closeTags);
         this.dispose =
-                meterRegistry.counter(
-                        "rsocket.duplex.connection.dispose",
+                metricsRegistry.counter(
+                        "rsocketDuplexConnectionDispose",
                         closeTags);
-        this.frameCounters = new FrameCounters(connectionType, meterRegistry, tags);
+        this.frameCounters = new FrameCounters(connectionType, metricsRegistry, tags);
     }
 
     @Override
@@ -179,12 +179,12 @@ final class MetricsDuplexConnection implements DuplexConnection {
                 Type connectionType, MetricRegistry metricRegistry, String frameType, Tag... tags) {
 
 
-            Tag[] allTags = Stream.of(tags, new Tag("connection.type", connectionType.name()), new Tag("frame.type", frameType))
+            Tag[] allTags = Stream.concat(Arrays.stream(tags), Stream.of(new Tag("connectionType", connectionType.name()), new Tag("frameType", frameType)))
                     .toArray(Tag[]::new);
 
 
             return metricRegistry.counter(
-                    "rsocket.frame", allTags);
+                    "rsocketFrame", allTags);
         }
 
         @Override

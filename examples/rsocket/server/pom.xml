@@ -53,12 +53,16 @@
             <artifactId>helidon-health</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.health</groupId>
-            <artifactId>helidon-health-checks</artifactId>
+            <groupId>io.helidon.rsocket</groupId>
+            <artifactId>helidon-rsocket-health</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.rsocket</groupId>
-            <artifactId>helidon-rsocket-health</artifactId>
+            <artifactId>helidon-rsocket-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health-checks</artifactId>
         </dependency>
     </dependencies>
 

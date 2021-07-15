@@ -18,8 +18,9 @@ package io.helidon.examples.rsocket.server;
 
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
+import io.helidon.metrics.MetricsSupport;
 import io.helidon.rsocket.health.RSocketHealthCheck;
-import io.helidon.rsocket.server.RSocketEndpoint;
+import io.helidon.rsocket.metrics.MeteredRSocketEndpoint;
 import io.helidon.rsocket.server.RSocketRouting;
 import io.helidon.rsocket.server.RSocketSupport;
 import io.helidon.webserver.Routing;
@@ -45,6 +46,8 @@ public class MainWS {
 
         MyRSocketService myRSocketService = new MyRSocketService();
 
+        MetricsSupport metrics = MetricsSupport.create();
+
         RSocketRouting rSocketRouting = RSocketRouting.builder()
                 .register(myRSocketService)
                 .build();
@@ -56,9 +59,10 @@ public class MainWS {
 
         Routing build = Routing.builder()
                 .register(health)
+                .register(metrics)
                 .register("/rsocket",
                         RSocketSupport.builder()
-                                .register(RSocketEndpoint.create(rSocketRouting, "/board")
+                                .register(MeteredRSocketEndpoint.create(rSocketRouting, "/board")
                                         .getEndPoint()
                                 ).build())
                 .build();

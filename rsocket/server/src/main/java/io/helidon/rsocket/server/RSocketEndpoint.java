@@ -34,10 +34,10 @@ import javax.websocket.server.ServerEndpointConfig;
  */
 public class RSocketEndpoint extends Endpoint {
 
-    private static Map<String,ConnectionAcceptor> connectionAcceptorMap = new HashMap<>();
-    final Map<String, HelidonDuplexConnection> connections = new ConcurrentHashMap<>();
+    protected static Map<String,ConnectionAcceptor> connectionAcceptorMap = new HashMap<>();
+    protected final Map<String, HelidonDuplexConnection> connections = new ConcurrentHashMap<>();
 
-    private String path;
+    protected String path;
 
     /**
      * Factory method to create {@link RSocketEndpoint}
@@ -71,7 +71,7 @@ public class RSocketEndpoint extends Endpoint {
      * @param routing
      * @param path
      */
-    private RSocketEndpoint(RSocketRouting routing, String path) {
+    public RSocketEndpoint(RSocketRouting routing, String path) {
         this.path = path;
 
         ConnectionAcceptor connectionAcceptor = RSocketServer

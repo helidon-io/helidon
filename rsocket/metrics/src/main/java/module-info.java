@@ -28,6 +28,9 @@ module io.helidon.rsocket.metrics {
     requires io.helidon.common;
     requires io.helidon.config;
     requires microprofile.metrics.api;
+    requires io.helidon.rsocket.server;
+    requires jakarta.websocket.api;
+    requires io.helidon.metrics;
 
 
     exports io.helidon.rsocket.metrics;
