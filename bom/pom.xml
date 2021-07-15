@@ -438,6 +438,21 @@
                 <artifactId>helidon-bundles-security</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.caching</groupId>
+                <artifactId>helidon-caching</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.caching</groupId>
+                <artifactId>helidon-caching-annotation</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.caching</groupId>
+                <artifactId>helidon-caching-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- microprofile -->
             <dependency>
                 <groupId>io.helidon.microprofile.bundles</groupId>

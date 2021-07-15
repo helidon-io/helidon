@@ -1,0 +1,12 @@
+caches:
+  - name: "simple-cache"
+    type: "memory"
+    properties:
+      capacity: 2
+  - name: "loader-cache"
+    type: "memory"
+    properties:
+      capacity: 2
+
+server:
+  port: 8080
