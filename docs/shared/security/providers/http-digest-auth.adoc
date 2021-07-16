@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ The following table shows all configuration options of the provider and their de
 |===
 |key |default value |description
 
+|`optional` |`false` |If set to `true`, failure to authenticate will return `ABSTAIN` result instead of `FAILURE`. This is
+an important distinction when more than one provider is used
 |`realm` |`helidon` |The realm shown in challenge when user accesses a service without authentication
 |`principal-type` |`USER` |Type of authenticated entity - either `USER` or `SERVICE`, can be used in combination with
                             other authentication mechanism to authenticate both the user (as in person sitting in front of a computer)
