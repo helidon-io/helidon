@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.caching;
+package io.helidon.caching.coherence;
 
-import java.util.Optional;
+import io.helidon.caching.spi.CacheProvider;
+import io.helidon.caching.spi.CacheProviderManager;
 
-import io.helidon.common.reactive.Single;
+public class CoherenceProvider implements CacheProvider {
+    @Override
+    public String type() {
+        return "coherence";
+    }
 
-public interface CacheCommon<K, V> {
-    String name();
-
-    Single<Optional<V>> get(K key);
-
-    Single<Void> put(K key, V value);
-
-    Single<Void> remove(K key);
-
-    Single<Void> clear();
-
-    <T> T unwrap(Class<T> clazz);
+    @Override
+    public CacheProviderManager.Builder cacheManagerBuilder() {
+        return null;
+    }
 }

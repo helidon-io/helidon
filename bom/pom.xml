@@ -453,6 +453,16 @@
                 <artifactId>helidon-caching-cdi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.caching</groupId>
+                <artifactId>helidon-caching-memory</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.caching</groupId>
+                <artifactId>helidon-caching-coherence</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- microprofile -->
             <dependency>
                 <groupId>io.helidon.microprofile.bundles</groupId>

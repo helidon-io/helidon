@@ -16,18 +16,29 @@
 
 package io.helidon.caching.spi;
 
-import io.helidon.caching.CacheConfig;
-import io.helidon.caching.CacheManager;
-import io.helidon.common.reactive.Single;
-import io.helidon.config.Config;
-
-public interface CacheProvider {
+/**
+ * A cache provider (such as Coherence, JCache etc.).
+ * This is a {@link java.util.ServiceLoader} service provider interface.
+ *
+ * @param <B> type of builder to create a provider cache manager
+ * @param <C> type of provider configuration (provider specific configuration class that can be used
+ *              to configure this provider programmatically)
+ * @param <T> type of provider cache manager
+ */
+public interface CacheProvider<B extends CacheProviderManager.Builder<B, C, T>, C extends CacheProviderConfig,
+        T extends CacheProviderManager> {
+    /**
+     * Type of the provider, to map to a configuration node
+     * for provider and for configured caches.
+     *
+     * @return type of the provider
+     */
     String type();
 
-    <K, V> Single<CacheSpi<K, V>> createCache(CacheManager manager,
-                                              Config config,
-                                              String name,
-                                              CacheConfig<K, V> configuration);
-
-    Single<Void> closeCache(CacheSpi<?, ?> toClose);
+    /**
+     * A builder to create a {@code ProviderCacheManager}.
+     *
+     * @return a new builder
+     */
+    B cacheManagerBuilder();
 }

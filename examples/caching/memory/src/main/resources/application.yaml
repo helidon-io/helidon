@@ -1,4 +1,5 @@
-caches:
+caching:
+  caches:
   - name: "simple-cache"
     type: "memory"
     properties:

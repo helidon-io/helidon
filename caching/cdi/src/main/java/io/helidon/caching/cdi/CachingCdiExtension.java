@@ -110,7 +110,7 @@ public class CachingCdiExtension implements Extension {
                         cacheConfigInstances.put(entry.getKey(), instance.select(entry.getValue()).get());
                     }
                     Config config = instance.select(Config.class).get();
-                    CacheManager cacheManager = CacheManager.create(config.get("caches"));
+                    CacheManager cacheManager = CacheManager.create(config.get("caching"));
                     return new Caches(cacheManager, cacheConfigInstances);
                 });
 

@@ -14,21 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.caching;
-
-import io.helidon.common.reactive.Single;
-import io.helidon.config.Config;
+package io.helidon.caching.spi;
 
 /**
- * Main entry point to access caches.
+ * A provider specific configuration.
  */
-public interface CacheManager {
-    static CacheManager create(Config config) {
-        return CacheManagerImpl.create(config);
-    }
+public interface CacheProviderConfig {
 
-    <K, V> Single<Cache<K, V>> cache(String name);
-    <K, V> Single<Cache<K, V>> cache(String name, CacheConfig<K, V> config);
-
-    Single<Void> close();
 }

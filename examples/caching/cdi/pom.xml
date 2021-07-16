@@ -45,9 +45,8 @@
             <artifactId>helidon-caching-cdi</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.oracle.coherence.ce</groupId>
-            <artifactId>coherence</artifactId>
-            <version>21.06</version>
+            <groupId>io.helidon.caching</groupId>
+            <artifactId>helidon-caching-memory</artifactId>
         </dependency>
     </dependencies>
 

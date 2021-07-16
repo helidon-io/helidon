@@ -41,10 +41,10 @@ class CachingService implements Service {
     }
 
     private void route(ServerRequest request, ServerResponse response) {
-        int key = Integer.parseInt(request.queryParams().first("key").orElseGet(this::key));
+        int id = Integer.parseInt(request.queryParams().first("id").orElseGet(this::key));
 
-        simpleCache.computeSingle(key, this::producer)
-                .flatMapSingle(result -> loaderCache.get(key)
+        simpleCache.computeSingle(id, this::producer)
+                .flatMapSingle(result -> loaderCache.get(id)
                         .map(loaderResult -> "Simple cache: " + result + ", loader result: " + loaderResult))
                 .forSingle(response::send);
     }

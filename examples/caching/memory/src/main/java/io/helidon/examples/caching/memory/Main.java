@@ -28,7 +28,7 @@ public class Main {
     public static void main(String[] args) {
         Config config = Config.create();
 
-        CacheManager cacheManager = CacheManager.create(config.get("caches"));
+        CacheManager cacheManager = CacheManager.create(config.get("caching"));
         Cache<Integer, String> simpleCache = cacheManager
                 .<Integer, String>cache("simple-cache")
                 .await();
@@ -39,7 +39,7 @@ public class Main {
         WebServer webServer = WebServer.builder()
                 .config(config.get("server"))
                 .routing(Routing.builder()
-                                 .register("/", new CachingService(simpleCache, loaderCache))
+                                 .register("/cache", new CachingService(simpleCache, loaderCache))
                                  .build())
                 .build()
                 .start()

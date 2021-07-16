@@ -43,6 +43,7 @@
         <version.lib.apache-httpclient>4.5.13</version.lib.apache-httpclient>
         <version.lib.brave-opentracing>0.35.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0.2</version.lib.cdi-api>
+        <version.lib.coherence>21.06</version.lib.coherence>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.1.3</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
@@ -1229,6 +1230,11 @@
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
                 <version>${version.lib.groovy-all}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.oracle.coherence.ce</groupId>
+                <artifactId>coherence</artifactId>
+                <version>${version.lib.coherence}</version>
             </dependency>
             <dependency>
                 <!-- required for dependency convergence, transitive dependency of both

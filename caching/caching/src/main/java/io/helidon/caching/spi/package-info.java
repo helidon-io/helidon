@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * SPI for Cache implementations.
+ */
 package io.helidon.caching.spi;
-
-import io.helidon.caching.CacheCommon;
-
-public interface CacheSpi<K, V> extends CacheCommon<K, V> {
-}

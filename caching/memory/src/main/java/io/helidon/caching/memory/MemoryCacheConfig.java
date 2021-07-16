@@ -14,21 +14,27 @@
  * limitations under the License.
  */
 
-package io.helidon.caching;
+package io.helidon.caching.memory;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.config.Config;
+import io.helidon.caching.CacheConfig;
 
 /**
- * Main entry point to access caches.
+ * Memory cache configuration.
+ *
+ * @param <K> key type
+ * @param <V> value type
  */
-public interface CacheManager {
-    static CacheManager create(Config config) {
-        return CacheManagerImpl.create(config);
+public interface MemoryCacheConfig<K, V> extends CacheConfig<K, V> {
+    /**
+     * Default capacity of the cache: {@value}.
+     */
+    int DEFAULT_CAPACITY = 10000;
+
+    /**
+     * Maximal cache capacity.
+     * @return capacity
+     */
+    default int capacity() {
+        return DEFAULT_CAPACITY;
     }
-
-    <K, V> Single<Cache<K, V>> cache(String name);
-    <K, V> Single<Cache<K, V>> cache(String name, CacheConfig<K, V> config);
-
-    Single<Void> close();
 }

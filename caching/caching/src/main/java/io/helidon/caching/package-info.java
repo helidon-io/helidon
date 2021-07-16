@@ -14,21 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.caching;
-
-import io.helidon.common.reactive.Single;
-import io.helidon.config.Config;
-
 /**
- * Main entry point to access caches.
+ * Caching support for Helidon SE.
  */
-public interface CacheManager {
-    static CacheManager create(Config config) {
-        return CacheManagerImpl.create(config);
-    }
-
-    <K, V> Single<Cache<K, V>> cache(String name);
-    <K, V> Single<Cache<K, V>> cache(String name, CacheConfig<K, V> config);
-
-    Single<Void> close();
-}
+package io.helidon.caching;

@@ -16,11 +16,34 @@
 
 package io.helidon.caching;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.reactive.Single;
 
-public interface Cache<K, V> extends CacheCommon<K, V> {
+/**
+ * A typed cache instance.
+ *
+ * @param <K> type of keys
+ * @param <V> type of values
+ */
+public interface Cache<K, V> {
+    /**
+     * Name of this cache.
+     * @return name of this cache
+     */
+    String name();
+
+    Single<Optional<V>> get(K key);
+
+    Single<Void> put(K key, V value);
+
+    Single<Void> remove(K key);
+
+    Single<Void> clear();
+
+    <T> T unwrap(Class<T> clazz);
+
     Single<Void> close();
 
     boolean isClosed();

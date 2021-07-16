@@ -22,6 +22,12 @@ import java.util.Optional;
 
 import io.helidon.common.reactive.Single;
 
+/**
+ * Load values for cache in case the cache does not contain them.
+ *
+ * @param <K>
+ * @param <V>
+ */
 @FunctionalInterface
 public interface CacheLoader<K, V> {
     Single<Optional<V>> load(K key);
