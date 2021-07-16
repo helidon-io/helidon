@@ -123,7 +123,7 @@ Config config = Config.create(
                 .pollingStrategy(PollingStrategies.regular(Duration.ofSeconds(2))) // <1>
                 .optional(),
         ConfigSources.file("conf/config.properties")
-                .pollingStrategy(PollingStrategies::watch)                         // <2>
+                .changeWatcher(FileSystemWatcher.create())                         // <2>
                 .optional(),
         ConfigSources.classpath("application.properties")
                 .pollingStrategy(PollingStrategies::nop));                         // <3>
