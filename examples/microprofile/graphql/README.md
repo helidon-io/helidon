@@ -77,11 +77,11 @@ Access the `/graphql` endpoint via `http://127.0.0.1:7001/graphql`:
 ## Accessing Metrics
 
 In [TaskApi.java](src/main/java/io/helidon/examples/graphql/basics/TaskApi.java), the [Microprofile Metrics](https://github.com/eclipse/microprofile-metrics)
-annotation`@Timed` has been added to queries and mutations. If you access the metrics endpoint at http://localhost:7001/metrics you 
+annotation`@Timed` has been added to queries and mutations. If you access the metrics endpoint at http://127.0.0.1:7001/metrics you 
 will see the metrics available.
 
 ```bash
-$ curl http://localhost:7001/metrics
+$ curl http://127.0.0.1:7001/metrics
 
 # TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_rate_per_second gauge
 application_io_helidon_examples_graphql_basics_TaskApi_updateTask_rate_per_second 0.0
