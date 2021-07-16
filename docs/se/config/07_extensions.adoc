@@ -25,7 +25,7 @@
 
 Developer-provided extensions influence how the config system behaves.
 
-The <<config/01_introduction.adoc,config system introduction>> explains the design of the config
+The <<se/config/01_introduction.adoc,config system introduction>> explains the design of the config
 system and how its parts work together to read and parse config data, convert it
 to Java types, fine-tune the look-up of config data, and reload and
 reprocess data when it changes. _Config extensions_ provided by the application
@@ -61,17 +61,17 @@ Each config extension implements one of the interfaces defined in the Configurat
 
 The extension mechanism of Config can also use Java `ServiceLoader`.
 For this purpose, you implement providers that serve as factories for your implementation of an extension.
-This is to support meta-configuration even for custom extensions.
+This is to support config profiles even for custom extensions.
 Service providers:
 
 * `ConfigMapperProvider` - support for config mappers, automatically discovered by the config system
 * `ConfigFilter` - support for config filters, automatically discovered by the config system
 * `ConfigParser` - support for config parsers, automatically discovered by the config system
-* `ConfigSourceProvider` - support for named config sources, configurable through meta configuration
-* `ChangeWatcherProvider` - support for named change watchers, configurable through meta configuration
-* `OverrideSourceProvider` - support for named override sources, configurable through meta configuration
-* `PollingStrategyProvider` - support for named polling strategies, configurable through meta configuration
-* `RetryPolicyProvider` - support for retry policies, configurable through meta configuration
+* `ConfigSourceProvider` - support for named config sources, configurable through profiles
+* `ChangeWatcherProvider` - support for named change watchers, configurable through profiles
+* `OverrideSourceProvider` - support for named override sources, configurable through profiles
+* `PollingStrategyProvider` - support for named polling strategies, configurable through profiles
+* `RetryPolicyProvider` - support for retry policies, configurable through profiles
 
 The config system itself implements several of these SPIs, as noted in the sections below.
 
@@ -107,8 +107,8 @@ The following extensions are loaded using a service loader for any configuration
 * `ConfigParser` - each config parser on the classpath that implements `ConfigParserProvider` as a Java service loader service
 * `ConfigFilter` - each filter on the classpath that implements `ConfigFilter` as a Java service loader service
 
-Other extensions are only used from Java service loader when you use meta configuration.
-Mapping is done through the type configured in meta configuration, and the type defined by the extension provider interface.
+Other extensions are only used from Java service loader when you use config profiles.
+Mapping is done through the type configured in config profile, and the type defined by the extension provider interface.
 For example for config sources, the interface defines the following methods (only subset shown):
 
 [source,java]
@@ -117,7 +117,7 @@ boolean supports(String type);
 ConfigSource create(String type, Config metaConfig);
 ----
 
-Considering the following meta configuration:
+Considering the following meta configuration (or config profile):
 
 [source,yaml]
 ----
@@ -128,7 +128,7 @@ sources:
 ----
 
 The config system would iterate through all `ConfigSourceProvider` implementations found through Java `ServiceLoader` based on their priority.
-First provider that returns `true` when `supports("my-type")` is called would be used, and an instance of a `ConfigSource` created using `create("my-type", config)`, where `config` is located on the node of `properties` from meta configuration.
+First provider that returns `true` when `supports("my-type")` is called would be used, and an instance of a `ConfigSource` created using `create("my-type", config)`, where `config` is located on the node of `properties` from config profile.
 
 === About Priority [[priority-info]]
 
@@ -335,7 +335,7 @@ method.
 The config system will apply the overrides returned from each
 `OverrideSource` to each config key requested from a `Config` that is based on that `Config.Builder`.
 
-To support custom override sources in meta configuration, also implement the
+To support custom override sources in config profiles, also implement the
 link:{javadoc-base-url-api}/spi/OverrideSourceProvider.html[`OverrideSourceProvider`] service loader SPI
 
 [plantuml,config/spi-OverrideSource,png,title="OverrideSource SPI",align="center"]
@@ -519,7 +519,7 @@ interface PollingStrategy.Polled {
 }
 ----
 
-To support polling strategies that can be configured in meta configuration, also implement the `PollingStrategyProvider` Java service loader SPI.
+To support polling strategies that can be configured in config profile, also implement the `PollingStrategyProvider` Java service loader SPI.
 
 === ChangeWatcher SPI
 
@@ -552,7 +552,7 @@ interface ChangeWatcher.ChangeEvvent<T> {
 }
 ----
 
-To support change watchers that can be configured in meta configuration, also implement the `ChangeWatcherProvider` Java service loader SPI.
+To support change watchers that can be configured in config profile, also implement the `ChangeWatcherProvider` Java service loader SPI.
 
 == RetryPolicy SPI [[Config-SPI-RetryPolicy]]
 
@@ -599,6 +599,6 @@ The application can try to cancel the overall execution of a `RetryPolicy` by in
 Ideally the retry policy implementation should be able to abort the execution of the retry policy, even while a function call is in progress, but the policy must respond to cancels between function calls.
 In either case `cancel` returns `true` if the retry was aborted without a successful call to the function, and `false` otherwise, including if the function call had already completed successfully or had previously been successfully canceled.
 
-To support retry policies in meta configuration, also implement the Java service loader SPI
+To support retry policies in config profiles, also implement the Java service loader SPI
 `RetryPolicyProvider`.
 

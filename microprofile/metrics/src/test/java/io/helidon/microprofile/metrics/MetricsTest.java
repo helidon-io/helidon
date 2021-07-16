@@ -35,8 +35,11 @@ import io.helidon.metrics.MetricsSupport;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Timer;
 import org.hamcrest.CoreMatchers;
@@ -202,5 +205,25 @@ public class MetricsTest extends MetricsBaseTest {
         Set<String> gauges =  getMetricRegistry().getGauges()
                 .keySet().stream().map(MetricID::getName).collect(Collectors.toSet());
         assertThat(gauges, CoreMatchers.hasItem("secondsSinceBeginningOfTime"));
+    }
+
+    @Test
+    void testOmittedDisplayName() {
+        MeteredBean bean = newBean(MeteredBean.class);
+        String metricName = MeteredBean.class.getName() + ".method1";
+        Metadata metadata = getMetricRegistry().getMetadata().get(metricName);
+        assertThat("Metadata for meter of annotated method", metadata, is(notNullValue()));
+
+        // The displayName value stored in the retrieved metadata should be null, but Metadata.getDisplayName() returns the name
+        // in those cases. So an easy way to check is to attempt to re-register/look up the meter using a new Metadata instance
+        // for which we know the displayName is null.
+        Metadata newMetadata = Metadata.builder()
+                .withName(metadata.getName())
+                .withType(MetricType.METERED)
+                .reusable(false)
+                .withUnit(MetricUnits.PER_SECOND)
+                .build();
+        // Should return the existing meter. Throws exception if metadata is mismatched.
+        Meter meter = getMetricRegistry().meter(newMetadata);
     }
 }

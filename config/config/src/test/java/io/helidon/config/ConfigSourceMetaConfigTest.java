@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -209,6 +209,30 @@ public class ConfigSourceMetaConfigTest {
         Config config = justFrom(source);
 
         assertThat(config.get("this.is.prefix.key.app.page-size").asInt().get(), is(10));
+    }
+
+    @Test
+    public void testInlined() {
+        Config metaConfig = builderFrom(ConfigSources.create(
+                ObjectNode.builder()
+                        .addValue("type", "inlined")
+                        .addObject("properties", ObjectNode.builder()
+                                .addValue("key", "inlined-value")
+                                .addObject("server", ObjectNode.builder()
+                                        .addValue("port", "8014")
+                                        .addValue("host", "localhost")
+                                        .build())
+                                .build())
+                        .build()))
+                .build();
+
+        ConfigSource source = singleSource(metaConfig);
+
+        Config config = justFrom(source);
+
+        assertThat(config.get("key").asString().get(), is("inlined-value"));
+        assertThat(config.get("server.port").asInt().get(), is(8014));
+        assertThat(config.get("server.host").asString().get(), is("localhost"));
     }
 
     private ConfigSource singleSource(Config metaConfig) {

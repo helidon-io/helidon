@@ -19,7 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import io.helidon.config.yaml.YamlMpConfigSource;
+import io.helidon.config.yaml.mp.YamlMpConfigSource;
 import io.helidon.microprofile.cdi.Main;
 
 import org.eclipse.microprofile.config.Config;

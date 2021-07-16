@@ -57,7 +57,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
     # Modified shell variables: JAVA_HOME - JDK home directory
     #                           PATH      - executables search path
     graalvm() {
-        JAVA_HOME='/tools/graalvm-ce-java11-21.0.0'
+        JAVA_HOME='/tools/graalvm-ce-java11-21.1.0'
         PATH="${PATH}:${JAVA_HOME}/bin"
     }
 

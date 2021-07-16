@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
@@ -149,6 +150,9 @@ class WebClientConfiguration {
                 if (webClientTls.trustAll()) {
                     sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
                 }
+                if (!webClientTls.allowedCipherSuite().isEmpty()) {
+                    sslContextBuilder.ciphers(webClientTls.allowedCipherSuite());
+                }
 
                 sslContext = sslContextBuilder.build();
             }
@@ -159,8 +163,9 @@ class WebClientConfiguration {
     }
 
     private SslContext nettySslFromJavaNet(SSLContext javaNetContext) {
+        Set<String> allowedCipherSuite = webClientTls.allowedCipherSuite();
         return new JdkSslContext(
-                javaNetContext, true, null,
+                javaNetContext, true, allowedCipherSuite.isEmpty() ? null : allowedCipherSuite,
                 IdentityCipherSuiteFilter.INSTANCE, null,
                 ClientAuth.OPTIONAL, null, false);
     }

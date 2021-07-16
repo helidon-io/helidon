@@ -563,7 +563,7 @@ public class GrpcMetrics
          *
          * @see org.eclipse.microprofile.metrics.Metadata
          */
-        private String displayName;
+        private Optional<String> displayName = Optional.empty();
 
         /**
          * The unit of the metric.
@@ -623,9 +623,7 @@ public class GrpcMetrics
 
             this.description.ifPresent(builder::withDescription);
             this.units.ifPresent(builder::withUnit);
-
-            String displayName = this.displayName;
-            builder.withDisplayName(displayName == null ? name : displayName);
+            this.displayName.ifPresent(builder::withDisplayName);
 
             return builder.build();
         }
@@ -648,7 +646,7 @@ public class GrpcMetrics
 
         private MetricsRules displayName(String displayName) {
             MetricsRules rules = new MetricsRules(this);
-            rules.displayName = displayName;
+            rules.displayName = Optional.of(displayName);
             return rules;
         }
 
