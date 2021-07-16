@@ -74,6 +74,44 @@ Access the `/graphql` endpoint via `http://127.0.0.1:7001/graphql`:
     {"data":{"createTask":{"id":"0d4a8d","description":"Task Description 1","createdAt":1605501774877,"completed":false}}
     ```  
 
+## Accessing Metrics
+
+In [TaskApi.java](src/main/java/io/helidon/examples/graphql/basics/TaskApi.java), the [Microprofile Metrics](https://github.com/eclipse/microprofile-metrics)
+annotation`@Timed` has been added to queries and mutations. If you access the metrics endpoint at http://localhost:7001/metrics you 
+will see the metrics available.
+
+```bash
+$ curl http://localhost:7001/metrics
+
+# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_rate_per_second gauge
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_rate_per_second 0.0
+# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_one_min_rate_per_second gauge
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_one_min_rate_per_second 0.0
+# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_five_min_rate_per_second gauge
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_five_min_rate_per_second 0.0
+# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_fifteen_min_rate_per_second gauge
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_fifteen_min_rate_per_second 0.0
+# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_mean_seconds gauge
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_mean_seconds 0.0
+# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_max_seconds gauge
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_max_seconds 0.0
+# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_min_seconds gauge
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_min_seconds 0.0
+# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_stddev_seconds gauge
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_stddev_seconds 0.0
+# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds summary
+# HELP application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds_count 0
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds{quantile="0.5"} 0.0
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds{quantile="0.75"} 0.0
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds{quantile="0.95"} 0.0
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds{quantile="0.98"} 0.0
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds{quantile="0.99"} 0.0
+application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds{quantile="0.999"} 0.0
+```
+
+> Note: Output above has been truncated for brevity
+
 ## Incorporating the GraphiQL UI
 
 The [GraphiQL UI](https://github.com/graphql/graphiql), which provides a UI to execute GraphQL commands, is not included by default in Helidon's Microprofile GraphQL 
@@ -142,15 +180,6 @@ for convenience.
     # Create a task
     mutation createTask {
       createTask(description: "Task Description 1") {
-        ...task
-      }
-    }
-
-    # Create a task with empty description - will return error message
-    # Normally unchecked exceptions will not be displayed but
-    # We have overriden this in the microprofile-config.properties
-    mutation createTaskWithoutDescription {
-      createTask {
         ...task
       }
     }

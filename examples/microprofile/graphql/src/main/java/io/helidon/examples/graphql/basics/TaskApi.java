@@ -31,6 +31,7 @@ import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
  * A CDI Bean that exposes a GraphQL API to query and mutate {@link Task}s.
@@ -50,6 +51,7 @@ public class TaskApi {
      * @return the created {@link Task}
      */
     @Mutation
+    @Timed
     @Description("Create a task with the given description")
     public Task createTask(@Name("description") @NonNull String description) {
         if (description == null) {
@@ -67,6 +69,7 @@ public class TaskApi {
      * @return a {@link Collection} of {@link Task}s
      */
     @Query
+    @Timed
     @Description("Query tasks and optionally specify only completed")
     public Collection<Task> getTasks(@Name("completed") Boolean completed) {
         return tasks.values().stream()
@@ -82,6 +85,7 @@ public class TaskApi {
      * @throws TaskNotFoundException if the task was not found
      */
     @Query
+    @Timed
     @Description("Return a given task")
     public Task findTask(@Name("id") @NonNull String id) throws TaskNotFoundException {
         return Optional.ofNullable(tasks.get(id))
@@ -96,6 +100,7 @@ public class TaskApi {
      * @throws TaskNotFoundException if the task was not found
      */
     @Mutation
+    @Timed
     @Description("Delete a task and return the deleted task details")
     public Task deleteTask(@Name("id") @NonNull String id) throws TaskNotFoundException {
         return Optional.ofNullable(tasks.remove(id))
@@ -108,6 +113,7 @@ public class TaskApi {
      * @return the {@link Task}s left
      */
     @Mutation
+    @Timed
     @Description("Remove all completed tasks and return the tasks left")
     public Collection<Task> deleteCompletedTasks() {
         tasks.values().removeIf(Task::isCompleted);
@@ -124,6 +130,7 @@ public class TaskApi {
      * @throws TaskNotFoundException if the task was not found
      */
     @Mutation
+    @Timed
     @Description("Update a task")
     public Task updateTask(@Name("id") @NonNull String id,
                            @Name("description") String description,
