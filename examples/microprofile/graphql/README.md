@@ -119,8 +119,6 @@ $ curl  -H 'Accept: application/json' http://127.0.0.1:7001/metrics/application 
 }
 ```
 
-> Note: Output above has been truncated for brevity
-
 ## Incorporating the GraphiQL UI
 
 The [GraphiQL UI](https://github.com/graphql/graphiql), which provides a UI to execute GraphQL commands, is not included by default in Helidon's Microprofile GraphQL 
