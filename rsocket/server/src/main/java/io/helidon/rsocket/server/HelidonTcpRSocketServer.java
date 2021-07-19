@@ -6,6 +6,9 @@ import io.rsocket.transport.netty.server.TcpServerTransport;
 
 import java.util.logging.Logger;
 
+/**
+ * Experimental RSocket Server for TCP connection.
+ */
 public class HelidonTcpRSocketServer {
 
     private final static Logger LOGGER = Logger.getLogger(HelidonTcpRSocketServer.class.getName());

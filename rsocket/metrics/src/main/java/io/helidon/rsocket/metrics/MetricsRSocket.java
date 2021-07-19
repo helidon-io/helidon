@@ -55,7 +55,13 @@ final class MetricsRSocket implements RSocket {
 
     private final InteractionCounters requestStream;
 
-
+    /**
+     * Constructor for MetricsRSocket.
+     *
+     * @param delegate
+     * @param metricRegistry
+     * @param tags
+     */
     MetricsRSocket(RSocket delegate, MetricRegistry metricRegistry, Tag... tags) {
         this.delegate = Objects.requireNonNull(delegate, "Delegate must not be null");
         Objects.requireNonNull(metricRegistry, "MetricRegistry must not be null");
@@ -67,31 +73,49 @@ final class MetricsRSocket implements RSocket {
         this.requestStream = new InteractionCounters(metricRegistry, "RequestStream", tags);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void dispose() {
         delegate.dispose();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<Void> fireAndForget(Payload payload) {
         return delegate.fireAndForget(payload).doFinally(requestFireAndForget);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<Void> metadataPush(Payload payload) {
         return delegate.metadataPush(payload).doFinally(metadataPush);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<Void> onClose() {
         return delegate.onClose();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
         return delegate.requestChannel(payloads).doFinally(requestChannel);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<Payload> requestResponse(Payload payload) {
         return Mono.defer(
@@ -104,6 +128,9 @@ final class MetricsRSocket implements RSocket {
                 });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Flux<Payload> requestStream(Payload payload) {
         return delegate.requestStream(payload).doFinally(requestStream);

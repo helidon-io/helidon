@@ -51,6 +51,14 @@ final class MetricsDuplexConnection implements DuplexConnection {
 
     private final FrameCounters frameCounters;
 
+    /**
+     * Constructor for MetricsDuplexConnection.
+     *
+     * @param connectionType
+     * @param delegate
+     * @param metricsRegistry
+     * @param tags
+     */
     MetricsDuplexConnection(
             Type connectionType, DuplexConnection delegate, MetricRegistry metricsRegistry, Tag... tags) {
 
@@ -70,38 +78,59 @@ final class MetricsDuplexConnection implements DuplexConnection {
         this.frameCounters = new FrameCounters(connectionType, metricsRegistry, tags);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ByteBufAllocator alloc() {
         return delegate.alloc();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SocketAddress remoteAddress() {
         return delegate.remoteAddress();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void dispose() {
         delegate.dispose();
         dispose.inc();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<Void> onClose() {
         return delegate.onClose().doAfterTerminate(close::inc);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Flux<ByteBuf> receive() {
         return delegate.receive().doOnNext(frameCounters);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void sendFrame(int streamId, ByteBuf frame) {
         frameCounters.accept(frame);
         delegate.sendFrame(streamId, frame);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void sendErrorAndClose(RSocketErrorException e) {
         delegate.sendErrorAndClose(e);

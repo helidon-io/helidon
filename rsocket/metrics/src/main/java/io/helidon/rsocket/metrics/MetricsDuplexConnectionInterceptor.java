@@ -23,14 +23,26 @@ import java.util.Objects;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
+/**
+ * Class used to intercept all Duplex connections to add metrics to them.
+ */
 public final class MetricsDuplexConnectionInterceptor implements DuplexConnectionInterceptor {
 
   private final MetricRegistry metricRegistry;
 
+  /**
+   * Constructor for metrics interceptor.
+   */
   public MetricsDuplexConnectionInterceptor() {
     metricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
   }
 
+  /**
+   * Apply the interceptor and return the delegate.
+   * @param type
+   * @param duplexConnection
+   * @return Duplex Connection Delegate.
+   */
   @Override
   public DuplexConnection apply(Type type, DuplexConnection duplexConnection) {
     Objects.requireNonNull(DuplexConnectionInterceptor.Type.SERVER, "ConnectionType must not be null");
