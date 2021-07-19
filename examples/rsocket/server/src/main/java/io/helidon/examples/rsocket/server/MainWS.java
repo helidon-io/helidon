@@ -20,13 +20,11 @@ import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.rsocket.health.RSocketHealthCheck;
-import io.helidon.rsocket.metrics.MeteredRSocketEndpoint;
+import io.helidon.rsocket.server.RSocketEndpoint;
 import io.helidon.rsocket.server.RSocketRouting;
 import io.helidon.rsocket.server.RSocketSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
-
-import java.util.concurrent.CompletableFuture;
 
 
 /**
@@ -62,7 +60,7 @@ public class MainWS {
                 .register(metrics)
                 .register("/rsocket",
                         RSocketSupport.builder()
-                                .register(MeteredRSocketEndpoint.create(rSocketRouting, "/board")
+                                .register(RSocketEndpoint.create(rSocketRouting, "/board")
                                         .getEndPoint()
                                 ).build())
                 .build();
@@ -86,21 +84,11 @@ public class MainWS {
 
         WebServer server = WebServer.builder(createRouting())
                 .port(8080)
-                .build();
+                .build()
+                .start()
+                .await();
+        System.out.println("WEB server is up! http://localhost:" + server.port());
 
-        // Start webserver
-        CompletableFuture<Void> started = new CompletableFuture<>();
-        server.start().thenAccept(ws -> {
-            System.out.println("WEB server is up! http://localhost:" + ws.port());
-            started.complete(null);
-        });
-
-        // Wait for webserver to start before returning
-        try {
-            started.toCompletableFuture().get();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
         return server;
     }
 

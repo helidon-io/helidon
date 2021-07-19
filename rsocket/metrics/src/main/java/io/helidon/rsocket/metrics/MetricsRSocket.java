@@ -57,14 +57,14 @@ final class MetricsRSocket implements RSocket {
 
 
     MetricsRSocket(RSocket delegate, MetricRegistry metricRegistry, Tag... tags) {
-        this.delegate = Objects.requireNonNull(delegate, "delegate must not be null");
-        Objects.requireNonNull(metricRegistry, "metricRegistry must not be null");
+        this.delegate = Objects.requireNonNull(delegate, "Delegate must not be null");
+        Objects.requireNonNull(metricRegistry, "MetricRegistry must not be null");
 
-        this.metadataPush = new InteractionCounters(metricRegistry, "metadataPush", tags);
-        this.requestChannel = new InteractionCounters(metricRegistry, "requestChannel", tags);
-        this.requestFireAndForget = new InteractionCounters(metricRegistry, "requestFnF", tags);
-        this.requestResponse = new InteractionTimers(metricRegistry, "requestResponse", tags);
-        this.requestStream = new InteractionCounters(metricRegistry, "requestStream", tags);
+        this.metadataPush = new InteractionCounters(metricRegistry, "MetadataPush", tags);
+        this.requestChannel = new InteractionCounters(metricRegistry, "RequestChannel", tags);
+        this.requestFireAndForget = new InteractionCounters(metricRegistry, "RequestFnF", tags);
+        this.requestResponse = new InteractionTimers(metricRegistry, "RequestResponse", tags);
+        this.requestStream = new InteractionCounters(metricRegistry, "RequestStream", tags);
     }
 
     @Override

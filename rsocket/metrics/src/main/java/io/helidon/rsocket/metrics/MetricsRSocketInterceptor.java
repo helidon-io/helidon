@@ -17,6 +17,7 @@
 package io.helidon.rsocket.metrics;
 
 
+import io.helidon.metrics.RegistryFactory;
 import io.rsocket.RSocket;
 import io.rsocket.plugins.RSocketInterceptor;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -28,18 +29,15 @@ public final class MetricsRSocketInterceptor implements RSocketInterceptor {
 
   private final MetricRegistry metricRegistry;
 
-  private final Tag[] tags;
 
-
-  public MetricsRSocketInterceptor(MetricRegistry metricRegistry, Tag... tags) {
-    this.metricRegistry = Objects.requireNonNull(metricRegistry, "meterRegistry must not be null");
-    this.tags = tags;
+  public MetricsRSocketInterceptor() {
+    metricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
   }
 
   @Override
   public MetricsRSocket apply(RSocket delegate) {
-    Objects.requireNonNull(delegate, "delegate must not be null");
+    Objects.requireNonNull(delegate, "Delegate must not be null");
 
-    return new MetricsRSocket(delegate, metricRegistry, tags);
+    return new MetricsRSocket(delegate, metricRegistry);
   }
 }

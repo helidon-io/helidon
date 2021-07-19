@@ -16,12 +16,18 @@
 
 package io.helidon.rsocket.server;
 
+import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.rsocket.DuplexConnection;
+import io.rsocket.RSocket;
 import io.rsocket.core.RSocketServer;
+import io.rsocket.plugins.DuplexConnectionInterceptor;
+import io.rsocket.plugins.RSocketInterceptor;
 import io.rsocket.transport.ServerTransport.ConnectionAcceptor;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
@@ -34,8 +40,16 @@ import javax.websocket.server.ServerEndpointConfig;
  */
 public class RSocketEndpoint extends Endpoint {
 
-    protected static Map<String,ConnectionAcceptor> connectionAcceptorMap = new HashMap<>();
-    protected final Map<String, HelidonDuplexConnection> connections = new ConcurrentHashMap<>();
+    private static Map<String,ConnectionAcceptor> connectionAcceptorMap = new HashMap<>();
+    private final Map<String, DuplexConnection> connections = new ConcurrentHashMap<>();
+
+    HelidonServiceLoader<DuplexConnectionInterceptor> connectionInterceptors = HelidonServiceLoader
+            .builder(ServiceLoader.load(DuplexConnectionInterceptor.class))
+            .build();
+
+    HelidonServiceLoader<RSocketInterceptor> rsocketInterceptors = HelidonServiceLoader
+            .builder(ServiceLoader.load(RSocketInterceptor.class))
+            .build();
 
     protected String path;
 
@@ -74,14 +88,23 @@ public class RSocketEndpoint extends Endpoint {
     public RSocketEndpoint(RSocketRouting routing, String path) {
         this.path = path;
 
+        RSocket rSocket = RoutedRSocket.builder()
+                .fireAndForgetRoutes(routing.fireAndForgetRoutes())
+                .requestChannelRoutes(routing.requestChannelRoutes())
+                .requestResponseRoutes(routing.requestResponseRoutes())
+                .requestStreamRoutes(routing.requestStreamRoutes())
+                .build();
+
+        //Apply interceptors for metrics
+        for (RSocketInterceptor interceptor : rsocketInterceptors) {
+            rSocket = interceptor.apply(rSocket);
+        }
+
+        RSocket finalRSocket = rSocket;
+
         ConnectionAcceptor connectionAcceptor = RSocketServer
                 .create()
-                .acceptor((connectionSetupPayload, rSocket) -> Mono.just(RoutedRSocket.builder()
-                        .fireAndForgetRoutes(routing.fireAndForgetRoutes())
-                        .requestChannelRoutes(routing.requestChannelRoutes())
-                        .requestResponseRoutes(routing.requestResponseRoutes())
-                        .requestStreamRoutes(routing.requestStreamRoutes())
-                        .build()))
+                .acceptor((connectionSetupPayload, rs) -> Mono.just(finalRSocket))
                 .asConnectionAcceptor();
 
         connectionAcceptorMap.put(path,connectionAcceptor);
@@ -103,7 +126,11 @@ public class RSocketEndpoint extends Endpoint {
      */
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
-        final HelidonDuplexConnection connection = new HelidonDuplexConnection(session);
+        DuplexConnection connection = new HelidonDuplexConnection(session);
+        //Apply interceptors for metrics
+        for (DuplexConnectionInterceptor interceptor : connectionInterceptors) {
+            connection = interceptor.apply(DuplexConnectionInterceptor.Type.SERVER, connection);
+        }
         connections.put(session.getId(), connection);
         connectionAcceptorMap.get(session.getRequestURI().getPath()).apply(connection).subscribe();
         connection.onClose().doFinally(con -> connections.remove(session.getId())).subscribe();

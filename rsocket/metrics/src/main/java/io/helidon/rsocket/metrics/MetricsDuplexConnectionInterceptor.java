@@ -16,6 +16,7 @@
 
 package io.helidon.rsocket.metrics;
 
+import io.helidon.metrics.RegistryFactory;
 import io.rsocket.DuplexConnection;
 import io.rsocket.plugins.DuplexConnectionInterceptor;
 import java.util.Objects;
@@ -26,16 +27,15 @@ public final class MetricsDuplexConnectionInterceptor implements DuplexConnectio
 
   private final MetricRegistry metricRegistry;
 
-
-  public MetricsDuplexConnectionInterceptor(MetricRegistry metricRegistry) {
-    this.metricRegistry = Objects.requireNonNull(metricRegistry, "meterRegistry must not be null");
+  public MetricsDuplexConnectionInterceptor() {
+    metricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
   }
 
   @Override
-  public MetricsDuplexConnection apply(Type connectionType, DuplexConnection delegate) {
-    Objects.requireNonNull(connectionType, "connectionType must not be null");
-    Objects.requireNonNull(delegate, "delegate must not be null");
+  public DuplexConnection apply(Type type, DuplexConnection duplexConnection) {
+    Objects.requireNonNull(DuplexConnectionInterceptor.Type.SERVER, "ConnectionType must not be null");
+    Objects.requireNonNull(duplexConnection, "Delegate must not be null");
 
-    return new MetricsDuplexConnection(connectionType, delegate, metricRegistry);
+    return new MetricsDuplexConnection(DuplexConnectionInterceptor.Type.SERVER, duplexConnection, metricRegistry);
   }
 }

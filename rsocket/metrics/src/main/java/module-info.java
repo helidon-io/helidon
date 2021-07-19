@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+import io.helidon.rsocket.metrics.MetricsDuplexConnectionInterceptor;
+import io.helidon.rsocket.metrics.MetricsRSocketInterceptor;
+import io.rsocket.plugins.DuplexConnectionInterceptor;
+import io.rsocket.plugins.RSocketInterceptor;
+
 /**
  * RSocket metrics support.
  */
@@ -32,6 +37,8 @@ module io.helidon.rsocket.metrics {
     requires jakarta.websocket.api;
     requires io.helidon.metrics;
 
+    provides DuplexConnectionInterceptor with MetricsDuplexConnectionInterceptor;
+    provides RSocketInterceptor with MetricsRSocketInterceptor;
 
     exports io.helidon.rsocket.metrics;
 }

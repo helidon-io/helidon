@@ -18,6 +18,8 @@
  * RSocket integration.
  */
 module io.helidon.rsocket.server {
+
+
     requires java.logging;
     requires static jakarta.activation;
 
@@ -33,4 +35,6 @@ module io.helidon.rsocket.server {
     requires rsocket.transport.netty;
 
     exports io.helidon.rsocket.server;
+
+    uses io.rsocket.plugins.DuplexConnectionInterceptor;
 }

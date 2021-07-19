@@ -78,18 +78,10 @@ public class MainTCP {
                 .build();
 
         // Start webserver
-        CompletableFuture<Void> started = new CompletableFuture<>();
         server.start().thenAccept(ws -> {
             System.out.println("WEB server is up! http://localhost:" + ws.port());
-            started.complete(null);
-        });
+        }).await();
 
-        // Wait for webserver to start before returning
-        try {
-            started.toCompletableFuture().get();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
         return server;
     }
 
