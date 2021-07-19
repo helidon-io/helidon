@@ -77,37 +77,46 @@ Access the `/graphql` endpoint via `http://127.0.0.1:7001/graphql`:
 ## Accessing Metrics
 
 In [TaskApi.java](src/main/java/io/helidon/examples/graphql/basics/TaskApi.java), the [Microprofile Metrics](https://github.com/eclipse/microprofile-metrics)
-annotation`@Timed` has been added to queries and mutations. If you access the metrics endpoint at http://127.0.0.1:7001/metrics you 
-will see the metrics available.
+annotation`@SimplyTimed` has been added to the class which will apply simple timing metrics to all methods. After 
+exercising the APIs, access the metrics endpoint at http://127.0.0.1:7001/metrics to see all metrics. 
+In the case below we have also appended `/application` to the URL to just retrieve the application metrics.
+
+> Note: `jq` has been used to format the JSON output. This can be downloaded from https://stedolan.github.io/jq/download/ or you can
+> format the output with an alternate utility.
 
 ```bash
-$ curl http://127.0.0.1:7001/metrics
+$ curl  -H 'Accept: application/json' http://127.0.0.1:7001/metrics/application | jq
 
-# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_rate_per_second gauge
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_rate_per_second 0.0
-# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_one_min_rate_per_second gauge
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_one_min_rate_per_second 0.0
-# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_five_min_rate_per_second gauge
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_five_min_rate_per_second 0.0
-# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_fifteen_min_rate_per_second gauge
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_fifteen_min_rate_per_second 0.0
-# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_mean_seconds gauge
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_mean_seconds 0.0
-# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_max_seconds gauge
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_max_seconds 0.0
-# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_min_seconds gauge
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_min_seconds 0.0
-# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_stddev_seconds gauge
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_stddev_seconds 0.0
-# TYPE application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds summary
-# HELP application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds_count 0
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds{quantile="0.5"} 0.0
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds{quantile="0.75"} 0.0
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds{quantile="0.95"} 0.0
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds{quantile="0.98"} 0.0
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds{quantile="0.99"} 0.0
-application_io_helidon_examples_graphql_basics_TaskApi_updateTask_seconds{quantile="0.999"} 0.0
+{
+  "io.helidon.examples.graphql.basics.TaskApi.TaskApi": {
+    "count": 1,
+    "elapsedTime": 0.000440414
+  },
+  "io.helidon.examples.graphql.basics.TaskApi.createTask": {
+    "count": 1,
+    "elapsedTime": 0.000112074
+  },
+  "io.helidon.examples.graphql.basics.TaskApi.deleteCompletedTasks": {
+    "count": 0,
+    "elapsedTime": 0
+  },
+  "io.helidon.examples.graphql.basics.TaskApi.deleteTask": {
+    "count": 0,
+    "elapsedTime": 0
+  },
+  "io.helidon.examples.graphql.basics.TaskApi.findTask": {
+    "count": 0,
+    "elapsedTime": 0
+  },
+  "io.helidon.examples.graphql.basics.TaskApi.getTasks": {
+    "count": 0,
+    "elapsedTime": 0
+  },
+  "io.helidon.examples.graphql.basics.TaskApi.updateTask": {
+    "count": 0,
+    "elapsedTime": 0
+  }
+}
 ```
 
 > Note: Output above has been truncated for brevity
