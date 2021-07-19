@@ -31,7 +31,6 @@ import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
-
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 
 /**
