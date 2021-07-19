@@ -47,6 +47,14 @@
             <groupId>io.helidon.rsocket</groupId>
             <artifactId>helidon-rsocket-health</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.metrics</groupId>
+            <artifactId>helidon-microprofile-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.rsocket</groupId>
+            <artifactId>helidon-rsocket-metrics</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
