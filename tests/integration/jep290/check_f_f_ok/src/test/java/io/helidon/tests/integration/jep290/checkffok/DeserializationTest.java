@@ -37,7 +37,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DeserializationTest {
     private static final String TEST_STRING = "Hello_" + new Random().nextInt(10);
-    ;
 
     @BeforeAll
     static void configureDeserialization() {

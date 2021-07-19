@@ -257,7 +257,6 @@ public final class SerializationConfig {
             LOGGER.warning(message);
             break;
         case CONFIGURE:
-            // TODO this will change with Java 17, where we can create a combined filter
             throw new IllegalStateException("Cannot reconfigure current global deserialization filter."
                                                     + " Original message: " + message);
         case IGNORE:
@@ -362,9 +361,7 @@ public final class SerializationConfig {
      * {@link SerializationConfig#configureRuntime()} directly.
      */
     public static class Builder implements io.helidon.common.Builder<SerializationConfig> {
-        // TODO change default action to FAIL for 3.0.0
         private Action onWrongConfig = configuredAction(PROP_WRONG_CONFIG_ACTION, Action.WARN);
-        // TODO change default action to CONFIGURE for 3.0.0
         private Action onNoConfig = configuredAction(PROP_NO_CONFIG_ACTION, Action.WARN);
         private String filterPattern = System.getProperty(PROP_PATTERN);
         private TraceOption traceSerialization = configuredTrace(TraceOption.NONE);
