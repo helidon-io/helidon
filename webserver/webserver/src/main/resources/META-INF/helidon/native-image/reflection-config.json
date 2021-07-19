@@ -1,0 +1,11 @@
+{
+    "annotated":[
+    ],
+    "class-hierarchy": [
+        "io.netty.channel.ChannelHandler"
+    ],
+    "classes": [
+    ],
+    "exclude": [
+    ]
+}

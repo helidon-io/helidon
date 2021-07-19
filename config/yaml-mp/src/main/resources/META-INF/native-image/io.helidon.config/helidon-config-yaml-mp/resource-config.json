@@ -1,0 +1,7 @@
+{
+    "resources": [
+        {
+            "pattern": "mp-meta-config.yaml"
+        }
+    ]
+}

@@ -27,6 +27,7 @@ import java.util.function.Function;
 import io.helidon.microprofile.metrics.MetricUtil.MatchingType;
 
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -68,18 +69,22 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
 
             String metricName = MetricUtil.getMetricName(annotatedElement, clazz, matchingType, info.name(annotation),
                     info.absolute(annotation));
-            String candidateDisplayName = info.displayName(annotation);
-            Metadata metadata = Metadata.builder()
+            MetadataBuilder metadataBuilder = Metadata.builder()
                     .withName(metricName)
-                    .withDisplayName(candidateDisplayName.isEmpty() ? metricName : candidateDisplayName)
-                    .withDescription(info.description(annotation)
-                            .trim())
                     .withType(ANNOTATION_TYPE_TO_METRIC_TYPE.get(annotation.annotationType()))
                     .withUnit(info.unit(annotation)
                             .trim())
-                    .reusable(info.reusable(annotation))
-                    .build();
-            return new RegistrationPrep<>(metricName, metadata, info.tags(annotation), info.registerFunction);
+                    .reusable(info.reusable(annotation));
+
+            String candidateDescription = info.description(annotation);
+            if (candidateDescription != null && !candidateDescription.trim().isEmpty()) {
+                metadataBuilder.withDescription(candidateDescription.trim());
+            }
+            String candidateDisplayName = info.displayName(annotation);
+            if (candidateDisplayName != null && !candidateDisplayName.trim().isEmpty()) {
+                metadataBuilder.withDisplayName(candidateDisplayName.trim());
+            }
+            return new RegistrationPrep<>(metricName, metadataBuilder.build(), info.tags(annotation), info.registerFunction);
         }
 
         private RegistrationPrep(String metricName, Metadata metadata, Tag[] tags, Registration<T> registration) {

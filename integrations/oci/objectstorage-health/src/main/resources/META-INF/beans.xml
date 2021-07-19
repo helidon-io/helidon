@@ -17,16 +17,10 @@
 
 -->
 
-<FindBugsFilter
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="https://github.com/spotbugs/filter/3.0.0"
-        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
-
-    <Match>
-        <!-- Paths come from config/code -->
-        <Class name="io.helidon.config.yaml.YamlMpConfigSource"/>
-        <Method name="create"/>
-        <Bug pattern=" URLCONNECTION_SSRF_FD"/>
-    </Match>
-
-</FindBugsFilter>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+        xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+                           http://xmlns.jcp.org/xml/ns/javaee/beans_2_0.xsd"
+        version="2.0"
+        bean-discovery-mode="annotated">
+</beans>

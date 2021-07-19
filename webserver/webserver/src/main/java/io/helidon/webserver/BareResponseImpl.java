@@ -221,6 +221,9 @@ class BareResponseImpl implements BareResponse {
             responseFuture.complete(this);
         } else {
             LOGGER.finer(() -> log("Response completion failed %s", throwable));
+            if (subscription != null) {
+                subscription.cancel();
+            }
             internallyClosed.set(true);
             responseFuture.completeExceptionally(throwable);
         }
@@ -234,6 +237,9 @@ class BareResponseImpl implements BareResponse {
      */
     private void completeInternal(Throwable throwable) {
         boolean wasClosed = !internallyClosed.compareAndSet(false, true);
+        if (wasClosed && subscription != null) {
+            subscription.cancel();
+        }
         orderedWrite(() -> completeInternalPipe(wasClosed, throwable));
     }
 
@@ -282,18 +288,17 @@ class BareResponseImpl implements BareResponse {
     private void writeLastContent(final Throwable throwable, final ChannelFutureListener closeAction) {
         boolean chunked = true;
         if (lengthOptimization) {
-            if (firstChunk != null) {
-                if (throwable == null) {
-                    HttpUtil.setTransferEncodingChunked(response, false);
-                    HttpUtil.setContentLength(response, firstChunk.remaining());
-                    chunked = false;
-                } else {
-                    //headers not sent yet
-                    response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-                    //We are not using CombinedHttpHeaders
-                    response.headers()
-                            .set(HttpHeaderNames.TRAILER, Response.STREAM_STATUS + "," + Response.STREAM_RESULT);
-                }
+            if (throwable == null) {
+                int length = (firstChunk == null ? 0 : firstChunk.remaining());
+                HttpUtil.setTransferEncodingChunked(response, false);
+                HttpUtil.setContentLength(response, length);
+                chunked = false;
+            } else {
+                //headers not sent yet
+                response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                //We are not using CombinedHttpHeaders
+                response.headers()
+                        .set(HttpHeaderNames.TRAILER, Response.STREAM_STATUS + "," + Response.STREAM_RESULT);
             }
             initWriteResponse();
         }
@@ -333,32 +338,34 @@ class BareResponseImpl implements BareResponse {
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-        this.subscription = subscription;
-        subscription.request(Long.MAX_VALUE);
+        if (this.subscription != null) {
+            subscription.cancel();
+            return;
+        }
+        this.subscription = Objects.requireNonNull(subscription, "subscription is null");
+        subscription.request(1);
     }
 
     @Override
     public void onNext(DataChunk data) {
-        if (internallyClosed.get()) {
-            throw new IllegalStateException("Response is already closed!");
-        }
-        if (data != null) {
-            if (data.isFlushChunk()) {
-                if (prevRequestChunk == null) {
-                   ctx.flush();
-                } else {
-                   prevRequestChunk = prevRequestChunk.thenRun(ctx::flush);
-                }
-                return;
+        Objects.requireNonNull(data, "DataChunk is null");
+        if (data.isFlushChunk()) {
+            if (prevRequestChunk == null) {
+                ctx.flush();
+            } else {
+                prevRequestChunk = prevRequestChunk.thenRun(ctx::flush);
             }
-
-            if (lengthOptimization && firstChunk == null) {
-                firstChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
-                return;
-            }
-
-            orderedWrite(() -> onNextPipe(data));
+            subscription.request(1);
+            return;
         }
+
+        if (lengthOptimization && firstChunk == null) {
+            firstChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
+            subscription.request(1);
+            return;
+        }
+
+        orderedWrite(() -> onNextPipe(data));
     }
 
     /**
@@ -431,6 +438,7 @@ class BareResponseImpl implements BareResponse {
             channelFuture = ctx.writeAndFlush(httpContent);
         } else {
             channelFuture = ctx.write(httpContent);
+            subscription.request(1);
         }
 
         return channelFuture
@@ -443,7 +451,11 @@ class BareResponseImpl implements BareResponse {
                             writeFuture.completeExceptionally(future.cause());
                         }
                     });
+                    boolean flush = data.flush();
                     data.release();
+                    if (flush) {
+                        subscription.request(1);
+                    }
                     LOGGER.finest(() -> log("Data chunk sent with result: %s", future.isSuccess()));
                 })
                 .addListener(completeOnFailureListener("Failure when sending a content!"))
@@ -453,18 +465,13 @@ class BareResponseImpl implements BareResponse {
 
     @Override
     public void onError(Throwable thr) {
+        Objects.requireNonNull(thr, "throwable is null");
         completeInternal(thr);
-        if (subscription != null) {
-            subscription.cancel();
-        }
     }
 
     @Override
     public void onComplete() {
         completeInternal(null);
-        if (subscription != null) {
-            subscription.cancel();
-        }
     }
 
     @Override

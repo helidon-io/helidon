@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.webserver.jersey;
 
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
@@ -37,36 +36,15 @@ class AsyncExecutorProvider implements ExecutorServiceProvider {
 
     static ExecutorServiceProvider create(Config config) {
         Config asyncExecutorServiceConfig = config.get("async-executor-service");
-        final java.lang.reflect.Method m;
-        if (asyncExecutorServiceConfig.get("virtual-threads").asBoolean().orElse(false)) {
-            java.lang.reflect.Method temp = null;
-            try {
-                temp = Executors.class.getDeclaredMethod("newVirtualThreadExecutor");
-            } catch (final ReflectiveOperationException notLoom) {
-                temp = null;
-            } finally {
-                m = temp;
-            }
-        } else {
-            m = null;
-        }
-        if (m != null) {
-            return new AsyncExecutorProvider(() -> {
-                try {
-                    return (ExecutorService) m.invoke(null);
-                } catch (final ReflectiveOperationException reflectiveOperationException) {
-                    throw new IllegalStateException(reflectiveOperationException.getMessage(), reflectiveOperationException);
-                }
-            });
-        } else {
-            return new AsyncExecutorProvider(ThreadPoolSupplier.builder()
+
+        // Loom support is moved to thread pool supplier
+        return new AsyncExecutorProvider(ThreadPoolSupplier.builder()
                                                  .corePoolSize(1)
                                                  .maxPoolSize(10)
                                                  .prestart(false)
                                                  .threadNamePrefix("helidon-jersey-async")
                                                  .config(asyncExecutorServiceConfig)
                                                  .build());
-        }
     }
 
     static ExecutorServiceProvider create(ExecutorService executor) {

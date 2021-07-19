@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,9 @@ import org.eclipse.microprofile.metrics.MetricID;
  * Implementation of {@link ConcurrentGauge}.
  */
 final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge {
+
+    private static final String PROMETHEUS_TYPE = "gauge";
+
     private final ConcurrentGauge delegate;
 
     private HelidonConcurrentGauge(String registryType, Metadata metadata, ConcurrentGauge delegate) {
@@ -111,6 +114,11 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
         }
         sb.append(nameMax).append(prometheusTags(metricID.getTags()))
                 .append(" ").append(getMax()).append('\n');
+    }
+
+    @Override
+    void prometheusType(StringBuilder sb, String nameWithUnits, String type) {
+        super.prometheusType(sb, nameWithUnits, PROMETHEUS_TYPE);
     }
 
     static class ConcurrentGaugeImpl implements ConcurrentGauge {
