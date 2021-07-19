@@ -53,7 +53,7 @@
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.google-api-client>1.30.11</version.lib.google-api-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
-        <version.lib.graalvm>21.0.0</version.lib.graalvm>
+        <version.lib.graalvm>21.1.0</version.lib.graalvm>
         <version.lib.graphql-java>15.0</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>15.0.0</version.lib.graphql-java.extended.scalars>
         <version.lib.grpc>1.35.0</version.lib.grpc>
@@ -115,7 +115,7 @@
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
         <version.lib.netty>4.1.63.Final</version.lib.netty>
-        <version.lib.oci-java-sdk-objectstorage>1.31.0</version.lib.oci-java-sdk-objectstorage>
+        <version.lib.oci-java-sdk-objectstorage>1.37.2</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>19.8.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>

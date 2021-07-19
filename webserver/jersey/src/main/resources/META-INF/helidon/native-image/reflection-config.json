@@ -39,7 +39,8 @@
         "org.glassfish.jersey.server.internal.process.RequestProcessingConfigurator$CloseableServiceFactory",
         "org.glassfish.jersey.server.internal.process.RequestProcessingConfigurator$ContainerRequestFactory",
         "org.glassfish.jersey.server.internal.process.RequestProcessingConfigurator$UriRoutingContextFactory",
-        "javassist.util.proxy.MethodHandler"
+        "javassist.util.proxy.MethodHandler",
+        "java.lang.Boolean"
     ],
     "exclude": [
     ]

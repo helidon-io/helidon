@@ -27,4 +27,5 @@ Update `FROM helidon/jdk11-graalvm-maven:version as build` to the desired versio
 Update `docs/common/guides/graalnative.adoc` - fix link and file name
 
 ## Tests
-Update `etc/scripts/test-integ-mysql.sh` and `etc/scripts/test-integ-pgsql.sh` to use the desired version
+Update `etc/scripts/includes/pipeline-env.sh` to use the desired version 
+(this requires work on build environment - this version must be installed)
