@@ -30,7 +30,9 @@ import java.util.function.Function;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
+import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.Annotated;
 import javax.enterprise.inject.spi.AnnotatedCallable;
@@ -173,6 +175,12 @@ public class CachingCdiExtension implements Extension {
 
             pip.configureInjectionPoint().addQualifier(CacheNameLiteral.create(name));
         }
+    }
+
+    void onStartUp(@Observes @Initialized(ApplicationScoped.class) Object init, Instance<Object> instance) {
+        instance.select(Caches.class)
+                .get()
+                .startup();
     }
 
     private String methodCacheKey(Method method) {

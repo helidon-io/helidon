@@ -19,6 +19,7 @@ package io.helidon.caching.memory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 import io.helidon.caching.Cache;
 import io.helidon.caching.CacheConfig;
@@ -27,11 +28,14 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 
 public class MemoryCacheManager implements CacheProviderManager {
+    private static final Logger LOGGER = Logger.getLogger(MemoryCacheManager.class.getName());
+
     private final Map<String, Config> cacheConfigs;
-    private final ConcurrentHashMap<String, MemoryCache<?, ?>> caches = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Cache<?, ?>> caches = new ConcurrentHashMap<>();
 
     private MemoryCacheManager(Builder builder) {
         this.cacheConfigs = builder.cacheConfigs;
+        LOGGER.info("Started Memory Cache manager");
     }
 
     public static Builder builder() {
@@ -41,6 +45,17 @@ public class MemoryCacheManager implements CacheProviderManager {
     @SuppressWarnings("unchecked")
     @Override
     public <K, V> Single<Cache<K, V>> createCache(String name, CacheConfig<K, V> configuration) {
+        return Single.just((Cache<K, V>) caches.computeIfAbsent(name, it -> buildCache(name, configuration)));
+    }
+
+    @Override
+    public Single<Void> close() {
+        caches.forEachValue(1000, Cache::close);
+        caches.clear();
+        return Single.empty();
+    }
+
+    private <V, K> Cache<K, V> buildCache(String name, CacheConfig<K, V> configuration) {
         MemoryCache.Builder<K, V> cacheBuilder = MemoryCache.builder();
 
         cacheBuilder.name(name);
@@ -58,7 +73,7 @@ public class MemoryCacheManager implements CacheProviderManager {
             configuration.loader().ifPresent(cacheBuilder::loader);
         }
 
-        return Single.just(cacheBuilder.build());
+        return cacheBuilder.build();
     }
 
     public static class Builder

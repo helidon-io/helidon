@@ -16,12 +16,8 @@
 
 package io.helidon.examples.caching.cdi;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
-import io.helidon.caching.Cache;
 import io.helidon.caching.annotation.CacheGet;
 import io.helidon.caching.annotation.CacheInit;
 import io.helidon.caching.annotation.CacheKey;
@@ -31,29 +27,22 @@ import io.helidon.caching.annotation.CacheRemove;
 import io.helidon.caching.annotation.CacheValue;
 
 @ApplicationScoped
-@CacheName("simple-cache")
-public class CachedBean {
-    private final AtomicInteger counter = new AtomicInteger();
-    private final Cache<Integer, Integer> cache;
-
-    @Inject
-    CachedBean(@CacheName("loader-cache") Cache<Integer, Integer> cache) {
-        this.cache = cache;
-        System.out.println(cache.get(79).await());
-    }
+@CacheName("loader-cache")
+public class LoaderCachedBean {
 
     @CacheGet
-    public String getIt(@CacheKey Integer id) {
-        return "produced-" + id + "-" + counter.incrementAndGet();
+    public Integer getIt(@CacheKey Integer id) {
+        // this should never be called
+        return id;
     }
 
     @CacheInit
-    public String createIt(@CacheKey Integer id) {
-        return "created-" + id;
+    public Integer createIt(@CacheKey Integer id) {
+        return id;
     }
 
     @CachePut
-    public void updateIt(@CacheKey Integer id, @CacheValue String value) {
+    public void updateIt(@CacheKey Integer id, @CacheValue Integer value) {
 
     }
 

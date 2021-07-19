@@ -30,8 +30,25 @@ public interface CacheConfig<K, V> {
             }
         };
     }
+
     static <K, V> CacheConfig<K, V> create() {
         return new CacheConfig<>() {
+        };
+    }
+
+    static <K, V> CacheConfig<K, V> create(Class<K> keyClass, Class<V> valueClass) {
+        GenericType<K> keyType = GenericType.create(keyClass);
+        GenericType<V> valueType = GenericType.create(valueClass);
+        return new CacheConfig<>() {
+            @Override
+            public GenericType<K> keyType() {
+                return keyType;
+            }
+
+            @Override
+            public GenericType<V> valueType() {
+                return valueType;
+            }
         };
     }
 

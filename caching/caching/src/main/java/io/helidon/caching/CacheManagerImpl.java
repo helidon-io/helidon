@@ -17,6 +17,7 @@
 package io.helidon.caching;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -117,6 +118,39 @@ class CacheManagerImpl implements CacheManager {
     @Override
     public <K, V> Single<Cache<K, V>> cache(String name, CacheConfig<K, V> config) {
         return getCache(name, config);
+    }
+
+    @Override
+    public Single<Void> close() {
+        Single<Void> result = Single.empty();
+
+        for (Map.Entry<String, AtomicBoolean> close : cacheClosed.entrySet()) {
+            if (close.getValue().compareAndSet(false, true)) {
+                String name = close.getKey();
+                if (cacheRequested.get(name).get()) {
+                    result = result.flatMapSingle(nothing -> Single.create(cacheFutures.get(name))
+                            .flatMapSingle(Cache::close));
+                }
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public Single<Void> startup() {
+        // get a set of all provider types that are explicitly configured
+        Set<String> types = new HashSet<>(providerConfigs.keySet());
+        for (CacheConfiguration value : cacheConfigs.values()) {
+            types.add(value.type);
+        }
+        CompletableFuture<CacheProviderManager> result = CompletableFuture.completedFuture(null);
+
+        for (String type : types) {
+            result = result.thenCompose(nothing -> getProvider(type));
+        }
+
+        return Single.create(result.thenApply(it -> null), true);
     }
 
     @SuppressWarnings("unchecked")
@@ -229,23 +263,6 @@ class CacheManagerImpl implements CacheManager {
                 return cache.toString();
             }
         };
-    }
-
-    @Override
-    public Single<Void> close() {
-        Single<Void> result = Single.empty();
-
-        for (Map.Entry<String, AtomicBoolean> close : cacheClosed.entrySet()) {
-            if (close.getValue().compareAndSet(false, true)) {
-                String name = close.getKey();
-                if (cacheRequested.get(name).get()) {
-                    result = result.flatMapSingle(nothing -> Single.create(cacheFutures.get(name))
-                            .flatMapSingle(Cache::close));
-                }
-            }
-        }
-
-        return result;
     }
 
     private static class CacheConfiguration {

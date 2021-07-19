@@ -16,16 +16,9 @@
 
 package io.helidon.caching.coherence;
 
-import io.helidon.caching.spi.CacheProvider;
+import io.helidon.caching.spi.CacheProviderConfig;
 
-public class CoherenceProvider implements CacheProvider<CoherenceManager.Builder, CoherenceConfig, CoherenceManager> {
-    @Override
-    public String type() {
-        return "coherence";
-    }
+import com.tangosol.net.CoherenceConfiguration;
 
-    @Override
-    public CoherenceManager.Builder cacheManagerBuilder() {
-        return CoherenceManager.builder();
-    }
+public interface CoherenceConfig extends CacheProviderConfig, CoherenceConfiguration {
 }

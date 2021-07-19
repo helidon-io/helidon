@@ -9,11 +9,8 @@ caching:
     properties:
       capacity: 2
   - name: "loader-cache"
-    type: "memory"
-    properties:
-      capacity: 2
-  - name: "sample"
     type: "coherence"
+    properties:
 
 server:
   port: 8080

@@ -39,6 +39,8 @@ public interface CacheProviderManager {
     <K, V> Single<Cache<K, V>> createCache(String name,
                                            CacheConfig<K, V> configuration);
 
+    Single<Void> close();
+
     /**
      * A fluent API builder for provider specific cache managers.
      *

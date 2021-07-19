@@ -28,7 +28,14 @@ public interface CacheManager {
     }
 
     <K, V> Single<Cache<K, V>> cache(String name);
+
     <K, V> Single<Cache<K, V>> cache(String name, CacheConfig<K, V> config);
 
     Single<Void> close();
+
+    /**
+     * Initialize all provider cache managers (if this method is not called, provider cache
+     * managers are initialized lazily as caches are requested).
+     */
+    Single<Void> startup();
 }

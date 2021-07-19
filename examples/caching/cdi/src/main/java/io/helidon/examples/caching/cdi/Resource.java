@@ -23,15 +23,24 @@ import javax.ws.rs.QueryParam;
 
 @Path("/cache")
 public class Resource {
-    private final CachedBean bean;
+    private final SimpleCachedBean simpleCache;
+    private final LoaderCachedBean loaderCache;
 
     @Inject
-    public Resource(CachedBean bean) {
-        this.bean = bean;
+    public Resource(SimpleCachedBean simple, LoaderCachedBean loader) {
+        this.simpleCache = simple;
+        this.loaderCache = loader;
     }
 
     @GET
-    public String getIt(@QueryParam("id") Integer id) {
-        return bean.getIt(id);
+    @Path("/simple")
+    public String getSimple(@QueryParam("id") Integer id) {
+        return simpleCache.getIt(id);
+    }
+
+    @GET
+    @Path("/loader")
+    public Integer getLoader(@QueryParam("id") Integer id) {
+        return loaderCache.getIt(id);
     }
 }

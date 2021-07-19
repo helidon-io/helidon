@@ -48,6 +48,10 @@
             <groupId>io.helidon.caching</groupId>
             <artifactId>helidon-caching-memory</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.caching</groupId>
+            <artifactId>helidon-caching-coherence</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

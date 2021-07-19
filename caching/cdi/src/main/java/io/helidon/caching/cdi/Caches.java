@@ -41,4 +41,8 @@ class Caches {
             return (Cache<Object, Object>) cacheManager.cache(name, cacheConfig).await();
         }
     }
+
+    void startup() {
+        cacheManager.startup().await();
+    }
 }
