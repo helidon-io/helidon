@@ -18,6 +18,7 @@ package io.helidon.microprofile.cors;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 import javax.ws.rs.client.Entity;
@@ -30,6 +31,7 @@ import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_O
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 
 @HelidonTest
 @AddBean(CrossOriginTest.CorsResource0.class)
@@ -49,12 +51,13 @@ class CorsDisabledTest {
         System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
     }
 
+    @Test
     void testCorsIsDisabled() {
         Response res = target.path("/cors2")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat("Headers from successful response", res.getHeaders().keySet(), hasItem(ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertThat("Headers from successful response", res.getHeaders().keySet(), not(hasItem(ACCESS_CONTROL_ALLOW_ORIGIN)));
     }
 }

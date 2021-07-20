@@ -269,7 +269,7 @@ class CorsSupportHelper<Q, R> {
      * @return whether the helper might have any effect on requests or responses
      */
     public boolean isActive() {
-        return aggregator.isActive() || (secondaryCrossOriginLookup != EMPTY_SECONDARY_SUPPLIER);
+        return aggregator.isEnabled();
     }
 
     /**
