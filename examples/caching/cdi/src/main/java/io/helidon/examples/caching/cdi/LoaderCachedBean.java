@@ -18,8 +18,8 @@ package io.helidon.examples.caching.cdi;
 
 import javax.enterprise.context.ApplicationScoped;
 
+import io.helidon.caching.annotation.CacheAdd;
 import io.helidon.caching.annotation.CacheGet;
-import io.helidon.caching.annotation.CacheInit;
 import io.helidon.caching.annotation.CacheKey;
 import io.helidon.caching.annotation.CacheName;
 import io.helidon.caching.annotation.CachePut;
@@ -36,7 +36,7 @@ public class LoaderCachedBean {
         return id;
     }
 
-    @CacheInit
+    @CacheAdd
     public Integer createIt(@CacheKey Integer id) {
         return id;
     }

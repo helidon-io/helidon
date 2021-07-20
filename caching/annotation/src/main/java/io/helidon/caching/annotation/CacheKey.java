@@ -21,6 +21,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Parameters annotated with this annotation are consider part of the key.
+ * If no parameters are annotated, then all parameter that are not annotated with {@link io.helidon.caching.annotation.CacheValue}
+ * form the key.
+ */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CacheKey {

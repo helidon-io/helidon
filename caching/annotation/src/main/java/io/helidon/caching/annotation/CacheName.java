@@ -21,8 +21,29 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target({ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER, ElementType.CONSTRUCTOR})
+/**
+ * Name of the cache that will be used for caching operations.
+ *
+ * Depending on location, this means:
+ * <ul>
+ *     <li>Type - all methods use this cache unless annotated</li>
+ *     <li>Method - this method uses configured cache name (overrides type configuration)</li>
+ *     <li>Parameter - when injecting into a constructor, you may inject more than one cache instance</li>
+ *     <li>Field - for field injections (not recommended, please use constructor injection)</li>
+ *     <li>Constructor - for injection into constructor parameters</li>
+ * </ul>
+ */
+@Target({ElementType.TYPE,
+                ElementType.METHOD,
+                ElementType.PARAMETER,
+                ElementType.FIELD,
+                ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CacheName {
+    /**
+     * Name of the cache to use.
+     *
+     * @return cache name
+     */
     String value();
 }
