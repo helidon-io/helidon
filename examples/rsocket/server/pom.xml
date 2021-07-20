@@ -36,7 +36,7 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.examples.rsocket.server.MainWS</mainClass>
+        <mainClass>io.helidon.examples.rsocket.server.Main</mainClass>
     </properties>
 
     <dependencies>

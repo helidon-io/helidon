@@ -53,7 +53,13 @@ public class AnotherRSocketService {
 
     @RequestResponse("print")
     public CompletableFuture<Payload> printAndRespond(Payload payload){
-        System.out.println("received from another: " +payload.getDataUtf8());
+        System.out.println("Received from another: " +payload.getDataUtf8());
+        return CompletableFuture.supplyAsync(()->ByteBufPayload.create("Another backfire!"));
+    }
+
+    @RequestResponse()
+    public CompletableFuture<Payload> requestNoRoute(Payload payload){
+        System.out.println("Request no route: " +payload.getDataUtf8());
         return CompletableFuture.supplyAsync(()->ByteBufPayload.create("Another backfire!"));
     }
 

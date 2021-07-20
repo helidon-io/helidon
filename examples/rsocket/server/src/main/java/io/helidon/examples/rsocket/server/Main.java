@@ -30,9 +30,9 @@ import io.helidon.webserver.WebServer;
 /**
  * Application demonstrates combination of websocket and REST.
  */
-public class MainWS {
+public class Main {
 
-    private MainWS() {
+    private Main() {
     }
 
     /**

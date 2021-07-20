@@ -59,18 +59,6 @@ public class RoutedRSocket implements RSocket {
     }
 
     /**
-     * Construct from RSocket Routing.
-     *
-     * @param rSocketRouting
-     */
-    RoutedRSocket(RSocketRouting rSocketRouting){
-        this.requestResponseRoutes = rSocketRouting.requestResponseRoutes();
-        this.fireAndForgetRoutes = rSocketRouting.fireAndForgetRoutes();
-        this.requestStreamRoutes = rSocketRouting.requestStreamRoutes();
-        this.requestChannelRoutes = rSocketRouting.requestChannelRoutes();
-    }
-
-    /**
      * Builder for RoutedRSocket.
      *
      * @return Builder
@@ -81,6 +69,7 @@ public class RoutedRSocket implements RSocket {
 
     /**
      * Set Mime type.
+     *
      * @param mimetype
      */
     public void setMimeType(String mimetype) {
@@ -106,7 +95,7 @@ public class RoutedRSocket implements RSocket {
             this.requestChannelRoutes = new HashMap<>();
         }
 
-        public Builder rSocketRouting(RSocketRouting rSocketRouting){
+        public Builder rSocketRouting(RSocketRouting rSocketRouting) {
             this.requestResponseRoutes = rSocketRouting.requestResponseRoutes();
             this.fireAndForgetRoutes = rSocketRouting.fireAndForgetRoutes();
             this.requestStreamRoutes = rSocketRouting.requestStreamRoutes();
@@ -180,12 +169,12 @@ public class RoutedRSocket implements RSocket {
         try {
             Map<String, TaggingMetadata> metadatas = parseMetadata(payload);
             String route = getRoute(metadatas);
-            if (route != null) {
-
-                RequestResponseHandler handler = requestResponseRoutes.get(route);
-                if (handler != null) {
-                    return handleRequestResponse(handler, payload);
-                }
+            if (route == null) {
+                route = "";
+            }
+            RequestResponseHandler handler = requestResponseRoutes.get(route);
+            if (handler != null) {
+                return handleRequestResponse(handler, payload);
             }
             return RSocket.super.requestResponse(payload);
         } catch (Throwable t) {
@@ -209,11 +198,12 @@ public class RoutedRSocket implements RSocket {
         try {
             Map<String, TaggingMetadata> metadatas = parseMetadata(payload);
             String route = getRoute(metadatas);
-            if (route != null) {
-                FireAndForgetHandler handler = fireAndForgetRoutes.get(route);
-                if (handler != null) {
-                    return handleFireAndForget(handler, payload);
-                }
+            if (route == null) {
+                route = "";
+            }
+            FireAndForgetHandler handler = fireAndForgetRoutes.get(route);
+            if (handler != null) {
+                return handleFireAndForget(handler, payload);
             }
             return RSocket.super.fireAndForget(payload);
         } catch (Throwable t) {
@@ -236,12 +226,14 @@ public class RoutedRSocket implements RSocket {
         try {
             Map<String, TaggingMetadata> metadatas = parseMetadata(payload);
             String route = getRoute(metadatas);
-            if (route != null) {
-                RequestStreamHandler handler = requestStreamRoutes.get(route);
-                if (handler != null) {
-                    return handleRequestStream(handler, payload);
-                }
+            if (route == null) {
+                route = "";
             }
+            RequestStreamHandler handler = requestStreamRoutes.get(route);
+            if (handler != null) {
+                return handleRequestStream(handler, payload);
+            }
+
             return RSocket.super.requestStream(payload);
         } catch (Throwable t) {
             return Flux.error(t);
@@ -269,12 +261,14 @@ public class RoutedRSocket implements RSocket {
                                 if (payload != null) {
                                     Map<String, TaggingMetadata> metadata = parseMetadata(payload);
                                     String route = getRoute(metadata);
-                                    if (route != null) {
-                                        RequestChannelHandler handler = requestChannelRoutes.get(route);
-                                        if (handler != null) {
-                                            return handleRequestChannel(handler, flows);
-                                        }
+                                    if (route == null) {
+                                        route = "";
                                     }
+                                    RequestChannelHandler handler = requestChannelRoutes.get(route);
+                                    if (handler != null) {
+                                        return handleRequestChannel(handler, flows);
+                                    }
+
                                 }
                                 return RSocket.super.requestChannel(payloads);
                             } catch (Throwable t) {
