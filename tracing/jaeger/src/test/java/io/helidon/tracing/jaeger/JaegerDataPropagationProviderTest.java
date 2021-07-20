@@ -33,7 +33,7 @@ import static org.hamcrest.CoreMatchers.is;
 
 class JaegerDataPropagationProviderTest {
 
-    private JaegerDataPropagationProvider provider = new JaegerDataPropagationProvider();
+    private final JaegerDataPropagationProvider provider = new JaegerDataPropagationProvider();
     
     @Test
     void dataPropagationTest() {
@@ -48,7 +48,6 @@ class JaegerDataPropagationProviderTest {
         Contexts.runInContext(context, () -> {
             assertThat(closed(scope), is(false));
             JaegerDataPropagationProvider.JaegerContext data = provider.data();
-            assertThat(closed(scope), is(true));
             provider.propagateData(data);
             assertThat(closed(data.scope()), is(false));
             provider.clearData(data);
@@ -97,7 +96,7 @@ class JaegerDataPropagationProviderTest {
 
     static class TestTracer implements Tracer {
 
-        private final Tracer delegate = JaegerTracerBuilder.create().serviceName("test-service").build();
+        private final Tracer delegate = JaegerTracerBuilder.create().serviceName("test-propagation").build();
 
         @Override
         public ScopeManager scopeManager() {

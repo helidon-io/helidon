@@ -53,13 +53,10 @@ public class JaegerDataPropagationProvider implements DataPropagationProvider<Ja
      */
     @Override
     public JaegerContext data() {
-        return Contexts.context().map(context -> {
-            context.get(Scope.class).ifPresent(Scope::close);
-            return context.get(Span.class).map(span -> {
-                Tracer tracer = context.get(Tracer.class).orElseGet(GlobalTracer::get);
-                return new JaegerContext(tracer, span);
-            }).orElse(null);
-        }).orElse(null);
+        return Contexts.context().map(context -> context.get(Span.class).map(span -> {
+            Tracer tracer = context.get(Tracer.class).orElseGet(GlobalTracer::get);
+            return new JaegerContext(tracer, span);
+        }).orElse(null)).orElse(null);
     }
 
     /**
