@@ -16,7 +16,11 @@
 
 package io.helidon.rsocket.server;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import io.helidon.common.reactive.Multi;
+
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
 import io.rsocket.metadata.CompositeMetadata;
@@ -27,8 +31,6 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Since currently RSocket does not have API for routing, we provide our own.
@@ -77,7 +79,7 @@ public class RoutedRSocket implements RSocket {
     }
 
     /**
-     * Builder for RoutedRSocket
+     * Builder for RoutedRSocket.
      */
     public static final class Builder {
         private Map<String, RequestResponseHandler> requestResponseRoutes;
@@ -93,14 +95,6 @@ public class RoutedRSocket implements RSocket {
             this.fireAndForgetRoutes = new HashMap<>();
             this.requestStreamRoutes = new HashMap<>();
             this.requestChannelRoutes = new HashMap<>();
-        }
-
-        public Builder rSocketRouting(RSocketRouting rSocketRouting) {
-            this.requestResponseRoutes = rSocketRouting.requestResponseRoutes();
-            this.fireAndForgetRoutes = rSocketRouting.fireAndForgetRoutes();
-            this.requestStreamRoutes = rSocketRouting.requestStreamRoutes();
-            this.requestChannelRoutes = rSocketRouting.requestChannelRoutes();
-            return this;
         }
 
         /**
@@ -153,7 +147,8 @@ public class RoutedRSocket implements RSocket {
          * @return {@link RoutedRSocket}
          */
         public RoutedRSocket build() {
-            return new RoutedRSocket(requestResponseRoutes, fireAndForgetRoutes, requestStreamRoutes, requestChannelRoutes);
+            return new RoutedRSocket(requestResponseRoutes, fireAndForgetRoutes,
+                    requestStreamRoutes, requestChannelRoutes);
         }
 
     }
@@ -283,7 +278,8 @@ public class RoutedRSocket implements RSocket {
     }
 
     private Flux<Payload> handleRequestChannel(RequestChannelHandler handler, Flux<Payload> payloads) {
-        return Flux.from(FlowAdapters.toPublisher(handler.handle(Multi.create(FlowAdapters.toFlowPublisher(payloads)))));
+        return Flux.from(FlowAdapters.toPublisher(
+                handler.handle(Multi.create(FlowAdapters.toFlowPublisher(payloads)))));
     }
 
     private Map<String, TaggingMetadata> parseMetadata(Payload payload) {

@@ -16,18 +16,24 @@
 
 package io.helidon.microprofile.rsocket.client;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+
 import javax.enterprise.util.Nonbinding;
 import javax.inject.Qualifier;
 
+
+/**
+ * Custom RSocket config prefix.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Qualifier
 public @interface CustomRSocket {
+
+    /**
+     * Get prefix.
+     * @return value.
+     */
     @Nonbinding
     String value() default "";
 }

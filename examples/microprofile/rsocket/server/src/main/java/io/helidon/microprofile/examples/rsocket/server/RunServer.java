@@ -18,7 +18,16 @@ package io.helidon.microprofile.examples.rsocket.server;
 
 import io.helidon.microprofile.cdi.Main;
 
-public class RunServer {
+/**
+ * Run CDI Server.
+ */
+@SuppressWarnings("checkstyle:HideUtilityClassConstructor")
+class RunServer {
+
+    /**
+     * Start Main.
+     * @param args
+     */
     public static void main(String[] args) {
         Main.main(args);
     }

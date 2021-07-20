@@ -16,7 +16,11 @@
 
 package io.helidon.rsocket.metrics;
 
-import static io.rsocket.frame.FrameType.*;
+import java.net.SocketAddress;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -25,18 +29,30 @@ import io.rsocket.RSocketErrorException;
 import io.rsocket.frame.FrameHeaderCodec;
 import io.rsocket.frame.FrameType;
 import io.rsocket.plugins.DuplexConnectionInterceptor.Type;
-
-import java.net.SocketAddress;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import static io.rsocket.frame.FrameType.CANCEL;
+import static io.rsocket.frame.FrameType.COMPLETE;
+import static io.rsocket.frame.FrameType.ERROR;
+import static io.rsocket.frame.FrameType.EXT;
+import static io.rsocket.frame.FrameType.KEEPALIVE;
+import static io.rsocket.frame.FrameType.LEASE;
+import static io.rsocket.frame.FrameType.METADATA_PUSH;
+import static io.rsocket.frame.FrameType.NEXT;
+import static io.rsocket.frame.FrameType.NEXT_COMPLETE;
+import static io.rsocket.frame.FrameType.PAYLOAD;
+import static io.rsocket.frame.FrameType.REQUEST_CHANNEL;
+import static io.rsocket.frame.FrameType.REQUEST_FNF;
+import static io.rsocket.frame.FrameType.REQUEST_N;
+import static io.rsocket.frame.FrameType.REQUEST_RESPONSE;
+import static io.rsocket.frame.FrameType.REQUEST_STREAM;
+import static io.rsocket.frame.FrameType.RESUME;
+import static io.rsocket.frame.FrameType.RESUME_OK;
+import static io.rsocket.frame.FrameType.SETUP;
 
 /**
  * Proxy Duplex Connection to collect metrics.
@@ -62,18 +78,19 @@ final class MetricsDuplexConnection implements DuplexConnection {
     MetricsDuplexConnection(
             Type connectionType, DuplexConnection delegate, MetricRegistry metricsRegistry, Tag... tags) {
 
-        Objects.requireNonNull(connectionType, "connectionType must not be null");
-        this.delegate = Objects.requireNonNull(delegate, "delegate must not be null");
-        Objects.requireNonNull(metricsRegistry, "metricsRegistry must not be null");
+        Objects.requireNonNull(connectionType, "Connection Type must not be null");
+        this.delegate = Objects.requireNonNull(delegate, "Delegate must not be null");
+        Objects.requireNonNull(metricsRegistry, "Metrics Registry must not be null");
 
-        Tag[] closeTags = Stream.concat(Arrays.stream(tags),Stream.of(new Tag("connectionType", connectionType.name()))).toArray(Tag[]::new);
+        Tag[] closeTags = Stream.concat(Arrays.stream(tags), Stream.of(new Tag("connection-type",
+                connectionType.name()))).toArray(Tag[]::new);
         this.close =
                 metricsRegistry.counter(
-                        "rsocketDuplexConnectionClose",
+                        "rsocket-duplex-connection-close",
                         closeTags);
         this.dispose =
                 metricsRegistry.counter(
-                        "rsocketDuplexConnectionDispose",
+                        "rsocket-duplex-connection-dispose",
                         closeTags);
         this.frameCounters = new FrameCounters(connectionType, metricsRegistry, tags);
     }
@@ -207,13 +224,12 @@ final class MetricsDuplexConnection implements DuplexConnection {
         private static Counter counter(
                 Type connectionType, MetricRegistry metricRegistry, String frameType, Tag... tags) {
 
-
-            Tag[] allTags = Stream.concat(Arrays.stream(tags), Stream.of(new Tag("connectionType", connectionType.name()), new Tag("frameType", frameType)))
+            Tag[] allTags = Stream.concat(Arrays.stream(tags), Stream.of(
+                    new Tag("connection-type", connectionType.name()),
+                    new Tag("frame-type", frameType)))
                     .toArray(Tag[]::new);
-
-
             return metricRegistry.counter(
-                    "rsocketFrame", allTags);
+                    "rsocket-frame", allTags);
         }
 
         @Override

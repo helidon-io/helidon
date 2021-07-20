@@ -16,11 +16,12 @@
 
 package io.helidon.rsocket.metrics;
 
-import io.helidon.metrics.RegistryFactory;
-import io.rsocket.DuplexConnection;
-import io.rsocket.plugins.DuplexConnectionInterceptor;
 import java.util.Objects;
 
+import io.helidon.metrics.RegistryFactory;
+
+import io.rsocket.DuplexConnection;
+import io.rsocket.plugins.DuplexConnectionInterceptor;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 /**

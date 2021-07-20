@@ -8,16 +8,41 @@ import java.util.Map;
  */
 public interface RSocketRouting {
 
+    /**
+     * Builder for RSocket routing.
+     *
+     * @return Builder
+     */
     static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Get all Request Response routes.
+     *
+     * @return Map with routes.
+     */
     Map<String, RequestResponseHandler> requestResponseRoutes();
 
+    /**
+     * Get all Fire and Forget routes.
+     *
+     * @return Map with routes.
+     */
     Map<String, FireAndForgetHandler> fireAndForgetRoutes();
 
+    /**
+     * Get all Request Stream routes.
+     *
+     * @return Map with routes.
+     */
     Map<String, RequestStreamHandler> requestStreamRoutes();
 
+    /**
+     * Get all Request Channel routes.
+     *
+     * @return Map with routes.
+     */
     Map<String, RequestChannelHandler> requestChannelRoutes();
 
 
@@ -49,6 +74,9 @@ public interface RSocketRouting {
 
     }
 
+    /**
+     * Builder class for RSocket Routing.
+     */
     class Builder implements Rules, io.helidon.common.Builder<RSocketRouting> {
 
         private final Map<String, RequestResponseHandler> requestResponseRoutes;

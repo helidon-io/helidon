@@ -16,13 +16,14 @@
 
 package io.helidon.rsocket.metrics;
 
+import java.util.Objects;
+
 import io.helidon.metrics.RegistryFactory;
+
 import io.rsocket.RSocket;
 import io.rsocket.plugins.RSocketInterceptor;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.Tag;
 
-import java.util.Objects;
 
 /**
  * Class used to intercept all RSocket to add metrics to them.

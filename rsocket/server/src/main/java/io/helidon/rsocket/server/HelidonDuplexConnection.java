@@ -15,6 +15,11 @@
  */
 package io.helidon.rsocket.server;
 
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+
+import javax.websocket.Session;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -26,23 +31,16 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.core.publisher.Sinks.EmitFailureHandler;
-import reactor.core.publisher.Sinks.Many;
 
-import java.io.IOException;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import javax.websocket.SendHandler;
-import javax.websocket.SendResult;
-import javax.websocket.Session;
 
 /**
  * Helidon Duplex connection for RSocket.
  */
 public class HelidonDuplexConnection implements DuplexConnection {
 
-    final Session session;
-    final Sinks.Empty<Void> onCloseSink;
-    final Sinks.Many<ByteBuf> receiverSink;
+    private final Session session;
+    private final Sinks.Empty<Void> onCloseSink;
+    private final Sinks.Many<ByteBuf> receiverSink;
 
     /**
      * Constructor for HelidonDuplexConnection.
@@ -101,7 +99,7 @@ public class HelidonDuplexConnection implements DuplexConnection {
     }
 
     /**
-     * Allocate ByteBuffer
+     * Allocate ByteBuffer.
      *
      * @return {@link ByteBufAllocator}
      */

@@ -16,9 +16,14 @@
 
 package io.helidon.rsocket.client;
 
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.util.Collections;
+
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
@@ -28,7 +33,6 @@ import io.rsocket.RSocket;
 import io.rsocket.metadata.AuthMetadataCodec;
 import io.rsocket.metadata.CompositeMetadataCodec;
 import io.rsocket.metadata.RoutingMetadata;
-import io.rsocket.metadata.TaggingMetadata;
 import io.rsocket.metadata.TaggingMetadataCodec;
 import io.rsocket.metadata.WellKnownAuthType;
 import io.rsocket.metadata.WellKnownMimeType;
@@ -41,9 +45,6 @@ import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.net.URI;
-import java.nio.ByteBuffer;
-import java.util.Collections;
 
 
 /**
@@ -60,9 +61,15 @@ public class RSocketClient implements Disposable {
     private String token;
 
 
+    /**
+     * Builder for RSocket client.
+     *
+     * @return Builder
+     */
     public static Builder builder() {
         return new Builder();
     }
+
     /**
      * RSocket Client constructor.
      *
@@ -72,6 +79,12 @@ public class RSocketClient implements Disposable {
         this.client = client;
     }
 
+    /**
+     * Create RSocket Client using config.
+     *
+     * @param config
+     * @return RSocketClient
+     */
     public static RSocketClient create(Config config){
         return builder().config(config).build();
     }
@@ -239,12 +252,15 @@ public class RSocketClient implements Disposable {
     }
 
 
+    /**
+     * Builder for RSocket Client.
+     */
     public static class Builder implements io.helidon.common.Builder<RSocketClient> {
 
         private String route;
         private WellKnownAuthType authType = null;
         private String mimeType = WellKnownMimeType.TEXT_PLAIN.toString();
-        private String metadataMimeType=WellKnownMimeType.MESSAGE_RSOCKET_COMPOSITE_METADATA.toString();
+        private String metadataMimeType = WellKnownMimeType.MESSAGE_RSOCKET_COMPOSITE_METADATA.toString();
         private String username;
         private String password;
         private String token;
@@ -265,7 +281,7 @@ public class RSocketClient implements Disposable {
                 rSocket = io.rsocket.core.RSocketConnector.create()
                         .dataMimeType(mimeType)
                         .metadataMimeType(metadataMimeType)
-                        .connect(TcpClientTransport.create(uri,port))
+                        .connect(TcpClientTransport.create(uri, port))
                         .block();
             }
 
@@ -288,7 +304,7 @@ public class RSocketClient implements Disposable {
          * Get setup data from the configuration.
          *
          * @param config
-         * @return Build
+         * @return Builder.
          */
         public Builder config(Config config) {
             config.get("authentication.username").asString().ifPresent(this::username);
@@ -303,51 +319,101 @@ public class RSocketClient implements Disposable {
             return this;
         }
 
+        /**
+         * Set Route.
+         * @param route
+         * @return Builder.
+         */
         public Builder route(String route) {
             this.route = route;
             return this;
         }
 
+        /**
+         * Set auth type.
+         * @param authType
+         * @return Builder.
+         */
         public Builder authType(WellKnownAuthType authType) {
             this.authType = authType;
             return this;
         }
 
+        /**
+         * SeMime Type.
+         * @param mimeType
+         * @return Builder.
+         */
         public Builder mimeType(String mimeType) {
             this.mimeType = mimeType;
             return this;
         }
 
+        /**
+         * Set Metadata Mime Type.
+         * @param metadataMimeType
+         * @return Builder.
+         */
         public Builder metadataMimeType(String metadataMimeType) {
             this.metadataMimeType = metadataMimeType;
             return this;
         }
 
+        /**
+         * Set User Name.
+         * @param username
+         * @return Builder.
+         */
         public Builder username(String username) {
             this.username = username;
             return this;
         }
 
+        /**
+         * Set Password.
+         * @param password
+         * @return Builder.
+         */
         public Builder password(String password) {
             this.password = password;
             return this;
         }
 
+        /**
+         * Set Token.
+         * @param token
+         * @return Builder.
+         */
         public Builder token(String token) {
             this.token = token;
             return this;
         }
 
+        /**
+         * Set WebSocket address.
+         * @param websocket
+         * @return Builder.
+         */
         public Builder websocket(String websocket) {
             this.websocket = websocket;
             return this;
         }
 
+        /**
+         * Set TCP URI.
+         * @param uri
+         * @return Builder.
+         */
         public Builder uri(String uri) {
             this.uri = uri;
             return this;
         }
 
+        /**
+         * Set TCP Port.
+         * @param port
+         * @return Builder.
+         */
         public Builder port(int port) {
             this.port = port;
             return this;

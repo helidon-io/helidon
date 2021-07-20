@@ -15,15 +15,17 @@
  */
 package io.helidon.rsocket.health;
 
+import java.util.Map;
+
+import javax.enterprise.context.ApplicationScoped;
+
 import io.helidon.rsocket.server.RSocketEndpoint;
+
 import io.rsocket.transport.ServerTransport;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
-
-import java.util.Map;
-import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Health support module for RSocket. Follows the standard MicroProfile HealthCheck pattern.
@@ -47,7 +49,8 @@ public class RSocketHealthCheck implements HealthCheck {
 
     private HealthCheckResponse runHealthCheckQuery(HealthCheckResponseBuilder builder) {
 
-        Map<String, ServerTransport.ConnectionAcceptor> connectionAcceptorMap = RSocketEndpoint.connectionAcceptorMap();
+        Map<String, ServerTransport.ConnectionAcceptor> connectionAcceptorMap
+                = RSocketEndpoint.connectionAcceptorMap();
 
         var responseBuilder = builder.withData("RSocket endpoint:", "/rsocket");
         for (Map.Entry<String, ServerTransport.ConnectionAcceptor> entry : connectionAcceptorMap.entrySet()) {

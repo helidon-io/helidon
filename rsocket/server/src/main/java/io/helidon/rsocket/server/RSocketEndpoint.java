@@ -16,7 +16,19 @@
 
 package io.helidon.rsocket.server;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.websocket.CloseReason;
+import javax.websocket.Endpoint;
+import javax.websocket.EndpointConfig;
+import javax.websocket.Session;
+import javax.websocket.server.ServerEndpointConfig;
+
 import io.helidon.common.serviceloader.HelidonServiceLoader;
+
 import io.rsocket.DuplexConnection;
 import io.rsocket.RSocket;
 import io.rsocket.core.RSocketServer;
@@ -25,43 +37,35 @@ import io.rsocket.plugins.RSocketInterceptor;
 import io.rsocket.transport.ServerTransport.ConnectionAcceptor;
 import reactor.core.publisher.Mono;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.concurrent.ConcurrentHashMap;
-import javax.websocket.CloseReason;
-import javax.websocket.Endpoint;
-import javax.websocket.EndpointConfig;
-import javax.websocket.Session;
-import javax.websocket.server.ServerEndpointConfig;
+
 
 /**
  * RSocket endpoint class.
  */
 public class RSocketEndpoint extends Endpoint {
 
-    private static Map<String,ConnectionAcceptor> connectionAcceptorMap = new HashMap<>();
+    private static Map<String, ConnectionAcceptor> connectionAcceptorMap = new HashMap<>();
     private final Map<String, DuplexConnection> connections = new ConcurrentHashMap<>();
 
-    HelidonServiceLoader<DuplexConnectionInterceptor> connectionInterceptors = HelidonServiceLoader
+    private HelidonServiceLoader<DuplexConnectionInterceptor> connectionInterceptors = HelidonServiceLoader
             .builder(ServiceLoader.load(DuplexConnectionInterceptor.class))
             .build();
 
-    HelidonServiceLoader<RSocketInterceptor> rsocketInterceptors = HelidonServiceLoader
+    private HelidonServiceLoader<RSocketInterceptor> rsocketInterceptors = HelidonServiceLoader
             .builder(ServiceLoader.load(RSocketInterceptor.class))
             .build();
 
-    protected String path;
+    private String path;
 
     /**
-     * Factory method to create {@link RSocketEndpoint}
+     * Factory method to create {@link RSocketEndpoint}.
      *
      * @param routing
      * @param path
      * @return {@link RSocketEndpoint}
      */
     public static RSocketEndpoint create(RSocketRouting routing, String path){
-        return new RSocketEndpoint(routing,path);
+        return new RSocketEndpoint(routing, path);
     }
 
     /**
@@ -74,9 +78,9 @@ public class RSocketEndpoint extends Endpoint {
     /**
      * Get all connection information.
      *
-     * @return
+     * @return Map with acceptors
      */
-    public static Map<String,ConnectionAcceptor> connectionAcceptorMap(){
+    public static Map<String, ConnectionAcceptor> connectionAcceptorMap(){
         return connectionAcceptorMap;
     }
 
@@ -107,12 +111,13 @@ public class RSocketEndpoint extends Endpoint {
                 .acceptor((connectionSetupPayload, rs) -> Mono.just(finalRSocket))
                 .asConnectionAcceptor();
 
-        connectionAcceptorMap.put(path,connectionAcceptor);
+        connectionAcceptorMap.put(path, connectionAcceptor);
     }
 
 
     /**
      * Returns the created and configured RSocket Endpoint.
+     * @return Server Endpoint Config
      */
     public ServerEndpointConfig getEndPoint() {
         return ServerEndpointConfig.Builder.create(this.getClass(), path)

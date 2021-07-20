@@ -16,19 +16,14 @@
 
 package io.helidon.rsocket.metrics;
 
-import static reactor.core.publisher.SignalType.CANCEL;
-import static reactor.core.publisher.SignalType.ON_COMPLETE;
-import static reactor.core.publisher.SignalType.ON_ERROR;
-
-import io.rsocket.Payload;
-import io.rsocket.RSocket;
-
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import io.rsocket.Payload;
+import io.rsocket.RSocket;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
@@ -37,6 +32,10 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
+
+import static reactor.core.publisher.SignalType.CANCEL;
+import static reactor.core.publisher.SignalType.ON_COMPLETE;
+import static reactor.core.publisher.SignalType.ON_ERROR;
 
 /**
  * A proxy class to collect metrics from RSocket usage.
@@ -66,11 +65,11 @@ final class MetricsRSocket implements RSocket {
         this.delegate = Objects.requireNonNull(delegate, "Delegate must not be null");
         Objects.requireNonNull(metricRegistry, "MetricRegistry must not be null");
 
-        this.metadataPush = new InteractionCounters(metricRegistry, "MetadataPush", tags);
-        this.requestChannel = new InteractionCounters(metricRegistry, "RequestChannel", tags);
-        this.requestFireAndForget = new InteractionCounters(metricRegistry, "RequestFnF", tags);
-        this.requestResponse = new InteractionTimers(metricRegistry, "RequestResponse", tags);
-        this.requestStream = new InteractionCounters(metricRegistry, "RequestStream", tags);
+        this.metadataPush = new InteractionCounters(metricRegistry, "metadata-push", tags);
+        this.requestChannel = new InteractionCounters(metricRegistry, "request-channel", tags);
+        this.requestFireAndForget = new InteractionCounters(metricRegistry, "request-FnF", tags);
+        this.requestResponse = new InteractionTimers(metricRegistry, "request-response", tags);
+        this.requestStream = new InteractionCounters(metricRegistry, "request-stream", tags);
     }
 
     /**
@@ -162,16 +161,19 @@ final class MetricsRSocket implements RSocket {
                 case ON_ERROR:
                     onError.inc();
                     break;
+                default:
+                    cancel.inc();
             }
         }
 
         private static Counter counter(
                 MetricRegistry meterRegistry, String interactionModel, SignalType signalType, Tag... tags) {
 
-            Tag[] resultTags = Stream.concat(Arrays.stream(tags), Stream.of(new Tag("signalType", signalType.name())))
+            Tag[] resultTags = Stream.concat(Arrays.stream(tags),
+                    Stream.of(new Tag("signal-type", signalType.name())))
                     .toArray(Tag[]::new);
             return meterRegistry.counter(
-                    "rsocket." + interactionModel, resultTags);
+                    "rsocket-" + interactionModel, resultTags);
         }
     }
 
@@ -200,16 +202,17 @@ final class MetricsRSocket implements RSocket {
         }
 
         Timer start() {
-            return metricRegistry.timer("RequestTimer");
+            return metricRegistry.timer("request-timer");
         }
 
         private static Timer timer(
                 MetricRegistry metricRegistry, String interactionModel, SignalType signalType, Tag... tags) {
 
-            Tag[] resultTags = Stream.concat(Arrays.stream(tags), Stream.of(new Tag("signalType", signalType.name())))
+            Tag[] resultTags = Stream.concat(Arrays.stream(tags),
+                    Stream.of(new Tag("signal-type", signalType.name())))
                     .toArray(Tag[]::new);
             return metricRegistry.timer(
-                    "rsocket." + interactionModel, resultTags);
+                    "rsocket-" + interactionModel, resultTags);
         }
     }
 }

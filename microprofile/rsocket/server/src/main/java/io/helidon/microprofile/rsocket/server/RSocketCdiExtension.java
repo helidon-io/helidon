@@ -16,19 +16,6 @@
 
 package io.helidon.microprofile.rsocket.server;
 
-import io.helidon.common.reactive.Multi;
-import io.helidon.common.reactive.Single;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
-import io.helidon.microprofile.cdi.RuntimeStart;
-import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.rsocket.server.RSocketEndpoint;
-import io.helidon.rsocket.server.RSocketRouting;
-import io.helidon.rsocket.server.RSocketSupport;
-import io.helidon.webserver.tyrus.TyrusSupport;
-import io.rsocket.Payload;
-import org.reactivestreams.FlowAdapters;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -40,6 +27,7 @@ import java.util.concurrent.Flow;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
@@ -52,6 +40,21 @@ import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.WithAnnotations;
+
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
+import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.rsocket.server.RSocketEndpoint;
+import io.helidon.rsocket.server.RSocketRouting;
+import io.helidon.rsocket.server.RSocketSupport;
+import io.helidon.webserver.tyrus.TyrusSupport;
+
+import io.rsocket.Payload;
+
+
 
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
@@ -79,7 +82,7 @@ public class RSocketCdiExtension implements Extension {
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         this.config = config;
         ConfigValue<String> root = config.get("rsocket").get("root").asString();
-        if (root.isPresent()){
+        if (root.isPresent()) {
             rsocketPathRoot = root.get();
         }
     }
@@ -107,7 +110,11 @@ public class RSocketCdiExtension implements Extension {
         LOGGER.info(() -> "Annotated endpoint found " + endpoint.getAnnotatedType().getJavaClass());
 
         LOGGER.finest("Methods:");
-        List<Method> methods = endpoint.getAnnotatedType().getMethods().stream().map(AnnotatedMethod::getJavaMember).collect(Collectors.toList());
+        List<Method> methods = endpoint.getAnnotatedType()
+                .getMethods()
+                .stream()
+                .map(AnnotatedMethod::getJavaMember)
+                .collect(Collectors.toList());
 
         Map<Annotation, Method> endPointMethods = new HashMap<>();
 
@@ -118,10 +125,10 @@ public class RSocketCdiExtension implements Extension {
             for (Annotation annotation : method.getAnnotations()) {
                 LOGGER.finest(" - " + annotation.toString());
 
-                if (annotation.annotationType().equals(FireAndForget.class) ||
-                        annotation.annotationType().equals(RequestChannel.class) ||
-                        annotation.annotationType().equals(RequestResponse.class) ||
-                        annotation.annotationType().equals(RequestStream.class)
+                if (annotation.annotationType().equals(FireAndForget.class)
+                        || annotation.annotationType().equals(RequestChannel.class)
+                        || annotation.annotationType().equals(RequestResponse.class)
+                        || annotation.annotationType().equals(RequestStream.class)
                 ) {
                     endPointMethods.put(annotation, method);
                 }
@@ -160,7 +167,8 @@ public class RSocketCdiExtension implements Extension {
                                     if (method.getReturnType().equals(Single.class)) {
                                         return (Single<Void>) method.invoke(rsocketInstance, payload);
                                     } else if (method.getReturnType().equals(CompletableFuture.class)) {
-                                        CompletableFuture<Void> result = (CompletableFuture<Void>) method.invoke(rsocketInstance, payload);
+                                        CompletableFuture<Void> result =
+                                                (CompletableFuture<Void>) method.invoke(rsocketInstance, payload);
                                         return Single.create(result);
                                     }
                                 } catch (IllegalAccessException | InvocationTargetException e) {
@@ -181,7 +189,8 @@ public class RSocketCdiExtension implements Extension {
                                     }
                                     if (method.getReturnType().equals(Flow.Publisher.class)) {
                                         if (payloads instanceof Flow.Publisher) {
-                                            return Multi.create((Flow.Publisher<Payload>) method.invoke(rsocketInstance, Multi.create(payloads)));
+                                            return Multi.create((Flow.Publisher<Payload>)
+                                                    method.invoke(rsocketInstance, Multi.create(payloads)));
                                         }
                                         Multi.create((Flow.Publisher<Payload>) method.invoke(rsocketInstance, payloads));
                                     }
@@ -197,7 +206,8 @@ public class RSocketCdiExtension implements Extension {
                                     if (method.getReturnType().equals(Single.class)) {
                                         return (Single<Payload>) method.invoke(rsocketInstance, payload);
                                     } else if (method.getReturnType().equals(CompletableFuture.class)) {
-                                        CompletableFuture<Payload> result = (CompletableFuture<Payload>) method.invoke(rsocketInstance, payload);
+                                        CompletableFuture<Payload> result =
+                                                (CompletableFuture<Payload>) method.invoke(rsocketInstance, payload);
                                         return Single.create(result);
                                     }
                                 } catch (IllegalAccessException | InvocationTargetException e) {

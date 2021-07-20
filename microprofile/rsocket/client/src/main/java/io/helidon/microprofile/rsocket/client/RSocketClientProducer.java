@@ -1,35 +1,32 @@
 package io.helidon.microprofile.rsocket.client;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
-import io.helidon.config.mp.MpConfig;
-import io.helidon.rsocket.client.RSocketClient;
-import org.eclipse.microprofile.config.ConfigProvider;
-
 import java.lang.annotation.Annotation;
 import java.util.Set;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
-import javax.inject.Named;
 
+import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
+import io.helidon.config.mp.MpConfig;
+import io.helidon.rsocket.client.RSocketClient;
+
+import org.eclipse.microprofile.config.ConfigProvider;
+
+
+/**
+ * Producer for RSocket clients.
+ */
 @ApplicationScoped
 public class RSocketClientProducer {
 
-//    @Produces
-//    public RSocketClient produceRSocketClient() {
-//        org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
-//        Config helidonConfig = MpConfig.toHelidonConfig(config).get("rsocket");
-//
-//        ConfigValue<RSocketClient> configValue = helidonConfig.as(RSocketClient::create);
-//        if (configValue.isPresent()) {
-//            return configValue.get();
-//        }
-//        throw new RuntimeException("Unable to configure RSocket client!");
-//    }
-
-
+    /**
+     * Produce RSocket Client.
+     * @param ip
+     * @return RSocketClient
+     */
     @Dependent
     @Produces
     @CustomRSocket
@@ -56,6 +53,10 @@ public class RSocketClientProducer {
         throw new RuntimeException("Unable to configure RSocket client!");
     }
 
+    /**
+     * Default RSocket client producer.
+     * @return RSocketClient
+     */
     @Produces
     public RSocketClient produceDefaultRSocketClient() {
         return createClient(null);

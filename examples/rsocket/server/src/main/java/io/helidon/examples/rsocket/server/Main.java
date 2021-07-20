@@ -55,7 +55,7 @@ public class Main {
                 .addLiveness(RSocketHealthCheck.create())   // Adds RSocket checks
                 .build();
 
-        Routing build = Routing.builder()
+        return Routing.builder()
                 .register(health)
                 .register(metrics)
                 .register("/rsocket",
@@ -64,21 +64,7 @@ public class Main {
                                         .getEndPoint()
                                 ).build())
                 .build();
-
-        return build;
     }
-
-    static RSocketRouting rSocketRouting(){
-
-        MyRSocketService myRSocketService = new MyRSocketService();
-
-        RSocketRouting rSocketRouting = RSocketRouting.builder()
-                .register(myRSocketService)
-                .build();
-
-        return rSocketRouting;
-    }
-
 
     static WebServer startWebServer() {
 

@@ -16,20 +16,23 @@
 
 package io.helidon.microprofile.examples.rsocket.client;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.microprofile.rsocket.client.CustomRSocket;
-import io.helidon.rsocket.client.RSocketClient;
-import io.rsocket.Payload;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
+
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+
+import io.helidon.common.reactive.Single;
+import io.helidon.microprofile.rsocket.client.CustomRSocket;
+import io.helidon.rsocket.client.RSocketClient;
+
+import io.rsocket.Payload;
+
 
 /**
  * A simple JAX-RS resource to call RSocket.
@@ -41,6 +44,11 @@ public class RSocketResource {
     private RSocketClient client;
     private RSocketClient anotherClient;
 
+    /**
+     * Construct RSocket resource.
+     * @param client
+     * @param anotherClient
+     */
     @Inject
     public RSocketResource(RSocketClient client, @CustomRSocket("custom") RSocketClient anotherClient) {
         this.client = client;
@@ -49,15 +57,14 @@ public class RSocketResource {
 
     /**
      * Return a worldly greeting message.
-     *
      * @return text
      */
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public String getDefaultMessage() throws ExecutionException, InterruptedException {
-        Single<Payload> payload = client.requestResponse(Single.just(ByteBuffer.wrap("Hello World!".getBytes(StandardCharsets.UTF_8))));
-        String result = payload.get().getDataUtf8();
-        return result;
+        Single<Payload> payload = client.requestResponse(
+                Single.just(ByteBuffer.wrap("Hello World!".getBytes(StandardCharsets.UTF_8))));
+        return payload.get().getDataUtf8();
     }
 
     /**
@@ -69,7 +76,8 @@ public class RSocketResource {
     @Path("/another")
     @Produces(MediaType.TEXT_PLAIN)
     public String getAnotherMessage() throws ExecutionException, InterruptedException {
-        Single<Payload> payload = anotherClient.requestResponse(Single.just(ByteBuffer.wrap("Hello Another World!".getBytes(StandardCharsets.UTF_8))));
+        Single<Payload> payload = anotherClient.requestResponse(
+                Single.just(ByteBuffer.wrap("Hello Another World!".getBytes(StandardCharsets.UTF_8))));
         return payload.get().getDataUtf8();
     }
 }
