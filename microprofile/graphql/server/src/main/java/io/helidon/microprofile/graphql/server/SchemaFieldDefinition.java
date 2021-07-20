@@ -142,10 +142,15 @@ class SchemaFieldDefinition extends AbstractDescriptiveElement implements Elemen
         StringBuilder sb = new StringBuilder(getSchemaElementDescription(format()))
                 .append(name());
 
-        if (listSchemaArguments.size() > 0) {
+        // determine if there are any arguments that are not ExecutionInput as they should
+        // not be included as standard types
+        boolean hasSchemaArguments = listSchemaArguments.stream().anyMatch(a -> !a.isExecutionInput());
+
+        if (hasSchemaArguments) {
             sb.append(OPEN_PARENTHESES)
                     .append(NEWLINE)
                     .append(listSchemaArguments.stream()
+                                    .filter(a -> !a.isExecutionInput())
                                     .map(SchemaArgument::getSchemaAsString)
                                     .collect(Collectors.joining(COMMA_SPACE + NEWLINE)));
             sb.append(NEWLINE).append(CLOSE_PARENTHESES);

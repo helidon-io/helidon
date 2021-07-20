@@ -16,6 +16,8 @@
 
 package io.helidon.graphql.server;
 
+import graphql.ExecutionInput;
+
 /**
  * GraphQL execution context to support partial results.
  */
@@ -40,4 +42,18 @@ public interface ExecutionContext {
      * @return true if there was a partial results exception
      */
     boolean hasPartialResultsException();
+
+    /**
+     * Add the {@link ExecutionInput}.
+     *
+     * @param input {@link ExecutionInput}
+     */
+    void setExecutionInput(ExecutionInput input);
+
+    /**
+     * Retrieve the {@link ExecutionInput}.
+     *
+     * @return the {@link ExecutionInput}
+     */
+    ExecutionInput executionInput();
 }

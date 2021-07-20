@@ -79,6 +79,11 @@ class SchemaArgument extends AbstractDescriptiveElement implements ElementGenera
     private Class<?> originalArrayType;
 
     /**
+     * Indicates if the argument type is the {@link graphql.ExecutionInput} and must be ignored in schema generation.
+     */
+    private boolean isExecutionInput;
+
+    /**
      * Construct a {@link SchemaArgument}.
      *
      * @param builder the {@link Builder} to construct from
@@ -95,6 +100,7 @@ class SchemaArgument extends AbstractDescriptiveElement implements ElementGenera
         this.arrayLevels = builder.arrayLevels;
         this.isArrayReturnTypeMandatory = builder.isArrayReturnTypeMandatory;
         this.originalArrayType = builder.originalArrayType;
+        this.isExecutionInput = builder.isExecutionInput;
         description(builder.description);
     }
 
@@ -300,6 +306,15 @@ class SchemaArgument extends AbstractDescriptiveElement implements ElementGenera
     }
 
     /**
+     * Indicates if the argument type is the {@link graphql.ExecutionInput} and must be ignored in schema generation.
+     *
+     * @return true if the argument type is the {@link graphql.ExecutionInput}
+     */
+    public boolean isExecutionInput() {
+        return isExecutionInput;
+    }
+
+    /**
      * Sets the original array type.
      *
      * @param originalArrayType the original array type
@@ -329,6 +344,7 @@ class SchemaArgument extends AbstractDescriptiveElement implements ElementGenera
                 + ", isReturnTypeMandatory=" + isArrayReturnTypeMandatory
                 + ", isArrayReturnType=" + isArrayReturnType
                 + ", originalArrayType=" + originalArrayType
+                + ", isExecutionInput=" + isExecutionInput
                 + ", arrayLevels=" + arrayLevels
                 + ", format=" + Arrays.toString(format)
                 + ", description='" + description() + '\'' + '}';
@@ -353,13 +369,14 @@ class SchemaArgument extends AbstractDescriptiveElement implements ElementGenera
                 && Arrays.equals(format, schemaArgument.format)
                 && Objects.equals(sourceArgument, schemaArgument.sourceArgument)
                 && Objects.equals(originalArrayType, schemaArgument.originalArrayType)
+                && Objects.equals(isExecutionInput, schemaArgument.isExecutionInput)
                 && Objects.equals(description(), schemaArgument.description())
                 && Objects.equals(defaultValue, schemaArgument.defaultValue);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), argumentName, argumentType, sourceArgument,
+        return Objects.hash(super.hashCode(), argumentName, argumentType, sourceArgument, isExecutionInput,
                             isMandatory, defaultValue, description(), originalType, format, originalArrayType);
     }
 
@@ -380,6 +397,7 @@ class SchemaArgument extends AbstractDescriptiveElement implements ElementGenera
         private int arrayLevels;
         private boolean isArrayReturnTypeMandatory;
         private Class<?> originalArrayType;
+        private boolean isExecutionInput;
 
         /**
          * Set the argument name.
@@ -506,11 +524,23 @@ class SchemaArgument extends AbstractDescriptiveElement implements ElementGenera
 
         /**
          * Set the original array inner type if it is array type.
-         * @param originalArrayType  the  original array inner type if it is array type
+         *
+         * @param originalArrayType the original array inner type if it is array type
          * @return updated builder instance
          */
         public Builder originalArrayType(Class<?> originalArrayType) {
             this.originalArrayType = originalArrayType;
+            return this;
+        }
+
+        /**
+         * Set if the argument type is the {@link graphql.ExecutionInput} and must be ignored in schema generation.
+         *
+         * @param isExecutionInput  if the argument type is the {@link graphql.ExecutionInput}
+         * @return updated builder instance
+         */
+        public Builder executionInput(boolean isExecutionInput) {
+            this.isExecutionInput = isExecutionInput;
             return this;
         }
 

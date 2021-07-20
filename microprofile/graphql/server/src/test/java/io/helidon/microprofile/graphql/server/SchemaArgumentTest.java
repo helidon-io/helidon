@@ -121,6 +121,17 @@ class SchemaArgumentTest {
     }
 
     @Test
+    public void testSchemaArgumentGenerationWithExecutionInput() {
+        SchemaArgument schemaArgument = SchemaArgument.builder()
+                .argumentName("test")
+                .executionInput(true)
+                .argumentType("String")
+                .build();
+
+        assertThat(schemaArgument.isExecutionInput(), is(true));
+    }
+
+    @Test
     public void testSchemaGeneration() {
         SchemaArgument schemaArgument = SchemaArgument.builder()
                 .argumentName("name")
