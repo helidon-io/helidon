@@ -570,14 +570,16 @@ public class HelidonReflectionFeature implements Feature {
             addConstructors();
         }
 
+        @SuppressWarnings("ResultOfMethodCallIgnored")
         private void validateTypeParams() {
             try {
                 clazz.getGenericSuperclass();
             } catch (Exception e) {
-                System.out.println("Type parameter of superclass is not on classpath of "
-                                           + clazz.getName()
-                                           + " error: "
-                                           + e.getMessage());
+                // this is now reported with each build, because ProtobufEncoder is part of netty codec
+                tracer.parsing(() -> "Type parameter of superclass is not on classpath of "
+                        + clazz.getName()
+                        + " error: "
+                        + e.getMessage());
                 valid = false;
             }
         }
