@@ -36,6 +36,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.rsocket</groupId>
             <artifactId>helidon-microprofile-rsocket-server</artifactId>
         </dependency>

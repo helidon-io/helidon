@@ -19,6 +19,7 @@ package io.helidon.microprofile.rsocket.server;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.rsocket.server.RSocketEndpoint;
@@ -68,6 +69,8 @@ public class RSocketCdiExtension implements Extension {
 
     private Map<String, RSocketRouting.Builder> routingMap = new HashMap<>();
 
+    private String rsocketPathRoot = "/rsocket";
+
     /**
      * Read Configuration.
      *
@@ -75,6 +78,10 @@ public class RSocketCdiExtension implements Extension {
      */
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         this.config = config;
+        ConfigValue<String> root = config.get("rsocket").get("root").asString();
+        if (root.isPresent()){
+            rsocketPathRoot = root.get();
+        }
     }
 
     /**
@@ -235,7 +242,7 @@ public class RSocketCdiExtension implements Extension {
         }
         TyrusSupport rsocketSupport = builder.build();
 
-        serverCdiExtension.serverRoutingBuilder().register("/rsocket", rsocketSupport);
+        serverCdiExtension.serverRoutingBuilder().register(rsocketPathRoot, rsocketSupport);
     }
 
     @SuppressWarnings("unchecked")
