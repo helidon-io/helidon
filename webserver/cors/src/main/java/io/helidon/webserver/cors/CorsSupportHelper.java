@@ -341,10 +341,13 @@ class CorsSupportHelper<Q, R> {
         RequestType requestType = requestType(requestAdapter, true); // silent: already logged during req processing
 
         if (requestType == RequestType.CORS) {
-            // Aggregator knows only about expect paths. If response is 404, use a "catch-all" cross-origin config because
-            // the aggregator will not know about the path.
+            // Aggregator knows only about expect paths. If response is 404, use an ad hoc cross-origin config for the given
+            // origin and method, thus allowing the 404 to pass through the CORS handling in the client.
             CrossOriginConfig crossOrigin = responseAdapter.status() == Http.Status.NOT_FOUND_404.code()
-                ? CrossOriginConfig.CATCH_ALL
+                ? CrossOriginConfig.builder()
+                    .allowOrigins(requestAdapter.firstHeader(ORIGIN).orElse("*"))
+                    .allowMethods(requestAdapter.method())
+                    .build()
                 : aggregator.lookupCrossOrigin(
                                 requestAdapter.path(),
                                 requestAdapter.method(),

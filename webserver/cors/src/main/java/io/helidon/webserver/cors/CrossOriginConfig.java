@@ -52,10 +52,6 @@ import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
  */
 public class CrossOriginConfig {
 
-    static final CrossOriginConfig CATCH_ALL = CrossOriginConfig.builder()
-            .allowOrigins("*")
-            .build();
-
     /**
      * Key for the node within the CORS config that contains the list of path information.
      */
