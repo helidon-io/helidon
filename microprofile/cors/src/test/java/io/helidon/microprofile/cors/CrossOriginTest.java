@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -347,17 +347,6 @@ class CrossOriginTest {
                 .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("http://foo.bar"));
-    }
-
-    @Test
-    void testErrorResponse() {
-        Response res = target.path("/notfound")
-                .request()
-                .header(ORIGIN, "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
-                .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
-        assertThat(res.getStatusInfo(), is(Response.Status.NOT_FOUND));
-        assertThat(res.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN), is(false));
     }
 
     @Test
