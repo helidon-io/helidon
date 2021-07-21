@@ -26,6 +26,9 @@
 
 [role="flex, sm7"]
 |=======
+
+// tag::common-prereqs-table-contents[]
+
 |A Helidon MP Application | You can use your own application or use the https://helidon.io/docs/v2/#/mp/guides/02_quickstart[Helidon MP Quickstart] to create a sample application.
 |https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}11] (http://jdk.java.net[Open{nbsp}JDK{nbsp}11]) |Helidon requires Java 11+.
 |https://maven.apache.org/download.cgi[Maven 3.6.1+]|Helidon requires Maven 3.6.1+.
@@ -34,6 +37,8 @@ want to build and deploy Docker containers.
 |https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.16.5+]|If you want to
 deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can
 <<about/05_kubernetes.adoc,install one on your desktop>>).
+// end::common-prereqs-table-contents[]
+
 |=======
 
 
@@ -65,14 +70,8 @@ export JAVA_HOME=/usr/lib/jvm/jdk-11
 
 [role="flex, sm7"]
 |=======
-|A Helidon MP Application | You can use your own application or use the https://helidon.io/docs/v2/#/mp/guides/02_quickstart[Helidon MP Quickstart] to create a sample application.
-|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}11] (http://jdk.java.net[Open{nbsp}JDK{nbsp}11]) |Helidon requires Java 11+.
-|https://maven.apache.org/download.cgi[Apache Maven 3.6.1+]|Helidon requires Apache Maven 3.6.1+.
-|https://docs.docker.com/install/[Docker 18.09+]|You need Docker if you
-want to build and deploy Docker containers.
-|https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.16.5+]|If you want to
-deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can
-<<about/05_kubernetes.adoc,install one on your desktop>>).
+include::common_prereqs.adoc[tag=common-prereqs-table-contents]
+
 |https://github.com/helm/helm[Helm] | To manage Kubernetes applications.
 |=======
 
@@ -105,14 +104,8 @@ export JAVA_HOME=/usr/lib/jvm/jdk-11
 
 [role="flex, sm7"]
 |=======
-|A Helidon MP Application | You can use your own application or use the https://helidon.io/docs/v2/#/mp/guides/02_quickstart[Helidon MP Quickstart] to create a sample application.
-|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}11] (http://jdk.java.net[Open{nbsp}JDK{nbsp}11]) |Helidon requires Java 11+.
-|https://maven.apache.org/download.cgi[Maven 3.6.1+]|Helidon requires Maven 3.6.1+.
-|https://docs.docker.com/install/[Docker 18.09+]|You need Docker if you
-want to build and deploy Docker containers.
-|https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.16.5+]|If you want to
-deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can
-<<about/05_kubernetes.adoc,install one on your desktop>>).|https://curl.se/download.html[curl] 
+include::common_prereqs.adoc[tag=common-prereqs-table-contents]
+|https://curl.se/download.html[curl] 
 |(Optional) for testing
 |=======
 
@@ -146,14 +139,8 @@ export JAVA_HOME=/usr/lib/jvm/jdk-11
 
 [role="flex, sm7"]
 |=======
-|A Helidon MP Application | You can use your own application or use the https://helidon.io/docs/v2/#/mp/guides/02_quickstart[Helidon MP Quickstart] to create a sample application.
-|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}11] (http://jdk.java.net[Open{nbsp}JDK{nbsp}11]) |Helidon requires Java 11+.
-|https://maven.apache.org/download.cgi[Maven 3.6.1+]|Helidon requires Maven 3.6.1+.
-|https://docs.docker.com/install/[Docker 18.09+]|You need Docker if you
-want to build and deploy Docker containers.
-|https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.16.5+]|If you want to
-deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can
-<<about/05_kubernetes.adoc,install one on your desktop>>).| https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.0.0[GraalVM CE 21.0.0]|
+include::common_prereqs.adoc[tag=common-prereqs-table-contents]
+| https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.0.0[GraalVM CE 21.0.0]|
 |=======
 
 
