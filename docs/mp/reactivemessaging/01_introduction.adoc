@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,6 +23,29 @@
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, messaging
 :h1Prefix: MP
+:feature-name: MicroProfile Reactive Messaging
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:microprofile-bundle: false
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+   <groupId>io.helidon.microprofile.messaging</groupId>
+   <artifactId>helidon-microprofile-messaging</artifactId>
+</dependency>
+----
+
+To include health checks for Messaging add the following dependency:
+
+[source,xml]
+----
+<dependency>
+   <groupId>io.helidon.microprofile.messaging</groupId>
+   <artifactId>helidon-microprofile-messaging-health</artifactId>
+</dependency>
+----
 
 == Reactive Messaging
 
@@ -150,32 +173,13 @@ public String processMessage(String msg) {
 }
 ----
 
-=== Dependency
-
-Declare the following dependency in your project:
-
-[source,xml]
-----
-<dependency>
-   <groupId>io.helidon.microprofile.messaging</groupId>
-   <artifactId>helidon-microprofile-messaging</artifactId>
-</dependency>
-----
-
 === Health check
+
 Messaging in Helidon has built in health probes for liveness and readiness. To activate it
-just add following dependency:
-[source,xml]
-----
-<dependency>
-   <groupId>io.helidon.microprofile.messaging</groupId>
-   <artifactId>helidon-microprofile-messaging-health</artifactId>
-</dependency>
-----
+add the <<maven-coordinates,health check dependency>>.
 
 * Liveness - channel is considered UP until `cancel` or `onError` signal is intercepted on it.
 * Readiness - channel is considered DOWN until `onSubscribe` signal is intercepted on it.
-
 
 If you check your health endpoints `/health/live` and `/health/ready` you will discover
 every messaging channel to have its own probe.

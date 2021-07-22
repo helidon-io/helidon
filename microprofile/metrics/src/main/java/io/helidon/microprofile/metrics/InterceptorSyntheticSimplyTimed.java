@@ -16,20 +16,16 @@
 
 package io.helidon.microprofile.metrics;
 
-import java.lang.reflect.Method;
-import java.time.Duration;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Map;
 
 import javax.annotation.Priority;
 import javax.inject.Inject;
-import javax.interceptor.AroundInvoke;
 import javax.interceptor.Interceptor;
-import javax.interceptor.InvocationContext;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.CompletionCallback;
 
-import org.eclipse.microprofile.metrics.SimpleTimer;
+import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
 /**
  * Interceptor for synthetic {@link SyntheticSimplyTimed} annotations.
@@ -41,70 +37,18 @@ import org.eclipse.microprofile.metrics.SimpleTimer;
 @SyntheticSimplyTimed
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 10)
-final class InterceptorSyntheticSimplyTimed {
+final class InterceptorSyntheticSimplyTimed extends InterceptorSimplyTimedBase {
 
-    private static final Logger LOGGER = Logger.getLogger(InterceptorSyntheticSimplyTimed.class.getName());
-
-    private final boolean isEnabled;
-    private final RestEndpointMetricsInfo restEndpointMetricsInfo;
+    private final Map<MetricID, Metric> metricsForVerification;
 
     @Inject
-    InterceptorSyntheticSimplyTimed(RestEndpointMetricsInfo restEndpointMetricsInfo) {
-        this.restEndpointMetricsInfo = restEndpointMetricsInfo;
-        isEnabled = restEndpointMetricsInfo.isEnabled();
+    InterceptorSyntheticSimplyTimed(@RegistryType(type = MetricRegistry.Type.BASE) MetricRegistry baseRegistry) {
+        super(SyntheticSimplyTimed.class);
+        metricsForVerification = baseRegistry.getMetrics();
     }
 
-    /**
-     * Intercepts a call to bean method annotated by a JAX-RS annotation.
-     *
-     * @param context invocation context
-     * @return the intercepted method's return value
-     * @throws Throwable in case any error occurs
-     */
-    @AroundInvoke
-    public Object interceptRestEndpoint(InvocationContext context) throws Throwable {
-        if (!isEnabled) {
-            return context.proceed();
-        }
-        long startNanos = System.nanoTime();
-        try {
-            LOGGER.fine("Interceptor of SyntheticSimplyTimed called for '" + context.getTarget().getClass()
-                    + "::" + context.getMethod().getName() + "'");
-
-            Method timedMethod = context.getMethod();
-            SimpleTimer simpleTimer = MetricsCdiExtension.syntheticSimpleTimer(timedMethod);
-            AsyncResponse asyncResponse = restEndpointMetricsInfo.asyncResponse(context);
-            if (asyncResponse != null) {
-                asyncResponse.register(new FinishCallback(startNanos, simpleTimer));
-                return context.proceed();
-            }
-            return simpleTimer.time(context::proceed);
-        } catch (Throwable t) {
-            LOGGER.log(Level.FINE, "Throwable caught by interceptor", t);
-            throw t;
-        }
-    }
-
-    /**
-     * Async callback which updates a {@code SimpleTimer} associated with the REST endpoint.
-     */
-    static class FinishCallback implements CompletionCallback {
-
-        private final long startTimeNanos;
-        private final SimpleTimer simpleTimer;
-
-        private FinishCallback(long startTimeNanos, SimpleTimer simpleTimer) {
-            this.simpleTimer = simpleTimer;
-            this.startTimeNanos = startTimeNanos;
-        }
-
-        @Override
-        public void onComplete(Throwable throwable) {
-            long nowNanos = System.nanoTime();
-            simpleTimer.update(Duration.ofNanos(nowNanos - startTimeNanos));
-            if (throwable != null) {
-                LOGGER.log(Level.FINE, "Throwable detected by interceptor callback", throwable);
-            }
-        }
+    @Override
+    Map<MetricID, Metric> metricsForVerification() {
+        return metricsForVerification;
     }
 }

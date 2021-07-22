@@ -62,7 +62,7 @@ mvn -U archetype:generate \
 Now `cd` into `helidon-ds`.  The rest of this guide will assume all
 relative paths are relative to this directory.
 
-== Add the H2 Database Driver to the Runtime Classpath
+=== Add the H2 Database Driver to the Runtime Classpath
 
 Add the following dependency in your `pom.xml`:
 
@@ -81,7 +81,7 @@ In a production application, you may use a different database, so in
 that case you may add a different database driver dependency here
 instead.
 
-== Add the Hikari Connection Pool Extension to the Runtime Classpath
+=== Add the Hikari Connection Pool Extension to the Runtime Classpath
 
 Add the following dependency in your `pom.xml`:
 
@@ -95,7 +95,7 @@ Add the following dependency in your `pom.xml`:
 </dependency>
 ----
 
-== Add an `application.yaml` File With Database Connectivity Information
+=== Add an `application.yaml` File With Database Connectivity Information
 
 Replace the contents of the following file under `src/main/resources`:
 
@@ -133,7 +133,9 @@ in this case, the
 https://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[`org.h2.jdbcx.JdbcDataSource`
 class].
 
-== Inject a https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`DataSource`] in Your Application Code
+=== Inject a Datasource into Your Application Code
+
+NOTE: For more information about datasources, see https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html
 
 In the `src/main/java/io/helidon/example/ds/ExampleResource.java` file, add the following
 imports:
@@ -179,11 +181,11 @@ http://javax-inject.github.io/javax-inject/api/javax/inject/Named.html[`@Named`
 annotation] is used to select which data source should be injected.
 Here, the `test` data source is requested.
 
-== Use The Injected `DataSource`
+=== Use The Injected DataSource
 
 Now that you have a `DataSource`, you'll use it to connect to the database.
 
-First, ensure the `io.heldion.example.ds.ExampleResource` resource
+First, ensure the `io.helidon.example.ds.ExampleResource` resource
 class imports various `java.sql` classes:
 
 [source,java]
@@ -257,7 +259,7 @@ Observe that the result will be a list of database table names.
 
 == Related Examples
 
-Helidon features a few examples of projects that use data sources.
+Helidon features a few examples of projects that use datasources.
 
 * https://github.com/oracle/helidon/tree/{helidon-version}/examples/integrations/cdi/datasource-hikaricp-h2[An
   example showing a Hikari connection pool data source connected to an

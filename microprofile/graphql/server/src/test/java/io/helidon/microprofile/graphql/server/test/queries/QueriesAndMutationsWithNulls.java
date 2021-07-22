@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,12 @@ public class QueriesAndMutationsWithNulls {
     @Query("paramShouldBeNonMandatory3")
     public String query3(@Name("value") @DefaultValue("value") @NonNull String value) {
         return "value";
+    }
+
+    // String should be mandatory because of NonNull
+    @Query("paramShouldBeMandatory")
+    public String query4(@Name("value") @NonNull String value) {
+        return value;
     }
 
     // just to generate NullPOJOInput

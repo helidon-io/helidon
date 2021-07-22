@@ -111,7 +111,7 @@ You can build a custom runtime image in 2 different ways:
 * Locally, on your desktop
 * Using Docker
 
-=== Local build
+=== Local Build
 
 Build the custom runtime image using the jlink image profile:
 
@@ -159,7 +159,7 @@ mvn package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false
 For more information on available configuration options see the
 https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plugin[`helidon-maven-plugin` documentation].
 
-=== Multi-stage Docker build
+=== Multi-Stage Docker Build
 
 To build a Docker image with a custom Java runtime image use the jlink
 Dockerfile included with the quickstart.
@@ -186,7 +186,7 @@ docker run --rm -p 8080:8080 helidon-quickstart-{helidon-lc-flavor}-jri:latest
 
 You can exercise the application's endpoints as before.
 
-== When should you use a Custom Runtime Image?
+== When should you use a custom runtime image?
 
 Custom runtime images are ideal for use when you want all of the runtime performance of
 the JDK JVM in a reasonably compact form.

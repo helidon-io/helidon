@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 
 import io.helidon.config.mp.MpConfigSources;
+import io.helidon.config.yaml.mp.YamlMpConfigSource;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
@@ -78,6 +79,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
     private static final Set<Class<? extends Annotation>> HELIDON_TEST_ANNOTATIONS =
             Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class);
     private static final Map<Class<? extends Annotation>, Annotation> BEAN_DEFINING = new HashMap<>();
+
+    private static final List<String> YAML_SUFFIXES = List.of(".yml", ".yaml");
 
     static {
         BEAN_DEFINING.put(ApplicationScoped.class, ApplicationScoped.Literal.INSTANCE);
@@ -283,7 +286,13 @@ class HelidonJunitExtension implements BeforeAllCallback,
             ConfigBuilder builder = configProviderResolver.getBuilder();
 
             configMeta.additionalSources.forEach(it -> {
-                builder.withSources(MpConfigSources.classPath(it).toArray(new ConfigSource[0]));
+                // If not using a YAML extension, assume properties file
+                String fileName = it.trim();
+                if (YAML_SUFFIXES.stream().anyMatch(fileName::endsWith)) {
+                    builder.withSources(YamlMpConfigSource.classPath(it).toArray(new ConfigSource[0]));
+                } else {
+                    builder.withSources(MpConfigSources.classPath(it).toArray(new ConfigSource[0]));
+                }
             });
 
             config = builder

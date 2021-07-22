@@ -136,7 +136,7 @@ final class NettyClient implements WebClient {
     }
 
     @Override
-    public WebClientRequestBuilder method(Http.Method method) {
+    public WebClientRequestBuilder method(Http.RequestMethod method) {
         return WebClientRequestBuilderImpl.create(eventGroup, configuration, method);
     }
 

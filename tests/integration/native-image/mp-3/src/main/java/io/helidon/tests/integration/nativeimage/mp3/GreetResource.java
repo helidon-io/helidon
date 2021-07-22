@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,6 @@ public class GreetResource {
      *
      * @return {@link javax.json.JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getDefaultMessage() {
@@ -93,7 +92,6 @@ public class GreetResource {
      * @param name the name to greet
      * @return {@link javax.json.JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @Path("/{name}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -107,7 +105,6 @@ public class GreetResource {
      * @param jsonObject JSON containing the new greeting
      * @return {@link javax.ws.rs.core.Response}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @Path("/greeting")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public class JdbcStatementParserTest {
                 "  WHERE name LIKE 'a?e%'\n";
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
-        List<String> names= parser.namesOrder();
+        List<String> names = parser.namesOrder();
         assertEquals(stmtIn, stmtOut);
         assertTrue(names.isEmpty());
     }
@@ -66,7 +66,7 @@ public class JdbcStatementParserTest {
         namesExp.add("ag3");
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
-        List<String> names= parser.namesOrder();
+        List<String> names = parser.namesOrder();
         assertEquals(stmtExp, stmtOut);
         assertEquals(namesExp, names);
     }
@@ -94,7 +94,7 @@ public class JdbcStatementParserTest {
         namesExp.add("ag3");
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
-        List<String> names= parser.namesOrder();
+        List<String> names = parser.namesOrder();
         assertEquals(stmtExp, stmtOut);
         assertEquals(namesExp, names);
     }
@@ -120,7 +120,7 @@ public class JdbcStatementParserTest {
         namesExp.add("ag3");
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
-        List<String> names= parser.namesOrder();
+        List<String> names = parser.namesOrder();
         assertEquals(stmtExp, stmtOut);
         assertEquals(namesExp, names);
     }
@@ -143,11 +143,28 @@ public class JdbcStatementParserTest {
                 " INNER JOIN address a ON a.id = p.aid" +
                 " WHERE p.age > :12age" +
                 "   AND a.zip = ?";
-       List<String> namesExp = new ArrayList<>(2);
+        List<String> namesExp = new ArrayList<>(2);
         namesExp.add("zip");
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
-        List<String> names= parser.namesOrder();
+        List<String> names = parser.namesOrder();
+        assertEquals(stmtExp, stmtOut);
+        assertEquals(namesExp, names);
+    }
+
+    @Test
+    void testStatementWithUnderscores() {
+        String stmtIn = "INSERT INTO example (created_at)\n" +
+                "      VALUES (:created_at)\n" +
+                "      RETURNING example_id, created_at;";
+        String stmtExp = "INSERT INTO example (created_at)\n" +
+                "      VALUES (?)\n" +
+                "      RETURNING example_id, created_at;";
+        List<String> namesExp = new ArrayList<>(1);
+        namesExp.add("created_at");
+        Parser parser = new Parser(stmtIn);
+        String stmtOut = parser.convert();
+        List<String> names = parser.namesOrder();
         assertEquals(stmtExp, stmtOut);
         assertEquals(namesExp, names);
     }

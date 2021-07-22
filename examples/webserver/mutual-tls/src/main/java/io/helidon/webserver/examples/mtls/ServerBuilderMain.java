@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webserver.examples.mtls;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.reactive.Single;
 import io.helidon.webserver.ClientAuthentication;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.SocketConfiguration;
@@ -49,20 +50,20 @@ public class ServerBuilderMain {
         startServer(8080, 443);
     }
 
-    static WebServer startServer(int unsecured, int secured) {
+    static Single<WebServer> startServer(int unsecured, int secured) {
         SocketConfiguration socketConf = SocketConfiguration.builder()
                 .name("secured")
                 .port(secured)
                 .tls(tlsConfig())
                 .build();
-        WebServer webServer = WebServer.builder()
+        Single<WebServer> webServer = WebServer.builder()
                 .port(unsecured)
                 .routing(createPlainRouting())
                 .addSocket(socketConf, createMtlsRouting())
-                .build();
+                .build()
+                .start();
 
-        webServer.start()
-                .thenAccept(ws -> {
+        webServer.thenAccept(ws -> {
                     System.out.println("WebServer is up!");
                     System.out.println("Unsecured: http://localhost:" + ws.port() + "/");
                     System.out.println("Secured: https://localhost:" + ws.port("secured") + "/");

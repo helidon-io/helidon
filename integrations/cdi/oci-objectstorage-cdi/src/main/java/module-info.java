@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. 
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,4 +28,10 @@ module io.helidon.integrations.cdi.oci.objectstorage {
     requires microprofile.config.api;
 
     exports io.helidon.integrations.cdi.oci.objectstorage;
+
+    provides javax.enterprise.inject.spi.Extension
+            with io.helidon.integrations.cdi.oci.objectstorage.OCIObjectStorageExtension;
+
+    provides org.eclipse.microprofile.config.spi.ConfigSource
+            with io.helidon.integrations.cdi.oci.objectstorage.OciConfigConfigSource;
 }

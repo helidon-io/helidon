@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,9 @@
 package io.helidon.microprofile.metrics;
 
 import javax.annotation.Priority;
-import javax.inject.Inject;
 import javax.interceptor.Interceptor;
-import javax.interceptor.InvocationContext;
 
 import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 /**
@@ -31,24 +28,14 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 @Counted
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 8)
-final class InterceptorCounted extends InterceptorBase<Counter, Counted> {
+final class InterceptorCounted extends MetricsInterceptorBase<Counter> {
 
-    @Inject
-    InterceptorCounted(MetricRegistry registry) {
-        super(registry,
-              Counted.class,
-              Counted::name,
-              Counted::tags,
-              Counted::absolute,
-              "counter",
-              Counter.class);
+    InterceptorCounted() {
+        super(Counted.class, Counter.class);
     }
 
     @Override
-    protected Object prepareAndInvoke(Counter counter,
-                                      Counted annot,
-                                      InvocationContext context) throws Exception {
-        counter.inc();
-        return context.proceed();
+    void preInvoke(Counter metric) {
+        metric.inc();
     }
 }

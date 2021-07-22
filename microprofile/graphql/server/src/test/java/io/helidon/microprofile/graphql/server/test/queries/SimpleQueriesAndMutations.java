@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -169,7 +170,7 @@ public class SimpleQueriesAndMutations {
     }
 
     @Query
-    @DateFormat(value = "dd MMM yyyy", locale = "en-AU")
+    @DateFormat(value = "dd MMM yyyy", locale = "en-GB")
     public LocalDate transformedDate() {
         String date = "2016-08-16";
         return LocalDate.parse(date);
@@ -205,18 +206,6 @@ public class SimpleQueriesAndMutations {
     @DateFormat(value = "dd MMM yyyy", locale = "en-GB")
     public LocalDate queryLocalDateGB() {
         return LocalDate.of(1968, 2, 17);
-    }
-
-    @Query
-    @DateFormat(value = "dd MMM yyyy", locale = "en-AU")
-    public LocalDate queryLocalDateAU() {
-        return LocalDate.of(1968, 2, 17);
-    }
-
-    @Mutation
-    @DateFormat(value = "dd MMM yyyy", locale = "en-AU")
-    public LocalDate echoLocalDateAU(@DateFormat(value = "dd/MM/yyyy") @Name("dateArgument") LocalDate date) {
-        return date;
     }
 
     @Mutation
@@ -257,5 +246,10 @@ public class SimpleQueriesAndMutations {
                                            @JsonbDateFormat(value = "dd MMMM yyyy 'at' HH:mm 'in' VV",locale = "en-ZA")
                                            ZonedDateTime zonedDateTime) {
         return zonedDateTime;
+    }
+
+    @Query
+    public Date echoLegacyDate(@Name("value") Date legacyDate) {
+        return legacyDate;
     }
 }

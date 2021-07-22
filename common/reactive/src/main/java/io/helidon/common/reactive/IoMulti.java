@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,16 +12,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.common.reactive;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Objects;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -29,6 +35,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import io.helidon.common.Builder;
 import io.helidon.common.LazyValue;
@@ -165,6 +172,69 @@ public interface IoMulti {
     }
 
     /**
+     * Creates function consuming {@code Multi<ByteBuffer>} to supplied {@link WritableByteChannel}.
+     * <br>
+     * Example usage:
+     * <pre>{@code
+     * Multi.create(listOfByteBuffers)
+     *      .map(s -> ByteBuffer.wrap(s.getBytes(StandardCharsets.UTF_8)))
+     *      .to(IoMulti.multiToByteChannel(fileChannel))
+     *      .await();
+     * }</pre>
+     *
+     * @param writableChannel for consuming ByteBuffers from upstream
+     * @return mapper consuming {@code Multi<ByteBuffer>} and returning Single for observing asynchronous writing.
+     */
+    static Function<? super Multi<ByteBuffer>, ? extends Single<Void>> multiToByteChannel(WritableByteChannel writableChannel) {
+        return multiToByteChannelBuilder(writableChannel).build();
+    }
+
+    /**
+     * Creates function consuming {@code Multi<ByteBuffer>} to supplied {@link WritableByteChannel}.
+     * <br>
+     * Example usage:
+     * <pre>{@code
+     * Multi.create(listOfByteBuffers)
+     *      .map(s -> ByteBuffer.wrap(s.getBytes(StandardCharsets.UTF_8)))
+     *      .to(IoMulti.multiToByteChannelBuilder(fileChannel)
+     *              .executor(customExecutor)
+     *              .build())
+     *      .await();
+     * }</pre>
+     *
+     * @param byteChannel for consuming ByteBuffers from upstream
+     * @return mapper consuming {@code Multi<ByteBuffer>} and returning Single for observing asynchronous writing.
+     */
+    static MultiToByteChannelBuilder multiToByteChannelBuilder(WritableByteChannel byteChannel) {
+        return new MultiToByteChannelBuilder(byteChannel);
+    }
+
+    /**
+     * Creates function consuming {@code Multi<ByteBuffer>} to {@link FileChannel} opened from supplied {@link Path}.
+     * <br>
+     * Example usage:
+     * <pre>{@code
+     * Multi.create(listOfByteBuffers)
+     *      .map(s -> ByteBuffer.wrap(s.getBytes(StandardCharsets.UTF_8)))
+     *      .to(IoMulti.writeToFile(path)
+     *              .executor(customExecutor)
+     *              .build())
+     *      .await();
+     * }</pre>
+     *
+     * @param filePath file for writing all ByteBuffers from upstream to
+     * @return mapper consuming {@code Multi<ByteBuffer>} and returning Single for observing asynchronous writing.
+     */
+    static MultiToByteChannelBuilder writeToFile(Path filePath) {
+        try {
+            FileChannel fileChannel = FileChannel.open(filePath, StandardOpenOption.WRITE);
+            return new MultiToByteChannelBuilder(fileChannel);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
      * Creates a builder of {@link Multi} from provided {@link java.nio.channels.ReadableByteChannel}.
      *
      * @param byteChannel readable byte channel with data
@@ -269,6 +339,48 @@ public interface IoMulti {
     }
 
     /**
+     * Fluent API builder for creating a subscriber consuming {@code Multi<ByteBuffer>} to {@link WritableByteChannel}.
+     */
+    final class MultiToByteChannelBuilder implements Builder<Function<? super Multi<ByteBuffer>, ? extends Single<Void>>> {
+
+        private final WritableByteChannel writableByteChannel;
+        private Executor executor;
+
+        private MultiToByteChannelBuilder(final WritableByteChannel writableByteChannel) {
+            this.writableByteChannel = writableByteChannel;
+        }
+
+        /**
+         * Supply custom executor for handling the blocking of {@link WritableByteChannel}.
+         *
+         * @param executor custom executor
+         * @return updated builder instance
+         */
+        public MultiToByteChannelBuilder executor(Executor executor) {
+            this.executor = executor;
+            return this;
+        }
+
+        @Override
+        public Function<? super Multi<ByteBuffer>, ? extends Single<Void>> build() {
+            if (executor == null) {
+                return byteBufferMulti -> {
+                    ByteChannelSubscriber byteChannelSubscriber =
+                            new ByteChannelSubscriber(writableByteChannel, Executors.newSingleThreadExecutor());
+                    byteBufferMulti.subscribe(byteChannelSubscriber);
+                    return byteChannelSubscriber;
+                };
+            }
+
+            return byteBufferMulti -> {
+                ByteChannelSubscriber byteChannelSubscriber = new ByteChannelSubscriber(writableByteChannel, executor);
+                byteBufferMulti.subscribe(byteChannelSubscriber);
+                return byteChannelSubscriber;
+            };
+        }
+    }
+
+    /**
      * Fluent API builder for creating a {@link io.helidon.common.reactive.Multi} from an
      * {@link java.io.InputStream}.
      */
@@ -315,6 +427,9 @@ public interface IoMulti {
         }
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.common.reactive.OutputStreamMulti}.
+     */
     final class OutputStreamMultiBuilder implements Builder<OutputStreamMulti> {
 
         private final OutputStreamMulti streamMulti = new OutputStreamMulti();

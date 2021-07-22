@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,8 +137,11 @@ public interface WebClient {
      * @param method request method
      * @return client request builder
      */
-    WebClientRequestBuilder method(Http.Method method);
+    WebClientRequestBuilder method(Http.RequestMethod method);
 
+    /**
+     * Fluent API builder for {@link io.helidon.webclient.WebClient}.
+     */
     final class Builder implements io.helidon.common.Builder<WebClient>,
                                    ParentingMediaContextBuilder<Builder>,
                                    MediaContextBuilder<Builder> {

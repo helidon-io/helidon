@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,14 +54,7 @@ public class HealthCheckIT {
     @Test
     public void testHealthCheck() {
         LOGGER.log(Level.INFO, "Running test testHealthCheck");
-        HealthCheck check;
-        if (!pingDml) {
-            LOGGER.log(Level.INFO, () -> String.format("Database %s does not support DML ping, using query", DB_CLIENT.dbType()));
-            check = DbClientHealthCheck.builder(DB_CLIENT).query().build();
-        } else {
-            LOGGER.log(Level.INFO, () -> String.format("Database %s supports DML ping, using default method", DB_CLIENT.dbType()));
-            check = DbClientHealthCheck.create(DB_CLIENT);
-        }
+        HealthCheck check = DbClientHealthCheck.create(DB_CLIENT, CONFIG.get("db.health-check"));
         HealthCheckResponse response = check.call();
         HealthCheckResponse.State state = response.getState();
         assertThat("Healthcheck failed, response: " + response.getData(), state, equalTo(HealthCheckResponse.State.UP));
@@ -74,14 +67,7 @@ public class HealthCheckIT {
     public void testHealthCheckWithName() {
         LOGGER.log(Level.INFO, "Running test testHealthCheckWithName");
         final String hcName = "TestHC";
-        HealthCheck check;
-        if (!pingDml) {
-            LOGGER.log(Level.INFO, () -> String.format("Database %s does not support DML ping, using query", DB_CLIENT.dbType()));
-            check = DbClientHealthCheck.builder(DB_CLIENT).name(hcName).query().build();
-        } else {
-            LOGGER.log(Level.INFO, () -> String.format("Database %s supports DML ping, using default method", DB_CLIENT.dbType()));
-            check = DbClientHealthCheck.builder(DB_CLIENT).name(hcName).build();
-        }
+        HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).config(CONFIG.get("db.health-check")).name(hcName).build();
         HealthCheckResponse response = check.call();
         String name = response.getName();
         HealthCheckResponse.State state = response.getState();
@@ -99,7 +85,7 @@ public class HealthCheckIT {
             LOGGER.log(Level.INFO, () -> String.format("Database %s does not support DML ping, skipping this test", DB_CLIENT.dbType()));
             return;
         }
-        HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).statementName("ping-dml").build();
+        HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).dml().statementName("ping-dml").build();
         HealthCheckResponse response = check.call();
         HealthCheckResponse.State state = response.getState();
         assertThat("Healthcheck failed, response: " + response.getData(), state, equalTo(HealthCheckResponse.State.UP));
@@ -120,7 +106,7 @@ public class HealthCheckIT {
         String statement = cfgStatement.asString().get();
         assertThat("Missing ping-dml statement String in database configuration!", statement, is(notNullValue()));
         LOGGER.log(Level.INFO, () -> String.format("Using db.statements.ping-dml value %s", statement));
-        HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).statement(statement).build();
+        HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).dml().statement(statement).build();
         HealthCheckResponse response = check.call();
         HealthCheckResponse.State state = response.getState();
         assertThat("Healthcheck failed, response: " + response.getData(), state, equalTo(HealthCheckResponse.State.UP));

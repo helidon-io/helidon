@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-parent</artifactId>
-        <version>2.3.0-SNAPSHOT</version>
+        <version>2.4.0-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon</groupId>
@@ -32,7 +32,7 @@
     <name>Helidon BOM POM</name>
 
     <properties>
-        <helidon.version>2.3.0-SNAPSHOT</helidon.version>
+        <helidon.version>2.4.0-SNAPSHOT</helidon.version>
     </properties>
 
     <dependencyManagement>
@@ -253,6 +253,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config-yaml-mp</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.config</groupId>
                 <artifactId>helidon-config-git</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -335,6 +340,11 @@
             <dependency>
                 <groupId>io.helidon.security.providers</groupId>
                 <artifactId>helidon-security-providers-http-sign</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security.providers</groupId>
+                <artifactId>helidon-security-providers-config-vault</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -512,6 +522,11 @@
                 <artifactId>helidon-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics-trace-exemplar</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- health checks -->
             <dependency>
@@ -581,6 +596,21 @@
             <dependency>
                 <groupId>io.helidon.common</groupId>
                 <artifactId>helidon-common-context</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.service-common</groupId>
+                <artifactId>helidon-service-common-rest</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.service-common</groupId>
+                <artifactId>helidon-service-common-rest-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-crypto</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
@@ -663,6 +693,12 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <!-- to add Jaeger metrics integration -->
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics-jaeger</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <!-- to add TracerResolver support -->
                 <groupId>io.helidon.tracing</groupId>
                 <artifactId>helidon-tracing-tracer-resolver</artifactId>
@@ -710,6 +746,18 @@
             <dependency>
                 <groupId>io.helidon.microprofile.messaging</groupId>
                 <artifactId>helidon-microprofile-messaging-health</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
+            <!-- Scheduling -->
+            <dependency>
+                <groupId>io.helidon.scheduling</groupId>
+                <artifactId>helidon-scheduling</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.scheduling</groupId>
+                <artifactId>helidon-microprofile-scheduling</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
@@ -835,6 +883,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-oci-objectstorage-health</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.graal</groupId>
                 <artifactId>helidon-graal-native-image-extension</artifactId>
                 <version>${helidon.version}</version>
@@ -844,6 +897,117 @@
                 <artifactId>helidon-mp-graal-native-image-extension</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.common</groupId>
+                <artifactId>helidon-integrations-common-rest</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.micrometer</groupId>
+                <artifactId>helidon-integrations-micrometer</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.micrometer</groupId>
+                <artifactId>helidon-integrations-micrometer-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-connect</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-telemetry</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-objectstorage</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-objectstorage-health</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-vault</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault</groupId>
+                <artifactId>helidon-integrations-vault</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.auths</groupId>
+                <artifactId>helidon-integrations-vault-auths-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.sys</groupId>
+                <artifactId>helidon-integrations-vault-sys</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.secrets</groupId>
+                <artifactId>helidon-integrations-vault-secrets-cubbyhole</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.secrets</groupId>
+                <artifactId>helidon-integrations-vault-secrets-kv1</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.secrets</groupId>
+                <artifactId>helidon-integrations-vault-secrets-kv2</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.secrets</groupId>
+                <artifactId>helidon-integrations-vault-secrets-database</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.secrets</groupId>
+                <artifactId>helidon-integrations-vault-secrets-pki</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.secrets</groupId>
+                <artifactId>helidon-integrations-vault-secrets-transit</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.auths</groupId>
+                <artifactId>helidon-integrations-vault-auths-token</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.auths</groupId>
+                <artifactId>helidon-integrations-vault-auths-k8s</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault.auths</groupId>
+                <artifactId>helidon-integrations-vault-auths-approle</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.vault</groupId>
+                <artifactId>helidon-integrations-vault-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
             <!-- OpenAPI support -->
             <dependency>
                 <groupId>io.helidon.openapi</groupId>
@@ -924,6 +1088,17 @@
                 <groupId>io.helidon.integrations.neo4j</groupId>
                 <artifactId>helidon-integrations-neo4j-metrics</artifactId>
                 <version>${helidon.version}</version>
+            </dependency>
+            <!-- Helidon tests tools -->
+            <dependency>
+                <groupId>io.helidon.tests.integration.tools</groupId>
+                <artifactId>helidon-tests-integration-tools-service</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.tests.integration.tools</groupId>
+                <artifactId>helidon-tests-integration-tools-client</artifactId>
+                <version>${project.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@
 :description: Helidon Tracing Support
 :keywords: helidon, tracing, jaeger
 :h1Prefix: SE
-:jager-page: ../../shared/tracing/tracer-jaeger.adoc
+:jaeger-page: ../../shared/tracing/tracer-jaeger.adoc
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: Jaeger Tracing
+:jaeger-metrics-page-ref: se/tracing/04_jaeger_metrics.adoc
 
-include::{jager-page}[]
+include::{jaeger-page}[]

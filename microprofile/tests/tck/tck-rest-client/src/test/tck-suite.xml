@@ -1,6 +1,6 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 <!--
-  Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+  Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,14 +15,18 @@
   limitations under the License.
   -->
 <suite name="microprofile-rest-client-TCK" verbose="2" configfailurepolicy="continue">
-
     <test name="microprofile-rest-client TCK">
         <packages>
-            <package name="org.eclipse.microprofile.rest.client.tck.*"/>
+            <package name="org.eclipse.microprofile.rest.client.tck.*">
+            </package>
         </packages>
-<!--        <classes>-->
-<!--            <class name="org.eclipse.microprofile.rest.client.tck.cditests.HasRequestScopeTest"/>-->
-<!--        </classes>-->
+        <classes>
+            <class name="org.eclipse.microprofile.rest.client.tck.ProxyServerTest">
+                <methods>
+                    <!--https://github.com/eclipse/microprofile-rest-client/pull/298-->
+                    <exclude name="testProxy"/>
+                </methods>
+            </class>
+        </classes>
     </test>
-
 </suite>

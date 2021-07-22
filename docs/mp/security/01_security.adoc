@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,15 +20,16 @@
 :h1Prefix: MP
 :description: Helidon MicroProfile security
 :keywords: helidon, microprofile, micro-profile
+:feature-name: Security
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 To add security, such as protecting
 resource methods with authentication, to a MicroProfile application, add the Helidon
  security integration dependency to your project.
 
-== Maven Coordinates
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
-.Maven Dependency
 ----
 <dependency>
   <groupId>io.helidon.microprofile</groupId>
@@ -50,7 +51,7 @@ For JAX-RS resources, declare security by adding annotations to a resource class
 // you can also use io.helidon.security.abac.role.RoleValidator.Roles
 @RolesAllowed("admin")
 public String adminResource(@Context io.helidon.security.SecurityContext securityContext) {
-  return "you are " + securityContext.getUser();
+  return "you are " + securityContext.userName();
 }
 ----
 

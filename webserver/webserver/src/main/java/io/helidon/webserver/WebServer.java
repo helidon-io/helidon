@@ -144,6 +144,25 @@ public interface WebServer {
     int port(String socketName);
 
     /**
+     * Update the TLS configuration of the default socket {@link WebServer#DEFAULT_SOCKET_NAME}.
+     *
+     * @param tls new TLS configuration
+     * @throws IllegalStateException if {@link WebServerTls#enabled()} returns {@code false} or
+     * if {@link SocketConfiguration#ssl()} returns {@code null}
+     */
+    void updateTls(WebServerTls tls);
+
+    /**
+     * Update the TLS configuration of the named socket.
+     *
+     * @param tls new TLS configuration
+     * @param socketName specific named socket name
+     * @throws IllegalStateException if {@link WebServerTls#enabled()} returns {@code false} or
+     * if {@link SocketConfiguration#ssl()} returns {@code null}
+     */
+    void updateTls(WebServerTls tls, String socketName);
+
+    /**
      * Creates a new instance from a provided configuration and a routing.
      *
      * @param configurationBuilder a server configuration builder that will be built as a first step

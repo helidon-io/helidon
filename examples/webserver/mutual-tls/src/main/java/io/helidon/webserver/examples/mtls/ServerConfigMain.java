@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.webserver.examples.mtls;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
@@ -45,13 +46,14 @@ public class ServerConfigMain {
         startServer(config.get("server"));
     }
 
-    static WebServer startServer(Config config) {
-        WebServer webServer = WebServer.builder(createPlainRouting())
+    static Single<WebServer> startServer(Config config) {
+        Single<WebServer> webServer = WebServer.builder(createPlainRouting())
                 .config(config)
                 .addNamedRouting("secured", createMtlsRouting())
-                .build();
-        webServer.start()
-                .thenAccept(ws -> {
+                .build()
+                .start();
+
+         webServer.thenAccept(ws -> {
                     System.out.println("WebServer is up!");
                     System.out.println("Unsecured: http://localhost:" + ws.port() + "/");
                     System.out.println("Secured: https://localhost:" + ws.port("secured") + "/");

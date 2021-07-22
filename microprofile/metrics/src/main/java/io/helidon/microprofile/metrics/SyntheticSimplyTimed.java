@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import javax.enterprise.util.AnnotationLiteral;
 import javax.interceptor.InterceptorBinding;
 
 @Inherited
@@ -34,4 +35,21 @@ import javax.interceptor.InterceptorBinding;
  * and updated when the method is invoked.
  */
 @interface SyntheticSimplyTimed {
+
+    /**
+     * Implementation of the synthetic {@code REST.request} {@code SimpleTimer} metric {@link SyntheticSimplyTimed}.
+     */
+    class Literal extends AnnotationLiteral<SyntheticSimplyTimed> implements SyntheticSimplyTimed {
+
+        private static final long serialVersionUID = 1L;
+
+        private static final Literal INSTANCE = new Literal();
+
+        static Literal getInstance() {
+            return INSTANCE;
+        }
+
+        private Literal() {
+        }
+    }
 }

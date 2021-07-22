@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
+
 /**
  * Jersey integration.
  */
@@ -23,6 +25,7 @@ module io.helidon.webserver.jersey {
     requires transitive java.ws.rs;
     requires transitive io.opentracing.api;
     requires transitive io.helidon.jersey.server;
+    requires transitive io.helidon.jersey.client;
 
     requires io.helidon.common.context;
     requires io.helidon.common.mapper;
@@ -32,6 +35,8 @@ module io.helidon.webserver.jersey {
     requires io.netty.buffer;
 
     exports io.helidon.webserver.jersey;
+
+    provides InjectionManagerFactory with io.helidon.webserver.jersey.HelidonHK2InjectionManagerFactory;
 
     // reflection access from jersey injection
     opens io.helidon.webserver.jersey to hk2.locator,hk2.utils;

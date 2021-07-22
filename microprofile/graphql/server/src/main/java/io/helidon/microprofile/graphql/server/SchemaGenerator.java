@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collection;
@@ -607,7 +608,9 @@ class SchemaGenerator {
                                                                                        getCorrectDateFormatter(
                                                                                                graphQLType, newFormat[2],
                                                                                                newFormat[1]);
-                                                                               return formatDate(v, dateTimeFormatter);
+                                                                               return dateTimeFormatter == null
+                                                                                       ? formatDate(v, new SimpleDateFormat(newFormat[1]))
+                                                                                       : formatDate(v, dateTimeFormatter);
                                                                            });
                     } else {
                         dataFetcher = DataFetcherFactories.wrapDataFetcher(methodDataFetcher,

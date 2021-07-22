@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.metrics;
 
+import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
@@ -31,11 +32,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * the config disables that feature.
  */
 @HelidonTest
-public class HelloWorldRestEndpointSimpleTimerDisabledTest extends HelloWorldTest {
+public class HelloWorldRestEndpointSimpleTimerDisabledTest {
 
     @Inject
     @RegistryType(type = MetricRegistry.Type.BASE)
-    MetricRegistry baseRegistry;
+    MetricRegistry syntheticSimpleTimerRegistry;
+
+    boolean isSyntheticSimpleTimerPresent() {
+        return !syntheticSimpleTimerRegistry.getSimpleTimers((metricID, metric) ->
+                metricID.equals(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME))
+                .isEmpty();
+    }
 
     @Test
     public void testSyntheticSimpleTimer() {

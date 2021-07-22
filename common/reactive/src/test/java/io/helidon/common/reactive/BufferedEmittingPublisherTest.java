@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -238,5 +239,29 @@ public class BufferedEmittingPublisherTest {
         };
         publisher.subscribe(subscriber);
         assertThrows(IllegalStateException.class, () -> publisher.emit(0L));
+    }
+
+    @Test
+    void flatMapping() {
+        final int STREAM_SIZE = 1_000_000;
+        AtomicInteger cnt = new AtomicInteger();
+        ExecutorService exec = Executors.newFixedThreadPool(32);
+        Single<Void> promise = Multi.range(0, STREAM_SIZE)
+                .flatMap(it -> {
+                    BufferedEmittingPublisher<Integer> flatMapped = new BufferedEmittingPublisher<>();
+                    exec.submit(() -> {
+                        flatMapped.emit(it);
+                        flatMapped.complete();
+                    });
+                    return flatMapped;
+                })
+                .forEach(unused -> cnt.incrementAndGet());
+
+        try {
+            promise.await(10, TimeUnit.SECONDS);
+            assertThat(cnt.get(), is(equalTo(STREAM_SIZE)));
+        } finally {
+            exec.shutdown();
+        }
     }
 }

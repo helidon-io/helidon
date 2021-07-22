@@ -65,6 +65,11 @@ class ResponseWriter implements ContainerResponseWriter {
     @Override
     public OutputStream writeResponseStatusAndHeaders(long contentLength, ContainerResponse context)
             throws ContainerException {
+        // Even in 404 responses with empty content, the CORS component might have added headers. Always copy any headers.
+        for (Map.Entry<String, List<String>> entry : context.getStringHeaders().entrySet()) {
+            res.headers().put(entry.getKey(), entry.getValue());
+        }
+
         if (context.getStatus() == 404 && contentLength == 0) {
             whenHandleFinishes.thenRun(() -> {
                 LOGGER.finer("Skipping the handling and forwarding to downstream WebServer filters.");
@@ -82,10 +87,6 @@ class ResponseWriter implements ContainerResponseWriter {
 
         if (contentLength >= 0) {
             res.headers().put(Http.Header.CONTENT_LENGTH, String.valueOf(contentLength));
-        }
-
-        for (Map.Entry<String, List<String>> entry : context.getStringHeaders().entrySet()) {
-            res.headers().put(entry.getKey(), entry.getValue());
         }
 
         //
@@ -146,7 +147,6 @@ class ResponseWriter implements ContainerResponseWriter {
         private static final long CANCEL = Long.MIN_VALUE;
         private static final long ERROR = CANCEL + 1;
         private static final long WAIT = -1;
-        private static final ByteBuf ZERO_BUF = Unpooled.buffer(0);
 
         private byte[] oneByteArray;
         private ByteBuf byteBuf;
@@ -195,7 +195,7 @@ class ResponseWriter implements ContainerResponseWriter {
         public void flush() throws IOException {
             if (byteBuf == null) {
                 awaitRequest();
-                publish(true, ZERO_BUF);
+                publish(true, Unpooled.EMPTY_BUFFER);
             } else {
                 byteBuf = null;
                 publish(true, byteBufRef);

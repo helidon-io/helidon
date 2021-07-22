@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 public class MultiFlatMapPublisherTest {
@@ -298,7 +298,6 @@ public class MultiFlatMapPublisherTest {
 
     static final int UPSTREAM_ITEM_COUNT = 100;
     static final int ASYNC_MULTIPLY = 10;
-    static final int ASYNC_DELAY_MILLIS = 20;
     static final int EXPECTED_EMISSION_COUNT = 1000;
     static final int MAX_CONCURRENCY = 128;
     static final int PREFETCH = 128;
@@ -306,48 +305,25 @@ public class MultiFlatMapPublisherTest {
             .boxed()
             .collect(Collectors.toList());
 
-    @Test
-    @Disabled // takes too long on its own, only for checking out possible bugs
-    public void multiLoop() throws Throwable {
-        for (int i = 0; i < 1000; i++) {
-            if (i % 10 == 0) {
-                System.out.println("multiLoop: " + i);
-            }
-            multi();
-        }
-    }
-
-    @Test
+    @RepeatedTest(500)
     public void multi() throws ExecutionException, InterruptedException {
         assertEquals(EXPECTED_EMISSION_COUNT, Multi.create(TEST_DATA)
                 .flatMap(MultiFlatMapPublisherTest::asyncFlowPublisher, MAX_CONCURRENCY, false, PREFETCH)
                 .distinct()
                 .collectList()
-                .toStage()
-                .toCompletableFuture()
-                .get()
+                .await(800, TimeUnit.MILLISECONDS)
                 .size());
     }
 
     private static Flow.Publisher<? extends String> asyncFlowPublisher(Integer i) {
-        SubmissionPublisher<String> pub = new SubmissionPublisher<>();
+        BufferedEmittingPublisher<String> pub = BufferedEmittingPublisher.create();
         new Thread(() -> {
             for (int o = 0; o < ASYNC_MULTIPLY; o++) {
-                sleep(ASYNC_DELAY_MILLIS);
-                pub.submit(i + "#" + o);
+                pub.emit(i + "#" + o);
             }
-            pub.close();
+            pub.complete();
         }).start();
         return pub;
-    }
-
-    private static void sleep(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
     }
 
     @Test

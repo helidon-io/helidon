@@ -489,16 +489,16 @@ public final class MediaType implements AcceptPredicate<MediaType> {
     // fixme: Bidirectional wildcard compatibility
     @Override
     public boolean test(MediaType other) {
-        return other != null && // return false if other is null, else
-                (
-                        type.equals(AcceptPredicate.WILDCARD_VALUE)
-                                || other.type.equals(AcceptPredicate.WILDCARD_VALUE)
-                                || (
-                                type.equalsIgnoreCase(other.type)
-                                        && (
-                                        subtype.equals(AcceptPredicate.WILDCARD_VALUE) || other.subtype
-                                                .equals(AcceptPredicate.WILDCARD_VALUE)))
-                                || (type.equalsIgnoreCase(other.type) && this.subtype.equalsIgnoreCase(other.subtype)));
+        return other != null // return false if other is null, else
+                && (
+                type.equals(AcceptPredicate.WILDCARD_VALUE)
+                        || other.type.equals(AcceptPredicate.WILDCARD_VALUE)
+                        || (
+                        type.equalsIgnoreCase(other.type)
+                                && (
+                                subtype.equals(AcceptPredicate.WILDCARD_VALUE) || other.subtype
+                                        .equals(AcceptPredicate.WILDCARD_VALUE)))
+                        || (type.equalsIgnoreCase(other.type) && this.subtype.equalsIgnoreCase(other.subtype)));
     }
 
     /**

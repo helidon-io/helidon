@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1084,6 +1084,15 @@ public interface Multi<T> extends Subscribable<T> {
 
         this.subscribe(subscriber);
         return single;
+    }
+
+    /**
+     * Terminal stage, ignore all items and complete returned {@code Single<Void>} successfully or exceptionally.
+     *
+     * @return Single completed when the stream terminates
+     */
+    default Single<Void> ignoreElements() {
+        return forEach(t -> {});
     }
 
 }

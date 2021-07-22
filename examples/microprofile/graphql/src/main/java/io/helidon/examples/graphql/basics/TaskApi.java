@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,13 +29,16 @@ import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
+import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 
 /**
  * A CDI Bean that exposes a GraphQL API to query and mutate {@link Task}s.
  */
 @GraphQLApi
 @ApplicationScoped
+@SimplyTimed
 public class TaskApi {
 
     private static final String MESSAGE = "Unable to find task with id ";
@@ -50,7 +53,7 @@ public class TaskApi {
      */
     @Mutation
     @Description("Create a task with the given description")
-    public Task createTask(@Name("description") String description) {
+    public Task createTask(@Name("description") @NonNull String description) {
         if (description == null) {
             throw new IllegalArgumentException("Description must be provided");
         }
@@ -82,7 +85,7 @@ public class TaskApi {
      */
     @Query
     @Description("Return a given task")
-    public Task findTask(@Name("id") String id) throws TaskNotFoundException {
+    public Task findTask(@Name("id") @NonNull String id) throws TaskNotFoundException {
         return Optional.ofNullable(tasks.get(id))
                 .orElseThrow(() -> new TaskNotFoundException(MESSAGE + id));
     }
@@ -96,7 +99,7 @@ public class TaskApi {
      */
     @Mutation
     @Description("Delete a task and return the deleted task details")
-    public Task deleteTask(@Name("id") String id) throws TaskNotFoundException {
+    public Task deleteTask(@Name("id") @NonNull String id) throws TaskNotFoundException {
         return Optional.ofNullable(tasks.remove(id))
                   .orElseThrow(() -> new TaskNotFoundException(MESSAGE + id));
     }
@@ -124,7 +127,7 @@ public class TaskApi {
      */
     @Mutation
     @Description("Update a task")
-    public Task updateTask(@Name("id") String id,
+    public Task updateTask(@Name("id") @NonNull String id,
                            @Name("description") String description,
                            @Name("completed") Boolean completed) throws TaskNotFoundException {
 

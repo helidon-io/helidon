@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ bin/standalone.bat
 
 Keycloak runs on localhost:8080 by default.
 
-=== Create an admin user
+=== Create an Admin User
 
 You need to create an admin user because it does not come by default when installing Keycloak.
 To do this, open  http://localhost:8080/auth in your favorite browser.
@@ -113,7 +113,7 @@ To set up Keycloak properly, go to the admin console: http://localhost:8080/auth
 If you are using Docker, use Username `admin` and password `admin` as it is the default admin user.
 Otherwise, use the username and password you used to create the admin user.
 
-=== Create a realm
+=== Create a Realm
 
 A realm is the place where groups of applications, and their environment, can be created. It gathers :
 
@@ -140,7 +140,7 @@ To switch from a realm to another, hover the realm name, and the other realm cre
 Click on any realm name to change the current realm. Make sure all configuration or modification are saved before changing
 the current realm or be subject to lose your configuration.
 
-=== Create a user
+=== Create a User
 
 Initially there are no users in a new realm. An unlimited number of user can be created per realm.
 A realm contains resources such as client which can be accessed by users.
@@ -169,7 +169,7 @@ To verify that the new user is created correctly:
 
 You should now be logged-in to the account console where users can manage their accounts.
 
-=== Create a client
+=== Create a Client
 
 To create your first client:
 
@@ -219,7 +219,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 cd helidon-quickstart-mp
 ----
 
-=== Update project dependencies
+=== Update Project Dependencies
 
 Update the pom.xml file and add the following Helidon dependency to the `<dependencies>` section.
 
@@ -232,7 +232,7 @@ Update the pom.xml file and add the following Helidon dependency to the `<depend
 </dependency>
 ----
 
-=== Add OIDC security properties
+=== Add OIDC Security Properties
 
 The OIDC security provider configuration can be joined to helidon configuration file.
 This file is located here: `src/main/resources/application.yaml`. It can be easily used to configure the web server
@@ -285,7 +285,7 @@ server.port="{Your-new-port}"
 frontend-uri: "http://localhost:{Your-new-port}"
 ----
 
-=== Secure your application
+=== Secure Your Application
 
 The `GreetResource` class is a JAX-RS resource available at the endpoint `/greet`. Use `@Authenticated` annotation to protect
 any method or endpoint.
@@ -315,7 +315,7 @@ Keycloak refuses the access.
 
 == Try it!
 
-Now, Helidon and Keycloak are correctly configured, and your application is safe.
+Helidon and Keycloak are now correctly configured and your application is safe.
 
 [source,bash]
 .Build the application, skipping unit tests, then run it:
@@ -339,7 +339,7 @@ now protected, its access is limited, and the tests are not built to take oidc s
 
 From the actual settings, the user needs to log in only once, then Keycloak saves all the connection data.
 
-=== Update tests to the secure environment
+=== Update Tests to the Secure Environment
 
 At this stage of the application, tests cannot pass because of OIDC security. The only way to authenticate a user is
 through the front end of that server which can be accessed with the browser for example.
@@ -472,7 +472,7 @@ Now, the project can be build without skiping test.
 mvn clean install
 ----
 
-=== Restrict access to a specific role
+=== Restrict Access to a Specific Role
 
 To give less access to a specific endpoint, it is possible to configure user role. So the application will grant access
 only the user with the required role.

@@ -20,50 +20,56 @@ import javax.inject.Inject;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+
+import io.helidon.faulttolerance.Async;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.junit.jupiter.api.Test;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import org.junit.jupiter.api.Test;
+
 @HelidonTest
 class TenantTest {
+
+    private static final int CONCURRENT_REQS = 50;
 
     @Inject
     private WebTarget baseTarget;
 
     @Test
-    public void test() {
-        Response r = baseTarget.path("test")
-                .request()
-                .get();
-        assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
+    public void test() throws Exception {
+        asyncCalls(() -> baseTarget.path("test").request()
+                .header("x-tenant-id", "123").get(), null);
     }
 
     @Test
-    public void test2() {
-        Response r;
-        for (int i = 0; i < 3; i++) {
-            r = baseTarget.path("test2")
-                    .request()
-                    .get();
-            assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
+    public void test2() throws Exception {
+        asyncCalls(() -> baseTarget.path("test2").request()
+                .header("x-tenant-id", "123").get(), null);
+    }
+
+    @Test
+    public void test3() throws Exception {
+        asyncCalls(() -> baseTarget.path("test3").queryParam("param1", "1").request()
+                .header("x-tenant-id", "123").get(), "1");
+    }
+
+    private void asyncCalls(Supplier<Response> supplier, String entityValue) throws Exception {
+        CompletableFuture<?>[] futures = new CompletableFuture<?>[CONCURRENT_REQS];
+        for (int i = 0; i < CONCURRENT_REQS; i++) {
+            futures[i] = Async.create().invoke(supplier).toCompletableFuture();
         }
-    }
-
-    @Test
-    public void test3() {
-        Response r;
-        for (int i = 0; i < 3; i++) {
-            String paramValue = Integer.toString(i);
-            r = baseTarget.path("test3")
-                    .queryParam("param1", paramValue)
-                    .request()
-                    .get();
+        CompletableFuture.allOf(futures).join();
+        for (int i = 0; i < CONCURRENT_REQS; i++) {
+            Response r = (Response) futures[i].get();
             assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
-            String entityValue = r.readEntity(String.class);
-            assertThat(entityValue, is(paramValue));
+            if (entityValue != null) {
+                String value = r.readEntity(String.class);
+                assertThat(entityValue, is(value));
+            }
         }
     }
 
@@ -77,5 +83,22 @@ class TenantTest {
         assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
         String entityValue = r.readEntity(String.class);
         assertThat(entityValue, is("1"));
+    }
+
+    @Test
+    public void test5() {
+        Response r;
+        r = baseTarget.path("test5")
+                .request()
+                .header("x-tenant-id", "1")
+                .get();
+        assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
+        String entityValue = r.readEntity(String.class);
+        assertThat(entityValue, is("1"));
+    }
+
+    @Test
+    public void testStartup() {
+        assertThat(StartupServices.SUCCESSFUL_STARTUP.get(), is(true));
     }
 }

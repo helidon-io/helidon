@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -676,10 +676,19 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * Terminal stage, invokes provided consumer when Single is completed.
      *
      * @param consumer consumer to be invoked
-     * @return Single completed when the stream terminates
+     * @return CompletionStage completed when the stream terminates
      */
     default CompletionAwaitable<Void> forSingle(Consumer<T> consumer) {
         return this.thenAccept(consumer);
+    }
+
+    /**
+     * Terminal stage, ignore onNext signals, only onComplete and onError signals are propagated.
+     *
+     * @return CompletionStage completed when the stream terminates
+     */
+    default CompletionAwaitable<Void> ignoreElement() {
+        return this.forSingle(t -> {});
     }
 
     /**

@@ -28,9 +28,27 @@ compilation and application restart, so you can easily iterate over source
 code changes.
 
 The CLI is distributed as a standalone executable (compiled using GraalVM) for
-ease of installation. It is currently available as download for Linux and Mac.
+ease of installation. It is currently available as a download for Linux, Mac and Windows.
 Simply download the binary, install it at a location accessible from your PATH
 and you’re ready to go.
+
+== Prerequisites
+
+Helidon requires Java 11 (or newer) and Maven.
+
+[role="flex, sm7"]
+|=======
+|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}11] (http://jdk.java.net[Open{nbsp}JDK{nbsp}11]) or newer
+|https://maven.apache.org/download.cgi[Maven 3.6.1+]
+|=======
+
+You should make sure `java` and `mvn` are in your path.
+
+[source,bash]
+----
+java -version
+mvn --version
+----
 
 == Installation
 
@@ -55,6 +73,9 @@ sudo mv ./helidon /usr/local/bin/
 ----
 PowerShell -Command Invoke-WebRequest -Uri "https://helidon.io/cli/latest/windows/helidon.exe" -OutFile "C:\Windows\system32\helidon.exe"
 ----
+
+For Windows you will also need the Visual C++ Redistributable Runtime. See <<about/04_windows.adoc,Helidon on Windows>>
+for more information.
 
 == Create a New Project
 

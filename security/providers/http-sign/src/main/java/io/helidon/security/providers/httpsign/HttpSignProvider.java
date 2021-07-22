@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
     private final OutboundConfig outboundConfig;
     // cache of target name to a signature configuration for outbound calls
     private final Map<String, OutboundTargetDefinition> targetKeys = new HashMap<>();
+    private final boolean backwardCompatibleEol;
 
     private HttpSignProvider(Builder builder) {
         this.optional = builder.optional;
@@ -88,6 +89,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         this.inboundRequiredHeaders = builder.inboundRequiredHeaders;
         this.inboundKeys = builder.inboundKeys;
         this.outboundConfig = builder.outboundConfig;
+        this.backwardCompatibleEol = builder.backwardCompatibleEol;
 
         outboundConfig.targets().forEach(target -> target.getConfig().ifPresent(targetConfig -> {
             OutboundTargetDefinition outboundTargetDefinition = targetConfig.get("signature")
@@ -193,7 +195,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         String lastError = signatures.isEmpty() ? "No signature values for Signature header" : null;
 
         for (String signature : signatures) {
-            HttpSignature httpSignature = HttpSignature.fromHeader(signature);
+            HttpSignature httpSignature = HttpSignature.fromHeader(signature, backwardCompatibleEol);
             Optional<String> validate = httpSignature.validate();
             if (validate.isPresent()) {
                 lastError = validate.get();
@@ -272,7 +274,10 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
 
             Map<String, List<String>> newHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
             newHeaders.putAll(outboundEnv.headers());
-            HttpSignature signature = HttpSignature.sign(outboundEnv, targetConfig, newHeaders);
+            HttpSignature signature = HttpSignature.sign(outboundEnv,
+                                                         targetConfig,
+                                                         newHeaders,
+                                                         targetConfig.backwardCompatibleEol());
 
             OutboundSecurityResponse.Builder builder = OutboundSecurityResponse.builder()
                     .requestHeaders(newHeaders)
@@ -284,6 +289,12 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
                 break;
             case AUTHORIZATION:
                 builder.requestHeader("Authorization", "Signature " + signature.toSignatureHeader());
+                break;
+            case CUSTOM:
+                Map<String, List<String>> headers = new HashMap<>();
+                targetConfig.tokenHandler()
+                        .addHeader(headers, signature.toSignatureHeader());
+                headers.forEach(builder::requestHeader);
                 break;
             default:
                 throw new HttpSignatureException("Invalid header configuration: " + targetConfig.header());
@@ -312,6 +323,10 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         private SignedHeadersConfig inboundRequiredHeaders = SignedHeadersConfig.builder().build();
         private OutboundConfig outboundConfig = OutboundConfig.builder().build();
         private final Map<String, InboundClientDefinition> inboundKeys = new HashMap<>();
+        // not to self - we need to switch default to false in 3.0.0
+        // and probably remove this in 4.0.0
+        @Deprecated
+        private boolean backwardCompatibleEol = true;
 
         private Builder() {
         }
@@ -337,6 +352,8 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
             config.get("inbound.keys")
                     .asList(InboundClientDefinition::create)
                     .ifPresent(list -> list.forEach(inbound -> inboundKeys.put(inbound.keyId(), inbound)));
+
+            config.get("backward-compatible-eol").asBoolean().ifPresent(this::backwardCompatibleEol);
 
             return this;
         }
@@ -464,6 +481,19 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
          */
         public Builder realm(String realm) {
             this.realm = realm;
+            return this;
+        }
+
+        /**
+         * Until version 3.0.0 (exclusive) there is a trailing end of line added to the signed
+         * data.
+         * To be able to communicate cross versions, we must configure this for newer versions
+         *
+         * @param backwardCompatible whether to run in backward compatible mode
+         * @return updated builder instance
+         */
+        public Builder backwardCompatibleEol(Boolean backwardCompatible) {
+            this.backwardCompatibleEol = backwardCompatible;
             return this;
         }
     }

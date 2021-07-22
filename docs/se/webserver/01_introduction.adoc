@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,9 +21,21 @@
 :pagename: webserver-introduction
 :description: Helidon Reactive WebServer Introduction
 :keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
+:feature-name: WebServer
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 WebServer provides an asynchronous and reactive API for creating web applications.
 The API is inspired by popular NodeJS and Java frameworks.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver</artifactId>
+</dependency>
+----
 
 == Quick Start
 
@@ -46,19 +58,3 @@ Here is the code for a minimalist web application that runs on a random free por
 <2> Start the server.
 <3> Wait for the server to start while throwing possible errors as runtime exceptions.
 <4> The server is bound to a random free port.
-
-== Maven Coordinates
-
-The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
-should declare dependency management for Helidon applications.
-Then declare the following dependency in your project:
-
-[source,xml,subs="verbatim,attributes"]
-----
-<dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver</artifactId> <!--1-->
-</dependency>
-----
-
-<1> Dependency on WebServer.

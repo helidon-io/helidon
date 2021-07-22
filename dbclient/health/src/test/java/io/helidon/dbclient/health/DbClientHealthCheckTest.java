@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.dbclient.health;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
+import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.Subscribable;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -68,6 +68,11 @@ public class DbClientHealthCheckTest {
         @Override
         public String dbType() {
             return "mysql";
+        }
+
+        @Override
+        public <C> Single<C> unwrap(Class<C> cls) {
+            throw new UnsupportedOperationException("Not supported in tests.");
         }
 
     }

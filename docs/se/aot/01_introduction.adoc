@@ -68,7 +68,7 @@ for native image.
 |✅ |{nbsp} |Integration: gRPC |{nbsp}
 |✅ |{nbsp} |OIDC |{nbsp}
 |✅ |{nbsp} |Provider: ABAC |{nbsp}
-|✅ |{nbsp} |Provider/ABAC/Policy: EL |Not yet tested.
+|✅ |{nbsp} |Provider/ABAC/Policy: EL |Requires reflection configuration for used classes.
 |✅ |{nbsp} |Provider/ABAC: Role |{nbsp}
 |✅ |{nbsp} |Provider/ABAC: Scope |{nbsp}
 |✅ |{nbsp} |Provider/ABAC: Time |{nbsp}
@@ -107,5 +107,8 @@ for native image.
 |✅ |{nbsp} |Metrics |{nbsp}
 |✅ |gRPC Client |gRPC Client |Since GraalVM 21.0.0
 |✅ |{nbsp} |Metrics |{nbsp}
+|✅ |Scheduling |Scheduling |{nbsp}
+|✅ |OCI |OCI Integration |Modules with group id `io.helidon.integrations.oci`
+|✅ |Vault |Hashicorp Vault Integration |{nbsp}
 |===
 

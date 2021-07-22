@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@
 :pagename: grpc-client-introduction
 :description: Helidon gRPC Client Introduction
 :keywords: helidon, grpc, java
+:feature-name: gRPC Client
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 = gRPC Client Introduction
 
@@ -34,20 +36,15 @@ The class `GrpcServiceClient` acts as the client object for accessing a gRPC ser
 
 In later sections in this document, you will see how to customize both `ClientServiceDescriptor` and the `Channel`.
 
-== Maven Coordinates
-
-The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
-should declare dependency management for Helidon applications. Then declare the following dependency in your project:
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
 ----
 <dependency>
     <groupId>io.helidon.grpc</groupId>
-    <artifactId>helidon-grpc-client</artifactId> <!--1-->
+    <artifactId>helidon-grpc-client</artifactId>
 </dependency>
 ----
-
-<1> Declare dependency on Helidon gRPC Client.
 
 == Quick Start
 

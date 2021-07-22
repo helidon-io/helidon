@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.webserver.cors;
 
@@ -270,7 +269,7 @@ class CorsSupportHelper<Q, R> {
      * @return whether the helper might have any effect on requests or responses
      */
     public boolean isActive() {
-        return aggregator.isActive() || (secondaryCrossOriginLookup != EMPTY_SECONDARY_SUPPLIER);
+        return aggregator.isEnabled();
     }
 
     /**
@@ -339,21 +338,23 @@ class CorsSupportHelper<Q, R> {
             return;
         }
 
-        // If not a successful response, skip CORS processing for response
-        if (responseAdapter.status() >= SUCCESS_RANGE) {
-            decisionLog(() -> String.format("CORS ignoring response of status code %d", responseAdapter.status()));
-            return;
-        }
-
         RequestType requestType = requestType(requestAdapter, true); // silent: already logged during req processing
 
         if (requestType == RequestType.CORS) {
-            CrossOriginConfig crossOrigin = aggregator.lookupCrossOrigin(
-                            requestAdapter.path(),
-                            requestAdapter.method(),
-                            secondaryCrossOriginLookup)
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Could not locate expected CORS information while preparing response to request " + requestAdapter));
+            // Aggregator knows only about expect paths. If response is 404, use an ad hoc cross-origin config for the given
+            // origin and method, thus allowing the 404 to pass through the CORS handling in the client.
+            CrossOriginConfig crossOrigin = responseAdapter.status() == Http.Status.NOT_FOUND_404.code()
+                ? CrossOriginConfig.builder()
+                    .allowOrigins(requestAdapter.firstHeader(ORIGIN).orElse("*"))
+                    .allowMethods(requestAdapter.method())
+                    .build()
+                : aggregator.lookupCrossOrigin(
+                                requestAdapter.path(),
+                                requestAdapter.method(),
+                                secondaryCrossOriginLookup)
+                        .orElseThrow(() -> new IllegalArgumentException(
+                                "Could not locate expected CORS information while preparing response to request "
+                                        + requestAdapter));
             addCorsHeadersToResponse(crossOrigin, requestAdapter, responseAdapter);
         }
     }

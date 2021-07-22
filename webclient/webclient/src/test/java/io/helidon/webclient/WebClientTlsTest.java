@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.webclient;
 
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -40,6 +41,7 @@ public class WebClientTlsTest {
         assertThat(webClientTls.clientCertificateChain().size(), is(0));
         assertThat(webClientTls.clientPrivateKey(), is(Optional.empty()));
         assertThat(webClientTls.sslContext(), is(Optional.empty()));
+        assertThat(webClientTls.allowedCipherSuite(), is(Set.of()));
     }
 
     //@Test

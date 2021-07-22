@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,18 +58,7 @@ public class FileServiceTest {
 
     @BeforeAll
     public static void startTheServer() throws Exception {
-        webServer = Main.startServer();
-
-        long timeout = 2000; // 2 seconds should be enough to start the server
-        long now = System.currentTimeMillis();
-
-        while (!webServer.isRunning()) {
-            //noinspection BusyWait
-            Thread.sleep(100);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
-            }
-        }
+        webServer = Main.startServer().await();
 
         webClient = WebClient.builder()
                              .baseUri("http://localhost:8080/api")
@@ -103,6 +92,23 @@ public class FileServiceTest {
 
     @Test
     @Order(2)
+    public void testStreamUpload() throws IOException {
+        Path file = Files.write( Files.createTempFile(null, null), "stream bar\n".getBytes(StandardCharsets.UTF_8));
+        Path file2 = Files.write( Files.createTempFile(null, null), "stream foo\n".getBytes(StandardCharsets.UTF_8));
+        WebClientResponse response = webClient
+                .post()
+                .queryParam("stream", "true")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .submit(FileFormParams.builder()
+                                      .addFile("file[]", "streamed-foo.txt", file)
+                                      .addFile("otherPart", "streamed-foo2.txt", file2)
+                                      .build())
+                .await(2, TimeUnit.SECONDS);
+        assertThat(response.status().code(), is(301));
+    }
+
+    @Test
+    @Order(3)
     public void testList() {
         WebClientResponse response = webClient
                 .get()
@@ -117,7 +123,7 @@ public class FileServiceTest {
     }
 
     @Test
-    @Order(3)
+    @Order(4)
     public void testDownload() {
         WebClientResponse response = webClient
                 .get()

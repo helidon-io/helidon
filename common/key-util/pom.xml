@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.common</groupId>
         <artifactId>helidon-common-project</artifactId>
-        <version>2.3.0-SNAPSHOT</version>
+        <version>2.4.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-common-key-util</artifactId>
     <name>Helidon Common Key Util</name>
@@ -55,4 +55,48 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <!-- needed to enable use of com.sun packages that we need to parse PKCS#1 keys -->
+                    <release combine.self="override"/>
+                    <compilerArgs>
+                        <compilerArg>--add-exports=java.base/sun.security.util=io.helidon.common.pki</compilerArg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>javadoc</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <configuration>
+                            <release combine.self="override"/>
+                            <additionalJOptions combine.children="append">
+                                <additionalJOption>--add-exports=java.base/sun.security.util=io.helidon.common.pki
+                                </additionalJOption>
+                            </additionalJOptions>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

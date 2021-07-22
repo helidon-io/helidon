@@ -27,7 +27,7 @@ This tutorial describes how to build a Helidon MicroProfile (MP) application fro
 
 == What You Need
 
-For this 30 minute tutrial, you'll need the following:
+For this 30 minute tutrial, you will need the following:
 
 include::{common-page-prefix-inc}[tag=common-prereqs-curl]
 
@@ -137,7 +137,7 @@ TIP: The warning message `JAR will be empty - no content was marked for inclusio
  can be ignored for now  because there is no actual content in the 
  application yet.
 
-== Start implementing the MicroProfile application
+== Start Implementing the MicroProfile Application
 
 The actual application logic can be created now.
 Create a directory for your source code, and then create
@@ -273,7 +273,7 @@ Create a `beans.xml` in the `src/main/resources/META-INF` directory
 <1> The `bean-discovery-mode` tells Helidon to look for the annotations
  to discover Java beans in the application.
 
-== Build the application
+== Build the Application
 
 Helidon MP applications are packaged into a JAR file and the dependencies
  are copied into a `libs` directory.
@@ -544,7 +544,7 @@ Rebuild the application and run it.  After making some requests, update
 TIP: To learn more about Helidon MP configuration please see the 
  <<mp/config/01_introduction.adoc,Config>> section of the documentation.
 
-== Extending the application
+== Extending the Application
 
 In this section, the application will be extended to add a PUT 
  resource method which will allow users to update the greeting and a
@@ -1126,10 +1126,10 @@ If desired, the Kubernetes YAML file can also be used to remove the
 kubectl delete -f app.yaml
 ----
 
-== Conclusion
+== Summary
 
-This concludes the tutorial.  The tutorial has demonstrated how to build
- a Helidon MP application from scratch, how to use Helidon and MicroProfile
+This tutorial demonstrated how to build
+ a new Helidon MP application, how to use Helidon and MicroProfile
  configuration, logging, metrics, and health checks.  It also demonstrated
  how to package the application in a Docker image and run it in Kubernetes.
 

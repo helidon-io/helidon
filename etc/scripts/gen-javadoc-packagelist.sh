@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,11 +32,7 @@
 #
 
 # Path to this script
-if [ -h "${0}" ] ; then
-    readonly SCRIPT_PATH="$(readlink "${0}")"
-else
-    readonly SCRIPT_PATH="${0}"
-fi
+[ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
 
 # Path to the root of the workspace
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)

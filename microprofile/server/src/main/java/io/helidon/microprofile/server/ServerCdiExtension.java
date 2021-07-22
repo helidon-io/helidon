@@ -17,9 +17,13 @@
 package io.helidon.microprofile.server;
 
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +31,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -44,14 +47,17 @@ import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
+import javax.enterprise.inject.spi.ProcessManagedBean;
+import javax.enterprise.inject.spi.ProcessProducerField;
+import javax.enterprise.inject.spi.ProcessProducerMethod;
 
 import io.helidon.common.Prioritized;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.config.DeprecatedConfig;
 import io.helidon.microprofile.cdi.BuildTimeStart;
 import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
@@ -59,7 +65,10 @@ import io.helidon.webserver.jersey.JerseySupport;
 import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.glassfish.jersey.internal.inject.InjectionManager;
+import org.glassfish.jersey.internal.inject.Injections;
 
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
@@ -91,6 +100,9 @@ public class ServerCdiExtension implements Extension {
     private volatile boolean started;
     private final List<JerseySupport> jerseySupports = new LinkedList<>();
 
+    private final Map<Bean<?>, RoutingConfiguration> serviceBeans
+            = Collections.synchronizedMap(new IdentityHashMap<>());
+
     private void buildTime(@Observes @BuildTimeStart Object event) {
         // update the status of server, as we may have been started without a builder being used
         // such as when cdi.Main or SeContainerInitializer are used
@@ -105,40 +117,63 @@ public class ServerCdiExtension implements Extension {
         this.config = config;
     }
 
+    // Priority must ensure that these handlers are added before the MetricsSupport KPI metrics handler.
+    private void registerKpiMetricsDeferrableRequestHandlers(
+            @Observes @Priority(LIBRARY_BEFORE) @Initialized(ApplicationScoped.class)
+            Object event, BeanManager beanManager) {
+        JaxRsCdiExtension jaxRs = beanManager.getExtension(JaxRsCdiExtension.class);
+
+        List<JaxRsApplication> jaxRsApplications = jaxRs.applicationsToRun();
+        jaxRsApplications.forEach(it -> registerKpiMetricsDeferrableRequestContextSetterHandler(jaxRs, it));
+    }
+
+    private void recordMethodProducedServices(@Observes ProcessProducerMethod<? extends Service, ?> ppm) {
+        Method m = ppm.getAnnotatedProducerMethod().getJavaMember();
+        String contextKey = m.getDeclaringClass().getName() + "." + m.getName();
+        serviceBeans.put(ppm.getBean(), new RoutingConfiguration(ppm.getAnnotated(), contextKey));
+    }
+
+    private void recordFieldProducedServices(@Observes ProcessProducerField<? extends Service, ?> ppf) {
+        Field f = ppf.getAnnotatedProducerField().getJavaMember();
+        String contextKey = f.getDeclaringClass().getName() + "." + f.getName();
+        serviceBeans.put(ppf.getBean(), new RoutingConfiguration(ppf.getAnnotated(), contextKey));
+    }
+
+    private void recordBeanServices(@Observes ProcessManagedBean<? extends Service> pmb) {
+        Class<? extends Service> cls = pmb.getAnnotatedBeanClass().getJavaClass();
+        serviceBeans.put(pmb.getBean(), new RoutingConfiguration(pmb.getAnnotated(), cls.getName()));
+    }
+
+    private void registerKpiMetricsDeferrableRequestContextSetterHandler(JaxRsCdiExtension jaxRs,
+            JaxRsApplication applicationMeta) {
+        Optional<String> contextRoot = jaxRs.findContextRoot(config, applicationMeta);
+        Optional<String> namedRouting = jaxRs.findNamedRouting(config, applicationMeta);
+        boolean routingNameRequired = jaxRs.isNamedRoutingRequired(config, applicationMeta);
+
+        Routing.Builder routing = routingBuilder(namedRouting, routingNameRequired, applicationMeta.appName());
+
+        if (contextRoot.isPresent()) {
+            String contextRootString = contextRoot.get();
+            routing.any(contextRootString, KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
+        } else {
+            LOGGER.finer(() ->
+                    "JAX-RS application " + applicationMeta.appName() + " adding deferrable request KPI metrics context on '/'");
+            routing.any(KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
+        }
+    }
+
     private void startServer(@Observes @Priority(PLATFORM_AFTER + 100) @Initialized(ApplicationScoped.class) Object event,
                              BeanManager beanManager) {
 
         // make sure all configuration is in place
         if (null == jaxRsExecutorService) {
             Config serverConfig = config.get("server");
-            final java.lang.reflect.Method m;
-            if (DeprecatedConfig.get(serverConfig, "executor-service.virtual-threads", "virtual-threads")
-                    .asBoolean().orElse(false)) {
-                java.lang.reflect.Method temp = null;
-                try {
-                    temp = Executors.class.getDeclaredMethod("newVirtualThreadExecutor");
-                } catch (final ReflectiveOperationException notLoomEarlyAccess) {
-                    temp = null;
-                } finally {
-                    m = temp;
-                }
-            } else {
-                m = null;
-            }
-            if (m != null) {
-                jaxRsExecutorService = () -> {
-                    try {
-                        return (ExecutorService) m.invoke(null);
-                    } catch (final ReflectiveOperationException reflectiveOperationException) {
-                        throw new IllegalStateException(reflectiveOperationException.getMessage(), reflectiveOperationException);
-                    }
-                };
-            } else {
-                jaxRsExecutorService = ServerThreadPoolSupplier.builder()
-                    .name("server")
-                    .config(serverConfig.get("executor-service"))
-                    .build();
-            }
+
+            // support for Loom is built into the thread pool supplier
+            jaxRsExecutorService = ServerThreadPoolSupplier.builder()
+                .name("server")
+                .config(serverConfig.get("executor-service"))
+                .build();
         }
 
         // redirect to the first page when root is accessed (if configured)
@@ -192,7 +227,8 @@ public class ServerCdiExtension implements Extension {
         if (jaxRsApplications.isEmpty()) {
             LOGGER.warning("There are no JAX-RS applications or resources. Maybe you forgot META-INF/beans.xml file?");
         } else {
-            jaxRsApplications.forEach(it -> addApplication(jaxRs, it));
+            InjectionManager injectionManager = Injections.createInjectionManager();
+            jaxRsApplications.forEach(it -> addApplication(jaxRs, it, injectionManager));
         }
     }
 
@@ -287,7 +323,8 @@ public class ServerCdiExtension implements Extension {
         }
     }
 
-    private void addApplication(JaxRsCdiExtension jaxRs, JaxRsApplication applicationMeta) {
+    private void addApplication(JaxRsCdiExtension jaxRs, JaxRsApplication applicationMeta,
+                                InjectionManager injectionManager) {
         LOGGER.info("Registering JAX-RS Application: " + applicationMeta.appName());
 
         Optional<String> contextRoot = jaxRs.findContextRoot(config, applicationMeta);
@@ -304,7 +341,7 @@ public class ServerCdiExtension implements Extension {
 
         Routing.Builder routing = routingBuilder(namedRouting, routingNameRequired, applicationMeta.appName());
 
-        JerseySupport jerseySupport = jaxRs.toJerseySupport(jaxRsExecutorService, applicationMeta);
+        JerseySupport jerseySupport = jaxRs.toJerseySupport(jaxRsExecutorService, applicationMeta, injectionManager);
         if (contextRoot.isPresent()) {
             String contextRootString = contextRoot.get();
             LOGGER.fine(() -> "JAX-RS application " + applicationMeta.appName() + " registered on '" + contextRootString + "'");
@@ -358,9 +395,8 @@ public class ServerCdiExtension implements Extension {
 
         for (Bean<?> bean : beans) {
             Bean<Object> objBean = (Bean<Object>) bean;
-            Class<?> aClass = objBean.getBeanClass();
             Service service = (Service) objBean.create(context);
-            registerWebServerService(aClass, service);
+            registerWebServerService(serviceBeans.remove(bean), service);
         }
     }
 
@@ -379,40 +415,15 @@ public class ServerCdiExtension implements Extension {
         return (null == prio) ? Prioritized.DEFAULT_PRIORITY : prio.value();
     }
 
-    private void registerWebServerService(Class<?> serviceClass,
-                                          Service service) {
+    private void registerWebServerService(RoutingConfiguration routingConf, Service service) {
 
-        RoutingPath rp = serviceClass.getAnnotation(RoutingPath.class);
-        RoutingName rn = serviceClass.getAnnotation(RoutingName.class);
+        String path = routingConf.routingPath(config);
+        String routingName = routingConf.routingName(config);
+        boolean routingNameRequired = routingConf.required(config);
 
-        String path = (null == rp) ? null : rp.value();
-        String routingName = (null == rn) ? null : rn.value();
-        boolean routingNameRequired = (null != rn) && rn.required();
-
-        // can override routing path from configuration
-        path = config.get(serviceClass.getName()
-                                  + "."
-                                  + RoutingPath.CONFIG_KEY_PATH)
-                .asString()
-                .orElse(path);
-
-        // can override routing name from configuration
-        routingName = config.get(serviceClass.getName()
-                                         + "."
-                                         + RoutingName.CONFIG_KEY_NAME)
-                .asString()
-                .orElse(routingName);
-
-        // also whether the routing name is required can be overridden
-        routingNameRequired = config.get(serviceClass.getName()
-                                                 + "."
-                                                 + RoutingName.CONFIG_KEY_REQUIRED)
-                .asBoolean()
-                .orElse(routingNameRequired);
-
-        Routing.Rules routing = findRouting(serviceClass.getName(),
-                                            routingName,
-                                            routingNameRequired);
+        Routing.Rules routing = findRouting(routingConf.configContext(),
+                routingName,
+                routingNameRequired);
 
         if ((null == path) || "/".equals(path)) {
             routing.register(service);
@@ -466,7 +477,7 @@ public class ServerCdiExtension implements Extension {
 
     /**
      * Helidon webserver routing builder that can be used to add routes to a named socket
-     *  of the webserver.
+     * of the webserver.
      *
      * @param name name of the named routing (should match a named socket configuration)
      * @return builder for routing of the named route
@@ -486,6 +497,7 @@ public class ServerCdiExtension implements Extension {
 
     /**
      * Current host the server is running on.
+     *
      * @return host of this server
      */
     public String host() {
@@ -500,6 +512,17 @@ public class ServerCdiExtension implements Extension {
      */
     public int port() {
         return port;
+    }
+
+    /**
+     * Named port the server is running on. This information is only available after the
+     * server is actually started.
+     *
+     * @param name Socket name
+     * @return Named port the server is running on
+     */
+    public int port(String name) {
+        return webserver.port(name);
     }
 
     /**

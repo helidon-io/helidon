@@ -125,7 +125,7 @@ public class TestCORS {
         assertThat("HTTP response payload", payload, is("Hola World!"));
         headers = r.headers();
         Optional<String> allowOrigin = headers.value(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is absent",
+        assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is present",
                 allowOrigin.isPresent(), is(true));
         assertThat("CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigin.get(), is("*"));
     }

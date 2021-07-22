@@ -15,22 +15,20 @@
  */
 package io.helidon.examples.media.multipart;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.ByteChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 
+import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.common.reactive.IoMulti;
 import io.helidon.media.multipart.ContentDisposition;
 import io.helidon.media.multipart.ReadableBodyPart;
 import io.helidon.media.multipart.ReadableMultiPart;
@@ -47,6 +45,8 @@ public final class FileService implements Service {
 
     private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
     private final FileStorage storage;
+    private final ExecutorService executor = ThreadPoolSupplier.create().get();
+
 
     /**
      * Create a new file upload service instance.
@@ -58,8 +58,8 @@ public final class FileService implements Service {
     @Override
     public void update(Routing.Rules rules) {
         rules.get("/", this::list)
-             .get("/{fname}", this::download)
-             .post("/", this::upload);
+                .get("/{fname}", this::download)
+                .post("/", this::upload);
     }
 
     private void list(ServerRequest req, ServerResponse res) {
@@ -88,72 +88,47 @@ public final class FileService implements Service {
     }
 
     private void bufferedUpload(ServerRequest req, ServerResponse res) {
-        req.content().as(ReadableMultiPart.class).thenAccept(multiPart -> {
-            for (ReadableBodyPart part : multiPart.fields("file[]")) {
-                writeBytes(storage.create(part.filename()), part.as(byte[].class));
-            }
-            res.status(Http.Status.MOVED_PERMANENTLY_301);
-            res.headers().put(Http.Header.LOCATION, "/ui");
-            res.send();
-        });
+        req.content().as(ReadableMultiPart.class)
+                .flatMapIterable(multiPart -> multiPart.fields("file[]"))
+                .flatMap(part -> part.content()
+                        .map(DataChunk::data)
+                        .flatMapIterable(Arrays::asList)
+                        .to(IoMulti.writeToFile(storage.create(part.filename()))
+                                .executor(executor)
+                                .build())
+                )
+                .onError(throwable -> {
+                    res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+                    res.send(throwable.toString());
+                })
+                .onComplete(() -> {
+                    res.status(Http.Status.MOVED_PERMANENTLY_301);
+                    res.headers().put(Http.Header.LOCATION, "/ui");
+                    res.send();
+                })
+                .ignoreElements();
     }
 
     private void streamUpload(ServerRequest req, ServerResponse res) {
         req.content().asStream(ReadableBodyPart.class)
+                .forEach(part -> {
+                    if ("file[]".equals(part.name())) {
+                        part.content().map(DataChunk::data)
+                                .flatMapIterable(Arrays::asList)
+                                .to(IoMulti.writeToFile(storage.create(part.filename()))
+                                        .executor(executor)
+                                        .build());
+                    } else {
+                        // when streaming unconsumed parts needs to be drained
+                        part.drain();
+                    }
+                })
                 .onError(res::send)
                 .onComplete(() -> {
                     res.status(Http.Status.MOVED_PERMANENTLY_301);
                     res.headers().put(Http.Header.LOCATION, "/ui");
                     res.send();
-                }).forEach((part) -> {
-                    if ("file[]".equals(part.name())) {
-                        final ByteChannel channel = newByteChannel(storage.create(part.filename()));
-                        part.content()
-                                .forEach(chunk -> writeChunk(channel, chunk))
-                                .thenAccept(it -> closeChannel(channel));
-                    }
-                });
+                }).ignoreElement();
     }
 
-    private static void writeBytes(Path file, byte[] bytes) {
-        try {
-            Files.write(file, bytes,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.WRITE,
-                    StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-    }
-
-    private static void writeChunk(ByteChannel channel, DataChunk chunk) {
-        try {
-            for (ByteBuffer byteBuffer : chunk.data()) {
-                channel.write(byteBuffer);
-            }
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        } finally {
-            chunk.release();
-        }
-    }
-
-    private void closeChannel(ByteChannel channel) {
-        try {
-            channel.close();
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-    }
-
-    private static ByteChannel newByteChannel(Path file) {
-        try {
-            return Files.newByteChannel(file,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.WRITE,
-                    StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-    }
 }

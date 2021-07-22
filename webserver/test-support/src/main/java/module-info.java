@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+/**
+ * A simple HTTP like client suitable for tests of {@code Web Server} {@link io.helidon.webserver.Routing Routing}.
+ *
+ * @see io.helidon.webserver.testsupport.TestClient
+ */
 module io.helidon.webserver.test.support {
     requires io.helidon.webserver;
     requires io.helidon.common.http;

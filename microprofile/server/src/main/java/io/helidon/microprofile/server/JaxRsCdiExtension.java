@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import io.helidon.webserver.jersey.JerseySupport;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.server.ResourceConfig;
 
 import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
@@ -269,7 +270,9 @@ public class JaxRsCdiExtension implements Extension {
                                           .build());
     }
 
-    JerseySupport toJerseySupport(Supplier<? extends ExecutorService> defaultExecutorService, JaxRsApplication jaxRsApplication) {
+    JerseySupport toJerseySupport(Supplier<? extends ExecutorService> defaultExecutorService,
+                                  JaxRsApplication jaxRsApplication,
+                                  InjectionManager injectionManager) {
         JerseySupport.Builder builder = JerseySupport.builder(jaxRsApplication.resourceConfig());
         builder.config(((io.helidon.config.Config) ConfigProvider.getConfig()).get("server.jersey"));
         builder.executorService(jaxRsApplication.executorService().orElseGet(defaultExecutorService));
@@ -284,6 +287,7 @@ public class JaxRsCdiExtension implements Extension {
                 }
             }
         });
+        builder.injectionManager(injectionManager);
         return builder.build();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,13 @@
  */
 package io.helidon.webclient;
 
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -27,6 +29,9 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.Future;
@@ -42,12 +47,14 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
 
     private static final Logger LOGGER = Logger.getLogger(RequestContentSubscriber.class.getName());
     private static final LastHttpContent LAST_HTTP_CONTENT = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER);
+    private static final Set<HttpMethod> EMPTY_CONTENT_LENGTH = Set.of(HttpMethod.PUT, HttpMethod.POST);
 
     private final CompletableFuture<WebClientResponse> responseFuture;
     private final CompletableFuture<WebClientServiceRequest> sent;
     private final DefaultHttpRequest request;
     private final Channel channel;
     private final long requestId;
+    private final boolean allowChunkedEncoding;
 
     private volatile Flow.Subscription subscription;
     private volatile DataChunk firstDataChunk;
@@ -56,12 +63,14 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
     RequestContentSubscriber(DefaultHttpRequest request,
                              Channel channel,
                              CompletableFuture<WebClientResponse> responseFuture,
-                             CompletableFuture<WebClientServiceRequest> sent) {
+                             CompletableFuture<WebClientServiceRequest> sent,
+                             boolean allowChunkedEncoding) {
         this.request = request;
         this.channel = channel;
         this.responseFuture = responseFuture;
         this.sent = sent;
         this.requestId = channel.attr(REQUEST_ID).get();
+        this.allowChunkedEncoding = allowChunkedEncoding;
     }
 
     @Override
@@ -89,7 +98,20 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
 
         if (null != firstDataChunk) {
             lengthOptimization = false;
-            HttpUtil.setTransferEncodingChunked(request, true);
+            if (HttpUtil.isContentLengthSet(request)) {
+                //User set Content-Length explicitly. It should be kept.
+                if (allowChunkedEncoding) {
+                    request.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
+                }
+            } else {
+                if (allowChunkedEncoding) {
+                    HttpUtil.setTransferEncodingChunked(request, true);
+                } else if (HttpUtil.isKeepAlive(request)) {
+                    throw new WebClientException("Chunked " + Http.Header.TRANSFER_ENCODING + " is disabled. "
+                                                         + Http.Header.CONTENT_LENGTH + " or "
+                                                         + Http.Header.CONNECTION + ": close, has to be set.");
+                }
+            }
             channel.writeAndFlush(request);
             sendData(firstDataChunk);
             firstDataChunk = null;
@@ -109,7 +131,13 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
             LOGGER.finest(() -> "(client reqID: " + requestId + ") "
                     + "Message body contains only one data chunk. Setting chunked encoding to false.");
             HttpUtil.setTransferEncodingChunked(request, false);
-            if (firstDataChunk != null) {
+            if (!HttpUtil.isContentLengthSet(request)) {
+                if (firstDataChunk != null) {
+                    HttpUtil.setContentLength(request, firstDataChunk.remaining());
+                } else if (EMPTY_CONTENT_LENGTH.contains(request.method())) {
+                    HttpUtil.setContentLength(request, 0);
+                }
+            } else if (HttpUtil.getContentLength(request) == 0 && firstDataChunk != null) {
                 HttpUtil.setContentLength(request, firstDataChunk.remaining());
             }
             channel.writeAndFlush(request);

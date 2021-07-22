@@ -19,7 +19,7 @@
  */
 module io.helidon.microprofile.restclient {
     requires java.logging;
-    requires transitive microprofile.rest.client.api;
+    requires microprofile.rest.client.api;
     requires io.helidon.common.context;
     requires jersey.common;
     requires jersey.mp.rest.client;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,6 +78,11 @@ public class FileStorage {
         Path file = storageDir.resolve(fname);
         if (!file.getParent().equals(storageDir)) {
             throw new BadRequestException("Invalid file name");
+        }
+        try {
+            Files.createFile(file);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
         return file;
     }

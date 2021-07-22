@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,7 +134,7 @@ class ContextAwareExecutorImpl implements ContextAwareExecutorService {
                     PROVIDERS.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
                     return Contexts.runInContext(context.get(), task);
                 } finally {
-                    PROVIDERS.forEach(DataPropagationProvider::clearData);
+                    PROVIDERS.forEach(provider -> provider.clearData(properties.get(provider.getClass())));
                 }
             };
         } else {
@@ -153,7 +153,7 @@ class ContextAwareExecutorImpl implements ContextAwareExecutorService {
                     PROVIDERS.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
                     Contexts.runInContext(context.get(), command);
                 } finally {
-                    PROVIDERS.forEach(DataPropagationProvider::clearData);
+                    PROVIDERS.forEach(provider -> provider.clearData(properties.get(provider.getClass())));
                 }
             };
         } else {

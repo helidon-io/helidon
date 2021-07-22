@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,25 +104,48 @@ public interface SocketConfiguration {
     int receiveBufferSize();
 
     /**
+     * Return a {@link WebServerTls} containing server TLS configuration. When empty {@link Optional} is returned
+     * no TLS should be configured.
+     *
+     * @return web server tls configuration
+     */
+    Optional<WebServerTls> tls();
+
+    /**
      * Returns a {@link SSLContext} to use with the server socket. If not {@code null} then
      * the server enforces an SSL communication.
      *
+     * @deprecated use {@code tls().sslContext()} instead. This method will be removed at 3.0.0 version.
      * @return a SSL context to use
      */
+    @Deprecated(since = "2.3.1", forRemoval = true)
     SSLContext ssl();
 
     /**
      * Returns the SSL protocols to enable, or {@code null} to enable the default
      * protocols.
+     * @deprecated use {@code tls().enabledTlsProtocols()} instead. This method will be removed at 3.0.0 version.
      * @return the SSL protocols to enable
      */
+    @Deprecated(since = "2.3.1", forRemoval = true)
     Set<String> enabledSslProtocols();
+
+    /**
+     * Return the allowed cipher suite of the TLS. If empty set is returned, the default cipher suite is used.
+     *
+     * @deprecated use {@code tls().cipherSuite()} instead. This method will be removed at 3.0.0 version.
+     * @return the allowed cipher suite
+     */
+    @Deprecated(since = "2.3.1", forRemoval = true)
+    Set<String> allowedCipherSuite();
 
     /**
      * Whether to require client authentication or not.
      *
+     * @deprecated use {@code tls().clientAuth()} instead. This method will be removed at 3.0.0 version.
      * @return client authentication
      */
+    @Deprecated(since = "2.3.1", forRemoval = true)
     ClientAuthentication clientAuth();
 
     /**
@@ -213,6 +236,13 @@ public interface SocketConfiguration {
                 .build();
     }
 
+    /**
+     * Socket configuration builder API, used by {@link io.helidon.webserver.SocketConfiguration.Builder}
+     * to configure additional sockets, and by {@link io.helidon.webserver.WebServer.Builder} to
+     * configure the default socket.
+     *
+     * @param <B> type of the subclass of this class to provide correct fluent API
+     */
     interface SocketConfigurationBuilder<B extends SocketConfigurationBuilder<B>> {
         /**
          * Configures a server port to listen on with the server socket. If port is

@@ -17,13 +17,15 @@
 package io.helidon.webserver;
 
 import java.net.BindException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -35,6 +37,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.net.ssl.SSLContext;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
@@ -59,6 +63,7 @@ import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
+import io.netty.handler.ssl.SslContext;
 import io.netty.util.concurrent.Future;
 
 /**
@@ -84,7 +89,7 @@ class NettyWebServer implements WebServer {
     private final CompletableFuture<WebServer> threadGroupsShutdownFuture = new CompletableFuture<>();
     private final Context contextualRegistry;
     private final ConcurrentMap<String, Channel> channels = new ConcurrentHashMap<>();
-    private final List<HttpInitializer> initializers = new LinkedList<>();
+    private final Map<String, HttpInitializer> initializers = new LinkedHashMap<>();
     private final MessageBodyWriterContext writerContext;
     private final MessageBodyReaderContext readerContext;
 
@@ -128,35 +133,8 @@ class NettyWebServer implements WebServer {
             }
 
             ServerBootstrap bootstrap = new ServerBootstrap();
-            // Transform java SSLContext into Netty SslContext
-            JdkSslContext sslContext = null;
-            if (soConfig.ssl() != null) {
-                // TODO configuration support for CLIENT AUTH (btw, ClientAuth.REQUIRE doesn't seem to work with curl nor with
-                // Chrome)
-                String[] protocols;
-                if (soConfig.enabledSslProtocols().isEmpty()) {
-                    protocols = null;
-                } else {
-                    protocols = soConfig.enabledSslProtocols().toArray(new String[0]);
-                }
 
-                // Enable ALPN for application protocol negotiation with HTTP/2
-                // Needs JDK >= 9 or Jetty’s ALPN boot library
-                ApplicationProtocolConfig appProtocolConfig = null;
-                if (configuration.isHttp2Enabled()) {
-                    appProtocolConfig = new ApplicationProtocolConfig(
-                            ApplicationProtocolConfig.Protocol.ALPN,
-                            ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
-                            ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
-                            ApplicationProtocolNames.HTTP_2,
-                            ApplicationProtocolNames.HTTP_1_1);
-                }
-
-                sslContext = new JdkSslContext(
-                        soConfig.ssl(), false, null,
-                        IdentityCipherSuiteFilter.INSTANCE, appProtocolConfig,
-                        soConfig.clientAuth().nettyClientAuth(), protocols, false);
-            }
+            SslContext sslContext = soConfig.tls().map(this::createSslContext).orElse(null);
 
             if (soConfig.backlog() > 0) {
                 bootstrap.option(ChannelOption.SO_BACKLOG, soConfig.backlog());
@@ -172,7 +150,7 @@ class NettyWebServer implements WebServer {
                                                                sslContext,
                                                                namedRoutings.getOrDefault(name, routing),
                                                                this);
-            initializers.add(childHandler);
+            initializers.put(name, childHandler);
             bootstrap.group(bossGroup, workerGroup)
                      .channelFactory(serverChannelFactory())
                      .handler(new LoggingHandler(NettyLog.class, LogLevel.DEBUG))
@@ -180,6 +158,39 @@ class NettyWebServer implements WebServer {
 
             bootstraps.put(name, bootstrap);
         }
+    }
+
+    private SslContext createSslContext(WebServerTls webServerTls) {
+        // Transform java SSLContext into Netty SslContext
+        SSLContext context = webServerTls.sslContext();
+        if (context != null) {
+            Collection<String> enabledProtocols = webServerTls.enabledTlsProtocols();
+            String[] protocols;
+            if (enabledProtocols.isEmpty()) {
+                protocols = null;
+            } else {
+                protocols = enabledProtocols.toArray(new String[0]);
+            }
+
+            // Enable ALPN for application protocol negotiation with HTTP/2
+            // Needs JDK >= 9 or Jetty’s ALPN boot library
+            ApplicationProtocolConfig appProtocolConfig = null;
+            if (configuration.isHttp2Enabled()) {
+                appProtocolConfig = new ApplicationProtocolConfig(
+                        ApplicationProtocolConfig.Protocol.ALPN,
+                        ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+                        ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+                        ApplicationProtocolNames.HTTP_2,
+                        ApplicationProtocolNames.HTTP_1_1);
+            }
+
+            Set<String> cipherSuite = webServerTls.cipherSuite();
+            return new JdkSslContext(
+                    context, false, cipherSuite.isEmpty() ? null : cipherSuite,
+                    IdentityCipherSuiteFilter.INSTANCE, appProtocolConfig,
+                    webServerTls.clientAuth().nettyClientAuth(), protocols, false);
+        }
+        return null;
     }
 
     @Override
@@ -234,9 +245,14 @@ class NettyWebServer implements WebServer {
                     // break because one of the previous channels already failed
                     break;
                 }
+                InetAddress bindAddress = socketConfig.bindAddress();
+                if (bindAddress == null) {
+                    // fall back to the server bind address
+                    bindAddress = configuration.bindAddress();
+                }
 
                 try {
-                    bootstrap.bind(configuration.bindAddress(), port).addListener(channelFuture -> {
+                    bootstrap.bind(bindAddress, port).addListener(channelFuture -> {
                         if (!channelFuture.isSuccess()) {
                             LOGGER.info(() -> "Channel '" + name + "' startup failed with message '"
                                     + channelFuture.cause().getMessage() + "'.");
@@ -374,7 +390,7 @@ class NettyWebServer implements WebServer {
     }
 
     private void forceQueuesRelease() {
-        initializers.removeIf(httpInitializer -> {
+        initializers.values().removeIf(httpInitializer -> {
             httpInitializer.queuesShutdown();
             return true;
         });
@@ -418,6 +434,26 @@ class NettyWebServer implements WebServer {
         }
         SocketAddress address = channel.localAddress();
         return address instanceof InetSocketAddress ? ((InetSocketAddress) address).getPort() : -1;
+    }
+
+    @Override
+    public void updateTls(WebServerTls tls) {
+        updateTls(tls, WebServer.DEFAULT_SOCKET_NAME);
+    }
+
+    @Override
+    public void updateTls(WebServerTls tls, String socketName) {
+        Objects.requireNonNull(tls, "Tls could not be updated. WebServerTls is required to be non-null");
+        HttpInitializer httpInitializer = initializers.get(socketName);
+        if (httpInitializer == null) {
+            throw new IllegalStateException("Unknown socket name: " + socketName);
+        } else {
+            if (!tls.enabled()) {
+                throw new IllegalStateException("Tls could not be updated. WebServerTls is required to be enabled");
+            }
+            SslContext context = createSslContext(tls);
+            httpInitializer.updateSslContext(context);
+        }
     }
 
     private Transport acquireTransport() {

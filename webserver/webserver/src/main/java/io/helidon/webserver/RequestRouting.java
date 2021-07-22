@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,7 +86,7 @@ class RequestRouting implements Routing {
             RoutedRequest nextRequests = new RoutedRequest(bareRequest, response, webServer, crawler, errorHandlers,
                                                            requestHeaders);
             response.request(nextRequests);
-            Contexts.runInContext(nextRequests.context(), (Runnable) nextRequests::next);
+            nextRequests.next();
         } catch (Error | RuntimeException e) {
             LOGGER.log(Level.SEVERE, "Unexpected error occurred during routing!", e);
             throw e;
@@ -302,7 +302,8 @@ class RequestRouting implements Routing {
             Crawler.Item nextItem = crawler.next();
             if (nextItem == null) {
                 // 404 error
-                nextNoCheck(new NotFoundException("No handler found for path: " + path()));
+                nextNoCheck(new NotFoundException("No handler found for path: "
+                        + HtmlEncoder.encode(path().toString())));
             } else {
                 try {
                     RoutedResponse nextResponse = new RoutedResponse(response);

@@ -40,7 +40,7 @@ set the `GRAALVM_HOME` environment variable to point at your GraalVM installatio
 [source,bash]
 ----
 # Your path might be different
-export GRAALVM_HOME=/usr/local/graalvm-ce-21.0.0/Contents/Home/
+export GRAALVM_HOME=/usr/local/graalvm-ce-21.1.0/Contents/Home/
 ----
 
 Then install the optional `native-image` command:
@@ -58,7 +58,7 @@ $GRAALVM_HOME/bin/java -version
 $GRAALVM_HOME/bin/native-image --version
 ----
 
-== Generate The Project
+== Generate the Project
 
 Generate the project using the Helidon {helidon-uc-flavor} Quickstart Maven archetype.
 
@@ -142,7 +142,7 @@ Yep, it starts fast. You can exercise the application's endpoints as before.
 
 === Multi-stage Docker build
 
-Build the "native" Docker Image
+Build the "native" Docker image
 
 [source,bash,subs="attributes+"]
 ----

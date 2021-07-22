@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,23 +22,23 @@
 :description: Reactive Messaging support for JMS in Helidon MP
 :keywords: helidon, mp, messaging, jms
 :h1Prefix: MP
+:feature-name: JMS Connector
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:microprofile-bundle: false
 
-== Reactive JMS Connector
-
-Connecting streams to JMS with Reactive Messaging couldn't be easier.
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
-.Dependencies needed:
 ----
-<dependency>
-    <groupId>io.helidon.microprofile.messaging</groupId>
-    <artifactId>helidon-microprofile-messaging</artifactId>
-</dependency>
 <dependency>
     <groupId>io.helidon.messaging.jms</groupId>
     <artifactId>helidon-messaging-jms</artifactId>
 </dependency>
 ----
+
+== Reactive JMS Connector
+
+Connecting streams to JMS with Reactive Messaging couldn't be easier.
 
 === Config
 
@@ -56,6 +56,12 @@ Connector name: `helidon-jms`
 |`transacted` | Indicates whether the session will use a local transaction. Default value: `false`
 |`message-selector` | JMS API message selector expression based on a subset of the SQL92.
 Expression can only access headers and properties, not the payload.
+|`client-id` | Client identifier for JMS connection.
+|`durable` | True for creating durable consumer (only for topic). Default value: `false`
+|`subscriber-name` | Subscriber name for durable consumer used to identify subscription.
+|`non-local` | If true then any messages published to the topic using this session's connection,
+ or any other connection with the same client identifier,
+ will not be added to the durable subscription. Default value: `false`
 |`named-factory` | Select in case factory is injected as a named bean or configured with name.
 |`poll-timeout` | Timeout for polling for next message in every poll cycle in millis. Default value: `50`
 |`period-executions` | Period for executing poll cycles in millis. Default value: `100`

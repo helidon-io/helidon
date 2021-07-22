@@ -28,6 +28,7 @@ engine:
       jandex-plugin-version: ${version.plugin.jandex}
       mp-version: "3.3"
       guides-dir: "${project.basedir}/../examples/guides"
+      jaeger-doc-version: 1.22 # hard-coded because older doc not avl for our version ${version.lib.jaegertracing}
 assets:
   - target: "/"
     includes:
@@ -153,6 +154,14 @@ backend:
               items:
                 - includes:
                     - "se/openapi/*.adoc"
+            - title: "OCI"
+              pathprefix: "/se/oci"
+              glyph:
+                type: "icon"
+                value: "filter_drama"
+              items:
+                - includes:
+                    - "se/oci/*.adoc"
             - title: "Reactive Streams"
               pathprefix: "/se/reactivestreams"
               glyph:
@@ -185,6 +194,14 @@ backend:
               items:
                 - includes:
                     - "se/security/*.adoc"
+            - title: "Scheduling"
+              pathprefix: "/se/scheduling"
+              glyph:
+                type: "icon"
+                value: "access_alarm"
+              items:
+                - includes:
+                    - "se/scheduling/*.adoc"
             - title: "Tracing"
               pathprefix: "/se/tracing"
               glyph:
@@ -193,6 +210,14 @@ backend:
               items:
                 - includes:
                     - "se/tracing/*.adoc"
+            - title: "Vault"
+              pathprefix: "/se/vault"
+              glyph:
+                type: "icon"
+                value: "lock"
+              items:
+                - includes:
+                    - "se/vault/*.adoc"
             - title: "Web Client"
               pathprefix: "/se/webclient"
               glyph:
@@ -351,6 +376,14 @@ backend:
               items:
                 - includes:
                     - "mp/openapi/*.adoc"
+            - title: "OCI"
+              pathprefix: "/mp/oci"
+              glyph:
+                type: "icon"
+                value: "filter_drama"
+              items:
+                - includes:
+                    - "mp/oci/*.adoc"
             - title: "Reactive Streams"
               pathprefix: "/mp/reactivestreams"
               glyph:
@@ -383,6 +416,14 @@ backend:
               items:
                 - includes:
                     - "mp/security/*.adoc"
+            - title: "Scheduling"
+              pathprefix: "/mp/scheduling"
+              glyph:
+                type: "icon"
+                value: "access_alarm"
+              items:
+                - includes:
+                    - "mp/scheduling/*.adoc"
             - title: "Tracing"
               pathprefix: "/mp/tracing"
               glyph:
@@ -391,6 +432,14 @@ backend:
               items:
                 - includes:
                     - "mp/tracing/*.adoc"
+            - title: "Vault"
+              pathprefix: "/mp/vault"
+              glyph:
+                type: "icon"
+                value: "lock"
+              items:
+                - includes:
+                    - "mp/vault/*.adoc"
             - title: "Websocket"
               pathprefix: "/mp/websocket"
               glyph:

@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-bom</artifactId>
-        <version>2.3.0-SNAPSHOT</version>
+        <version>2.4.0-SNAPSHOT</version>
         <relativePath>../bom/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-dependencies</artifactId>
@@ -44,22 +44,23 @@
         <version.lib.brave-opentracing>0.35.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0.2</version.lib.cdi-api>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
+        <version.lib.cron-utils>9.1.3</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
-        <version.lib.eclipselink>2.7.5</version.lib.eclipselink>
+        <version.lib.eclipselink>2.7.8</version.lib.eclipselink>
         <version.lib.el-api>3.0.3</version.lib.el-api>
         <version.lib.el-impl>3.0.2</version.lib.el-impl>
-        <version.lib.etcd4j>2.17.0</version.lib.etcd4j>
+        <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.google-api-client>1.30.11</version.lib.google-api-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
-        <version.lib.graalvm>21.0.0</version.lib.graalvm>
+        <version.lib.graalvm>21.1.0</version.lib.graalvm>
         <version.lib.graphql-java>15.0</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>15.0.0</version.lib.graphql-java.extended.scalars>
         <version.lib.grpc>1.35.0</version.lib.grpc>
         <version.lib.guava>30.0-jre</version.lib.guava>
         <version.lib.h2>1.4.199</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.hibernate>5.4.25.Final</version.lib.hibernate>
+        <version.lib.hibernate>5.4.29.Final</version.lib.hibernate>
         <version.lib.hikaricp>3.4.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.inject>1.0</version.lib.inject>
@@ -71,12 +72,15 @@
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
         <version.lib.jaxb-impl>2.3.2</version.lib.jaxb-impl>
         <version.lib.jaxrs-api>2.1.6</version.lib.jaxrs-api>
-        <version.lib.jboss.classfilewriter>1.2.4.Final</version.lib.jboss.classfilewriter>
+        <version.lib.jboss.classfilewriter>1.2.5.Final</version.lib.jboss.classfilewriter>
         <version.lib.jboss.logging>3.2.1.Final</version.lib.jboss.logging>
         <version.lib.jboss.transaction-api>1.0.0.Final</version.lib.jboss.transaction-api>
         <version.lib.jboss.transaction-spi>7.6.0.Final</version.lib.jboss.transaction-spi>
+        <!-- Force upgrade version used by maven-jaxb2-plugin. Needed to support Java 16 -->
+        <version.lib.jaxb-runtime>2.3.3</version.lib.jaxb-runtime>
         <version.lib.jedis>3.1.0</version.lib.jedis>
-        <version.lib.jersey>2.33</version.lib.jersey>
+        <version.lib.jersey>2.34</version.lib.jersey>
+        <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
         <version.lib.jms-api>2.0</version.lib.jms-api>
         <version.lib.jsonb-api>1.0.2</version.lib.jsonb-api>
         <version.lib.jsonp-api>1.1.6</version.lib.jsonp-api>
@@ -88,12 +92,13 @@
         <version.lib.logback>1.2.3</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
+        <version.lib.micrometer>1.6.6</version.lib.micrometer>
         <version.lib.micronaut>2.2.0</version.lib.micronaut>
         <version.lib.micronaut.data>2.2.0</version.lib.micronaut.data>
         <version.lib.micronaut.sql>3.3.1</version.lib.micronaut.sql>
         <version.lib.microprofile-config>1.4</version.lib.microprofile-config>
         <version.lib.microprofile-fault-tolerance-api>2.1.1</version.lib.microprofile-fault-tolerance-api>
-        <version.lib.microprofile-graphql>1.0.3</version.lib.microprofile-graphql>
+        <version.lib.microprofile-graphql>1.1.0</version.lib.microprofile-graphql>
         <version.lib.microprofile-health>2.2</version.lib.microprofile-health>
         <version.lib.microprofile-jwt>1.1.1</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>2.3.2</version.lib.microprofile-metrics-api>
@@ -101,16 +106,16 @@
         <version.lib.microprofile-reactive-messaging-api>1.0</version.lib.microprofile-reactive-messaging-api>
         <version.lib.microprofile-reactive-streams-operators-api>1.0.1</version.lib.microprofile-reactive-streams-operators-api>
         <version.lib.microprofile-reactive-streams-operators-core>1.0.1</version.lib.microprofile-reactive-streams-operators-core>
-        <version.lib.microprofile-rest-client>1.4.1</version.lib.microprofile-rest-client>
+        <version.lib.microprofile-rest-client>2.0</version.lib.microprofile-rest-client>
         <version.lib.microprofile-tracing>1.3.3</version.lib.microprofile-tracing>
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
-        <version.lib.neo4j>4.2.0</version.lib.neo4j>
+        <version.lib.neo4j>4.2.4</version.lib.neo4j>
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
-        <version.lib.netty>4.1.59.Final</version.lib.netty>
-        <version.lib.oci-java-sdk-objectstorage>1.31.0</version.lib.oci-java-sdk-objectstorage>
+        <version.lib.netty>4.1.63.Final</version.lib.netty>
+        <version.lib.oci-java-sdk-objectstorage>1.37.2</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>19.8.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
@@ -122,7 +127,7 @@
         <version.lib.reactive-streams-tck>1.0.3</version.lib.reactive-streams-tck>
         <version.lib.reactivestreams>1.0.3</version.lib.reactivestreams>
         <version.lib.slf4j>1.7.30</version.lib.slf4j>
-        <version.lib.smallrye-openapi>1.2.0</version.lib.smallrye-openapi>
+        <version.lib.smallrye-openapi>1.2.3</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>1.27</version.lib.snakeyaml>
         <version.lib.transaction-api>1.3.3</version.lib.transaction-api>
         <version.lib.typesafe-config>1.4.0</version.lib.typesafe-config>
@@ -300,6 +305,11 @@
                 <groupId>jakarta.activation</groupId>
                 <artifactId>jakarta.activation-api</artifactId>
                 <version>${version.lib.activation-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jgit</groupId>
+                <artifactId>org.eclipse.jgit</artifactId>
+                <version>${version.lib.jgit}</version>
             </dependency>
             <dependency>
                 <groupId>javax.jms</groupId>
@@ -548,6 +558,18 @@
                 <groupId>com.oracle.database.messaging</groupId>
                 <artifactId>aqapi</artifactId>
                 <version>${version.lib.database.messaging}</version>
+            </dependency>
+
+            <!-- Micrometer related -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${version.lib.micrometer}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+                <version>${version.lib.micrometer}</version>
             </dependency>
 
             <!-- Microprofile related -->
@@ -976,6 +998,10 @@
                         <groupId>jakarta.json</groupId>
                         <artifactId>jakarta.json-api</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.hk2.external</groupId>
+                        <artifactId>jakarta.inject</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <!-- Micronaut integrations -->
@@ -1024,6 +1050,18 @@
                 <groupId>org.neo4j.driver</groupId>
                 <artifactId>neo4j-java-driver</artifactId>
                 <version>${version.lib.neo4j}</version>
+            </dependency>
+            <!-- Cron utils -->
+            <dependency>
+                <groupId>com.cronutils</groupId>
+                <artifactId>cron-utils</artifactId>
+                <version>${version.lib.cron-utils}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.glassfish</groupId>
+                        <artifactId>javax.el</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <!-- END OF Section 1: direct third party dependencies -->
 

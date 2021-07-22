@@ -1,6 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,10 +35,18 @@ include::{common-page-prefix-inc}[tag=common-prereqs]
 
 In addition, you will need to install and configure the following:
 
+* <<Introduction,Introduction>>
 * <<Keycloak Installation,Keycloak Installation>>
 * <<Set up Keycloak,Set up Keycloak>>
 * <<Set up Helidon,Set up Helidon>>
+* <<Test Keycloak process with Postman,Test Keycloak process with Postman>>
 * <<Restrict access to a specific role,Restrict access to a specific role>>
+
+=== Introduction
+
+This guide describes the steps required to protect your whole application or a specific area with Open ID Connect
+(OIDC) security. OIDC is a secure mechanism for an application to contact an identity service.
+Its built on top of OAuth 2.0 and provides full-fledged authentication and authorization protocols.
 
 === Keycloak Installation
 
@@ -76,7 +86,7 @@ Open keycloak folder to make it your current directory.
 cd keycloak-11.0.2
 ----
 
-===== Start Keycloak
+=== Start Keycloak
 
 To start keycloak and have it ready for further steps, run the following command.
 
@@ -94,7 +104,7 @@ bin/standalone.bat
 
 Keycloak runs on localhost:8080 by default.
 
-===== Create an admin user
+==== Create an Admin User
 
 You need to create an admin user because it does not come by default when installing Keycloak.
 To do this, open  http://localhost:8080/auth in your favorite browser.
@@ -117,7 +127,7 @@ To set up Keycloak properly, go to the admin console: http://localhost:8080/auth
 If you are using Docker, use Username `admin` and password `admin` as it is the default admin user.
 Otherwise, use the username and password you used to create the admin user.
 
-==== Create a realm
+==== Create a Realm
 
 A realm is the place where groups of applications, and their environment, can be created. It gathers :
 
@@ -144,7 +154,7 @@ To switch from a realm to another, hover the realm name, and the other realm cre
 Click on any realm name to change the current realm. Make sure all configuration or modification are saved before changing
 the current realm or be subject to lose your configuration.
 
-==== Create a user
+==== Create a User
 
 Initially there are no users in a new realm. An unlimited number of user can be created per realm.
 A realm contains resources such as client which can be accessed by users.
@@ -223,7 +233,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 cd helidon-quickstart-se
 ----
 
-==== Update project dependencies
+==== Update Project Dependencies
 
 Update the pom.xml file and add the following Helidon dependency to the `<dependencies>` section.
 
@@ -236,7 +246,7 @@ Update the pom.xml file and add the following Helidon dependency to the `<depend
 </dependency>
 ----
 
-==== Add OIDC security properties
+==== Add OIDC Security Properties
 
 The OIDC security provider configuration can be joined to helidon configuration file.
 This file is located here: `src/main/resources/application.yaml`. It can be easily used to configure the web server
@@ -254,6 +264,7 @@ security:
       client-secret: "Client secret generated into Keycloak client credential" // <2>
       identity-uri: "http://localhost:8080/auth/realms/myRealm" // <3>
       audience: "account"
+      header-use: "true"
       # proxy-host should be defined if you operate behind a proxy, can be removed otherwise
       proxy-host: ""
       frontend-uri: "http://localhost:7987" // <4>
@@ -295,7 +306,7 @@ server:
 frontend-uri: "http://localhost:{Your-new-port}"
 ----
 
-==== Configure web server
+==== Configure Web Server
 
 Once the properties are added, the web server must be set up.
 The `Main.createRouting` method gather all configuration properties.
@@ -325,7 +336,7 @@ Then, OidcSupport instance registers the endpoint to which OIDC redirects browse
 
 Helidon sample is now set up and ready.
 
-==== Try it !
+== Build the Application
 
 [source,bash]
 .Build the application, skipping unit tests, then run it:
@@ -349,7 +360,82 @@ now protected, its access is limited, and the tests are not built to take oidc s
 
 From the actual settings, the user needs to log in only once, then Keycloak saves all the connection data.
 
-==== Update tests to the secure environment
+=== Test Keycloak Process with Postman
+
+Keycloak supports many authentication and authorization flows, but only two of them will be shown. This section
+describes another way you can get an access token or refresh a token or identity token. The identity token contains
+information about the user. The access token contains access information that the application can use to determine what
+resources the user is allowed to access. Once expired, the refresh token allows the application to obtain a new access
+token. As these tokens contain sensitive information, they are valid for a very short period. It is possible to make them
+last longer in order to let you manipulate them with Postman. To do so:
+
+1. Open the Postman Console.
+2. Click on the `Realm Setting` in the left menu.
+3. Navigate to the `Tokens` tab.
+
+You can increase the access token lifespan.
+
+==== Authorization Code Flow
+
+The Authorization Code flow is suitable for browser-based applications. It is composed of three main steps:
+
+1. The browser visits the application. The user is not logged in, so it redirects the browser to Keycloak which requires
+username and password for authentication.
+2. Keycloak authenticates the user and returns a temporary authorization code as a query parameter in the URL.
+3. The authorization code is used to get access and refresh token from Keycloak token endpoint.
+
+For the first step, paste the following URL into your browser:
+`http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/auth?client_id=myClientID&response_type=code`.
+The first part of the url `http:/../auth` is the Keycloak endpoint to request an authorization code. Two query
+parameters are provided, the client id and the response type.
+Press enter and Keycloak responds with different URL containing a query parameter `code`. You successfully received
+the authorization code.
+
+In order to achieve the third step, we can use Postman to exchange the authorization code for tokens. In Postman,
+select the Http POST method. Keycloak endpoint to get token is the following:
+`http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token`.
+In the body of the request, select `x-www-form-urlencoded` type. Add the following data:
+
+[source,json]
+.Enter the key:value
+----
+[{"key":"grant_type","value":"authorization_code"},
+{"key":"client_id","value":"myClientID"},
+{"key":"client_secret","value":"client secret"},
+{"key":"code","value":"authorization code"}]
+----
+
+Do not forget to replace the `client secret` by its value (generated during Create a Client), and `authorization code`
+by the code value in the query parameter. Send the request by pressing `Send`. Keycloak returns an access token and
+a refresh token.
+
+==== Resource Owner Password Credentials Grant (Direct Access Grants)
+
+The Direct Access Grants flow is used by REST clients that want to request tokens on behalf of a user.
+To use Postman to make this request on behalf of `myuser`, select the GET method and enter this URL:
+`http://localhost:7987/greet/`. Under `Authorization` tab, select authorization type`OAuth 2.0`. Under it, complete the
+sentence  `Add authorization data to` with `Request Headers`, and complete the required fields.
+
+[source,json]
+.Enter the following information:
+----
+[{"key":"Header Prefix","value":"bearer"},
+{"key":"Grant type","value":"Password  Credentials"},
+{"key":"Access Token URL","value":"http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token"},
+{"key":"Client ID","value":"myClientID"},
+{"key":"Client Secret","value":"client secret"},
+{"key":"Username","value":"myuser"},
+{"key":"Password","value":"password"},
+{"key":"Scope","value":"openid"},
+{"key":"Client Authentication","value":"Send as Basic Auth Header"}]
+----
+
+Again, make sure to replace `client secret` by the actual client secret. Click on `Get New Access Token`. A popup
+window appears with Authentication complete, click on proceed to display access, refresh and identity token.
+Copy and paste the access token to `Access Token` field and press `Send`. Helidon greeting application sends back
+`Hello World !`.
+
+==== Update Tests to the Secure Environment
 
 At this stage of the application, tests cannot pass because of OIDC security. The only way to authenticate a user is
 through the front end of that server which can be accessed with the browser for example.
@@ -473,7 +559,7 @@ Now, the project can be build without skipping test.
 mvn clean install
 ----
 
-==== Restrict access to a specific role
+==== Restrict Access to a Specific Role
 
 To give less access to an endpoint, it is possible to configure user role. So the application will only grant access
 to the user with the required role.

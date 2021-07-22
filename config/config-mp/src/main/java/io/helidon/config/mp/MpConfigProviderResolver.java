@@ -28,6 +28,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
@@ -44,6 +45,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * This class is an implementation of a java service obtained through ServiceLoader.
  */
 public class MpConfigProviderResolver extends ConfigProviderResolver {
+    private static final Logger LOGGER = Logger.getLogger(MpConfigProviderResolver.class.getName());
     private static final Map<ClassLoader, ConfigDelegate> CONFIGS = new IdentityHashMap<>();
     private static final ReadWriteLock RW_LOCK = new ReentrantReadWriteLock();
     // specific for native image - we want to replace config provided during build with runtime configuration
@@ -83,20 +85,31 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
 
     private Config buildConfig(ClassLoader loader) {
         MpConfigBuilder builder = getBuilder();
-
-        Optional<io.helidon.config.Config> meta = MetaConfig.metaConfig();
-
-        meta.ifPresent(builder::metaConfig);
-
         builder.forClassLoader(loader);
 
-        if (meta.isEmpty()) {
-            builder.addDefaultSources();
+        // MP Meta Configuration
+        Optional<io.helidon.config.Config> meta = MpMetaConfig.metaConfig();
+
+        if (meta.isEmpty()){
+            meta = MetaConfig.metaConfig();
+
+            if (meta.isPresent()) {
+                builder.metaConfig(meta.get());
+                LOGGER.warning("You are using Helidon SE meta configuration in a Helidon MP application. Some features "
+                                       + "work differently, such as environment variable resolving, and mutability");
+            }
+        } else {
+            builder.mpMetaConfig(meta.get());
         }
 
-        return builder.addDiscoveredSources()
-                .addDiscoveredConverters()
-                .build();
+        if (meta.isEmpty()) {
+            // no meta configuration, use defaults
+            builder.addDefaultSources();
+            builder.addDiscoveredSources();
+            builder.addDiscoveredConverters();
+        }
+
+        return builder.build();
     }
 
     @Override
@@ -212,6 +225,7 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
      * A delegate used to allow replacing configuration at runtime for components
      * that hold a reference to configuration obtained at build time.
      */
+    @Deprecated
     public static final class ConfigDelegate implements io.helidon.config.Config, Config {
         private final AtomicReference<Config> delegate = new AtomicReference<>();
         private final AtomicReference<io.helidon.config.Config> helidonDelegate = new AtomicReference<>();

@@ -22,10 +22,24 @@
 :h1Prefix: SE
 :description: Helidon config introduction
 :keywords: helidon, config
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: Config
 
 The config component provides a Java API to load and process
 configuration properties from various sources into a `Config` object which the
 application can use to retrieve config data.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.config</groupId>
+        <artifactId>helidon-config</artifactId>
+    </dependency>
+</dependencies>
+----
 
 == Getting Started
 
@@ -91,97 +105,6 @@ For this first example we can see the basic features of `Config`:
     commonly used types, such as `int`, `String`, `long` and other
 - You can immediately provide a default value for the cases the configuration option is not defined
     in any source
-
-=== Your First Config Application
-An easy way to start with the link:{javadoc-base-url-api}/Config.html[Config] API
-is to follow these four steps:
-
-1. <<maven-coords,add config-related dependencies to your `pom.xml`>>
-2. <<update-module-info, revise your `module-info.java` to refer to config (if you are using Java 9+)>>
-3. <<create-simple-config-props, create a simple config properties file>>
-4. <<Config-Basics-DefaultConfig, retrieve and use the default `Config` from your app>>
-
-==== Add Maven Dependency on Config [[maven-coords]]
-[source,xml]
-.Config Dependency in `pom.xml`
-----
-<dependencies>
-    <dependency>
-        <groupId>io.helidon.config</groupId>
-        <artifactId>helidon-config</artifactId>
-        <version>version-of-config-you-are-using</version>
-    </dependency>
-</dependencies>
-----
-
-==== Update `module-info.java` [[update-module-info]]
-If you are using Java 11 then create or update the `module-info.java` file for your application:
-[source,java]
-.Config Dependency in `module-info.java`
-----
-module myModule {
-    requires io.helidon.config;
-}
-----
-
-==== Create simple Config Properties File [[create-simple-config-props]]
-[source]
-.Example `src/main/resources/application.properties` config file
-----
-greeting = Hello
-
-web.debug = true
-web.page-size = 20
-web.ratio = 1.3
-
-bl.initial-id = 10000000000
-
-origin = props
-java.home=homeFromProps # will be ignored
-----
-
-==== Write Code using the Default Config [[Config-Basics-DefaultConfig]]
-
-[source,java]
-.Create and Use Default `Config` from Java
-----
-import io.helidon.config.Config; // <1>
-...
-Config config = Config.create(); // <2>
-System.out.println(String.format(
-        "greeting is %s\n"
-                + "web.debug is %b\n"
-                + "web.page-size is %d\n"
-                + "web.ratio is %f\n"
-                + "bl.initial-id is %d\n"
-                + "origin is %s\n"
-                + "java.home is %s",
-        config.get("greeting").asString().orElse("Default greeting"),  // <3>
-        config.get("web.debug").asBoolean().orElse(false),
-        config.get("web.page-size").asInt().orElse(50),
-        config.get("web.ratio").asDouble().orElse(2.0),
-        config.get("bl.initial-id").asLong().orElse(1L),
-        config.get("origin").asString().orElse("defaults"),
-        config.get("java.home").asString().get())); // <4>
-----
-<1> Import `Config`.
-<2> Create the root of the `Config` tree from the default sources.
-<3> Retrieve various values by their dotted names and decode them as the appropriate
-Java types, providing default values if the property is missing.
-<4> Retrieve the value (and fail with a runtime exception if missing)
-
-When you build and run your project, the output will look like this:
-[source]
-----
-greeting is Hello
-web.debug is true
-web.page-size is 20
-web.ratio is 1.300000
-bl.initial-id is 10000000000
-origin is props
-java.home is /Library/Java/JavaVirtualMachines/jdk-10.0.1.jdk/Contents/Home
-----
-
 
 === Overriding Values
 
@@ -304,8 +227,8 @@ filters, overrides, mappers, whether or not environment variables and Java
 system properties serve as config sources. The JavaDoc explains how to use the 
 link:{javadoc-base-url-api}/Config.Builder.html[`Config.Builder`].
 +
-or
-* creating a <<config/06_advanced-configuration.adoc#Config-Advanced-metaconfig,meta-configuration>>
+* using a <<se/config/09_config-profiles.adoc,config profile>> to choose the sources to be used
+* creating a <<se/config/06_advanced-configuration.adoc#Config-Advanced-metaconfig, meta-configuration>>
 file on the runtime classpath or file system to control how the config system prepares the
 default configuration.
 
@@ -320,26 +243,26 @@ other config topics.
 |===
 | Topic |Documentation
 
-| Where config comes from |<<config/02_config-sources.adoc,Config sources>>,
-<<config/06_advanced-configuration.adoc#metaconfig,meta-configuration>>
-| What format config data is expressed in |<<config/02_config-sources.adoc#parsers,Config parsers>>, 
-<<config/08_supported-formats.adoc,supported formats>>
-| How to filter, override, and dereference values |<<config/06_advanced-configuration.adoc#filters-and-overrides,Filters and overrides>>
-| What happens when config data changes |<<config/05_mutability-support.adoc#polling,Config polling>>
-| How to deal with loading errors |<<config/02_config-sources.adoc#retry,Config retry policies>>
+| Where config comes from |<<se/config/02_config-sources.adoc,Config sources>>,<<se/config/09_config-profiles.adoc,Config Profiles>>,
+<<se/config/06_advanced-configuration.adoc#Config-Advanced-metaconfig,meta-configuration>>
+| What format config data is expressed in |<<se/config/02_config-sources.adoc#parsers,Config parsers>>,
+<<se/config/08_supported-formats.adoc,supported formats>>
+| How to filter, override, and dereference values |<<se/config/06_advanced-configuration.adoc#filters-and-overrides,Filters and overrides>>
+| What happens when config data changes |<<se/config/05_mutability-support.adoc#polling,Config polling>>
+| How to deal with loading errors |<<se/config/02_config-sources.adoc#retry,Config retry policies>>
 |===
 
 .Accessing Configuration Data
 |===
 | Topic |Documentation
 
-| How config data is translated into Java types |<<config/04_property-mapping.adoc,Config mappers>>
-| How to navigate config trees |<<config/03_hierarchical-features.adoc,Navigation>>
+| How config data is translated into Java types |<<se/config/04_property-mapping.adoc,Config mappers>>
+| How to navigate config trees |<<se/config/03_hierarchical-features.adoc,Navigation>>
 |===
 
 .Extending and Fine-tuning the Config System
 |===
 | Topic |Documentation 
 
-| Writing extensions |<<config/07_extensions.adoc,Extensions>>
+| Writing extensions |<<se/config/07_extensions.adoc,Extensions>>
 |===

@@ -1,0 +1,95 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Reusing Helidon SE services
+:h1Prefix: MP
+:description: Helidon Reactive Routing
+:keywords: helidon, guide, routing
+:helidon-uc-flavor: MP
+:helidon-lc-flavor: mp
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+
+This guide shows how reuse Helidon SE Service in your Helidon MP application.
+
+== What You Need
+
+For this 10 minute tutorial, you will need the following:
+
+include::{common-page-prefix-inc}[tag=common-prereqs]
+
+Helidon MP supports <<mp/jaxrs/10_reactive-routing.adoc, Reactive routing>> which brings possibility for reusing
+`io.helidon.webserver.Service` implementations in Helidon MP. Such feature can be quite useful for common
+solutions for filtering, auditing, logging or augmenting REST endpoints in hybrid Helidon SE/MP environment.
+
+Let's define simple Helidon SE Service for adding special header to every REST response:
+
+[source,java]
+----
+public class CoolingService implements Service, Handler {
+
+    public static final String COOL_HEADER_NAME = "Cool-Header";
+    public static final String COOLING_VALUE = "This is way cooler response than ";
+
+    @Override
+    public void update(Routing.Rules rules) {
+        rules.any(this);
+    }
+
+    @Override
+    public void accept(ServerRequest req, ServerResponse res) {
+        res.headers().add(COOL_HEADER_NAME, COOLING_VALUE);
+        req.next();
+    }
+}
+----
+
+Its easy to use it with Helidon SE:
+
+[source,java]
+----
+WebServer.builder(Routing.builder()
+                    // register service with routing path
+                    .register("/cool", new CoolingService())
+                    .build())
+                .config(config)
+                .addMediaSupport(JsonpSupport.create())
+                .build()
+                .start();
+----
+
+And not much harder to use it with Helidon MP:
+
+[source,java]
+----
+@ApplicationScoped
+public class MyBean {
+
+    @Produces
+    @ApplicationScoped
+    @RoutingPath("/cool")
+    public Service coolService() {
+        return new CoolingService();
+    }
+
+}
+----
+
+You can leverage annotations:
+
+* @RoutingPath - path of the WebServer service
+* @RoutingName - select routing when <<mp/jaxrs/02_server-configuration.adoc#conf-additional-ports,serving requests on multiple ports>>

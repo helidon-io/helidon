@@ -235,7 +235,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                     case '/': return SLASH;
                     case ':': return COLON;
                     default:
-                        return Character.isLetter(c)
+                        return Character.isLetter(c) || c == '_'
                                 ? LETTER
                                 : (Character.isDigit(c) ? NUMBER : OTHER);
                 }

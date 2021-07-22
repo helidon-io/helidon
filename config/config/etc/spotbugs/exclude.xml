@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,6 +22,61 @@
         xmlns="https://github.com/spotbugs/filter/3.0.0"
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
 
+    <Match>
+        <!-- Hash is used only to see if a file has changed -->
+        <Class name="io.helidon.config.FileSourceHelper"/>
+        <Bug pattern="UNSAFE_HASH_EQUALS"/>
+    </Match>
+    <Match>
+        <!-- Hash is used only to see if a file has changed -->
+        <Class name="io.helidon.config.FileSourceHelper"/>
+        <Bug pattern="WEAK_MESSAGE_DIGEST_MD5"/>
+    </Match>
+    <Match>
+        <!-- Path from config/code, not openly from user -->
+        <Class name="io.helidon.config.ConfigMappers"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+    <Match>
+        <!-- Path from config/code, not openly from user -->
+        <Class name="io.helidon.config.ConfigSources"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+    <Match>
+        <!-- Path from config/code, not openly from user -->
+        <Class name="io.helidon.config.OverrideSources"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+    <Match>
+        <!-- Path from config/code/system property, not openly from user -->
+        <Class name="io.helidon.config.MetaConfigFinder"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+    <Match>
+        <!-- Path from config/code, not openly from user -->
+        <Class name="io.helidon.config.ClasspathConfigSource"/>
+        <Bug pattern="URLCONNECTION_SSRF_FD"/>
+    </Match>
+    <Match>
+        <!-- Path from config/code, not openly from user -->
+        <Class name="io.helidon.config.ClasspathOverrideSource"/>
+        <Bug pattern="URLCONNECTION_SSRF_FD"/>
+    </Match>
+    <Match>
+        <!-- Path from config/code, not openly from user -->
+        <Class name="io.helidon.config.UrlConfigSource"/>
+        <Bug pattern="URLCONNECTION_SSRF_FD"/>
+    </Match>
+    <Match>
+        <!-- Path from config/code, not openly from user -->
+        <Class name="io.helidon.config.UrlHelper"/>
+        <Bug pattern="URLCONNECTION_SSRF_FD"/>
+    </Match>
+    <Match>
+        <!-- Path from config/code, not openly from user -->
+        <Class name="io.helidon.config.UrlOverrideSource"/>
+        <Bug pattern="URLCONNECTION_SSRF_FD"/>
+    </Match>
     <Match>
         <!-- False positive. See https://github.com/spotbugs/spotbugs/issues/756 -->
         <Class name="io.helidon.config.PropertiesConfigParser"/>
