@@ -19,7 +19,6 @@ package io.helidon.microprofile.examples.cors;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
@@ -43,11 +42,11 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -86,7 +85,7 @@ public class TestCORS {
 
     @Order(1) // Make sure this runs before the greeting message changes so responses are deterministic.
     @Test
-    public void testHelloWorld() throws Exception {
+    public void testHelloWorld() {
 
         WebClientResponse r = getResponse("/greet");
 
@@ -113,7 +112,7 @@ public class TestCORS {
 
     @Order(10) // Run after the non-CORS tests (so the greeting is Hola) but before the CORS test that changes the greeting again.
     @Test
-    void testAnonymousGreetWithCors() throws Exception {
+    void testAnonymousGreetWithCors() {
         WebClientRequestBuilder builder = client.get();
         Headers headers = builder.headers();
         headers.add("Origin", "http://foo.com");
@@ -132,7 +131,7 @@ public class TestCORS {
 
     @Order(11) // Run after the non-CORS tests but before other CORS tests.
     @Test
-    void testGreetingChangeWithCors() throws Exception {
+    void testGreetingChangeWithCors() {
 
         // Send the pre-flight request and check the response.
 
@@ -144,8 +143,7 @@ public class TestCORS {
 
         WebClientResponse r = builder.path("/greet/greeting")
                 .submit()
-                .toCompletableFuture()
-                .get();
+                .await();
 
         assertThat("pre-flight status", r.status().code(), is(200));
         Headers preflightResponseHeaders = r.headers();
@@ -177,7 +175,7 @@ public class TestCORS {
 
     @Order(12) // Run after CORS test changes greeting to Cheers.
     @Test
-    void testNamedGreetWithCors() throws Exception {
+    void testNamedGreetWithCors() {
         WebClientRequestBuilder builder = client.get();
         Headers headers = builder.headers();
         headers.add("Origin", "http://foo.com");
@@ -195,7 +193,7 @@ public class TestCORS {
 
     @Order(100) // After all other tests so we can rely on deterministic greetings.
     @Test
-    void testGreetingChangeWithCorsAndOtherOrigin() throws Exception {
+    void testGreetingChangeWithCorsAndOtherOrigin() {
         WebClientRequestBuilder builder = client.put();
         Headers headers = builder.headers();
         headers.add("Origin", "http://other.com");
@@ -208,27 +206,23 @@ public class TestCORS {
     }
 
 
-    private static WebClientResponse getResponse(String path) throws ExecutionException, InterruptedException {
+    private static WebClientResponse getResponse(String path) {
         return getResponse(path, client.get());
     }
 
-    private static WebClientResponse getResponse(String path, WebClientRequestBuilder builder) throws ExecutionException,
-            InterruptedException {
+    private static WebClientResponse getResponse(String path, WebClientRequestBuilder builder) {
         return builder
                 .accept(MediaType.APPLICATION_JSON)
                 .path(path)
                 .submit()
-                .toCompletableFuture()
-                .get();
+                .await();
     }
 
-    private static String fromPayload(WebClientResponse response) throws ExecutionException,
-            InterruptedException {
+    private static String fromPayload(WebClientResponse response) {
         JsonObject json = response
                 .content()
                 .as(JsonObject.class)
-                .toCompletableFuture()
-                .get();
+                .await();
         return json.getString(JSON_MESSAGE_RESPONSE_LABEL);
     }
 
@@ -237,20 +231,15 @@ public class TestCORS {
         return builder.add(JSON_NEW_GREETING_LABEL, message)
                 .build();
     }
-    private static WebClientResponse putResponse(String path, String message) throws ExecutionException,
-            InterruptedException {
+    private static WebClientResponse putResponse(String path, String message) {
         return putResponse(path, message, client.put());
     }
 
-    private static WebClientResponse putResponse(String path, String message, WebClientRequestBuilder builder)
-            throws ExecutionException, InterruptedException {
+    private static WebClientResponse putResponse(String path, String message, WebClientRequestBuilder builder) {
         return builder
                 .accept(MediaType.APPLICATION_JSON)
                 .path(path)
                 .submit(toPayload(message))
-                .toCompletableFuture()
-                .get();
+                .await();
     }
-
-
 }

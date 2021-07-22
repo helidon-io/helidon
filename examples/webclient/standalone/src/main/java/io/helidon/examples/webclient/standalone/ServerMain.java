@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package io.helidon.examples.webclient.standalone;
 
-import java.util.concurrent.CompletionStage;
-
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
@@ -59,7 +58,7 @@ public final class ServerMain {
      *
      * @return the created {@link WebServer} instance
      */
-    static CompletionStage<WebServer> startServer() {
+    static Single<WebServer> startServer() {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
@@ -70,20 +69,16 @@ public final class ServerMain {
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
-        CompletionStage<WebServer> start = server.start();
-
-        start.thenAccept(ws -> {
-            serverPort = ws.port();
-            System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");
-            ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
-        }).exceptionally(t -> {
-            System.err.println("Startup failed: " + t.getMessage());
-            t.printStackTrace(System.err);
-            return null;
-        });
-
         // Server threads are not daemon. No need to block. Just react.
-        return start;
+        return server.start()
+                .peek(ws -> {
+                    serverPort = ws.port();
+                    System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");
+                    ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
+                }).onError(t -> {
+                    System.err.println("Startup failed: " + t.getMessage());
+                    t.printStackTrace(System.err);
+                });
     }
 
     /**

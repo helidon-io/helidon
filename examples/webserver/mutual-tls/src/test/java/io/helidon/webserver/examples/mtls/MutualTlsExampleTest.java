@@ -15,18 +15,14 @@
  */
 package io.helidon.webserver.examples.mtls;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -40,16 +36,15 @@ public class MutualTlsExampleTest {
     private WebServer webServer;
 
     @AfterEach
-    public void killServer() throws InterruptedException, ExecutionException, TimeoutException {
+    public void killServer() {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(10, TimeUnit.SECONDS);
         }
     }
 
     @Test
-    public void testConfigAccessSuccessful() throws InterruptedException {
+    public void testConfigAccessSuccessful() {
         Config config = Config.just(() -> ConfigSources.classpath("application-test.yaml").build());
         webServer = ServerConfigMain.startServer(config.get("server")).await();
         WebClient webClient = WebClient.create(config.get("client"));
@@ -59,7 +54,7 @@ public class MutualTlsExampleTest {
     }
 
     @Test
-    public void testBuilderAccessSuccessful() throws InterruptedException {
+    public void testBuilderAccessSuccessful() {
         webServer = ServerBuilderMain.startServer(-1, -1).await();
         WebClient webClient = ClientBuilderMain.createWebClient();
 
