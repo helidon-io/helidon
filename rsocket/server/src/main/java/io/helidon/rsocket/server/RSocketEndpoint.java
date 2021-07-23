@@ -60,8 +60,8 @@ public class RSocketEndpoint extends Endpoint {
     /**
      * Factory method to create {@link RSocketEndpoint}.
      *
-     * @param routing
-     * @param path
+     * @param routing RSocketRouting
+     * @param path String
      * @return {@link RSocketEndpoint}
      */
     public static RSocketEndpoint create(RSocketRouting routing, String path){
@@ -86,8 +86,8 @@ public class RSocketEndpoint extends Endpoint {
 
     /**
      * Private constructor.
-     * @param routing
-     * @param path
+     * @param routing RSocketRouting
+     * @param path String
      */
     public RSocketEndpoint(RSocketRouting routing, String path) {
         this.path = path;
@@ -126,8 +126,8 @@ public class RSocketEndpoint extends Endpoint {
 
     /**
      * Function called on connection open, used to organize sessions.
-     * @param session
-     * @param endpointConfig
+     * @param session Session
+     * @param endpointConfig EndpointConfig
      */
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
@@ -144,8 +144,8 @@ public class RSocketEndpoint extends Endpoint {
     /**
      * Function called on connection close, used to dispose resources.
      *
-     * @param session
-     * @param closeReason
+     * @param session Session
+     * @param closeReason CloseReason
      */
     @Override
     public void onClose(Session session, CloseReason closeReason) {
@@ -154,8 +154,8 @@ public class RSocketEndpoint extends Endpoint {
 
     /**
      * Function called on Error received, cleans up the resources.
-     * @param session
-     * @param thr
+     * @param session Session
+     * @param thr Throwable
      */
     @Override
     public void onError(Session session, Throwable thr) {

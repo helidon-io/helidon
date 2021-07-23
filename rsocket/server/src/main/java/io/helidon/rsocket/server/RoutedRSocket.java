@@ -45,10 +45,10 @@ public class RoutedRSocket implements RSocket {
     /**
      * Constructor for routed RSocket.
      *
-     * @param requestResponseRoutes
-     * @param fireAndForgetRoutes
-     * @param requestStreamRoutes
-     * @param requestChannelRoutes
+     * @param requestResponseRoutes Map
+     * @param fireAndForgetRoutes Map
+     * @param requestStreamRoutes Map
+     * @param requestChannelRoutes Map
      */
     RoutedRSocket(Map<String, RequestResponseHandler> requestResponseRoutes,
                   Map<String, FireAndForgetHandler> fireAndForgetRoutes,
@@ -100,7 +100,7 @@ public class RoutedRSocket implements RSocket {
         /**
          * Set RequestResponse routes.
          *
-         * @param requestResponseRoutes
+         * @param requestResponseRoutes Map
          * @return Builder
          */
         public Builder requestResponseRoutes(Map<String, RequestResponseHandler> requestResponseRoutes) {
@@ -111,7 +111,7 @@ public class RoutedRSocket implements RSocket {
         /**
          * Set Fire and Forget routes.
          *
-         * @param fireAndForgetRoutes
+         * @param fireAndForgetRoutes Map
          * @return Builder
          */
         public Builder fireAndForgetRoutes(Map<String, FireAndForgetHandler> fireAndForgetRoutes) {
@@ -122,7 +122,7 @@ public class RoutedRSocket implements RSocket {
         /**
          * Set Request Stream routes.
          *
-         * @param requestStreamRoutes
+         * @param requestStreamRoutes Map
          * @return Builder
          */
         public Builder requestStreamRoutes(Map<String, RequestStreamHandler> requestStreamRoutes) {
@@ -133,7 +133,7 @@ public class RoutedRSocket implements RSocket {
         /**
          * Set Request Channel routes.
          *
-         * @param requestChannelRoutes
+         * @param requestChannelRoutes Map
          * @return Builder
          */
         public Builder requestChannelRoutes(Map<String, RequestChannelHandler> requestChannelRoutes) {
@@ -156,7 +156,7 @@ public class RoutedRSocket implements RSocket {
     /**
      * Handle Request Response.
      *
-     * @param payload
+     * @param payload Map
      * @return Mono<Payload>
      */
     @Override
@@ -185,7 +185,7 @@ public class RoutedRSocket implements RSocket {
     /**
      * Handle Fire and Forget.
      *
-     * @param payload
+     * @param payload Payload
      * @return Mono<Void>
      */
     @Override
@@ -213,7 +213,7 @@ public class RoutedRSocket implements RSocket {
     /**
      * Handle Request Stream.
      *
-     * @param payload
+     * @param payload Payload
      * @return Flux<Payload>
      */
     @Override
@@ -242,7 +242,7 @@ public class RoutedRSocket implements RSocket {
     /**
      * Handle Request Channel.
      *
-     * @param payloads
+     * @param payloads Publisher
      * @return Flux<Payload>
      */
     @Override

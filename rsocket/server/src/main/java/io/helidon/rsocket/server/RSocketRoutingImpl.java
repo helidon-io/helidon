@@ -31,10 +31,10 @@ public class RSocketRoutingImpl implements RSocketRouting {
     /**
      * Constructor for RSocketRouting.
      *
-     * @param requestResponseRoutes
-     * @param fireAndForgetRoutes
-     * @param requestStreamRoutes
-     * @param requestChannelRoutes
+     * @param requestResponseRoutes Map
+     * @param fireAndForgetRoutes Map
+     * @param requestStreamRoutes Map
+     * @param requestChannelRoutes Map
      */
     RSocketRoutingImpl(Map<String, RequestResponseHandler> requestResponseRoutes,
                               Map<String, FireAndForgetHandler> fireAndForgetRoutes,

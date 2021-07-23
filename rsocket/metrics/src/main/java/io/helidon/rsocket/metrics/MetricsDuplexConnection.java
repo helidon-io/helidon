@@ -70,10 +70,10 @@ final class MetricsDuplexConnection implements DuplexConnection {
     /**
      * Constructor for MetricsDuplexConnection.
      *
-     * @param connectionType
-     * @param delegate
-     * @param metricsRegistry
-     * @param tags
+     * @param connectionType Type
+     * @param delegate Deligate
+     * @param metricsRegistry Registry
+     * @param tags Tags
      */
     MetricsDuplexConnection(
             Type connectionType, DuplexConnection delegate, MetricRegistry metricsRegistry, Tag... tags) {

@@ -40,8 +40,8 @@ public final class MetricsDuplexConnectionInterceptor implements DuplexConnectio
 
   /**
    * Apply the interceptor and return the delegate.
-   * @param type
-   * @param duplexConnection
+   * @param type Type
+   * @param duplexConnection the connection
    * @return Duplex Connection Delegate.
    */
   @Override

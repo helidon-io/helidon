@@ -124,7 +124,7 @@ public interface RSocketRouting {
         /**
          * Register {@link RSocketService} service.
          *
-         * @param service
+         * @param service RSocketService
          * @return Builder
          */
         @Override
@@ -136,8 +136,8 @@ public interface RSocketRouting {
         /**
          * Register {@link RSocketService} service.
          *
-         * @param pathParam
-         * @param service
+         * @param pathParam String
+         * @param service RSocketService
          * @return Builder
          */
         @Override
@@ -149,7 +149,7 @@ public interface RSocketRouting {
         /**
          * Register Fire and Forget method handler.
          *
-         * @param handler
+         * @param handler FireAndForgetHandler
          * @return Builder
          */
         @Override
@@ -161,8 +161,8 @@ public interface RSocketRouting {
         /**
          * Register Fire and Forget method handler.
          *
-         * @param handler
-         * @param pathParam
+         * @param handler FireAndForgetHandler
+         * @param pathParam String
          * @return Builder
          */
         @Override
@@ -174,7 +174,7 @@ public interface RSocketRouting {
         /**
          * Register Request Channel method handler.
          *
-         * @param handler
+         * @param handler RequestChannelHandler
          * @return Builder
          */
         @Override
@@ -186,8 +186,8 @@ public interface RSocketRouting {
         /**
          * Register Request Channel method handler.
          *
-         * @param handler
-         * @param pathParam
+         * @param handler RequestChannelHandler
+         * @param pathParam String
          * @return Builder
          */
         @Override
@@ -199,7 +199,7 @@ public interface RSocketRouting {
         /**
          * Register Request Response method handler.
          *
-         * @param handler
+         * @param handler RequestResponseHandler
          * @return Builder
          */
         @Override
@@ -211,8 +211,8 @@ public interface RSocketRouting {
         /**
          * Register Request Response method handler.
          *
-         * @param handler
-         * @param pathParam
+         * @param handler RequestResponseHandler
+         * @param pathParam String
          * @return Builder
          */
         @Override
@@ -224,7 +224,7 @@ public interface RSocketRouting {
         /**
          * Register Request Stream method handler.
          *
-         * @param handler
+         * @param handler RequestStreamHandler
          * @return Builder
          */
         @Override
@@ -236,8 +236,8 @@ public interface RSocketRouting {
         /**
          * Register Request Stream method handler.
          *
-         * @param handler
-         * @param pathParam
+         * @param handler RequestStreamHandler
+         * @param pathParam String
          * @return Builder
          */
         @Override

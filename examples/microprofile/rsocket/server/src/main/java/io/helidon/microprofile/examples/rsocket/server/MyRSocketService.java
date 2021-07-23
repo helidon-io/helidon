@@ -39,7 +39,7 @@ public class MyRSocketService {
 
     /**
      * Fire and Forget sample.
-     * @param payload
+     * @param payload Payload
      * @return Single
      */
     @FireAndForget("print")
@@ -50,7 +50,7 @@ public class MyRSocketService {
 
     /**
      * Request Response sample.
-     * @param payload
+     * @param payload Payload
      * @return Single
      */
     @RequestResponse("print")
@@ -61,7 +61,7 @@ public class MyRSocketService {
 
     /**
      * Request Stream sample.
-     * @param payload
+     * @param payload Payload
      * @return Multi
      */
     @RequestStream("print")
@@ -72,7 +72,7 @@ public class MyRSocketService {
 
     /**
      * Request Channel sample.
-     * @param payloads
+     * @param payloads Payload
      * @return Multi
      */
     @RequestChannel("print")

@@ -57,9 +57,9 @@ final class MetricsRSocket implements RSocket {
     /**
      * Constructor for MetricsRSocket.
      *
-     * @param delegate
-     * @param metricRegistry
-     * @param tags
+     * @param delegate Delegate
+     * @param metricRegistry Metrics Registry
+     * @param tags Tags
      */
     MetricsRSocket(RSocket delegate, MetricRegistry metricRegistry, Tag... tags) {
         this.delegate = Objects.requireNonNull(delegate, "Delegate must not be null");

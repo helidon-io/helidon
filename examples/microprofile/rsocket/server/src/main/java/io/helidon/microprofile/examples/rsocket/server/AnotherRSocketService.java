@@ -42,7 +42,7 @@ public class AnotherRSocketService {
 
     /**
      * Fire and Forget sample.
-     * @param payload
+     * @param payload Payload
      * @return CompletableFuture
      */
     @FireAndForget("print")
@@ -53,7 +53,7 @@ public class AnotherRSocketService {
 
     /**
      * Fire and Forget sample with different routing.
-     * @param payload
+     * @param payload Payload
      * @return CompletableFuture
      */
     @FireAndForget("print2")
@@ -64,7 +64,7 @@ public class AnotherRSocketService {
 
     /**
      * Request Response sample.
-     * @param payload
+     * @param payload Payload
      * @return CompletableFuture
      */
     @RequestResponse("print")
@@ -86,7 +86,7 @@ public class AnotherRSocketService {
 
     /**
      * Request Stream sample.
-     * @param payload
+     * @param payload Payload
      * @return CompletableFuture
      */
     @RequestStream("stream")

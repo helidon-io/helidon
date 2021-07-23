@@ -46,7 +46,7 @@ public class HelidonDuplexConnection implements DuplexConnection {
     /**
      * Constructor for HelidonDuplexConnection.
      *
-     * @param session
+     * @param session Session
      */
     public HelidonDuplexConnection(Session session) {
       this.onCloseSink = Sinks.empty();
@@ -57,7 +57,7 @@ public class HelidonDuplexConnection implements DuplexConnection {
     /**
      * Send Frame.
      *
-     * @param i
+     * @param i item
      * @param byteBuf data
      */
     @Override

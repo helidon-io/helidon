@@ -42,7 +42,7 @@ public final class MetricsRSocketInterceptor implements RSocketInterceptor {
   /**
    * Apply the interceptor and return the delegate.
    *
-   * @param delegate
+   * @param delegate Delegate
    * @return RSocket delegate.
    */
   @Override

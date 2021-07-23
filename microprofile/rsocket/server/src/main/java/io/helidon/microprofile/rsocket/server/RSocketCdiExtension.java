@@ -77,7 +77,7 @@ public class RSocketCdiExtension implements Extension {
     /**
      * Read Configuration.
      *
-     * @param config
+     * @param config Config
      */
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         this.config = config;
@@ -90,8 +90,8 @@ public class RSocketCdiExtension implements Extension {
     /**
      * Register configured RSockets.
      *
-     * @param event
-     * @param beanManager
+     * @param event Event
+     * @param beanManager BeanManager
      */
     private void startServer(@Observes @Priority(PLATFORM_AFTER + 99) @Initialized(ApplicationScoped.class) Object event,
                              BeanManager beanManager) {

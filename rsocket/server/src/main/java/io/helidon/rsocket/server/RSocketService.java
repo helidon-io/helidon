@@ -26,7 +26,7 @@ public interface RSocketService {
     /**
      * Override to update routing.
      *
-     * @param rules
+     * @param rules Rules
      */
     void update(RSocketRouting.Rules rules);
 }

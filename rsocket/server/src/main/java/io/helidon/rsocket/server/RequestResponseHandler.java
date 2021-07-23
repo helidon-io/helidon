@@ -30,7 +30,7 @@ public interface RequestResponseHandler {
     /**
      * Handle Request Response.
      *
-     * @param payload
+     * @param payload Payload
      * @return Single of Payload.
      */
     Single<Payload> handle(Payload payload);

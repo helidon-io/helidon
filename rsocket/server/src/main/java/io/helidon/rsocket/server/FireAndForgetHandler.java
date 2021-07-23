@@ -29,7 +29,7 @@ public interface FireAndForgetHandler {
     /**
      * Handle the Fire And Forget Request.
      *
-     * @param payload
+     * @param payload Payload.
      * @return Single.
      */
     Single<Void> handle(Payload payload);

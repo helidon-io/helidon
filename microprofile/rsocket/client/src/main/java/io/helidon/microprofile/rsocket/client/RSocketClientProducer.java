@@ -24,7 +24,7 @@ public class RSocketClientProducer {
 
     /**
      * Produce RSocket Client.
-     * @param ip
+     * @param ip InjectionPoint
      * @return RSocketClient
      */
     @Dependent

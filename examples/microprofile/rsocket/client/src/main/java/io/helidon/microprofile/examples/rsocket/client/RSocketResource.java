@@ -46,8 +46,8 @@ public class RSocketResource {
 
     /**
      * Construct RSocket resource.
-     * @param client
-     * @param anotherClient
+     * @param client client
+     * @param anotherClient one more client
      */
     @Inject
     public RSocketResource(RSocketClient client, @CustomRSocket("custom") RSocketClient anotherClient) {
