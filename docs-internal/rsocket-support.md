@@ -29,7 +29,4 @@ The current proposal intends to implement:
 5. RSocket configuration should be done via Helidon Config.
 6. All Reactor API should be hidden or replaced from Helidon APIs
 
-
-
-
-
+At the first iteration only support throw WebSocket as transport should be supported.
