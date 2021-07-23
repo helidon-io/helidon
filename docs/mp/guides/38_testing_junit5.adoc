@@ -20,29 +20,34 @@
 :h1Prefix: MP
 :description: Helidon testing with JUnit 5
 :keywords: helidon, testing, microprofile, guide, JUnit 
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide describes how to write and execute tests for your MicroProfile applications in a JUnit 5 environment using optimized customizations.
 
 == What You Need
 
-[width=70%,role="flex, sm7"]
-|===
-|About 30 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|Familiarity with the  concepts described in https://helidon.io/docs/v2/#/mp/testing/01_testing[Helidon MP Testing with JUnit 5]
-|===
+For this 20 minute tutorial, you will need the following:
+include::{common-page-prefix-inc}[tag=common-prereqs]
 
-== Dependency
-To start using this feature, add a dependency to the testing module:
+
+== Dependencies
+To start using this feature, add the following dependencies to the testing module:
 
 [source,xml]
-.Maven dependency
+.Maven dependencies
 ----
-<dependency>
-    <groupId>io.helidon.microprofile.tests</groupId>
-    <artifactId>helidon-microprofile-tests-junit5</artifactId>
-    <scope>test</scope>
-</dependency>
+<dependencies>
+   <dependency>
+      <groupId>io.helidon.microprofile.tests</groupId>
+      <artifactId>helidon-microprofile-tests-junit5</artifactId>
+      <scope>test</scope>
+   </dependency>
+   <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.5.2</version>
+   </dependency>
+</dependencies>
 ----
 
 
@@ -80,7 +85,7 @@ You can see this in the test output:
 ****
 
 
-NOTE: The application server starts on port 8080 by default. For this example we modified the port number to avoid any conflicts.
+NOTE: The `@HelidonTest` annotation uses a random port regardless of the port configured in the application.yaml.
 
 
 
@@ -202,7 +207,7 @@ If you want to disable discovery and only add custom extensions and beans, then 
 @DisableDiscovery
 ----
 
-NOTE: This annotation is typically used in conjunction with `@AddBeans` and/or `@AddExtension`. As you have seen in standard test output, Helidon starts with the full MicroProfile features enabled.
+NOTE: This annotation is typically used in conjunction with `@AddBeans` and/or `@AddExtension`. As you have seen in standard test output, by default Helidon starts with the dependencies defined in pom.xml.
 
 
 == Write a Basic Test
@@ -258,7 +263,7 @@ This guide demonstrated how to create tests for MicroProfile applications in a J
 Refer to the following references for additional information:
 
 * https://junit.org/junit5/docs/current/user-guide/[JUnit 5 User Guide]
-* https://helidon.io/docs/v2/#/mp/introduction/01_introduction[Helidon MP Documentation]
+* <<mp/testing/01_testing.adoc, Testing with JUnit 5>>
 
 
  
