@@ -472,7 +472,7 @@ import javax.transaction.Transactional;
 import javax.ws.rs.PathParam;
 ----
 
-Add the following resource method to the `RSocketResource` class:
+Add the following resource method to the `GreetResource` class:
 
 [source,java]
 .`src/main/java/io/helidon/example/jpa/GreetResource.java`

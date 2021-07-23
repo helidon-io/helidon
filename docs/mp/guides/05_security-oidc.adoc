@@ -290,7 +290,7 @@ frontend-uri: "http://localhost:{Your-new-port}"
 
 ==== Secure your application
 
-The `RSocketResource` class is a JAX-RS resource available at the endpoint `/greet`. Use `@Authenticated` annotation to protect
+The `GreetResource` class is a JAX-RS resource available at the endpoint `/greet`. Use `@Authenticated` annotation to protect
 any method or endpoint.
 Modify the `getDefaultMessage` method with the `@Authenticated` to limit its access.
 
