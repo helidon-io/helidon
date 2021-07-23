@@ -32,7 +32,6 @@ import io.helidon.webserver.WebServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -46,6 +45,9 @@ public class MainTest {
     private static final JsonObject TEST_JSON_OBJECT;
     private static WebServer webServer;
     private static WebClient webClient;
+
+    private static double expectedPersonalizedGets;
+    private static double expectedAllGets;
 
     static {
         TEST_JSON_OBJECT = JSON_BF.createObjectBuilder()
@@ -72,25 +74,36 @@ public class MainTest {
         }
     }
 
+    private static JsonObject get() {
+        return get("/greet");
+    }
+
+    private static JsonObject get(String path) {
+        JsonObject jsonObject = webClient.get()
+                .path(path)
+                .request(JsonObject.class)
+                .await();
+        expectedAllGets++;
+        return jsonObject;
+    }
+
+    private static JsonObject personalizedGet(String name) {
+        JsonObject result = get("/greet/" + name);
+        expectedPersonalizedGets++;
+        return result;
+    }
+
     @Test
     @Order(1)
     void testDefaultGreeting() {
-        JsonObject jsonObject = webClient.get()
-                .path("/greet")
-                .request(JsonObject.class)
-                .await();
-
+        JsonObject jsonObject = get();
         Assertions.assertEquals("Hello World!", jsonObject.getString("greeting"));
     }
 
     @Test
     @Order(2)
     void testNamedGreeting() {
-        JsonObject jsonObject = webClient.get()
-                .path("/greet/Joe")
-                .request(JsonObject.class)
-                .await();
-
+        JsonObject jsonObject = personalizedGet("Joe");
         Assertions.assertEquals("Hello Joe!", jsonObject.getString("greeting"));
     }
 
@@ -105,17 +118,12 @@ public class MainTest {
 
         Assertions.assertEquals(Http.Status.NO_CONTENT_204, response.status());
 
-        JsonObject jsonObject = webClient.get()
-                .path("/greet/Joe")
-                .request(JsonObject.class)
-                .await();
-
+        JsonObject jsonObject = personalizedGet("Joe");
         Assertions.assertEquals("Hola Joe!", jsonObject.getString("greeting"));
     }
 
     @Test
     @Order(4)
-    @Disabled("This test is broken, follow up issue created")
     void testMicrometer() {
         WebClientResponse response = webClient.get()
                 .path("/micrometer")
@@ -128,12 +136,15 @@ public class MainTest {
         String output = response.content()
                 .as(String.class)
                 .await();
-        Assertions.assertTrue(output.contains("get_seconds_count 2.0"),
-                              "Unable to find expected all-gets timer count 2.0"); // 2 gets; the put is not counted
-        Assertions.assertTrue(output.contains("get_seconds_sum"),
-                              "Unable to find expected all-gets timer sum");
-        Assertions.assertTrue(output.contains("personalizedGets_total 1.0"),
-                              "Unable to find expected counter result 1.0");
+        String expected = Main.ALL_GETS_TIMER_NAME + "_seconds_count " + expectedAllGets;
+        Assertions.assertTrue(output.contains(expected),
+                "Unable to find expected all-gets timer count " + expected + "; output is " + output); // all gets; the put
+        // is not counted
+        Assertions.assertTrue(output.contains(Main.ALL_GETS_TIMER_NAME + "_seconds_sum"),
+                "Unable to find expected all-gets timer sum");
+        expected = Main.PERSONALIZED_GETS_COUNTER_NAME + "_total " + expectedPersonalizedGets;
+        Assertions.assertTrue(output.contains(expected),
+                "Unable to find expected counter result " + expected + "; output is " + output);
         response.close();
     }
 }
