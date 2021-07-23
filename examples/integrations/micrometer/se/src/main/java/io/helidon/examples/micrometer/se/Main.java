@@ -32,6 +32,9 @@ import io.micrometer.core.instrument.Timer;
  */
 public final class Main {
 
+    static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
+    static final String ALL_GETS_TIMER_NAME = "allGets";
+
     /**
      * Cannot be instantiated.
      */
@@ -90,8 +93,8 @@ public final class Main {
 
         MicrometerSupport micrometerSupport = MicrometerSupport.create();
         Counter personalizedGetCounter = micrometerSupport.registry()
-                .counter("personalizedGets");
-        Timer getTimer = Timer.builder("allGets")
+                .counter(PERSONALIZED_GETS_COUNTER_NAME);
+        Timer getTimer = Timer.builder(ALL_GETS_TIMER_NAME)
                 .publishPercentileHistogram()
                 .register(micrometerSupport.registry());
 
