@@ -16,14 +16,7 @@
 
 package io.helidon.rsocket.server;
 
-import java.util.Set;
-
-import javax.websocket.Extension;
-import javax.websocket.server.ServerEndpointConfig;
-
 import io.helidon.webserver.tyrus.TyrusSupport;
-
-import org.glassfish.tyrus.spi.WebSocketEngine;
 
 
 /**
@@ -39,19 +32,4 @@ public class RSocketSupport extends TyrusSupport {
         super(other);
     }
 
-    /**
-     * Create RSocketSupport.
-     *
-     * @param engine
-     * @param endpointClasses
-     * @param endpointConfigs
-     * @param extensions
-     */
-    public RSocketSupport(
-            WebSocketEngine engine,
-            Set<Class<?>> endpointClasses,
-            Set<ServerEndpointConfig> endpointConfigs,
-            Set<Extension> extensions) {
-        super(engine, endpointClasses, endpointConfigs, extensions);
-    }
 }

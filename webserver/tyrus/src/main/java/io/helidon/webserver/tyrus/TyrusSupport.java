@@ -68,13 +68,23 @@ public class TyrusSupport implements Service {
      *
      * @param other The other instance.
      */
-    public TyrusSupport(TyrusSupport other) {
+    protected TyrusSupport(TyrusSupport other) {
         this.engine = other.engine;
         this.endpointClasses = other.endpointClasses;
         this.endpointConfigs = other.endpointConfigs;
         this.extensions = other.extensions;
     }
 
+    TyrusSupport(
+            WebSocketEngine engine,
+            Set<Class<?>> endpointClasses,
+            Set<ServerEndpointConfig> endpointConfigs,
+            Set<Extension> extensions) {
+        this.engine = engine;
+        this.endpointClasses = endpointClasses;
+        this.endpointConfigs = endpointConfigs;
+        this.extensions = extensions;
+    }
 
     /**
      * Register our WebSocket handler for all routes. Once a request is received,
