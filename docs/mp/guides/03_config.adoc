@@ -359,7 +359,7 @@ curl http://localhost:8080/greet
 Helidon offers a variety of methods to access in-memory configuration.  These can be categorized as _key access_ or _tree navigation_.
 You have been using _key access_ for all of the examples to this point.  For example `app.greeting` is accessing
 the `greeting` child node of the `app` parent node.  There are many options for access this data using navigation
-methods as described in <<se/config/03_hierarchical-features.adoc,Hierarchical Config>> and <<se/config/06_advanced-configuration.adoc,Advanced Config>>.
+methods as described in <<se/config/03_hierarchical-features.adoc,Hierarchical Configuration>> and <<se/config/06_advanced-configuration.adoc,Advanced Configuration>>.
 This simple example below demonstrates how to access a child node as a detached configuration sub-tree.
 
 [source,yaml]

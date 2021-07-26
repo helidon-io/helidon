@@ -1,0 +1,271 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon MP Testing with JUnit 5 Guide
+:h1Prefix: MP
+:description: Helidon testing with JUnit 5
+:keywords: helidon, testing, microprofile, guide, JUnit 
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+
+This guide describes how to write and execute tests for your MicroProfile applications in a JUnit 5 environment using optimized customizations.
+
+== What You Need
+
+For this 20 minute tutorial, you will need the following:
+include::{common-page-prefix-inc}[tag=common-prereqs]
+
+
+== Dependencies
+To start using this feature, add the following dependencies to the testing module:
+
+[source,xml]
+.Maven dependencies
+----
+<dependencies>
+   <dependency>
+      <groupId>io.helidon.microprofile.tests</groupId>
+      <artifactId>helidon-microprofile-tests-junit5</artifactId>
+      <scope>test</scope>
+   </dependency>
+   <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.5.2</version>
+   </dependency>
+</dependencies>
+----
+
+
+
+== Create a Sample Helidon MP Project
+In this guide we will use the https://helidon.io/docs/v2/#/mp/guides/02_quickstart[Helidon MP Quick Start] project in our examples. 
+
+This application provides an endpoint `/greet`, and we want to make sure this endpoint is available and returns expected value.
+
+=== Create a Test Class
+
+First you'll need to create a test class with an empty test method, and annotate it with `@HelidonTest`:
+
+[source,java]
+.Test Class
+----
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+
+import org.junit.jupiter.api.Test;
+
+@HelidonTest
+class GreetTest {
+    @Test
+    void testDefaultGreeting() {
+    } 
+}
+----
+
+The `@HelidonTest` annotation will cause the test extension to start a Helidon MicroProfile server so that you do not need to manage the server lifecycle in your test. The container is initialized once before the test class is instantiated, and shut down after the last test runs.
+
+You can see this in the test output:
+
+****
+`INFO io.helidon.microprofile.server.ServerCdiExtension: Server started on http://localhost:56293 (and all other host addresses) in 1893 milliseconds (since JVM startup)`.
+****
+
+
+NOTE: The `@HelidonTest` annotation uses a random port regardless of the port configured in the application.yaml.
+
+
+
+
+=== Inject a WebTarget
+
+The test is only useful if it invokes the server and verifies the result. To support testing, you can inject a `WebTarget` that is configured for the currently running server (it can also be a parameter to a test method). We can use the target to invoke our endpoint and validate the result.
+
+
+[source,java]
+.Updated Class with webTarget
+----
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@HelidonTest
+class GreetTest {
+    @Inject
+    WebTarget webTarget;
+
+    @Test
+    void testDefaultGreeting() {
+        JsonObject jsonObject = webTarget.path("/greet")
+                .request()
+                .get(JsonObject.class);
+
+        String expected = "Hello World!";
+        String actual = jsonObject.getString("message");
+        assertEquals(expected, actual, "Message in JSON"); 
+    }
+}
+----
+
+The test is now complete and verifies the message.
+
+=== Customize the Testing Extension
+
+The testing extension supports a few additional annotations that allow for finer control of the test execution.
+
+
+.Optional Extension Annotations
+[width="70%",options="header"]
+|====================
+| Annotation | Description 
+| `@HelidonTest(resetPerTest = true)` | Resets the container for each method.
+
+This is useful when we want to modify configuration or beans between executions. In such a case, injection into fields is not possible, as we would need a different instance for each test.
+| `@AddConfig(key = "app.greeting", value = "Unite")` |  Defines a new configuration (either on class level, or method level) by adding a single configuration key/value.
+| `@Configuration(configSources = "test-config.properties")` | Adds a whole config source from classpath. 
+|====================
+
+Here's an example showing how these approaches are used to execute the same endpoint with different configuration:
+
+[source,java]
+----
+@HelidonTest(resetPerTest = true)
+class GreetTest {
+    @Test
+    void testDefaultGreeting(WebTarget webTarget) {
+        validate(webTarget, "/greet", "Hello World!");
+    }
+
+    @Test
+    @AddConfig(key = "app.greeting", value = "Unite")
+    void testConfiguredGreeting(WebTarget webTarget) {
+        validate(webTarget, "/greet", "Unite World!");
+    }
+
+    private void validate(WebTarget webTarget,
+                          String path,
+                          String expected) {
+
+        JsonObject jsonObject = webTarget.path(path)
+                .request()
+                .get(JsonObject.class);
+
+        String actual = jsonObject.getString("message");
+        assertEquals(expected, actual, "Message in JSON");
+    }
+}
+----
+
+=== Use Beans for Testing
+
+If you prefer to use only beans for testing, and want to add a different bean for each test, then you must use the `@AddBean` annotation. This cannot be achieved by CDI discovery because if we place `META-INF/beans.xml` on the classpath, then all of our beans would be added.
+
+[source,java]
+----
+@AddBean(TestBean.class)
+----
+
+By default the bean is added to the container with scope set to `ApplicationScoped`. You can customize scope either by annotating the bean class with another scope or through the annotation:
+
+[source, java]
+----
+@AddBean(value = TestBean.class, scope = Dependent.class)
+----
+
+
+NOTE: This annotation can also be placed on a method when running in `resetPerTest` mode.
+
+=== Add Test Extension 
+
+When a custom bean is not enough, you may want to extend the CDI with a test-only `Extension`. Once again, if we use the standard way of doing this, we would need to create a `META-INF/services` record that would be picked up by every test class.
+
+For this purpose, we provide the following annotation which adds the extension to the container and allows you to modify its behavior as a usual CDI Portable Extension:
+
+[source, java]
+----
+@AddExtension(TestExtension.class)
+----
+
+
+=== Disable Discovery
+
+If you want to disable discovery and only add custom extensions and beans, then use the following annotation:
+
+[source, java]
+----
+@DisableDiscovery
+----
+
+NOTE: This annotation is typically used in conjunction with `@AddBeans` and/or `@AddExtension`. As you have seen in standard test output, by default Helidon starts with the dependencies defined in pom.xml.
+
+
+== Write a Basic Test
+
+If you want just the basic test features enabled, then you only have to add a few required extensions and classes to your test. The following example uses only those extensions and classes required to run a bean that injects configuration value:
+
+[source, java]
+----
+import javax.inject.Inject;
+
+import io.helidon.microprofile.config.ConfigCdiExtension;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddConfig;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@HelidonTest
+@DisableDiscovery
+@AddExtension(ConfigCdiExtension.class)
+@AddBean(GreetTest.ConfiguredBean.class)
+@AddConfig(key = "test.message", value = "Hello Guide!")
+class GreetTest {
+    @Inject
+    ConfiguredBean bean;
+
+    @Test
+    void testBean() {
+        assertEquals("Hello Guide!", bean.message());
+    }
+
+    public static class ConfiguredBean {
+        @Inject
+        @ConfigProperty(name = "test.message")
+        private String message;
+
+        String message() {
+            return message;
+        }
+    }
+}
+----
+
+== Summary
+
+This guide demonstrated how to create tests for MicroProfile applications in a JUnit 5 environment. It described some useful customizations that can be added to your testing extension and allow you to configure test outcomes for your Helidon MP applications. 
+
+Refer to the following references for additional information:
+
+* https://junit.org/junit5/docs/current/user-guide/[JUnit 5 User Guide]
+* <<mp/testing/01_testing.adoc, Testing with JUnit 5>>
+
+
+ 
+
+

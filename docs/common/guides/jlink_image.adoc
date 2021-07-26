@@ -59,7 +59,7 @@ https://en.wikipedia.org/wiki/List_of_Linux_distributions#Debian-based[Debian ba
 in the `openjdk-*-jdk-headless` packages.
 
 
-== Generate The Project
+== Generate the Project
 
 Generate the project using the Helidon {helidon-uc-flavor} Quickstart Maven archetype.
 
@@ -186,7 +186,7 @@ docker run --rm -p 8080:8080 helidon-quickstart-{helidon-lc-flavor}-jri:latest
 
 You can exercise the application's endpoints as before.
 
-== When should you use a custom runtime image?
+== Using Custom Runtime Images
 
 Custom runtime images are ideal for use when you want all of the runtime performance of
 the JDK JVM in a reasonably compact form.
