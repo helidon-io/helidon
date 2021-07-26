@@ -27,6 +27,7 @@ import io.helidon.config.Config;
 import io.helidon.tracing.TracerBuilder;
 
 import io.jaegertracing.Configuration;
+import io.jaegertracing.internal.JaegerTracer;
 import io.opentracing.Tracer;
 import io.opentracing.noop.NoopTracerFactory;
 import io.opentracing.util.GlobalTracer;
@@ -444,7 +445,9 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                         "Configuration must at least contain the 'service' key ('tracing.service` in MP) with service name");
             }
 
-            result = jaegerConfig().getTracer();
+            JaegerTracer.Builder builder = jaegerConfig().getTracerBuilder();
+            builder.withScopeManager(new JaegerScopeManager());     // use our scope manager
+            result = builder.build();
             LOGGER.info(() -> "Creating Jaeger tracer for '" + serviceName + "' configured with " + protocol + "://"
                     + host + ":" + port);
         } else {
