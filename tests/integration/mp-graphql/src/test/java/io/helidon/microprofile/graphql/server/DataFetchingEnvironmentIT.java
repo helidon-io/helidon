@@ -31,7 +31,7 @@ import io.helidon.microprofile.tests.junit5.AddBean;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for {@link graphql.ExecutionInput} injection.
+ * Tests for {@link graphql.schema.DataFetchingEnvironment} injection.
  */
 @AddBean(DataFetchingEnvironmentQueriesAndMutations.class)
 class DataFetchingEnvironmentIT extends AbstractGraphQlCdiIT {
@@ -46,11 +46,11 @@ class DataFetchingEnvironmentIT extends AbstractGraphQlCdiIT {
     public void testWithNoArgs() throws Exception {
         setupIndex(indexFileName, DataFetchingEnvironmentQueriesAndMutations.class);
         InvocationHandler executionContext = createInvocationHandler();
-        String query = "query { testExecutionInputNoArgs }";
+        String query = "query { testNoArgs }";
         Map<String, Object> mapResults = getAndAssertResult(executionContext.execute(query));
         assertThat(mapResults, is(notNullValue()));
-        String results = (String) mapResults.get("testExecutionInputNoArgs");
-        assertThat(results, is("testExecutionInputNoArgs"));
+        String results = (String) mapResults.get("testNoArgs");
+        assertThat(results, is("testNoArgs"));
     }
 
     @Test
@@ -59,11 +59,11 @@ class DataFetchingEnvironmentIT extends AbstractGraphQlCdiIT {
         setupIndex(indexFileName, DataFetchingEnvironmentQueriesAndMutations.class);
         InvocationHandler executionContext = createInvocationHandler();
 
-        String query = "query { testExecutionInputWithArgs(name: \"Tim\") }";
+        String query = "query { testWithArgs(name: \"Tim\") }";
         Map<String, Object> mapResults = getAndAssertResult(executionContext.execute(query));
         assertThat(mapResults, is(notNullValue()));
-        String results = (String) mapResults.get("testExecutionInputWithArgs");
-        assertThat(results, is("Tim" + "testExecutionInputWithArgs"));
+        String results = (String) mapResults.get("testWithArgs");
+        assertThat(results, is("Tim" + "testWithArgs"));
     }
 
     @Test
@@ -72,10 +72,10 @@ class DataFetchingEnvironmentIT extends AbstractGraphQlCdiIT {
         setupIndex(indexFileName, DataFetchingEnvironmentQueriesAndMutations.class);
         InvocationHandler executionContext = createInvocationHandler();
 
-        String query = "query { testExecutionInputWithArgs2(name1: \"Tim\", name2: \"Tim\") }";
+        String query = "query { testWithArgs2(name1: \"Tim\", name2: \"Tim\") }";
         Map<String, Object> mapResults = getAndAssertResult(executionContext.execute(query));
         assertThat(mapResults, is(notNullValue()));
-        String results = (String) mapResults.get("testExecutionInputWithArgs2");
-        assertThat(results, is("TimTim" + "testExecutionInputWithArgs2" ));
+        String results = (String) mapResults.get("testWithArgs2");
+        assertThat(results, is("TimTim" + "testWithArgs2" ));
     }
 }

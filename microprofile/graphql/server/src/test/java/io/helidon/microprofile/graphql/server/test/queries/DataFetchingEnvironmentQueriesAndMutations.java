@@ -35,17 +35,17 @@ public class DataFetchingEnvironmentQueriesAndMutations {
     }
 
     @Query
-    public String testExecutionInputNoArgs(DataFetchingEnvironment env) {
+    public String testNoArgs(DataFetchingEnvironment env) {
         return env.getField().getName();
     }
 
     @Query
-    public String testExecutionInputWithArgs(@Name("name") String name, DataFetchingEnvironment env) {
+    public String testWithArgs(@Name("name") String name, DataFetchingEnvironment env) {
         return name + env.getField().getName();
     }
 
     @Query
-    public String testExecutionInputWithArgs2(@Name("name1") String name1, DataFetchingEnvironment env, @Name("name2") String name2) {
+    public String testWithArgs2(@Name("name1") String name1, DataFetchingEnvironment env, @Name("name2") String name2) {
         return name1 + name2 + env.getField().getName();
     }
 }

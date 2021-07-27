@@ -81,7 +81,7 @@ class SchemaArgument extends AbstractDescriptiveElement implements ElementGenera
     private Class<?> originalArrayType;
 
     /**
-     * Indicates if the argument type is the {@link graphql.ExecutionInput} and must be ignored in schema generation.
+     * Indicates if the argument type is the {@link DataFetchingEnvironment} and must be ignored in schema generation.
      */
     private boolean isDataFetchingEnvironment;
 

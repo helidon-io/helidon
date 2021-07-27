@@ -142,7 +142,7 @@ class SchemaFieldDefinition extends AbstractDescriptiveElement implements Elemen
         StringBuilder sb = new StringBuilder(getSchemaElementDescription(format()))
                 .append(name());
 
-        // determine if there are any arguments that are ExecutionInput as they should
+        // determine if there are any arguments that are DataFetcherEnvironment as they should
         // not be included as standard types
         boolean hasSchemaArguments = listSchemaArguments.stream().anyMatch(a -> !a.isDataFetchingEnvironment());
 

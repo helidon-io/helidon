@@ -16,7 +16,6 @@
 
 package io.helidon.graphql.server;
 
-
 /**
  * GraphQL execution context to support partial results.
  */
