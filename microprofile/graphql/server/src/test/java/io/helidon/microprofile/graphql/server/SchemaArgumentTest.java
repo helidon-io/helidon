@@ -121,7 +121,7 @@ class SchemaArgumentTest {
     }
 
     @Test
-    public void testSchemaArgumentGenerationWithExecutionInput() {
+    public void testSchemaArgumentGenerationWithDataFetchingEnvironment() {
         SchemaArgument schemaArgument = SchemaArgument.builder()
                 .argumentName("test")
                 .dataFetchingEnvironment(true)
