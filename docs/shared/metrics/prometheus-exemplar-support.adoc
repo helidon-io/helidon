@@ -89,7 +89,7 @@ application_globalRequestTracker_elapsedTime_seconds 0.030309068 # {trace_id="da
 Helidon adds an exemplar to the output for each statistical value--such as minimum, maximum, mean, and quantiles--for histograms, timers, simple times, and for counters. The exemplar information describes a single, actual sample that is representative of the statistical value.
 Helidon chooses the representative examplar for each value using information that is already recorded for each type of metric:
 
-. If a metric necessarily corresponds to a specific sample--for example a minimum or maximum--Helidon associates a sample that has that exact value as the exemmplar for the metric.
+. If a metric necessarily corresponds to a specific sample--for example a minimum or maximum--Helidon associates a sample that has that exact value as the exemplar for the metric.
 . If a metric collects samples into bins (quantiles), Helidon associates a sample from that bin with the bin's output.
 . If a metric maintains running statistics (counts, totals), Helidon associates the most recent sample for that metric.
 . If Helidon computes a metric's value from a number of samples--for example, mean--Helidon associates a sample for which its value is at least as close as other samples to the statistical calculation.
