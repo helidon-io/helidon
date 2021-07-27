@@ -54,28 +54,33 @@
 </suppress>
 
 <!-- GraalVM -->
-<!-- This suppresses multiple CVEs related to old versions of the JDK -->
+<!-- This suppresses multiple CVEs related to running untrusted Java code.
+     The descriptions of these CVEs have the statement:
+       This vulnerability does not apply to Java deployments, typically in servers, that load and run only trusted code"
+     Therefore these do not apply to Helidon's use of GraalVM
+-->
 <suppress>
    <notes><![CDATA[
-   file name: truffle-nfi-21.1.0.jar
+   file name: graal-sdk-21.1.0.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\.truffle/truffle\-nfi@.*$</packageUrl>
-   <cpe>cpe:/a:oracle:graalvm</cpe>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
+   <cve>CVE-2021-2341</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: truffle-nfi-21.1.0.jar
+   file name: graal-sdk-21.1.0.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\.truffle/truffle\-nfi@.*$</packageUrl>
-   <cpe>cpe:/a:oracle:openjdk</cpe>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
+   <cve>CVE-2021-2369</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: truffle-nfi-21.1.0.jar
+   file name: graal-sdk-21.1.0.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\.truffle/truffle\-nfi@.*$</packageUrl>
-   <cpe>cpe:/a:sun:openjdk</cpe>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
+   <cve>CVE-2021-2388</cve>
 </suppress>
+
 
 <!-- junit 4 -->
 <!-- This CVE is fixed in junit 4.13.1 and only applies when using Java 1.6
