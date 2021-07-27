@@ -124,11 +124,11 @@ class SchemaArgumentTest {
     public void testSchemaArgumentGenerationWithExecutionInput() {
         SchemaArgument schemaArgument = SchemaArgument.builder()
                 .argumentName("test")
-                .executionInput(true)
+                .dataFetchingEnvironment(true)
                 .argumentType("String")
                 .build();
 
-        assertThat(schemaArgument.isExecutionInput(), is(true));
+        assertThat(schemaArgument.isDataFetchingEnvironment(), is(true));
     }
 
     @Test

@@ -16,7 +16,7 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
-import graphql.ExecutionInput;
+import graphql.schema.DataFetchingEnvironment;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -25,27 +25,27 @@ import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 
 /**
- * Class that holds queries and mutations using {@link graphql.ExecutionInput}.
+ * Class that holds queries and mutations using {@link DataFetchingEnvironment}.
  */
 @GraphQLApi
 @ApplicationScoped
-public class ExecutionInputQueriesAndMutations {
+public class DataFetchingEnvironmentQueriesAndMutations {
 
-    public ExecutionInputQueriesAndMutations() {
+    public DataFetchingEnvironmentQueriesAndMutations() {
     }
 
     @Query
-    public String testExecutionInputNoArgs(ExecutionInput input) {
-        return input.getQuery();
+    public String testExecutionInputNoArgs(DataFetchingEnvironment env) {
+        return env.getField().getName();
     }
 
     @Query
-    public String testExecutionInputWithArgs(@Name("name") String name, ExecutionInput input) {
-        return name + input.getQuery();
+    public String testExecutionInputWithArgs(@Name("name") String name, DataFetchingEnvironment env) {
+        return name + env.getField().getName();
     }
 
     @Query
-    public String testExecutionInputWithArgs2(@Name("name1") String name1, ExecutionInput input, @Name("name2") String name2) {
-        return name1 + name2 + input.getQuery();
+    public String testExecutionInputWithArgs2(@Name("name1") String name1, DataFetchingEnvironment env, @Name("name2") String name2) {
+        return name1 + name2 + env.getField().getName();
     }
 }

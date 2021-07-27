@@ -92,8 +92,6 @@ class InvocationHandlerImpl implements InvocationHandler {
                 .variables(variables)
                 .build();
 
-        context.setExecutionInput(executionInput);
-
         ExecutionResult result = graphQl.execute(executionInput);
         List<GraphQLError> errors = result.getErrors();
 

@@ -18,11 +18,8 @@ package io.helidon.graphql.server;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import graphql.ExecutionInput;
-
 class ExecutionContextImpl implements ExecutionContext {
     private final AtomicReference<Throwable> currentThrowable = new AtomicReference<>();
-    private final AtomicReference<ExecutionInput> currentExecutionInput = new AtomicReference<>();
 
     ExecutionContextImpl() {
     }
@@ -40,15 +37,5 @@ class ExecutionContextImpl implements ExecutionContext {
     @Override
     public boolean hasPartialResultsException() {
         return currentThrowable.get() != null;
-    }
-
-    @Override
-    public void setExecutionInput(ExecutionInput input) {
-        currentExecutionInput.set(input);
-    }
-
-    @Override
-    public ExecutionInput executionInput() {
-        return currentExecutionInput.get();
     }
 }

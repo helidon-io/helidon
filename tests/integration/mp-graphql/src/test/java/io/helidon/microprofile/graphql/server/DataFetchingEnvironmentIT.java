@@ -25,7 +25,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.helidon.graphql.server.InvocationHandler;
-import io.helidon.microprofile.graphql.server.test.queries.ExecutionInputQueriesAndMutations;
+import io.helidon.microprofile.graphql.server.test.queries.DataFetchingEnvironmentQueriesAndMutations;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
@@ -33,50 +33,49 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests for {@link graphql.ExecutionInput} injection.
  */
-@AddBean(ExecutionInputQueriesAndMutations.class)
-class ExecutionInputIT extends AbstractGraphQlCdiIT {
+@AddBean(DataFetchingEnvironmentQueriesAndMutations.class)
+class DataFetchingEnvironmentIT extends AbstractGraphQlCdiIT {
 
     @Inject
-    ExecutionInputIT(GraphQlCdiExtension graphQlCdiExtension) {
+    DataFetchingEnvironmentIT(GraphQlCdiExtension graphQlCdiExtension) {
         super(graphQlCdiExtension);
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testExecutionInputNoArgs() throws Exception {
-        setupIndex(indexFileName, ExecutionInputQueriesAndMutations.class);
+    public void testWithNoArgs() throws Exception {
+        setupIndex(indexFileName, DataFetchingEnvironmentQueriesAndMutations.class);
         InvocationHandler executionContext = createInvocationHandler();
         String query = "query { testExecutionInputNoArgs }";
         Map<String, Object> mapResults = getAndAssertResult(executionContext.execute(query));
         assertThat(mapResults, is(notNullValue()));
         String results = (String) mapResults.get("testExecutionInputNoArgs");
-        assertThat(results, is(query));
+        assertThat(results, is("testExecutionInputNoArgs"));
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testExecutionInputWithArgs() throws Exception {
-        setupIndex(indexFileName, ExecutionInputQueriesAndMutations.class);
+    public void testWithArgs() throws Exception {
+        setupIndex(indexFileName, DataFetchingEnvironmentQueriesAndMutations.class);
         InvocationHandler executionContext = createInvocationHandler();
 
         String query = "query { testExecutionInputWithArgs(name: \"Tim\") }";
         Map<String, Object> mapResults = getAndAssertResult(executionContext.execute(query));
         assertThat(mapResults, is(notNullValue()));
         String results = (String) mapResults.get("testExecutionInputWithArgs");
-        assertThat(results, is("Tim" + query));
+        assertThat(results, is("Tim" + "testExecutionInputWithArgs"));
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testExecutionInputWithArgs2() throws Exception {
-        setupIndex(indexFileName, ExecutionInputQueriesAndMutations.class);
+    public void testWithArgs2() throws Exception {
+        setupIndex(indexFileName, DataFetchingEnvironmentQueriesAndMutations.class);
         InvocationHandler executionContext = createInvocationHandler();
 
         String query = "query { testExecutionInputWithArgs2(name1: \"Tim\", name2: \"Tim\") }";
         Map<String, Object> mapResults = getAndAssertResult(executionContext.execute(query));
         assertThat(mapResults, is(notNullValue()));
         String results = (String) mapResults.get("testExecutionInputWithArgs2");
-        assertThat(results, is("TimTim" + query ));
+        assertThat(results, is("TimTim" + "testExecutionInputWithArgs2" ));
     }
-
 }

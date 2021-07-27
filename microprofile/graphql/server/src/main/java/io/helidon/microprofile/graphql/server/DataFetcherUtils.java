@@ -47,7 +47,6 @@ import javax.enterprise.inject.spi.CDI;
 
 import io.helidon.graphql.server.ExecutionContext;
 
-import graphql.ExecutionInput;
 import graphql.GraphQLException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -123,16 +122,14 @@ class DataFetcherUtils {
             }
 
             ExecutionContext executionContext;
-            // check for a single ExecutionInput parameter as args will be zero
+            // check for a single DataFetchingEnvironment parameter as args will be zero
             Parameter[] parameters = method.getParameters();
-            if (parameters.length == 1 && parameters[0].getType().equals(ExecutionInput.class)) {
-                executionContext = environment.getContext();
-                listArgumentValues.add(executionContext.executionInput());
+            if (parameters.length == 1 && parameters[0].getType().equals(DataFetchingEnvironment.class)) {
+                listArgumentValues.add(environment);
             } else if (args.length > 0) {
                 for (SchemaArgument argument : args) {
-                    if (argument.isExecutionInput()) {
-                         executionContext = environment.getContext();
-                         listArgumentValues.add(executionContext.executionInput());
+                    if (argument.isDataFetchingEnvironment()) {
+                         listArgumentValues.add(environment);
                     } else {
                         // ensure a Map is not used as an input type
                         Class<?> originalType = argument.originalType();

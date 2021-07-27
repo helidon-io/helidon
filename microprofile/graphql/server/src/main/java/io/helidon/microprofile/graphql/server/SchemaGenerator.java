@@ -44,9 +44,9 @@ import javax.json.bind.annotation.JsonbProperty;
 
 import io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DiscoveredMethod;
 
-import graphql.ExecutionInput;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
+import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.PropertyDataFetcher;
 import org.eclipse.microprofile.graphql.Description;
@@ -551,7 +551,7 @@ class SchemaGenerator {
                 a.argumentType(typeName);
                 String returnType = a.argumentType();
 
-                if (originalTypeName.equals(returnType) && !ID.equals(returnType) && !a.isExecutionInput()) {
+                if (originalTypeName.equals(returnType) && !ID.equals(returnType) && !a.isDataFetchingEnvironment()) {
                     // type name has not changed, so this must be either a Scalar, Enum or a Type
                     // Note: Interfaces are not currently supported as InputTypes in 1.0 of the Specification
                     // if is Scalar or enum then add to unresolved types and they will be dealt with
@@ -1243,7 +1243,7 @@ class SchemaGenerator {
                         .defaultValue(argumentDefaultValue)
                         .originalType(paramType)
                         .description(getDescription(parameter.getAnnotation(Description.class)))
-                        .executionInput(paramType.equals(ExecutionInput.class))
+                        .dataFetchingEnvironment(paramType.equals(DataFetchingEnvironment.class))
                         .build();
 
                 String[] argumentFormat = getFormattingAnnotation(parameter);

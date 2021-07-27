@@ -144,13 +144,13 @@ class SchemaFieldDefinition extends AbstractDescriptiveElement implements Elemen
 
         // determine if there are any arguments that are ExecutionInput as they should
         // not be included as standard types
-        boolean hasSchemaArguments = listSchemaArguments.stream().anyMatch(a -> !a.isExecutionInput());
+        boolean hasSchemaArguments = listSchemaArguments.stream().anyMatch(a -> !a.isDataFetchingEnvironment());
 
         if (hasSchemaArguments) {
             sb.append(OPEN_PARENTHESES)
                     .append(NEWLINE)
                     .append(listSchemaArguments.stream()
-                                    .filter(a -> !a.isExecutionInput())
+                                    .filter(a -> !a.isDataFetchingEnvironment())
                                     .map(SchemaArgument::getSchemaAsString)
                                     .collect(Collectors.joining(COMMA_SPACE + NEWLINE)));
             sb.append(NEWLINE).append(CLOSE_PARENTHESES);
