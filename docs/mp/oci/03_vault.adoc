@@ -104,7 +104,7 @@ public class VaultResource {
 ----
 
 <1> `OciVault` support class is configured and injected automatically
-<2> <3> <4> <5> Properties a read from the configuration
+<2> <3> <4> <5> Properties read from the configuration
 
 == OCI Vault Usage
 

@@ -69,7 +69,7 @@ Current configuration requires `~/.oci/config` to be available in the home folde
 
 The OCIDs can be set up and found in OCI under Security tab.
 
-image::oci/ocivault.png[OCI Vault, align="center"]
+image::oci/vaultkey.png[OCI Vault, align="center"]
 
 Next, these values should be read and provided to `VaultService`:
 
@@ -168,7 +168,7 @@ private void sign(ServerRequest req, ServerResponse res) {
 }
 ----
 
-=== Verification of a signature
+==== Verification of a signature
 
 To verify the correctness of the signature, submit a `GET` request to `/verify` endpoint:
 
@@ -190,7 +190,7 @@ private void verify(ServerRequest req, ServerResponse res) {
 }
 ----
 
-=== Creating a signature
+==== Creating a Signature
 
 To create a secret with a provided name, submit a `GET` request to `/secret`:
 
@@ -210,7 +210,7 @@ private void createSecret(ServerRequest req, ServerResponse res, String secretTe
 }
 ----
 
-=== Getting a signature
+==== Getting a Signature
 
 To get a secret by its OCID, submit a `GET` request to `/secret`:
 
@@ -231,7 +231,7 @@ private void getSecret(ServerRequest req, ServerResponse res) {
 }
 ----
 
-=== Deleting a signature
+==== Deleting a Signature
 
 To delete a secret, a `DELETE` request to `/secret` should be used:
 
