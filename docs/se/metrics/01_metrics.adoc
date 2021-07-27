@@ -30,6 +30,8 @@ Helidon SE provides the following to support metrics:
 2. A base set of metrics, available at `/metrics/base`, as specified by the MicroProfile Metrics specification.
 3. A set of Helidon-specific metrics, available at `/metrics/vendor`
 
+NOTE: Helidon-provided endpoints for `/metrics` do their work synchronously, using the same thread on which the request arrived via Netty. To avoid performance degradation, avoid including long-running code that can be invoked by these handlers while Helidon is responding to the metric.
+
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
