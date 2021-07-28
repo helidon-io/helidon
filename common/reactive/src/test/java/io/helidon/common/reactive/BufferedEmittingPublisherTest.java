@@ -27,16 +27,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
-
-import org.junit.jupiter.api.Test;
 
 /**
  * The BufferedEmittingPublisherTest.
@@ -168,7 +167,7 @@ public class BufferedEmittingPublisherTest {
         try {
             publisher.fail(new IllegalStateException("foo!"));
             fail("an exception should have been thrown");
-        } catch(IllegalStateException ex) {
+        } catch (IllegalStateException ex) {
             assertThat(ex.getCause(), is(not(nullValue())));
             assertThat(ex.getCause(), is(instanceOf(UnsupportedOperationException.class)));
         }
@@ -199,8 +198,7 @@ public class BufferedEmittingPublisherTest {
         publisher.emit(15L);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(not(nullValue())));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
-        assertThat(subscriber.getLastError().getCause(), is(instanceOf(UnsupportedOperationException.class)));
+        assertThat(subscriber.getLastError(), is(instanceOf(UnsupportedOperationException.class)));
     }
 
     @Test
@@ -238,7 +236,31 @@ public class BufferedEmittingPublisherTest {
             }
         };
         publisher.subscribe(subscriber);
-        assertThrows(IllegalStateException.class, () -> publisher.emit(0L));
+        publisher.emit(0L);
+        assertThat(publisher.bufferSize(), is(equalTo(0)));
+        assertThat(publisher.isCancelled(), is(equalTo(true)));
+    }
+
+    @Test
+    void concurrentSubscribe() {
+        AtomicInteger cnt = new AtomicInteger();
+        ExecutorService exec = Executors.newFixedThreadPool(5);
+        try {
+            for (int i = 0; i < 10_000_000; i++) {
+                cnt.set(0);
+                BufferedEmittingPublisher<Integer> flatMapped = new BufferedEmittingPublisher<>();
+                exec.submit(() -> {
+                    flatMapped.emit(1);
+                    flatMapped.complete();
+                });
+                Multi.create(flatMapped)
+                        .forEach(integer -> cnt.incrementAndGet())
+                        .await();
+                assertThat(cnt.get(), is(equalTo(1)));
+            }
+        } finally {
+            exec.shutdown();
+        }
     }
 
     @Test

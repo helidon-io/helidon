@@ -36,9 +36,9 @@ class HttpRequestScopedPublisher extends BufferedEmittingPublisher<DataChunk> {
         this.holdingQueue = holdingQueue;
     }
 
-    public int emit(ByteBuf data) {
+    public void emit(ByteBuf data) {
         try {
-            return super.emit(new ByteBufRequestChunk(data, holdingQueue));
+            super.emit(new ByteBufRequestChunk(data, holdingQueue));
         } finally {
             holdingQueue.release();
         }
