@@ -168,7 +168,7 @@ private void sign(ServerRequest req, ServerResponse res) {
 }
 ----
 
-==== Verification of a signature
+==== Verification of a Signature
 
 To verify the correctness of the signature, submit a `GET` request to `/verify` endpoint:
 
