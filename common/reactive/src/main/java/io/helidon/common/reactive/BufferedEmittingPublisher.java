@@ -106,7 +106,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
             }
         });
         subscriber = sub;
-        drain(); // assert: contenders lock is already acquired
+        drain(sub); // assert: contenders lock is already acquired
     }
 
     /**
@@ -219,7 +219,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
                 // assert: fail is re-entrant (will succeed even while the contenders lock has been acquired)
                 abort(re);
             } finally {
-                drain();
+                drain(null);
             }
             return;
         }
@@ -227,7 +227,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         // assert: if ignorePending, buffer cleanup will happen in the future
         buffer.add(item);
         if (locked) {
-            drain();
+            drain(null);
         } else {
             maybeDrain();
         }
@@ -413,7 +413,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         // assert: if not started, will not post too many emit() and complete() to overflow the
         //         counter
         if (contenders.getAndIncrement() == 0) {
-            drain();
+            drain(null);
         }
     }
 
@@ -427,14 +427,18 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     //     - cancelled
     //   - requested
     //   - buffer contents
-    private void drain() {
+    private void drain(Flow.Subscriber<? super T> sub) {
         IllegalStateException ise = null;
         for (int cont = 1; cont > 0; cont = contenders.addAndGet(-cont)) {
             boolean terminateNow = ignorePending;
             try {
                 while (!terminateNow && requested.get() > emitted && !buffer.isEmpty()) {
                     T item = buffer.poll();
-                    subscriber.onNext(item);
+                    if (subscriber == null && sub != null) {
+                        sub.onNext(item);
+                    } else {
+                        subscriber.onNext(item);
+                    }
                     if (onEmitCallback != null) {
                         onEmitCallback.accept(item);
                     }
