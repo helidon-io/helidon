@@ -60,9 +60,8 @@ public final class Main {
     /**
      * Start the server.
      * @return the created WebServer instance
-     * @throws IOException if there are problems reading logging properties
      */
-    public static Single<WebServer> startServer() throws IOException {
+    public static Single<WebServer> startServer() {
         // load logging configuration
         LogConfig.configureRuntime();
 
