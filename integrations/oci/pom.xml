@@ -39,5 +39,6 @@
         <module>objectstorage-health</module>
         <module>vault</module>
         <module>cdi</module>
+        <module>atp</module>
     </modules>
 </project>
