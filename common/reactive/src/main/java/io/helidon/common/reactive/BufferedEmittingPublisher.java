@@ -106,7 +106,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
             }
         });
         subscriber = sub;
-        drain(sub); // assert: contenders lock is already acquired
+        drain(); // assert: contenders lock is already acquired
     }
 
     /**
@@ -219,7 +219,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
                 // assert: fail is re-entrant (will succeed even while the contenders lock has been acquired)
                 abort(re);
             } finally {
-                drain(null);
+                drain();
             }
             return;
         }
@@ -227,7 +227,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         // assert: if ignorePending, buffer cleanup will happen in the future
         buffer.add(item);
         if (locked) {
-            drain(null);
+            drain();
         } else {
             maybeDrain();
         }
@@ -364,7 +364,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         //
         // assert: once isCompleted becomes true, it stays true
         // question: what should it be, if complete() was called, but not onSubscribe()?
-        return buffer.isEmpty() && state.get() > 1;
+        return state.get() > 1 && buffer.isEmpty();
     }
 
     /**
@@ -413,7 +413,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         // assert: if not started, will not post too many emit() and complete() to overflow the
         //         counter
         if (contenders.getAndIncrement() == 0) {
-            drain(null);
+            drain();
         }
     }
 
@@ -427,18 +427,14 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     //     - cancelled
     //   - requested
     //   - buffer contents
-    private void drain(Flow.Subscriber<? super T> sub) {
+    private void drain() {
         IllegalStateException ise = null;
         for (int cont = 1; cont > 0; cont = contenders.addAndGet(-cont)) {
             boolean terminateNow = ignorePending;
             try {
                 while (!terminateNow && requested.get() > emitted && !buffer.isEmpty()) {
                     T item = buffer.poll();
-                    if (subscriber == null && sub != null) {
-                        sub.onNext(item);
-                    } else {
-                        subscriber.onNext(item);
-                    }
+                    subscriber.onNext(item);
                     if (onEmitCallback != null) {
                         onEmitCallback.accept(item);
                     }
@@ -458,6 +454,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
                     // assert: cleanup in finally
                     if (!cancelled) {
                         cancelled = true;
+                        ignorePending = true;
                         if (error != null) {
                             subscriber.onError(error);
                         } else {

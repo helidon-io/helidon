@@ -246,14 +246,14 @@ public class BufferedEmittingPublisherTest {
         AtomicInteger cnt = new AtomicInteger();
         ExecutorService exec = Executors.newFixedThreadPool(5);
         try {
-            for (int i = 0; i < 10_000_000; i++) {
+            for (int i = 0; i < 5_000_000; i++) {
                 cnt.set(0);
-                BufferedEmittingPublisher<Integer> flatMapped = new BufferedEmittingPublisher<>();
+                BufferedEmittingPublisher<Integer> bep = new BufferedEmittingPublisher<>();
                 exec.submit(() -> {
-                    flatMapped.emit(1);
-                    flatMapped.complete();
+                    bep.emit(1);
+                    bep.complete();
                 });
-                Multi.create(flatMapped)
+                Multi.create(bep)
                         .forEach(integer -> cnt.incrementAndGet())
                         .await();
                 assertThat(cnt.get(), is(equalTo(1)));
@@ -270,12 +270,12 @@ public class BufferedEmittingPublisherTest {
         ExecutorService exec = Executors.newFixedThreadPool(32);
         Single<Void> promise = Multi.range(0, STREAM_SIZE)
                 .flatMap(it -> {
-                    BufferedEmittingPublisher<Integer> flatMapped = new BufferedEmittingPublisher<>();
+                    BufferedEmittingPublisher<Integer> bep = new BufferedEmittingPublisher<>();
                     exec.submit(() -> {
-                        flatMapped.emit(it);
-                        flatMapped.complete();
+                        bep.emit(it);
+                        bep.complete();
                     });
-                    return flatMapped;
+                    return bep;
                 })
                 .forEach(unused -> cnt.incrementAndGet());
 
