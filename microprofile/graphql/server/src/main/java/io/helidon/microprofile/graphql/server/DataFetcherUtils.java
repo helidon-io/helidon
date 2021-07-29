@@ -20,6 +20,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.NumberFormat;
@@ -120,28 +121,37 @@ class DataFetcherUtils {
                 }
             }
 
-            if (args.length > 0) {
+            ExecutionContext executionContext;
+            // check for a single DataFetchingEnvironment parameter as args will be zero
+            Parameter[] parameters = method.getParameters();
+            if (parameters.length == 1 && parameters[0].getType().equals(DataFetchingEnvironment.class)) {
+                listArgumentValues.add(environment);
+            } else if (args.length > 0) {
                 for (SchemaArgument argument : args) {
-                    // ensure a Map is not used as an input type
-                    Class<?> originalType = argument.originalType();
-                    if (originalType != null && Map.class.isAssignableFrom(originalType)) {
-                        ensureRuntimeException(LOGGER, MAP_MESSAGE);
-                    }
+                    if (argument.isDataFetchingEnvironment()) {
+                         listArgumentValues.add(environment);
+                    } else {
+                        // ensure a Map is not used as an input type
+                        Class<?> originalType = argument.originalType();
+                        if (originalType != null && Map.class.isAssignableFrom(originalType)) {
+                            ensureRuntimeException(LOGGER, MAP_MESSAGE);
+                        }
 
-                    if (argument.isArrayReturnType() && argument.arrayLevels() > 1
-                            && SchemaGeneratorHelper.isPrimitiveArray(argument.originalType())) {
-                        throw new GraphQlConfigurationException("This implementation does not currently support "
-                                                              + "multi-level primitive arrays as arguments. Please use "
-                                                              + "List or Collection of Object equivalent. E.g. "
-                                                              + "In place of method(int [][] value) use "
-                                                              + " method(List<List<Integer>> value)");
-                    }
+                        if (argument.isArrayReturnType() && argument.arrayLevels() > 1
+                                && SchemaGeneratorHelper.isPrimitiveArray(argument.originalType())) {
+                            throw new GraphQlConfigurationException("This implementation does not currently support "
+                                                                  + "multi-level primitive arrays as arguments. Please use "
+                                                                  + "List or Collection of Object equivalent. E.g. "
+                                                                  + "In place of method(int [][] value) use "
+                                                                  + " method(List<List<Integer>> value)");
+                        }
 
-                    listArgumentValues.add(generateArgumentValue(schema, argument.argumentType(),
-                                                                 argument.originalType(),
-                                                                 argument.originalArrayType(),
-                                                                 environment.getArgument(argument.argumentName()),
-                                                                 argument.format()));
+                        listArgumentValues.add(generateArgumentValue(schema, argument.argumentType(),
+                                                                     argument.originalType(),
+                                                                     argument.originalArrayType(),
+                                                                     environment.getArgument(argument.argumentName()),
+                                                                     argument.format()));
+                    }
                 }
             }
 
