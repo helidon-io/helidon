@@ -35,7 +35,7 @@ public interface OciAutonomousDBRx {
     /**
      * Host name prefix.
      */
-    String API_HOST_PREFIX = "autonomousDatabases";
+    String API_HOST_PREFIX = "database";
 
     /**
      * Host format of API server.

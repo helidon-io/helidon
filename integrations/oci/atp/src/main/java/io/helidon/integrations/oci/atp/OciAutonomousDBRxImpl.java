@@ -47,7 +47,7 @@ class OciAutonomousDBRxImpl implements OciAutonomousDBRx {
 
     @Override
     public Single<ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response>> getWallet(GenerateAutonomousDatabaseWallet.Request request) {
-        String apiPath = "/" + this.ocid + "/generateWallet";
+        String apiPath = "/20160918/autonomousDatabases/" + this.ocid + "/actions/generateWallet";
 
         if (!request.endpoint().isPresent()) {
             endpoint.ifPresent(request::endpoint);
@@ -55,8 +55,9 @@ class OciAutonomousDBRxImpl implements OciAutonomousDBRx {
                     .hostPrefix(hostPrefix);
         }
 
-        return restApi
-                .getPublisher(apiPath, request, ApiOptionalResponse.<Multi<DataChunk>, GenerateAutonomousDatabaseWallet.Response>apiResponseBuilder()
+        request.addQueryParam("autonomousDatabaseId", this.ocid);
+
+        return restApi.post(apiPath,request,ApiOptionalResponse.<Multi<DataChunk>, GenerateAutonomousDatabaseWallet.Response>apiResponseBuilder()
                         .entityProcessor(GenerateAutonomousDatabaseWallet.Response::create));
     }
 }
