@@ -1272,6 +1272,7 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <!-- 4.x versions cause problems with native-image This is used by jaeger-client -->
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
