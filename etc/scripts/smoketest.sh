@@ -85,6 +85,9 @@ $(basename ${0}) [ --staged ] [ --giturl=URL ] [ --clean ] [--help ] --version=V
 EOF
 }
 
+STAGED_PROFILE=""
+CLEAN_MVN_REPO=""
+
 # parse command line args
 ARGS=( "${@}" )
 for ((i=0;i<${#ARGS[@]};i++))
@@ -128,12 +131,7 @@ if [ -z "${VERSION}" ] ; then
     exit 1
 fi
 
-# Path to this script
-if [ -h "${0}" ] ; then
-    readonly SCRIPT_PATH="$(readlink "${0}")"
-else
-    readonly SCRIPT_PATH="${0}"
-fi
+readonly MAVEN_ARGS=""
 
 readonly SCRIPT_DIR=$(dirname ${SCRIPT_PATH})
 
@@ -150,6 +148,8 @@ if [ -z "${GIT_URL}" ] ; then
     echo "ERROR: can't determine URL of git repository. Pleas use --giturl option"
     exit 1
 fi
+
+set -u
 
 full(){
     echo "===== Full Test ====="
@@ -189,16 +189,21 @@ full(){
     cd ${SCRATCH}/helidon/tests/integration/native-image
     mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
 
-#    echo "===== Running native image tests ====="
-#    if [ -z "${GRAALVM_HOME}" ]; then
-#        echo "WARNING! GRAALVM_HOME is not set. Skipping native image tests"
-#    else
-#        readonly native_image_tests="se-1 mp-1 mp-2 mp-3"
-#        for native_test in ${native_image_tests}; do
-#            cd ${SCRATCH}/helidon/tests/integration/native-image/${native_test}
-#            mvn ${MAVEN_ARGS} clean package -Pnative-image ${STAGED_PROFILE}
-#        done
-#    fi
+    echo "===== Running native image tests ====="
+    if [ -z "${GRAALVM_HOME}" ]; then
+        echo "WARNING! GRAALVM_HOME is not set. Skipping native image tests"
+    else
+        echo "GRAALVM_HOME=${GRAALVM_HOME}"
+        readonly native_image_tests="se-1 mp-1 mp-2 mp-3"
+        for native_test in ${native_image_tests}; do
+            cd ${SCRATCH}/helidon/tests/integration/native-image/${native_test}
+            mvn ${MAVEN_ARGS} clean package -Pnative-image ${STAGED_PROFILE}
+        done
+
+        # Run this one because it has no pre-reqs and self-tests
+        cd ${SCRATCH}/helidon/tests/integration/native-image/mp-1
+        target/helidon-tests-native-image-mp-1
+    fi
 
 }
 
@@ -206,7 +211,8 @@ waituntilready() {
     # Give app a chance to start --retry will retry until it is up
     # --retry-connrefused requires curl 7.51.0 or newer
     sleep 6
-    curl -s --retry-connrefused --retry 3 -X GET http://localhost:8080/health/live
+    #curl -s --retry-connrefused --retry 3 -X GET http://localhost:8080/health/live
+    curl -s --retry 3 -X GET http://localhost:8080/health/live
     echo
 }
 
