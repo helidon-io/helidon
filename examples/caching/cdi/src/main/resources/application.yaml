@@ -1,0 +1,16 @@
+caching:
+  providers:
+  - type: "coherence"
+    properties:
+      cluster-name: "Helidon"
+  caches:
+  - name: "simple-cache"
+    type: "memory"
+    properties:
+      capacity: 2
+  - name: "loader-cache"
+    type: "coherence"
+    properties:
+
+server:
+  port: 8080

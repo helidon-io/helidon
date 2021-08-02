@@ -191,6 +191,13 @@ final class FeatureCatalog {
                     .path("HCP Vault")
                     .flavor(HelidonFlavor.SE)
                     .experimental(true));
+        add("io.helidon.caching",
+            FeatureDescriptor.builder()
+                    .name("Caching")
+                    .description("Caching support")
+                    .path("Caching")
+                    .flavor(HelidonFlavor.SE)
+                    .experimental(true));
         /*
          * MP Modules
          */
@@ -386,6 +393,13 @@ final class FeatureCatalog {
                     .name("HCP Vault")
                     .description("Hashicorp Vault Integration")
                     .path("HCP Vault")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true));
+        add("io.helidon.caching.cdi",
+            FeatureDescriptor.builder()
+                    .name("Caching")
+                    .description("Caching support")
+                    .path("Caching")
                     .flavor(HelidonFlavor.MP)
                     .experimental(true));
 
@@ -666,6 +680,14 @@ final class FeatureCatalog {
             "Sys",
             "System operations",
             "HCP Vault", "Sys");
+        add("io.helidon.caching.memory",
+                    "Memory",
+                    "In memory caching support",
+                    "Caching", "Memory");
+        add("io.helidon.caching.coherence",
+            "Coherence",
+            "Coherence caching support",
+            "Caching", "Coherence");
 
         /*
          * Packages that are not a feature
