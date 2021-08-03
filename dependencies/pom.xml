@@ -114,6 +114,8 @@
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.neo4j>4.2.4</version.lib.neo4j>
+        <version.lib.rsocket>1.1.1</version.lib.rsocket>
+        <version.lib.rsocket-transport>1.1.0</version.lib.rsocket-transport>
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
         <version.lib.netty>4.1.63.Final</version.lib.netty>
@@ -1052,6 +1054,23 @@
                 <groupId>org.neo4j.driver</groupId>
                 <artifactId>neo4j-java-driver</artifactId>
                 <version>${version.lib.neo4j}</version>
+            </dependency>
+            <!-- RSocket -->
+            <dependency>
+                <groupId>io.rsocket</groupId>
+                <artifactId>rsocket-core</artifactId>
+                <version>${version.lib.rsocket}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.rsocket</groupId>
+                <artifactId>rsocket-transport-netty</artifactId>
+                <version>${version.lib.rsocket-transport}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.projectreactor</groupId>
+                        <artifactId>reactor-core</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <!-- Cron utils -->
             <dependency>

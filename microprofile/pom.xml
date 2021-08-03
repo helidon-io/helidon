@@ -55,5 +55,6 @@
         <module>cors</module>
         <module>graphql</module>
         <module>scheduling</module>
+        <module>rsocket</module>
     </modules>
 </project>

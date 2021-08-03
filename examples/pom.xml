@@ -60,6 +60,7 @@
         <module>messaging</module>
         <module>logging</module>
         <module>metrics</module>
+        <module>rsocket</module>
     </modules>
 
     <build>

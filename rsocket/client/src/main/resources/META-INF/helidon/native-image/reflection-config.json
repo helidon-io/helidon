@@ -1,0 +1,14 @@
+{
+  "annotated": [],
+  "class-hierarchy": [
+    "io.netty.channel.ChannelInboundHandlerAdapter",
+    "io.netty.channel.ChannelHandlerAdapter",
+    "io.netty.channel.ChannelInboundHandler",
+    "io.netty.channel.ChannelOutboundHandler"
+  ],
+  "classes": [
+    "javax.naming.InitialContext"
+  ],
+  "exclude": [
+  ]
+}
