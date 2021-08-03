@@ -72,7 +72,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
 
         HelidonInjectionManager(InjectionManager delegate, InjectionManager parent, ResourceConfig resourceConfig) {
             this.delegate = delegate;
-            this.parent = parent;
+            this.parent = parent != null ? parent : delegate;       // for testing
             this.resourceConfig = resourceConfig;
         }
 
