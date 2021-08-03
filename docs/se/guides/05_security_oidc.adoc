@@ -20,17 +20,18 @@
 :h1Prefix: SE
 :description: Helidon OIDC Security Provider
 :keywords: helidon, security, guide, oidc, provider
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide describes how to set up Keycloak and Helidon
 to secure your application with OIDC security provider.
 
-== What you need
+== What You Need
 
-[width=50%,role="flex, sm7"]
-|===
-|About 20 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|===
+For this 20 minute tutorial, you will need the following:
+
+include::{common-page-prefix-inc}[tag=common-prereqs]
+
+In addition, you will need to install and configure the following:
 
 * <<Introduction,Introduction>>
 * <<Keycloak Installation,Keycloak Installation>>
@@ -83,7 +84,7 @@ Open keycloak folder to make it your current directory.
 cd keycloak-11.0.2
 ----
 
-===== Start Keycloak
+=== Start Keycloak
 
 To start keycloak and have it ready for further steps, run the following command.
 
@@ -101,7 +102,7 @@ bin/standalone.bat
 
 Keycloak runs on localhost:8080 by default.
 
-===== Create an admin user
+==== Create an Admin User
 
 You need to create an admin user because it does not come by default when installing Keycloak.
 To do this, open  http://localhost:8080/auth in your favorite browser.
@@ -124,7 +125,7 @@ To set up Keycloak properly, go to the admin console: http://localhost:8080/auth
 If you are using Docker, use Username `admin` and password `admin` as it is the default admin user.
 Otherwise, use the username and password you used to create the admin user.
 
-==== Create a realm
+==== Create a Realm
 
 A realm is the place where groups of applications, and their environment, can be created. It gathers :
 
@@ -151,7 +152,7 @@ To switch from a realm to another, hover the realm name, and the other realm cre
 Click on any realm name to change the current realm. Make sure all configuration or modification are saved before changing
 the current realm or be subject to lose your configuration.
 
-==== Create a user
+==== Create a User
 
 Initially there are no users in a new realm. An unlimited number of user can be created per realm.
 A realm contains resources such as client which can be accessed by users.
@@ -230,7 +231,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 cd helidon-quickstart-se
 ----
 
-==== Update project dependencies
+==== Update Project Dependencies
 
 Update the pom.xml file and add the following Helidon dependency to the `<dependencies>` section.
 
@@ -243,7 +244,7 @@ Update the pom.xml file and add the following Helidon dependency to the `<depend
 </dependency>
 ----
 
-==== Add OIDC security properties
+==== Add OIDC Security Properties
 
 The OIDC security provider configuration can be joined to helidon configuration file.
 This file is located here: `src/main/resources/application.yaml`. It can be easily used to configure the web server
@@ -303,7 +304,7 @@ server:
 frontend-uri: "http://localhost:{Your-new-port}"
 ----
 
-==== Configure web server
+==== Configure Web Server
 
 Once the properties are added, the web server must be set up.
 The `Main.createRouting` method gather all configuration properties.
@@ -333,7 +334,7 @@ Then, OidcSupport instance registers the endpoint to which OIDC redirects browse
 
 Helidon sample is now set up and ready.
 
-==== Try it !
+== Build the Application
 
 [source,bash]
 .Build the application, skipping unit tests, then run it:
@@ -357,7 +358,7 @@ now protected, its access is limited, and the tests are not built to take oidc s
 
 From the actual settings, the user needs to log in only once, then Keycloak saves all the connection data.
 
-=== Test Keycloak process with Postman
+=== Test Keycloak Process with Postman
 
 Keycloak supports many authentication and authorization flows, but only two of them will be shown. This section
 describes another way you can get an access token or refresh a token or identity token. The identity token contains
@@ -432,7 +433,7 @@ window appears with Authentication complete, click on proceed to display access,
 Copy and paste the access token to `Access Token` field and press `Send`. Helidon greeting application sends back
 `Hello World !`.
 
-==== Update tests to the secure environment
+==== Update Tests to the Secure Environment
 
 At this stage of the application, tests cannot pass because of OIDC security. The only way to authenticate a user is
 through the front end of that server which can be accessed with the browser for example.
@@ -556,7 +557,7 @@ Now, the project can be build without skipping test.
 mvn clean install
 ----
 
-==== Restrict access to a specific role
+==== Restrict Access to a Specific Role
 
 To give less access to an endpoint, it is possible to configure user role. So the application will only grant access
 to the user with the required role.

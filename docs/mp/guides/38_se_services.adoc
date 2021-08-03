@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,16 +22,15 @@
 :keywords: helidon, guide, routing
 :helidon-uc-flavor: MP
 :helidon-lc-flavor: mp
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide shows how reuse Helidon SE Service in your Helidon MP application.
 
 == What You Need
 
-|===
-|About 10 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|<<mp/guides/02_quickstart.adoc,A Helidon MP application, such as Helidon MP Quickstart>>
-|===
+For this 10 minute tutorial, you will need the following:
+
+include::{common-page-prefix-inc}[tag=common-prereqs]
 
 Helidon MP supports <<mp/jaxrs/10_reactive-routing.adoc, Reactive routing>> which brings possibility for reusing
 `io.helidon.webserver.Service` implementations in Helidon MP. Such feature can be quite useful for common
