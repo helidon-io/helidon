@@ -64,6 +64,7 @@ public final class Main {
         // Get webserver config from the "server" section of application.yaml
         WebServer server = WebServer.builder(createRouting(config))
                 .config(config.get("server"))
+                .port(-1)
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 

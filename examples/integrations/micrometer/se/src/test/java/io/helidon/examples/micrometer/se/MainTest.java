@@ -58,7 +58,7 @@ public class MainTest {
     @BeforeAll
     public static void startTheServer() {
         webServer = Main.startServer()
-                .await(2, TimeUnit.SECONDS);
+                .await(10, TimeUnit.SECONDS);
 
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
