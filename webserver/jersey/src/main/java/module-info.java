@@ -33,6 +33,7 @@ module io.helidon.webserver.jersey {
     requires java.logging;
     requires hk2.api;
     requires io.netty.buffer;
+    requires jersey.common;
 
     exports io.helidon.webserver.jersey;
 

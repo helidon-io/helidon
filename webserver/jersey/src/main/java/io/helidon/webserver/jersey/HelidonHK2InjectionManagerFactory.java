@@ -18,6 +18,7 @@ package io.helidon.webserver.jersey;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -130,7 +131,11 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
 
         @Override
         public <T> T createAndInitialize(Class<T> createMe) {
-            return parent.createAndInitialize(createMe);
+            try {
+                return parent.createAndInitialize(createMe);
+            } catch (Throwable t) {
+                return delegate.createAndInitialize(createMe);
+            }
         }
 
         /**
@@ -186,26 +191,36 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
 
         @Override
         public ForeignDescriptor createForeignDescriptor(Binding binding) {
-            return parent.createForeignDescriptor(binding);
+            try {
+                return parent.createForeignDescriptor(binding);
+            } catch (Throwable t) {
+                return delegate.createForeignDescriptor(binding);
+            }
         }
 
         @Override
         public <T> List<T> getAllInstances(Type contractOrImpl) {
-            return parent.getAllInstances(contractOrImpl);
+            List<T> result = new ArrayList<>();
+            result.addAll(delegate.getAllInstances(contractOrImpl));
+            result.addAll(parent.getAllInstances(contractOrImpl));
+            return result;
         }
 
         @Override
         public void inject(Object injectMe) {
+            delegate.inject(injectMe);
             parent.inject(injectMe);
         }
 
         @Override
         public void inject(Object injectMe, String classAnalyzer) {
+            delegate.inject(injectMe, classAnalyzer);
             parent.inject(injectMe, classAnalyzer);
         }
 
         @Override
         public void preDestroy(Object preDestroyMe) {
+            delegate.preDestroy(preDestroyMe);
             parent.preDestroy(preDestroyMe);
         }
 
@@ -272,8 +287,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
                     return false;
                 }
             } else {
-                return binding.getContracts().stream().filter(
-                        c -> getClasses().contains(c)).findAny().isPresent();       // set intersection
+                return binding.getContracts().stream().anyMatch(c -> getClasses().contains(c));
             }
         }
     }
