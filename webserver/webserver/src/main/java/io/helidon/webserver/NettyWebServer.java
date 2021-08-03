@@ -47,7 +47,8 @@ import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
-
+import io.helidon.webserver.NettyTransport.EpollTransport;
+import io.helidon.webserver.NettyTransport.NioTransport;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFactory;
@@ -55,8 +56,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
@@ -252,7 +251,8 @@ class NettyWebServer implements WebServer {
                 }
 
                 try {
-                    bootstrap.bind(bindAddress, port).addListener(channelFuture -> {
+                    SocketAddress address = new InetSocketAddress(bindAddress, port);
+                    bootstrap.bind(address).addListener(channelFuture -> {
                         if (!channelFuture.isSuccess()) {
                             LOGGER.info(() -> "Channel '" + name + "' startup failed with message '"
                                     + channelFuture.cause().getMessage() + "'.");
@@ -260,7 +260,7 @@ class NettyWebServer implements WebServer {
 
                             String message = "Channel startup failed: " + name;
                             if (cause instanceof BindException) {
-                                message = message + ", failed to listen on " + configuration.bindAddress() + ":" + port;
+                                message = message + ", failed to listen on " + address;
                             }
 
                             channelsUpFuture.completeExceptionally(new IllegalStateException(message,
@@ -457,24 +457,22 @@ class NettyWebServer implements WebServer {
     }
 
     private Transport acquireTransport() {
-        Transport transport = configuration.transport().orElse(new NioTransport());
-        // (Note that an NioTransport's isAvailableFor() method will
-        // always return true when passed this.)
-        return transport.isAvailableFor(this) ? transport : new NioTransport();
+        return configuration.transport()
+            .or(() -> Optional.of(new EpollTransport()))
+            .filter(t -> t.isAvailableFor(this))
+            .orElseGet(NioTransport::new);
     }
 
-    private Transport transport() {
+    Transport transport() {
         return transport;
     }
 
-    @SuppressWarnings("unchecked")
     private EventLoopGroup bossGroup() {
         return transport()
             .createTransportArtifact(EventLoopGroup.class, "bossGroup", configuration)
             .orElseThrow(() -> noSuchTransportArtifact("bossGroup"));
     }
 
-    @SuppressWarnings("unchecked")
     private EventLoopGroup workerGroup() {
         return transport()
             .createTransportArtifact(EventLoopGroup.class, "workerGroup", configuration)
@@ -493,46 +491,6 @@ class NettyWebServer implements WebServer {
                                           + transport() + ", could not supply "
                                           + "a transport artifact named \""
                                           + name + "\"");
-    }
-
-    private static final class NioTransport implements Transport {
-
-        private NioTransport() {
-            super();
-        }
-
-        @Override
-        public boolean isAvailableFor(WebServer webserver) {
-            return webserver instanceof NettyWebServer;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> Optional<T> createTransportArtifact(Class<T> artifactType,
-                                                       String artifactName,
-                                                       ServerConfiguration config) {
-            if (EventLoopGroup.class.isAssignableFrom(artifactType)) {
-                switch (artifactName) {
-                case "bossGroup":
-                    return Optional.of((T) new NioEventLoopGroup(config.sockets().size()));
-                case "workerGroup":
-                    return Optional.of((T) new NioEventLoopGroup(Math.max(0, config.workersCount())));
-                default:
-                    return Optional.empty();
-                }
-            } else if (ChannelFactory.class.isAssignableFrom(artifactType)) {
-                switch (artifactName) {
-                case "serverChannelFactory":
-                    ChannelFactory<? extends ServerChannel> cf = NioServerSocketChannel::new;
-                    return Optional.of((T) cf);
-                default:
-                    return Optional.empty();
-                }
-            } else {
-                return Optional.empty();
-            }
-        }
-
     }
 
     // this class is only used to create a log handler in NettyLogHandler, to distinguish from webclient

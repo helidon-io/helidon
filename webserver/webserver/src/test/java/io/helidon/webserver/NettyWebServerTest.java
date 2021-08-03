@@ -16,6 +16,17 @@
 
 package io.helidon.webserver;
 
+import static io.helidon.config.testing.OptionalMatcher.present;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.core.AllOf.allOf;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.net.InetAddress;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
@@ -30,23 +41,15 @@ import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Multi;
-
 import org.hamcrest.collection.IsCollectionWithSize;
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
-import static io.helidon.config.testing.OptionalMatcher.present;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.core.AllOf.allOf;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.fail;
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Multi;
+import io.helidon.webserver.NettyTransport.EpollTransport;
 
 /**
  * The NettyWebServerTest.
@@ -267,5 +270,14 @@ public class NettyWebServerTest {
                 .build();
 
         assertThat(webServer.configuration().namedSocket("matched"), present());
+    }
+
+    @Test
+    @EnabledIf("io.netty.channel.epoll.Epoll#isAvailable")
+    void epoll() {
+        var  webServer = (NettyWebServer) WebServer.create(
+                routing((bareRequest, bareResponse) -> { }));
+
+        assertThat(webServer.transport(), instanceOf(EpollTransport.class));
     }
 }

@@ -353,7 +353,6 @@ public interface WebServer {
         // for backward compatibility
         @SuppressWarnings("deprecation")
         private ServerConfiguration explicitConfig;
-        private Transport transport;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
 

@@ -39,6 +39,7 @@ module io.helidon.webserver {
     requires io.netty.common;
     requires io.netty.buffer;
     requires io.netty.codec.http2;
+    requires io.netty.transport.epoll;
 
     exports io.helidon.webserver;
 }
