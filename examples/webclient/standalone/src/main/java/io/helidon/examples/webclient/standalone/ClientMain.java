@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +19,21 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.IoMulti;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.webclient.FileSubscriber;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.metrics.WebClientMetrics;
@@ -71,11 +71,8 @@ public class ClientMain {
      * User can override port from configuration by main method parameter with the specific port.
      *
      * @param args main method
-     * @throws ExecutionException   execution exception
-     * @throws InterruptedException interrupted exception
-     * @throws IOException          io exception
      */
-    public static void main(String[] args) throws ExecutionException, InterruptedException, IOException {
+    public static void main(String[] args) {
         Config config = Config.create();
         String url;
         if (args.length == 0) {
@@ -97,86 +94,85 @@ public class ClientMain {
                 .build();
 
         performPutMethod(webClient)
-                .thenCompose(it -> performGetMethod(webClient))
-                .thenCompose(it -> followRedirects(webClient))
-                .thenCompose(it -> getResponseAsAnJsonObject(webClient))
-                .thenCompose(it -> saveResponseToFile(webClient))
-                .thenCompose(it -> clientMetricsExample(url, config))
+                .flatMapSingle(it -> performGetMethod(webClient))
+                .flatMapSingle(it -> followRedirects(webClient))
+                .flatMapSingle(it -> getResponseAsAnJsonObject(webClient))
+                .flatMapSingle(it -> saveResponseToFile(webClient))
+                .flatMapSingle(it -> clientMetricsExample(url, config))
                 //Now we need to wait until all requests are done.
-                .toCompletableFuture()
-                .get();
+                .await();
     }
 
-    static CompletionStage<Void> performPutMethod(WebClient webClient) {
+    static Single<Http.ResponseStatus> performPutMethod(WebClient webClient) {
         System.out.println("Put request execution.");
         return webClient.put()
                 .path("/greeting")
                 .submit(JSON_NEW_GREETING)
-                .thenAccept(webClientResponse -> System.out.println("PUT request successfully executed."));
+                .map(WebClientResponse::status)
+                .peek(status -> System.out.println("PUT request executed with status: " + status));
     }
 
-    static CompletionStage<String> performGetMethod(WebClient webClient) {
+    static Single<String> performGetMethod(WebClient webClient) {
         System.out.println("Get request execution.");
         return webClient.get()
                 .request(String.class)
-                .thenCompose(string -> {
+                .peek(string -> {
                     System.out.println("GET request successfully executed.");
                     System.out.println(string);
-                    return CompletableFuture.completedFuture(string);
                 });
     }
 
-    static CompletionStage<String> followRedirects(WebClient webClient) {
+    static Single<String> followRedirects(WebClient webClient) {
         System.out.println("Following request redirection.");
         return webClient.get()
                 .path("/redirect")
                 .request()
-                .thenCompose(response -> {
+                .flatMapSingle(response -> {
                     if (response.status() != Http.Status.OK_200) {
                         throw new IllegalStateException("Follow redirection failed!");
                     }
                     return response.content().as(String.class);
                 })
-                .thenCompose(string -> {
+                .peek(string -> {
                     System.out.println("Redirected request successfully followed.");
                     System.out.println(string);
-                    return CompletableFuture.completedFuture(string);
                 });
     }
 
-    static CompletionStage<JsonObject> getResponseAsAnJsonObject(WebClient webClient) {
+    static Single<JsonObject> getResponseAsAnJsonObject(WebClient webClient) {
         //Support for JsonObject reading from response is not present by default.
         //In case of this example it was registered at creation time of the WebClient instance.
         System.out.println("Requesting from JsonObject.");
         return webClient.get()
                 .request(JsonObject.class)
-                .thenCompose(jsonObject -> {
+                .peek(jsonObject -> {
                     System.out.println("JsonObject successfully obtained.");
                     System.out.println(jsonObject);
-                    return CompletableFuture.completedFuture(jsonObject);
                 });
     }
 
-    static CompletionStage<Void> saveResponseToFile(WebClient webClient) {
+    static Single<Void> saveResponseToFile(WebClient webClient) {
         //We have to create file subscriber first. This subscriber will save the content of the response to the file.
         Path file = Paths.get("test.txt");
         try {
             Files.deleteIfExists(file);
+            Files.createFile(file);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        FileSubscriber fileSubscriber = FileSubscriber.create(file);
 
-        //Then it is needed obtain unhandled response content and subscribe file subscriber to it.
-        System.out.println("Downloading server response to the file: " + file);
+        System.out.println("Downloading server response to file: " + file);
         return webClient.get()
                 .request()
-                .thenApply(WebClientResponse::content)
-                .thenCompose(fileSubscriber::subscribeTo)
-                .thenAccept(path -> System.out.println("Download complete!"));
+                .map(WebClientResponse::content)
+                .flatMapSingle(content -> content
+                        .map(DataChunk::data)
+                        .flatMapIterable(Arrays::asList)
+                        .to(IoMulti.writeToFile(file).build()))
+                .peek(path -> System.out.println("Download complete!"));
     }
 
-    static CompletionStage<Void> clientMetricsExample(String url, Config config) {
+    static Single<String> clientMetricsExample(String url, Config config) {
         //This part here is only for verification purposes, it is not needed to be done for actual usage.
         String counterName = "example.metric.GET.localhost";
         Counter counter = METRIC_REGISTRY.counter(counterName);
@@ -198,6 +194,6 @@ public class ClientMain {
         //Perform any GET request using this newly created WebClient instance.
         return performGetMethod(webClient)
                 //Verification for example purposes that metric has been incremented.
-                .thenAccept(s -> System.out.println(counterName + ": " + counter.getCount()));
+                .peek(s -> System.out.println(counterName + ": " + counter.getCount()));
     }
 }

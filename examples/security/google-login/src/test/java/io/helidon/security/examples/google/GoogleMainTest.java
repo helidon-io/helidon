@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.security.examples.google;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Http;
@@ -60,7 +59,7 @@ public abstract class GoogleMainTest {
     }
 
     @Test
-    public void testEndpoint() throws ExecutionException, InterruptedException {
+    public void testEndpoint() {
         client.get()
                 .uri("http://localhost:" + port() + "/rest/profile")
                 .request()
@@ -69,8 +68,7 @@ public abstract class GoogleMainTest {
                     assertThat(it.headers().first(Http.Header.WWW_AUTHENTICATE),
                                value(is("Bearer realm=\"helidon\",scope=\"openid profile email\"")));
                 })
-                .toCompletableFuture()
-                .get();
+                .await();
     }
 
     abstract int port();

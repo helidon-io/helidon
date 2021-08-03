@@ -51,7 +51,7 @@ public class MainTest {
     }
 
     @BeforeAll
-    public static void startTheServer() throws Exception {
+    public static void startTheServer() {
         webServer = Main.startServer().await();
 
         webClient = WebClient.builder()
@@ -61,29 +61,26 @@ public class MainTest {
     }
 
     @AfterAll
-    public static void stopServer() throws Exception {
+    public static void stopServer() {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(10, TimeUnit.SECONDS);
         }
     }
 
     @Test
-    public void testHelloWorld() throws Exception {
+    public void testHelloWorld() {
         webClient.get()
                 .path("/greet")
                 .request(JsonObject.class)
                 .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("greeting")))
-                .toCompletableFuture()
-                .get();
+                .await();
 
         webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
                 .thenAccept(jsonObject -> Assertions.assertEquals("Hello Joe!", jsonObject.getString("greeting")))
-                .toCompletableFuture()
-                .get();
+                .await();
 
         webClient.put()
                 .path("/greet/greeting")
@@ -93,8 +90,7 @@ public class MainTest {
                         .path("/greet/Joe")
                         .request(JsonObject.class))
                 .thenAccept(jsonObject -> Assertions.assertEquals("Hola Joe!", jsonObject.getString("greeting")))
-                .toCompletableFuture()
-                .get();
+                .await();
 
         webClient.get()
                 .path("/health")
@@ -103,8 +99,7 @@ public class MainTest {
                     Assertions.assertEquals(200, response.status().code());
                     response.close();
                 })
-                .toCompletableFuture()
-                .get();
+                .await();
 
         webClient.get()
                 .path("/metrics")
@@ -113,31 +108,29 @@ public class MainTest {
                     Assertions.assertEquals(200, response.status().code());
                     response.close();
                 })
-                .toCompletableFuture()
-                .get();
+                .await();
     }
 
     @Test
-    public void testOpenAPI() throws Exception {
+    public void testOpenAPI() {
         /*
-         * If you change the OpenAPI endpoing path in application.yaml, then
+         * If you change the OpenAPI endpoint path in application.yaml, then
          * change the following path also.
          */
         JsonObject jsonObject = webClient.get()
                 .accept(MediaType.APPLICATION_JSON)
                 .path("/openapi")
                 .request(JsonObject.class)
-                .toCompletableFuture()
-                .get();
+                .await();
         JsonObject paths = jsonObject.getJsonObject("paths");
 
         JsonPointer jp = Json.createPointer("/" + escape("/greet/greeting") + "/put/summary");
-        JsonString js = JsonString.class.cast(jp.getValue(paths));
+        JsonString js = (JsonString) jp.getValue(paths);
         Assertions.assertEquals("Set the greeting prefix", js.getString(), "/greet/greeting.put.summary not as expected");
 
         jp = Json.createPointer("/" + escape(SimpleAPIModelReader.MODEL_READER_PATH)
                                         + "/get/summary");
-        js = JsonString.class.cast(jp.getValue(paths));
+        js = (JsonString) jp.getValue(paths);
         Assertions.assertEquals(SimpleAPIModelReader.SUMMARY, js.getString(),
                                 "summary added by model reader does not match");
 

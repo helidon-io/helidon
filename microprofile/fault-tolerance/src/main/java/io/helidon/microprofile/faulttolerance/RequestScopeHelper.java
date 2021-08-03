@@ -129,7 +129,10 @@ class RequestScopeHelper {
             requestContext.release();
             requestContext = null;
         }
-        requestScope = null;
+        if (requestScope != null) {
+            CDI.current().destroy(requestScope);
+            requestScope = null;
+        }
         requestController = null;
         injectionManager = null;
         state = State.CLEARED;

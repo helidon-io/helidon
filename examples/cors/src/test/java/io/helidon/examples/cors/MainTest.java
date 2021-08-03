@@ -18,7 +18,6 @@ package io.helidon.examples.cors;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import javax.json.JsonObject;
@@ -74,17 +73,16 @@ public class MainTest {
     }
 
     @AfterAll
-    public static void stop() throws Exception {
+    public static void stop() {
         if (webServer != null) {
             webServer.shutdown()
-                     .toCompletableFuture()
-                     .get(10, TimeUnit.SECONDS);
+                     .await(10, TimeUnit.SECONDS);
         }
     }
 
     @Order(1) // Make sure this runs before the greeting message changes so responses are deterministic.
     @Test
-    public void testHelloWorld() throws Exception {
+    public void testHelloWorld() {
 
         WebClientResponse r = getResponse("/greet");
 
@@ -114,7 +112,7 @@ public class MainTest {
 
     @Order(10) // Run after the non-CORS tests (so the greeting is Hola) but before the CORS test that changes the greeting again.
     @Test
-    void testAnonymousGreetWithCors() throws Exception {
+    void testAnonymousGreetWithCors() {
         WebClientRequestBuilder builder = webClient.get();
         Headers headers = builder.headers();
         headers.add("Origin", "http://foo.com");
@@ -133,7 +131,7 @@ public class MainTest {
 
     @Order(11) // Run after the non-CORS tests but before other CORS tests.
     @Test
-    void testGreetingChangeWithCors() throws Exception {
+    void testGreetingChangeWithCors() {
 
         // Send the pre-flight request and check the response.
 
@@ -145,8 +143,7 @@ public class MainTest {
 
         WebClientResponse r = builder.path("/greet/greeting")
                 .submit()
-                .toCompletableFuture()
-                .get();
+                .await();
 
         Headers preflightResponseHeaders = r.headers();
         List<String> allowMethods = preflightResponseHeaders.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS);
@@ -179,7 +176,7 @@ public class MainTest {
 
     @Order(12) // Run after CORS test changes greeting to Cheers.
     @Test
-    void testNamedGreetWithCors() throws Exception {
+    void testNamedGreetWithCors() {
         WebClientRequestBuilder builder = webClient.get();
         Headers headers = builder.headers();
         headers.add("Origin", "http://foo.com");
@@ -197,7 +194,7 @@ public class MainTest {
 
     @Order(100) // After all other tests so we can rely on deterministic greetings.
     @Test
-    void testGreetingChangeWithCorsAndOtherOrigin() throws Exception {
+    void testGreetingChangeWithCorsAndOtherOrigin() {
         WebClientRequestBuilder builder = webClient.put();
         Headers headers = builder.headers();
         headers.add("Origin", "http://other.com");
@@ -209,42 +206,36 @@ public class MainTest {
         assertEquals(isOverriding ? 204 : 403, r.status().code(), "HTTP response3");
     }
 
-    private static WebClientResponse getResponse(String path) throws ExecutionException, InterruptedException {
+    private static WebClientResponse getResponse(String path) {
         return getResponse(path, webClient.get());
     }
 
-    private static WebClientResponse getResponse(String path, WebClientRequestBuilder builder) throws ExecutionException,
-            InterruptedException {
+    private static WebClientResponse getResponse(String path, WebClientRequestBuilder builder) {
         return builder
                 .accept(MediaType.APPLICATION_JSON)
                 .path(path)
                 .submit()
-                .toCompletableFuture()
-                .get();
+                .await();
     }
 
-    private static WebClientResponse putResponse(String path, GreetingMessage payload) throws ExecutionException,
-            InterruptedException {
+    private static WebClientResponse putResponse(String path, GreetingMessage payload) {
         return putResponse(path, payload, webClient.put());
     }
 
-    private static WebClientResponse putResponse(String path, GreetingMessage payload, WebClientRequestBuilder builder)
-            throws ExecutionException, InterruptedException {
+    private static WebClientResponse putResponse(String path, GreetingMessage payload, WebClientRequestBuilder builder) {
         return builder
                 .accept(MediaType.APPLICATION_JSON)
                 .path(path)
                 .submit(payload.forRest())
-                .toCompletableFuture()
-                .get();
+                .await();
     }
 
-    private static GreetingMessage fromPayload(WebClientResponse response) throws ExecutionException,
-            InterruptedException {
+    private static GreetingMessage fromPayload(WebClientResponse response) {
         JsonObject json = response
                 .content()
                 .as(JsonObject.class)
-                .toCompletableFuture()
-                .get();
+                .await();
+
         return GreetingMessage.fromRest(json);
     }
 }

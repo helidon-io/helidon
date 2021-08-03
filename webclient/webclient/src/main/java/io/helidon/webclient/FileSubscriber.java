@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,9 @@ import io.helidon.common.http.DataChunk;
 /**
  * A file writer that subscribes to chunks of data.
  *
- * @deprecated This will most likely be removed when multipart is implemented.
+ * @deprecated use {@link io.helidon.common.reactive.IoMulti#writeToFile(java.nio.file.Path)} instead
  */
-@Deprecated
+@Deprecated(forRemoval = true)
 public final class FileSubscriber implements Flow.Subscriber<DataChunk> {
     private static final Logger LOGGER = Logger.getLogger(FileSubscriber.class.getName());
 

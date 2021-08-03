@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,24 +45,24 @@ public class TranslatorTest {
     private static WebTarget target;
 
     @BeforeAll
-    public static void setUp() throws Exception {
-        webServerBackend = startBackendServer().toCompletableFuture().get(10, TimeUnit.SECONDS);
-        webServerFrontend = startFrontendServer().toCompletableFuture().get(10, TimeUnit.SECONDS);
+    public static void setUp() {
+        webServerBackend = startBackendServer().await(10, TimeUnit.SECONDS);
+        webServerFrontend = startFrontendServer().await(10, TimeUnit.SECONDS);
         client = ClientBuilder.newClient();
         target = client.target("http://localhost:" + webServerFrontend.port());
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
-        webServerFrontend.shutdown().toCompletableFuture().get(10, TimeUnit.SECONDS);
-        webServerBackend.shutdown().toCompletableFuture().get(10, TimeUnit.SECONDS);
+    public static void tearDown() {
+        webServerFrontend.shutdown().await(10, TimeUnit.SECONDS);
+        webServerBackend.shutdown().await(10, TimeUnit.SECONDS);
         if (client != null) {
             client.close();
         }
     }
 
     @Test
-    public void testCzech() throws Exception {
+    public void testCzech() {
         Response response = target.queryParam("q", "cloud")
                                   .queryParam("lang", "czech")
                                   .request()
@@ -73,7 +73,7 @@ public class TranslatorTest {
     }
 
     @Test
-    public void testItalian() throws Exception {
+    public void testItalian() {
         Response response = target.queryParam("q", "cloud")
                                   .queryParam("lang", "italian")
                                   .request()
@@ -84,7 +84,7 @@ public class TranslatorTest {
     }
 
     @Test
-    public void testFrench() throws Exception {
+    public void testFrench() {
         Response response = target.queryParam("q", "cloud")
                                   .queryParam("lang", "french")
                                   .request()
