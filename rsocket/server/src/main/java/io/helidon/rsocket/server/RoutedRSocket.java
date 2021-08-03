@@ -40,15 +40,15 @@ public class RoutedRSocket implements RSocket {
     private final Map<String, FireAndForgetHandler> fireAndForgetRoutes;
     private final Map<String, RequestStreamHandler> requestStreamRoutes;
     private final Map<String, RequestChannelHandler> requestChannelRoutes;
-    private String mimeType = WellKnownMimeType.APPLICATION_JSON.getString();
+    private String mimeType;
 
     /**
      * Constructor for routed RSocket.
      *
      * @param requestResponseRoutes Map
-     * @param fireAndForgetRoutes Map
-     * @param requestStreamRoutes Map
-     * @param requestChannelRoutes Map
+     * @param fireAndForgetRoutes   Map
+     * @param requestStreamRoutes   Map
+     * @param requestChannelRoutes  Map
      */
     RoutedRSocket(Map<String, RequestResponseHandler> requestResponseRoutes,
                   Map<String, FireAndForgetHandler> fireAndForgetRoutes,
@@ -58,6 +58,7 @@ public class RoutedRSocket implements RSocket {
         this.fireAndForgetRoutes = fireAndForgetRoutes;
         this.requestStreamRoutes = requestStreamRoutes;
         this.requestChannelRoutes = requestChannelRoutes;
+        this.mimeType = WellKnownMimeType.APPLICATION_JSON.getString();
     }
 
     /**
@@ -67,6 +68,14 @@ public class RoutedRSocket implements RSocket {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Get mime type.
+     * @return String with mime type
+     */
+    public String getMimeType() {
+        return mimeType;
     }
 
     /**
@@ -290,9 +299,10 @@ public class RoutedRSocket implements RSocket {
 
             for (CompositeMetadata.Entry entry : compositeMetadata) {
                 if (entry instanceof CompositeMetadata.WellKnownMimeTypeEntry) {
-                    TaggingMetadata metadata = new TaggingMetadata(entry.getMimeType(), entry.getContent());
-
-                    metadataMap.put(entry.getMimeType(), metadata);
+                    if (entry.getMimeType() != null) {
+                        TaggingMetadata metadata = new TaggingMetadata(entry.getMimeType(), entry.getContent());
+                        metadataMap.put(entry.getMimeType(), metadata);
+                    }
                 }
             }
         }

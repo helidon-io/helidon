@@ -81,7 +81,7 @@ public class RSocketClient implements Disposable {
     /**
      * Create RSocket Client using config.
      *
-     * @param config
+     * @param config configuration
      * @return RSocketClient
      */
     public static RSocketClient create(Config config) {
@@ -104,6 +104,24 @@ public class RSocketClient implements Disposable {
      */
     public void setOneTimeMimeType(String mimeType) {
         this.mimeType = mimeType;
+    }
+
+    /**
+     * Get Metadata MIME type.
+     *
+     * @return String.
+     */
+    public String getMetadataMimeType() {
+        return metadataMimeType;
+    }
+
+    /**
+     * Set MetaData MIME type.
+     *
+     * @param metadataMimeType String.
+     */
+    public void setMetadataMimeType(String metadataMimeType) {
+        this.metadataMimeType = metadataMimeType;
     }
 
     /**
