@@ -53,9 +53,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-
-import io.helidon.webserver.jersey.HelidonHK2InjectionManagerFactory.HelidonInjectionManager;
 import io.helidon.webserver.jersey.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
+
 import io.opentracing.SpanContext;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.internal.MapPropertiesDelegate;

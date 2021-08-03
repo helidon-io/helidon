@@ -16,9 +16,6 @@
 
 package io.helidon.webserver.jersey;
 
-import javax.annotation.Priority;
-import javax.inject.Singleton;
-import javax.ws.rs.core.Application;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collections;
@@ -27,6 +24,10 @@ import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.annotation.Priority;
+import javax.inject.Singleton;
+import javax.ws.rs.core.Application;
 
 import org.glassfish.jersey.inject.hk2.Hk2InjectionManagerFactory;
 import org.glassfish.jersey.internal.inject.Binder;
