@@ -46,7 +46,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 
-
 /**
  * Helidon RSocket client.
  */
@@ -85,7 +84,7 @@ public class RSocketClient implements Disposable {
      * @param config
      * @return RSocketClient
      */
-    public static RSocketClient create(Config config){
+    public static RSocketClient create(Config config) {
         return builder().config(config).build();
     }
 
@@ -130,8 +129,8 @@ public class RSocketClient implements Disposable {
     /**
      * Set simple Auth credentials.
      *
-     * @param username
-     * @param password
+     * @param username user name
+     * @param password password
      */
     public void authSimple(String username, String password) {
         this.username = username;
@@ -151,14 +150,10 @@ public class RSocketClient implements Disposable {
         }
 
         if (mimeType != null) {
-//            TaggingMetadata mimeMetadata = TaggingMetadataCodec.createTaggingMetadata(ByteBufAllocator.DEFAULT,
-//                    WellKnownMimeType.MESSAGE_RSOCKET_MIMETYPE.getString(), Collections.singletonList(mimeType));
             CompositeMetadataCodec.encodeAndAddMetadata(metadata,
                     ByteBufAllocator.DEFAULT,
                     WellKnownMimeType.MESSAGE_RSOCKET_MIMETYPE,
                     ByteBufUtil.writeUtf8(ByteBufAllocator.DEFAULT, mimeType));
-            //reset per stream mime type
-            //mimeType = null;
         }
         if (authType == WellKnownAuthType.SIMPLE) {
             ByteBuf byteBuf = AuthMetadataCodec.encodeSimpleMetadata(ByteBufAllocator.DEFAULT,
@@ -182,7 +177,7 @@ public class RSocketClient implements Disposable {
     /**
      * Send Data via Fire and Forget method.
      *
-     * @param dataSingle
+     * @param dataSingle Single with Data
      * @return Single
      */
     public Single<Void> fireAndForget(Single<ByteBuffer> dataSingle) {
@@ -195,7 +190,7 @@ public class RSocketClient implements Disposable {
     /**
      * Send Data via Request/Response method.
      *
-     * @param dataSingle
+     * @param dataSingle Single with Data
      * @return Single with Payload.
      */
     public Single<Payload> requestResponse(Single<ByteBuffer> dataSingle) {
@@ -208,7 +203,7 @@ public class RSocketClient implements Disposable {
     /**
      * Send data via Request Stream.
      *
-     * @param dataSingle
+     * @param dataSingle Single with Data
      * @return Multi with payload.
      */
     public Multi<Payload> requestStream(Single<ByteBuffer> dataSingle) {
@@ -222,7 +217,7 @@ public class RSocketClient implements Disposable {
     /**
      * Send data via Request Channel.
      *
-     * @param data
+     * @param data Publisher with data
      * @return Multi with payload.
      */
     public Multi<Payload> requestChannel(Publisher<ByteBuffer> data) {
@@ -234,7 +229,7 @@ public class RSocketClient implements Disposable {
     /**
      * Push metadata.
      *
-     * @param dataSingle
+     * @param dataSingle Single with Data
      * @return Single.
      */
     public Single<Void> metadataPush(Single<ByteBuffer> dataSingle) {
@@ -270,40 +265,42 @@ public class RSocketClient implements Disposable {
 
         @Override
         public RSocketClient build() {
-            RSocket rSocket;
+            RSocket rSocket = io.rsocket.core.RSocketConnector.create()
+                    .dataMimeType(mimeType)
+                    .metadataMimeType(metadataMimeType)
+                    .connect(TcpClientTransport.create(uri, port))
+                    .block();
             if (uri != null && !uri.isEmpty()) {
                 rSocket = io.rsocket.core.RSocketConnector.create()
                         .dataMimeType(mimeType)
                         .metadataMimeType(metadataMimeType)
                         .connect(WebsocketClientTransport.create(URI.create(websocket)))
                         .block();
+            }
+
+            if (rSocket != null) {
+                io.rsocket.core.RSocketClient client = io.rsocket.core.RSocketClient.from(rSocket);
+                RSocketClient result = new RSocketClient(client);
+
+                if (route != null && !route.isEmpty()) {
+                    result.route = route;
+                    result.authType = authType;
+                    result.mimeType = mimeType;
+                    result.username = username;
+                    result.password = password;
+                    result.token = token;
+
+                }
+                return result;
             } else {
-                rSocket = io.rsocket.core.RSocketConnector.create()
-                        .dataMimeType(mimeType)
-                        .metadataMimeType(metadataMimeType)
-                        .connect(TcpClientTransport.create(uri, port))
-                        .block();
+                throw new RuntimeException("Bad configuration!");
             }
-
-            io.rsocket.core.RSocketClient client = io.rsocket.core.RSocketClient.from(rSocket);
-            RSocketClient result = new RSocketClient(client);
-
-            if (route != null && !route.isEmpty()) {
-                result.route = route;
-                result.authType = authType;
-                result.mimeType = mimeType;
-                result.username = username;
-                result.password = password;
-                result.token = token;
-
-            }
-            return result;
         }
 
         /**
          * Get setup data from the configuration.
          *
-         * @param config
+         * @param config Config
          * @return Builder.
          */
         public Builder config(Config config) {
@@ -321,7 +318,8 @@ public class RSocketClient implements Disposable {
 
         /**
          * Set Route.
-         * @param route
+         *
+         * @param route Route
          * @return Builder.
          */
         public Builder route(String route) {
@@ -331,7 +329,8 @@ public class RSocketClient implements Disposable {
 
         /**
          * Set auth type.
-         * @param authType
+         *
+         * @param authType Auth Type
          * @return Builder.
          */
         public Builder authType(WellKnownAuthType authType) {
@@ -341,7 +340,8 @@ public class RSocketClient implements Disposable {
 
         /**
          * SeMime Type.
-         * @param mimeType
+         *
+         * @param mimeType Mime type
          * @return Builder.
          */
         public Builder mimeType(String mimeType) {
@@ -351,7 +351,8 @@ public class RSocketClient implements Disposable {
 
         /**
          * Set Metadata Mime Type.
-         * @param metadataMimeType
+         *
+         * @param metadataMimeType Metadata mime type
          * @return Builder.
          */
         public Builder metadataMimeType(String metadataMimeType) {
@@ -361,7 +362,8 @@ public class RSocketClient implements Disposable {
 
         /**
          * Set User Name.
-         * @param username
+         *
+         * @param username username
          * @return Builder.
          */
         public Builder username(String username) {
@@ -371,7 +373,8 @@ public class RSocketClient implements Disposable {
 
         /**
          * Set Password.
-         * @param password
+         *
+         * @param password password
          * @return Builder.
          */
         public Builder password(String password) {
@@ -381,7 +384,8 @@ public class RSocketClient implements Disposable {
 
         /**
          * Set Token.
-         * @param token
+         *
+         * @param token token
          * @return Builder.
          */
         public Builder token(String token) {
@@ -391,7 +395,8 @@ public class RSocketClient implements Disposable {
 
         /**
          * Set WebSocket address.
-         * @param websocket
+         *
+         * @param websocket websocket address
          * @return Builder.
          */
         public Builder websocket(String websocket) {
@@ -401,7 +406,8 @@ public class RSocketClient implements Disposable {
 
         /**
          * Set TCP URI.
-         * @param uri
+         *
+         * @param uri uri
          * @return Builder.
          */
         public Builder uri(String uri) {
@@ -411,7 +417,8 @@ public class RSocketClient implements Disposable {
 
         /**
          * Set TCP Port.
-         * @param port
+         *
+         * @param port port
          * @return Builder.
          */
         public Builder port(int port) {

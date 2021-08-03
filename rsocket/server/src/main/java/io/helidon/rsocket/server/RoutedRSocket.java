@@ -72,7 +72,7 @@ public class RoutedRSocket implements RSocket {
     /**
      * Set Mime type.
      *
-     * @param mimetype
+     * @param mimetype the mime type
      */
     public void setMimeType(String mimetype) {
         this.mimeType = mimetype;
@@ -157,7 +157,7 @@ public class RoutedRSocket implements RSocket {
      * Handle Request Response.
      *
      * @param payload Map
-     * @return Mono<Payload>
+     * @return Mono with Payload
      */
     @Override
     public Mono<Payload> requestResponse(Payload payload) {
@@ -186,7 +186,7 @@ public class RoutedRSocket implements RSocket {
      * Handle Fire and Forget.
      *
      * @param payload Payload
-     * @return Mono<Void>
+     * @return Mono with Void
      */
     @Override
     public Mono<Void> fireAndForget(Payload payload) {
@@ -214,7 +214,7 @@ public class RoutedRSocket implements RSocket {
      * Handle Request Stream.
      *
      * @param payload Payload
-     * @return Flux<Payload>
+     * @return Flux with Payload
      */
     @Override
     public Flux<Payload> requestStream(Payload payload) {
@@ -243,7 +243,7 @@ public class RoutedRSocket implements RSocket {
      * Handle Request Channel.
      *
      * @param payloads Publisher
-     * @return Flux<Payload>
+     * @return Flux with Payload
      */
     @Override
     public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
