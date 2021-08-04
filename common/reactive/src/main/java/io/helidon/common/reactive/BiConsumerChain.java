@@ -50,8 +50,17 @@ class BiConsumerChain<T, S>
             return ((BiConsumerChain<T, S>) current).combineWith(another);
         }
         BiConsumerChain<T, S> newChain = new BiConsumerChain<>();
-        newChain.add(current);
-        newChain.add(another);
+        if (current instanceof BiConsumerChain) {
+            newChain.addAll((BiConsumerChain<T, S>) current);
+        } else {
+            newChain.add(current);
+        }
+
+        if (another instanceof BiConsumerChain) {
+            newChain.addAll((BiConsumerChain<T, S>) another);
+        } else {
+            newChain.add(another);
+        }
         return newChain;
     }
 }

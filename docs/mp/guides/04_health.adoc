@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,19 +20,18 @@
 :h1Prefix: MP
 :description: Helidon health-checks
 :keywords: helidon, health-checks, health, check
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide describes how to create a sample MicroProfile (MP) project
-that can be used to run some basic examples using both built-in and custom health-checks with Helidon MP.
+that can be used to run some basic examples using both built-in and custom health checks with Helidon MP.
 
-== What you need
+== What You Need
 
-[width=50%,role="flex, sm7"]
-|===
-|About 15 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|===
+For this 15 minute tutorial, you will need the following:
 
-=== Create a sample MP project
+include::{common-page-prefix-inc}[tag=common-prereqs]
+
+=== Create a Sample MP Project
 
 Generate the project sources using the Helidon MP Maven archetype.
 The result is a simple project that can be used for the examples in this guide.
@@ -49,16 +48,16 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.mp
 ----
 
-=== Using the built-in health-checks
+=== Using the Built-In Health Checks
 
-Helidon has a set of built-in health-checks that are automatically enabled to report various
-health-check statuses that are commonly used:
+Helidon has a set of built-in health checks that are automatically enabled to report various
+health check statuses that are commonly used:
 
 * deadlock detection
 * available disk space
 * available heap memory
 
-The following example will demonstrate how to use the built-in health-checks.  These examples are all executed
+The following example will demonstrate how to use the built-in health checks.  These examples are all executed
 from the root directory of your project (helidon-quickstart-mp).
 
 [source,bash]
@@ -120,10 +119,10 @@ NOTE: In MicroProfile Health 2.0 `outcome` and `state` were replaced by `status`
 Helidon currently provides both fields for backwards compatibility, but use of `outcome` and `state` is deprecated
 and will be removed in a future release. You should rely on `status` instead.
 
-=== Custom liveness health-checks
+=== Custom Liveness Health Checks
 
-You can create application-specific custom health-checks and integrate them with Helidon
-using CDI.  The following example shows how to add a custom liveness health-check.
+You can create application-specific custom health checks and integrate them with Helidon
+using CDI.  The following example shows how to add a custom liveness health check.
 
 [source,java]
 .Create a new `GreetLivenessCheck` class with the following content:
@@ -149,7 +148,7 @@ public class GreetLivenessCheck implements HealthCheck {
   }
 }
 ----
-<1> Annotation indicating this is a liveness health-check.
+<1> Annotation indicating this is a liveness health check.
 <2> Annotation indicating there is a single liveness `HealthCheck` object during the lifetime of the application.
 <3> Build the HealthCheckResponse with status `UP` and the current time.
 
@@ -178,7 +177,7 @@ curl http://localhost:8080/health/live
 }
 ----
 
-=== Custom readiness health-check
+=== Custom Readiness Health Check
 
 You can add a readiness check to indicate that the application is ready to be used.  In this
 example, the server will wait five seconds before it becomes ready.
@@ -292,14 +291,14 @@ curl -v http://localhost:8080/health/ready
 ----
 <1> The HTTP status is `200` indicating that the application is ready.
 
-When using the health-check URLs, you can get the following health-check data:
+When using the health check URLs, you can get the following health check data:
 
 * custom liveness only - http://localhost:8080/health/live
 * custom readiness only -  http://localhost:8080/health/ready
-* all health-check data -  http://localhost:8080/health
+* all health check data -  http://localhost:8080/health
 
 [source,bash]
-.Get all the health-check data, including custom data:
+.Get all the health check data, including custom data:
 ----
 curl http://localhost:8080/health
 ----
@@ -363,7 +362,7 @@ curl http://localhost:8080/health
 ----
 
 
-=== Custom health root path and port
+=== Custom Health Root Path and Port
 
 You can specify a custom port and root context for the root health endpoint path.
 However, you cannot use different ports, such as http://localhost:8080/myhealth and http://localhost:8081/myhealth/live.
@@ -417,9 +416,9 @@ curl http://localhost:8081/myhealth/live
 curl http://localhost:8081/myhealth/ready
 ----
 
-=== Using Liveness and Readiness health-checks with Kubernetes
+=== Using Liveness and Readiness Health Checks with Kubernetes
 
-The following example shows how to integrate the Helidon health API with an application that implements
+The following example shows how to integrate the Helidon health check API with an application that implements
 health endpoints for the Kubernetes liveness and readiness probes.
 
 *Delete the contents of `application.yaml` so that the default health endpoint path and port are used.*
@@ -529,14 +528,14 @@ kubectl delete -f ./health.yaml
 ----
 
 === Summary
-This guide demonstrated how to use health-check in a Helidon MP application as follows:
+This guide demonstrated how to use health checks in a Helidon MP application as follows:
 
-* Access the default health-check
+* Access the default health checks
 * Create and use custom readiness and liveness checks
-* Customize the health-check root path and port
-* Integrate Helidon health-check with Kubernetes
+* Customize the health check root path and port
+* Integrate Helidon health check API with Kubernetes
 
-Please refer to the following references for additional information:
+Refer to the following references for additional information:
 
 * MicroProfile health-check specification at https://github.com/eclipse/microprofile-health/releases/tag/2.0
 * MicroProfile health-check Javadoc at https://javadoc.io/doc/org.eclipse.microprofile.health/microprofile-health-api/2.0

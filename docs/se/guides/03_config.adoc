@@ -21,19 +21,18 @@
 :description: Helidon configuration
 :keywords: helidon, configuration, microprofile, guide, SE
 :toc:
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide describes how to create a sample Helidon SE project that can be used to run some
 basic examples using both default and custom configuration.
 
 == What you need
 
-[width=50%,role="flex, sm7"]
-|===
-|About 30 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|===
+For this 20 minute tutorial, you will need the following:
 
-== Getting started with configuration
+include::{common-page-prefix-inc}[tag=common-prereqs]
+
+== Getting Started with Configuration
 
 Helidon provides a very flexible and comprehensive configuration system, offering you many application configuration choices.
 You can include configuration data from a variety of sources using different formats, like JSON and YAML.
@@ -41,7 +40,7 @@ Furthermore, you can customize the precedence of sources and make them optional 
 This guide introduces Helidon SE configuration and demonstrates the fundamental concepts using several examples.
 Refer to <<se/config/01_introduction.adoc, Helidon Config>> for the full configuration concepts documentation.
 
-=== Create a sample Helidon SE project
+=== Create a Sample Helidon SE Project
 
 Use the Helidon SE Maven archetype to create a simple project that can be used for the examples in this guide.
 
@@ -76,7 +75,7 @@ each with the extension name you should use. By default, Helidon will determine 
 
 The remainder of this document will use these formats in examples and show you how to configure Helidon to parse them.
 
-=== Default configuration
+=== Default Configuration
 
 Helidon has an internal configuration, so you are not required to provide any configuration data for your application,
 though in practice you most likely would.  By default, that configuration can be overridden from three sources:
@@ -95,7 +94,7 @@ See the following code from the project you created.
 ----
 <1> The `Config` object is created with default settings.
 
-=== Source precedence for default configuration
+=== Source Precedence for Default Configuration
 
 In order to properly configure your application using configuration sources, you need to understand
 the precedence rules that Helidon uses to merge your configuration data.  By default,
@@ -115,7 +114,7 @@ an entry key named "app.greeting".  In the same way, an environment variable nam
 
 The following examples will demonstrate the default precedence order.
 
-==== Default configuration resource
+==== Default Configuration Resource
 
 Change a configuration parameter in the default configuration resource file, `application.yaml`.
 There are no environment variable or system property overrides defined.
@@ -145,7 +144,7 @@ curl http://localhost:8080/greet
 ----
 <1> The new `app.greeting` value in `application.yaml` is used.
 
-===== System property override
+===== System Property Override
 
 A system property has a higher precedence than `application.yaml`.
 
@@ -166,7 +165,7 @@ curl http://localhost:8080/greet
 ----
 <1> The system property took precedence over `application.yaml`.
 
-===== Environment variable override
+===== Environment Variable Override
 
 An environment variable has a higher precedence than the system property.
 
@@ -188,7 +187,7 @@ curl http://localhost:8080/greet
 ----
 <1> The environment variable `APP_GREETING` took precedence over the system property and the value in `application.yaml`.
 
-== Custom configuration sources
+== Custom Configuration Sources
 
 To use custom configuration sources, your application needs to specify the sources when it creates `Config` object. By doing this,
 you are in full control of all configuration sources and precedence. By default, the environment variable and system property
@@ -197,7 +196,7 @@ methods.
 
 This section will show you how to use a custom configuration with various sources, formats, and precedence rules.
 
-=== Full list of configuration sources
+=== Full List of Configuration Sources
 
 Here is the full list of external config sources that you can use programmatically.
 
@@ -212,7 +211,7 @@ and the contents of that file are used as the corresponding config String value.
 You can also define custom sources, such as Git, and use them in your Helidon application.
 See <<se/config/06_advanced-configuration.adoc,Advanced Config>> for more information.
 
-=== Classpath sources
+=== Classpath Sources
 
 The first custom resource example demonstrates how to add a second internal configuration resource that is discovered in the `classpath`.
 The code needs to build a `Config` object, which in turn is used to build the `Server` object.  The `Config` object can be built
@@ -294,7 +293,7 @@ curl http://localhost:8080/greet
 ----
 <1> The file `application.yaml` was used to get the greeting since it now has precedence over `config.properties`.
 
-=== External file sources
+=== External File Sources
 
 You can move all or part of your configuration to external files, making them optional or mandatory.  The obvious advantage to this
 approach is that you do not need to rebuild your application to change configuration.  In the following
@@ -371,7 +370,7 @@ To fix this, use the `optional` method as shown below, then rerun the test.
 ----
 <1> The `missing-file` configuration file is now optional.
 
-=== Directory source
+=== Directory Source
 
 A directory source treats every file in the directory as a key, and the file contents as the value.  The
 following example includes a directory source as highest precedence.
@@ -410,7 +409,7 @@ curl http://localhost:8080/greet
 ----
 <1> The greeting was fetched from the file named `app.greeting`.
 
-==== Exceeding three sources
+==== Exceeding Three Sources
 
 If you have more than three sources, you can use the `addSource` method as shown below.
 
@@ -539,7 +538,7 @@ sources:
 You can re-run the previous tests that exercised environment variables and system properties. Swap the two types to see
 the precedence change. Be sure to unset APP_GREETING after you finish testing.
 
-== Accessing Config within an application
+== Accessing Config within an Application
 
 You have used Helidon to customize configuration behavior from your code using the `Config` and
 `Config.Builder` classes.  As discussed previously, Helidon reads configuration from a config source, which uses a config parser
@@ -550,7 +549,7 @@ the `greeting` child node of the `app` parent node.  There are many options for 
 methods as described in <<se/config/03_hierarchical-features.adoc,Hierarchical Config>> and <<se/config/06_advanced-configuration.adoc,Advanced Config>>.
 
 
-=== Accessing config using keys or navigation
+=== Accessing Config Using Keys or Navigation
 
 The simplest way to access configuration data is using a key, as shown below in the `GreetService` class.  The
 key can be composite as shown below:
@@ -585,7 +584,7 @@ curl http://localhost:8080/greet
 }
 ----
 
-=== Using filters and collections
+=== Using Filters and Collections
 
 The Helidon `Config` class provides several methods that allow you to filter and customize the traversal of the
 configuration tree.  The example below shows how to get the `greeting` node when you only know it is somewhere in
@@ -644,7 +643,7 @@ curl http://localhost:8080/greet
 ----
 
 
-=== Reacting to configuration updates
+=== Reacting to Configuration Updates
 
 Even though in-memory config trees are immutable, the config system internally records configuration source metadata that
 allows it to watch sources for changes. Your application listens for updates to the underlying config sources and

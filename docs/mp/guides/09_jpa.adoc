@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,22 +20,20 @@
 :h1Prefix: MP
 :description: Helidon MP JPA Guide
 :keywords: helidon, guide, transaction, jpa, microprofile
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide shows how to configure and use the
 https://jakarta.ee/specifications/persistence/2.2/[Java Persistence
 API (JPA)] from within a Helidon MP application.
 
 == What You Need
+For this 30 minute tutrial, you'll need the following:
 
-|===
-|About 30 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|<<mp/guides/07_datasource.adoc,An understanding of named data source support in Helidon MP>>
-|<<mp/guides/08_jta.adoc,An understanding of transaction support in Helidon MP>>
-|An understanding of JPA itself
-|===
+include::{common-page-prefix-inc}[tag=common-prereqs-curl]
 
-== What You'll Do
+
+
+== Overview
 
 By following this guide, you’ll enhance a bare-bones Helidon MP
 application to use JPA, with automatic transaction support, backed by
@@ -43,6 +41,10 @@ https://www.eclipse.org/eclipselink/#jpa[EclipseLink], to access an
 in-memory https://www.h2database.com/html/main.html[H2
 database]. You’ll see how to install the relevant dependencies and add
 JPA-related code to your application.
+
+NOTE: This guide assumes that you have read the following:
+ <<mp/guides/07_datasource.adoc,An understanding of named data source support in Helidon MP>> and 
+ <<mp/guides/08_jta.adoc,An understanding of transaction support in Helidon MP>>.
 
 == Use the Maven Archetype to Generate a Helidon MP Application
 
@@ -63,7 +65,7 @@ mvn -U archetype:generate \
 Now `cd` into `helidon-jpa`.  The rest of this guide will assume all
 relative paths are relative to this directory.
 
-== Add the H2 Database Driver to the Runtime Classpath
+=== Add the H2 Database Driver to the Runtime Classpath
 
 Add the following dependency in your `pom.xml`:
 
@@ -81,7 +83,7 @@ In a production application, you may use a different database, so in
 that case you may add a different database driver dependency here
 instead.
 
-== Add the Hikari Connection Pool Extension to the Runtime Classpath
+=== Add the Hikari Connection Pool Extension to the Runtime Classpath
 
 Add the following dependency in your `pom.xml`:
 
@@ -95,7 +97,7 @@ Add the following dependency in your `pom.xml`:
 </dependency>
 ----
 
-== Add the JTA Extension to the Runtime Classpath
+=== Add the JTA Extension to the Runtime Classpath
 
 Add the following dependency in your `pom.xml`:
 
@@ -109,7 +111,7 @@ Add the following dependency in your `pom.xml`:
 </dependency>
 ----
 
-== Add the Provider-Independent Helidon JPA Extension to the Runtime Classpath
+=== Add the Provider-Independent Helidon JPA Extension to the Runtime Classpath
 
 Add the following dependency in your `pom.xml`:
 
@@ -123,7 +125,7 @@ Add the following dependency in your `pom.xml`:
 </dependency>
 ----
 
-== Add the EclipseLink JPA Extension to the Runtime Classpath
+=== Add the EclipseLink JPA Extension to the Runtime Classpath
 
 Add the following dependency in your `pom.xml`:
 
@@ -137,7 +139,7 @@ Add the following dependency in your `pom.xml`:
 </dependency>
 ----
 
-== Add the JTA and JPA Dependencies to the Provided Classpath
+=== Add the JTA and JPA Dependencies to the Provided Classpath
 
 Add the following dependencies in your `pom.xml`:
 
@@ -156,7 +158,7 @@ Add the following dependencies in your `pom.xml`:
 </dependency>
 ----
 
-== Add DDL to Create the Relevant Database Tables
+=== Add DDL to Create the Relevant Database Tables
 
 Add the following file under `src/main/resources`:
 
@@ -171,7 +173,7 @@ CREATE TABLE IF NOT EXISTS GREETING (
 MERGE INTO GREETING (SALUTATION, RESPONSE) VALUES ('Marco', 'Polo');
 ----
 
-== Add an `application.yaml` File With Database Connectivity Information
+=== Add an `application.yaml` File With Database Connectivity Information
 
 Replace the contents of the following file under `src/main/resources`:
 
@@ -199,7 +201,7 @@ this case, it is going to
 http://www.h2database.com/html/commands.html#runscript[load and run]
 the DDL mentioned above.
 
-== Add a Java Class to Represent a Greeting JPA Entity
+=== Add a Java Class to Represent a Greeting JPA Entity
 
 Add the following Java class under `src/main/java/io/helidon/example/jpa`:
 
@@ -319,7 +321,7 @@ and is non-`public` so that normal users have to supply data for the
 
 <9> This is the constructor normal users will use.
 
-== Add a `META-INF/persistence.xml` Descriptor
+=== Add a `META-INF/persistence.xml` Descriptor
 
 Add the following file under `src/main/resources/META-INF`:
 
@@ -377,7 +379,7 @@ have the value
 property] is required when EclipseLink is the JPA provider and must be
 set to `false`.
 
-== Modify the `pom.xml` File To Support Static Weaving
+=== Modify the `pom.xml` File To Support Static Weaving
 
 _Weaving_ is the term that describes the bytecode manipulation that
 JPA providers perform upon your simple Java entity classes (like the

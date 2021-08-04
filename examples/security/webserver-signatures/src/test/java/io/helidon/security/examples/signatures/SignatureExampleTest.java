@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.security.examples.signatures;
 
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.security.Security;
@@ -72,7 +71,7 @@ public abstract class SignatureExampleTest {
     abstract int getService2Port();
 
     @Test
-    public void testService1Hmac() throws ExecutionException, InterruptedException {
+    public void testService1Hmac() {
         testProtected("http://localhost:" + getService1Port() + "/service1",
                       "jack",
                       "password",
@@ -82,7 +81,7 @@ public abstract class SignatureExampleTest {
     }
 
     @Test
-    public void testService1Rsa() throws ExecutionException, InterruptedException {
+    public void testService1Rsa() {
         testProtected("http://localhost:" + getService1Port() + "/service1-rsa",
                       "jack",
                       "password",
@@ -97,7 +96,7 @@ public abstract class SignatureExampleTest {
                                String password,
                                Set<String> expectedRoles,
                                Set<String> invalidRoles,
-                               String service) throws ExecutionException, InterruptedException {
+                               String service) {
         client.get()
                 .uri(uri)
                 .property(EP_PROPERTY_OUTBOUND_USER, username)
@@ -112,7 +111,6 @@ public abstract class SignatureExampleTest {
 
                     assertThat(it, containsString("id='" + service + "'"));
                 })
-                .toCompletableFuture()
-                .get();
+                .await();
     }
 }
