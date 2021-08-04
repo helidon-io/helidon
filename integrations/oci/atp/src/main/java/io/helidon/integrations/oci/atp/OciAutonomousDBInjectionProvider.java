@@ -16,10 +16,10 @@
 
 package io.helidon.integrations.oci.atp;
 
+import io.helidon.integrations.oci.connect.spi.InjectionProvider;
+
 import java.util.LinkedList;
 import java.util.List;
-
-import io.helidon.integrations.oci.connect.spi.InjectionProvider;
 
 /**
  * Service provider for {@link io.helidon.integrations.oci.connect.spi.InjectionProvider}.
@@ -39,13 +39,11 @@ public class OciAutonomousDBInjectionProvider implements InjectionProvider {
                                                      .config(config)
                                                      .build()));
 
-        /*
         injectables.add(InjectionType.create(OciAutonomousDB.class,
                                              (restApi, config) -> OciAutonomousDB.create(OciAutonomousDBRx.builder()
                                                                                           .restApi(restApi)
                                                                                           .config(config)
-                                                                                          .build())));*/
-
+                                                                                          .build())));
         INJECTABLES = List.copyOf(injectables);
     }
 

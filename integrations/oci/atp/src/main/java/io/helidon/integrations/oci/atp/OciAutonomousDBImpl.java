@@ -16,17 +16,9 @@
 
 package io.helidon.integrations.oci.atp;
 
-/*
-import java.nio.channels.ReadableByteChannel;
-
-import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.IoMulti;
-import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
-*/
 
 class OciAutonomousDBImpl implements OciAutonomousDB {
-    /*
     private final OciAutonomousDBRx delegate;
 
     OciAutonomousDBImpl(OciAutonomousDBRx delegate) {
@@ -34,9 +26,8 @@ class OciAutonomousDBImpl implements OciAutonomousDB {
     }
 
     @Override
-    public ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response> getWallet(GenerateAutonomousDatabaseWallet.Request request) {
-            return delegate.getWallet(request).await()
+    public ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response> generateWallet(GenerateAutonomousDatabaseWalletRx.Request request) {
+            return delegate.generateWallet(request).await()
                 .map(reactiveResponse -> GenerateAutonomousDatabaseWallet.Response.create(reactiveResponse.bytePublisher()));
     }
-    */
 }

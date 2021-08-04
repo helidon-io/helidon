@@ -16,11 +16,31 @@
 
 package io.helidon.integrations.oci.atp;
 
+import io.helidon.integrations.common.rest.ApiOptionalResponse;
+
 /**
  * Blocking OCI ATP API.
  * All methods block the current thread. This implementation is not suitable for reactive programming.
  * Use {@link io.helidon.integrations.oci.atp.OciAutonomousDBRx} in reactive code.
  */
 public interface OciAutonomousDB {
+    /**
+     * Create a blocking object storage integration from its reactive counterpart.
+     * When running within an injection capable environment (such as CDI), instances of this
+     * class can be injected.
+     *
+     * @param reactive reactive OCI object storage
+     * @return blocking OCI object storage
+     */
+    static OciAutonomousDB create(OciAutonomousDBRx reactive) {
+        return new OciAutonomousDBImpl(reactive);
+    }
 
+    /**
+     * Gets the metadata and body of Wallet.
+     *
+     * @param request get object request
+     * @return future with response or error
+     */
+    ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response> generateWallet(GenerateAutonomousDatabaseWalletRx.Request request);
 }

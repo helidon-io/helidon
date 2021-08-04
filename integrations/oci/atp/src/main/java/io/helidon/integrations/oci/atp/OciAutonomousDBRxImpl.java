@@ -16,19 +16,14 @@
 
 package io.helidon.integrations.oci.atp;
 
-import java.util.Optional;
-import java.util.concurrent.Flow;
-
-import javax.json.JsonObject;
-
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
-import io.helidon.integrations.oci.connect.OciApiException;
-import io.helidon.integrations.oci.connect.OciRequestBase;
 import io.helidon.integrations.oci.connect.OciRestApi;
+
+import java.util.Optional;
 
 class OciAutonomousDBRxImpl implements OciAutonomousDBRx {
     private final OciRestApi restApi;
@@ -46,7 +41,7 @@ class OciAutonomousDBRxImpl implements OciAutonomousDBRx {
     }
 
     @Override
-    public Single<ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response>> getWallet(GenerateAutonomousDatabaseWallet.Request request) {
+    public Single<ApiOptionalResponse<GenerateAutonomousDatabaseWalletRx.Response>> generateWallet(GenerateAutonomousDatabaseWalletRx.Request request) {
         String apiPath = "/20160918/autonomousDatabases/" + this.ocid + "/actions/generateWallet";
 
         if (!request.endpoint().isPresent()) {
@@ -55,9 +50,12 @@ class OciAutonomousDBRxImpl implements OciAutonomousDBRx {
                     .hostPrefix(hostPrefix);
         }
 
-        request.addQueryParam("autonomousDatabaseId", this.ocid);
+        request.setPassword(this.walletPassword);
 
-        return restApi.post(apiPath,request,ApiOptionalResponse.<Multi<DataChunk>, GenerateAutonomousDatabaseWallet.Response>apiResponseBuilder()
-                        .entityProcessor(GenerateAutonomousDatabaseWallet.Response::create));
+        return restApi.invokePublisherResponse(Http.Method.POST,
+                apiPath,
+                request,
+                ApiOptionalResponse.<Multi<DataChunk>, GenerateAutonomousDatabaseWalletRx.Response>apiResponseBuilder()
+                                .entityProcessor(GenerateAutonomousDatabaseWalletRx.Response::create));
     }
 }

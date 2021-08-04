@@ -22,7 +22,7 @@ import java.util.OptionalLong;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.integrations.oci.atp.OciAutonomousDBRx;
-import io.helidon.integrations.oci.atp.GenerateAutonomousDatabaseWallet;
+import io.helidon.integrations.oci.atp.GenerateAutonomousDatabaseWalletRx;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -37,17 +37,17 @@ class ATPService implements Service {
 
     @Override
     public void update(Routing.Rules rules) {
-        rules.get("/wallet", this::getWallet);
+        rules.get("/wallet", this::generateWallet);
     }
 
-    private void getWallet(ServerRequest req, ServerResponse res) {
-        atpDB.getWallet(GenerateAutonomousDatabaseWallet.Request.builder())
+    private void generateWallet(ServerRequest req, ServerResponse res) {
+        atpDB.generateWallet(GenerateAutonomousDatabaseWalletRx.Request.builder())
                 .forSingle(apiResponse -> {
-                    Optional<GenerateAutonomousDatabaseWallet.Response> entity = apiResponse.entity();
+                    Optional<GenerateAutonomousDatabaseWalletRx.Response> entity = apiResponse.entity();
                     if (entity.isEmpty()) {
                         res.status(Http.Status.NOT_FOUND_404).send();
                     } else {
-                        GenerateAutonomousDatabaseWallet.Response response = entity.get();
+                        GenerateAutonomousDatabaseWalletRx.Response response = entity.get();
                         // copy the content length header to response
                         apiResponse.headers()
                                 .first(Http.Header.CONTENT_LENGTH)

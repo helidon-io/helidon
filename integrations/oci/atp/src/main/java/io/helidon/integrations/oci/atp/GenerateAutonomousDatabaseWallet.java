@@ -16,16 +16,12 @@
 
 package io.helidon.integrations.oci.atp;
 
-import io.helidon.common.http.DataChunk;
+import io.helidon.common.reactive.IoMulti;
 import io.helidon.common.reactive.Multi;
-import io.helidon.integrations.oci.connect.OciApiException;
-import io.helidon.integrations.oci.connect.OciRequestBase;
 import io.helidon.integrations.oci.connect.OciResponseParser;
 
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
 import java.nio.ByteBuffer;
-import java.util.Optional;
+import java.nio.channels.WritableByteChannel;
 
 /**
  * GenerateAutonomousDatabaseWallet request and response.
@@ -35,61 +31,28 @@ public final class GenerateAutonomousDatabaseWallet {
     }
 
     /**
-     * Request object. Can be configured with additional headers, query parameters etc.
-     */
-    public static class Request extends OciRequestBase<Request> {
-        private Request() {
-        }
-
-        /**
-         * Fluent API builder for configuring a request.
-         * The request builder is passed as is, without a build method.
-         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
-         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
-         *
-         * @return new request builder
-         */
-        public static Request builder() {
-            return new Request();
-        }
-
-        @Override
-        public Optional<JsonObject> toJson(JsonBuilderFactory factory) {
-            return Optional.empty();
-        }
-    }
-
-    /**
      * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
      */
     public static class Response extends OciResponseParser {
-        private final Multi<DataChunk> publisher;
+        private final Multi<ByteBuffer> publisher;
 
-        private Response(Multi<DataChunk> publisher) {
+        private Response(Multi<ByteBuffer> publisher) {
             this.publisher = publisher;
         }
 
-        static Response create(Multi<DataChunk> publisher) {
+        static Response create(Multi<ByteBuffer> publisher) {
             return new Response(publisher);
         }
 
         /**
-         * Get a publisher of {@link io.helidon.common.http.DataChunk}, this is useful
-         * when the result is sent via WebServer or WebClient that also use it.
+         * Write the response to the provided byte channel.
          *
-         * @return publisher of data chunks
+         * @param channel channel to write to
+         * @see java.nio.channels.Channels#newChannel(java.io.OutputStream)
          */
-        public Multi<DataChunk> publisher() {
-            return publisher;
-        }
-
-        /**
-         * Get a publisher of byte buffers.
-         *
-         * @return publisher of byte buffers
-         */
-        public Multi<ByteBuffer> bytePublisher() {
-            return publisher.flatMap(it -> Multi.just(it.data()));
+        public void writeTo(WritableByteChannel channel) {
+            publisher.to(IoMulti.multiToByteChannel(channel))
+                    .await();
         }
     }
 }

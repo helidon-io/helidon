@@ -16,12 +16,12 @@
 
 package io.helidon.integrations.oci.atp;
 
-import java.util.function.Consumer;
-
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.connect.OciRestApi;
+
+import java.util.function.Consumer;
 
 /**
  * Reactive API for OCI ATP.
@@ -77,7 +77,7 @@ public interface OciAutonomousDBRx {
      * @param request get object request
      * @return future with response or error
      */
-    Single<ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response>> getWallet(GenerateAutonomousDatabaseWallet.Request request);
+    Single<ApiOptionalResponse<GenerateAutonomousDatabaseWalletRx.Response>> generateWallet(GenerateAutonomousDatabaseWalletRx.Request request);
 
     /**
      * Fluent API Builder for {@link io.helidon.integrations.oci.atp.OciAutonomousDBRx}.
@@ -155,7 +155,7 @@ public interface OciAutonomousDBRx {
         /**
          * Explicit ocid of ATP to use.
          *
-         * @param ocid endpoint
+         * @param ocid ocid
          * @return updated builder
          */
         public Builder ocid(String ocid) {
@@ -166,7 +166,7 @@ public interface OciAutonomousDBRx {
         /**
          * Set explicit password to encrypt the keys inside the wallet
          *
-         * @param walletPassword endpoint
+         * @param walletPassword walletPassword
          * @return updated builder
          */
         public Builder walletPassword(String walletPassword) {
