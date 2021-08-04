@@ -1101,11 +1101,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.rsocket</groupId>
-                <artifactId>rsocket-transport-netty</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.microprofile.rsocket</groupId>
                 <artifactId>helidon-microprofile-rsocket-server</artifactId>
                 <version>${helidon.version}</version>
