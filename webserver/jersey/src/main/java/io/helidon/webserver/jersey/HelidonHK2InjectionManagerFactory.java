@@ -208,14 +208,20 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
 
         @Override
         public void inject(Object injectMe) {
-            delegate.inject(injectMe);
-            parent.inject(injectMe);
+            try {
+                delegate.inject(injectMe);
+            } catch (Throwable t) {
+                parent.inject(injectMe);
+            }
         }
 
         @Override
         public void inject(Object injectMe, String classAnalyzer) {
-            delegate.inject(injectMe, classAnalyzer);
-            parent.inject(injectMe, classAnalyzer);
+            try {
+                delegate.inject(injectMe, classAnalyzer);
+            } catch (Throwable t) {
+                parent.inject(injectMe, classAnalyzer);
+            }
         }
 
         @Override
