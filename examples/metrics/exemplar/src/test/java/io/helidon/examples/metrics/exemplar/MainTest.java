@@ -16,24 +16,25 @@
 
 package io.helidon.examples.metrics.exemplar;
 
-import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
-import io.helidon.webserver.WebServer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+
+import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
+import io.helidon.webserver.WebServer;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertLinesMatch;
@@ -63,11 +64,10 @@ public class MainTest {
     }
 
     @AfterAll
-    public static void stopServer() throws Exception {
+    public static void stopServer() {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(10, TimeUnit.SECONDS);
         }
     }
 

@@ -20,6 +20,7 @@
 :h1Prefix: SE
 :description: Helidon metrics
 :keywords: helidon, metrics, microprofile, guide
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 :common-guides: ../../common/guides
 :metrics-common: {common-guides}/metrics.adoc
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.metrics/io/helidon/metrics
@@ -30,8 +31,8 @@
 include::{metrics-common}[tag=intro]
 include::{metrics-common}[tag=create-sample-project]
 include::{metrics-common}[tag=using-built-in-metrics-intro]
-The generated source code is
-already configured for both metrics and health-checks, but the following example removes health-checks.
+
+The generated source code is already configured for both metrics and health checks, but the following example removes health checks.
 
 
 [source,xml]
@@ -94,7 +95,7 @@ Your Helidon SE application can also enable or disable the extended KPI metrics 
 
 include::{metrics-common}[tag=metrics-metadata]
 
-=== Application-specific metrics data
+=== Application-Specific Metrics Data
 
 This section demonstrates how to use application-specific metrics and integrate them with Helidon.
 It is the application's responsibility to create and update the metrics at runtime.  The application has
@@ -107,7 +108,7 @@ In all of these examples, the scope and lifetime of the metric is at the applica
 Each metric, except `Gauge`, is updated in response to a REST request and the contents of the
 metric is cumulative.
 
-==== Counter metric
+==== Counter Metric
 
 The `Counter` metric is a monotonically increasing or decreasing number. The following example
 will demonstrate how to use a `Counter` to track the number of times the `/cards` endpoint is called.
@@ -198,7 +199,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 <1> The count value is one since the method was called once.
 
 
-==== Meter metric
+==== Meter Metric
 
 The `Meter` metric is used to measure throughput, the number of times an event occurs within a certain time period.
 When a `Meter` object is created, its internal clock starts running.  That clock is used to calculate the various rates
@@ -284,7 +285,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 <2> The `/cards` endpoint was called three times.
 
 
-==== Timer metric
+==== Timer Metric
 
 (See also <<#simple_timer_metric,Simple timer metric>>.)
 
@@ -381,7 +382,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 will change each time you invoke the `/cards` endpoint.
 
 
-==== Histogram metric
+==== Histogram Metric
 
 The `Histogram` metric calculates the distribution of a set of values within ranges.  This metric does
 not relate to time at all.  The following example will record a set of random numbers in a `Histogram` metric when
@@ -474,7 +475,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 <1> This is the histogram data.  Some of these values will change each time you invoke the `/cards` endpoint.
 
 
-==== Gauge metric
+==== Gauge Metric
 
 The `Gauge` metric measures a discreet value at a point in time, such as a temperature.  The metric is not normally
 tied to a REST endpoint, rather it should be registered during application startup.  When the `/metrics/application` endpoint
@@ -574,7 +575,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 <1> The current temperature is returned.  Invoke the `/metrics/application` endpoint again and you should get a different value.
 
 [[simple_timer_metric]]
-==== Simple timer metric
+==== Simple Timer Metric
 
 The `SimpleTimer` metric counts invocations and accumulates duration (in seconds). In the following example,
 a `SimpleTimer` metric is used to count and measure the duration of a method's execution. Whenever the REST `/cards`

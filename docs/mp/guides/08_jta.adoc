@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 :h1Prefix: MP
 :description: Helidon MP JTA Guide
 :keywords: helidon, guide, transaction, jta, microprofile
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide shows how to configure and use
 https://jakarta.ee/specifications/transactions/1.3/[Java Transaction API
@@ -27,13 +28,13 @@ https://jakarta.ee/specifications/transactions/1.3/[Java Transaction API
 
 == What You Need
 
-|===
-|About 10 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|<<mp/guides/02_quickstart.adoc,A Helidon MP application, such as Helidon MP Quickstart>>
-|===
+For this 10 minute tutorial, you will need the following:
 
-== Add The Helidon JTA Integration to Your Helidon MP Application's Runtime Classpath
+include::{common-page-prefix-inc}[tag=common-prereqs]
+
+
+
+== Add the Helidon JTA Integration to Your Application's Runtime Classpath
 
 To bring JTA transactions to your Helidon MP application, you'll need
 to add the relevant extension.  Specifically, you'll need to add an
@@ -52,7 +53,7 @@ JTA extension:
 
 <1> Note the scope is `runtime`.
 
-== Add JTA to Your Helidon MP Application's Compilation Classpath
+== Add JTA to Your Application's Compilation Classpath
 
 To actually use the Java Transaction API in your code, you'll need to
 ensure a library defining the classes and interfaces mandated by the

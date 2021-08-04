@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package io.helidon.examples.translator.backend;
 
-import java.util.concurrent.CompletionStage;
-
 import io.helidon.common.LogConfig;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.tracing.TracerBuilder;
@@ -37,7 +36,7 @@ public class Main {
      * Start the server.
      * @return the created {@link WebServer} instance
      */
-    public static CompletionStage<WebServer> startBackendServer() {
+    public static Single<WebServer> startBackendServer() {
         // configure logging in order to not have the standard JVM defaults
         LogConfig.configureRuntime();
 
@@ -55,16 +54,14 @@ public class Main {
                 .build();
 
         return webServer.start()
-                .thenApply(ws -> {
+                .peek(ws -> {
                     System.out.println(
                             "WEB server is up! http://localhost:" + ws.port());
                     ws.whenShutdown().thenRun(()
                                                       -> System.out.println("WEB server is DOWN. Good bye!"));
-                    return ws;
-                }).exceptionally(t -> {
+                }).onError(t -> {
                     System.err.println("Startup failed: " + t.getMessage());
                     t.printStackTrace(System.err);
-                    return null;
                 });
     }
 
@@ -72,9 +69,8 @@ public class Main {
      * The main method of Translator backend.
      *
      * @param args command-line args, currently ignored.
-     * @throws Exception in case of an error
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         startBackendServer();
     }
 }

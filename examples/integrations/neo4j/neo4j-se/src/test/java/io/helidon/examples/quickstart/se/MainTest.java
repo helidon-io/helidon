@@ -20,18 +20,20 @@ import java.util.concurrent.TimeUnit;
 
 import javax.json.JsonArray;
 
+import io.helidon.common.http.Http;
 import io.helidon.examples.integrations.neo4j.se.Main;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
-
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.neo4j.harness.Neo4j;
 import org.neo4j.harness.Neo4jBuilders;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Main test class for Neo4j Helidon SE quickstarter.
@@ -44,8 +46,7 @@ public class MainTest {
     private static Neo4j embeddedDatabaseServer;
 
     @BeforeAll
-    private static void startTheServer() throws Exception {
-
+    static void startTheServer() {
 
         embeddedDatabaseServer = Neo4jBuilders.newInProcessBuilder()
                 .withDisabledServer()
@@ -63,46 +64,44 @@ public class MainTest {
     }
 
     @AfterAll
-    private static void stopServer() throws Exception {
+    static void stopServer() {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(10, TimeUnit.SECONDS);
         }
         embeddedDatabaseServer.close();
     }
 
     @Test
-    void testMovies() throws Exception {
+    void testMovies() {
 
-        webClient.get()
+        JsonArray result = webClient.get()
                 .path("api/movies")
                 .request(JsonArray.class)
-                .thenAccept(result -> Assertions.assertEquals("The Matrix", result.getJsonObject(0).getString("title")))
-                .toCompletableFuture()
-                .get();
+                .await();
 
+        assertEquals("The Matrix", result.getJsonObject(0).getString("title"));
     }
 
     @Test
-    public void testHealth() throws Exception {
+    public void testHealth() {
 
-        webClient.get()
+        WebClientResponse response = webClient.get()
                 .path("/health")
                 .request()
-                .thenAccept(response -> Assertions.assertEquals(200, response.status().code()))
-                .toCompletableFuture()
-                .get();
+                .await();
+
+        assertEquals(Http.Status.OK_200, response.status());
     }
 
     @Test
-    public void testMetrics() throws Exception {
-        webClient.get()
+    public void testMetrics() {
+        WebClientResponse response = webClient.get()
                 .path("/metrics")
                 .request()
-                .thenAccept(response -> Assertions.assertEquals(200, response.status().code()))
-                .toCompletableFuture()
-                .get();
+                .await();
+
+        assertEquals(Http.Status.OK_200, response.status());
     }
 
     static final String FIXTURE = ""

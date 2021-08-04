@@ -101,7 +101,7 @@ Config.builder()
 ----
 
 
-== Resource class when loaded from Config
+== Resource Class When Loaded from Config
 
 The configuration approach to `Resource` class was using prefixes which was not aligned with our approach to configuration.
 All usages were refactored as follows:
@@ -281,7 +281,7 @@ WebServer.builder()
    .build();
 ----
 
-=== Other significant WebServer deprecations
+=== Other Significant WebServer Deprecations
 
 - `io.helidon.webserver.WebServer.Builder` - all methods that accept `ServerConfiguration` or its builder are deprecated, please use
       methods on `WebServer.Builder` instead

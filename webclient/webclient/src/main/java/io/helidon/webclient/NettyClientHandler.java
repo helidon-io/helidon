@@ -286,10 +286,12 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             });
         }
 
-        public int emit(final ByteBuf buf) {
+
+
+        public void emit(final ByteBuf buf) {
             buf.retain();
-            return super.emit(DataChunk.create(false, true, buf::release,
-                                               buf.nioBuffer().asReadOnlyBuffer()));
+            super.emit(DataChunk.create(false, true, buf::release,
+                       buf.nioBuffer().asReadOnlyBuffer()));
         }
     }
 
