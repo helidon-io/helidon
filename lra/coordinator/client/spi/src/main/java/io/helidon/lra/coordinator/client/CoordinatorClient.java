@@ -54,12 +54,21 @@ public interface CoordinatorClient {
     /**
      * Ask coordinator to start new LRA and return its id.
      *
+     * @param clientID  id specifying originating method/resource
+     * @param timeout   after what time should be LRA cancelled automatically
+     * @return id of the new LRA
+     */
+    URI start(String clientID, long timeout);
+
+    /**
+     * Ask coordinator to start new LRA and return its id.
+     *
      * @param parentLRA in case new LRA should be a child of already existing one
      * @param clientID  id specifying originating method/resource
      * @param timeout   after what time should be LRA cancelled automatically
      * @return id of the new LRA
      */
-    URI start(URI parentLRA, String clientID, Long timeout);
+    URI start(URI parentLRA, String clientID, long timeout);
 
     /**
      * Join existing LRA with participant.
@@ -69,7 +78,7 @@ public interface CoordinatorClient {
      * @param participant participant metadata with URLs to be called when complete/compensate ...
      * @return recovery URI if supported by coordinator or empty
      */
-    Optional<URI> join(URI lraId, Long timeLimit, Participant participant);
+    Optional<URI> join(URI lraId, long timeLimit, Participant participant);
 
     /**
      * Cancel LRA if its active. Should cause coordinator to compensate its participants.

@@ -1358,6 +1358,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.eclipse.microprofile.lra</groupId>
+                <artifactId>microprofile-lra-tck</artifactId>
+                <version>${version.lib.microprofile-lra-api}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-simple</artifactId>
                 <version>${version.lib.slf4j}</version>

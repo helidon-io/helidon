@@ -75,21 +75,26 @@ public class NarayanaClient implements CoordinatorClient {
     }
 
     @Override
-    public URI start(URI parentLRA, String clientID, Long timeout) {
+    public URI start(String clientID, long timeout) {
+        return start("", clientID, timeout);
+    }
+
+    @Override
+    public URI start(URI parentLRAUri, String clientID, long timeout) {
+        String parentLra = URLEncoder.encode(parentLRAUri.toASCIIString(), StandardCharsets.UTF_8);
+        return start(parentLra, clientID, timeout);
+    }
+
+    private URI start(String parentLRA, String clientID, long timeout) {
         RuntimeException lastError = new IllegalStateException();
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {
             try {
                 WebClientResponse response = webClient
                         .post()
                         .path("start")
-                        .queryParam(QUERY_PARAM_CLIENT_ID, Optional.ofNullable(clientID)
-                                .orElse(""))
-                        .queryParam(QUERY_PARAM_TIME_LIMIT, Optional.ofNullable(timeout)
-                                .map(String::valueOf)
-                                .orElse(String.valueOf(0L)))
-                        .queryParam(QUERY_PARAM_PARENT_LRA, Optional.ofNullable(parentLRA)
-                                .map(p -> URLEncoder.encode(p.toString(), StandardCharsets.UTF_8))
-                                .orElse(""))
+                        .queryParam(QUERY_PARAM_CLIENT_ID, Optional.ofNullable(clientID).orElse(""))
+                        .queryParam(QUERY_PARAM_TIME_LIMIT, String.valueOf(timeout))
+                        .queryParam(QUERY_PARAM_PARENT_LRA, parentLRA)
                         .submit()
                         .await(coordinatorTimeout, coordinatorTimeoutUnit);
 
@@ -179,7 +184,7 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public Optional<URI> join(URI lraId,
-                              Long timeLimit,
+                              long timeLimit,
                               Participant participant) {
         RuntimeException lastError = new IllegalStateException();
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {

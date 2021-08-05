@@ -17,6 +17,7 @@
 
 package io.helidon.microprofile.lra;
 
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -31,6 +32,7 @@ import javax.ws.rs.core.Response;
 
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
+import io.helidon.lra.coordinator.client.Participant;
 
 import org.jboss.jandex.AnnotationInstance;
 
@@ -57,12 +59,12 @@ class LraAnnotationHandler implements AnnotationHandler {
 
     @Override
     public void handleJaxRsBefore(ContainerRequestContext reqCtx, ResourceInfo resourceInfo) {
-        var method = resourceInfo.getResourceMethod();
-        var baseUri = reqCtx.getUriInfo().getBaseUri();
-        var participant = participantService.participant(baseUri, resourceInfo.getResourceClass());
-        var existingLraId = LraThreadContext.get().lra();
-        var timeLimit = Duration.of(annotation.timeLimit(), annotation.timeUnit()).toMillis();
-        var clientId = method.getDeclaringClass().getName() + "#" + method.getName();
+        Method method = resourceInfo.getResourceMethod();
+        URI baseUri = reqCtx.getUriInfo().getBaseUri();
+        Participant participant = participantService.participant(baseUri, resourceInfo.getResourceClass());
+        Optional<URI> existingLraId = LraThreadContext.get().lra();
+        long timeLimit = Duration.of(annotation.timeLimit(), annotation.timeUnit()).toMillis();
+        String clientId = method.getDeclaringClass().getName() + "#" + method.getName();
 
         URI lraId = null;
         URI parentLraId = null;
@@ -77,7 +79,7 @@ class LraAnnotationHandler implements AnnotationHandler {
                                 .map(URI::toASCIIString)
                                 .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
                     } else {
-                        lraId = coordinatorClient.start(null, clientId, timeLimit);
+                        lraId = coordinatorClient.start(clientId, timeLimit);
                         coordinatorClient.join(lraId, timeLimit, participant)
                                 .map(URI::toASCIIString)
                                 .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
@@ -121,7 +123,7 @@ class LraAnnotationHandler implements AnnotationHandler {
                     }
                     // non existing lra, fall thru to requires_new
                 case REQUIRES_NEW:
-                    lraId = coordinatorClient.start(null, clientId, timeLimit);
+                    lraId = coordinatorClient.start(clientId, timeLimit);
                     coordinatorClient.join(lraId, timeLimit, participant)
                             .map(URI::toASCIIString)
                             .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
