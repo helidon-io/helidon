@@ -85,10 +85,12 @@ abstract class InterceptorBase<M extends Metric> extends HelidonInterceptor.Base
         if (Registry.isMarkedAsDeleted(metric)) {
             throw new IllegalStateException("Attempt to use previously-removed metric" + workItem.metricID());
         }
-        LOGGER.log(Level.FINEST, () -> String.format(
-                "%s (%s) is accepting %s %s for processing on %s triggered by @%s",
-                getClass().getSimpleName(), actionType, workItem.metric().getClass().getSimpleName(), workItem.metricID(),
-                context.getMethod() != null ? context.getMethod() : context.getConstructor(), annotationType.getSimpleName()));
+        if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.log(Level.FINEST, String.format(
+                    "%s (%s) is accepting %s %s for processing on %s triggered by @%s",
+                    getClass().getSimpleName(), actionType, workItem.metric().getClass().getSimpleName(), workItem.metricID(),
+                    context.getMethod() != null ? context.getMethod() : context.getConstructor(), annotationType.getSimpleName()));
+        }
         action.accept(metricType.cast(metric));
     }
 

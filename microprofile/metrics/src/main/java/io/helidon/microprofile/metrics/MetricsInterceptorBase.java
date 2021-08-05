@@ -88,7 +88,7 @@ abstract class MetricsInterceptorBase<M extends Metric> extends HelidonIntercept
             throw new IllegalStateException("Attempt to use previously-removed metric" + workItem.metricID());
         }
         if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.log(Level.FINEST, () -> String.format(
+            LOGGER.log(Level.FINEST, String.format(
                     "%s (%s) is accepting %s %s for processing on %s triggered by @%s",
                     getClass().getSimpleName(), actionType, workItem.metric()
                             .getClass()
