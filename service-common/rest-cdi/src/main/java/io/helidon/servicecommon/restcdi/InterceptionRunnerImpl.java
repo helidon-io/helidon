@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -51,6 +52,8 @@ class InterceptionRunnerImpl implements InterceptionRunner {
      * can use the same instance for all except async method runners.
      */
     private static final InterceptionRunner INSTANCE = new InterceptionRunnerImpl();
+
+    private static final Map<Method, Integer> asyncResponseSlots = new ConcurrentHashMap<>();
 
     /**
      * Returns the appropriate {@code InterceptionRunner} for the executable.
@@ -315,14 +318,15 @@ class InterceptionRunnerImpl implements InterceptionRunner {
     }
 
     private static int asyncResponseSlot(Method interceptedMethod) {
-        int result = 0;
-
-        for (Parameter p : interceptedMethod.getParameters()) {
-            if (AsyncResponse.class.isAssignableFrom(p.getType()) && p.getAnnotation(Suspended.class) != null) {
-                return result;
+        return asyncResponseSlots.computeIfAbsent(interceptedMethod, executable -> {
+            int newResult = 0;
+            for (Parameter p : interceptedMethod.getParameters()) {
+                if (AsyncResponse.class.isAssignableFrom(p.getType()) && p.getAnnotation(Suspended.class) != null) {
+                    return newResult;
+                }
+                newResult++;
             }
-            result++;
-        }
-        return -1;
+            return -1;
+        });
     }
 }
