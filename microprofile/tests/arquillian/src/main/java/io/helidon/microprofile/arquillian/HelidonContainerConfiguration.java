@@ -16,9 +16,9 @@
 
 package io.helidon.microprofile.arquillian;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.function.Consumer;
 
+import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
 
@@ -37,32 +37,21 @@ import org.jboss.arquillian.container.spi.client.container.ContainerConfiguratio
  * </ul>
  */
 public class HelidonContainerConfiguration implements ContainerConfiguration {
-    private final Map<String, String> customMap = new HashMap<>();
     private String appClassName = null;
     private String excludeArchivePattern = null;
     private int port = 8080;
     private boolean deleteTmp = true;
     private boolean useRelativePath = false;
     private boolean useParentClassloader = true;
+    private Consumer<ConfigBuilder> builderConsumer;
 
     /**
-     * Set custom property.
+     * Access container's config builder.
      *
-     * @param propertyName name of the custom property
-     * @param value        value of custom property
+     * @param builderConsumer container's config builder
      */
-    public void set(String propertyName, String value) {
-        customMap.put(propertyName, value);
-    }
-
-    /**
-     * Get custom property.
-     *
-     * @param propertyName name of the custom property
-     * @return value of custom property or null
-     */
-    public String get(String propertyName) {
-        return customMap.get(propertyName);
+    public void config(Consumer<ConfigBuilder> builderConsumer) {
+        this.builderConsumer = builderConsumer;
     }
 
     public String getApp() {
@@ -120,7 +109,8 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
         }
     }
 
-    Map<String, String> getCustomMap() {
-        return customMap;
+    ConfigBuilder useBuilder(ConfigBuilder configBuilder) {
+        builderConsumer.accept(configBuilder);
+        return configBuilder;
     }
 }

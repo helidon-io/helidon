@@ -16,9 +16,9 @@
  */
 
 /**
- * Mock LRA coordinator with Narayana like rest api for testing .
+ * Helidon LRA coordinator.
  */
-module io.helidon.microprofile.lra.coordinator {
+module io.helidon.lra.coordinator {
     requires java.logging;
     requires microprofile.lra.api;
     requires io.helidon.common.reactive;
@@ -27,6 +27,6 @@ module io.helidon.microprofile.lra.coordinator {
     requires io.helidon.health;
     requires io.helidon.health.checks;
     requires io.helidon.scheduling;
-    requires java.sql;
-    requires java.xml.bind;
+    requires io.helidon.dbclient;
+    requires io.helidon.dbclient.jdbc;
 }

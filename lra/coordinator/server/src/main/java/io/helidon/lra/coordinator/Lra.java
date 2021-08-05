@@ -12,9 +12,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
+ *  
  */
-package io.helidon.microprofile.lra.coordinator;
+package io.helidon.lra.coordinator;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -31,27 +31,21 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlID;
-import javax.xml.bind.annotation.XmlIDREF;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
-
 import io.helidon.common.http.Headers;
 import io.helidon.config.Config;
+import io.helidon.metrics.RegistryFactory;
 import io.helidon.webclient.WebClientRequestHeaders;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Timer;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_ENDED_CONTEXT_HEADER;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_PARENT_CONTEXT_HEADER;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
 
-@XmlRootElement
-@XmlAccessorType(XmlAccessType.FIELD)
 class Lra {
 
     private static final Logger LOGGER = Logger.getLogger(Lra.class.getName());
@@ -60,42 +54,81 @@ class Lra {
     private URI parentId;
     private final Set<String> compensatorLinks = Collections.synchronizedSet(new HashSet<>());
 
-    @XmlID
     private String lraId;
-
-    @XmlTransient
     private Config config;
 
-    @XmlIDREF
     private final List<Lra> children = Collections.synchronizedList(new ArrayList<>());
 
-    @XmlElement
     private final List<Participant> participants = new CopyOnWriteArrayList<>();
 
     private final AtomicReference<LRAStatus> status = new AtomicReference<>(LRAStatus.Active);
 
-    @XmlTransient
     private final Lock lock = new ReentrantLock();
 
     private boolean isChild;
     private long whenReadyToDelete = 0;
 
+    private final MetricRegistry registry = RegistryFactory.getInstance()
+            .getRegistry(MetricRegistry.Type.APPLICATION);
+    private final Counter lraCtr = registry.counter("lractr");
+    private final Timer.Context lraLifeSpanTmr = registry.timer("lralifespantmr").time();
+    
     Lra(String lraUUID, Config config) {
         lraId = lraUUID;
         this.config = config;
+        lraCtr.inc();
+        
     }
 
     Lra(String lraUUID, URI parentId, Config config) {
         lraId = lraUUID;
         this.parentId = parentId;
         this.config = config;
-    }
-
-    Lra() {
+        lraCtr.inc();
     }
 
     String lraId() {
         return lraId;
+    }
+
+    String parentId() {
+        return Optional.ofNullable(parentId).map(URI::toASCIIString).orElse(null);
+    }
+
+    boolean isChild() {
+        return isChild;
+    }
+
+    void setChild(boolean child) {
+        isChild = child;
+    }
+
+    long getTimeout() {
+        return timeout;
+    }
+
+    void setStatus(LRAStatus status) {
+        this.status.set(status);
+    }
+
+    long getWhenReadyToDelete() {
+        return this.whenReadyToDelete;
+    }
+
+    void setWhenReadyToDelete(long whenReadyToDelete) {
+        this.whenReadyToDelete = whenReadyToDelete;
+    }
+
+    void setTimeout(long timeout) {
+        this.timeout = timeout;
+    }
+
+    List<Participant> getParticipants() {
+        return this.participants;
+    }
+
+    Iterable<String> getCompensatorLinks() {
+        return compensatorLinks;
     }
 
     void setupTimeout(long timeLimit) {
@@ -148,6 +181,7 @@ class Lra {
             LOGGER.warning("Can't close LRA, it's already " + status.get().name() + " " + this.lraId);
             return;
         }
+        lraLifeSpanTmr.close();
         if (lock.tryLock()) {
             try {
                 sendComplete();
@@ -172,6 +206,7 @@ class Lra {
             LOGGER.warning("Can't cancel LRA, it's already " + status.get().name() + " " + this.lraId);
             return;
         }
+        lraLifeSpanTmr.close();
         for (Lra nestedLra : children) {
             nestedLra.cancel();
         }

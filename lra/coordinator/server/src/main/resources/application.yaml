@@ -14,6 +14,100 @@
 # limitations under the License.
 #
 
-server:
-  port: 8070
-  host: 0.0.0.0
+helidon.lra.coordinator:
+  url: http://localhost:8070/lra-coordinator
+  timeout: 500
+  
+  server:
+    port: 8070
+    host: 0.0.0.0
+    
+  db:
+    source: jdbc
+    connection:
+      url: "jdbc:h2:file:./lra-coordinator"
+      username: h2
+      password: ""
+      poolName: h2
+    statements:
+      create-lra-table: >-
+        CREATE TABLE IF NOT EXISTS LRA(
+          ID                    VARCHAR(255) PRIMARY KEY,
+          PARENT_ID             VARCHAR(255),
+          TIMEOUT               BIGINT,
+          STATUS                VARCHAR(32),
+          IS_CHILD              BOOLEAN,
+          WHEN_READY_TO_DELETE  BIGINT
+        )
+        
+      create-participant-table: >-
+        CREATE TABLE IF NOT EXISTS PARTICIPANT(
+          ID                        IDENTITY PRIMARY KEY, 
+          LRA_ID                    VARCHAR(255),
+          STATUS                    VARCHAR(32),
+          COMPENSATE_STATUS         VARCHAR(32),
+          FORGET_STATUS             VARCHAR(32),
+          AFTER_LRA_STATUS          VARCHAR(32),
+          SENDING_STATUS            VARCHAR(32),
+          REMAINING_CLOSE_ATTEMPTS  INT,
+          REMAINING_AFTER_ATTEMPTS  INT,
+          COMPLETE_LINK             VARCHAR(255),
+          COMPENSATE_LINK           VARCHAR(255),
+          AFTER_LINK                VARCHAR(255),
+          FORGET_LINK               VARCHAR(255),
+          STATUS_LINK               VARCHAR(255)
+        )
+        
+      load: >-
+        SELECT 
+          lra.ID, 
+          PARENT_ID, 
+          TIMEOUT, 
+          lra.STATUS, 
+          IS_CHILD, 
+          WHEN_READY_TO_DELETE, 
+        
+          p.STATUS PARTICIPANT_STATUS, 
+          COMPENSATE_STATUS, 
+          FORGET_STATUS, 
+          AFTER_LRA_STATUS, 
+          SENDING_STATUS, 
+          REMAINING_CLOSE_ATTEMPTS, 
+          REMAINING_AFTER_ATTEMPTS, 
+          COMPLETE_LINK, 
+          COMPENSATE_LINK, 
+          AFTER_LINK, 
+          FORGET_LINK, 
+          STATUS_LINK  
+        FROM LRA lra 
+        LEFT JOIN PARTICIPANT p ON p.LRA_ID=lra.ID
+        
+      insert-lra: >-
+        INSERT INTO LRA(
+          ID, 
+          PARENT_ID, 
+          TIMEOUT, 
+          STATUS, 
+          IS_CHILD, 
+          WHEN_READY_TO_DELETE
+        ) VALUES (?,?,?,?,?,?)
+      
+      insert-participant: >-
+        INSERT INTO PARTICIPANT(
+          LRA_ID, 
+          STATUS,
+          COMPENSATE_STATUS,
+          FORGET_STATUS,
+          AFTER_LRA_STATUS,
+          SENDING_STATUS,
+          REMAINING_CLOSE_ATTEMPTS,
+          REMAINING_AFTER_ATTEMPTS,
+          COMPLETE_LINK,
+          COMPENSATE_LINK,
+          AFTER_LINK,
+          FORGET_LINK,
+          STATUS_LINK
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+        
+      delete-all-lra: DELETE FROM LRA
+      delete-all-participants: DELETE FROM PARTICIPANT

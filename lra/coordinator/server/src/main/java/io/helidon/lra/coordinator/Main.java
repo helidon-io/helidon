@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.lra.coordinator;
+package io.helidon.lra.coordinator;
 
 import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Single;
@@ -40,7 +40,6 @@ public class Main {
      * @param args are not used
      */
     public static void main(String[] args) {
-
         LogConfig.configureRuntime();
 
         Config config = Config.create();
@@ -48,7 +47,7 @@ public class Main {
         CoordinatorService coordinatorService = CoordinatorService.builder().build();
 
         WebServer server = WebServer.builder(createRouting(config, coordinatorService))
-                .config(config.get("server"))
+                .config(config.get("helidon.lra.coordinator.server"))
                 .build();
 
         Single<WebServer> webserver = server.start();
@@ -65,8 +64,7 @@ public class Main {
         });
     }
 
-    private static Routing createRouting(Config config,
-                                         CoordinatorService coordinatorService) {
+    private static Routing createRouting(Config config, CoordinatorService coordinatorService) {
 
         MetricsSupport metrics = MetricsSupport.create();
         HealthSupport health = HealthSupport.builder()
@@ -74,8 +72,8 @@ public class Main {
                 .build();
 
         return Routing.builder()
-                .register(health)                   // Health at "/health"
-                .register(metrics)                  // Metrics at "/metrics"
+                .register(health)
+                .register(metrics)
                 .register(config.get("mp.lra.coordinator.context.path")
                         .asString()
                         .orElse("/lra-coordinator"), coordinatorService)

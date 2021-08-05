@@ -68,6 +68,8 @@ public class NarayanaClient implements CoordinatorClient {
         this.coordinatorTimeoutUnit = timeoutUnit;
         this.webClient = WebClient.builder()
                 .baseUri(coordinatorUri)
+                // Workaround for #3242
+                .keepAlive(false)
                 .addReader(new LRAStatusReader())
                 .build();
     }
@@ -124,11 +126,20 @@ public class NarayanaClient implements CoordinatorClient {
                         .submit()
                         .await(coordinatorTimeout, coordinatorTimeoutUnit);
 
-                if (response.status().code() == 404) {
-                    LOGGER.warning("Cancel LRA - Coordinator can't find LRAID: " + lraId.toASCIIString());
+                switch (response.status().family()) {
+                    case SUCCESSFUL:
+                        return;
+                    case CLIENT_ERROR:
+                    default:
+                        if (404 == response.status().code()) {
+                            LOGGER.warning("Cancel LRA - Coordinator can't find LRAID: " + lraId.toASCIIString());
+                            return;
+                        }
+                        LOGGER.warning("Cancelling LRA - Unable to call coordinator to cancel LRAID: " + lraId.toASCIIString());
+                        throw new CoordinatorConnectionException("Unable to cancel lra " + lraId, response.status().code());
                 }
             } catch (CompletionException | IllegalStateException e) {
-                lastError = coordinationConnectionError("Unable to start LRA", 500, e);
+                lastError = coordinationConnectionError("Unable to cancel LRA " + lraId.toASCIIString(), 500, e);
             }
         }
         throw lastError;
@@ -148,7 +159,12 @@ public class NarayanaClient implements CoordinatorClient {
                 switch (response.status().family()) {
                     case SUCCESSFUL:
                         return;
+                    case CLIENT_ERROR:
                     default:
+                        if (410 == response.status().code()) {
+                            // Already closed/cancelled
+                            return;
+                        }
                         LOGGER.warning("Closing LRA - Unable to call coordinator to close LRAID: " + lraId.toASCIIString());
                         throw new CoordinatorConnectionException("Unable to close lra " + lraId, response.status().code());
                 }
@@ -293,13 +309,13 @@ public class NarayanaClient implements CoordinatorClient {
      */
     private String compensatorLinks(Participant p) {
         return Map.of(
-                "compensate", p.compensate(),
-                "complete", p.complete(),
-                "forget", p.forget(),
-                "leave", p.leave(),
-                "after", p.after(),
-                "status", p.status()
-        )
+                        "compensate", p.compensate(),
+                        "complete", p.complete(),
+                        "forget", p.forget(),
+                        "leave", p.leave(),
+                        "after", p.after(),
+                        "status", p.status()
+                )
                 .entrySet()
                 .stream()
                 .filter(e -> e.getValue().isPresent())

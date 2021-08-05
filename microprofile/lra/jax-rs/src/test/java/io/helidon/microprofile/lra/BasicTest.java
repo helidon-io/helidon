@@ -30,6 +30,7 @@ import java.util.concurrent.TimeoutException;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
+import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Entity;
@@ -37,11 +38,11 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
-import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.common.reactive.Single;
+import io.helidon.config.Config;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.microprofile.config.ConfigCdiExtension;
-import io.helidon.microprofile.lra.coordinator.CoordinatorService;
+import io.helidon.lra.coordinator.CoordinatorService;
 import io.helidon.microprofile.lra.resources.CdiCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.CdiNestedCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.CommonAfter;
@@ -72,7 +73,6 @@ import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.hamcrest.core.AnyOf;
 import org.hamcrest.core.IsNull;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -114,20 +114,33 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @AddConfig(key = "server.sockets.0.name", value = "coordinator")
 @AddConfig(key = "server.sockets.0.port", value = "8070")
 @AddConfig(key = "server.sockets.0.bind-address", value = "localhost")
+@AddConfig(key = "db.source", value = "jdbc")
+@AddConfig(key = "db.connection.url", value = "jdbc:h2:mem:lra-coordinator;DB_CLOSE_DELAY=-1")
+@AddConfig(key = "db.connection.username", value = "h2")
+@AddConfig(key = "db.connection.password", value = "")
+@AddConfig(key = "db.connection.poolName", value = "h2")
 public class BasicTest {
 
     private static final long TIMEOUT_SEC = 10L;
 
     private final Map<String, CompletableFuture<URI>> completionMap = new HashMap<>();
 
+    @Inject
+    BeanManager beanManager;
+    
+    @Inject
+    Config config;
+    
     @Produces
     @ApplicationScoped
     @RoutingName(value = "coordinator", required = true)
     @RoutingPath("/lra-coordinator")
     public Service coordinatorService() {
-        return CoordinatorService.create();
+        return CoordinatorService.builder()
+                .config(config.get(CoordinatorService.CONFIG_PREFIX))
+                .build();
     }
-    
+
     @Inject
     CoordinatorClient coordinatorClient;
 
@@ -135,7 +148,7 @@ public class BasicTest {
     void setUp() {
         completionMap.clear();
     }
-    
+
     @SuppressWarnings("unchecked")
     public synchronized <T> CompletableFuture<T> getCompletable(String key, URI lraId) {
         String combinedKey = key + Optional.ofNullable(lraId).map(URI::toASCIIString).orElse("");

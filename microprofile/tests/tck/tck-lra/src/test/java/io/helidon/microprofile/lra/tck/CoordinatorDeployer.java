@@ -15,12 +15,13 @@
  */
 package io.helidon.microprofile.lra.tck;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.Map;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
 
+import io.helidon.config.mp.MpConfigSources;
+import io.helidon.lra.coordinator.CoordinatorService;
 import io.helidon.microprofile.arquillian.HelidonContainerConfiguration;
 import io.helidon.microprofile.arquillian.HelidonDeployableContainer;
 
@@ -35,22 +36,28 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 public class CoordinatorDeployer {
 
     static final String COORDINATOR_ROUTING_NAME = "coordinator";
-    static final String COORDINATOR_REGISTRY = "target/mock-coordinator/lra-registry";
     static final String LOCAL_COORDINATOR_URL = "http://localhost:8071/lra-coordinator";
+    static final String LOCAL_COORDINATOR_PORT = "8071";
 
     public void beforeStart(@Observes BeforeStart event, Container container) throws Exception {
         HelidonDeployableContainer helidonContainer = (HelidonDeployableContainer) container.getDeployableContainer();
         HelidonContainerConfiguration containerConfig = helidonContainer.getContainerConfig();
 
-        Files.deleteIfExists(Paths.get(COORDINATOR_REGISTRY));
-
         String coordinatorUrl = System.getProperty("lra.coordinator.url", LOCAL_COORDINATOR_URL);
+        String port = System.getProperty("lra.coordinator.port", LOCAL_COORDINATOR_PORT);
 
-        containerConfig.set("mp.lra.coordinator.url", coordinatorUrl);
-        containerConfig.set("mp.lra.coordinator.registry", COORDINATOR_REGISTRY);
-        containerConfig.set("server.sockets.0.name", COORDINATOR_ROUTING_NAME);
-        containerConfig.set("server.sockets.0.port", "8071");
-        containerConfig.set("server.sockets.0.bind-address", "localhost");
+        containerConfig.config(configBuilder -> {
+            configBuilder.withSources(MpConfigSources.create(CoordinatorService.class.getResource("/application.yaml")),
+                    MpConfigSources.create(Map.of(
+                            // LRA agent 
+                            "mp.lra.coordinator.url", coordinatorUrl,
+                            // LRA coordinator
+                            "helidon.lra.coordinator.url", coordinatorUrl,
+                            "server.sockets.0.name", COORDINATOR_ROUTING_NAME,
+                            "server.sockets.0.port", port,
+                            "server.sockets.0.bind-address", "localhost"
+                    )));
+        });
 
         JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class)
                 .addClass(CoordinatorAppService.class);
@@ -65,6 +72,7 @@ public class CoordinatorDeployer {
             CDI<Object> current = CDI.current();
             ((SeContainer) current).close();
         } catch (Throwable t) {
+            t.printStackTrace();
         }
     }
 }

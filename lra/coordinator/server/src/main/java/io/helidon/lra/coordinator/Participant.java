@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.microprofile.lra.coordinator;
+package io.helidon.lra.coordinator;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -30,10 +30,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
 
 import io.helidon.config.Config;
 import io.helidon.webclient.WebClient;
@@ -54,8 +50,6 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_ENDED_CONTEXT_HEADER;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
 
-@XmlRootElement
-@XmlAccessorType(XmlAccessType.FIELD)
 class Participant {
 
     private static final int RETRY_CNT = 60;
@@ -70,6 +64,9 @@ class Participant {
     private final AtomicInteger remainingAfterLraAttempts = new AtomicInteger(RETRY_CNT);
 
     private final AtomicReference<Status> status = new AtomicReference<>(Status.ACTIVE);
+    private final Map<String, WebClient> webClientMap = new HashMap<>();
+    private final Map<String, URI> compensatorLinks = new HashMap<>();
+    private final long timeout;
 
     enum Status {
         ACTIVE(Active, null, null, false, Set.of(Completing, Compensating)),
@@ -139,15 +136,10 @@ class Participant {
         NOT_SENT, SENDING, SENT;
     }
 
-    private long timeout;
-
-    private final Map<String, URI> compensatorLinks = new HashMap<>();
-
-    Participant() {
-    }
-
     Participant(Config config) {
-        timeout = config.get("mp.lra.coordinator.timeout").asLong().orElse(500L);
+        timeout = config.get("helidon.lra.coordinator.timeout")
+                .asLong()
+                .orElse(500L);
     }
 
     void parseCompensatorLinks(String compensatorLinks) {
@@ -168,11 +160,19 @@ class Participant {
         return getCompensatorLink("complete");
     }
 
+    void setCompleteURI(URI completeURI) {
+        compensatorLinks.put("complete", completeURI);
+    }
+
     /**
      * Invoked when cancelled 200, 202, 409, 410.
      */
     public Optional<URI> getCompensateURI() {
         return getCompensatorLink("compensate");
+    }
+
+    void setCompensateURI(URI compensateURI) {
+        compensatorLinks.put("compensate", compensateURI);
     }
 
     /**
@@ -182,6 +182,10 @@ class Participant {
         return getCompensatorLink("after");
     }
 
+    void setAfterURI(URI afterURI) {
+        compensatorLinks.put("after", afterURI);
+    }
+
     /**
      * Invoked when cleaning up 200, 410.
      */
@@ -189,11 +193,71 @@ class Participant {
         return getCompensatorLink("forget");
     }
 
+    void setForgetURI(URI forgetURI) {
+        compensatorLinks.put("forget", forgetURI);
+    }
+
     /**
      * Directly updates status of participant 200, 202, 410.
      */
     public Optional<URI> getStatusURI() {
         return getCompensatorLink("status");
+    }
+
+    void setStatusURI(URI statusURI) {
+        compensatorLinks.put("status", statusURI);
+    }
+
+    CompensateStatus getCompensateStatus() {
+        return this.compensateCalled.get();
+    }
+
+    void setCompensateStatus(CompensateStatus compensateStatus) {
+        this.compensateCalled.set(compensateStatus);
+    }
+
+    void setStatus(Status status) {
+        this.status.set(status);
+    }
+
+    ForgetStatus getForgetStatus() {
+        return this.forgetCalled.get();
+    }
+
+    void setForgetStatus(ForgetStatus forgetStatus) {
+        this.forgetCalled.set(forgetStatus);
+    }
+
+    AfterLraStatus getAfterLraStatus() {
+        return this.afterLRACalled.get();
+    }
+
+    void setAfterLraStatus(AfterLraStatus afterLraStatus) {
+        this.afterLRACalled.set(afterLraStatus);
+    }
+
+    SendingStatus getSendingStatus() {
+        return this.sendingStatus.get();
+    }
+
+    void setSendingStatus(SendingStatus sendingStatus) {
+        this.sendingStatus.set(sendingStatus);
+    }
+
+    int getRemainingCloseAttempts() {
+        return this.remainingCloseAttempts.get();
+    }
+
+    void setRemainingCloseAttempts(int remainingCloseAttempts) {
+        this.remainingCloseAttempts.set(remainingCloseAttempts);
+    }
+
+    int getRemainingAfterAttempts() {
+        return this.remainingAfterLraAttempts.get();
+    }
+
+    void setRemainingAfterAttempts(int remainingAfterAttempts) {
+        this.remainingAfterLraAttempts.set(remainingAfterAttempts);
     }
 
     Status state() {
@@ -217,6 +281,7 @@ class Participant {
         for (int i = 0; i < SYNCHRONOUS_RETRY_CNT; i++) {
             if (!sendingStatus.compareAndSet(SendingStatus.NOT_SENDING, SendingStatus.SENDING)) return false;
             if (!compensateCalled.compareAndSet(CompensateStatus.NOT_SENT, CompensateStatus.SENDING)) return false;
+            WebClientResponse response = null;
             try {
                 // call for client status only on retries and when status uri is known
                 if (!status.get().equals(Status.ACTIVE) && getStatusURI().isPresent()) {
@@ -240,9 +305,7 @@ class Participant {
                     }
                 }
 
-                WebClientResponse response = WebClient.builder()
-                        .baseUri(endpointURI.get())
-                        .build()
+                response = getWebClient(endpointURI.get())
                         .put()
                         .headers(lra.headers())
                         .submit(LRAStatus.Cancelled.name())
@@ -282,6 +345,7 @@ class Participant {
                 }
 
             } finally {
+                Optional.ofNullable(response).ifPresent(WebClientResponse::close);
                 sendingStatus.set(SendingStatus.NOT_SENDING);
                 compensateCalled.compareAndSet(CompensateStatus.SENDING, CompensateStatus.NOT_SENT);
             }
@@ -293,6 +357,7 @@ class Participant {
         Optional<URI> endpointURI = getCompleteURI();
         for (int i = 0; i < SYNCHRONOUS_RETRY_CNT; i++) {
             if (!sendingStatus.compareAndSet(SendingStatus.NOT_SENDING, SendingStatus.SENDING)) return false;
+            WebClientResponse response = null;
             try {
                 if (status.get().isFinal()) {
                     return true;
@@ -321,10 +386,7 @@ class Participant {
                         return true;
                     }
                 }
-                WebClientResponse response = WebClient
-                        .builder()
-                        .baseUri(endpointURI.get())
-                        .build()
+                response = getWebClient(endpointURI.get())
                         .put()
                         .headers(lra.headers())
                         .submit(LRAStatus.Closed.name())
@@ -360,6 +422,7 @@ class Participant {
                     status.set(Status.COMPLETING);
                 }
             } finally {
+                Optional.ofNullable(response).ifPresent(WebClientResponse::close);
                 sendingStatus.set(SendingStatus.NOT_SENDING);
             }
         }
@@ -373,12 +436,11 @@ class Participant {
             // LRA in right state
             if (!(Set.of(LRAStatus.Closed, LRAStatus.Cancelled).contains(lra.status().get()))) return false;
 
+            WebClientResponse response = null;
             try {
                 Optional<URI> afterURI = getAfterURI();
                 if (afterURI.isPresent() && afterLRACalled.compareAndSet(AfterLraStatus.NOT_SENT, AfterLraStatus.SENDING)) {
-                    WebClientResponse response = WebClient.builder()
-                            .baseUri(afterURI.get())
-                            .build()
+                    response = getWebClient(afterURI.get())
                             .put()
                             .headers(lra.headers())
                             .submit(lra.status().get().name())
@@ -397,6 +459,8 @@ class Participant {
                 } else {
                     afterLRACalled.set(AfterLraStatus.NOT_SENT);
                 }
+            } finally {
+                Optional.ofNullable(response).ifPresent(WebClientResponse::close);
             }
             if (afterLRACalled.get() == AfterLraStatus.SENT) return true;
         }
@@ -407,10 +471,7 @@ class Participant {
     Optional<ParticipantStatus> retrieveStatus(Lra lra, ParticipantStatus inProgressStatus) {
         URI statusURI = this.getStatusURI().get();
         try {
-            WebClientResponse response = WebClient
-                    .builder()
-                    .baseUri(statusURI)
-                    .build()
+            WebClientResponse response = getWebClient(statusURI)
                     .get()
                     .headers(h -> {
                         // Dont send parent!
@@ -465,10 +526,7 @@ class Participant {
     boolean sendForget(Lra lra) {
         if (!forgetCalled.compareAndSet(ForgetStatus.NOT_SENT, ForgetStatus.SENDING)) return false;
         try {
-            WebClientResponse response = WebClient
-                    .builder()
-                    .baseUri(getForgetURI().get())
-                    .build()
+            WebClientResponse response = getWebClient(getForgetURI().get())
                     .delete()
                     .headers(lra.headers())
                     .submit()
@@ -505,5 +563,13 @@ class Participant {
         }
 
         return false;
+    }
+
+    private WebClient getWebClient(URI baseUri) {
+        return webClientMap.computeIfAbsent(baseUri.toASCIIString(), unused -> WebClient.builder()
+                // Workaround for #3242
+                .keepAlive(false)
+                .baseUri(baseUri)
+                .build());
     }
 }

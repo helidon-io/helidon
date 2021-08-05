@@ -12,10 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
+ *  
  */
 
-package io.helidon.microprofile.lra.coordinator;
+package io.helidon.lra.coordinator;
 
 import java.net.URI;
 import java.util.StringJoiner;
@@ -23,12 +23,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
-
-@XmlRootElement
-@XmlAccessorType(XmlAccessType.FIELD)
 class Link {
 
     private static final Logger LOGGER = Logger.getLogger(Link.class.getName());

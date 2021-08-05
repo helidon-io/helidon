@@ -53,6 +53,7 @@ import javax.enterprise.inject.spi.DefinitionException;
 import io.helidon.config.mp.MpConfigSources;
 
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
@@ -267,10 +268,10 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
         // Configuration needs to be explicit, as some TCK libraries contain an unfortunate
         //    META-INF/microprofile-config.properties (such as JWT-Auth)
-        Config config = ConfigProviderResolver.instance()
-                .getBuilder()
-                .withSources(findMpConfigSources(classPath))
-                .withSources(MpConfigSources.create(containerConfig.getCustomMap()))
+        ConfigBuilder builder = ConfigProviderResolver.instance()
+                .getBuilder();
+        Config config =
+                containerConfig.useBuilder(builder.withSources(findMpConfigSources(classPath)))
                 .addDiscoveredConverters()
                 // will read application.yaml
                 .addDiscoveredSources()

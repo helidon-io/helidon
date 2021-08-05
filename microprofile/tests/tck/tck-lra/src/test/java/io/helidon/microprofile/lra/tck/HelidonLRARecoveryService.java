@@ -53,7 +53,7 @@ public class HelidonLRARecoveryService implements LRARecoveryService {
 
         do {
             if (counter > 9) return;
-            LOGGER.info("Recovery attempt #" + ++counter);
+            LOGGER.info("Recovery attempt #" + ++counter + " of " + lraId);
         } while (!waitForEndPhaseReplay(lraId));
         LOGGER.info("LRA " + lraId + " has finished the recovery");
 
@@ -67,6 +67,7 @@ public class HelidonLRARecoveryService implements LRARecoveryService {
             Response response = client
                     .target(coordinatorUrl)
                     .path("recovery")
+                    .queryParam("lraId", lraId.toASCIIString())
                     .request()
                     .get();
 
