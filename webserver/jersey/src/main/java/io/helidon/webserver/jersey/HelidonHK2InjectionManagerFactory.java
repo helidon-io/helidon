@@ -49,18 +49,24 @@ import org.glassfish.jersey.server.ResourceConfig;
  */
 @Priority(11)   // overrides Jersey's
 public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactory {
+    private static final Logger LOGGER = Logger.getLogger(HelidonHK2InjectionManagerFactory.class.getName());
 
     @Override
     public InjectionManager create(Object parent) {
+        InjectionManager result;
+
         if (parent == null) {
-            return super.create(null);
+            result = super.create(null);
+            LOGGER.finest("Creating injection manager " + result);
         } else if (parent instanceof InjectionManagerWrapper) {
             InjectionManagerWrapper wrapper = (InjectionManagerWrapper) parent;
-            return new HelidonInjectionManager(super.create(null),
-                    wrapper.injectionManager, wrapper.application);
+            InjectionManager delegate = super.create(null);
+            result = new HelidonInjectionManager(delegate, wrapper.injectionManager, wrapper.application);
+            LOGGER.finest("Creating injection manager " + delegate + " with parent " + wrapper.injectionManager);
         } else {
             throw new IllegalStateException("Invalid parent injection manager");
         }
+        return result;
     }
 
     static class HelidonInjectionManager implements InjectionManager {
@@ -101,10 +107,10 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         public void register(Binding binding) {
             if (returnedByApplication(binding)) {
                 delegate.register(binding);
-                LOGGER.info("register delegate " + toString(binding));
+                LOGGER.finest(() -> "register delegate " + delegate  + " " + toString(binding));
             } else {
                 parent.register(binding);
-                LOGGER.info("register parent " + toString(binding));
+                LOGGER.finest(() -> "register parent " + parent + " " + toString(binding));
             }
         }
 
@@ -151,10 +157,10 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         public <T> List<ServiceHolder<T>> getAllServiceHolders(Class<T> contractOrImpl, Annotation... qualifiers) {
             List<ServiceHolder<T>> parentList = parent.getAllServiceHolders(contractOrImpl, qualifiers);
             parentList.forEach(sh -> LOGGER.finest(() ->
-                    "getAllServiceHolders parent " + sh.getContractTypes().iterator().next()));
+                    "getAllServiceHolders parent " + parent + " " + sh.getContractTypes().iterator().next()));
             List<ServiceHolder<T>> delegateList = delegate.getAllServiceHolders(contractOrImpl, qualifiers);
             delegateList.forEach(sh -> LOGGER.finest(() ->
-                    "getAllServiceHolders delegate " + sh.getContractTypes().iterator().next()));
+                    "getAllServiceHolders delegate " + delegate + " " + sh.getContractTypes().iterator().next()));
             return delegateList.size() == 0 ? parentList
                     : Stream.concat(parentList.stream(), delegateList.stream()).collect(Collectors.toList());
         }
