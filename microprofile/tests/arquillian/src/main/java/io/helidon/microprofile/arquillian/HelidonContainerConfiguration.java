@@ -43,15 +43,18 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
     private boolean deleteTmp = true;
     private boolean useRelativePath = false;
     private boolean useParentClassloader = true;
-    private Consumer<ConfigBuilder> builderConsumer;
+    private Consumer<ConfigBuilder> builderConsumer = configBuilder -> {};
 
     /**
      * Access container's config builder.
      *
-     * @param builderConsumer container's config builder
+     * @param addedBuilderConsumer container's config builder
      */
-    public void config(Consumer<ConfigBuilder> builderConsumer) {
-        this.builderConsumer = builderConsumer;
+    public void config(Consumer<ConfigBuilder> addedBuilderConsumer) {
+        this.builderConsumer = configBuilder -> {
+            builderConsumer.accept(configBuilder);
+            addedBuilderConsumer.accept(configBuilder);
+        };
     }
 
     public String getApp() {
