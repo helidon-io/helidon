@@ -53,7 +53,7 @@ class InterceptionRunnerImpl implements InterceptionRunner {
      */
     private static final InterceptionRunner INSTANCE = new InterceptionRunnerImpl();
 
-    private static final Map<Method, Integer> asyncResponseSlots = new ConcurrentHashMap<>();
+    private static final Map<Method, Integer> ASYNC_RESPONSE_SLOTS = new ConcurrentHashMap<>();
 
     /**
      * Returns the appropriate {@code InterceptionRunner} for the executable.
@@ -318,7 +318,7 @@ class InterceptionRunnerImpl implements InterceptionRunner {
     }
 
     private static int asyncResponseSlot(Method interceptedMethod) {
-        return asyncResponseSlots.computeIfAbsent(interceptedMethod, executable -> {
+        return ASYNC_RESPONSE_SLOTS.computeIfAbsent(interceptedMethod, executable -> {
             int newResult = 0;
             for (Parameter p : interceptedMethod.getParameters()) {
                 if (AsyncResponse.class.isAssignableFrom(p.getType()) && p.getAnnotation(Suspended.class) != null) {
