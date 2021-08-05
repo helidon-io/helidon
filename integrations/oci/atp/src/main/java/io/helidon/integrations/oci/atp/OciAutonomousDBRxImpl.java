@@ -16,14 +16,14 @@
 
 package io.helidon.integrations.oci.atp;
 
+import java.util.Optional;
+
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.connect.OciRestApi;
-
-import java.util.Optional;
 
 class OciAutonomousDBRxImpl implements OciAutonomousDBRx {
     private final OciRestApi restApi;
@@ -41,7 +41,8 @@ class OciAutonomousDBRxImpl implements OciAutonomousDBRx {
     }
 
     @Override
-    public Single<ApiOptionalResponse<GenerateAutonomousDatabaseWalletRx.Response>> generateWallet(GenerateAutonomousDatabaseWalletRx.Request request) {
+    public Single<ApiOptionalResponse<GenerateAutonomousDatabaseWalletRx.Response>> generateWallet(
+            GenerateAutonomousDatabaseWalletRx.Request request) {
         String apiPath = "/20160918/autonomousDatabases/" + this.ocid + "/actions/generateWallet";
 
         if (!request.endpoint().isPresent()) {

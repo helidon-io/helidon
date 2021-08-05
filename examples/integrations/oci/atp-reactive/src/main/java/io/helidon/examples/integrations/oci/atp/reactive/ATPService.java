@@ -40,6 +40,9 @@ class ATPService implements Service {
         rules.get("/wallet", this::generateWallet);
     }
 
+    /**
+     * Generate wallet file for the configured ATP.
+     */
     private void generateWallet(ServerRequest req, ServerResponse res) {
         atpDB.generateWallet(GenerateAutonomousDatabaseWalletRx.Request.builder())
                 .forSingle(apiResponse -> {

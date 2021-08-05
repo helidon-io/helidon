@@ -37,6 +37,7 @@ import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.atp.OciAutonomousDB;
 import io.helidon.integrations.oci.atp.GenerateAutonomousDatabaseWallet;
 import io.helidon.integrations.oci.atp.GenerateAutonomousDatabaseWalletRx;
+
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
@@ -52,10 +53,9 @@ public class ATPResource {
     }
 
     /**
-     * Download a file from object storage.
+     * Generate wallet file for the configured ATP.
      *
-     * @param fileName name of the object
-     * @return response
+     * @return response containing wallet file
      */
     @GET
     @Path("/wallet")
@@ -71,10 +71,10 @@ public class ATPResource {
 
         StreamingOutput stream = output -> response.writeTo(Channels.newChannel(output));
 
-        //.header(Http.Header.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
         Response.ResponseBuilder ok = Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM_TYPE)
                 .header("opc-request-id", ociResponse.headers().first("opc-request-id").orElse(""))
                 .header("request-id", ociResponse.requestId());
+        //.header(Http.Header.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
 
         ociResponse.headers()
                 .first(Http.Header.CONTENT_TYPE)
@@ -87,3 +87,4 @@ public class ATPResource {
         return ok.build();
     }
 }
+

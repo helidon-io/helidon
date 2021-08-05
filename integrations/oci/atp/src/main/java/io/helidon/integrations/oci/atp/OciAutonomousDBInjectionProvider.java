@@ -16,10 +16,10 @@
 
 package io.helidon.integrations.oci.atp;
 
-import io.helidon.integrations.oci.connect.spi.InjectionProvider;
-
 import java.util.LinkedList;
 import java.util.List;
+
+import io.helidon.integrations.oci.connect.spi.InjectionProvider;
 
 /**
  * Service provider for {@link io.helidon.integrations.oci.connect.spi.InjectionProvider}.

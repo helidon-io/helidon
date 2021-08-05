@@ -52,10 +52,6 @@ public final class OciATPMain {
         // ~/.oci/config
         OciAutonomousDBRx atpDB = OciAutonomousDBRx.create(ociConfig);
 
-        // the following parameters are required
-        //String ocid = ociConfig.get("atp").get("ocid").asString().get();
-        //String walletPassword = ociConfig.get("atp").get("walletPassword").asString().get();
-
         WebServer.builder()
                 .config(config.get("server"))
                 .routing(Routing.builder()

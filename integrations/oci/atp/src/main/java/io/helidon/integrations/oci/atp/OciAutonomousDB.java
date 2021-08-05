@@ -25,12 +25,12 @@ import io.helidon.integrations.common.rest.ApiOptionalResponse;
  */
 public interface OciAutonomousDB {
     /**
-     * Create a blocking object storage integration from its reactive counterpart.
+     * Create a blocking ATP integration from its reactive counterpart.
      * When running within an injection capable environment (such as CDI), instances of this
      * class can be injected.
      *
-     * @param reactive reactive OCI object storage
-     * @return blocking OCI object storage
+     * @param reactive reactive OCI ATP
+     * @return blocking OCI ATP
      */
     static OciAutonomousDB create(OciAutonomousDBRx reactive) {
         return new OciAutonomousDBImpl(reactive);
@@ -42,5 +42,6 @@ public interface OciAutonomousDB {
      * @param request get object request
      * @return future with response or error
      */
-    ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response> generateWallet(GenerateAutonomousDatabaseWalletRx.Request request);
+    ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response> generateWallet(
+            GenerateAutonomousDatabaseWalletRx.Request request);
 }

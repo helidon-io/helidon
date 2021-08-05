@@ -16,12 +16,12 @@
 
 package io.helidon.integrations.oci.atp;
 
+import java.nio.ByteBuffer;
+
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
 import io.helidon.integrations.oci.connect.OciRequestBase;
 import io.helidon.integrations.oci.connect.OciResponseParser;
-
-import java.nio.ByteBuffer;
 
 /**
  * GenerateAutonomousDatabaseWalletRx request and response.
@@ -50,12 +50,12 @@ public final class GenerateAutonomousDatabaseWalletRx {
         }
 
         /**
-         * Set explicit password to encrypt the keys inside the wallet
+         * Set explicit password to encrypt the keys inside the wallet.
          *
          * @param walletPassword walletPassword
          * @return updated request
          */
-        public Request setPassword (String walletPassword) {
+        public Request setPassword(String walletPassword) {
             return add("password", walletPassword);
         }
     }

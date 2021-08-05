@@ -23,5 +23,5 @@ server:
 
 oci:
   atp:
-    ocid: "ocid1.autonomousdatabase.oc1.iad.abuwcljsdqiktkdsqab2rrdbgu5wopsjhguno32fxeokevjxdyix6356ilpq"
-    walletPassword: "testPwd1"
+    ocid: "${oci.properties.atp-ocid}"
+    walletPassword: "${oci.properties.atp-walletPassword}"
