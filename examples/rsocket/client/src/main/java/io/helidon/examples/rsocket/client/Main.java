@@ -16,8 +16,6 @@
 
 package io.helidon.examples.rsocket.client;
 
-import java.util.concurrent.CompletableFuture;
-
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -47,21 +45,11 @@ public class Main {
     static WebServer startWebServer() {
         WebServer server = WebServer.builder(createRouting())
                 .port(8081)
-                .build();
+                .build()
+                .start()
+                .await();
+        System.out.println("WEB server is up! http://localhost:" + server.port());
 
-        // Start webserver
-        CompletableFuture<Void> started = new CompletableFuture<>();
-        server.start().thenAccept(ws -> {
-            System.out.println("WEB server is up! http://localhost:" + ws.port());
-            started.complete(null);
-        });
-
-        // Wait for webserver to start before returning
-        try {
-            started.toCompletableFuture().get();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
         return server;
     }
 
