@@ -15,13 +15,14 @@
 #
 
 helidon.lra.coordinator:
-  url: http://localhost:8070/lra-coordinator
-  timeout: 500
-  
   server:
     port: 8070
     host: 0.0.0.0
-    
+
+  context: /lra-coordinator
+  # Part of LRA id and recovery url
+  #url: http://localhost:8070/lra-coordinator
+
   db:
     source: jdbc
     connection:

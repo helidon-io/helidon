@@ -20,6 +20,7 @@
  */
 module io.helidon.lra.coordinator {
     requires java.logging;
+    requires java.json;
     requires microprofile.lra.api;
     requires io.helidon.common.reactive;
     requires io.helidon.webclient;
@@ -29,4 +30,5 @@ module io.helidon.lra.coordinator {
     requires io.helidon.scheduling;
     requires io.helidon.dbclient;
     requires io.helidon.dbclient.jdbc;
+    requires io.helidon.media.jsonp;
 }

@@ -50,10 +50,14 @@ public class Main {
                 .config(config.get("helidon.lra.coordinator.server"))
                 .build();
 
+        String context = config.get("helidon.lra.coordinator.context.path")
+                .asString()
+                .orElse("/lra-coordinator");
+
         Single<WebServer> webserver = server.start();
 
         webserver.thenAccept(ws -> {
-            System.out.println("Helidon LRA Coordinator is up! http://localhost:" + ws.port() + "/lra-coordinator");
+            System.out.println("Helidon LRA Coordinator is up! http://localhost:" + ws.port() + context);
             ws.whenShutdown()
                     .thenRun(() -> {
                         System.out.println("Helidon LRA Coordinator is DOWN. Good bye!");

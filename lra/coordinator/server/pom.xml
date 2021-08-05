@@ -81,6 +81,10 @@
             <artifactId>helidon-dbclient-jdbc</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>jakarta.json</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.integrations.db</groupId>
             <artifactId>h2</artifactId>
         </dependency>

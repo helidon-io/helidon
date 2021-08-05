@@ -17,6 +17,8 @@
 package io.helidon.lra.coordinator;
 
 import java.net.URI;
+import java.util.Collections;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -25,9 +27,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
+
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.media.common.MessageBodyWriter;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.scheduling.FixedRateInvocation;
 import io.helidon.scheduling.Scheduling;
 import io.helidon.scheduling.Task;
@@ -56,6 +69,8 @@ public class CoordinatorService implements Service {
 
     private static final Logger LOGGER = Logger.getLogger(CoordinatorService.class.getName());
     private static final Set<LRAStatus> RECOVERABLE_STATUSES = Set.of(LRAStatus.Cancelling, LRAStatus.Closing, LRAStatus.Active);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+    private static final MessageBodyWriter<JsonStructure> JSON_WRITER = JsonpSupport.create().writerInstance();
 
     private final AtomicReference<CompletableFuture<Void>> completedRecovery = new AtomicReference<>(new CompletableFuture<>());
 
@@ -63,7 +78,8 @@ public class CoordinatorService implements Service {
 
     private final String coordinatorURL;
     private final Config config;
-    private Task scheduled;
+    private Task recoveryTask;
+    private Task persistTask = null;
 
     CoordinatorService(LraPersistentRegistry lraPersistentRegistry, Config config) {
         this.lraPersistentRegistry = lraPersistentRegistry;
@@ -74,42 +90,54 @@ public class CoordinatorService implements Service {
 
     private void init() {
         lraPersistentRegistry.load();
-        scheduled = Scheduling.fixedRateBuilder()
-                .delay(300)
+        recoveryTask = Scheduling.fixedRateBuilder()
+                .delay(config.get("recovery-interval").asLong().orElse(300L))
                 .initialDelay(200)
                 .timeUnit(TimeUnit.MILLISECONDS)
                 .task(this::tick)
                 .build();
+
+        if (config.get("periodical-persist").asBoolean().orElse(false)) {
+            persistTask = Scheduling.fixedRateBuilder()
+                    .delay(config.get("persist-interval").asLong().orElse(5000L))
+                    .initialDelay(200)
+                    .timeUnit(TimeUnit.MILLISECONDS)
+                    .task(inv -> lraPersistentRegistry.save())
+                    .build();
+        }
     }
 
     /**
      * Gracefully shutdown coordinator.
      */
     public void shutdown() {
-        scheduled.executor().shutdown();
-        try {
-            if (!scheduled.executor().awaitTermination(5, TimeUnit.SECONDS)) {
-                LOGGER.log(Level.WARNING, "Shutdown of the scheduled task took too long.");
-            }
-        } catch (InterruptedException e) {
-            LOGGER.log(Level.WARNING, "Shutdown of the scheduled task was interrupted.", e);
-        }
+        Stream.of(recoveryTask, persistTask)
+                .filter(Objects::nonNull)
+                .forEach(task -> {
+                    task.executor().shutdown();
+                    try {
+                        if (!task.executor().awaitTermination(5, TimeUnit.SECONDS)) {
+                            LOGGER.log(Level.WARNING, "Shutdown of the scheduled task took too long.");
+                        }
+                    } catch (InterruptedException e) {
+                        LOGGER.log(Level.WARNING, "Shutdown of the scheduled task was interrupted.", e);
+                    }
+                });
         lraPersistentRegistry.save();
     }
 
     @Override
     public void update(Routing.Rules rules) {
         rules
-                .get("/", (req, res) -> {
-                    res.send("Helidon coordinator");
-                })
+                .get("/", this::get)
+                .get("/recovery", this::recovery)
                 .post("/start", this::start)
                 .put("/{LraId}/close", this::close)
                 .put("/{LraId}/cancel", this::cancel)
                 .put("/{LraId}", this::join)
+                .get("/{LraId}", this::get)
                 .get("/{LraId}/status", this::status)
-                .put("/{LraId}/remove", this::leave)
-                .get("/recovery", this::recovery);
+                .put("/{LraId}/remove", this::leave);
     }
 
     /**
@@ -265,31 +293,64 @@ public class CoordinatorService implements Service {
             Lra lra = lraPersistentRegistry.get(lraId.get());
             if (lra != null) {
                 nextRecoveryCycle()
-                        .map(String::valueOf)
-                        .onCompleteResumeWith(Single.just(lra.status().get().name() + "-" + lra.lraId()))
+                        .map(Lra.class::cast)
+                        .onCompleteResume(lra)
+                        .filter(l -> RECOVERABLE_STATUSES.contains(lra.status().get()))
+                        .map(l -> JSON.createObjectBuilder()
+                                .add("lraId", l.lraId())
+                                .add("status", l.status().get().name())
+                                .build()
+                        )
                         .first()
                         .onError(res::send)
-                        .forSingle(s -> res.status(200).send(s));
+                        .defaultIfEmpty(JsonValue.EMPTY_JSON_OBJECT)
+                        .forSingle(s -> res.status(200).send(JSON_WRITER.marshall(s)));
             } else {
                 nextRecoveryCycle()
                         .map(String::valueOf)
                         .onError(res::send)
+                        .map(JsonObject.class::cast)
+                        .defaultIfEmpty(JsonValue.EMPTY_JSON_OBJECT)
                         .forSingle(s -> res.status(404).send());
             }
         } else {
             nextRecoveryCycle()
-                    .map(String::valueOf)
+                    .map(JsonArray.class::cast)
                     .onCompleteResumeWith(lraPersistentRegistry
                             .stream()
                             .filter(lra -> RECOVERABLE_STATUSES.contains(lra.status().get()))
-                            .map(lra -> lra.status().get().name() + "-" + lra.lraId())
-                            .flatMapIterable(s -> Set.of(s, ","))
-                            .collect(StringBuilder::new, StringBuilder::append)
-                            .map(StringBuilder::toString))
+                            .map(l -> JSON.createObjectBuilder()
+                                    .add("lraId", l.lraId())
+                                    .add("status", l.status().get().name())
+                                    .build()
+                            )
+                            .collect(JSON::createArrayBuilder, JsonArrayBuilder::add)
+                            .map(JsonArrayBuilder::build))
                     .first()
                     .onError(res::send)
-                    .forSingle(s -> res.status(200).send(s));
+                    .defaultIfEmpty(JsonArray.EMPTY_JSON_ARRAY)
+                    .forSingle(s -> res.status(200).send(JSON_WRITER.marshall(s)));
         }
+    }
+
+    private void get(ServerRequest req, ServerResponse res) {
+        Optional<String> lraId = Optional.ofNullable(req.path().param("LraId"))
+                .or(() -> req.queryParams().first("lraId"));
+
+        lraPersistentRegistry
+                .stream()
+                // filter by lraId param or dont filter at all
+                .filter(lra -> lraId.map(id -> lra.lraId().equals(id)).orElse(true))
+                .map(l -> JSON.createObjectBuilder()
+                        .add("lraId", l.lraId())
+                        .add("status", l.status().get().name())
+                        .build()
+                )
+                .collect(JSON::createArrayBuilder, JsonArrayBuilder::add)
+                .map(JsonArrayBuilder::build)
+                .onError(res::send)
+                .defaultIfEmpty(JsonArray.EMPTY_JSON_ARRAY)
+                .forSingle(s -> res.status(200).send(JSON_WRITER.marshall(s)));
     }
 
     private void tick(FixedRateInvocation inv) {
@@ -319,7 +380,6 @@ public class CoordinatorService implements Service {
                 }
             }
         });
-        lraPersistentRegistry.save();
         completedRecovery.getAndSet(new CompletableFuture<>()).complete(null);
     }
 
@@ -336,7 +396,9 @@ public class CoordinatorService implements Service {
      * @return coordinator
      */
     public static CoordinatorService create() {
-        return builder().build();
+        return builder()
+                .config(Config.create().get(CoordinatorService.CONFIG_PREFIX))
+                .build();
     }
 
     /**
