@@ -229,8 +229,15 @@ public class MetricsConfigurer
 
             MetricAnnotationInfo<?> mInfo = METRIC_ANNOTATION_INFO.get(annotation.annotationType());
             if (mInfo != null && mInfo.annotationClass.isInstance(annotation)) {
-                interceptor = interceptor.description(mInfo.description(annotatedMethod))
-                        .displayName(mInfo.displayName(annotatedMethod))
+                String candidateDescription = mInfo.description(annotatedMethod);
+                if (candidateDescription != null && !candidateDescription.trim().isEmpty()) {
+                    interceptor = interceptor.description(candidateDescription.trim());
+                }
+                String candidateDisplayName = mInfo.displayName(annotatedMethod);
+                if (candidateDisplayName != null && !candidateDisplayName.trim().isEmpty()) {
+                    interceptor = interceptor.displayName(candidateDisplayName.trim());
+                }
+                interceptor = interceptor
                         .reusable(mInfo.reusable(annotatedMethod))
                         .units(mInfo.units(annotatedMethod));
             }

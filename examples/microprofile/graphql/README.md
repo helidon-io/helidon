@@ -74,6 +74,51 @@ Access the `/graphql` endpoint via `http://127.0.0.1:7001/graphql`:
     {"data":{"createTask":{"id":"0d4a8d","description":"Task Description 1","createdAt":1605501774877,"completed":false}}
     ```  
 
+## Accessing Metrics
+
+In [TaskApi.java](src/main/java/io/helidon/examples/graphql/basics/TaskApi.java), the [Microprofile Metrics](https://github.com/eclipse/microprofile-metrics)
+annotation`@SimplyTimed` has been added to the class which will apply simple timing metrics to all methods. After 
+exercising the APIs, access the metrics endpoint at http://127.0.0.1:7001/metrics to see all metrics. 
+In the case below we have also appended `/application` to the URL to just retrieve the application metrics.
+
+> Note: `jq` has been used to format the JSON output. This can be downloaded from https://stedolan.github.io/jq/download/ or you can
+> format the output with an alternate utility.
+
+```bash
+$ curl  -H 'Accept: application/json' http://127.0.0.1:7001/metrics/application | jq
+
+{
+  "io.helidon.examples.graphql.basics.TaskApi.TaskApi": {
+    "count": 1,
+    "elapsedTime": 0.000440414
+  },
+  "io.helidon.examples.graphql.basics.TaskApi.createTask": {
+    "count": 1,
+    "elapsedTime": 0.000112074
+  },
+  "io.helidon.examples.graphql.basics.TaskApi.deleteCompletedTasks": {
+    "count": 0,
+    "elapsedTime": 0
+  },
+  "io.helidon.examples.graphql.basics.TaskApi.deleteTask": {
+    "count": 0,
+    "elapsedTime": 0
+  },
+  "io.helidon.examples.graphql.basics.TaskApi.findTask": {
+    "count": 0,
+    "elapsedTime": 0
+  },
+  "io.helidon.examples.graphql.basics.TaskApi.getTasks": {
+    "count": 0,
+    "elapsedTime": 0
+  },
+  "io.helidon.examples.graphql.basics.TaskApi.updateTask": {
+    "count": 0,
+    "elapsedTime": 0
+  }
+}
+```
+
 ## Incorporating the GraphiQL UI
 
 The [GraphiQL UI](https://github.com/graphql/graphiql), which provides a UI to execute GraphQL commands, is not included by default in Helidon's Microprofile GraphQL 
@@ -142,15 +187,6 @@ for convenience.
     # Create a task
     mutation createTask {
       createTask(description: "Task Description 1") {
-        ...task
-      }
-    }
-
-    # Create a task with empty description - will return error message
-    # Normally unchecked exceptions will not be displayed but
-    # We have overriden this in the microprofile-config.properties
-    mutation createTaskWithoutDescription {
-      createTask {
         ...task
       }
     }

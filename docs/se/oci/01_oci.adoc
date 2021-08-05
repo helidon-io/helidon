@@ -33,6 +33,11 @@ WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimen
 
 == General Configuration
 
+NOTE: If you follow these instructions on how to
+https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#two[Generate an API Signing Key],
+be advised that Helidon does not currently support passphrase-protected private keys in PKCS#1 format.
+If generating a private key using those instructions, use the _no passphrase_ option.
+
 === Using Helidon SE Properties Configuration
 
 The first option to configure connection to OCI is to directly specify properties in `application.yaml` file:

@@ -49,7 +49,7 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 
 import io.helidon.config.mp.MpConfigSources;
-import io.helidon.config.yaml.YamlMpConfigSource;
+import io.helidon.config.yaml.mp.YamlMpConfigSource;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;

@@ -29,8 +29,6 @@ module io.helidon.integrations.oci.objectstorage {
     requires io.helidon.integrations.common.rest;
     requires io.helidon.common.http;
 
-
-
     exports io.helidon.integrations.oci.objectstorage;
 
     // this is the intended usage, deprecation is to warn about accidental usage in code

@@ -37,6 +37,7 @@ public class AppRoleVaultAuth implements VaultAuth {
 
     private final String appRoleId;
     private final String secretId;
+    private final String methodPath;
 
     /**
      * Constructor required for Java Service Loader.
@@ -47,11 +48,13 @@ public class AppRoleVaultAuth implements VaultAuth {
     public AppRoleVaultAuth() {
         this.appRoleId = null;
         this.secretId = null;
+        this.methodPath = null;
     }
 
     private AppRoleVaultAuth(Builder builder) {
         this.appRoleId = builder.appRoleId;
         this.secretId = builder.secretId;
+        this.methodPath = builder.path;
     }
 
     /**
@@ -106,10 +109,13 @@ public class AppRoleVaultAuth implements VaultAuth {
         vaultBuilder.baseNamespace().ifPresent(loginVaultBuilder::baseNamespace);
 
         Vault loginVault = loginVaultBuilder.build();
+        String methodPath = Optional.ofNullable(this.methodPath)
+                .orElseGet(() -> config.get("auth.app-role.path")
+                        .asString()
+                        .orElse(AppRoleAuthRx.AUTH_METHOD.defaultPath()));
 
-        AppRoleAuthRx auth = loginVault.auth(AppRoleAuthRx.AUTH_METHOD);
+        LOGGER.info("Authenticated Vault " + address + "/" + methodPath + " using AppRole, roleId \"" + appRoleId + "\"");
 
-        LOGGER.info("Authenticated Vault " + address + " using AppRole, roleId \"" + appRoleId + "\"");
         return Optional.of(AppRoleRestApi.appRoleBuilder()
                                    .webClientBuilder(webclient -> {
                                        webclient.baseUri(address + "/v1");
@@ -118,7 +124,7 @@ public class AppRoleVaultAuth implements VaultAuth {
                                        vaultBuilder.webClientUpdater().accept(webclient);
                                    })
                                    .faultTolerance(vaultBuilder.ftHandler())
-                                   .auth(auth)
+                                   .auth(loginVault.auth(AppRoleAuthRx.AUTH_METHOD, methodPath))
                                    .appRoleId(appRoleId)
                                    .secretId(secretId)
                                    .build());
@@ -131,6 +137,7 @@ public class AppRoleVaultAuth implements VaultAuth {
     public static class Builder implements io.helidon.common.Builder<AppRoleVaultAuth> {
         private String appRoleId;
         private String secretId;
+        private String path;
 
         private Builder() {
         }
@@ -159,6 +166,19 @@ public class AppRoleVaultAuth implements VaultAuth {
          */
         public Builder secretId(String secretId) {
             this.secretId = secretId;
+            return this;
+        }
+
+        /**
+         * Custom method path.
+         *
+         * @param path path of the app role method, defaults to
+         *          {@link io.helidon.integrations.vault.auths.approle.AppRoleAuthRx#AUTH_METHOD}
+         *          default path
+         * @return updated builder
+         */
+        public Builder path(String path) {
+            this.path = path;
             return this;
         }
     }

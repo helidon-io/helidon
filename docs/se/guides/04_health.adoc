@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,19 +20,18 @@
 :h1Prefix: SE
 :description: Helidon health-checks
 :keywords: helidon, health-check, health, check
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide describes how to create a sample Helidon SE project
 that can be used to run some basic examples using both built-in and custom health-checks.
 
-== What you need
+== What You Need
 
-[width=50%,role="flex, sm7"]
-|===
-|About 15 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|===
+For this 15 minute tutorial, you will need the following:
 
-=== Create a sample SE project
+include::{common-page-prefix-inc}[tag=common-prereqs]
+
+=== Create a Sample SE Project
 
 Generate the project sources using the Helidon SE Maven archetype.
 The result is a simple project that can be used for the examples in this guide.
@@ -49,9 +48,9 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.se
 ----
 
-=== Using the built-in health-checks
+=== Using the Built-In Health Checks
 
-Helidon has a set of built-in health-checks that can be optionally enabled to report various
+Helidon has a set of built-in health checks that can be optionally enabled to report various
  health-check statuses that are commonly used:
 
 * deadlock detection
@@ -149,12 +148,12 @@ NOTE: In MicroProfile Health 2.0 `outcome` and `state` were replaced by `status`
 Helidon currently provides both fields for backwards compatibility, but use of `outcome` and `state` is deprecated
 and will be removed in a future release. You should rely on `status` instead.
 
-=== Custom liveness health-checks
+=== Custom Liveness Health Checks
 
-You can create application specific custom health-checks and integrate them with Helidon
+You can create application specific custom health checks and integrate them with Helidon
 using the `HealthSupport` class, which is a  WebServer service that contains
 a collection of registered `HealthCheck` instances. When queried, it invokes the registered
-health-check and returns a response with a status code representing the overall
+health check and returns a response with a status code representing the overall
 state of the application.
 
 [source,xml]
@@ -177,7 +176,7 @@ HealthSupport health = HealthSupport.builder()
   .build();
 
 ----
-<1> Add a custom liveness health-check. This example returns `UP` and current time.
+<1> Add a custom liveness health check. This example returns `UP` and current time.
 
 [source,bash]
 .Build and run the application, then verify the custom health endpoint:
@@ -202,7 +201,7 @@ curl http://localhost:8080/health
 }
 ----
 
-=== Custom readiness health-check
+=== Custom Readiness Health Check
 
 You can add a readiness check to indicate that the application is ready to be used.  In this
 example, the server will wait five seconds before it becomes ready.
@@ -351,7 +350,7 @@ curl http://localhost:8080/health
 }
 ----
 
-=== Combine built-in and custom health-checks
+=== Combine Built-In and Custom Health Checks
 
 You can combine built-in and custom health-checks using the same HealthSupport builder.
 
@@ -437,7 +436,7 @@ curl http://localhost:8080/health
 ----
 
 
-=== Custom health-check URL path
+=== Custom Health Check URL Path
 
 You can use a custom URL path for heath checks by setting the `WebContext`.  In the following example, only
 the liveness URL is changed, but you can do the same for the readiness and default
@@ -480,7 +479,7 @@ curl http://localhost:8080/probe/live
 }
 ----
 
-=== Using Liveness and Readiness health-checks with Kubernetes
+=== Using Liveness and Readiness Health Checks with Kubernetes
 
 The following example shows how to integrate the Helidon health API in an application that implements
 health endpoints for the Kubernetes liveness and readiness probes.
@@ -612,14 +611,14 @@ kubectl delete -f ./health.yaml
 ----
 
 === Summary
-This guide demonstrated how to use health-check in a Helidon SE application as follows:
+This guide demonstrated how to use health checks in a Helidon SE application as follows:
 
 * Access the default health-check
 * Create and use custom readiness and liveness checks
 * Customize the health-check root path
 * Integrate Helidon health-check with Kubernetes
 
-Please refer to the following reference for additional information:
+Refer to the following reference for additional information:
 
 * Helidon Javadoc at https://helidon.io/docs/latest/apidocs/index.html?overview-summary.html
 

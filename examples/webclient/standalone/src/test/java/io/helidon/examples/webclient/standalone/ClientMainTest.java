@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.ExecutionException;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
@@ -27,8 +26,11 @@ import io.helidon.config.Config;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientServiceRequest;
+import io.helidon.webclient.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
+import io.helidon.webserver.WebServer;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -52,12 +54,10 @@ public class ClientMainTest {
     private Path testFile;
 
     @BeforeEach
-    public void beforeEach() throws ExecutionException, InterruptedException {
+    public void beforeEach() {
         testFile = Paths.get("test.txt");
-        ServerMain.startServer()
-                .thenAccept(webServer -> createWebClient(webServer.port()))
-                .toCompletableFuture()
-                .get();
+        WebServer server = ServerMain.startServer().await();
+        createWebClient(server.port());
     }
 
     @AfterEach
@@ -78,27 +78,25 @@ public class ClientMainTest {
     }
 
     @Test
-    public void testPerformPutAndGetMethod() throws ExecutionException, InterruptedException {
+    public void testPerformPutAndGetMethod() {
         ClientMain.performGetMethod(webClient)
                 .thenAccept(it -> assertThat(it, is("{\"message\":\"Hello World!\"}")))
                 .thenCompose(it -> ClientMain.performPutMethod(webClient))
                 .thenCompose(it -> ClientMain.performGetMethod(webClient))
                 .thenAccept(it -> assertThat(it, is("{\"message\":\"Hola World!\"}")))
-                .toCompletableFuture()
-                .get();
+                .await();
     }
 
     @Test
-    public void testPerformRedirect() throws ExecutionException, InterruptedException {
+    public void testPerformRedirect() {
         createWebClient(ServerMain.getServerPort(), new RedirectClientServiceTest());
         ClientMain.followRedirects(webClient)
                 .thenAccept(it -> assertThat(it, is("{\"message\":\"Hello World!\"}")))
-                .toCompletableFuture()
-                .get();
+                .await();
     }
 
     @Test
-    public void testFileDownload() throws InterruptedException, ExecutionException {
+    public void testFileDownload() {
         ClientMain.saveResponseToFile(webClient)
                 .thenAccept(it -> assertThat(Files.exists(testFile), is(true)))
                 .thenAccept(it -> {
@@ -108,36 +106,40 @@ public class ClientMainTest {
                         fail(e);
                     }
                 })
-                .toCompletableFuture()
-                .get();
+                .await();
     }
 
     @Test
-    public void testMetricsExample() throws ExecutionException, InterruptedException {
+    public void testMetricsExample() {
         String counterName = "example.metric.GET.localhost";
         Counter counter = METRIC_REGISTRY.counter(counterName);
         assertThat("Counter " + counterName + " has not been 0", counter.getCount(), is(0L));
         ClientMain.clientMetricsExample("http://localhost:" + ServerMain.getServerPort() + "/greet", Config.create())
                 .thenAccept(it -> assertThat("Counter " + counterName + " "
                                                      + "has not been 1", counter.getCount(), is(1L)))
-                .toCompletableFuture()
-                .get();
+                .await();
     }
 
     private static final class RedirectClientServiceTest implements WebClientService {
 
-        private boolean redirect = false;
+        private volatile boolean redirect = true;
+
+        @Override
+        public Single<WebClientServiceResponse> response(WebClientRequestBuilder.ClientRequest request,
+                                                         WebClientServiceResponse response) {
+
+            if (response.status() == Http.Status.MOVED_PERMANENTLY_301 && redirect) {
+                fail("Received second redirect! Only one redirect expected here.");
+            } else if (response.status() == Http.Status.OK_200 && !redirect) {
+                fail("There was status 200 without status 301 before it.");
+            }
+            // not used for now, this test must be refactored
+            //redirect = !redirect;
+            return Single.just(response);
+        }
 
         @Override
         public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
-            request.whenComplete()
-                    .thenAccept(response -> {
-                        if (response.status() == Http.Status.MOVED_PERMANENTLY_301 && redirect) {
-                            fail("Received second redirect! Only one redirect expected here.");
-                        } else if (response.status() == Http.Status.OK_200 && !redirect) {
-                            fail("There was status 200 without status 301 before it.");
-                        }
-                    });
             return Single.just(request);
         }
     }

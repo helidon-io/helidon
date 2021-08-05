@@ -17,29 +17,37 @@
 package io.helidon.examples.micrometer.se;
 
 import java.util.Collections;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
+import io.helidon.common.http.Http;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
+// we need to first call the methods, before validating metrics
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class MainTest {
-
-    private static WebServer webServer;
-    private static WebClient webClient;
 
     private static final JsonBuilderFactory JSON_BF = Json.createBuilderFactory(Collections.emptyMap());
     private static final JsonObject TEST_JSON_OBJECT;
+    private static WebServer webServer;
+    private static WebClient webClient;
+
+    private static double expectedPersonalizedGets;
+    private static double expectedAllGets;
 
     static {
         TEST_JSON_OBJECT = JSON_BF.createObjectBuilder()
@@ -48,18 +56,9 @@ public class MainTest {
     }
 
     @BeforeAll
-    public static void startTheServer() throws Exception {
-        webServer = Main.startServer();
-
-        long timeout = 2000; // 2 seconds should be enough to start the server
-        long now = System.currentTimeMillis();
-
-        while (!webServer.isRunning()) {
-            Thread.sleep(100);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
-            }
-        }
+    public static void startTheServer() {
+        webServer = Main.startServer()
+                .await(10, TimeUnit.SECONDS);
 
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
@@ -68,62 +67,84 @@ public class MainTest {
     }
 
     @AfterAll
-    public static void stopServer() throws Exception {
+    public static void stopServer() {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(10, TimeUnit.SECONDS);
         }
     }
 
+    private static JsonObject get() {
+        return get("/greet");
+    }
+
+    private static JsonObject get(String path) {
+        JsonObject jsonObject = webClient.get()
+                .path(path)
+                .request(JsonObject.class)
+                .await();
+        expectedAllGets++;
+        return jsonObject;
+    }
+
+    private static JsonObject personalizedGet(String name) {
+        JsonObject result = get("/greet/" + name);
+        expectedPersonalizedGets++;
+        return result;
+    }
+
     @Test
-    public void testHelloWorld() throws Exception {
-        webClient.get()
-                .path("/greet")
-                .request(JsonObject.class)
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("greeting")))
-                .toCompletableFuture()
-                .get();
+    @Order(1)
+    void testDefaultGreeting() {
+        JsonObject jsonObject = get();
+        Assertions.assertEquals("Hello World!", jsonObject.getString("greeting"));
+    }
 
-        webClient.get()
-                .path("/greet/Joe")
-                .request(JsonObject.class)
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hello Joe!", jsonObject.getString("greeting")))
-                .toCompletableFuture()
-                .get();
+    @Test
+    @Order(2)
+    void testNamedGreeting() {
+        JsonObject jsonObject = personalizedGet("Joe");
+        Assertions.assertEquals("Hello Joe!", jsonObject.getString("greeting"));
+    }
 
-        webClient.put()
+    @Test
+    @Order(3)
+    void testUpdateGreeting() {
+
+        WebClientResponse response = webClient.put()
                 .path("/greet/greeting")
                 .submit(TEST_JSON_OBJECT)
-                .thenAccept(response -> Assertions.assertEquals(204, response.status().code()))
-                .thenCompose(nothing -> webClient.get()
-                        .path("/greet/Joe")
-                        .request(JsonObject.class))
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hola Joe!", jsonObject.getString("greeting")))
-                .toCompletableFuture()
-                .get();
+                .await();
 
-        webClient.get()
+        Assertions.assertEquals(Http.Status.NO_CONTENT_204, response.status());
+
+        JsonObject jsonObject = personalizedGet("Joe");
+        Assertions.assertEquals("Hola Joe!", jsonObject.getString("greeting"));
+    }
+
+    @Test
+    @Order(4)
+    void testMicrometer() {
+        WebClientResponse response = webClient.get()
                 .path("/micrometer")
                 .request()
-                .thenAccept(response -> {
-                    Assertions.assertEquals(200, response.status()
-                            .code());
-                    try {
-                        String output = response.content()
-                                .as(String.class)
-                                .get();
-                        Assertions.assertTrue(output.contains("get_seconds_count 2.0"),
-                                "Unable to find expected all-gets timer count 2.0"); // 2 gets; the put is not counted
-                        Assertions.assertTrue(output.contains("get_seconds_sum"),
-                                "Unable to find expected all-gets timer sum");
-                        Assertions.assertTrue(output.contains("personalizedGets_total 1.0"),
-                                "Unable to find expected counter result 1.0");
-                    } catch (InterruptedException | ExecutionException e) {
-                        throw new RuntimeException(e);
-                    }
+                .await();
 
-                    response.close();
-                });
+        Assertions.assertEquals(200, response.status()
+                .code());
+
+        String output = response.content()
+                .as(String.class)
+                .await();
+        String expected = Main.ALL_GETS_TIMER_NAME + "_seconds_count " + expectedAllGets;
+        Assertions.assertTrue(output.contains(expected),
+                "Unable to find expected all-gets timer count " + expected + "; output is " + output); // all gets; the put
+        // is not counted
+        Assertions.assertTrue(output.contains(Main.ALL_GETS_TIMER_NAME + "_seconds_sum"),
+                "Unable to find expected all-gets timer sum");
+        expected = Main.PERSONALIZED_GETS_COUNTER_NAME + "_total " + expectedPersonalizedGets;
+        Assertions.assertTrue(output.contains(expected),
+                "Unable to find expected counter result " + expected + "; output is " + output);
+        response.close();
     }
 }

@@ -24,7 +24,7 @@
 :description: Fault Tolerance in Helidon SE
 :keywords: helidon, java, fault, tolerance, fault tolerance, se
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
-:javadoc-base-url-faulttolerance: {javadoc-base-url}io.helidon.faultolerance/io/helidon/faultolerance/package-summary.html
+:javadoc-base-url-faulttolerance: {javadoc-base-url}io.helidon.faulttolerance/io/helidon/faulttolerance/package-summary.html
 :javadoc-base-url-reactive: {javadoc-base-url}io.helidon.common.reactive/io/helidon/common/reactive/package-summary.html
 :helidon-variant: SE
 :mp-microprofile: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-2.1.1/microprofile-fault-tolerance-spec.html
