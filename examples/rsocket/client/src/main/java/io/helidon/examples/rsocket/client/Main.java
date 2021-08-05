@@ -16,6 +16,7 @@
 
 package io.helidon.examples.rsocket.client;
 
+import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -35,7 +36,9 @@ public class Main {
      */
     static Routing createRouting() {
 
-        RSocketClientService rSocketClientService = new RSocketClientService();
+        Config config = Config.create();
+
+        RSocketClientService rSocketClientService = new RSocketClientService(config);
 
         return Routing.builder()
                 .register(rSocketClientService)

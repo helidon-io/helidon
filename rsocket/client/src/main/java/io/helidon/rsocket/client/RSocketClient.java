@@ -283,12 +283,14 @@ public class RSocketClient implements Disposable {
 
         @Override
         public RSocketClient build() {
-            RSocket rSocket = io.rsocket.core.RSocketConnector.create()
-                    .dataMimeType(mimeType)
-                    .metadataMimeType(metadataMimeType)
-                    .connect(TcpClientTransport.create(uri, port))
-                    .block();
+            RSocket rSocket;
             if (uri != null && !uri.isEmpty()) {
+                rSocket = io.rsocket.core.RSocketConnector.create()
+                        .dataMimeType(mimeType)
+                        .metadataMimeType(metadataMimeType)
+                        .connect(TcpClientTransport.create(uri, port))
+                        .block();
+            } else {
                 rSocket = io.rsocket.core.RSocketConnector.create()
                         .dataMimeType(mimeType)
                         .metadataMimeType(metadataMimeType)

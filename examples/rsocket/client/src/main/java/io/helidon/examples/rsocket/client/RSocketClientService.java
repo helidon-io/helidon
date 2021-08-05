@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 
 import io.helidon.common.reactive.Single;
+import io.helidon.config.Config;
 import io.helidon.rsocket.client.RSocketClient;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -33,6 +34,13 @@ import io.rsocket.Payload;
  * RSocket Client service Sample.
  */
 public class RSocketClientService implements Service {
+
+    private  Config config;
+
+    RSocketClientService(Config config) {
+        this.config = config;
+    }
+
     @Override
     public void update(Routing.Rules rules) {
         rules.get("/call", this::rsocketClientCall);
@@ -41,8 +49,7 @@ public class RSocketClientService implements Service {
     private void rsocketClientCall(ServerRequest req, ServerResponse response) {
 
         RSocketClient client = RSocketClient.builder()
-                .websocket("ws://localhost:8080/rsocket/board")
-                .route("print")
+                .config(config.get("rsocket"))
                 .build();
 
         Single<Payload> payload = client.requestResponse(
