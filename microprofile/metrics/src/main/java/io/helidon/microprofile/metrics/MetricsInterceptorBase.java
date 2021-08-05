@@ -18,7 +18,6 @@ package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,11 +25,11 @@ import java.util.logging.Logger;
 import javax.inject.Inject;
 import javax.interceptor.InvocationContext;
 
+import io.helidon.metrics.Registry;
 import io.helidon.microprofile.metrics.MetricsCdiExtension.MetricWorkItem;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
 
 import org.eclipse.microprofile.metrics.Metric;
-import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 /**
@@ -54,8 +53,6 @@ abstract class MetricsInterceptorBase<M extends Metric> extends HelidonIntercept
     @Inject
     private MetricRegistry registry;
 
-    private Map<MetricID, Metric> metricsForVerification;
-
     enum ActionType {
         PREINVOKE("preinvoke"), COMPLETE("complete");
 
@@ -75,13 +72,6 @@ abstract class MetricsInterceptorBase<M extends Metric> extends HelidonIntercept
         this.metricType = metricType;
     }
 
-    Map<MetricID, Metric> metricsForVerification() {
-        if (metricsForVerification == null) {
-            metricsForVerification = registry.getMetrics();
-        }
-        return metricsForVerification;
-    }
-
     @Override
     public Iterable<MetricWorkItem> workItems(Executable executable) {
         return extension.workItems(executable, annotationType);
@@ -93,10 +83,10 @@ abstract class MetricsInterceptorBase<M extends Metric> extends HelidonIntercept
     }
 
     void invokeVerifiedAction(InvocationContext context, MetricWorkItem workItem, Consumer<M> action, ActionType actionType) {
-        if (!metricsForVerification().containsKey(workItem.metricID())) {
+        Metric metric = workItem.metric();
+        if (Registry.isMarkedAsDeleted(metric)) {
             throw new IllegalStateException("Attempt to use previously-removed metric" + workItem.metricID());
         }
-        Metric metric = workItem.metric();
         LOGGER.log(Level.FINEST, () -> String.format(
                 "%s (%s) is accepting %s %s for processing on %s triggered by @%s",
                 getClass().getSimpleName(), actionType, workItem.metric().getClass().getSimpleName(), workItem.metricID(),

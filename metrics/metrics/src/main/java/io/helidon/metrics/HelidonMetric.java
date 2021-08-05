@@ -74,4 +74,17 @@ interface HelidonMetric extends Metric {
      * @return the metric's {@link Metadata}
      */
     Metadata metadata();
+
+    /**
+     * Returns whether the metric has been deleted.
+     *
+     * @return true if the metrics was removed from the registry; false otherwise
+     */
+    boolean isDeleted();
+
+    /**
+     * Mark this metric as deleted.
+     */
+    void markAsDeleted();
+
 }

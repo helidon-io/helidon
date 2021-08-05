@@ -35,10 +35,11 @@ class ExemplarServiceManager {
 
     private static final List<ExemplarService> EXEMPLAR_SERVICES = collectExemplarServices();
 
+    private static final boolean IS_ACTIVE = !EXEMPLAR_SERVICES.isEmpty();
 
-    private static final Supplier<String> EXEMPLAR_SUPPLIER = EXEMPLAR_SERVICES.isEmpty()
-            ? () -> ""
-            : () -> EXEMPLAR_SERVICES.stream()
+    private static final String INACTIVE_LABEL = "";
+
+    private static final Supplier<String> EXEMPLAR_SUPPLIER = () -> EXEMPLAR_SERVICES.stream()
                         .map(ExemplarService::label)
                         .filter(Predicate.not(String::isBlank))
                         .collect(ExemplarServiceManager::labelsStringJoiner, StringJoiner::add, StringJoiner::merge)
@@ -58,7 +59,7 @@ class ExemplarServiceManager {
      * @return exemplar string provided by the highest-priority service instance
      */
     static String exemplarLabel() {
-        return EXEMPLAR_SUPPLIER.get();
+        return IS_ACTIVE ? EXEMPLAR_SUPPLIER.get() : INACTIVE_LABEL;
     }
 
     private static List<ExemplarService> collectExemplarServices() {

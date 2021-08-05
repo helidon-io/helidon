@@ -82,6 +82,17 @@ public class Registry extends MetricRegistry {
         return new Registry(type);
     }
 
+    /**
+     * Indicates whether the specific metrics has been marked as deleted.
+     *
+     * @param metric the metric to check
+     * @return true if it's a Helidon metric and has been marked as deleted; false otherwise
+     */
+    public static boolean isMarkedAsDeleted(Metric metric) {
+        return HelidonMetric.class.isInstance(metric)
+                && ((HelidonMetric) metric).isDeleted();
+    }
+
     @Override
     public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
         return registerUniqueMetric(name, metric);
@@ -225,12 +236,14 @@ public class Registry extends MetricRegistry {
      */
     @Override
     public synchronized boolean remove(String name) {
-        final List<MetricID> metricIDs = allMetricIDsByName.get(name);
-        if (metricIDs == null) {
+        final List<Map.Entry<MetricID, HelidonMetric>> doomedMetrics = getMetricsByName(name);
+        if (doomedMetrics.isEmpty()) {
             return false;
         }
-        final boolean result = metricIDs.stream()
-                .map(metricID -> allMetrics.remove(metricID) != null)
+
+        final boolean result = doomedMetrics.stream()
+                .peek(entry -> entry.getValue().markAsDeleted())
+                .map(entry -> allMetrics.remove(entry.getKey()) != null)
                 .reduce((a, b) -> a || b)
                 .orElse(false);
         allMetricIDsByName.remove(name);
@@ -256,7 +269,11 @@ public class Registry extends MetricRegistry {
             allMetadata.remove(metricID.getName());
         }
 
-        return allMetrics.remove(metricID) != null;
+        HelidonMetric doomedMetric = allMetrics.remove(metricID);
+        if (doomedMetric != null) {
+            doomedMetric.markAsDeleted();
+        }
+        return doomedMetric != null;
     }
 
     @Override
