@@ -37,7 +37,7 @@ class ExemplarServiceManager {
 
     private static final boolean IS_ACTIVE = !EXEMPLAR_SERVICES.isEmpty();
 
-    private static final String INACTIVE_LABEL = "";
+    static final String INACTIVE_LABEL = "";
 
     private static final Supplier<String> EXEMPLAR_SUPPLIER = () -> EXEMPLAR_SERVICES.stream()
                         .map(ExemplarService::label)
@@ -60,6 +60,14 @@ class ExemplarServiceManager {
      */
     static String exemplarLabel() {
         return IS_ACTIVE ? EXEMPLAR_SUPPLIER.get() : INACTIVE_LABEL;
+    }
+
+    /**
+     *
+     * @return whether exemplar handling is active or not
+     */
+    static boolean isActive() {
+        return IS_ACTIVE;
     }
 
     private static List<ExemplarService> collectExemplarServices() {
