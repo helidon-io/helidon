@@ -36,11 +36,16 @@
         <dependency>
             <groupId>io.jaegertracing</groupId>
             <artifactId>jaeger-client</artifactId>
-        </dependency>
-        <dependency>
-            <!-- we need to enforce managed dependency, as otherwise we get a version 4.x that fails with native image -->
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
+            <exclusions>
+                <!-- Bad dependency in libthrift introduced in 0.14.0. See bug
+                     https://github.com/apache/thrift/pull/2340
+                     Should be able to remove this once jaeger-client goes to libthrift 0.14.3
+                -->
+                <exclusion>
+                    <groupId>org.apache.tomcat.embed</groupId>
+                    <artifactId>tomcat-embed-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
