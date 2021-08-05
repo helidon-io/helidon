@@ -107,7 +107,7 @@ public class RSocketCdiExtension implements Extension {
      * @param endpoint The endpoint.
      */
     private void endpointClasses(@Observes @WithAnnotations(RSocket.class) ProcessAnnotatedType<?> endpoint) {
-        LOGGER.info(() -> "Annotated endpoint found " + endpoint.getAnnotatedType().getJavaClass());
+        LOGGER.finest(() -> "Annotated endpoint found " + endpoint.getAnnotatedType().getJavaClass());
 
         LOGGER.finest("Methods:");
         List<Method> methods = endpoint.getAnnotatedType()
@@ -136,7 +136,7 @@ public class RSocketCdiExtension implements Extension {
         }
 
         methodMap.put(endpoint.getAnnotatedType().getJavaClass(), endPointMethods);
-        LOGGER.info("Endpoints discovery completed");
+        LOGGER.finest("Endpoints discovery completed");
     }
 
 
@@ -235,7 +235,7 @@ public class RSocketCdiExtension implements Extension {
             }
 
             routingMap.put(rsocketInstance.getClass().getAnnotation(RSocket.class).value(), rSocketRoutingBuilder);
-            LOGGER.info("Instance to method wiring completed!");
+            LOGGER.finest("Instance to method wiring completed!");
         }
     }
 
