@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,8 @@ import javax.annotation.security.RolesAllowed;
 import io.helidon.common.Errors;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
@@ -44,6 +46,7 @@ import io.helidon.security.SecurityResponse;
 import io.helidon.security.providers.abac.spi.AbacValidator;
 import io.helidon.security.providers.abac.spi.AbacValidatorService;
 import io.helidon.security.spi.AuthorizationProvider;
+import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
 
 /**
@@ -155,24 +158,24 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
                 // or it has a supported annotation
                 abacConfig.flatMap(it -> it.get(configKey).asNode().asOptional())
                         .ifPresentOrElse(attribConfig -> {
-                            attributes.add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig)));
-                        },
-                        () -> {
-                            List<Annotation> annotationConfig = new ArrayList<>();
-                            for (SecurityLevel securityLevel : epConfig.securityLevels()) {
-                                for (Class<? extends Annotation> annotation : annotations) {
-                                    List<? extends Annotation> list = securityLevel
-                                            .combineAnnotations(annotation,
-                                                                EndpointConfig.AnnotationScope.values());
-                                    annotationConfig.addAll(list);
-                                }
-                            }
+                                             attributes.add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig)));
+                                         },
+                                         () -> {
+                                             List<Annotation> annotationConfig = new ArrayList<>();
+                                             for (SecurityLevel securityLevel : epConfig.securityLevels()) {
+                                                 for (Class<? extends Annotation> annotation : annotations) {
+                                                     List<? extends Annotation> list = securityLevel
+                                                             .combineAnnotations(annotation,
+                                                                                 EndpointConfig.AnnotationScope.values());
+                                                     annotationConfig.addAll(list);
+                                                 }
+                                             }
 
-                            if (!annotationConfig.isEmpty()) {
-                                attributes.add(new RuntimeAttribute(validator,
-                                                                    validator.fromAnnotations(epConfig)));
-                            }
-                        });
+                                             if (!annotationConfig.isEmpty()) {
+                                                 attributes.add(new RuntimeAttribute(validator,
+                                                                                     validator.fromAnnotations(epConfig)));
+                                             }
+                                         });
             }
         }
 
@@ -333,6 +336,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
     /**
      * A fluent API builder for {@link AbacProvider}.
      */
+    @Configured(prefix = "abac", provides = {SecurityProvider.class, AuthorizationProvider.class})
     public static final class Builder implements io.helidon.common.Builder<AbacProvider> {
         private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
         private Config config = Config.empty();
@@ -377,6 +381,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
          * @param failOnUnvalidated true for failure on unvalidated, false if it is OK to fail some of the validations
          * @return updated builder instance
          */
+        @ConfiguredOption(defaultValue = "true")
         public Builder failOnUnvalidated(boolean failOnUnvalidated) {
             this.failOnUnvalidated = failOnUnvalidated;
             return this;
@@ -388,6 +393,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
          * @param failIfNoneValidated true for failure on unvalidated, false if it is OK not to validate any attribute
          * @return updated builder instance
          */
+        @ConfiguredOption(defaultValue = "true")
         public Builder failIfNoneValidated(boolean failIfNoneValidated) {
             this.failIfNoneValidated = failIfNoneValidated;
             return this;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,26 @@
  * limitations under the License.
  */
 
-/**
- * Common tools that use config component.
- *
- * @see io.helidon.common.configurable.Resource
- */
-module io.helidon.common.configurable {
-    requires java.logging;
-    requires java.management;
-    requires transitive io.helidon.config;
-    requires io.helidon.common;
-    requires io.helidon.common.context;
-    requires static io.helidon.config.metadata;
+package io.helidon.config.metadata;
 
-    exports io.helidon.common.configurable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+/**
+ * Can be used to define a list of possible values of an option.
+ */
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ConfiguredValue {
+    /**
+     * Value of the option.
+     * @return value
+     */
+    String value();
+
+    /**
+     * Description of this value.
+     *
+     * @return description
+     */
+    String description();
 }

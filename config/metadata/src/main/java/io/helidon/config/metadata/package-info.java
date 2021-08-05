@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,7 @@
  */
 
 /**
- * Common tools that use config component.
- *
- * @see io.helidon.common.configurable.Resource
+ * Configuration metadata to support IDE auto completion
+ * and generation of documentation.
  */
-module io.helidon.common.configurable {
-    requires java.logging;
-    requires java.management;
-    requires transitive io.helidon.config;
-    requires io.helidon.common;
-    requires io.helidon.common.context;
-    requires static io.helidon.config.metadata;
-
-    exports io.helidon.common.configurable;
-}
+package io.helidon.config.metadata;

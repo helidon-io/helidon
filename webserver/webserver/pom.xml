@@ -171,6 +171,11 @@
             <artifactId>netty-handler</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>io.opentracing</groupId>
             <artifactId>opentracing-mock</artifactId>
             <scope>test</scope>

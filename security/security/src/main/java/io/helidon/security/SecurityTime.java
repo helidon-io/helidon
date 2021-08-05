@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Time used in security, configurable.
@@ -120,6 +122,7 @@ public class SecurityTime {
     /**
      * Fluent API builder for {@link SecurityTime}.
      */
+    @Configured
     public static final class Builder implements io.helidon.common.Builder<SecurityTime> {
         private final List<ChronoValues> values = new ArrayList<>();
         private ZoneId timeZone = ZoneId.systemDefault();
@@ -142,6 +145,7 @@ public class SecurityTime {
          * @param zoneId zone id to use for the instance being built
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder timeZone(ZoneId zoneId) {
             this.timeZone = zoneId;
             return this;
@@ -153,6 +157,7 @@ public class SecurityTime {
          * @param seconds number of seconds by which we want to shift the system time, may be negative
          * @return updated builder instance
          */
+        @ConfiguredOption(defaultValue = "0")
         public Builder shiftBySeconds(long seconds) {
             this.shiftBySeconds = seconds;
             return this;
@@ -165,6 +170,13 @@ public class SecurityTime {
          * @param value value to set on the field, see javadoc of each field to see possible values
          * @return updated builder instance
          */
+        @ConfiguredOption(value = "year", type = Long.class)
+        @ConfiguredOption(value = "month", type = Long.class)
+        @ConfiguredOption(value = "day-of-month", type = Long.class)
+        @ConfiguredOption(value = "hour-of-day", type = Long.class)
+        @ConfiguredOption(value = "minute", type = Long.class)
+        @ConfiguredOption(value = "second", type = Long.class)
+        @ConfiguredOption(value = "millisecond", type = Long.class)
         public Builder value(ChronoField field, long value) {
             this.values.add(new ChronoValues(field, value));
             return this;
@@ -216,3 +228,4 @@ public class SecurityTime {
         }
     }
 }
+

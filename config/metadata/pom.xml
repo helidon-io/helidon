@@ -17,32 +17,36 @@
 
 -->
 
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.security.providers</groupId>
-        <artifactId>helidon-security-providers-project</artifactId>
+        <groupId>io.helidon.config</groupId>
+        <artifactId>helidon-config-project</artifactId>
         <version>2.4.0-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-security-providers-abac</artifactId>
-    <name>Helidon Security Providers ABAC</name>
+    <artifactId>helidon-config-metadata</artifactId>
+    <name>Helidon Config Metadata</name>
+
+    <properties>
+        <helidon.services.skip>true</helidon.services.skip>
+    </properties>
 
     <description>
-        Attribute based access control provider
+        Configuration Metadata annotations and processing.
     </description>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.security</groupId>
-            <artifactId>helidon-security</artifactId>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
+            <groupId>org.glassfish</groupId>
+            <artifactId>jakarta.json</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -50,13 +54,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-core</artifactId>
+            <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -67,14 +66,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>io.helidon.config</groupId>
-                            <artifactId>helidon-config-metadata</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
+                    <compilerArgument>-proc:none</compilerArgument>
                 </configuration>
             </plugin>
         </plugins>

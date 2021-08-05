@@ -46,6 +46,8 @@ import io.helidon.common.reactive.Single;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.spi.AuditProvider;
 import io.helidon.security.spi.AuthenticationProvider;
@@ -551,6 +553,7 @@ public class Security {
     /**
      * Builder pattern class for helping create {@link Security} in a convenient way.
      */
+    @Configured(root = true, prefix = "security")
     public static final class Builder implements io.helidon.common.Builder<Security> {
         private final Set<AuditProvider> auditProviders = new LinkedHashSet<>();
         private final List<NamedProvider<AuthenticationProvider>> atnProviders = new LinkedList<>();
@@ -564,7 +567,7 @@ public class Security {
         private final Map<String, Supplier<Single<Optional<String>>>> secrets = new HashMap<>();
         private final Map<String, EncryptionProvider.EncryptionSupport> encryptions = new HashMap<>();
         private final Map<String, DigestProvider.DigestSupport> digests = new HashMap<>();
-
+        private final Set<String> providerNames = new HashSet<>();
         private NamedProvider<AuthenticationProvider> authnProvider;
         private NamedProvider<AuthorizationProvider> authzProvider;
         private SubjectMappingProvider subjectMappingProvider;
@@ -576,8 +579,6 @@ public class Security {
         private SecurityTime serverTime = SecurityTime.builder().build();
         private Supplier<ExecutorService> executorService = ThreadPoolSupplier.create();
         private boolean enabled = true;
-
-        private final Set<String> providerNames = new HashSet<>();
 
         private Builder() {
         }
@@ -597,6 +598,10 @@ public class Security {
          * @param pspFunction function to obtain an instance of the policy. This function will be only called once by security.
          * @return updated builder instance
          */
+        @ConfiguredOption(value = "provider-policy.type", type = ProviderSelectionPolicyType.class,
+                          description = "Type of the policy.")
+        @ConfiguredOption(value = "provider-policy.class-name", description = "Provider selection policy class name, only used "
+                + "when type is set to CLASS", type = Class.class)
         public Builder providerSelectionPolicy(Function<ProviderSelectionPolicy.Providers, ProviderSelectionPolicy>
                                                        pspFunction) {
             this.providerSelectionPolicy = pspFunction;
@@ -609,6 +614,7 @@ public class Security {
          * @param time time instance with possible time shift, explicit timezone or overridden values
          * @return updated builder instance
          */
+        @ConfiguredOption("environment.server-time")
         public Builder serverTime(SecurityTime time) {
             this.serverTime = time;
             return this;
@@ -632,6 +638,7 @@ public class Security {
          * @param tracingEnabled true to enable tracing, false to disable
          * @return updated builder instance
          */
+        @ConfiguredOption(value = "tracing.enabled", defaultValue = "true")
         public Builder tracingEnabled(boolean tracingEnabled) {
             this.tracingEnabled = tracingEnabled;
             return this;
@@ -654,6 +661,7 @@ public class Security {
          * @param provider Provider implementing multiple security provider interfaces
          * @return updated builder instance
          */
+        @ConfiguredOption(value = "providers", list = true, required = true)
         public Builder addProvider(SecurityProvider provider) {
             return addProvider(provider, provider.getClass().getSimpleName());
         }
@@ -719,6 +727,7 @@ public class Security {
          * @param provider Provider instance to use as the default for this runtime.
          * @return updated builder instance
          */
+        @ConfiguredOption("default-authentication-provider")
         public Builder authenticationProvider(AuthenticationProvider provider) {
             // explicit default provider
             this.authnProvider = new NamedProvider<>(provider.getClass().getSimpleName(), provider);
@@ -741,6 +750,7 @@ public class Security {
          * @param provider provider instance to use as the default for this runtime.
          * @return updated builder instance
          */
+        @ConfiguredOption("default-authorization-provider")
         public Builder authorizationProvider(AuthorizationProvider provider) {
             // explicit default provider
             this.authzProvider = new NamedProvider<>(provider.getClass().getSimpleName(), provider);
@@ -1042,6 +1052,7 @@ public class Security {
          * @param enabled set to {@code false} to disable security
          * @return updated builder instance
          */
+        @ConfiguredOption(defaultValue = "true")
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
             return this;
@@ -1091,6 +1102,11 @@ public class Security {
          * @see #secret(String)
          * @see #secret(String, String)
          */
+        @ConfiguredOption(value = "secrets", list = true, type = Config.class, description = "Configured secrets")
+        @ConfiguredOption(value = "secrets.*.name", type = String.class, description = "Name of the secret, used for lookup")
+        @ConfiguredOption(value = "secrets.*.provider", type = String.class, description = "Name of the secret provider")
+        @ConfiguredOption(value = "secrets.*.config", type = ProviderConfig.class, description = "Configuration specific to the"
+                + " secret provider")
         public <T extends ProviderConfig> Builder addSecret(String name,
                                                             SecretsProvider<T> secretProvider,
                                                             T providerConfig) {
@@ -1150,7 +1166,7 @@ public class Security {
             }
 
             config.get("environment.server-time").as(SecurityTime::create).ifPresent(this::serverTime);
-            executorSupplier(ThreadPoolSupplier.create(config.get("environment.executor-service")));
+            executorService(ThreadPoolSupplier.create(config.get("environment.executor-service")));
 
             Map<String, SecurityProviderService> configKeyToService = new HashMap<>();
             Map<String, SecurityProviderService> classNameToService = new HashMap<>();
@@ -1337,8 +1353,16 @@ public class Security {
             }
         }
 
-        private void executorSupplier(Supplier<ExecutorService> supplier) {
+        /**
+         * Configure executor service to be used for blocking operations within security.
+         *
+         * @param supplier supplier of an executor service, as as {@link io.helidon.common.configurable.ThreadPoolSupplier}
+         * @return updated builder
+         */
+        @ConfiguredOption(value = "environment.executor-service", type = ThreadPoolSupplier.class)
+        public Builder executorService(Supplier<ExecutorService> supplier) {
             this.executorService = supplier;
+            return this;
         }
 
         private String resolveProviderName(Config pConf,

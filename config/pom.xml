@@ -48,6 +48,7 @@
         <module>tests</module>
         <module>config-mp</module>
         <module>yaml-mp</module>
+        <module>metadata</module>
     </modules>
 
     <build>

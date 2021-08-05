@@ -30,6 +30,8 @@ import javax.net.ssl.SSLContext;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.DeprecatedConfig;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * The SocketConfiguration configures a port to listen on and its associated server socket parameters.
@@ -243,6 +245,7 @@ public interface SocketConfiguration {
      *
      * @param <B> type of the subclass of this class to provide correct fluent API
      */
+    @Configured
     interface SocketConfigurationBuilder<B extends SocketConfigurationBuilder<B>> {
         /**
          * Configures a server port to listen on with the server socket. If port is
@@ -251,6 +254,7 @@ public interface SocketConfiguration {
          * @param port the server port of the server socket
          * @return this builder
          */
+        @ConfiguredOption(defaultValue = "0")
         B port(int port);
 
         /**
@@ -262,6 +266,7 @@ public interface SocketConfiguration {
          * @throws java.lang.NullPointerException in case the bind address is null
          * @throws io.helidon.config.ConfigException in case the address provided is not a valid host address
          */
+        @ConfiguredOption
         default B bindAddress(String address) {
             try {
                 return bindAddress(InetAddress.getByName(address));
@@ -276,6 +281,7 @@ public interface SocketConfiguration {
          * @param address host to listen on
          * @return this builder
          */
+        @ConfiguredOption
         default B host(String address) {
             return bindAddress(address);
         }
@@ -299,6 +305,7 @@ public interface SocketConfiguration {
          * @param backlog a maximum length of the queue of incoming connections
          * @return this builder
          */
+        @ConfiguredOption(defaultValue = "1024")
         B backlog(int backlog);
 
         /**
@@ -308,6 +315,8 @@ public interface SocketConfiguration {
          * @param unit time unit to use with the configured amount
          * @return this builder
          */
+        @ConfiguredOption(value = "timeout-millis", type = Long.class, defaultValue = "0",
+                          description = "Socket timeout in milliseconds")
         B timeout(long amount, TimeUnit unit);
 
         /**
@@ -319,6 +328,7 @@ public interface SocketConfiguration {
          * @param receiveBufferSize a buffer size in bytes of the server socket or {@code 0}
          * @return this builder
          */
+        @ConfiguredOption
         B receiveBufferSize(int receiveBufferSize);
 
         /**
@@ -332,6 +342,7 @@ public interface SocketConfiguration {
          * @param webServerTls ssl configuration to use with this socket
          * @return this builder
          */
+        @ConfiguredOption
         B tls(WebServerTls webServerTls);
 
         /**
@@ -355,6 +366,7 @@ public interface SocketConfiguration {
          * @param size maximal number of bytes of combined header values
          * @return this builder
          */
+        @ConfiguredOption(defaultValue = "8192")
         B maxHeaderSize(int size);
 
         /**
@@ -365,6 +377,7 @@ public interface SocketConfiguration {
          * @param length maximal number of characters
          * @return this builder
          */
+        @ConfiguredOption(defaultValue = "4096")
         B maxInitialLineLength(int length);
 
         /**
@@ -376,6 +389,7 @@ public interface SocketConfiguration {
          * @param value compression flag
          * @return this builder
          */
+        @ConfiguredOption(defaultValue = "false")
         B enableCompression(boolean value);
 
         /**
@@ -385,6 +399,7 @@ public interface SocketConfiguration {
          * @param size maximum payload size
          * @return this builder
          */
+        @ConfiguredOption
         B maxPayloadSize(long size);
 
         /**
@@ -436,6 +451,7 @@ public interface SocketConfiguration {
     /**
      * The {@link io.helidon.webserver.SocketConfiguration} builder class.
      */
+    @Configured
     final class Builder implements SocketConfigurationBuilder<Builder>, io.helidon.common.Builder<SocketConfiguration> {
         /**
          * @deprecated remove once WebServer.Builder.addSocket(name, socket) methods are removed
@@ -641,6 +657,7 @@ public interface SocketConfiguration {
          * @param name name of the socket
          * @return updated builder instance
          */
+        @ConfiguredOption(required = true)
         public Builder name(String name) {
             this.name = name;
             return this;

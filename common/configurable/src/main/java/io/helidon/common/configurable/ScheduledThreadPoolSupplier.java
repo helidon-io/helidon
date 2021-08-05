@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import java.util.function.Supplier;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Supplier of a custom scheduled thread pool.
@@ -117,6 +119,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
     /**
      * A fluent API builder for {@link ScheduledThreadPoolSupplier}.
      */
+    @Configured
     public static final class Builder implements io.helidon.common.Builder<ScheduledThreadPoolSupplier> {
         private int corePoolSize = EXECUTOR_DEFAULT_CORE_POOL_SIZE;
         private boolean isDaemon = EXECUTOR_DEFAULT_IS_DAEMON;
@@ -137,6 +140,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
          * @param corePoolSize see {@link ThreadPoolExecutor#getCorePoolSize()}
          * @return updated builder instance
          */
+        @ConfiguredOption(defaultValue = "16")
         public Builder corePoolSize(int corePoolSize) {
             this.corePoolSize = corePoolSize;
             return this;
@@ -148,6 +152,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
          * @param daemon whether the threads are daemon threads
          * @return updated builder instance
          */
+        @ConfiguredOption(value = "is-daemon", defaultValue = "true")
         public Builder daemon(boolean daemon) {
             isDaemon = daemon;
             return this;
@@ -159,6 +164,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
          * @param threadNamePrefix prefix of a thread name
          * @return updated builder instance
          */
+        @ConfiguredOption(defaultValue = "helidon-")
         public Builder threadNamePrefix(String threadNamePrefix) {
             this.threadNamePrefix = threadNamePrefix;
             return this;
@@ -170,6 +176,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
          * @param prestart whether to prestart the threads
          * @return updated builder instance
          */
+        @ConfiguredOption(value = "should-prestart", defaultValue = "true")
         public Builder prestart(boolean prestart) {
             this.prestart = prestart;
             return this;

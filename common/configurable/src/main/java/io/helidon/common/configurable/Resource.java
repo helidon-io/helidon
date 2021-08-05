@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,9 @@ import java.util.Optional;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
+import io.helidon.config.DeprecatedConfig;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * A representation of a resource that can be
@@ -41,6 +44,7 @@ import io.helidon.config.ConfigException;
  * there is an option: call {@link #cacheBytes()} before accessing it by other threads.
  * Note that this stores all the bytes in memory, so use with care!!!
  */
+@Configured
 public interface Resource {
     /**
      * Load resource from URI provided.
@@ -102,6 +106,7 @@ public interface Resource {
      * @param bytes       raw bytes of this resource
      * @return resource instance
      */
+    @ConfiguredOption(value = "content", description = "Base64 encoded content of the resource")
     static Resource create(String description, byte[] bytes) {
         Objects.requireNonNull(bytes, "Resource bytes must not be null");
         return new ResourceImpl(Source.BINARY_CONTENT, description, bytes);
@@ -150,10 +155,20 @@ public interface Resource {
      * @return a resource ready to load from one of the locations
      * @throws io.helidon.config.ConfigException in case this config does not define a resource configuration
      */
+    @ConfiguredOption(value = "resource-path", description = "Classpath location of the resource.")
+    @ConfiguredOption(value = "path", description = "File system path to the resource.")
+    @ConfiguredOption(value = "content-plain", description = "Plain text content of the resource")
+    @ConfiguredOption(value = "uri", type = URI.class, description = "URI of the resource.")
+    @ConfiguredOption(value = "proxy-host", description = "Host of the proxy when using url.")
+    @ConfiguredOption(value = "proxy-port", type = Integer.class, description = "Port of the proxy when using url.")
+    @ConfiguredOption(value = "use-proxy",
+                      type = Boolean.class,
+                      description = "Whether to use proxy. Only used if proxy-host is defined as well.",
+                      defaultValue = "true")
     static Resource create(Config resourceConfig) {
         return ResourceUtil.fromConfigPath(resourceConfig.get("path"))
                 .or(() -> ResourceUtil.fromConfigResourcePath(resourceConfig.get("resource-path")))
-                .or(() -> ResourceUtil.fromConfigUrl(resourceConfig.get("url")))
+                .or(() -> ResourceUtil.fromConfigUrl(DeprecatedConfig.get(resourceConfig, "uri", "url")))
                 .or(() -> ResourceUtil.fromConfigContent(resourceConfig.get("content-plain")))
                 .or(() -> ResourceUtil.fromConfigB64Content(resourceConfig.get("content")))
                 .orElseThrow(() -> new ConfigException("Config is not a resource configuration on key: " + resourceConfig.key()
