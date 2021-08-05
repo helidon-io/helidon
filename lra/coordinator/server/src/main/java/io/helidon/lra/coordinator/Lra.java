@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *  
+ *
  */
 package io.helidon.lra.coordinator;
 
@@ -72,12 +72,11 @@ class Lra {
             .getRegistry(MetricRegistry.Type.APPLICATION);
     private final Counter lraCtr = registry.counter("lractr");
     private final Timer.Context lraLifeSpanTmr = registry.timer("lralifespantmr").time();
-    
+
     Lra(String lraUUID, Config config) {
         lraId = lraUUID;
         this.config = config;
         lraCtr.inc();
-        
     }
 
     Lra(String lraUUID, URI parentId, Config config) {

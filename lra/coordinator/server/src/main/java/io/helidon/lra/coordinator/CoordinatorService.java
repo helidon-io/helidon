@@ -46,6 +46,9 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVER
  */
 public class CoordinatorService implements Service {
 
+    /**
+     * Configuration prefix.
+     */
     public static final String CONFIG_PREFIX = "helidon.lra.coordinator";
     static final String CLIENT_ID_PARAM_NAME = "ClientID";
     static final String TIME_LIMIT_PARAM_NAME = "TimeLimit";
