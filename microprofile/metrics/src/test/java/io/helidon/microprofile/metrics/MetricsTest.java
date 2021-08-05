@@ -28,7 +28,6 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.Watchable;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -44,9 +43,6 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Timer;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
@@ -69,21 +65,6 @@ public class MetricsTest extends MetricsBaseTest {
     private static final long PERF_TEST_FAILURE_THRESHOLD_NS = Integer.getInteger(
             PERF_TEST_PROP_PREFIX + ".failureThresholdNS", 200 * 1000 * 1000); // roughly double informal expc
 
-    static void stallAtStart() {
-        try {
-            TimeUnit.SECONDS.sleep(30);
-        } catch (InterruptedException e) {
-            Assertions.fail("Failed waiting for attachment", e);
-        }
-    }
-
-    static void stallAtEnd() {
-        try {
-            TimeUnit.SECONDS.sleep(30);
-        } catch (InterruptedException e) {
-            Assertions.fail("Failed waiting for attachment", e);
-        }
-    }
     @Test
     public void testCounted1() {
         CountedBean bean = newBean(CountedBean.class);
@@ -116,9 +97,9 @@ public class MetricsTest extends MetricsBaseTest {
         Counter counter = getMetric(bean, "method2");
         System.err.printf("Elapsed time for test (ms): %f%n", (end - start) / 1000.0 / 1000.0);
         assertThat(counter.getCount(), is((long) PERF_TEST_COUNT));
-//        assertThat(String.format("Elapsed time of %d tests (ms)", PERF_TEST_COUNT),
-//                (end - start) / 1000.0 / 1000.0,
-//                is(lessThan(PERF_TEST_FAILURE_THRESHOLD_NS / 1000.0 / 1000.0)));
+        assertThat(String.format("Elapsed time of %d tests (ms)", PERF_TEST_COUNT),
+                (end - start) / 1000.0 / 1000.0,
+                is(lessThan(PERF_TEST_FAILURE_THRESHOLD_NS / 1000.0 / 1000.0)));
     }
 
     @Test
