@@ -146,20 +146,14 @@ public class ServerCdiExtension implements Extension {
 
     private void registerKpiMetricsDeferrableRequestContextSetterHandler(JaxRsCdiExtension jaxRs,
             JaxRsApplication applicationMeta) {
-        Optional<String> contextRoot = jaxRs.findContextRoot(config, applicationMeta);
         Optional<String> namedRouting = jaxRs.findNamedRouting(config, applicationMeta);
         boolean routingNameRequired = jaxRs.isNamedRoutingRequired(config, applicationMeta);
 
         Routing.Builder routing = routingBuilder(namedRouting, routingNameRequired, applicationMeta.appName());
 
-        if (contextRoot.isPresent()) {
-            String contextRootString = contextRoot.get();
-            routing.any(contextRootString, KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
-        } else {
-            LOGGER.finer(() ->
-                    "JAX-RS application " + applicationMeta.appName() + " adding deferrable request KPI metrics context on '/'");
-            routing.any(KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
-        }
+        LOGGER.finer(() ->
+                "JAX-RS application " + applicationMeta.appName() + " adding deferrable request KPI metrics context on '/'");
+        routing.any(KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
     }
 
     private void startServer(@Observes @Priority(PLATFORM_AFTER + 100) @Initialized(ApplicationScoped.class) Object event,

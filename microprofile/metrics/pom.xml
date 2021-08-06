@@ -94,6 +94,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/HelloWorldAsyncResponseTest.java</exclude>
+                                <exclude>**/TestExtendedKPIMetrics.java</exclude>
                                 <exclude>**/TestMetricsOnOwnSocket.java</exclude>
                             </excludes>
                         </configuration>
@@ -107,6 +108,7 @@
                         <configuration>
                             <includes>
                                 <include>**/HelloWorldAsyncResponseTest.java</include>
+                                <include>**/TestExtendedKPIMetrics.java</include>
                                 <include>**/TestMetricsOnOwnSocket.java</include>
                             </includes>
                         </configuration>
