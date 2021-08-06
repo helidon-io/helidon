@@ -14,30 +14,46 @@
 # limitations under the License.
 #
 
-# 1st stage, build the app
 FROM maven:3.6-jdk-11 as build
 
-WORKDIR /helidon
+WORKDIR /helidon    
+ARG HELIDON_BRANCH=master
+ARG HELIDON_REPOSITORY=oracle/helidon
 
-# Create a first layer to cache the "Maven World" in the local repository.
-# Incremental docker builds will always resume after that, unless you update
-# the pom
-ADD pom.xml .
-RUN mvn package -Dmaven.test.skip
+ENV HELIDON_BRANCH ${HELIDON_BRANCH}
+ENV HELIDON_REPOSITORY ${HELIDON_REPOSITORY}
 
-# Do the Maven build!
-# Incremental docker builds will resume here when you change sources
-ADD src src
-RUN mvn package -DskipTests
-RUN echo "done!"
+RUN wget -q -O helidon_repo.zip https://github.com/${HELIDON_REPOSITORY}/archive/refs/heads/${HELIDON_BRANCH}.zip
 
-# 2nd stage, build the runtime image
+# Unzip and exclude modules coordinator don't need
+RUN unzip helidon_repo.zip -d ./helidon_repo  \
+    -x "helidon-${HELIDON_BRANCH}/microprofile/*" \
+    -x "helidon-${HELIDON_BRANCH}/openapi/*"  \
+    -x "helidon-${HELIDON_BRANCH}/messaging/*"  \
+    -x "helidon-${HELIDON_BRANCH}/graphql/*"  \
+    -x "helidon-${HELIDON_BRANCH}/tests/*"  \
+    -x "helidon-${HELIDON_BRANCH}/examples/*" \
+    -x "helidon-${HELIDON_BRANCH}/jersey/*" \
+    -x "*src/test/*"
+    
+RUN mv ./helidon_repo/*/* ./
+
+RUN sed -i '/<module>microprofile/d' ./pom.xml \
+&& sed -i '/<module>openapi/d' ./pom.xml \
+&& sed -i '/<module>messaging/d' ./pom.xml \
+&& sed -i '/<module>jersey/d' ./pom.xml \
+&& sed -i '/<module>graphql/d' ./pom.xml
+
+# Build only required modules
+RUN mvn install -pl :helidon-lra-coordinator-server -am -DskipTests
+
+RUN echo "Helidon LRA Coordinator build successfully fished"
+
 FROM openjdk:11-jre-slim
 WORKDIR /helidon
 
-# Copy the binary built in the 1st stage
-COPY --from=build /helidon/target/helidon-lra-coordinator-server.jar ./
-COPY --from=build /helidon/target/libs ./libs
+COPY --from=build /helidon/lra/coordinator/server/target/helidon-lra-coordinator-server.jar ./
+COPY --from=build /helidon/lra/coordinator/server/target/libs ./libs
 
 CMD ["java", "-jar", "helidon-lra-coordinator-server.jar"]
 

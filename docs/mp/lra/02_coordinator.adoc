@@ -29,18 +29,41 @@ Coordinator is a service that tracks all LRA transactions and calls the compensa
 the participants when the LRA transaction gets cancelled or completes (in case it gets closed).
 In addition, participant also keeps track of timeouts, retries participant calls, and assigns LRA ids.
 
-Helidon LRA supports https://narayana.io/lra[Narayana coordinator].
+.Helidon LRA supports following coordinators
+* Helidon LRA coordinator
+* https://narayana.io/lra[Narayana coordinator].
+
+=== Helidon LRA coordinator
+
+CAUTION: Experimental tool, usage in production is not advised.
+
+[source,bash]
+.Build and run Helidon LRA coordinator
+----
+docker build -t helidon/lra-coordinator https://github.com/oracle/helidon.git:lra/coordinator/server
+docker run -dp 8070:8070 --name lra-coordinator --network="host" helidon/lra-coordinator
+----
+
+Helidon LRA coordinator is compatible with Narayana clients, you need to add an additional dependency for Narayana client:
+[source,xml]
+.Dependency needed for using Helidon LRA with Narayana compatible coordinator
+----
+<dependency>
+    <groupId>io.helidon.lra</groupId>
+    <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
+</dependency>
+----
 
 === Narayana
 https://narayana.io[Narayana] is a transaction manager supporting LRA.
-To use Narayana LRA coordinator with Helidon LRA client you need to add an additional dependency for Narayana adapter:
+To use Narayana LRA coordinator with Helidon LRA client you need to add an additional dependency for Narayana client:
 
 [source,xml]
 .Dependency needed for using Helidon LRA with Narayana coordinator
 ----
 <dependency>
-  <groupId>io.helidon.microprofile.lra</groupId>
-  <artifactId>helidon-microprofile-lra-client-narayana-adapter</artifactId>
+    <groupId>io.helidon.lra</groupId>
+    <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
 </dependency>
 ----
 
