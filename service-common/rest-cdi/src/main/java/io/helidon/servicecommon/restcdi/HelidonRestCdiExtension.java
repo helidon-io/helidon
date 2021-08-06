@@ -270,10 +270,14 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
         private final Map<Executable, Map<Class<? extends Annotation>, List<W>>> workItemsByExecutable = new HashMap<>();
 
         public void put(Executable executable, Class<? extends Annotation> annotationType, W workItem) {
-            workItemsByExecutable
+            List<W> workItems = workItemsByExecutable
                     .computeIfAbsent(executable, e -> new HashMap<>())
-                    .computeIfAbsent(annotationType, t -> new ArrayList<>())
-                    .add(workItem);
+                    .computeIfAbsent(annotationType, t -> new ArrayList<>());
+            // This method is invoked only during annotation processing from CDI extensions, so linear scans of the lists
+            // does not hurt runtime performance during request handling.
+            if (!workItems.contains(workItem)) {
+                workItems.add(workItem);
+            }
         }
 
         public Iterable<W> workItems(Executable executable, Class<? extends Annotation> annotationType) {
