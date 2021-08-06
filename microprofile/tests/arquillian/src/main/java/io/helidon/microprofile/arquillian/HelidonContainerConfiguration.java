@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.arquillian;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
@@ -43,18 +45,15 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
     private boolean deleteTmp = true;
     private boolean useRelativePath = false;
     private boolean useParentClassloader = true;
-    private Consumer<ConfigBuilder> builderConsumer = configBuilder -> {};
+    private final List<Consumer<ConfigBuilder>> builderConsumers = new ArrayList<>();
 
     /**
      * Access container's config builder.
      *
      * @param addedBuilderConsumer container's config builder
      */
-    public void config(Consumer<ConfigBuilder> addedBuilderConsumer) {
-        this.builderConsumer = configBuilder -> {
-            builderConsumer.accept(configBuilder);
-            addedBuilderConsumer.accept(configBuilder);
-        };
+    public void addConfigBuilderConsumer(Consumer<ConfigBuilder> addedBuilderConsumer) {
+        this.builderConsumers.add(addedBuilderConsumer);
     }
 
     public String getApp() {
@@ -113,7 +112,7 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
     }
 
     ConfigBuilder useBuilder(ConfigBuilder configBuilder) {
-        builderConsumer.accept(configBuilder);
+        this.builderConsumers.forEach(builderConsumer -> builderConsumer.accept(configBuilder));
         return configBuilder;
     }
 }

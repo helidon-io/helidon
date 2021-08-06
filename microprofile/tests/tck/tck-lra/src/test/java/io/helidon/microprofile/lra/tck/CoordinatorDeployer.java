@@ -46,7 +46,7 @@ public class CoordinatorDeployer {
         String coordinatorUrl = System.getProperty("lra.coordinator.url", LOCAL_COORDINATOR_URL);
         String port = System.getProperty("lra.coordinator.port", LOCAL_COORDINATOR_PORT);
 
-        containerConfig.config(configBuilder -> {
+        containerConfig.addConfigBuilderConsumer(configBuilder -> {
             configBuilder.withSources(MpConfigSources.create(CoordinatorService.class.getResource("/application.yaml")),
                     MpConfigSources.create(Map.of(
                             // LRA agent 
