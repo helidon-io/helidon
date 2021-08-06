@@ -76,10 +76,11 @@ class Participant {
         FAILED_TO_COMPENSATE(FailedToCompensate, null, null, true, Set.of()),
         FAILED_TO_COMPLETE(FailedToComplete, null, null, true, Set.of()),
 
-        CLIENT_COMPENSATING(Compensating, COMPENSATED, FAILED_TO_COMPENSATE, false, Set.of(Compensated, FailedToCompensate)),
-        CLIENT_COMPLETING(Completing, COMPLETED, FAILED_TO_COMPLETE, false, Set.of(Completed, FailedToComplete)),
-        COMPENSATING(Compensating, COMPENSATED, FAILED_TO_COMPENSATE, false, Set.of(Compensated, FailedToCompensate)),
-        COMPLETING(Completing, COMPLETED, FAILED_TO_COMPLETE, false, Set.of(Completed, FailedToComplete));
+        CLIENT_COMPENSATING(Compensating, COMPENSATED, FAILED_TO_COMPENSATE, false,
+                Set.of(Active, Compensated, FailedToCompensate)),
+        CLIENT_COMPLETING(Completing, COMPLETED, FAILED_TO_COMPLETE, false, Set.of(Active, Completed, FailedToComplete)),
+        COMPENSATING(Compensating, COMPENSATED, FAILED_TO_COMPENSATE, false, Set.of(Active, Compensated, FailedToCompensate)),
+        COMPLETING(Completing, COMPLETED, FAILED_TO_COMPLETE, false, Set.of(Active, Completed, FailedToComplete));
 
         private final ParticipantStatus participantStatus;
         private final Status successFinalStatus;
@@ -297,11 +298,23 @@ class Participant {
                         LOGGER.log(Level.INFO, "Participant reports it failed to compensate.");
                         status.set(Status.FAILED_TO_COMPENSATE);
                         return true;
+                    } else if (reportedClientStatus == Active) {
+                        // last call didn't reach participant, try call again
+                    } else if (reportedClientStatus == Completed && lra.isChild()) {
+                        // completed participant can be compensated again in case of nested tx
+                    } else if (reportedClientStatus == Compensating) {
+                        LOGGER.log(Level.INFO, "Participant reports it is still compensating.");
+                        status.set(Status.CLIENT_COMPENSATING);
+                        return false;
                     } else if (remainingCloseAttempts.decrementAndGet() <= 0) {
                         LOGGER.log(Level.INFO, "Participant didnt report final status after {0} status call retries.",
                                 new Object[] {RETRY_CNT});
                         status.set(Status.FAILED_TO_COMPENSATE);
                         return true;
+                    } else {
+                        // Unknown status, lets try in next recovery cycle
+                        LOGGER.log(Level.INFO, "Unknown status of " + lra.lraId());
+                        return false;
                     }
                 }
 
@@ -336,6 +349,9 @@ class Participant {
                 }
 
             } catch (Exception e) {
+                LOGGER.log(Level.FINE, e, () ->
+                        "Can't reach participant's compensate endpoint: " + endpointURI.map(URI::toASCIIString).orElse("unknown")
+                );
                 if (remainingCloseAttempts.decrementAndGet() <= 0) {
                     LOGGER.log(Level.WARNING, "Failed to compensate participant of LRA {0} {1} {2}",
                             new Object[] {lra.lraId(), this.getCompensateURI(), e.getMessage()});
@@ -375,6 +391,8 @@ class Participant {
                         LOGGER.log(Level.INFO, "Participant reports it failed to complete.");
                         status.set(Status.FAILED_TO_COMPLETE);
                         return true;
+                    } else if (reportedClientStatus == Active) {
+                        // last call didn't reach participant, try call again
                     } else if (reportedClientStatus == Completing) {
                         LOGGER.log(Level.INFO, "Participant reports it is still completing.");
                         status.set(Status.CLIENT_COMPLETING);
@@ -384,6 +402,9 @@ class Participant {
                                 new Object[] {RETRY_CNT});
                         status.set(Status.FAILED_TO_COMPLETE);
                         return true;
+                    } else {
+                        // Unknown status, lets try in next recovery cycle
+                        return false;
                     }
                 }
                 response = getWebClient(endpointURI.get())
@@ -414,6 +435,9 @@ class Participant {
                 }
 
             } catch (Exception e) {
+                LOGGER.log(Level.FINE, e, () ->
+                        "Can't reach participant's complete endpoint: " + endpointURI.map(URI::toASCIIString).orElse("unknown")
+                );
                 if (remainingCloseAttempts.decrementAndGet() <= 0) {
                     LOGGER.log(Level.WARNING, "Failed to complete participant of LRA {0} {1} {2}",
                             new Object[] {lra.lraId(), this.getCompleteURI(), e.getMessage()});
@@ -494,7 +518,7 @@ class Participant {
                 case 500:
                     throw new IllegalStateException(String.format("Client reports unexpected status %s %s, "
                                     + "current participant state is %s, "
-                                    + "lra: %s"
+                                    + "lra: %s "
                                     + "status uri: %s",
                             code,
                             response.content().as(String.class),
@@ -510,7 +534,7 @@ class Participant {
                         LOGGER.log(Level.WARNING,
                                 "Client reports unexpected status {0} {1}, "
                                         + "current participant state is {2}, "
-                                        + "lra: {3}"
+                                        + "lra: {3} "
                                         + "status uri: {4}",
                                 new Object[] {code, reportedStatus, currentStatus, lra.lraId(), statusURI.toASCIIString()});
                         return Optional.empty();
