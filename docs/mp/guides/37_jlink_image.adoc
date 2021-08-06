@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,8 +23,12 @@
 :helidon-uc-flavor: MP
 :helidon-lc-flavor: mp
 :docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+
 
 This guide describes how to build a custom runtime image for your Helidon application
 using Helidon's support for the JDK's `jlink` tool.
+
+
 
 include::../../common/guides/jlink_image.adoc[]

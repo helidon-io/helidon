@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,17 +21,16 @@
 :description: Helidon tracing
 :keywords: helidon, tracing, microprofile, guide
 :toc:
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide describes how to create a sample Helidon SE project
 that can be used to run some basic examples using tracing with a Helidon SE application.
 
-== What you need
+== What You Need
 
-[width=50%,role="flex, sm7"]
-|===
-|About 30 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|===
+For this 30 minute tutorial, you will need the following:
+
+include::{common-page-prefix-inc}[tag=common-prereqs]
 
 == Introduction
 
@@ -41,7 +40,7 @@ which helps you identify performance and operational issues.  Helidon SE include
 through the https://opentracing.io[OpenTracing API].  Tracing is integrated with WebServer, gRPC Server,
 and Security using either the https://zipkin.io[Zipkin] or https://www.jaegertracing.io[Jaeger] tracers.
 
-=== Tracing concepts
+=== Tracing Concepts
 
 This section explains a few concepts that you need to understand before you get started with tracing.
 In the context of this document, a service is synonymous with an application.
@@ -55,13 +54,13 @@ can belong to multiple services, running on multiple hosts.  The _OpenTracing Da
 at https://opentracing.io/specification[The OpenTracing Semantic Specification].
 Spans are automatically created by Helidon as needed during execution of the REST request.
 
-== Getting started with tracing
+== Getting Started with Tracing
 
-The examples in this guide demonstrate how to integrate tracing with helidon, how to view traces, how to trace
+The examples in this guide demonstrate how to integrate tracing with Helidon, how to view traces, how to trace
 across multiple services, and how to integrate with tracing with Kubernetes.  All examples use Zipkin and traces
 will be viewed using both the Zipkin API and UI.
 
-=== Create a sample Helidon SE project
+=== Create a Sample Helidon SE Project
 
 Use the Helidon SE Maven archetype to create a simple project that can be used for the examples in this guide.
 
@@ -83,7 +82,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 cd helidon-quickstart-se
 ----
 
-=== Setup Zipkin
+=== Set up Zipkin
 
 First, you need to run the Zipkin tracer.  Helidon will communicate with this tracer at runtime.
 
@@ -115,7 +114,7 @@ curl http://localhost:9411/health // <1>
 <1> Invoke the Zipkin REST API to check the Zipkin server health.
 <2> All `status` fields should be `UP`.
 
-=== Enable Tracing in your Helidon application
+=== Enable Tracing in the Helidon Application
 
 Update the pom.xml file and add the following Zipkin dependency to the `<dependencies>`
 section (*not* `<dependencyManagement>`).  This will enable Helidon to use Zipkin at the
@@ -203,7 +202,7 @@ curl http://localhost:8080/greet
 ----
 
 
-=== Viewing tracing using Zipkin REST API
+=== Viewing Tracing Using Zipkin REST API
 
 Because you had tracing enabled, the previous `/greet` endpoint invocation resulted in a new trace being created.
 Let's get the trace data that was generated using the Zipkin API.  First, get the service information.
@@ -274,7 +273,7 @@ results to a specific time window.
 <2> The request will return 3 spans, one for each name.
 <3> Each span has a `parentId` field, except the `http request` span, which is the root.
 
-=== Viewing tracing using Zipkin UI
+=== Viewing Tracing Using Zipkin UI
 
 The tracing output data is verbose and can be difficult to interpret using the REST API, especially since it represents
 a structure of spans.  Zipkin provides a web-based UI at http://localhost:9411/zipkin, where you can see a visual
@@ -309,7 +308,7 @@ You can see times for each space relative to the root span.  These rows are anno
 image::guides/12_tracing_se_span_detail.png[Span Details]
 
 
-=== Tracing across services
+=== Tracing Across Services
 
 Helidon automatically traces across services, providing that the services use the same tracer, for example, the same instance of Zipkin.
 This means a single trace can include spans from multiple services and hosts.  OpenTracing uses a `SpanContext` to
@@ -320,7 +319,7 @@ To demonstrate distributed tracing, you will need to create a second project, wh
 Create a new root directory to hold this new project, then do the following steps, similar to
 what you did at the start of this guide:
 
-=== Create the second service
+=== Create the Second Service
 
 [source,bash,subs="attributes+"]
 .Run the Maven archetype:
@@ -417,7 +416,7 @@ curl http://localhost:8081/greet
 }
 ----
 
-=== Modify the first service
+=== Modify the First Service
 
 Once you have validated that the second service is running correctly, you need to modify the original application to
 call it.
@@ -658,7 +657,7 @@ Navigate to http://localhost:9412/zipkin to validate that you can access Zipkin 
 take a few seconds before it is ready.
 
 
-=== Deploy your Helidon application into Kubernetes
+=== Deploy Your Helidon Application into Kubernetes
 
 [source,yaml]
 .Create the Kubernetes YAML specification, named `tracing.yaml`, with the following contents:
@@ -706,7 +705,7 @@ spec:
 kubectl apply -f ./tracing.yaml
 ----
 
-=== Access your application and the Zipkin trace
+=== Access Your Application and the Zipkin Trace
 
 [source,bash]
 .Get the application service information:

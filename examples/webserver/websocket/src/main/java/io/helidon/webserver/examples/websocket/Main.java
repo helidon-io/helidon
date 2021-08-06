@@ -18,7 +18,6 @@ package io.helidon.webserver.examples.websocket;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import javax.websocket.Encoder;
 import javax.websocket.server.ServerEndpointConfig;
@@ -58,23 +57,15 @@ public class Main {
     }
 
     static WebServer startWebServer() {
+        // Wait for webserver to start before returning
         WebServer server = WebServer.builder(createRouting())
                 .port(8080)
-                .build();
+                .build()
+                .start()
+                .await();
 
-        // Start webserver
-        CompletableFuture<Void> started = new CompletableFuture<>();
-        server.start().thenAccept(ws -> {
-            System.out.println("WEB server is up! http://localhost:" + ws.port());
-            started.complete(null);
-        });
+        System.out.println("WEB server is up! http://localhost:" + server.port());
 
-        // Wait for webserver to start before returning
-        try {
-            started.toCompletableFuture().get();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
         return server;
     }
 

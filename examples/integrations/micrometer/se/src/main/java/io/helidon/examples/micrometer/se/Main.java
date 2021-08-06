@@ -16,9 +16,8 @@
 
 package io.helidon.examples.micrometer.se;
 
-import java.io.IOException;
-
 import io.helidon.common.LogConfig;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.integrations.micrometer.MicrometerSupport;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -33,6 +32,9 @@ import io.micrometer.core.instrument.Timer;
  */
 public final class Main {
 
+    static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
+    static final String ALL_GETS_TIMER_NAME = "allGets";
+
     /**
      * Cannot be instantiated.
      */
@@ -42,18 +44,16 @@ public final class Main {
     /**
      * Application main entry point.
      * @param args command line arguments.
-     * @throws IOException if there are problems reading logging properties
      */
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
         startServer();
     }
 
     /**
      * Start the server.
      * @return the created {@link WebServer} instance
-     * @throws IOException if there are problems reading logging properties
      */
-    static WebServer startServer() throws IOException {
+    static Single<WebServer> startServer() {
 
         // load logging configuration
         LogConfig.configureRuntime();
@@ -64,27 +64,24 @@ public final class Main {
         // Get webserver config from the "server" section of application.yaml
         WebServer server = WebServer.builder(createRouting(config))
                 .config(config.get("server"))
+                .port(-1)
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
-        server.start()
-            .thenAccept(ws -> {
+        // Server threads are not daemon. No need to block. Just react.
+        return server.start()
+            .peek(ws -> {
                 System.out.println(
                         "WEB server is up! http://localhost:" + ws.port() + "/greet");
                 ws.whenShutdown().thenRun(()
                     -> System.out.println("WEB server is DOWN. Good bye!"));
                 })
-            .exceptionally(t -> {
+            .onError(t -> {
                 System.err.println("Startup failed: " + t.getMessage());
                 t.printStackTrace(System.err);
-                return null;
             });
-
-        // Server threads are not daemon. No need to block. Just react.
-
-        return server;
     }
 
     /**
@@ -97,8 +94,8 @@ public final class Main {
 
         MicrometerSupport micrometerSupport = MicrometerSupport.create();
         Counter personalizedGetCounter = micrometerSupport.registry()
-                .counter("personalizedGets");
-        Timer getTimer = Timer.builder("allGets")
+                .counter(PERSONALIZED_GETS_COUNTER_NAME);
+        Timer getTimer = Timer.builder(ALL_GETS_TIMER_NAME)
                 .publishPercentileHistogram()
                 .register(micrometerSupport.registry());
 

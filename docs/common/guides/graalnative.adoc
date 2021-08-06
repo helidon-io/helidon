@@ -16,6 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 == Introduction
 
@@ -27,11 +28,9 @@ In this guide you will learn how to build a native image locally on your machine
 
 == What You Need
 
-|===
-|About 10 minutes
-| <<about/03_prerequisites.adoc,Helidon Prerequisites>>
-| GraalVM CE https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.1.0[21.1.0]
-|===
+For this 10 minute tutorial, you will need the following:
+
+include::{common-page-prefix-inc}[tag=common-prereqs-graal]
 
 == Install GraalVM and the Native Image Command
 
@@ -59,7 +58,7 @@ $GRAALVM_HOME/bin/java -version
 $GRAALVM_HOME/bin/native-image --version
 ----
 
-== Generate The Project
+== Generate the Project
 
 Generate the project using the Helidon {helidon-uc-flavor} Quickstart Maven archetype.
 
@@ -143,7 +142,7 @@ Yep, it starts fast. You can exercise the application's endpoints as before.
 
 === Multi-stage Docker build
 
-Build the "native" Docker Image
+Build the "native" Docker image
 
 [source,bash,subs="attributes+"]
 ----
