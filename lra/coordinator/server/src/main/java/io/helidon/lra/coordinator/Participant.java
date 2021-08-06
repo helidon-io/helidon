@@ -71,8 +71,8 @@ class Participant {
     enum Status {
         ACTIVE(Active, null, null, false, Set.of(Completing, Compensating)),
 
-        COMPENSATED(Compensated, null, null, true, Set.of()),
-        COMPLETED(Completed, null, null, true, Set.of()),
+        COMPENSATED(Compensated, null, null, true, Set.of(Compensated)),
+        COMPLETED(Completed, null, null, true, Set.of(Completed)),
         FAILED_TO_COMPENSATE(FailedToCompensate, null, null, true, Set.of()),
         FAILED_TO_COMPLETE(FailedToComplete, null, null, true, Set.of()),
 
@@ -508,11 +508,11 @@ class Participant {
                         return Optional.of(reportedStatus);
                     } else {
                         LOGGER.log(Level.WARNING,
-                                "Client reports unexpected status {0}, "
-                                        + "current participant state is {1}, "
-                                        + "lra: {2}"
-                                        + "status uri: {3}",
-                                new Object[] {reportedStatus, currentStatus, lra.lraId(), statusURI.toASCIIString()});
+                                "Client reports unexpected status {0} {1}, "
+                                        + "current participant state is {2}, "
+                                        + "lra: {3}"
+                                        + "status uri: {4}",
+                                new Object[] {code, reportedStatus, currentStatus, lra.lraId(), statusURI.toASCIIString()});
                         return Optional.empty();
                     }
             }
