@@ -62,7 +62,6 @@ public class CoordinatorTest {
                 .addSocket(SocketConfiguration.builder()
                         .name("coordinator")
                         .port(8077)
-                        .bindAddress(Inet4Address.getLocalHost())
                         .build())
                 .addNamedRouting("coordinator", Routing.builder()
                         .register("/lra-coordinator", coordinatorService)
