@@ -349,7 +349,7 @@ class Participant {
                 }
 
             } catch (Exception e) {
-                LOGGER.log(Level.FINE, e, () ->
+                LOGGER.log(Level.INFO, e, () ->
                         "Can't reach participant's compensate endpoint: " + endpointURI.map(URI::toASCIIString).orElse("unknown")
                 );
                 if (remainingCloseAttempts.decrementAndGet() <= 0) {
@@ -373,6 +373,9 @@ class Participant {
         Optional<URI> endpointURI = getCompleteURI();
         for (int i = 0; i < SYNCHRONOUS_RETRY_CNT; i++) {
             if (!sendingStatus.compareAndSet(SendingStatus.NOT_SENDING, SendingStatus.SENDING)) return false;
+            LOGGER.log(Level.INFO, "Sending complete, sync retry: " + i
+                    + ", status: " + status.get().name()
+                    + " status: " + getStatusURI().map(URI::toASCIIString).orElse(null));
             WebClientResponse response = null;
             try {
                 if (status.get().isFinal()) {
@@ -435,7 +438,7 @@ class Participant {
                 }
 
             } catch (Exception e) {
-                LOGGER.log(Level.FINE, e, () ->
+                LOGGER.log(Level.INFO, e, () ->
                         "Can't reach participant's complete endpoint: " + endpointURI.map(URI::toASCIIString).orElse("unknown")
                 );
                 if (remainingCloseAttempts.decrementAndGet() <= 0) {
