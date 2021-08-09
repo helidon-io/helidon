@@ -69,31 +69,43 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         return result;
     }
 
+    /**
+     * <p>Helidon implementation of an injection manager. Based on two underlying injection managers:
+     * one to handle application specific classes (returned by the {@code Application} subclass
+     * methods) and one that is shared among all the {@code Application} subclasses. Thus, if a
+     * Helidon application comprises N subclasses, then N+1 injection managers will be created.</p>
+     *
+     * <p>Creating a separate injection manager ensures that providers associated with a certain
+     * subclass are not returned for others. There will be an instance of this class for each
+     * {@code Application} subclass. This manager needs to get access to the values returned
+     * by {@code getClasses} and {@code getInstances} in order to provide the correct registration
+     * semantics</p>
+     */
     static class HelidonInjectionManager implements InjectionManager {
         private static final Logger LOGGER = Logger.getLogger(HelidonInjectionManager.class.getName());
 
         private Set<Class<?>> classes;
         private Set<Object> singletons;
         private final ResourceConfig resourceConfig;
-        private final InjectionManager parent;
-        private final InjectionManager delegate;
+        private final InjectionManager shared;
+        private final InjectionManager forApplication;
 
-        HelidonInjectionManager(InjectionManager delegate, InjectionManager parent, ResourceConfig resourceConfig) {
-            this.delegate = delegate;
-            this.parent = parent != null ? parent : delegate;       // for testing
+        HelidonInjectionManager(InjectionManager forApplication, InjectionManager shared, ResourceConfig resourceConfig) {
+            this.forApplication = forApplication;
+            this.shared = shared != null ? shared : forApplication;       // for testing
             this.resourceConfig = resourceConfig;
         }
 
         @Override
         public void completeRegistration() {
-            parent.completeRegistration();
-            delegate.completeRegistration();
+            shared.completeRegistration();
+            forApplication.completeRegistration();
         }
 
         @Override
         public void shutdown() {
-            parent.shutdown();
-            delegate.shutdown();
+            shared.shutdown();
+            forApplication.shutdown();
         }
 
         /**
@@ -106,11 +118,11 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         @Override
         public void register(Binding binding) {
             if (returnedByApplication(binding)) {
-                delegate.register(binding);
-                LOGGER.finest(() -> "register delegate " + delegate  + " " + toString(binding));
+                forApplication.register(binding);
+                LOGGER.finest(() -> "register forApplication " + forApplication + " " + toString(binding));
             } else {
-                parent.register(binding);
-                LOGGER.finest(() -> "register parent " + parent + " " + toString(binding));
+                shared.register(binding);
+                LOGGER.finest(() -> "register shared " + shared + " " + toString(binding));
             }
         }
 
@@ -126,21 +138,26 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
 
         @Override
         public void register(Object provider) throws IllegalArgumentException {
-            LOGGER.info("Register Object " + provider);
-            parent.register(provider);
+            if (getSingletons().contains(provider)) {
+                forApplication.register(provider);
+                LOGGER.finest(() -> "register forApplication " + forApplication + " " + provider);
+            } else {
+                shared.register(provider);
+                LOGGER.finest(() -> "register shared " + forApplication + " " + provider);
+            }
         }
 
         @Override
         public boolean isRegistrable(Class<?> clazz) {
-            return parent.isRegistrable(clazz);
+            return shared.isRegistrable(clazz) || forApplication.isRegistrable(clazz);
         }
 
         @Override
         public <T> T createAndInitialize(Class<T> createMe) {
             try {
-                return parent.createAndInitialize(createMe);
+                return shared.createAndInitialize(createMe);
             } catch (Throwable t) {
-                return delegate.createAndInitialize(createMe);
+                return forApplication.createAndInitialize(createMe);
             }
         }
 
@@ -155,85 +172,85 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
          */
         @Override
         public <T> List<ServiceHolder<T>> getAllServiceHolders(Class<T> contractOrImpl, Annotation... qualifiers) {
-            List<ServiceHolder<T>> parentList = parent.getAllServiceHolders(contractOrImpl, qualifiers);
+            List<ServiceHolder<T>> parentList = shared.getAllServiceHolders(contractOrImpl, qualifiers);
             parentList.forEach(sh -> LOGGER.finest(() ->
-                    "getAllServiceHolders parent " + parent + " " + sh.getContractTypes().iterator().next()));
-            List<ServiceHolder<T>> delegateList = delegate.getAllServiceHolders(contractOrImpl, qualifiers);
+                    "getAllServiceHolders parent " + shared + " " + sh.getContractTypes().iterator().next()));
+            List<ServiceHolder<T>> delegateList = forApplication.getAllServiceHolders(contractOrImpl, qualifiers);
             delegateList.forEach(sh -> LOGGER.finest(() ->
-                    "getAllServiceHolders delegate " + delegate + " " + sh.getContractTypes().iterator().next()));
+                    "getAllServiceHolders delegate " + forApplication + " " + sh.getContractTypes().iterator().next()));
             return delegateList.size() == 0 ? parentList
                     : Stream.concat(parentList.stream(), delegateList.stream()).collect(Collectors.toList());
         }
 
         @Override
         public <T> T getInstance(Class<T> contractOrImpl, Annotation... qualifiers) {
-            T t = parent.getInstance(contractOrImpl, qualifiers);
-            return t != null ? t : delegate.getInstance(contractOrImpl, qualifiers);
+            T t = shared.getInstance(contractOrImpl, qualifiers);
+            return t != null ? t : forApplication.getInstance(contractOrImpl, qualifiers);
         }
 
         @Override
         public <T> T getInstance(Class<T> contractOrImpl, String classAnalyzer) {
-            T t = parent.getInstance(contractOrImpl, classAnalyzer);
-            return t != null ? t : delegate.getInstance(contractOrImpl, classAnalyzer);
+            T t = shared.getInstance(contractOrImpl, classAnalyzer);
+            return t != null ? t : forApplication.getInstance(contractOrImpl, classAnalyzer);
         }
 
         @Override
         public <T> T getInstance(Class<T> contractOrImpl) {
-            T t = parent.getInstance(contractOrImpl);
-            return t != null ? t : delegate.getInstance(contractOrImpl);
+            T t = shared.getInstance(contractOrImpl);
+            return t != null ? t : forApplication.getInstance(contractOrImpl);
         }
 
         @Override
         public <T> T getInstance(Type contractOrImpl) {
-            T t = parent.getInstance(contractOrImpl);
-            return t != null ? t : delegate.getInstance(contractOrImpl);
+            T t = shared.getInstance(contractOrImpl);
+            return t != null ? t : forApplication.getInstance(contractOrImpl);
         }
 
         @Override
         public Object getInstance(ForeignDescriptor foreignDescriptor) {
-            Object o = parent.getInstance(foreignDescriptor);
-            return o != null ? o : delegate.getInstance(foreignDescriptor);
+            Object o = shared.getInstance(foreignDescriptor);
+            return o != null ? o : forApplication.getInstance(foreignDescriptor);
         }
 
         @Override
         public ForeignDescriptor createForeignDescriptor(Binding binding) {
             try {
-                return parent.createForeignDescriptor(binding);
+                return shared.createForeignDescriptor(binding);
             } catch (Throwable t) {
-                return delegate.createForeignDescriptor(binding);
+                return forApplication.createForeignDescriptor(binding);
             }
         }
 
         @Override
         public <T> List<T> getAllInstances(Type contractOrImpl) {
             List<T> result = new ArrayList<>();
-            result.addAll(delegate.getAllInstances(contractOrImpl));
-            result.addAll(parent.getAllInstances(contractOrImpl));
+            result.addAll(shared.getAllInstances(contractOrImpl));
+            result.addAll(forApplication.getAllInstances(contractOrImpl));
             return result;
         }
 
         @Override
         public void inject(Object injectMe) {
             try {
-                delegate.inject(injectMe);
+                shared.inject(injectMe);
             } catch (Throwable t) {
-                parent.inject(injectMe);
+                forApplication.inject(injectMe);
             }
         }
 
         @Override
         public void inject(Object injectMe, String classAnalyzer) {
             try {
-                delegate.inject(injectMe, classAnalyzer);
+                shared.inject(injectMe, classAnalyzer);
             } catch (Throwable t) {
-                parent.inject(injectMe, classAnalyzer);
+                forApplication.inject(injectMe, classAnalyzer);
             }
         }
 
         @Override
         public void preDestroy(Object preDestroyMe) {
-            delegate.preDestroy(preDestroyMe);
-            parent.preDestroy(preDestroyMe);
+            shared.preDestroy(preDestroyMe);
+            forApplication.preDestroy(preDestroyMe);
         }
 
         /**
