@@ -68,7 +68,7 @@
         <version.lib.inject>1.0</version.lib.inject>
         <version.lib.interceptor-api>1.2.5</version.lib.interceptor-api>
         <version.lib.jackson>2.12.1</version.lib.jackson>
-        <version.lib.jaegertracing>1.1.0</version.lib.jaegertracing>
+        <version.lib.jaegertracing>1.6.0</version.lib.jaegertracing>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
@@ -120,6 +120,8 @@
         <version.lib.oci-java-sdk-objectstorage>2.3.0</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>19.8.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
+        <version.lib.okhttp3>3.14.9</version.lib.okhttp3>
+        <version.lib.okio>1.17.5</version.lib.okio>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
@@ -1281,6 +1283,24 @@
                         <artifactId>jsr305</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <!-- 4.x versions cause problems with native-image This is used by jaeger-client -->
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${version.lib.okhttp3}</version>
+            </dependency>
+            <dependency>
+                <!-- required for dependency convergence
+                used from both
+                com.squareup.okhttp3:mockwebserver:3.13.1
+                com.squareup.moshi:moshi:1.8.0
+                both referenced by
+                io.zipkin.zipkin2:zipkin-junit:2.12.5
+                -->
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio</artifactId>
+                <version>${version.lib.okio}</version>
             </dependency>
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
 
