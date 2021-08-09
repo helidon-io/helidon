@@ -71,8 +71,9 @@ public final class EPollTransport implements Transport {
      *
      * @param artifactType a {@link Class} indicating the kind of
      * artifact to be returned; must not be {@code null}; may usefully
-     * only be a subtype of either {@link EventLoopGroup} or {@link
-     * ServerChannelFactory}
+     * only be a subtype of either {@link EventLoopGroup} or
+     * {@linkplain ChannelFactory <code>ChannelFactory&lt;? extends
+     * ServerChannel&gt;}
      *
      * @param artifactName a {@link String} indicating which of
      * possibly several artifacts of the same kind to be returned;
