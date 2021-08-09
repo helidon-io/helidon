@@ -63,7 +63,7 @@
         <version.lib.h2>1.4.200</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.hibernate>5.4.29.Final</version.lib.hibernate>
-        <version.lib.hikaricp>3.4.1</version.lib.hikaricp>
+        <version.lib.hikaricp>5.0.0</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.inject>1.0</version.lib.inject>
         <version.lib.interceptor-api>1.2.5</version.lib.interceptor-api>
