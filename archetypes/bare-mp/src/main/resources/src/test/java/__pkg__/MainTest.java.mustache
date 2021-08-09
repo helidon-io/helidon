@@ -39,19 +39,21 @@ class MainTest {
         Assertions.assertEquals("Hello World!", jsonObject.getString("message"),
                 "default message");
 
-        Response r = client
+        try (Response r = client
                 .target(serverUrl)
                 .path("metrics")
                 .request()
-                .get();
-        Assertions.assertEquals(200, r.getStatus(), "GET metrics status code");
+                .get()) {
+            Assertions.assertEquals(200, r.getStatus(), "GET metrics status code");
+        }
 
-        r = client
+        try (Response r = client
                 .target(serverUrl)
                 .path("health")
                 .request()
-                .get();
-        Assertions.assertEquals(200, r.getStatus(), "GET health status code");
+                .get()) {
+            Assertions.assertEquals(200, r.getStatus(), "GET health status code");
+        }
     }
 
     @AfterAll
