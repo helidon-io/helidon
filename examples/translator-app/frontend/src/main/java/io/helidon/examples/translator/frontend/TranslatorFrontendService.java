@@ -61,8 +61,7 @@ public final class TranslatorFrontendService implements Service {
                     .queryParam("q", query)
                     .queryParam("lang", language)
                     .request()
-                    .get())
-            {
+                    .get()) {
                 final String result;
                 if (backendResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
                     result = backendResponse.readEntity(String.class);
