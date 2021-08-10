@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,12 +60,10 @@ public class HelloWorldTest {
     @Test
     public void testHelloWorld() throws Exception {
         Client client = ClientBuilder.newClient();
-        try {
-            Response response = client.target("http://localhost:" + webServer.port())
+        try (Response response = client.target("http://localhost:" + webServer.port())
                                       .path("jersey/hello")
                                       .request()
-                                      .get();
-
+                                      .get()) {
             assertEquals("Hello World!", response.readEntity(String.class),
                     "Unexpected response; status: " + response.getStatus());
         } finally {

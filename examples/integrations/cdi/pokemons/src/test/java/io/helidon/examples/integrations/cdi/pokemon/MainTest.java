@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,26 +72,29 @@ class MainTest {
                 .get(Pokemon.class);
         assertThat(pokemon.getType(), is(10));
 
-        Response response = client.target(getConnectionString("/pokemon/1"))
+        try (Response response = client.target(getConnectionString("/pokemon/1"))
                 .request()
-                .get();
-        assertThat(response.getStatus(), is(200));
+                .get()) {
+            assertThat(response.getStatus(), is(200));
+        }
 
         Pokemon test = new Pokemon();
         test.setType(1);
         test.setId(100);
         test.setName("Test");
-        response = client.target(getConnectionString("/pokemon"))
+        try (Response response = client.target(getConnectionString("/pokemon"))
                 .request()
-                .post(Entity.entity(test, MediaType.APPLICATION_JSON));
-        assertThat(response.getStatus(), is(204));
-        assertThat(getPokemonCount(), is(7));
+                .post(Entity.entity(test, MediaType.APPLICATION_JSON))) {
+            assertThat(response.getStatus(), is(204));
+            assertThat(getPokemonCount(), is(7));
+        }
 
-        response = client.target(getConnectionString("/pokemon/100"))
+        try (Response response = client.target(getConnectionString("/pokemon/100"))
                 .request()
-                .delete();
-        assertThat(response.getStatus(), is(204));
-        assertThat(getPokemonCount(), is(6));
+                .delete()) {
+            assertThat(response.getStatus(), is(204));
+            assertThat(getPokemonCount(), is(6));
+        }
     }
 
     private int getPokemonCount() {
