@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 
 @HelidonTest()
@@ -47,6 +48,8 @@ import static org.hamcrest.Matchers.is;
 public class TestMetricsOnOwnSocket {
 
     private Invocation metricsInvocation= null;
+
+    private static int loadCountBeforePingingMetrics = -1;
 
     @Inject
     private ServerCdiExtension serverCdiExtension;
@@ -68,9 +71,9 @@ public class TestMetricsOnOwnSocket {
     @Order(0)
     @Test
     void checkMetricsBeforeRequests() {
-
-        int load = getRequestsLoadCount("Pre-test");
-        assertThat("Pre-test load count", load, is(0));
+        // Just record the load count value. Other tests might have run earlier so we cannot assume the count is exactly 0.
+        loadCountBeforePingingMetrics = getRequestsLoadCount("Pre-test");
+        assertThat("Pre-test load count", loadCountBeforePingingMetrics, is(greaterThanOrEqualTo(0)));
 
     }
 
@@ -90,7 +93,7 @@ public class TestMetricsOnOwnSocket {
     @Test
     void checkMetricsAfterGet() {
         int load = getRequestsLoadCount("Post-test");
-        assertThat("Post-test load count", load, is(1));
+        assertThat("Change in load count", load - loadCountBeforePingingMetrics, is(1));
 
     }
 
