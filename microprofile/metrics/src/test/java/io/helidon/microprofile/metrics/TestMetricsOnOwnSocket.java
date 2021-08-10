@@ -24,6 +24,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import io.helidon.common.http.Http;
+import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
@@ -38,22 +39,31 @@ import static org.hamcrest.Matchers.is;
 @HelidonTest()
 // Set up the metrics endpoint on its own socket
 @AddConfig(key = "server.sockets.0.name", value = "metrics")
-@AddConfig(key = "server.sockets.0.port", value = "8082")
+// No port setting, so use any available one
 @AddConfig(key = "server.sockets.0.bind-address", value = "0.0.0.0")
-
 @AddConfig(key = "metrics.routing", value = "metrics")
 @AddConfig(key = "metrics.key-performance-indicators.extended", value = "true")
-
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TestMetricsOnOwnSocket {
 
-    private static Invocation metricsInvocation = ClientBuilder.newClient()
-            .target("http://localhost:8082/metrics/vendor")
-            .request(MediaType.APPLICATION_JSON_TYPE)
-            .buildGet();
+    private Invocation metricsInvocation= null;
+
+    @Inject
+    private ServerCdiExtension serverCdiExtension;
 
     @Inject
     private WebTarget webTarget;
+
+    Invocation metricsInvocation() {
+        if (metricsInvocation == null) {
+            int metricsPort = serverCdiExtension.port("metrics");
+            metricsInvocation = ClientBuilder.newClient()
+                    .target(String.format("http://localhost:%d/metrics/vendor", metricsPort))
+                    .request(MediaType.APPLICATION_JSON_TYPE)
+                    .buildGet();
+        }
+        return metricsInvocation;
+    }
 
     @Order(0)
     @Test
@@ -84,8 +94,8 @@ public class TestMetricsOnOwnSocket {
 
     }
 
-    private static int getRequestsLoadCount(String descr) {
-        try (Response r = metricsInvocation.invoke()) {
+    private int getRequestsLoadCount(String descr) {
+        try (Response r = metricsInvocation().invoke()) {
             assertThat(descr + " metrics sampling response", r.getStatus(), is(Http.Status.OK_200.code()));
 
             JsonObject metrics = r.readEntity(JsonObject.class);
