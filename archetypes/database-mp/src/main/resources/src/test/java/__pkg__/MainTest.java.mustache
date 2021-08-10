@@ -1,6 +1,7 @@
 
 package {{package}};
 
+import javax.inject.Inject;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
 import javax.json.JsonArray;
@@ -9,37 +10,27 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.client.WebTarget;
 
 import io.helidon.microprofile.server.Server;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+@HelidonTest
 class MainTest {
 
-    private static Server server;
-    private static String serverUrl;
-    private static Client client;
-
-    @BeforeAll
-    public static void startTheServer() {
-        client = ClientBuilder.newClient();
-        server = Server.create().start();
-        serverUrl = "http://localhost:" + server.port();
-    }
-
-    @AfterAll
-    static void destroyClass() {
-        CDI<Object> current = CDI.current();
-        ((SeContainer) current).close();
-    }
+    @Inject
+    private WebTarget target;
 
     @Test
     void testPokemonTypes() {
-        JsonArray types = client.target(serverUrl)
+        JsonArray types = target
                 .path("type")
                 .request()
                 .get(JsonArray.class);
@@ -50,19 +41,19 @@ class MainTest {
     void testPokemon() {
         assertThat(getPokemonCount(), is(6));
 
-        Pokemon pokemon = client.target(serverUrl)
+        Pokemon pokemon = target
                 .path("pokemon/1")
                 .request()
                 .get(Pokemon.class);
         assertThat(pokemon.getName(), is("Bulbasaur"));
 
-        pokemon = client.target(serverUrl)
+        pokemon = target
                 .path("pokemon/name/Charmander")
                 .request()
                 .get(Pokemon.class);
         assertThat(pokemon.getType(), is(10));
 
-        try (Response response = client.target(serverUrl)
+        try (Response response = target
                 .path("pokemon/1")
                 .request()
                 .get()) {
@@ -73,7 +64,7 @@ class MainTest {
         test.setType(1);
         test.setId(100);
         test.setName("Test");
-        try (Response response = client.target(serverUrl)
+        try (Response response = target
                 .path("pokemon")
                 .request()
                 .post(Entity.entity(test, MediaType.APPLICATION_JSON))) {
@@ -81,7 +72,7 @@ class MainTest {
             assertThat(getPokemonCount(), is(7));
         }
 
-        try (Response response = client.target(serverUrl)
+        try (Response response = target
                 .path("pokemon/100")
                 .request()
                 .delete()) {
@@ -92,13 +83,13 @@ class MainTest {
 
     @Test
     void testHealthMetrics() {
-        try (Response response = client.target(serverUrl)
+        try (Response response = target
                 .path("health")
                 .request()
                 .get()) {
             assertThat(response.getStatus(), is(200));
         }
-        try (Response response = client.target(serverUrl)
+        try (Response response = target
                 .path("metrics")
                 .request()
                 .get()) {
@@ -107,7 +98,7 @@ class MainTest {
     }
 
     private int getPokemonCount() {
-        JsonArray pokemons = client.target(serverUrl)
+        JsonArray pokemons = target
                 .path("pokemon")
                 .request()
                 .get(JsonArray.class);
