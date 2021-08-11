@@ -145,9 +145,9 @@ class Participant {
     }
 
     Participant(Config config) {
-        timeout = config.get("helidon.lra.coordinator.timeout")
+        timeout = config.get("timeout")
                 .asLong()
-                .orElse(50L);
+                .orElse(500L);
     }
 
     void parseCompensatorLinks(String compensatorLinks) {

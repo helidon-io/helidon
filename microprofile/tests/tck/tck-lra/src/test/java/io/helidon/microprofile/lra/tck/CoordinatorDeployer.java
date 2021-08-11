@@ -53,6 +53,7 @@ public class CoordinatorDeployer {
                             "mp.lra.coordinator.url", coordinatorUrl,
                             // LRA coordinator
                             "helidon.lra.coordinator.url", coordinatorUrl,
+                            "helidon.lra.coordinator.timeout", "800",
                             "server.sockets.0.name", COORDINATOR_ROUTING_NAME,
                             "server.sockets.0.port", port,
                             "server.sockets.0.bind-address", "localhost"
