@@ -31,6 +31,9 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
+
 import io.helidon.common.http.Headers;
 import io.helidon.config.Config;
 import io.helidon.metrics.RegistryFactory;
@@ -160,6 +163,17 @@ class Lra {
     void addChild(Lra lra) {
         children.add(lra);
         lra.isChild = true;
+    }
+
+    MultivaluedMap<String, Object> headersMap() {
+        MultivaluedHashMap<String, Object> map = new MultivaluedHashMap<>();
+        map.add(LRA_HTTP_CONTEXT_HEADER, lraId);
+        map.add(LRA_HTTP_ENDED_CONTEXT_HEADER, lraId);
+        Optional.ofNullable(parentId)
+                .map(URI::toASCIIString)
+                .ifPresent(s -> map.add(LRA_HTTP_PARENT_CONTEXT_HEADER, s));
+        map.add(LRA_HTTP_RECOVERY_HEADER, lraId);
+        return map;
     }
 
     Function<WebClientRequestHeaders, Headers> headers() {

@@ -31,6 +31,11 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Response;
+
 import io.helidon.config.Config;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
@@ -67,6 +72,8 @@ class Participant {
     private final Map<String, WebClient> webClientMap = new HashMap<>();
     private final Map<String, URI> compensatorLinks = new HashMap<>();
     private final long timeout;
+
+    private final Client client = ClientBuilder.newBuilder().build();
 
     enum Status {
         ACTIVE(Active, null, null, false, Set.of(Completing, Compensating)),
@@ -140,7 +147,7 @@ class Participant {
     Participant(Config config) {
         timeout = config.get("helidon.lra.coordinator.timeout")
                 .asLong()
-                .orElse(500L);
+                .orElse(50L);
     }
 
     void parseCompensatorLinks(String compensatorLinks) {
@@ -376,7 +383,7 @@ class Participant {
             LOGGER.log(Level.INFO, "Sending complete, sync retry: " + i
                     + ", status: " + status.get().name()
                     + " status: " + getStatusURI().map(URI::toASCIIString).orElse(null));
-            WebClientResponse response = null;
+            Response response = null;
             try {
                 if (status.get().isFinal()) {
                     return true;
@@ -410,15 +417,16 @@ class Participant {
                         return false;
                     }
                 }
-                response = getWebClient(endpointURI.get())
-                        .put()
-                        .headers(lra.headers())
-                        .submit(LRAStatus.Closed.name())
-                        .await(timeout, TimeUnit.MILLISECONDS);
+                response = client.target(endpointURI.get())
+                        .request()
+                        .headers(lra.headersMap())
+                        .async()
+                        .put(Entity.text(LRAStatus.Closed.name()))
+                        .get(500, TimeUnit.MILLISECONDS);
                 // When timeout occur we loose track of the participant status
                 // next retry will attempt to retrieve participant status if status uri is available
 
-                switch (response.status().code()) {
+                switch (response.getStatus()) {
                     // complete or compensated
                     case 200:
                     case 410:
@@ -434,7 +442,7 @@ class Participant {
                     case 404:
                     case 503:
                     default:
-                        throw new Exception(response.status().code() + " " + response.status().reasonPhrase());
+                        throw new Exception(response.getStatus() + " ");
                 }
 
             } catch (Exception e) {
@@ -449,7 +457,7 @@ class Participant {
                     status.set(Status.COMPLETING);
                 }
             } finally {
-                Optional.ofNullable(response).ifPresent(WebClientResponse::close);
+                Optional.ofNullable(response).ifPresent(Response::close);
                 sendingStatus.set(SendingStatus.NOT_SENDING);
             }
         }
