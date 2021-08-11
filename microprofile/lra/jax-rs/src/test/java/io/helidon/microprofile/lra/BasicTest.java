@@ -195,7 +195,7 @@ public class BasicTest {
         assertThat(response.getStatus(), is(500));
         URI lraId = await(JaxRsCompleteOrCompensate.CS_START_LRA);
         assertThat(await(JaxRsCompleteOrCompensate.CS_COMPENSATE), is(lraId));
-        assertFalse(getCompletable(JaxRsCompleteOrCompensate.CS_COMPLETE).isDone());
+        assertFalse(getCompletable(JaxRsCompleteOrCompensate.CS_COMPLETE, lraId).isDone());
     }
 
     @Test
