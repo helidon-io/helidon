@@ -39,8 +39,28 @@
             <artifactId>helidon-security-jwt</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-http-auth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-jsonp</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient-jaxrs</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-jsonp</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.jersey</groupId>

@@ -17,18 +17,21 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import javax.json.JsonObject;
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
 
 import io.helidon.common.Errors;
+import io.helidon.common.http.FormParams;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
+import io.helidon.common.reactive.Single;
+import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.webclient.WebClientResponse;
 
 /**
  * Oracle IDCS specific implementations for {@code idcs} server type.
@@ -38,31 +41,72 @@ class IdcsSupport {
     private IdcsSupport() {
     }
     // load signature jwk with a token
-    static JwkKeys signJwk(Client generalClient, WebTarget tokenEndpoint, Errors.Collector collector, URI signJwkUri) {
+    static JwkKeys signJwk(WebClient generalClient, URI tokenEndpointUri, Errors.Collector collector, URI signJwkUri) {
         //  need to get token to be able to request this endpoint
-        MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
-        formData.putSingle("grant_type", "client_credentials");
-        formData.putSingle("scope", "urn:opc:idm:__myscopes__");
+        FormParams form = FormParams.builder()
+                .add("grant_type", "client_credentials")
+                .add("scope", "urn:opc:idm:__myscopes__")
+                .build();
 
-        JsonObject response;
         try {
-            response = tokenEndpoint.request()
-                    .accept(MediaType.APPLICATION_JSON_TYPE)
-                    .post(Entity.form(formData), JsonObject.class);
-        } catch (ClientErrorException e) {
-            String errorMessage = e.getMessage();
-            String entity = e.getResponse().readEntity(String.class);
-            throw new SecurityException("Failed to read JWK from IDCS: " + errorMessage + ", entity: " + entity, e);
+            WebClientResponse response = generalClient.post()
+                    .accept(MediaType.APPLICATION_JSON)
+                    .submit(form)
+                    .await();
+
+            if (response.status().family() == Http.ResponseStatus.Family.SUCCESSFUL) {
+                JsonObject json = response.content()
+                        .as(JsonObject.class)
+                        .await();
+
+                String accessToken = json.getString("access_token");
+
+                // get the jwk from server
+                JsonObject jwkJson = generalClient.target(signJwkUri)
+                        .request()
+                        .header("Authorization", "Bearer " + accessToken)
+                        .get(JsonObject.class);
+
+                return JwkKeys.create(jwkJson);
+            } else {
+                String errorEntity = response.content()
+                        .as(String.class)
+                        .await();
+            }
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new SecurityException("Failed to read JWK from IDCS", e);
         }
-        String accessToken = response.getString("access_token");
-
-        // get the jwk from server
-        JsonObject jwkJson = generalClient.target(signJwkUri)
-                .request()
-                .header("Authorization", "Bearer " + accessToken)
-                .get(JsonObject.class);
-
-        return JwkKeys.create(jwkJson);
     }
 
+    static Single<Void> processJsonSubmit(WebClientRequestBuilder request,
+                                          Object toSubmit,
+                                          Consumer<JsonObject> jsonProcessor,
+                                          BiConsumer<Http.ResponseStatus, String> errorEntityProcessor,
+                                          BiConsumer<Throwable, String> errorProcessor) {
+
+        return request.submit(toSubmit)
+                .peek(response -> {
+                    if (response.status().family() == Http.ResponseStatus.Family.SUCCESSFUL) {
+                        response.content()
+                                .as(JsonObject.class)
+                                .forSingle(jsonProcessor)
+                                .exceptionallyAccept(t -> errorProcessor.accept(t,
+                                                                                "Failed to read JSON from IDCS JWK request."));
+                    } else {
+                        response.content()
+                                .as(String.class)
+                                .forSingle(it -> errorEntityProcessor.accept(response.status(), it))
+                                .exceptionallyAccept(t -> errorProcessor.accept(t,
+                                                                                "Failed to read error entity from "
+                                                                                        + "IDCS JWK response."));
+                    }
+                })
+                .onErrorResumeWithSingle(t -> {
+                    errorProcessor.accept(t, "Failed to invoke IDCS JWK request");
+                    return Single.empty();
+                })
+                .flatMapSingle(it -> Single.empty());
+    }
 }

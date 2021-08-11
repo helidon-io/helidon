@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,16 +26,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.json.JsonObject;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.Response;
 
+import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -191,13 +190,13 @@ public final class OidcSupport implements Service {
     private void addRequestAsHeader(ServerRequest req, ServerResponse res) {
         //noinspection unchecked
         Map<String, List<String>> newHeaders = req.context()
-                        .get(WebSecurity.CONTEXT_ADD_HEADERS, Map.class)
-                        .map(theMap -> (Map<String, List<String>>) theMap)
-                        .orElseGet(() -> {
-                            Map<String, List<String>> newMap = new HashMap<>();
-                            req.context().register(WebSecurity.CONTEXT_ADD_HEADERS, newMap);
-                            return newMap;
-                        });
+                .get(WebSecurity.CONTEXT_ADD_HEADERS, Map.class)
+                .map(theMap -> (Map<String, List<String>>) theMap)
+                .orElseGet(() -> {
+                    Map<String, List<String>> newMap = new HashMap<>();
+                    req.context().register(WebSecurity.CONTEXT_ADD_HEADERS, newMap);
+                    return newMap;
+                });
 
         String query = req.query();
         if ((null == query) || query.isEmpty()) {
@@ -212,52 +211,81 @@ public final class OidcSupport implements Service {
     }
 
     private void processOidcRedirect(ServerRequest req, ServerResponse res) {
-        // redirected from IDCS
+        // redirected from OIDC provider
         Optional<String> codeParam = req.queryParams().first(CODE_PARAM_NAME);
         // if code is not in the request, this is a problem
-        codeParam
-                .ifPresentOrElse(code -> processCode(code, req, res), () -> processError(req, res));
+        codeParam.ifPresentOrElse(code -> processCode(code, req, res),
+                                  () -> processError(req, res));
     }
 
     private void processCode(String code, ServerRequest req, ServerResponse res) {
-        MultivaluedHashMap<String, String> formValues = new MultivaluedHashMap<>();
-        formValues.putSingle("grant_type", "authorization_code");
-        formValues.putSingle("code", code);
-        formValues.putSingle("redirect_uri", oidcConfig.redirectUriWithHost());
+        WebClient webClient = oidcConfig.appWebClient();
 
-        Response response = oidcConfig.tokenEndpoint().request()
-                .accept(MediaType.APPLICATION_JSON_TYPE)
-                .post(Entity.form(formValues));
+        FormParams.Builder form = FormParams.builder()
+                .add("grant_type", "authorization_code")
+                .add("code", code)
+                .add("redirect_uri", oidcConfig.redirectUriWithHost());
 
-        if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-            JsonObject jsonResponse = response.readEntity(JsonObject.class);
-            String tokenValue = jsonResponse.getString("access_token");
-            //redirect to "state"
-            String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
-            res.status(Http.Status.TEMPORARY_REDIRECT_307);
-            if (oidcConfig.useParam()) {
-                if (state.contains("?")) {
-                    state = state + "&" + oidcConfig.paramName() + "=" + tokenValue;
-                } else {
-                    state = state + "?" + oidcConfig.paramName() + "=" + tokenValue;
-                }
+        WebClientRequestBuilder post = webClient.post()
+                .uri(oidcConfig.tokenEndpointUri())
+                .accept(io.helidon.common.http.MediaType.APPLICATION_JSON);
+
+        oidcConfig.updateRequest(OidcConfig.RequestType.CODE_TO_TOKEN,
+                                 post,
+                                 form);
+
+        OidcProvider.processJsonSubmit(post,
+                                       form.build(),
+                                       json -> processJsonResponse(req, res, json),
+                                       (status, errorEntity) -> processError(res, status, errorEntity),
+                                       (t, message) -> processError(res, t, message),
+                                       "code")
+                .ignoreElement();
+    }
+
+    private void processJsonResponse(ServerRequest req, ServerResponse res, JsonObject json) {
+        String tokenValue = json.getString("access_token");
+        //redirect to "state"
+        String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
+        res.status(Http.Status.TEMPORARY_REDIRECT_307);
+        if (oidcConfig.useParam()) {
+            if (state.contains("?")) {
+                state = state + "&" + oidcConfig.paramName() + "=" + tokenValue;
+            } else {
+                state = state + "?" + oidcConfig.paramName() + "=" + tokenValue;
             }
-
-            state = increaseRedirectCounter(state);
-            res.headers().add(Http.Header.LOCATION, state);
-
-            if (oidcConfig.useCookie()) {
-                res.headers()
-                        .add("Set-Cookie", oidcConfig.cookieName() + "=" + tokenValue + oidcConfig.cookieOptions());
-            }
-
-            res.send();
-        } else {
-            String entity = response.readEntity(String.class);
-            LOGGER.log(Level.FINE, "Invalid token or failed request when connecting to OIDC Token Endpoint. Response: " + entity);
-            res.status(Http.Status.UNAUTHORIZED_401);
-            res.send("Not a valid authorization code");
         }
+
+        state = increaseRedirectCounter(state);
+        res.headers().add(Http.Header.LOCATION, state);
+
+        if (oidcConfig.useCookie()) {
+            res.headers()
+                    .add("Set-Cookie", oidcConfig.cookieName() + "=" + tokenValue + oidcConfig.cookieOptions());
+        }
+
+        res.send();
+    }
+
+    private void processError(ServerResponse serverResponse, Http.ResponseStatus status, String entity) {
+        LOGGER.log(Level.FINE,
+                   "Invalid token or failed request when connecting to OIDC Token Endpoint. Response: " + entity
+                           + ", response status: " + status);
+
+        sendErrorResponse(serverResponse);
+    }
+
+    private void processError(ServerResponse res, Throwable t, String message) {
+        LOGGER.log(Level.FINE, message, t);
+
+        sendErrorResponse(res);
+    }
+
+    // this must always be the same, so clients cannot guess what kind of problem they are facing
+    // if they try to provide wrong data
+    private void sendErrorResponse(ServerResponse serverResponse) {
+        serverResponse.status(Http.Status.UNAUTHORIZED_401);
+        serverResponse.send("Not a valid authorization code");
     }
 
     String increaseRedirectCounter(String state) {
@@ -280,8 +308,6 @@ public final class OidcSupport implements Service {
             return state + "?" + oidcConfig.redirectAttemptParam() + "=1";
         }
     }
-
-
 
     private void processError(ServerRequest req, ServerResponse res) {
         String error = req.queryParams().first("error").orElse("invalid_request");
@@ -306,6 +332,21 @@ public final class OidcSupport implements Service {
         private OidcConfig oidcConfig;
 
         private Builder() {
+        }
+
+        private static Config findMyKey(Config rootConfig, String providerName) {
+            if (rootConfig.key().name().equals(providerName)) {
+                return rootConfig;
+            }
+
+            return rootConfig.get("security.providers")
+                    .asNodeList()
+                    .get()
+                    .stream()
+                    .filter(it -> it.get(providerName).exists())
+                    .findFirst()
+                    .map(it -> it.get(providerName))
+                    .orElseThrow(() -> new SecurityException("No configuration found for provider named: " + providerName));
         }
 
         @Override
@@ -370,21 +411,6 @@ public final class OidcSupport implements Service {
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
             return this;
-        }
-
-        private static Config findMyKey(Config rootConfig, String providerName) {
-            if (rootConfig.key().name().equals(providerName)) {
-                return rootConfig;
-            }
-
-            return rootConfig.get("security.providers")
-                    .asNodeList()
-                    .get()
-                    .stream()
-                    .filter(it -> it.get(providerName).exists())
-                    .findFirst()
-                    .map(it -> it.get(providerName))
-                    .orElseThrow(() -> new SecurityException("No configuration found for provider named: " + providerName));
         }
     }
 }

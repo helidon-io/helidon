@@ -22,7 +22,12 @@ module io.helidon.security.providers.oidc.common {
     requires io.helidon.security.util;
     requires io.helidon.security.providers.common;
     requires io.helidon.security.jwt;
+    requires io.helidon.security.providers.httpauth;
     requires io.helidon.webclient.jaxrs;
+    requires io.helidon.webclient;
+    requires io.helidon.webclient.security;
+    requires io.helidon.media.jsonp;
+
     requires jersey.client;
     requires java.ws.rs;
 
