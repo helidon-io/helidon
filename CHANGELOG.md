@@ -7,6 +7,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [2.3.3]
+
+This is a bug fix release of Helidon. It contains bug fixes and minor enhancements. We recommend all Helidon 2.x users upgrade to this release.
+
+### Compatibility
+
+2.3.3 is API compatible with 2.3.0.
+
+### CHANGES
+
+- TBD
+
 ## [2.3.2]
 
 This is a bug fix release of Helidon. It contains bug fixes and minor enhancements. We recommend all Helidon 2.x users upgrade to this release.
@@ -1455,6 +1467,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.3.3]: https://github.com/oracle/helidon/compare/2.3.3...2.3.3
 [2.3.2]: https://github.com/oracle/helidon/compare/2.3.1...2.3.2
 [2.3.1]: https://github.com/oracle/helidon/compare/2.3.0...2.3.1
 [2.3.0]: https://github.com/oracle/helidon/compare/2.2.2...2.3.0
