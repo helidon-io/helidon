@@ -375,7 +375,6 @@ class Participant {
             if (!sendingStatus.compareAndSet(SendingStatus.NOT_SENDING, SendingStatus.SENDING)) return false;
             LOGGER.log(Level.INFO, "Sending complete, sync retry: " + i
                     + ", status: " + status.get().name()
-                    + ", reportedStatus: " + getStatusURI().flatMap(u -> retrieveStatus(lra, Completing)).orElse(null)
                     + " status: " + getStatusURI().map(URI::toASCIIString).orElse(null));
             WebClientResponse response = null;
             try {
@@ -498,9 +497,8 @@ class Participant {
 
     Optional<ParticipantStatus> retrieveStatus(Lra lra, ParticipantStatus inProgressStatus) {
         URI statusURI = this.getStatusURI().get();
-        WebClientResponse response = null;
         try {
-            response = getWebClient(statusURI)
+            WebClientResponse response = getWebClient(statusURI)
                     .get()
                     .headers(h -> {
                         // Dont send parent!
@@ -549,8 +547,6 @@ class Participant {
             LOGGER.log(Level.WARNING, "Error when getting participant status. " + statusURI, e);
             // skip dependent compensation call, another retry with status call might be luckier
             throw e;
-        } finally {
-            Optional.ofNullable(response).ifPresent(WebClientResponse::close);
         }
     }
 
@@ -597,16 +593,10 @@ class Participant {
     }
 
     private WebClient getWebClient(URI baseUri) {
-        return WebClient.builder()
+        return webClientMap.computeIfAbsent(baseUri.toASCIIString(), unused -> WebClient.builder()
                 // Workaround for #3242
                 .keepAlive(false)
                 .baseUri(baseUri)
-                .build();
-
-//        return webClientMap.computeIfAbsent(baseUri.toASCIIString(), unused -> WebClient.builder()
-//                // Workaround for #3242
-//                .keepAlive(false)
-//                .baseUri(baseUri)
-//                .build());
+                .build());
     }
 }
