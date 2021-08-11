@@ -57,12 +57,13 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
 
         if (parent == null) {
             result = super.create(null);
-            LOGGER.finest("Creating injection manager " + result);
+            LOGGER.finest(() -> "Creating injection manager " + result);
         } else if (parent instanceof InjectionManagerWrapper) {
             InjectionManagerWrapper wrapper = (InjectionManagerWrapper) parent;
-            InjectionManager delegate = super.create(null);
-            result = new HelidonInjectionManager(delegate, wrapper.injectionManager, wrapper.application);
-            LOGGER.finest("Creating injection manager " + delegate + " with parent " + wrapper.injectionManager);
+            InjectionManager forApplication = super.create(null);
+            result = new HelidonInjectionManager(forApplication, wrapper.injectionManager, wrapper.application);
+            LOGGER.finest(() -> "Creating injection manager " + forApplication + " with shared "
+                    + wrapper.injectionManager);
         } else {
             throw new IllegalStateException("Invalid parent injection manager");
         }
@@ -109,8 +110,8 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         }
 
         /**
-         * Registers classes returned by {@code getClasses} in {@code delegate} and
-         * all other classes in {@code parent}. This is done to keep separation between
+         * Registers classes returned by {@code getClasses} in {@code forApplication} and
+         * all other classes in {@code shared}. This is done to keep separation between
          * global providers and those that are specific to an {@code Application} class.
          *
          * @param binding the binding to register.
@@ -162,8 +163,8 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         }
 
         /**
-         * Collects all service holders, including those registered in the parent and the
-         * delegate.
+         * Collects all service holders, including those registered in the {@code shared}
+         * and the {@code forApplication}.
          *
          * @param contractOrImpl contract or implementation class.
          * @param qualifiers the qualifiers.
@@ -172,14 +173,14 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
          */
         @Override
         public <T> List<ServiceHolder<T>> getAllServiceHolders(Class<T> contractOrImpl, Annotation... qualifiers) {
-            List<ServiceHolder<T>> parentList = shared.getAllServiceHolders(contractOrImpl, qualifiers);
-            parentList.forEach(sh -> LOGGER.finest(() ->
-                    "getAllServiceHolders parent " + shared + " " + sh.getContractTypes().iterator().next()));
-            List<ServiceHolder<T>> delegateList = forApplication.getAllServiceHolders(contractOrImpl, qualifiers);
-            delegateList.forEach(sh -> LOGGER.finest(() ->
-                    "getAllServiceHolders delegate " + forApplication + " " + sh.getContractTypes().iterator().next()));
-            return delegateList.size() == 0 ? parentList
-                    : Stream.concat(parentList.stream(), delegateList.stream()).collect(Collectors.toList());
+            List<ServiceHolder<T>> sharedList = shared.getAllServiceHolders(contractOrImpl, qualifiers);
+            sharedList.forEach(sh -> LOGGER.finest(() ->
+                    "getAllServiceHolders shared " + shared + " " + sh.getContractTypes().iterator().next()));
+            List<ServiceHolder<T>> forApplicationList = forApplication.getAllServiceHolders(contractOrImpl, qualifiers);
+            forApplicationList.forEach(sh -> LOGGER.finest(() ->
+                    "getAllServiceHolders forApplication " + forApplication + " " + sh.getContractTypes().iterator().next()));
+            return forApplicationList.size() == 0 ? sharedList
+                    : Stream.concat(sharedList.stream(), forApplicationList.stream()).collect(Collectors.toList());
         }
 
         @Override
@@ -265,7 +266,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
                     classes = application.getClasses();
                 }
             }
-            return classes != null ? classes : Collections.EMPTY_SET;
+            return classes != null ? classes : Collections.emptySet();
         }
 
         /**
@@ -280,7 +281,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
                     singletons = application.getSingletons();
                 }
             }
-            return singletons != null ? singletons : Collections.EMPTY_SET;
+            return singletons != null ? singletons : Collections.emptySet();
         }
 
         /**
@@ -289,11 +290,12 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
          * @param b the binding
          * @return string representation of binding
          */
+        @SuppressWarnings("unchecked")
         private static String toString(Binding b) {
             StringBuilder sb = new StringBuilder();
-            b.getContracts().forEach(c -> sb.append(" Cont " + c));
+            b.getContracts().forEach(c -> sb.append(" Cont ").append(c));
             if (b.getImplementationType() != null) {
-                sb.append("\n\tImpl " + b.getImplementationType());
+                sb.append("\n\tImpl ").append(b.getImplementationType());
             }
             return sb.toString();
         }
@@ -305,8 +307,9 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
          * returned by {@code getClasses()}, as well as the JAX-RS API filter interface.
          *
          * @param binding injection manager binding
-         * @return
+         * @return outcome of test
          */
+        @SuppressWarnings("unchecked")
         private boolean returnedByApplication(Binding binding) {
             if (Singleton.class.equals(binding.getScope())) {
                 try {
