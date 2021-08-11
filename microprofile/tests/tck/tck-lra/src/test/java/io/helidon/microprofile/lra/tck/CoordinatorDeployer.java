@@ -16,9 +16,13 @@
 package io.helidon.microprofile.lra.tck;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
+import javax.ws.rs.client.ClientBuilder;
 
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.lra.coordinator.CoordinatorService;
@@ -27,6 +31,7 @@ import io.helidon.microprofile.arquillian.HelidonDeployableContainer;
 
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
+import org.jboss.arquillian.container.spi.event.container.AfterDeploy;
 import org.jboss.arquillian.container.spi.event.container.BeforeStart;
 import org.jboss.arquillian.container.spi.event.container.BeforeUnDeploy;
 import org.jboss.arquillian.core.api.annotation.Observes;
@@ -34,6 +39,8 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 
 public class CoordinatorDeployer {
+
+    private static final Logger LOGGER = Logger.getLogger(CoordinatorDeployer.class.getName());
 
     static final String COORDINATOR_ROUTING_NAME = "coordinator";
     static final String LOCAL_COORDINATOR_URL = "http://localhost:8071/lra-coordinator";
@@ -66,6 +73,30 @@ public class CoordinatorDeployer {
         helidonContainer.getAdditionalArchives().add(javaArchive);
 
     }
+
+    public void afterStart(@Observes AfterDeploy event, Container container) throws Exception {
+        long stamp = System.currentTimeMillis();
+        for (int i = 0; i < 20; i++) {
+            LOGGER.log(Level.INFO, "Waiting for coordinator, iteration " + i);
+            try {
+                LOGGER.log(Level.INFO, "Coordinator is ready: " + ClientBuilder.newBuilder()
+                        .build()
+                        .target(LOCAL_COORDINATOR_URL)
+                        .path("/")
+                        .request()
+                        .async()
+                        .get()
+                        .get(2000, TimeUnit.MILLISECONDS)
+                        .getStatus() + " after " + (System.currentTimeMillis() - stamp) + " millis");
+                break;
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, () -> "Can't ping coordinator yet. " + e.getMessage());
+                Thread.sleep(1000);
+                continue;
+            }
+        }
+    }
+
 
     public void beforeUndeploy(@Observes BeforeUnDeploy event, Container container) throws DeploymentException {
         // Gracefully stop the container so coordinator gets the chance to persist lra registry
