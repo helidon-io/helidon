@@ -31,11 +31,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Response;
-
 import io.helidon.config.Config;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
@@ -72,8 +67,6 @@ class Participant {
     private final Map<String, WebClient> webClientMap = new HashMap<>();
     private final Map<String, URI> compensatorLinks = new HashMap<>();
     private final long timeout;
-
-    private final Client client = ClientBuilder.newBuilder().build();
 
     enum Status {
         ACTIVE(Active, null, null, false, Set.of(Completing, Compensating)),
@@ -286,9 +279,12 @@ class Participant {
 
     boolean sendCancel(Lra lra) {
         Optional<URI> endpointURI = getCompensateURI();
-        for (int i = 0; i < SYNCHRONOUS_RETRY_CNT; i++) {
+        for (AtomicInteger i = new AtomicInteger(0); i.getAndIncrement() < SYNCHRONOUS_RETRY_CNT;) {
             if (!sendingStatus.compareAndSet(SendingStatus.NOT_SENDING, SendingStatus.SENDING)) return false;
             if (!compensateCalled.compareAndSet(CompensateStatus.NOT_SENT, CompensateStatus.SENDING)) return false;
+            LOGGER.log(Level.FINE, () -> "Sending compensate, sync retry: " + i.get()
+                    + ", status: " + status.get().name()
+                    + " statusUri: " + getStatusURI().map(URI::toASCIIString).orElse(null));
             WebClientResponse response = null;
             try {
                 // call for client status only on retries and when status uri is known
@@ -356,7 +352,7 @@ class Participant {
                 }
 
             } catch (Exception e) {
-                LOGGER.log(Level.INFO, e, () ->
+                LOGGER.log(Level.WARNING, e, () ->
                         "Can't reach participant's compensate endpoint: " + endpointURI.map(URI::toASCIIString).orElse("unknown")
                 );
                 if (remainingCloseAttempts.decrementAndGet() <= 0) {
@@ -378,12 +374,12 @@ class Participant {
 
     boolean sendComplete(Lra lra) {
         Optional<URI> endpointURI = getCompleteURI();
-        for (int i = 0; i < SYNCHRONOUS_RETRY_CNT; i++) {
+        for (AtomicInteger i = new AtomicInteger(0); i.getAndIncrement() < SYNCHRONOUS_RETRY_CNT;) {
             if (!sendingStatus.compareAndSet(SendingStatus.NOT_SENDING, SendingStatus.SENDING)) return false;
-            LOGGER.log(Level.INFO, "Sending complete, sync retry: " + i
+            LOGGER.log(Level.FINE, () -> "Sending complete, sync retry: " + i.get()
                     + ", status: " + status.get().name()
-                    + " status: " + getStatusURI().map(URI::toASCIIString).orElse(null));
-            Response response = null;
+                    + " statusUri: " + getStatusURI().map(URI::toASCIIString).orElse(null));
+            WebClientResponse response = null;
             try {
                 if (status.get().isFinal()) {
                     return true;
@@ -417,16 +413,15 @@ class Participant {
                         return false;
                     }
                 }
-                response = client.target(endpointURI.get())
-                        .request()
-                        .headers(lra.headersMap())
-                        .async()
-                        .put(Entity.text(LRAStatus.Closed.name()))
-                        .get(timeout, TimeUnit.MILLISECONDS);
+                response = getWebClient(endpointURI.get())
+                        .put()
+                        .headers(lra.headers())
+                        .submit(LRAStatus.Closed.name())
+                        .await(timeout, TimeUnit.MILLISECONDS);
                 // When timeout occur we loose track of the participant status
                 // next retry will attempt to retrieve participant status if status uri is available
 
-                switch (response.getStatus()) {
+                switch (response.status().code()) {
                     // complete or compensated
                     case 200:
                     case 410:
@@ -442,11 +437,11 @@ class Participant {
                     case 404:
                     case 503:
                     default:
-                        throw new Exception(response.getStatus() + " ");
+                        throw new Exception(response.status().code() + " " + response.status().reasonPhrase());
                 }
 
             } catch (Exception e) {
-                LOGGER.log(Level.INFO, e, () ->
+                LOGGER.log(Level.WARNING, e, () ->
                         "Can't reach participant's complete endpoint: " + endpointURI.map(URI::toASCIIString).orElse("unknown")
                 );
                 if (remainingCloseAttempts.decrementAndGet() <= 0) {
@@ -457,7 +452,7 @@ class Participant {
                     status.set(Status.COMPLETING);
                 }
             } finally {
-                Optional.ofNullable(response).ifPresent(Response::close);
+                Optional.ofNullable(response).ifPresent(WebClientResponse::close);
                 sendingStatus.set(SendingStatus.NOT_SENDING);
             }
         }

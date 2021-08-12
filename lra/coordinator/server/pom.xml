@@ -61,12 +61,16 @@
             <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient</artifactId>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.jersey</groupId>
-            <artifactId>helidon-jersey-client</artifactId>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health-checks</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.scheduling</groupId>

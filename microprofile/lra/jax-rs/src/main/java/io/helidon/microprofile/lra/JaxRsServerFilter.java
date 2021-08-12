@@ -60,7 +60,6 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
         try {
             requestContext.setProperty(BEFORE_REQUEST_LRA_CTX_PROP, LraThreadContext.get());
             Method method = resourceInfo.getResourceMethod();
-            LOGGER.log(Level.INFO, "START: Server filter for " + method);
             // if lraId already exists save it for later
             Optional.ofNullable(requestContext.getHeaders().getFirst(LRA_HTTP_CONTEXT_HEADER))
                     .map(h -> UriBuilder.fromPath(requestContext.getHeaders().getFirst(LRA_HTTP_CONTEXT_HEADER)).build())
@@ -83,7 +82,6 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
             for (var handler : handlerService.createHandler(method)) {
                 handler.handleJaxRsBefore(requestContext, resourceInfo);
             }
-            LOGGER.log(Level.INFO, "STOP: Server filter for " + method);
         } catch (WebApplicationException e) {
             // Rethrow error responses
             throw e;
@@ -97,7 +95,6 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
                        ContainerResponseContext responseContext) throws IOException {
         try {
             Method method = resourceInfo.getResourceMethod();
-            LOGGER.log(Level.INFO, "START: Server response filter for " + method);
             if (method == null) {
                 return;
             }
@@ -106,7 +103,6 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
             for (var handler : handlerService.createHandler(method)) {
                 handler.handleJaxRsAfter(requestContext, responseContext, resourceInfo);
             }
-            LOGGER.log(Level.INFO, "STOP: Server response filter for " + method);
         } catch (Throwable t) {
             LOGGER.log(Level.SEVERE, "After LRA filter", t);
         } finally {

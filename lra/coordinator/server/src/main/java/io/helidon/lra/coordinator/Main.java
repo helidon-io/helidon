@@ -20,6 +20,8 @@ package io.helidon.lra.coordinator;
 import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.health.HealthSupport;
+import io.helidon.health.checks.HealthChecks;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
@@ -69,9 +71,13 @@ public class Main {
     private static Routing createRouting(Config config, CoordinatorService coordinatorService) {
 
         MetricsSupport metrics = MetricsSupport.create();
+        HealthSupport health = HealthSupport.builder()
+                .addLiveness(HealthChecks.healthChecks())
+                .build();
 
         return Routing.builder()
                 .register(metrics)
+                .register(health)
                 .register(config.get("mp.lra.coordinator.context.path")
                         .asString()
                         .orElse("/lra-coordinator"), coordinatorService)

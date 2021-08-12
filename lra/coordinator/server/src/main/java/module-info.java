@@ -25,9 +25,10 @@ module io.helidon.lra.coordinator {
     requires io.helidon.common.reactive;
     requires io.helidon.webclient;
     requires io.helidon.metrics;
-    requires io.helidon.jersey.client;
     requires io.helidon.scheduling;
     requires io.helidon.dbclient;
     requires io.helidon.dbclient.jdbc;
     requires io.helidon.media.jsonp;
+    requires io.helidon.health;
+    requires io.helidon.health.checks;
 }
