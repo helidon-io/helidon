@@ -422,7 +422,7 @@ class Participant {
                         .headers(lra.headersMap())
                         .async()
                         .put(Entity.text(LRAStatus.Closed.name()))
-                        .get(500, TimeUnit.MILLISECONDS);
+                        .get(timeout, TimeUnit.MILLISECONDS);
                 // When timeout occur we loose track of the participant status
                 // next retry will attempt to retrieve participant status if status uri is available
 
