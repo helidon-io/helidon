@@ -1467,7 +1467,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.3.3]: https://github.com/oracle/helidon/compare/2.3.3...2.3.3
+[2.3.3]: https://github.com/oracle/helidon/compare/2.3.2...2.3.3
 [2.3.2]: https://github.com/oracle/helidon/compare/2.3.1...2.3.2
 [2.3.1]: https://github.com/oracle/helidon/compare/2.3.0...2.3.1
 [2.3.0]: https://github.com/oracle/helidon/compare/2.2.2...2.3.0
