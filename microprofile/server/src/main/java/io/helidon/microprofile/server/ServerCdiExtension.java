@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -103,6 +104,8 @@ public class ServerCdiExtension implements Extension {
     private final Map<Bean<?>, RoutingConfiguration> serviceBeans
             = Collections.synchronizedMap(new IdentityHashMap<>());
 
+    private final Set<Routing.Builder> routingsWithKPIMetrics = new HashSet<>();
+
     private void buildTime(@Observes @BuildTimeStart Object event) {
         // update the status of server, as we may have been started without a builder being used
         // such as when cdi.Main or SeContainerInitializer are used
@@ -151,9 +154,13 @@ public class ServerCdiExtension implements Extension {
 
         Routing.Builder routing = routingBuilder(namedRouting, routingNameRequired, applicationMeta.appName());
 
-        LOGGER.finer(() ->
-                "JAX-RS application " + applicationMeta.appName() + " adding deferrable request KPI metrics context on '/'");
-        routing.any(KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
+        if (!routingsWithKPIMetrics.contains(routing)) {
+            routingsWithKPIMetrics.add(routing);
+            routing.any(KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
+            LOGGER.finer(() ->
+                    "Adding deferrable request KPI metrics context for routing with name '"
+                            + namedRouting.orElse("<unnamed>"));
+        }
     }
 
     private void startServer(@Observes @Priority(PLATFORM_AFTER + 100) @Initialized(ApplicationScoped.class) Object event,
