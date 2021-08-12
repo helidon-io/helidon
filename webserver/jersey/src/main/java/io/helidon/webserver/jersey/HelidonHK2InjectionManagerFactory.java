@@ -18,7 +18,6 @@ package io.helidon.webserver.jersey;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -31,6 +30,7 @@ import javax.inject.Singleton;
 import javax.ws.rs.core.Application;
 
 import org.glassfish.jersey.inject.hk2.Hk2InjectionManagerFactory;
+import org.glassfish.jersey.inject.hk2.ImmediateHk2InjectionManager;
 import org.glassfish.jersey.internal.inject.Binder;
 import org.glassfish.jersey.internal.inject.Binding;
 import org.glassfish.jersey.internal.inject.ForeignDescriptor;
@@ -55,10 +55,14 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
     public InjectionManager create(Object parent) {
         InjectionManager result;
 
+        // If no parent, create manager single JAX-RS app or shared multiple JAX-RS apps
         if (parent == null) {
             result = super.create(null);
             LOGGER.finest(() -> "Creating injection manager " + result);
-        } else if (parent instanceof InjectionManagerWrapper) {
+        } else if (parent instanceof ImmediateHk2InjectionManager) {        // single JAX-RS app
+            result = (InjectionManager) parent;
+            LOGGER.finest(() -> "Using injection manager " + result);
+        } else if (parent instanceof InjectionManagerWrapper) {             // multiple JAX-RS apps
             InjectionManagerWrapper wrapper = (InjectionManagerWrapper) parent;
             InjectionManager forApplication = super.create(null);
             result = new HelidonInjectionManager(forApplication, wrapper.injectionManager, wrapper.application);
@@ -224,10 +228,10 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
 
         @Override
         public <T> List<T> getAllInstances(Type contractOrImpl) {
-            List<T> result = new ArrayList<>();
-            result.addAll(shared.getAllInstances(contractOrImpl));
-            result.addAll(forApplication.getAllInstances(contractOrImpl));
-            return result;
+            return Stream.concat(
+                    shared.<T>getAllInstances(contractOrImpl).stream(),
+                    forApplication.<T>getAllInstances(contractOrImpl).stream())
+                    .collect(Collectors.toList());
         }
 
         @Override
@@ -235,6 +239,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
             try {
                 shared.inject(injectMe);
             } catch (Throwable t) {
+                LOGGER.warning(() -> "Injection failed for " + injectMe + " using shared");
                 forApplication.inject(injectMe);
             }
         }
@@ -244,6 +249,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
             try {
                 shared.inject(injectMe, classAnalyzer);
             } catch (Throwable t) {
+                LOGGER.warning(() -> "Injection failed for " + injectMe + " using shared");
                 forApplication.inject(injectMe, classAnalyzer);
             }
         }
@@ -311,16 +317,14 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
          */
         @SuppressWarnings("unchecked")
         private boolean returnedByApplication(Binding binding) {
-            if (Singleton.class.equals(binding.getScope())) {
-                try {
-                    InstanceBinding<?> instanceBinding = (InstanceBinding<?>) binding;
-                    return getSingletons().contains(instanceBinding.getService());
-                } catch (Exception e) {
-                    return false;
-                }
-            } else {
-                return binding.getContracts().stream().anyMatch(c -> getClasses().contains(c));
+            // Check singleton binding first
+            if (Singleton.class.equals(binding.getScope()) && binding instanceof InstanceBinding<?>) {
+                InstanceBinding<?> instanceBinding = (InstanceBinding<?>) binding;
+                return getSingletons().contains(instanceBinding.getService());
             }
+
+            // Check any contract is returned by getClasses()
+            return binding.getContracts().stream().anyMatch(c -> getClasses().contains(c));
         }
     }
 

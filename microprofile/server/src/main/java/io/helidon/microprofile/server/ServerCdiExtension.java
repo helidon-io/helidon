@@ -227,8 +227,9 @@ public class ServerCdiExtension implements Extension {
         if (jaxRsApplications.isEmpty()) {
             LOGGER.warning("There are no JAX-RS applications or resources. Maybe you forgot META-INF/beans.xml file?");
         } else {
-            InjectionManager injectionManager = Injections.createInjectionManager();
-            jaxRsApplications.forEach(it -> addApplication(jaxRs, it, injectionManager));
+            // Creates a shared injection manager if more than one application
+            InjectionManager shared = jaxRsApplications.size() > 1 ? Injections.createInjectionManager() : null;
+            jaxRsApplications.forEach(it -> addApplication(jaxRs, it, shared));
         }
     }
 

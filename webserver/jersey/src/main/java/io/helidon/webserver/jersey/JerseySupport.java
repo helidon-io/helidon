@@ -59,6 +59,7 @@ import io.opentracing.SpanContext;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.internal.MapPropertiesDelegate;
 import org.glassfish.jersey.internal.inject.InjectionManager;
+import org.glassfish.jersey.internal.inject.Injections;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.server.ApplicationHandler;
 import org.glassfish.jersey.server.ContainerRequest;
@@ -148,7 +149,9 @@ public class JerseySupport implements Service {
         }
         this.handler = new JerseyHandler(builder.resourceConfig);
         this.appHandler = new ApplicationHandler(builder.resourceConfig, new ServerBinder(executorService),
-                new InjectionManagerWrapper(builder.injectionManager, builder.resourceConfig));
+                builder.injectionManager != null
+                        ? new InjectionManagerWrapper(builder.injectionManager, builder.resourceConfig)
+                        : Injections.createInjectionManager());     // single JAX-RS application
         this.container = new HelidonJerseyContainer(appHandler, builder.resourceConfig);
 
         // This configuration via system properties is for the Jersey Client API. Any
