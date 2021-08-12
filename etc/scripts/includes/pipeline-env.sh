@@ -63,7 +63,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
 
     if [ -n "${JENKINS_HOME}" ] ; then
         export PIPELINE="true"
-        export JAVA_HOME="/tools/jdk11"
+        export JAVA_HOME="/tools/jdk-11.0.12"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.showDateTime=true"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS"
