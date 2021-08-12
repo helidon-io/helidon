@@ -94,6 +94,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/HelloWorldAsyncResponseTest.java</exclude>
+                                <exclude>**/TestMetricsOnOwnSocket.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -106,6 +107,7 @@
                         <configuration>
                             <includes>
                                 <include>**/HelloWorldAsyncResponseTest.java</include>
+                                <include>**/TestMetricsOnOwnSocket.java</include>
                             </includes>
                         </configuration>
                     </execution>

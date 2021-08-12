@@ -35,7 +35,8 @@ import io.helidon.webserver.cors.CrossOriginConfig;
  *     </ul>
  *
  * <p>
- *     Concrete implementations must implement {@link #postConfigureEndpoint(Routing.Rules)} to do any service-specific routing.
+ *     Concrete implementations must implement {@link #postConfigureEndpoint(Routing.Rules, Routing.Rules)} to do any
+ *     service-specific routing.
  *     See also the {@link Builder} information for possible additional overrides.
  * </p>
  *
@@ -60,27 +61,43 @@ public abstract class HelidonRestServiceSupport implements Service {
     }
 
     /**
+     * Avoid using this obsolete method. Use {@link #configureEndpoint(Routing.Rules, Routing.Rules)} instead. (Neither method
+     * should typically invoked directly from user code.)
+     *
+     * @param rules routing rules (also accepts
+     * {@link io.helidon.webserver.Routing.Builder}
+     */
+    @Deprecated
+    public final void configureEndpoint(Routing.Rules rules) {
+        configureEndpoint(rules, rules);
+    }
+
+    /**
      * Configures service endpoint on the provided routing rules. This method
      * just adds the endpoint path (as defaulted or configured).
      * This method is exclusive to
      * {@link #update(io.helidon.webserver.Routing.Rules)} (e.g. you should not
      * use both, as otherwise you would register the endpoint twice)
      *
-     * @param rules routing rules (also accepts
-     * {@link io.helidon.webserver.Routing.Builder}
+     * @param defaultRules default routing rules (also accepts {@link io.helidon.webserver.Routing.Builder}
+     * @param serviceEndpointRoutingRules actual rules (if different from default) for the service endpoint
      */
-    public final void configureEndpoint(Routing.Rules rules) {
+    public final void configureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules) {
         // CORS first
-        rules.any(context, corsEnabledServiceHelper.processor());
-        postConfigureEndpoint(rules);
+        defaultRules.any(context, corsEnabledServiceHelper.processor());
+        if (defaultRules != serviceEndpointRoutingRules) {
+            serviceEndpointRoutingRules.any(context, corsEnabledServiceHelper.processor());
+        }
+        postConfigureEndpoint(defaultRules, serviceEndpointRoutingRules);
     }
 
     /**
      * Concrete implementations override this method to perform any service-specific routing set-up.
      *
-     * @param rules {@code Routing.Rules} to be updated
+     * @param defaultRules default {@code Routing.Rules} to be updated
+     * @param serviceEndpointRoutingRules actual rules (if different from the default ones) to be updated for the service endpoint
      */
-    protected abstract void postConfigureEndpoint(Routing.Rules rules);
+    protected abstract void postConfigureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules);
 
     protected String context() {
         return context;
