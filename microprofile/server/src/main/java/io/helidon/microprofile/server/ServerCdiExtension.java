@@ -157,9 +157,8 @@ public class ServerCdiExtension implements Extension {
         if (!routingsWithKPIMetrics.contains(routing)) {
             routingsWithKPIMetrics.add(routing);
             routing.any(KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
-            LOGGER.finer(() ->
-                    "Adding deferrable request KPI metrics context for routing with name '"
-                            + namedRouting.orElse("<unnamed>"));
+            LOGGER.finer(() -> String.format("Adding deferrable request KPI metrics context for routing with name '%s'",
+                            namedRouting.orElse("<unnamed>")));
         }
     }
 
