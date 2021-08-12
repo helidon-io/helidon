@@ -29,7 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 class SerializationConfigTest {
     @Test
-    void testDefaults() throws Exception {
+    void testDefaults() {
         SerializationConfig serializationConfig = SerializationConfig.builder().build();
 
         SerializationConfig.ConfigOptions options = serializationConfig.options();

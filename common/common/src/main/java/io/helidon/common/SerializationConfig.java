@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
  *     <td>{@link #PROP_WRONG_CONFIG_ACTION}</td>
  *     <td>{@code warn} - {@link io.helidon.common.SerializationConfig.Action#WARN}</td>
  *     <td>{@code fail} - {@link io.helidon.common.SerializationConfig.Action#FAIL}</td>
- *     <td>What to do if an existing global deserialization filter exists without a global blacklist.</td>
+ *     <td>What to do if an existing global deserialization filter exists without a global reject-list.</td>
  * </tr>
  * <tr>
  *     <td>{@link #PROP_NO_CONFIG_ACTION}</td>
@@ -62,16 +62,16 @@ import java.util.stream.Collectors;
  * Last option (not used by default) is to {@code ignore} the problem and do nothing (can be used both with wrong config
  * and no config above).
  * <h2>Deserialization filtering in Helidon</h2>
- * Helidon serialization filter is implemented to support whitelists, automatically blacklisting
+ * Helidon serialization filter is implemented to support allow-lists, automatically rejecting
  * all classes.
  * Helidon restrictions are only enforced on the global filter.
  * <h3>Custom pattern</h3>
  * To add patterns to the serial filter, use a system property {@value #PROP_PATTERN}.
- * This pattern follows the rules as defined by JDK. Helidon will add exclude all as the last
- * pattern.
+ * This pattern follows the rules as defined by JDK. Helidon will add reject all as the last
+ * pattern if it is not already defined by it.
  * <p>
  * As an alternative, a file {@link #PROPERTY_FILE} can be created on the classpath with the following content, to
- * configure filter for a specific library. Do not add a global blacklist to these patterns!:
+ * configure filter for a specific library. Do not add a global reject to these patterns!:
  * {@code pattern=oracle.sql.converter.*}
  * <h3>Deserialization tracing</h3>
  * A tracing filter can be configured using system property {@value #PROP_TRACE} to log information
@@ -93,9 +93,12 @@ public final class SerializationConfig {
     static final String PROP_PATTERN = "helidon.serialFilter.pattern";
     static final String PROP_TRACE = "helidon.serialFilter.trace";
     static final String PROP_IGNORE_FILES = "helidon.serialFilter.ignoreFiles";
-    private static final Logger LOGGER = Logger.getLogger(SerializationConfig.class.getName());
+
     private static final String PROPERTY_FILE = "META-INF/helidon/serial-config.properties";
+    private static final String REJECT_ALL_PATTERN = "!*";
+    private static final Logger LOGGER = Logger.getLogger(SerializationConfig.class.getName());
     private static final AtomicReference<ConfigOptions> EXISTING_CONFIG = new AtomicReference<>();
+
     private final ConfigOptions options;
 
     private SerializationConfig(Builder builder) {
@@ -229,24 +232,29 @@ public final class SerializationConfig {
             });
             if (status == ObjectInputFilter.Status.ALLOWED || status == ObjectInputFilter.Status.UNDECIDED) {
                 handleBadFilter(action,
-                                "Custom JDK Serialization Filter is not configured to blacklist all classes. "
-                                        + "Helidon can only run with whitelists. Please add '!*' as the last "
-                                        + "pattern.");
+                                "Custom JDK Serialization Filter is not configured to reject all classes. "
+                                        + "Helidon can only run with allow-list. Please add '"
+                                        + REJECT_ALL_PATTERN + "' as the last pattern.");
             }
         } else {
             LOGGER.finest("System property filter configured: " + currentFilterString);
-            // make sure blacklist is for all
-            if (currentFilterString.startsWith("!*;")
-                    || currentFilterString.contains(";!*;")
-                    || currentFilterString.endsWith(";!*")
-                    || currentFilterString.equals("!*")) {
+            // make sure reject-list is for all
+            if (hasRejectAll(currentFilterString)) {
                 // this is OK
                 return;
             }
             handleBadFilter(action,
-                            "jdk.serialFilter is configured without blacklisting all other classes. Helidon "
-                                    + "can only run with whitelists. Please add '!*' as the last pattern.");
+                            "jdk.serialFilter is configured without rejecting all other classes. Helidon "
+                                    + "can only run with allow-lists. Please add '"
+                                    + REJECT_ALL_PATTERN + "' as the last pattern.");
         }
+    }
+
+    private static boolean hasRejectAll(String pattern) {
+        return pattern.startsWith(REJECT_ALL_PATTERN + ";")
+                || pattern.contains(";" + REJECT_ALL_PATTERN + ";")
+                || pattern.endsWith(";" + REJECT_ALL_PATTERN)
+                || pattern.equals(REJECT_ALL_PATTERN);
     }
 
     private void handleBadFilter(Action action, String message) {
@@ -296,12 +304,7 @@ public final class SerializationConfig {
     }
 
     private ObjectInputFilter emptyFilter() {
-        return new ObjectInputFilter() {
-            @Override
-            public Status checkInput(FilterInfo filterInfo) {
-                return Status.UNDECIDED;
-            }
-        };
+        return filterInfo -> ObjectInputFilter.Status.UNDECIDED;
     }
 
     private void configureGlobalFilter(ConfigOptions options) {
@@ -442,6 +445,8 @@ public final class SerializationConfig {
 
         /**
          * Filter pattern to use.
+         * If the pattern does not contain a global reject pattern, it will be added
+         * as the last section of the pattern.
          *
          * @param filterPattern filter pattern
          * @return updated builder
@@ -482,14 +487,20 @@ public final class SerializationConfig {
                     throw new IllegalArgumentException("jdk.serialFilter system property is configured and an explicit"
                                                                + " filter pattern is configured as well. This is not supported.");
                 }
-                return "!*";
+                // if the system property gets defined, our own configuration will be ignored
+                // as the global filter will be built by JRE
+                return REJECT_ALL_PATTERN;
             }
 
             if (ignoreFiles) {
                 if (filterPattern == null || filterPattern.isBlank()) {
-                    return "!*";
+                    return REJECT_ALL_PATTERN;
                 }
-                return filterPattern + ";!*";
+                if (hasRejectAll(filterPattern)) {
+                    // we do not want to add it if already present
+                    return filterPattern;
+                }
+                return filterPattern + ";" + REJECT_ALL_PATTERN;
             }
 
             List<String> parts = new LinkedList<>();
@@ -519,7 +530,9 @@ public final class SerializationConfig {
             if (!(filterPattern == null || filterPattern.isBlank())) {
                 parts.add(filterPattern.trim());
             }
-            parts.add("!*");
+            if (!parts.contains(REJECT_ALL_PATTERN)) {
+                parts.add(REJECT_ALL_PATTERN);
+            }
 
             return String.join(";", parts);
         }
