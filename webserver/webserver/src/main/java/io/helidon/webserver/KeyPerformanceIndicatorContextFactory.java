@@ -69,15 +69,32 @@ class KeyPerformanceIndicatorContextFactory {
     private static class DeferrableRequestContext extends ImmediateRequestContext
             implements KeyPerformanceIndicatorSupport.DeferrableRequestContext {
 
+        private boolean isStartRecorded = false;
+
         @Override
         public void requestHandlingStarted(Metrics kpiMetrics) {
             kpiMetrics(kpiMetrics);
+            recordStartTime(); // In case no handler in the chain manages the start-of-processing moment.
             kpiMetrics.onRequestReceived();
         }
 
         @Override
         public void requestProcessingStarted() {
-            recordStartTime();
+            recordStartTime(); // Overwrite the previously-recorded, provisional start time, now that we have a real one.
+            recordProcessingStarted();
+        }
+
+        @Override
+        public void requestProcessingCompleted(boolean isSuccessful) {
+            // No handler explicitly dealt with start-of-processing, so approximate it based on request receipt time.
+            if (!isStartRecorded) {
+                recordProcessingStarted();
+            }
+            super.requestProcessingCompleted(isSuccessful);
+        }
+
+        private void recordProcessingStarted() {
+            isStartRecorded = true;
             Metrics kpiMetrics = kpiMetrics();
             if (kpiMetrics != null) {
                 kpiMetrics().onRequestStarted();
