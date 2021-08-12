@@ -1,0 +1,92 @@
+[
+    {
+        "name": "ch.qos.logback.core.status.OnConsoleStatusListener",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.core.rolling.RollingFileAppender",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.core.rolling.TimeBasedRollingPolicy",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.core.hook.DelayingShutdownHook",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.classic.AsyncAppender",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.core.rolling.helper.DateTokenConverter",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.classic.pattern.DateConverter",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.classic.pattern.MethodOfCallerConverter",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.classic.pattern.LineOfCallerConverter",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.classic.pattern.RootCauseFirstThrowableProxyConverter",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.classic.pattern.LineSeparatorConverter",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.classic.pattern.MessageConverter",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.classic.pattern.ClassOfCallerConverter",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.classic.pattern.color.HighlightingCompositeConverter",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.classic.pattern.LevelConverter",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.classic.encoder.PatternLayoutEncoder",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.core.ConsoleAppender",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "ch.qos.logback.classic.pattern.MDCConverter",
+        "allPublicMethods": true,
+        "allPublicConstructors": true
+    }
+]

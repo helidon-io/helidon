@@ -2,5 +2,9 @@
     {
         "name": "org.eclipse.jgit.internal.JGitText",
         "allPublicConstructors": true
+    },
+    {
+        "name": "org.eclipse.jgit.lib.CoreConfig$LogRefUpdates",
+        "allPublicMethods": true
     }
 ]
