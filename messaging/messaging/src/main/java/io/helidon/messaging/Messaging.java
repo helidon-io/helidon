@@ -19,6 +19,8 @@ package io.helidon.messaging;
 import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
@@ -210,8 +212,11 @@ public interface Messaging {
         public <PAYLOAD> Builder listener(Channel<PAYLOAD> channel,
                                           Consumer<? super PAYLOAD> consumer) {
             this.messaging.registerChannel(channel);
+            Logger logger = Logger.getLogger(Messaging.class.getName());
             channel.setSubscriber(Builder.<PAYLOAD>unwrapProcessorBuilder()
-                    .forEach(consumer)
+                    .peek(consumer)
+                    .onError(t -> logger.log(Level.SEVERE, "Error detected in channel " + channel.name(), t))
+                    .ignore()
                     .build());
             return this;
         }
