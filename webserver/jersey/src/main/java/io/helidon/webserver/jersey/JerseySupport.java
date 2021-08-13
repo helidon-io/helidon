@@ -149,9 +149,8 @@ public class JerseySupport implements Service {
         }
         this.handler = new JerseyHandler(builder.resourceConfig);
         this.appHandler = new ApplicationHandler(builder.resourceConfig, new ServerBinder(executorService),
-                builder.injectionManager != null
-                        ? new InjectionManagerWrapper(builder.injectionManager, builder.resourceConfig)
-                        : Injections.createInjectionManager());     // single JAX-RS application
+                builder.injectionManager == null ? null         // single JAX-RS application
+                        : new InjectionManagerWrapper(builder.injectionManager, builder.resourceConfig));
         this.container = new HelidonJerseyContainer(appHandler, builder.resourceConfig);
 
         // This configuration via system properties is for the Jersey Client API. Any

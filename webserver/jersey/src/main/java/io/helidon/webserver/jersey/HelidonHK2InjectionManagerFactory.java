@@ -42,7 +42,8 @@ import org.glassfish.jersey.server.ResourceConfig;
 /**
  * Overrides the injection manager factory from Jersey and provides a new implementation
  * of {@code InjectionManager}. This new injection manager will separate registrations
- * for those global (shared) providers and those returned by calling {@code getClasses}.
+ * for those global (shared) providers and those returned by calling {@code getClasses}
+ * and {@code getSingletons}.
  *
  * This separation is necessary to properly associate providers with JAX-RS applications,
  * of which there could be more than one in Helidon.
@@ -55,7 +56,6 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
     public InjectionManager create(Object parent) {
         InjectionManager result;
 
-        // If no parent, create manager single JAX-RS app or shared multiple JAX-RS apps
         if (parent == null) {
             result = super.create(null);
             LOGGER.finest(() -> "Creating injection manager " + result);
