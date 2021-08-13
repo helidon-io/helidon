@@ -70,30 +70,29 @@ public class TestExtendedKPIMetrics {
                 .submit();
 
         // Now wait for both requests to finish.
-        Response response1 = response1Future.get();
-        Response response2 = response2Future.get();
+        try (Response response1 = response1Future.get(); Response response2 = response2Future.get()) {
+            assertThat("Access to GET response 1", response1.getStatus(), is(Http.Status.OK_200.code()));
+            assertThat("Access to GET response 2", response2.getStatus(), is(Http.Status.OK_200.code()));
+        }
 
-        assertThat("Access to GET response 1", response1.getStatus(), is(Http.Status.OK_200.code()));
-        assertThat("Access to GET response 2", response2.getStatus(), is(Http.Status.OK_200.code()));
-
-        Response metricsResponse = webTarget
+        try (Response metricsResponse = webTarget
                 .path("metrics/vendor")
                 .request()
                 .accept(MediaType.APPLICATION_JSON_TYPE)
-                .get();
+                .get()) {
 
-        assertThat("Metrics /metrics/vendor URL HTTP status", metricsResponse.getStatus(), is(Http.Status.OK_200.code()));
+            assertThat("Metrics /metrics/vendor URL HTTP status", metricsResponse.getStatus(), is(Http.Status.OK_200.code()));
 
-        JsonObject vendorMetrics = metricsResponse.readEntity(JsonObject.class);
+            JsonObject vendorMetrics = metricsResponse.readEntity(JsonObject.class);
 
-        assertThat("Extended KPI metric requests.deferred present", vendorMetrics.containsKey("requests.deferred"),
-                is(true));
+            assertThat("Extended KPI metric requests.deferred present", vendorMetrics.containsKey("requests.deferred"),
+                    is(true));
 
-        JsonObject requestsDeferred = vendorMetrics.getJsonObject("requests.deferred");
-        assertThat("requests.deferred", requestsDeferred, is(notNullValue()));
+            JsonObject requestsDeferred = vendorMetrics.getJsonObject("requests.deferred");
+            assertThat("requests.deferred", requestsDeferred, is(notNullValue()));
 
-        int deferredCount = requestsDeferred.getInt("count");
-        assertThat("Extended KPI metric requests.deferred->count value", deferredCount, is(greaterThan(0)));
-
+            int deferredCount = requestsDeferred.getInt("count");
+            assertThat("Extended KPI metric requests.deferred->count value", deferredCount, is(greaterThan(0)));
+        }
     }
 }
