@@ -43,6 +43,7 @@
         <version.lib.apache-httpclient>4.5.13</version.lib.apache-httpclient>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0.2</version.lib.cdi-api>
+        <version.lib.reactivestreams>1.0.3</version.lib.reactivestreams>
         <!-- commons-codec is for dependency convergence only -->
         <version.lib.commons-codec>1.15</version.lib.commons-codec>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
@@ -128,8 +129,6 @@
         <version.lib.persistence-api>2.2.3</version.lib.persistence-api>
         <version.lib.postgresql>42.2.18</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
-        <version.lib.reactive-streams-tck>1.0.3</version.lib.reactive-streams-tck>
-        <version.lib.reactivestreams>1.0.3</version.lib.reactivestreams>
         <version.lib.slf4j>1.7.30</version.lib.slf4j>
         <version.lib.smallrye-openapi>1.2.3</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>1.27</version.lib.snakeyaml>
@@ -1067,6 +1066,16 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>org.reactivestreams</groupId>
+                <artifactId>reactive-streams</artifactId>
+                <version>${version.lib.reactivestreams}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.reactivestreams</groupId>
+                <artifactId>reactive-streams-tck</artifactId>
+                <version>${version.lib.reactivestreams}</version>
+            </dependency>
             <!-- END OF Section 1: direct third party dependencies -->
 
             <!-- Section 2: third party dependencies used by examples -->
@@ -1219,11 +1228,6 @@
                 <version>${version.lib.google-error-prone}</version>
             </dependency>
             <dependency>
-                <groupId>org.reactivestreams</groupId>
-                <artifactId>reactive-streams</artifactId>
-                <version>${version.lib.reactivestreams}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.jboss.spec.javax.transaction</groupId>
                 <artifactId>jboss-transaction-api_1.2_spec</artifactId>
                 <version>${version.lib.jboss.transaction-api}</version>
@@ -1334,11 +1338,6 @@
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
                 <version>${version.lib.hamcrest}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.reactivestreams</groupId>
-                <artifactId>reactive-streams-tck</artifactId>
-                <version>${version.lib.reactive-streams-tck}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.activemq</groupId>
