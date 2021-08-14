@@ -28,7 +28,7 @@ module io.helidon.microprofile.openapi {
     requires io.helidon.microprofile.server;
     requires io.helidon.openapi;
 
-    requires jandex;
+    requires org.jboss.jandex;
 
     exports io.helidon.microprofile.openapi;
 
