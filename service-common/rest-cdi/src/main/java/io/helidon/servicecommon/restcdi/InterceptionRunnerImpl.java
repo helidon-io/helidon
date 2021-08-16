@@ -79,7 +79,9 @@ class InterceptionRunnerImpl implements InterceptionRunner {
             InvocationContext context,
             Iterable<T> workItems,
             PreInvocationHandler<T> preInvocationHandler) throws Exception {
-        workItems.forEach(workItem -> preInvocationHandler.accept(context, workItem));
+        for (T workItem : workItems) {
+            preInvocationHandler.accept(context, workItem);
+        }
         return context.proceed();
     }
 
@@ -89,7 +91,9 @@ class InterceptionRunnerImpl implements InterceptionRunner {
             Iterable<T> workItems,
             PreInvocationHandler<T> preInvocationHandler,
             PostCompletionHandler<T> postCompletionHandler) throws Exception {
-        workItems.forEach(workItem -> preInvocationHandler.accept(context, workItem));
+        for (T workItem : workItems) {
+            preInvocationHandler.accept(context, workItem);
+        }
 
         Object result = null;
         Exception exceptionFromContextProceed = null;
@@ -138,7 +142,9 @@ class InterceptionRunnerImpl implements InterceptionRunner {
             // use it in the completion callback. Any other null argument would trigger an NPE from the current call stack.
             Objects.requireNonNull(postCompletionHandler, "postCompletionHandler");
 
-            workItems.forEach(workItem -> preInvocationHandler.accept(context, workItem));
+            for (T workItem : workItems) {
+                preInvocationHandler.accept(context, workItem);
+            }
 
             Object[] params = context.getParameters();
             AsyncResponse asyncResponse = AsyncResponse.class.cast(context.getParameters()[asyncResponseSlot]);
@@ -318,15 +324,17 @@ class InterceptionRunnerImpl implements InterceptionRunner {
     }
 
     private static int asyncResponseSlot(Method interceptedMethod) {
-        return ASYNC_RESPONSE_SLOTS.computeIfAbsent(interceptedMethod, executable -> {
-            int newResult = 0;
-            for (Parameter p : interceptedMethod.getParameters()) {
-                if (AsyncResponse.class.isAssignableFrom(p.getType()) && p.getAnnotation(Suspended.class) != null) {
-                    return newResult;
-                }
-                newResult++;
+        return ASYNC_RESPONSE_SLOTS.computeIfAbsent(interceptedMethod, InterceptionRunnerImpl::computeAsyncResponseSlot);
+    }
+
+    private static int computeAsyncResponseSlot(Method interceptedMethod) {
+        int newResult = 0;
+        for (Parameter p : interceptedMethod.getParameters()) {
+            if (AsyncResponse.class.isAssignableFrom(p.getType()) && p.getAnnotation(Suspended.class) != null) {
+                return newResult;
             }
-            return -1;
-        });
+            newResult++;
+        }
+        return -1;
     }
 }
