@@ -45,7 +45,7 @@ abstract class MetricsInterceptorBase<M extends Metric> extends HelidonIntercept
     static final Logger LOGGER = Logger.getLogger(MetricsInterceptorBase.class.getName());
 
     private final Class<? extends Annotation> annotationType;
-    private final Class<M> metricType;
+    protected final Class<M> metricType;
 
     @Inject
     private MetricsCdiExtension extension;
@@ -79,10 +79,11 @@ abstract class MetricsInterceptorBase<M extends Metric> extends HelidonIntercept
 
     @Override
     public void preInvocation(InvocationContext context, MetricWorkItem workItem) {
-        invokeVerifiedAction(context, workItem, this::preInvoke, ActionType.PREINVOKE);
+        verifyMetric(context, workItem, ActionType.PREINVOKE);
+        preInvoke(metricType.cast(workItem.metric()));
     }
 
-    void invokeVerifiedAction(InvocationContext context, MetricWorkItem workItem, Consumer<M> action, ActionType actionType) {
+    void verifyMetric(InvocationContext context, MetricWorkItem workItem, ActionType actionType) {
         Metric metric = workItem.metric();
         if (Registry.isMarkedAsDeleted(metric)) {
             throw new IllegalStateException("Attempt to use previously-removed metric" + workItem.metricID());
@@ -95,7 +96,6 @@ abstract class MetricsInterceptorBase<M extends Metric> extends HelidonIntercept
                             .getSimpleName(), workItem.metricID(),
                     context.getMethod() != null ? context.getMethod() : context.getConstructor(), annotationType.getSimpleName()));
         }
-        action.accept(metricType.cast(metric));
     }
 
     abstract void preInvoke(M metric);
@@ -118,7 +118,8 @@ abstract class MetricsInterceptorBase<M extends Metric> extends HelidonIntercept
 
         @Override
         public void postCompletion(InvocationContext context, Throwable throwable, MetricWorkItem workItem) {
-            invokeVerifiedAction(context, workItem, this::postComplete, ActionType.COMPLETE);
+            verifyMetric(context, workItem, ActionType.COMPLETE);
+            postComplete(metricType.cast(workItem.metric()));
         }
 
         abstract void postComplete(T metric);
