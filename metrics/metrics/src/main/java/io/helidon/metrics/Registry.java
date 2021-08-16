@@ -89,7 +89,7 @@ public class Registry extends MetricRegistry {
      * @return true if it's a Helidon metric and has been marked as deleted; false otherwise
      */
     public static boolean isMarkedAsDeleted(Metric metric) {
-        return HelidonMetric.class.isInstance(metric)
+        return (metric instanceof HelidonMetric)
                 && ((HelidonMetric) metric).isDeleted();
     }
 
