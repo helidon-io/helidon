@@ -46,7 +46,7 @@ import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.interceptor.Interceptor;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
+import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Routing;
@@ -239,23 +239,11 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
         Config config = ((Config) ConfigProvider.getConfig()).get(configPrefix);
         serviceSupport = serviceSupportFactory.apply(config);
 
-        ConfigValue<String> routingNameConfig = config.get("routing")
-                .asString();
-        Routing.Builder defaultRouting = server.serverRoutingBuilder();
+        RoutingBuilders routingBuilders = RoutingBuilders.create(config);
 
-        Routing.Builder endpointRouting = defaultRouting;
+        serviceSupport.configureEndpoint(routingBuilders.defaultRoutingBuilder(), routingBuilders.routingBuilder());
 
-        if (routingNameConfig.isPresent()) {
-            String routingName = routingNameConfig.get();
-            // support for overriding this back to default routing using config
-            if (!"@default".equals(routingName)) {
-                endpointRouting = server.serverNamedRoutingBuilder(routingName);
-            }
-        }
-
-        serviceSupport.configureEndpoint(endpointRouting);
-
-        return defaultRouting;
+        return routingBuilders.defaultRoutingBuilder();
     }
 
     protected T serviceSupport() {

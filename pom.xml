@@ -74,8 +74,6 @@
         <version.lib.testng>6.13.1</version.lib.testng>
         <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
         <version.lib.bedrock>5.0.11</version.lib.bedrock>
-        <version.lib.okhttp3>3.14.1</version.lib.okhttp3>
-        <version.lib.okio>1.17.2</version.lib.okio>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
         <version.lib.weld-junit>2.0.0.Final</version.lib.weld-junit>
         <version.lib.jmh>1.23</version.lib.jmh>
@@ -102,7 +100,7 @@
         <version.plugin.helidon-build-tools>2.2.1</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
-        <version.plugin.jandex>1.0.6</version.plugin.jandex>
+        <version.plugin.jandex>1.1.0</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.javadoc>3.3.0</version.plugin.javadoc>
         <version.plugin.jaxb>0.14.0</version.plugin.jaxb>
@@ -1067,23 +1065,6 @@
                         <artifactId>bsh</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp</artifactId>
-                <version>${version.lib.okhttp3}</version>
-            </dependency>
-            <dependency>
-                <!-- required for dependency convergence
-                used from both
-                com.squareup.okhttp3:mockwebserver:3.13.1
-                com.squareup.moshi:moshi:1.8.0
-                both referenced by
-                io.zipkin.zipkin2:zipkin-junit:2.12.5
-                -->
-                <groupId>com.squareup.okio</groupId>
-                <artifactId>okio</artifactId>
-                <version>${version.lib.okio}</version>
             </dependency>
             <dependency>
                 <groupId>org.awaitility</groupId>
