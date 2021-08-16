@@ -1038,7 +1038,7 @@ public final class OidcConfig {
                                                  null);
                     if (null != jwkUri) {
                         if ("idcs".equals(serverType)) {
-                            this.signJwk = IdcsSupport.signJwk(webClient, tokenEndpointUri, collector, jwkUri);
+                            this.signJwk = IdcsSupport.signJwk(appWebClient, webClient, tokenEndpointUri, jwkUri);
                         } else {
                             this.signJwk = JwkKeys.builder()
                                     .resource(Resource.create(jwkUri))

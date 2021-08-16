@@ -17,20 +17,15 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 import javax.json.JsonObject;
 
-import io.helidon.common.Errors;
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.reactive.Single;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 
 /**
@@ -40,8 +35,12 @@ class IdcsSupport {
     // prevent instantiation
     private IdcsSupport() {
     }
-    // load signature jwk with a token
-    static JwkKeys signJwk(WebClient generalClient, URI tokenEndpointUri, Errors.Collector collector, URI signJwkUri) {
+
+    // load signature jwk with a token, blocking operation
+    static JwkKeys signJwk(WebClient appWebClient,
+                           WebClient generalClient,
+                           URI tokenEndpointUri,
+                           URI signJwkUri) {
         //  need to get token to be able to request this endpoint
         FormParams form = FormParams.builder()
                 .add("grant_type", "client_credentials")
@@ -49,7 +48,8 @@ class IdcsSupport {
                 .build();
 
         try {
-            WebClientResponse response = generalClient.post()
+            WebClientResponse response = appWebClient.post()
+                    .uri(tokenEndpointUri)
                     .accept(MediaType.APPLICATION_JSON)
                     .submit(form)
                     .await();
@@ -62,51 +62,27 @@ class IdcsSupport {
                 String accessToken = json.getString("access_token");
 
                 // get the jwk from server
-                JsonObject jwkJson = generalClient.target(signJwkUri)
-                        .request()
-                        .header("Authorization", "Bearer " + accessToken)
-                        .get(JsonObject.class);
+                JsonObject jwkJson = generalClient.get()
+                        .uri(signJwkUri)
+                        .headers(it -> {
+                            it.add(Http.Header.AUTHORIZATION, "Bearer " + accessToken);
+                            return it;
+                        })
+                        .request(JsonObject.class)
+                        .await();
 
                 return JwkKeys.create(jwkJson);
             } else {
                 String errorEntity = response.content()
                         .as(String.class)
                         .await();
+                throw new SecurityException("Failed to read JWK from IDCS. Status: " + response.status()
+                                                    + ", entity: " + errorEntity);
             }
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
             throw new SecurityException("Failed to read JWK from IDCS", e);
         }
-    }
-
-    static Single<Void> processJsonSubmit(WebClientRequestBuilder request,
-                                          Object toSubmit,
-                                          Consumer<JsonObject> jsonProcessor,
-                                          BiConsumer<Http.ResponseStatus, String> errorEntityProcessor,
-                                          BiConsumer<Throwable, String> errorProcessor) {
-
-        return request.submit(toSubmit)
-                .peek(response -> {
-                    if (response.status().family() == Http.ResponseStatus.Family.SUCCESSFUL) {
-                        response.content()
-                                .as(JsonObject.class)
-                                .forSingle(jsonProcessor)
-                                .exceptionallyAccept(t -> errorProcessor.accept(t,
-                                                                                "Failed to read JSON from IDCS JWK request."));
-                    } else {
-                        response.content()
-                                .as(String.class)
-                                .forSingle(it -> errorEntityProcessor.accept(response.status(), it))
-                                .exceptionallyAccept(t -> errorProcessor.accept(t,
-                                                                                "Failed to read error entity from "
-                                                                                        + "IDCS JWK response."));
-                    }
-                })
-                .onErrorResumeWithSingle(t -> {
-                    errorProcessor.accept(t, "Failed to invoke IDCS JWK request");
-                    return Single.empty();
-                })
-                .flatMapSingle(it -> Single.empty());
     }
 }
