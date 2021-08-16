@@ -277,7 +277,7 @@ public class BytesReuseTest {
     public void unconsumedPostRequestPayloadGetsReleased() throws Exception {
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             s.request(Http.Method.POST, "/unconsumed?test=myData", "myData" + longData(100_000).toString());
-            assertThat(s.receive(), endsWith("Nothing consumed!\n0\n\n"));
+            assertThat(s.receive(), endsWith("Nothing consumed!\n0\nConnection: close\n\n"));
         }
         assertChunkReferencesAreReleased();
     }

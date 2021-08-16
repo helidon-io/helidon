@@ -37,6 +37,7 @@ import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -87,8 +88,10 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private long actualPayloadSize;
     private boolean ignorePayload;
 
+    private CompletableFuture<ChannelFutureListener> requestDrained;
     private CompletableFuture<?> prevRequestFuture;
     private boolean lastContent;
+    private boolean hadContentAlready;
     private final Runnable clearQueues;
 
     ForwardingHandler(Routing routing,
@@ -109,6 +112,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
     private void reset() {
         lastContent = false;
+        hadContentAlready = false;
         isWebSocketUpgrade = false;
         actualPayloadSize = 0L;
         ignorePayload = false;
@@ -144,6 +148,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     @SuppressWarnings("checkstyle:methodlength")
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof HttpRequest) {
+            hadContentAlready = false;
             LOGGER.fine(() -> log("Received HttpRequest: %s", ctx, System.identityHashCode(msg)));
 
             // On new request, use chance to cleanup queues in HttpInitializer
@@ -238,9 +243,11 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 prevRequestFuture = null;
             }
 
+            requestDrained = new CompletableFuture<>();
             // Create response and handler for its completion
             BareResponseImpl bareResponse =
-                    new BareResponseImpl(ctx, request, publisher::isCompleted, prevRequestFuture, requestId);
+                    new BareResponseImpl(ctx, request, publisher::isCompleted, publisher::hasRequests,
+                                         prevRequestFuture, requestDrained, requestId);
             prevRequestFuture = new CompletableFuture<>();
             CompletableFuture<?> thisResp = prevRequestFuture;
             bareResponse.whenCompleted()
@@ -340,10 +347,20 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     requestContext.complete();
                     requestContext = null; // just to be sure that current http req/res session doesn't interfere with other ones
                 }
+                requestDrained.complete(ChannelFutureListener.CLOSE_ON_FAILURE);
             } else if (!content.isReadable()) {
                 // this is here to handle the case when the content is not readable but we didn't
                 // exceptionally complete the publisher and close the connection
                 throw new IllegalStateException("It is not expected to not have readable content.");
+            } else if (!requestContext.hasRequests() && HttpUtil.isKeepAlive(requestContext.request())) {
+                if (hadContentAlready) {
+                    requestDrained.complete(ChannelFutureListener.CLOSE);
+                } else {
+                    //We are draining the entity, but we cannot be sure if connection should be closed or not.
+                    //Next content has to be checked if it is last chunk. If not close connection.
+                    hadContentAlready = true;
+                    ctx.channel().read();
+                }
             }
         }
 
@@ -436,9 +453,8 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         response.headers().add(HttpHeaderNames.CONTENT_TYPE, "text/plain");
         response.headers().add(HttpHeaderNames.CONTENT_LENGTH, entity.length);
         response.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
-        ctx.write(response)
+        ctx.writeAndFlush(response)
                 .addListener(future -> {
-                    ctx.flush();
                     ctx.close();
                 });
         failPublisher(new Error("400: Bad request"));
@@ -451,9 +467,8 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
      */
     private void send413PayloadTooLarge(ChannelHandlerContext ctx) {
         FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, REQUEST_ENTITY_TOO_LARGE);
-        ctx.write(response)
+        ctx.writeAndFlush(response)
                 .addListener(future -> {
-                    ctx.flush();
                     ctx.close();
                 });
         failPublisher(new Error("413: Payload is too large"));

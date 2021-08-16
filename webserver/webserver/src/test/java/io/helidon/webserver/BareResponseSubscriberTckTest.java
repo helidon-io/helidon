@@ -16,7 +16,12 @@
 
 package io.helidon.webserver;
 
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
+
 import io.helidon.common.http.DataChunk;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -26,10 +31,6 @@ import io.netty.handler.codec.http.HttpVersion;
 import org.mockito.Mockito;
 import org.reactivestreams.tck.TestEnvironment;
 import org.reactivestreams.tck.flow.FlowSubscriberWhiteboxVerification;
-
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow;
 
 public class BareResponseSubscriberTckTest extends FlowSubscriberWhiteboxVerification<DataChunk> {
 
@@ -52,6 +53,8 @@ public class BareResponseSubscriberTckTest extends FlowSubscriberWhiteboxVerific
         return new BareResponseImpl(ctx,
                 httpRequest,
                 () -> true,
+                () -> false,
+                CompletableFuture.completedFuture(null),
                 CompletableFuture.completedFuture(null),
                 0L) {
             @Override

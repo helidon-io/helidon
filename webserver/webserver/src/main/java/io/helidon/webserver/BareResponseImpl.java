@@ -71,6 +71,8 @@ class BareResponseImpl implements BareResponse {
     private final CompletableFuture<BareResponse> responseFuture;
     private final CompletableFuture<BareResponse> headersFuture;
     private final BooleanSupplier requestContentConsumed;
+    private final BooleanSupplier contentRequested;
+    private final CompletableFuture<ChannelFutureListener> requestDrained;
     private final long requestId;
     private final String http2StreamId;
     private final HttpHeaders requestHeaders;
@@ -97,9 +99,13 @@ class BareResponseImpl implements BareResponse {
     BareResponseImpl(ChannelHandlerContext ctx,
                      HttpRequest request,
                      BooleanSupplier requestContentConsumed,
+                     BooleanSupplier contentRequested,
                      CompletableFuture<?> prevRequestChunk,
+                     CompletableFuture<ChannelFutureListener> requestDrained,
                      long requestId) {
         this.requestContentConsumed = requestContentConsumed;
+        this.contentRequested = contentRequested;
+        this.requestDrained = requestDrained;
         this.responseFuture = new CompletableFuture<>();
         this.headersFuture = new CompletableFuture<>();
         this.ctx = ctx;
@@ -260,17 +266,31 @@ class BareResponseImpl implements BareResponse {
         if (keepAlive) {
             LOGGER.finest(() -> log("Writing an empty last http content; keep-alive: true"));
 
-            writeLastContent(throwable, ChannelFutureListener.CLOSE_ON_FAILURE);
-
             if (!requestContentConsumed.getAsBoolean()) {
+                if (contentRequested.getAsBoolean()) {
+                    // There has been entity handling requested by the user, but it had not finished yet.
+                    // Response is being sent before entity has been fully handled.
+                    Throwable exception = new IllegalStateException("Cannot request entity and send response without "
+                                                                            + "waiting for it to be handled");
+                    if (throwable != null) {
+                        exception.addSuppressed(throwable);
+                    }
+                    writeLastContent(exception, ChannelFutureListener.CLOSE);
+                    return;
+                }
+
                 // the request content wasn't read, close the connection once the content is fully written.
                 LOGGER.finer(() -> log("Request content not fully read with keep-alive: true", ctx));
+
+                // Send last content when we are sure what we want to do with the connection.
+                requestDrained.thenAccept(listener -> writeLastContent(throwable, listener));
 
                 // if content is not consumed, we need to trigger next chunk read in order to not get stuck forever; the
                 // connection will be closed in the ForwardingHandler in case there is more than just small amount of data
                 ctx.channel().read();
+            } else {
+                writeLastContent(throwable, ChannelFutureListener.CLOSE_ON_FAILURE);
             }
-
         } else {
             LOGGER.finest(() -> log("Closing with an empty buffer; keep-alive: false", ctx));
             writeLastContent(throwable, ChannelFutureListener.CLOSE);
@@ -293,6 +313,12 @@ class BareResponseImpl implements BareResponse {
                 HttpUtil.setTransferEncodingChunked(response, false);
                 HttpUtil.setContentLength(response, length);
                 chunked = false;
+                if (keepAlive && closeAction.equals(ChannelFutureListener.CLOSE)) {
+                    // If Connection header had keep-alive set, we need to change that to close,
+                    // to prevent incorrect connection handling at client side.
+                    response.headers().set(Http.Header.CONNECTION, HttpHeaderValues.CLOSE);
+                    LOGGER.finest(() -> log("Setting connection as closed even though keep alive was requested."));
+                }
             } else {
                 //headers not sent yet
                 response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
@@ -310,6 +336,12 @@ class BareResponseImpl implements BareResponse {
                         .set(Response.STREAM_STATUS, 500)
                         .set(Response.STREAM_RESULT, throwable);
                 LOGGER.severe(() -> log("Upstream error while sending response: %s", throwable));
+            }
+            if (keepAlive && closeAction.equals(ChannelFutureListener.CLOSE)) {
+                // If Connection header had keep-alive set and headers has been sent already,
+                // connection close to prevent incorrect connection handling at client side.
+                lastHttpContent.trailingHeaders().set(Http.Header.CONNECTION, HttpHeaderValues.CLOSE);
+                LOGGER.finest(() -> log("Setting connection as closed even though keep alive was requested."));
             }
         }
         ctx.writeAndFlush(lastHttpContent)

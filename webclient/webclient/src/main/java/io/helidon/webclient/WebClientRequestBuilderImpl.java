@@ -524,13 +524,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         CompletableFuture<WebClientServiceRequest> sent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> responseReceived = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> complete = new CompletableFuture<>();
-        Single<WebClientServiceRequest> singleSent = Single.create(sent);
-        Single<WebClientServiceResponse> singleResponseReceived = Single.create(responseReceived);
-        Single<WebClientServiceResponse> singleComplete = Single.create(complete);
-        WebClientServiceRequest completedRequest = new WebClientServiceRequestImpl(this,
-                                                                                   singleSent,
-                                                                                   singleResponseReceived,
-                                                                                   singleComplete);
+        WebClientServiceRequest completedRequest = new WebClientServiceRequestImpl(this, sent, responseReceived, complete);
         CompletionStage<WebClientServiceRequest> rcs = CompletableFuture.completedFuture(completedRequest);
 
         for (WebClientService service : services) {

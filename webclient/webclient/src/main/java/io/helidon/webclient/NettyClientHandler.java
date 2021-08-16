@@ -73,6 +73,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     private HttpResponsePublisher publisher;
     private ResponseCloser responseCloser;
     private long requestId;
+    private LastHttpContent lastHttpContent;
 
     /**
      * Creates new instance.
@@ -88,10 +89,17 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             channel.read();
         }
         if (channel.hasAttr(RETURN) && channel.attr(RETURN).get().compareAndSet(true, false)) {
-            LOGGER.finest(() -> "(client reqID: " + requestId + ") Returning channel " + channel.hashCode() + " to the cache");
-            channel.attr(IN_USE).get().set(false);
-            responseCloser.cf.complete(null);
-            publisher.complete();
+            if (lastHttpContent.trailingHeaders().contains(Http.Header.CONNECTION, HttpHeaderValues.CLOSE.toString(), true)) {
+                LOGGER.finest(() -> "(client reqID: " + requestId + ") Trailing headers are closing connection. "
+                        + "Even when keep-alive has been set.");
+                closeConnection(ctx, responseCloser.cf);
+            } else {
+                LOGGER.finest(() -> "(client reqID: " + requestId + ") "
+                        + "Returning channel " + channel.hashCode() + " to the cache");
+                channel.attr(IN_USE).get().set(false);
+                responseCloser.cf.complete(null);
+                publisher.complete();
+            }
         }
     }
 
@@ -99,6 +107,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws IOException {
         Channel channel = ctx.channel();
         if (msg instanceof HttpResponse) {
+            lastHttpContent = null;
             channel.config().setAutoRead(false);
             HttpResponse response = (HttpResponse) msg;
             this.requestId = channel.attr(REQUEST_ID).get();
@@ -184,6 +193,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             if (channel.hasAttr(RETURN)) {
                 if (msg instanceof LastHttpContent) {
                     LOGGER.finest(() -> "(client reqID: " + requestId + ") Draining finished");
+                    lastHttpContent = (LastHttpContent) msg;
                     channel.attr(RETURN).get().set(true);
                 } else {
                     LOGGER.finest(() -> "(client reqID: " + requestId + ") Draining not finished, requesting new chunk");
@@ -200,6 +210,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         }
 
         if (msg instanceof LastHttpContent) {
+            lastHttpContent = (LastHttpContent) msg;
             LOGGER.finest(() -> "(client reqID: " + requestId + ") Last http content received");
             if (channel.hasAttr(RETURN)) {
                 channel.attr(RETURN).get().set(true);
@@ -329,20 +340,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                 String connection = response.headers().first(Http.Header.CONNECTION)
                         .orElseGet(HttpHeaderValues.CLOSE::toString);
                 if (connection.equals(HttpHeaderValues.CLOSE.toString()) || !channel.hasAttr(RETURN)) {
-                    ctx.close()
-                            .addListener(future -> {
-                                if (future.isSuccess()) {
-                                    LOGGER.finest(() -> "(client reqID: " + requestId + ") "
-                                            + "Response from the server has been closed");
-                                    cf.complete(null);
-                                } else {
-                                    LOGGER.log(Level.SEVERE,
-                                               future.cause(),
-                                               () -> "An exception occurred while closing the response");
-                                    cf.completeExceptionally(future.cause());
-                                }
-                            });
-                    publisher.complete();
+                    closeConnection(ctx, cf);
                 } else if (!channel.attr(RETURN).get().get()) {
                     LOGGER.finest(() -> "(client reqID: " + requestId + ") Drain possible remaining entity parts");
                     channel.read();
@@ -351,6 +349,22 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             return Single.create(cf, true);
         }
 
+    }
+
+    private void closeConnection(ChannelHandlerContext ctx, CompletableFuture<Void> cf) {
+        ctx.close()
+                .addListener(future -> {
+                    if (future.isSuccess()) {
+                        LOGGER.finest(() -> "(client reqID: " + requestId + ") Response from the server has been closed");
+                        cf.complete(null);
+                    } else {
+                        LOGGER.log(Level.SEVERE,
+                                   future.cause(),
+                                   () -> "An exception occurred while closing the response");
+                        cf.completeExceptionally(future.cause());
+                    }
+                });
+        publisher.complete();
     }
 
 }

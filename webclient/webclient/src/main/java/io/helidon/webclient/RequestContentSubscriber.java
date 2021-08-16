@@ -145,16 +145,19 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
                 sendData(firstDataChunk);
             }
         }
+        WebClientRequestImpl clientRequest = channel.attr(REQUEST).get();
+        WebClientServiceRequest serviceRequest = clientRequest.configuration().clientServiceRequest();
         LOGGER.finest(() -> "(client reqID: " + requestId + ") Sending last http content");
         channel.writeAndFlush(LAST_HTTP_CONTENT)
                 .addListener(completeOnFailureListener("(client reqID: " + requestId + ") "
                                                                + "An exception occurred when writing last http content."))
-                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
-
-        WebClientRequestImpl clientRequest = channel.attr(REQUEST).get();
-        WebClientServiceRequest serviceRequest = clientRequest.configuration().clientServiceRequest();
-        sent.complete(serviceRequest);
-        LOGGER.finest(() -> "(client reqID: " + requestId + ") Request sent");
+                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
+                .addListener(future -> {
+                    if (future.isSuccess()) {
+                        sent.complete(serviceRequest);
+                        LOGGER.finest(() -> "(client reqID: " + requestId + ") Request sent");
+                    }
+                });
     }
 
     private void sendData(DataChunk data) {
