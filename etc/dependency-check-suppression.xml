@@ -110,6 +110,18 @@
    <cpe>cpe:/a:apache:httpclient</cpe>
 </suppress>
 
+<!-- This CVE is against Neo4j through 3.4.18. We use Neo4j 4.2.4
+     Helidon's Neo4j integration triggered a false positive due to it's 
+     version being < 3.4.18
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j:2.4.0-SNAPSHOT
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon\-integrations\-neo4j@.*$</packageUrl>
+   <cve>CVE-2021-34371</cve>
+</suppress>
+
 <!-- The Neo4j java driver contains a shaded copy of a couple of Netty artifacts.
      This CVE is against netty-codec-http2 which is not included in the Neo4j driver.
 -->
