@@ -23,7 +23,7 @@ module io.helidon.microprofile.lra {
     requires jakarta.inject.api;
     requires java.ws.rs;
     requires microprofile.lra.api;
-    requires jandex;
+    requires org.jboss.jandex;
     requires java.logging;
     requires java.annotation;
     requires io.helidon.config;
