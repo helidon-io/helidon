@@ -251,7 +251,7 @@ public class PlainTest {
             s.request(Http.Method.GET, SocketHttpClient.longData(100_000).toString());
 
             // assert
-            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("9\nIt works!\n0\n\n"));
+            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("9\nIt works!\n0\nConnection: close\n\n"));
             SocketHttpClient.assertConnectionIsClosed(s);
         }
     }
@@ -264,7 +264,7 @@ public class PlainTest {
             s.request(Http.Method.TRACE, "/trace", "small");
 
             // assert
-            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("9\nIn trace!\n0\nConnection: close\n\n"));
+            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("9\nIn trace!\n0\n\n"));
             SocketHttpClient.assertConnectionIsClosed(s);
         }
     }

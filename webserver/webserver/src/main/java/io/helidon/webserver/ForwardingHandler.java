@@ -312,6 +312,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 if (HttpMethod.TRACE.equals(method)) {
                     // regarding the TRACE method, we're failing when payload is present only when the payload is actually
                     // consumed; if not, the request might proceed when payload is small enough
+                    requestDrained.complete(ChannelFutureListener.CLOSE_ON_FAILURE);
                     LOGGER.finer(() -> log("Closing connection illegal payload; method: ", ctx, method));
                     throw new BadRequestException("It is illegal to send a payload with http method: " + method);
                 }
