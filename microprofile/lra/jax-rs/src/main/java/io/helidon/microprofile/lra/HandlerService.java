@@ -24,7 +24,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import io.helidon.lra.coordinator.client.CoordinatorClient;
@@ -37,7 +36,6 @@ import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 import org.eclipse.microprofile.lra.annotation.ws.rs.Leave;
 import org.jboss.jandex.AnnotationInstance;
 
-@ApplicationScoped
 class HandlerService {
 
     @Inject

@@ -92,11 +92,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @AddExtension(CdiComponentProvider.class)
 // LRA client
 @AddExtension(LraCdiExtension.class)
-@AddBean(InspectionService.class)
-@AddBean(ParticipantService.class)
-@AddBean(HandlerService.class)
-@AddBean(ParticipantApp.class)
-@AddBean(CoordinatorLocatorService.class)
 @AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_URL, value = "http://localhost:8070/lra-coordinator")
 // Test resources
 @AddBean(TestApplication.class)

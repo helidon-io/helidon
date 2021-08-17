@@ -69,19 +69,19 @@ class Link {
         return link;
     }
 
-    public URI uri() {
+    URI uri() {
         return uri;
     }
 
-    public String rel() {
+    String rel() {
         return rel;
     }
 
-    public String title() {
+    String title() {
         return title;
     }
 
-    public String type() {
+    String type() {
         return type;
     }
 

@@ -14,10 +14,9 @@
  * limitations under the License.
  *
  */
-
-import io.helidon.microprofile.lra.LraAutoDiscoverable;
-import io.helidon.microprofile.lra.LraCdiExtension;
-
+/**
+ * Helidon implementation of MicroProfile Long Running Actions.
+ */
 module io.helidon.microprofile.lra {
     requires jakarta.enterprise.cdi.api;
     requires jakarta.inject.api;
@@ -37,6 +36,6 @@ module io.helidon.microprofile.lra {
 
     uses io.helidon.lra.coordinator.client.CoordinatorClient;
 
-    provides javax.enterprise.inject.spi.Extension with LraCdiExtension;
-    provides org.glassfish.jersey.internal.spi.AutoDiscoverable with LraAutoDiscoverable;
+    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.lra.LraCdiExtension;
+    provides org.glassfish.jersey.internal.spi.AutoDiscoverable with io.helidon.microprofile.lra.LraAutoDiscoverable;
 }

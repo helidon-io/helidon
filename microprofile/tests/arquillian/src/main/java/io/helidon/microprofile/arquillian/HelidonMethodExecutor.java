@@ -53,10 +53,10 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
 
     /**
      * Invoke method after enrichment.
-     * <p>
+     *
      * - JUnit: Inexplicably, the {@code @Before} and {@code @After} methods are
      * not called when running this executor, so we call them manually.
-     * <p>
+     *
      * - TestNG: Methods decorated with {@code @BeforeMethod} and {@code AfterMethod}
      * are called too early, before enrichment takes places. Here we call them
      * again to make sure instances are initialized properly.

@@ -52,22 +52,27 @@ class LraDatabasePersistentRegistry implements LraPersistentRegistry {
                 .await();
     }
 
+    @Override
     public Lra get(String lraId) {
         return lraMap.get(lraId);
     }
 
+    @Override
     public void put(String key, Lra lra) {
         lraMap.put(key, lra);
     }
 
+    @Override
     public void remove(String key) {
         lraMap.remove(key);
     }
 
+    @Override
     public Multi<Lra> stream() {
         return Multi.create(new HashSet<>(lraMap.values()));
     }
 
+    @Override
     public void load() {
         dbClient.inTransaction(tx -> tx.namedQuery("load")
                 .map(row -> {
@@ -130,6 +135,7 @@ class LraDatabasePersistentRegistry implements LraPersistentRegistry {
                 );
     }
 
+    @Override
     public void save() {
         dbClient.inTransaction(tx ->
                 Multi.concat(

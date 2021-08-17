@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
@@ -34,7 +33,6 @@ import io.helidon.lra.coordinator.client.Participant;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-@ApplicationScoped
 class ParticipantService {
 
     @Inject

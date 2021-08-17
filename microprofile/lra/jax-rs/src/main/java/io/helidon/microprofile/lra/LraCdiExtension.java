@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
@@ -40,6 +41,7 @@ import javax.enterprise.inject.spi.AnnotatedParameter;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
@@ -135,6 +137,21 @@ public class LraCdiExtension implements Extension {
         if (index != null) return;
         // create runtime index when pre-built index is not available
         runtimeIndex(DotName.createSimple(pat.getAnnotatedType().getJavaClass().getName()));
+    }
+
+    private void registerInternalBeans(@Observes BeforeBeanDiscovery event) {
+        Stream.of(
+                        CoordinatorLocatorService.class,
+                        HandlerService.class,
+                        InspectionService.class,
+                        ParticipantApp.class,
+                        ParticipantCdiResource.class,
+                        ParticipantService.class
+                )
+                .forEach(clazz -> event
+                        .addAnnotatedType(clazz, "lra-" + clazz.getName())
+                        .add(ApplicationScoped.Literal.INSTANCE)
+                );
     }
 
     private void validateCdiLRASignatures(@Observes

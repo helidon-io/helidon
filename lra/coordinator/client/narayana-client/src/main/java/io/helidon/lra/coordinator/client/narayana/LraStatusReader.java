@@ -31,7 +31,7 @@ import io.helidon.media.common.MessageBodyReaderContext;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 
-class LRAStatusReader implements MessageBodyReader<LRAStatus> {
+class LraStatusReader implements MessageBodyReader<LRAStatus> {
     @Override
     public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
         return PredicateResult.supports(LRAStatus.class, type);

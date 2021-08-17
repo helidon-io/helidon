@@ -22,7 +22,7 @@ import io.helidon.common.reactive.Multi;
 /**
  * Persistable lra registry.
  */
-public interface LraPersistentRegistry {
+interface LraPersistentRegistry {
 
     /**
      * Load persisted Lras.

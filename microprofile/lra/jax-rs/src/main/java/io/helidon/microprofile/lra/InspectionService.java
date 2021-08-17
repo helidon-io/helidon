@@ -34,7 +34,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
@@ -54,7 +53,6 @@ import org.jboss.jandex.IndexView;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Type;
 
-@ApplicationScoped
 class InspectionService {
 
     private static final Logger LOGGER = Logger.getLogger(InspectionService.class.getName());

@@ -244,9 +244,9 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         }
 
         context.classLoader = new HelidonContainerClassloader(parent,
-                urlClassloader,
-                excludedLibrariesPattern,
-                containerConfig.getUserParentClassloader());
+                                                              urlClassloader,
+                                                              excludedLibrariesPattern,
+                                                              containerConfig.getUserParentClassloader());
 
         context.oldClassLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(context.classLoader);

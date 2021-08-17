@@ -37,8 +37,6 @@ import static io.helidon.lra.coordinator.client.CoordinatorClient.CONF_KEY_COORD
 import static io.helidon.lra.coordinator.client.CoordinatorClient.CONF_KEY_COORDINATOR_TIMEOUT_UNIT;
 import static io.helidon.lra.coordinator.client.CoordinatorClient.CONF_KEY_COORDINATOR_URL;
 
-
-@ApplicationScoped
 class CoordinatorLocatorService {
 
     @Inject

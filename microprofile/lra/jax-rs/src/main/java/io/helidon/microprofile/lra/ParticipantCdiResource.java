@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -50,7 +49,6 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_PARENT_
 /**
  * JaxRs resource for LRA CDI methods.
  */
-@ApplicationScoped
 @Path(ParticipantCdiResource.CDI_PARTICIPANT_PATH)
 public class ParticipantCdiResource {
 

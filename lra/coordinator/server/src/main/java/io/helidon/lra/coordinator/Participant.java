@@ -100,23 +100,23 @@ class Participant {
             this.validNextStates = validNextStates;
         }
 
-        public ParticipantStatus participantStatus() {
+        ParticipantStatus participantStatus() {
             return participantStatus;
         }
 
-        public boolean isFinal() {
+        boolean isFinal() {
             return finalState;
         }
 
-        public boolean validateNextStatus(ParticipantStatus participantStatus) {
+        boolean validateNextStatus(ParticipantStatus participantStatus) {
             return validNextStates.contains(participantStatus);
         }
 
-        public Optional<ParticipantStatus> successFinalStatus() {
+        Optional<ParticipantStatus> successFinalStatus() {
             return Optional.ofNullable(successFinalStatus.participantStatus());
         }
 
-        public Optional<ParticipantStatus> failedFinalStatus() {
+        Optional<ParticipantStatus> failedFinalStatus() {
             return Optional.ofNullable(failedFinalStatus.participantStatus);
         }
     }
@@ -157,7 +157,7 @@ class Participant {
     /**
      * Invoked when closed 200, 202, 409, 410.
      */
-    public Optional<URI> getCompleteURI() {
+    Optional<URI> getCompleteURI() {
         return getCompensatorLink("complete");
     }
 
@@ -168,7 +168,7 @@ class Participant {
     /**
      * Invoked when cancelled 200, 202, 409, 410.
      */
-    public Optional<URI> getCompensateURI() {
+    Optional<URI> getCompensateURI() {
         return getCompensatorLink("compensate");
     }
 
@@ -179,7 +179,7 @@ class Participant {
     /**
      * Invoked when finalized 200.
      */
-    public Optional<URI> getAfterURI() {
+    Optional<URI> getAfterURI() {
         return getCompensatorLink("after");
     }
 
@@ -190,7 +190,7 @@ class Participant {
     /**
      * Invoked when cleaning up 200, 410.
      */
-    public Optional<URI> getForgetURI() {
+    Optional<URI> getForgetURI() {
         return getCompensatorLink("forget");
     }
 
@@ -201,7 +201,7 @@ class Participant {
     /**
      * Directly updates status of participant 200, 202, 410.
      */
-    public Optional<URI> getStatusURI() {
+    Optional<URI> getStatusURI() {
         return getCompensatorLink("status");
     }
 

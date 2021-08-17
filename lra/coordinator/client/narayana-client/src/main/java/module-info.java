@@ -14,6 +14,10 @@
  * limitations under the License.
  *
  */
+
+/**
+ * Coordinator client for coordinators using Narayana like API.
+ */
 module io.helidon.lra.coordinator.client.narayana {
     requires java.logging;
     requires microprofile.config.api;

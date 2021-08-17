@@ -280,7 +280,7 @@ public class BufferedEmittingPublisherTest {
                 .forEach(unused -> cnt.incrementAndGet());
 
         try {
-            promise.await(15, TimeUnit.SECONDS);
+            promise.await(10, TimeUnit.SECONDS);
             assertThat(cnt.get(), is(equalTo(STREAM_SIZE)));
         } finally {
             exec.shutdown();

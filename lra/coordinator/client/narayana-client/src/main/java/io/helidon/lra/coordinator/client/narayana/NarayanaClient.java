@@ -70,7 +70,7 @@ public class NarayanaClient implements CoordinatorClient {
                 .baseUri(coordinatorUri)
                 // Workaround for #3242
                 .keepAlive(false)
-                .addReader(new LRAStatusReader())
+                .addReader(new LraStatusReader())
                 .build();
     }
 

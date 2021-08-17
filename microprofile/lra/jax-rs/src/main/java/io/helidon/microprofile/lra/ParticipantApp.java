@@ -17,13 +17,11 @@ package io.helidon.microprofile.lra;
 
 import java.util.Set;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.Application;
 
 /**
  * Register JaxRs resource for invoking CDI LRA methods.
  */
-@ApplicationScoped
 public class ParticipantApp extends Application {
     @Override
     public Set<Class<?>> getClasses() {
