@@ -23,3 +23,6 @@ grpc:
     java:
       enabled: true
 
+mp.initializer:
+  allow: true
+  no-warn: true
