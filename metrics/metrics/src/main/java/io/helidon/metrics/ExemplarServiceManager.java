@@ -18,11 +18,11 @@ package io.helidon.metrics;
 
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.StringJoiner;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 
@@ -41,9 +41,15 @@ class ExemplarServiceManager {
             : () -> EXEMPLAR_SERVICES.stream()
                         .map(ExemplarService::label)
                         .filter(Predicate.not(String::isBlank))
-                        .collect(Collectors.joining(",", "{", "}"));
+                        .collect(ExemplarServiceManager::labelsStringJoiner, StringJoiner::add, StringJoiner::merge)
+                        .toString();
 
     private ExemplarServiceManager() {
+    }
+
+    private static StringJoiner labelsStringJoiner() {
+        // A StringJoiner that suppresses the prefix and suffix if no strings were added
+        return new StringJoiner(",", "{", "}").setEmptyValue("");
     }
 
     /**
