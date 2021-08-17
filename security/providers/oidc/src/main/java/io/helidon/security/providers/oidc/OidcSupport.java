@@ -234,16 +234,16 @@ public final class OidcSupport implements Service {
                                  post,
                                  form);
 
-        OidcProvider.processJsonSubmit(post,
-                                       form.build(),
-                                       json -> processJsonResponse(req, res, json),
-                                       (status, errorEntity) -> processError(res, status, errorEntity),
-                                       (t, message) -> processError(res, t, message),
-                                       "code")
+        OidcConfig.postJsonResponse(post,
+                                    form.build(),
+                                     json -> processJsonResponse(req, res, json),
+                                    (status, errorEntity) -> processError(res, status, errorEntity),
+                                    (t, message) -> processError(res, t, message))
                 .ignoreElement();
+
     }
 
-    private void processJsonResponse(ServerRequest req, ServerResponse res, JsonObject json) {
+    private String processJsonResponse(ServerRequest req, ServerResponse res, JsonObject json) {
         String tokenValue = json.getString("access_token");
         //redirect to "state"
         String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
@@ -265,20 +265,24 @@ public final class OidcSupport implements Service {
         }
 
         res.send();
+
+        return "done";
     }
 
-    private void processError(ServerResponse serverResponse, Http.ResponseStatus status, String entity) {
+    private Optional<String> processError(ServerResponse serverResponse, Http.ResponseStatus status, String entity) {
         LOGGER.log(Level.FINE,
                    "Invalid token or failed request when connecting to OIDC Token Endpoint. Response: " + entity
                            + ", response status: " + status);
 
         sendErrorResponse(serverResponse);
+        return Optional.empty();
     }
 
-    private void processError(ServerResponse res, Throwable t, String message) {
+    private Optional<String> processError(ServerResponse res, Throwable t, String message) {
         LOGGER.log(Level.FINE, message, t);
 
         sendErrorResponse(res);
+        return Optional.empty();
     }
 
     // this must always be the same, so clients cannot guess what kind of problem they are facing

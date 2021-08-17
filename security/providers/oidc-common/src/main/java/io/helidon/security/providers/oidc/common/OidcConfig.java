@@ -18,6 +18,9 @@ package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 import javax.json.Json;
@@ -30,9 +33,12 @@ import javax.ws.rs.client.WebTarget;
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.FormParams;
+import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.security.Security;
+import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
@@ -43,6 +49,7 @@ import io.helidon.webclient.Proxy;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.security.WebClientSecurity;
+import io.helidon.webclient.tracing.WebClientTracing;
 
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
@@ -429,6 +436,50 @@ public final class OidcConfig {
         return OidcConfig.builder()
                 .config(config)
                 .build();
+    }
+
+    /**
+     * Processing of {@link io.helidon.webclient.WebClient} submit using a POST method.
+     * This is a helper method to handle possible cases (success, failure with readable entity, failure).
+     *
+     * @param requestBuilder WebClient request builder
+     * @param toSubmit object to submit (such as {@link io.helidon.common.http.FormParams}
+     * @param jsonProcessor processor of successful JSON response
+     * @param errorEntityProcessor processor of an error that has an entity, to fail the single
+     * @param errorProcessor processor of an error that does not have an entity
+     * @param <T> type of the result the call
+     * @return a future that completes successfully if processed from json, or if an error processor returns a non-empty value,
+     *      completes with error otherwise
+     */
+    public static <T> Single<T> postJsonResponse(WebClientRequestBuilder requestBuilder,
+                                                 Object toSubmit,
+                                                 Function<JsonObject, T> jsonProcessor,
+                                                 BiFunction<Http.ResponseStatus, String, Optional<T>> errorEntityProcessor,
+                                                 BiFunction<Throwable, String, Optional<T>> errorProcessor) {
+        return requestBuilder.submit(toSubmit)
+                .flatMapSingle(response -> {
+                    if (response.status().family() == Http.ResponseStatus.Family.SUCCESSFUL) {
+                        return response.content()
+                                .as(JsonObject.class)
+                                .map(jsonProcessor)
+                                .onErrorResumeWithSingle(t -> errorProcessor.apply(t, "Failed to read JSON from response")
+                                        .map(Single::just)
+                                        .orElseGet(() -> Single.error(t)));
+                    } else {
+                        return response.content()
+                                .as(String.class)
+                                .flatMapSingle(it -> errorEntityProcessor.apply(response.status(), it)
+                                        .map(Single::just)
+                                        .orElseGet(() -> Single.error(new SecurityException("Failed to process request: " + it))))
+                                .onErrorResumeWithSingle(t -> errorProcessor.apply(t, "Failed to process error entity")
+                                        .map(Single::just)
+                                        .orElseGet(() -> Single.error(t)));
+                    }
+                })
+                .onErrorResumeWithSingle(t -> errorProcessor.apply(t, "Failed to invoke request")
+                        .map(Single::just)
+                        .orElseGet(() -> Single.error(t)));
+
     }
 
     /**
@@ -989,6 +1040,7 @@ public final class OidcConfig {
 
             ClientBuilder clientBuilder = ClientBuilder.newBuilder();
             WebClient.Builder webClientBuilder = WebClient.builder()
+                    .addService(WebClientTracing.create())
                     .addMediaSupport(JsonpSupport.create());
 
             clientBuilder.property(OutboundConfig.PROPERTY_DISABLE_OUTBOUND, Boolean.TRUE);
@@ -1022,7 +1074,7 @@ public final class OidcConfig {
                         .addOutboundSecurityProvider(httpBasicAuth)
                         .build();
 
-                 webClientBuilder.addService(WebClientSecurity.create(tokenOutboundSecurity));
+                webClientBuilder.addService(WebClientSecurity.create(tokenOutboundSecurity));
             }
 
             appClient = clientBuilder.build();

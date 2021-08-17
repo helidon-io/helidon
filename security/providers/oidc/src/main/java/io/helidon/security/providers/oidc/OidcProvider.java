@@ -33,14 +33,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import javax.json.JsonObject;
 
 import io.helidon.common.Errors;
 import io.helidon.common.http.FormParams;
@@ -75,6 +72,8 @@ import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.webclient.WebClientRequestBuilder;
+
+import static io.helidon.security.providers.oidc.common.OidcConfig.postJsonResponse;
 
 /**
  * Open ID Connect authentication provider.
@@ -170,56 +169,26 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
 
                 oidcConfig.updateRequest(OidcConfig.RequestType.INTROSPECT_JWT, post, form);
 
-                return processJsonSubmit(post,
-                                         form.build(),
-                                         json -> {
-                                             if (!json.getBoolean("active")) {
-                                                 collector.fatal(json, "Token is not active");
-                                             }
-                                         },
-                                         (status, message) -> collector.fatal(status,
-                                                                              "Failed to validate token, response status: "
-                                                                                      + status
-                                                                                      + ", entity: " + message),
-                                         (t, message) -> collector.fatal(t,
-                                                                         "Failed to validate token, request failed: " + message),
-                                         "token-introspection")
-                        .map(it -> collector);
+                return postJsonResponse(post,
+                                        form.build(),
+                                        json -> {
+                                            if (!json.getBoolean("active")) {
+                                                collector.fatal(json, "Token is not active");
+                                            }
+                                            return collector;
+                                        },
+                                        (status, message) ->
+                                                Optional.of(collector.fatal(status,
+                                                                            "Failed to validate token, response "
+                                                                                    + "status: "
+                                                                                    + status
+                                                                                    + ", entity: " + message)),
+                                        (t, message) ->
+                                                Optional.of(collector.fatal(t,
+                                                                            "Failed to validate token, request failed: "
+                                                                                    + message)));
             };
         }
-    }
-
-    static Single<Void> processJsonSubmit(WebClientRequestBuilder request,
-                                          Object toSubmit,
-                                          Consumer<JsonObject> jsonProcessor,
-                                          BiConsumer<Http.ResponseStatus, String> errorEntityProcessor,
-                                          BiConsumer<Throwable, String> errorProcessor,
-                                          String type) {
-
-        return request.submit(toSubmit)
-                .peek(response -> {
-                    if (response.status().family() == Http.ResponseStatus.Family.SUCCESSFUL) {
-                        response.content()
-                                .as(JsonObject.class)
-                                .forSingle(jsonProcessor)
-                                .exceptionallyAccept(t -> errorProcessor.accept(t,
-                                                                                "Failed to read JSON from " + type
-                                                                                        + " response."));
-                    } else {
-                        response.content()
-                                .as(String.class)
-                                .forSingle(it -> errorEntityProcessor.accept(response.status(), it))
-                                .exceptionallyAccept(t -> errorProcessor.accept(t,
-                                                                                "Failed to read error entity from "
-                                                                                        + type
-                                                                                        + " response."));
-                    }
-                })
-                .onErrorResumeWithSingle(t -> {
-                    errorProcessor.accept(t, "Failed to invoke " + type + " request");
-                    return Single.empty();
-                })
-                .flatMapSingle(it -> Single.empty());
     }
 
     /**
@@ -653,7 +622,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         private OutboundConfig outboundConfig;
         private TokenHandler defaultOutboundHandler = TokenHandler.builder()
                 .tokenHeader("Authorization")
-                .tokenPrefix("bearer ")
+                .tokenPrefix("Bearer ")
                 .build();
 
         @Override

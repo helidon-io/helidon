@@ -26,6 +26,7 @@ module io.helidon.security.providers.oidc.common {
     requires io.helidon.webclient.jaxrs;
     requires io.helidon.webclient;
     requires io.helidon.webclient.security;
+    requires io.helidon.webclient.tracing;
     requires io.helidon.media.jsonp;
 
     requires jersey.client;

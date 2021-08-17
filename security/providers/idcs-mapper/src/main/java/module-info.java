@@ -27,6 +27,7 @@ module io.helidon.security.providers.idcs.mapper {
 
     requires io.helidon.security.integration.common;
     requires io.helidon.security.util;
+    requires io.helidon.webclient;
     requires java.logging;
 
     requires jersey.client;
