@@ -38,18 +38,6 @@ import org.jboss.jandex.AnnotationInstance;
 
 class HandlerService {
 
-    @Inject
-    private CoordinatorClient coordinatorClient;
-
-    @Inject
-    private InspectionService inspectionService;
-
-    @Inject
-    private ParticipantService participantService;
-
-    @ConfigProperty(name = "mp.lra.propagation.active", defaultValue = "true")
-    private boolean propagate;
-
     private static final Map<String, AnnotationHandler.HandlerMaker> HANDLER_SUPPLIERS =
             Map.of(
                     LRA.class.getName(), LraAnnotationHandler::new,
@@ -59,6 +47,23 @@ class HandlerService {
             );
 
     private static final Set<String> STAND_ALONE_ANNOTATIONS = Set.of(Status.class.getName(), Complete.class.getName());
+
+    private final CoordinatorClient coordinatorClient;
+    private final InspectionService inspectionService;
+    private final ParticipantService participantService;
+    private final boolean propagate;
+
+    @Inject
+    public HandlerService(CoordinatorClient coordinatorClient,
+                          InspectionService inspectionService,
+                          ParticipantService participantService,
+                          @ConfigProperty(name = "mp.lra.propagation.active", defaultValue = "true")
+                                  boolean propagate) {
+        this.coordinatorClient = coordinatorClient;
+        this.inspectionService = inspectionService;
+        this.participantService = participantService;
+        this.propagate = propagate;
+    }
 
     List<AnnotationHandler> createHandler(Method m) {
         Set<AnnotationInstance> lraAnnotations = inspectionService.lookUpLraAnnotations(m);
@@ -80,15 +85,15 @@ class HandlerService {
         }
 
         return lraAnnotations.stream().map(lraAnnotation -> {
-            var handlerMaker =
-                    HANDLER_SUPPLIERS.get(lraAnnotation.name().toString());
+                    var handlerMaker =
+                            HANDLER_SUPPLIERS.get(lraAnnotation.name().toString());
 
-            if (handlerMaker == null) {
-                // Non LRA annotation on LRA method, skipping
-                return null;
-            }
-            return handlerMaker.make(lraAnnotation, coordinatorClient, inspectionService, participantService);
-        }).filter(Objects::nonNull)
+                    if (handlerMaker == null) {
+                        // Non LRA annotation on LRA method, skipping
+                        return null;
+                    }
+                    return handlerMaker.make(lraAnnotation, coordinatorClient, inspectionService, participantService);
+                }).filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 }

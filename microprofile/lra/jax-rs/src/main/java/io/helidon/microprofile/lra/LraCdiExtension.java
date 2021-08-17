@@ -53,9 +53,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 
-import io.helidon.config.Config;
-
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
@@ -78,11 +75,6 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 public class LraCdiExtension implements Extension {
 
     private static final Logger LOGGER = Logger.getLogger(LraCdiExtension.class.getName());
-    private final Config config = (Config) ConfigProvider.getConfig();
-
-    private final Indexer indexer;
-    private IndexView index;
-    private final ClassLoader classLoader;
 
     private static final Set<Class<? extends Annotation>> EXPECTED_ANNOTATIONS = Set.of(
             AfterLRA.class,
@@ -95,6 +87,10 @@ public class LraCdiExtension implements Extension {
 
     private final Set<Class<?>> beanTypesWithCdiLRAMethods = new HashSet<>();
     private final Map<Class<?>, Bean<?>> lraCdiBeanReferences = new HashMap<>();
+    private final Indexer indexer;
+    private final ClassLoader classLoader;
+    private IndexView index;
+
 
     /**
      * Initialize MicroProfile Long Running Actions CDI extension.

@@ -35,17 +35,20 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 class ParticipantService {
 
-    @Inject
-    private LraCdiExtension lraCdiExtension;
-
-    @Inject
-    private BeanManager beanManager;
-
-    @Inject
-    @ConfigProperty(name = "mp.lra.participant.url")
-    private Optional<URI> participantUri;
+    private final LraCdiExtension lraCdiExtension;
+    private final BeanManager beanManager;
+    private final Optional<URI> participantUri;
 
     private final Map<Class<?>, Participant> participants = new HashMap<>();
+
+    @Inject
+    public ParticipantService(LraCdiExtension lraCdiExtension,
+                              BeanManager beanManager,
+                              @ConfigProperty(name = "mp.lra.participant.url") Optional<URI> participantUri) {
+        this.lraCdiExtension = lraCdiExtension;
+        this.beanManager = beanManager;
+        this.participantUri = participantUri;
+    }
 
     Participant participant(URI defaultBaseUri, Class<?> clazz) {
         return participants.computeIfAbsent(clazz, c ->

@@ -39,21 +39,23 @@ import static io.helidon.lra.coordinator.client.CoordinatorClient.CONF_KEY_COORD
 
 class CoordinatorLocatorService {
 
-    @Inject
-    @ConfigProperty(name = "mp.lra.coordinator.client")
-    private Optional<String> clientFqdn;
+    private final Optional<String> clientFqdn;
+    private final String coordinatorUrl;
+    private final Long coordinatorTimeout;
+    private final TimeUnit coordinatorTimeoutUnit;
 
     @Inject
-    @ConfigProperty(name = CONF_KEY_COORDINATOR_URL)
-    private String coordinatorUrl;
-
-    @Inject
-    @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT, defaultValue = "10")
-    private Long coordinatorTimeout;
-
-    @Inject
-    @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT_UNIT, defaultValue = "SECONDS")
-    private TimeUnit coordinatorTimeoutUnit;
+    public CoordinatorLocatorService(@ConfigProperty(name = "mp.lra.coordinator.client") Optional<String> clientFqdn,
+                                     @ConfigProperty(name = CONF_KEY_COORDINATOR_URL) String coordinatorUrl,
+                                     @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT, defaultValue = "10")
+                                             Long coordinatorTimeout,
+                                     @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT_UNIT, defaultValue = "SECONDS")
+                                             TimeUnit coordinatorTimeoutUnit) {
+        this.clientFqdn = clientFqdn;
+        this.coordinatorUrl = coordinatorUrl;
+        this.coordinatorTimeout = coordinatorTimeout;
+        this.coordinatorTimeoutUnit = coordinatorTimeoutUnit;
+    }
 
     @Produces
     @ApplicationScoped
