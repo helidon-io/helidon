@@ -13,30 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.tests.functional.multipleapps;
 
-import java.util.Set;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.container.ContainerResponseFilter;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
-
-/**
- * Second application.
- */
-@ApplicationScoped
-@ApplicationPath("app2")
-public class GreetApplication2 extends Application {
-
-    private static final Filter2 filter2 = new Filter2();
+public class Filter2 implements ContainerResponseFilter {
 
     @Override
-    public Set<Class<?>> getClasses() {
-        return Set.of(GreetResource2.class, SharedFilter.class);
-    }
-
-    @Override
-    public Set<Object> getSingletons() {
-        return Set.of(filter2);
+    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
+        responseContext.getHeaders().add("filter2", "");
     }
 }
