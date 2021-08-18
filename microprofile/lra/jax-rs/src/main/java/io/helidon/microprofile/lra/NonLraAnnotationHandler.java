@@ -22,6 +22,8 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.UriBuilder;
 
+import io.helidon.common.context.Contexts;
+
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
 class NonLraAnnotationHandler implements AnnotationHandler {
@@ -41,7 +43,8 @@ class NonLraAnnotationHandler implements AnnotationHandler {
         if (propagate) {
             // Save lraId from header to thread local for possible clients
             String lraFromHeader = requestContext.getHeaders().getFirst(LRA_HTTP_CONTEXT_HEADER);
-            LraThreadContext.get().lra(UriBuilder.fromPath(lraFromHeader).build());
+            Contexts.context()
+                    .ifPresent(c -> c.register(LRA_HTTP_CONTEXT_HEADER, UriBuilder.fromPath(lraFromHeader).build()));
         }
         // clear lra header
         requestContext.getHeaders().remove(LRA_HTTP_CONTEXT_HEADER);

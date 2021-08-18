@@ -30,6 +30,8 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Response;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
 import io.helidon.lra.coordinator.client.Participant;
@@ -62,7 +64,7 @@ class LraAnnotationHandler implements AnnotationHandler {
         Method method = resourceInfo.getResourceMethod();
         URI baseUri = reqCtx.getUriInfo().getBaseUri();
         Participant participant = participantService.participant(baseUri, resourceInfo.getResourceClass());
-        Optional<URI> existingLraId = LraThreadContext.get().lra();
+        Optional<URI> existingLraId = Contexts.context().flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class));
         long timeLimit = Duration.of(annotation.timeLimit(), annotation.timeUnit()).toMillis();
         String clientId = method.getDeclaringClass().getName() + "#" + method.getName();
 
@@ -138,7 +140,10 @@ class LraAnnotationHandler implements AnnotationHandler {
         lraId = lraId != null ? lraId : existingLraId.orElse(null);
         if (lraId != null) {
             reqCtx.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString());
-            LraThreadContext.get().lra(lraId);
+            Optional<Context> ctx = Contexts.context();
+            if (ctx.isPresent()) {
+                ctx.get().register(LRA_HTTP_CONTEXT_HEADER, lraId);
+            }
             reqCtx.setProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
         }
         if (parentLraId != null) {
@@ -152,7 +157,7 @@ class LraAnnotationHandler implements AnnotationHandler {
                                  ContainerResponseContext responseContext,
                                  ResourceInfo resourceInfo) {
         Optional<URI> lraId = Optional.ofNullable((URI) requestContext.getProperty(LRA_HTTP_CONTEXT_HEADER))
-                .or(() -> LraThreadContext.get().lra());
+                .or(() -> Contexts.context().flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class)));
 
         var end = annotation.end();
         var cancelOnFamilies = annotation.cancelOnFamily();

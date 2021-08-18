@@ -45,7 +45,7 @@ class CoordinatorLocatorService {
     private final TimeUnit coordinatorTimeoutUnit;
 
     @Inject
-    public CoordinatorLocatorService(@ConfigProperty(name = "mp.lra.coordinator.client") Optional<String> clientFqdn,
+    CoordinatorLocatorService(@ConfigProperty(name = "mp.lra.coordinator.client") Optional<String> clientFqdn,
                                      @ConfigProperty(name = CONF_KEY_COORDINATOR_URL) String coordinatorUrl,
                                      @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT, defaultValue = "10")
                                              Long coordinatorTimeout,

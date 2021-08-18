@@ -17,7 +17,7 @@
 
 /**
  * MicroProfile Long Running Actions Narayana Coordinator client.
- * <p>
+ *
  * Provides concrete implementation for using Narayana coordinator with Helidon's LRA.
  */
 package io.helidon.lra.coordinator.client.narayana;

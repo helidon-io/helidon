@@ -34,6 +34,7 @@ import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriBuilder;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.Headers;
 
@@ -41,8 +42,6 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT
 
 @ConstrainedTo(RuntimeType.SERVER)
 class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilter {
-
-    private static final String BEFORE_REQUEST_LRA_CTX_PROP = "before-request-lra-thread-context";
 
     private static final Logger LOGGER = Logger.getLogger(JaxRsServerFilter.class.getName());
 
@@ -58,12 +57,11 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
         try {
-            requestContext.setProperty(BEFORE_REQUEST_LRA_CTX_PROP, LraThreadContext.get());
             Method method = resourceInfo.getResourceMethod();
             // if lraId already exists save it for later
             Optional.ofNullable(requestContext.getHeaders().getFirst(LRA_HTTP_CONTEXT_HEADER))
                     .map(h -> UriBuilder.fromPath(requestContext.getHeaders().getFirst(LRA_HTTP_CONTEXT_HEADER)).build())
-                    .ifPresent(lraId -> LraThreadContext.get().lra(lraId));
+                    .ifPresent(lraId -> Contexts.context().get().register(LRA_HTTP_CONTEXT_HEADER, lraId));
 
             // Adapt JaxRs calls from specific coordinator
             coordinatorClient.preprocessHeaders(new Headers() {
@@ -105,13 +103,6 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
             }
         } catch (Throwable t) {
             LOGGER.log(Level.SEVERE, "After LRA filter", t);
-        } finally {
-            // Keep the thread clean
-            LraThreadContext.clear();
-            // Cleanup context from different thread
-            // in case of async request thread is different
-            Optional.ofNullable((LraThreadContext) requestContext.getProperty(BEFORE_REQUEST_LRA_CTX_PROP))
-                    .ifPresent(LraThreadContext::remove);
         }
     }
 }

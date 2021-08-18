@@ -24,6 +24,7 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ResourceInfo;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
@@ -40,7 +41,7 @@ class LeaveAnnotationHandler implements AnnotationHandler {
 
     @Override
     public void handleJaxRsBefore(ContainerRequestContext requestContext, ResourceInfo resourceInfo) {
-        Optional<URI> existingLraId = LraThreadContext.get().lra();
+        Optional<URI> existingLraId = Contexts.context().flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class));
 
         if (existingLraId.isPresent()) {
             var lraId = existingLraId.get();

@@ -54,7 +54,7 @@ class HandlerService {
     private final boolean propagate;
 
     @Inject
-    public HandlerService(CoordinatorClient coordinatorClient,
+    HandlerService(CoordinatorClient coordinatorClient,
                           InspectionService inspectionService,
                           ParticipantService participantService,
                           @ConfigProperty(name = "mp.lra.propagation.active", defaultValue = "true")

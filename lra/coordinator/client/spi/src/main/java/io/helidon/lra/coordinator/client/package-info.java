@@ -22,7 +22,7 @@
  * {@link io.helidon.lra.coordinator.client.CoordinatorClient CoordinatorClient} is expected to be
  * an application scoped bean.
  * <p>
- * Coordinator client is expected to leverage with following configuration keys:
+ * Coordinator client is expected to leverage following configuration keys:
  *
  * <ul>
  * <li>{@link io.helidon.lra.coordinator.client.CoordinatorClient#CONF_KEY_COORDINATOR_URL mp.lra.coordinator.url}

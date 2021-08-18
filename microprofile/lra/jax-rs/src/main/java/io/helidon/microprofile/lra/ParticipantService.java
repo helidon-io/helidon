@@ -42,7 +42,7 @@ class ParticipantService {
     private final Map<Class<?>, Participant> participants = new HashMap<>();
 
     @Inject
-    public ParticipantService(LraCdiExtension lraCdiExtension,
+    ParticipantService(LraCdiExtension lraCdiExtension,
                               BeanManager beanManager,
                               @ConfigProperty(name = "mp.lra.participant.url") Optional<URI> participantUri) {
         this.lraCdiExtension = lraCdiExtension;

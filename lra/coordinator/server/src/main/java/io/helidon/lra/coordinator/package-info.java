@@ -16,6 +16,6 @@
  */
 
 /**
- * Mock LRA coordinator with Narayana like rest api for testing .
+ * Mock LRA coordinator with Narayana like rest api for testing.
  */
 package io.helidon.lra.coordinator;

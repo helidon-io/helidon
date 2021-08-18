@@ -26,13 +26,15 @@ import javax.ws.rs.RuntimeType;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 
+import io.helidon.common.context.Contexts;
+
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
 @ConstrainedTo(RuntimeType.CLIENT)
 class JaxRsClientFilter implements ClientRequestFilter {
     @Override
     public void filter(final ClientRequestContext requestContext) throws IOException {
-        Optional<URI> lraId = LraThreadContext.get().lra();
+        Optional<URI> lraId = Contexts.context().flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class));
         if ((!requestContext.getHeaders().containsKey(LRA_HTTP_CONTEXT_HEADER)) && lraId.isPresent()) {
             // no explicit lraId header, add the one saved in thread local
             requestContext.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, lraId.get().toASCIIString());
