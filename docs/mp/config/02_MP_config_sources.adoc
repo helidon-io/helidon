@@ -153,7 +153,7 @@ You can create Microprofile Config Source from a map.
 ----
 ConfigProviderResolver resolver = ConfigProviderResolver.instance();
 
-org.eclipse.microprofile.config.Config config = resolver.getBuilder().getBuilder() <1>
+org.eclipse.microprofile.config.Config config = resolver.getBuilder() <1>
         .withSources(MpConfigSources.environmentVariables()) <2>
         .withSources(MpConfigSources.create(Map.of("key","value"))) <3>
         .build(); <4>
@@ -177,7 +177,7 @@ it with the builder.
 ----
 ConfigProviderResolver.instance().newBuilder()
         .withSources(YamlMpConfigSource.create(path))
-        .build()
+        .build();
 ----
 
 == Creating MicroProfile Config Sources from meta-config
