@@ -39,6 +39,7 @@ import javax.enterprise.inject.spi.Extension;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
@@ -51,6 +52,7 @@ import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
 import io.grpc.BindableService;
 import io.grpc.Channel;
 import io.grpc.inprocess.InProcessChannelBuilder;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
  * A CDI extension that will start the {@link GrpcServer gRPC server}.
@@ -73,7 +75,7 @@ public class GrpcServerCdiExtension
     private void startServer(@Observes @Initialized(ApplicationScoped.class) Object event, BeanManager beanManager) {
         GrpcRouting.Builder routingBuilder = discoverGrpcRouting(beanManager);
 
-        Config config = resolveConfig(beanManager);
+        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
         GrpcServerConfiguration.Builder serverConfiguration = GrpcServerConfiguration.builder(config.get("grpc"));
         CompletableFuture<GrpcServer> startedFuture = new CompletableFuture<>();
         CompletableFuture<GrpcServer> shutdownFuture = new CompletableFuture<>();
@@ -126,26 +128,6 @@ public class GrpcServerCdiExtension
                           LOGGER.info(() -> "gRPC Server stopped in " + t + " milliseconds.");
                       }
                   });
-        }
-    }
-
-    /**
-     * Resolve the Helidon configuration to use.
-     * <p>
-     * The a bean of type {@link Config} is resolvable then that
-     * bean will be used for the configuration otherwise a new
-     * configuration will be created using {@link Config#create()}.
-     *
-     * @param beanManager  the {@link BeanManager} to use to resolve the config bean
-     *
-     * @return  the {@link Config} to use
-     */
-    private Config resolveConfig(BeanManager beanManager) {
-        Instance<Config> instance = beanManager.createInstance().select(Config.class);
-        if (instance.isResolvable()) {
-            return instance.get();
-        } else {
-            return Config.create();
         }
     }
 

@@ -35,6 +35,7 @@ module io.helidon.integrations.micrometer.cdi {
     requires io.helidon.config;
     requires io.helidon.webserver.cors;
     requires io.helidon.integrations.micrometer;
+    requires io.helidon.config.mp;
 
     requires micrometer.core;
     requires micrometer.registry.prometheus;
