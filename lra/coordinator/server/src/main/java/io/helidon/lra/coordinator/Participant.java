@@ -505,9 +505,9 @@ class Participant {
                     .get()
                     .headers(h -> {
                         // Dont send parent!
-                        h.add(LRA_HTTP_CONTEXT_HEADER, lra.lraId());
-                        h.add(LRA_HTTP_RECOVERY_HEADER, lra.lraId());
-                        h.add(LRA_HTTP_ENDED_CONTEXT_HEADER, lra.lraId());
+                        h.add(LRA_HTTP_CONTEXT_HEADER, lra.lraContextId());
+                        h.add(LRA_HTTP_RECOVERY_HEADER, lra.lraContextId() + "/recovery");
+                        h.add(LRA_HTTP_ENDED_CONTEXT_HEADER, lra.lraContextId());
                         return h;
                     })
                     .request()

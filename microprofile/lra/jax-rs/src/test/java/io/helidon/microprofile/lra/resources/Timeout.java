@@ -29,7 +29,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import io.helidon.microprofile.lra.BasicTest;
+import io.helidon.microprofile.lra.LoadBalancedCoordinatorTest;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
@@ -49,7 +49,7 @@ public class Timeout {
     public static final String CS_COMPENSATE = PATH_BASE + PATH_COMPENSATE;
 
     @Inject
-    BasicTest basicTest;
+    LoadBalancedCoordinatorTest basicTest;
 
     @PUT
     @Path(Timeout.PATH_START_LRA)

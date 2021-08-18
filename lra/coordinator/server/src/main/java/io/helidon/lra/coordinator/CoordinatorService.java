@@ -66,6 +66,8 @@ public class CoordinatorService implements Service {
     static final String CLIENT_ID_PARAM_NAME = "ClientID";
     static final String TIME_LIMIT_PARAM_NAME = "TimeLimit";
     static final String PARENT_LRA_PARAM_NAME = "ParentLRA";
+    static final String COORDINATOR_URL_KEY = "url";
+    static final String DEFAULT_COORDINATOR_URL = "http://localhost:8070/lra-coordinator";
 
     private static final Logger LOGGER = Logger.getLogger(CoordinatorService.class.getName());
     private static final Set<LRAStatus> RECOVERABLE_STATUSES = Set.of(LRAStatus.Cancelling, LRAStatus.Closing, LRAStatus.Active);
@@ -83,7 +85,9 @@ public class CoordinatorService implements Service {
 
     CoordinatorService(LraPersistentRegistry lraPersistentRegistry, Config config) {
         this.lraPersistentRegistry = lraPersistentRegistry;
-        coordinatorURL = config.get("url").asString().orElse("http://localhost:8070/lra-coordinator");
+        coordinatorURL = config.get(COORDINATOR_URL_KEY)
+                .asString()
+                .orElse(DEFAULT_COORDINATOR_URL);
         this.config = config;
         init();
     }
@@ -131,6 +135,7 @@ public class CoordinatorService implements Service {
         rules
                 .get("/", this::get)
                 .get("/recovery", this::recovery)
+                .get("/{LraId}/recovery", this::recovery)
                 .post("/start", this::start)
                 .put("/{LraId}/close", this::close)
                 .put("/{LraId}/cancel", this::cancel)
@@ -154,7 +159,7 @@ public class CoordinatorService implements Service {
         String lraUUID = UUID.randomUUID().toString();
         URI lraId = URI.create(coordinatorURL + "/" + lraUUID);
         if (!parentLRA.isEmpty()) {
-            Lra parent = lraPersistentRegistry.get(parentLRA.replace(coordinatorURL, ""));
+            Lra parent = lraPersistentRegistry.get(parentLRA.replace(coordinatorURL + "/", ""));
             if (parent != null) {
                 Lra childLra = new Lra(lraUUID, URI.create(parentLRA), this.config);
                 childLra.setupTimeout(timeLimit);
@@ -232,7 +237,7 @@ public class CoordinatorService implements Service {
             return;
         }
         lra.addParticipant(compensatorLink);
-        String recoveryUrl = coordinatorURL + lraId;
+        String recoveryUrl = coordinatorURL + "/" + lraId + "/recovery";
 
         res.headers().put(LRA_HTTP_RECOVERY_HEADER, recoveryUrl);
         res.headers().put("Location", recoveryUrl);
@@ -287,7 +292,8 @@ public class CoordinatorService implements Service {
      * @param res HTTP Response
      */
     private void recovery(ServerRequest req, ServerResponse res) {
-        Optional<String> lraId = req.queryParams().first("lraId");
+        Optional<String> lraId = req.queryParams().first("lraId")
+                .or(() -> Optional.ofNullable(req.path().param("LraId")));
 
         if (lraId.isPresent()) {
             Lra lra = lraPersistentRegistry.get(lraId.get());

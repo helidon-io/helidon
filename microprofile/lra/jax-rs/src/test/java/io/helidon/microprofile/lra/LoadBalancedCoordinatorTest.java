@@ -27,6 +27,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
@@ -40,9 +43,10 @@ import javax.ws.rs.core.UriBuilder;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.lra.coordinator.CoordinatorService;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.microprofile.config.ConfigCdiExtension;
-import io.helidon.lra.coordinator.CoordinatorService;
 import io.helidon.microprofile.lra.resources.CdiCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.CdiNestedCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.CommonAfter;
@@ -79,10 +83,18 @@ import org.junit.jupiter.api.Test;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+/**
+ * Use case of two standalone coordinators with simple proxying loadbalancer.
+ * Lra client needs to call loadbalancer first http://localhost:8074/lra-coordinator/start to start new TX,
+ * returned LRA id (example: http://127.0.0.1:8070/lra-coordinator/0_ffff7f000001_a76d_608fb07d_183a)
+ * is actual URI targeting specific coordinator directly.
+ * All subsequent calls for already started LRA needs to be directed to coordinator which knows it.
+ */
 @HelidonTest
 @DisableDiscovery
 // Helidon MP
@@ -92,7 +104,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @AddExtension(CdiComponentProvider.class)
 // LRA client
 @AddExtension(LraCdiExtension.class)
-@AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_URL, value = "http://localhost:8070/lra-coordinator")
+@AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_URL, value = "http://localhost:8074/lra-coordinator")
 // Test resources
 @AddBean(TestApplication.class)
 @AddBean(JaxRsCompleteOrCompensate.class)
@@ -104,36 +116,109 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @AddBean(RecoveryStatus.class)
 @AddBean(CdiNestedCompleteOrCompensate.class)
 @AddBean(JaxRsNestedCompleteOrCompensate.class)
-// Coordinator
-// comment out below annotations to use external coordinator
-@AddConfig(key = "server.sockets.0.name", value = "coordinator")
-@AddConfig(key = "server.sockets.0.port", value = "8070")
+// Simple proxy loadbalancer for coordinators
+@AddConfig(key = "server.sockets.0.name", value = "coordinator-loadbalancer")
+@AddConfig(key = "server.sockets.0.port", value = "8074")
 @AddConfig(key = "server.sockets.0.bind-address", value = "localhost")
-@AddConfig(key = "db.source", value = "jdbc")
-@AddConfig(key = "db.connection.url", value = "jdbc:h2:mem:lra-coordinator;DB_CLOSE_DELAY=-1")
-@AddConfig(key = "db.connection.username", value = "h2")
-@AddConfig(key = "db.connection.password", value = "")
-@AddConfig(key = "db.connection.poolName", value = "h2")
-public class BasicTest {
+
+// Coordinator A
+@AddConfig(key = "server.sockets.1.name", value = "coordinator-a")
+@AddConfig(key = "server.sockets.1.port", value = "8075")
+@AddConfig(key = "server.sockets.1.bind-address", value = "localhost")
+@AddConfig(key = CoordinatorService.CONFIG_PREFIX + ".coord-a.url", value = "http://localhost:8075/lra-coordinator")
+
+// Coordinator B
+@AddConfig(key = "server.sockets.2.name", value = "coordinator-b")
+@AddConfig(key = "server.sockets.2.port", value = "8076")
+@AddConfig(key = "server.sockets.2.bind-address", value = "localhost")
+@AddConfig(key = CoordinatorService.CONFIG_PREFIX + ".coord-b.url", value = "http://localhost:8076/lra-coordinator")
+public class LoadBalancedCoordinatorTest {
+
+    private static final Logger LOGGER = Logger.getLogger(LoadBalancedCoordinatorTest.class.getName());
 
     private static final long TIMEOUT_SEC = 10L;
+
+    private static final AtomicReference<String> forbiddenLoadBalancerCall = new AtomicReference<>();
 
     private final Map<String, CompletableFuture<URI>> completionMap = new HashMap<>();
 
     @Inject
     BeanManager beanManager;
-    
+
     @Inject
     Config config;
-    
+
+    URI[] coordinators = new URI[] {
+            URI.create("http://localhost:8075/lra-coordinator/start"),
+            URI.create("http://localhost:8076/lra-coordinator/start")
+    };
+
+    AtomicInteger roundRobinIndex = new AtomicInteger(coordinators.length - 1);
+
     @Produces
     @ApplicationScoped
-    @RoutingName(value = "coordinator", required = true)
+    @RoutingName(value = "coordinator-loadbalancer", required = true)
     @RoutingPath("/lra-coordinator")
-    public Service coordinatorService() {
+    public Service coordinatorLoadBalancerService() {
+        return rules ->
+                rules.post("/start", (req, res) -> WebClient.builder()
+                                .baseUri(coordinators[roundRobinIndex.getAndUpdate(o -> o > 0 ? o - 1 : coordinators.length - 1)])
+                                .build()
+                                .method(req.method())
+                                .headers(req.headers())
+                                .queryParams(req.queryParams())
+                                .submit(req.content())
+                                .forSingle(wr -> {
+                                    wr.headers().toMap()
+                                            .forEach((k, values) -> values
+                                                    .forEach(e -> res.headers().add(k, e))
+                                            );
+                                    res.status(wr.status())
+                                            .send(wr.content());
+                                }))
+                        .any((req, res) -> {
+                            if (!req.absoluteUri().toASCIIString().contains("/start")) {
+                                LOGGER.severe("Loadbalancer should be called only for starting LRA. " + req.absoluteUri());
+                                forbiddenLoadBalancerCall.set(req.method().name() + " " + req.absoluteUri());
+                            }
+                            req.next();
+                        });
+    }
+
+    @Produces
+    @ApplicationScoped
+    @RoutingName(value = "coordinator-a", required = true)
+    @RoutingPath("/lra-coordinator")
+    public Service coordinatorServiceA() {
         return CoordinatorService.builder()
-                .config(config.get(CoordinatorService.CONFIG_PREFIX))
+                .config(configForCoordinator("coord-a"))
                 .build();
+    }
+
+    @Produces
+    @ApplicationScoped
+    @RoutingName(value = "coordinator-b", required = true)
+    @RoutingPath("/lra-coordinator")
+    public Service coordinatorServiceB() {
+        return CoordinatorService.builder()
+                .config(configForCoordinator("coord-b"))
+                .build();
+    }
+
+    private Config configForCoordinator(String coordinatorName) {
+        return Config.create(
+                ConfigSources.create(Config.builder()
+                        .addSource(ConfigSources.classpath("application.yaml"))
+                        .addFilter((key, old) ->
+                                // use inmemory db with different name
+                                old.contains("jdbc:h2:file")
+                                        ? "jdbc:h2:mem:lra-" + coordinatorName + ";DB_CLOSE_DELAY=-1"
+                                        : old
+                        )
+                        .build()
+                        .get(CoordinatorService.CONFIG_PREFIX).detach()),
+                ConfigSources.create(config.get(CoordinatorService.CONFIG_PREFIX + "." + coordinatorName).detach())
+        );
     }
 
     @Inject
@@ -176,6 +261,7 @@ public class BasicTest {
         URI lraId = await(JaxRsCompleteOrCompensate.CS_START_LRA);
         assertThat(await(JaxRsCompleteOrCompensate.CS_COMPLETE), is(lraId));
         assertFalse(getCompletable(JaxRsCompleteOrCompensate.CS_COMPENSATE).isDone());
+        assertLoadBalancerCalledProperly();
     }
 
     @Test
@@ -191,6 +277,7 @@ public class BasicTest {
         URI lraId = await(JaxRsCompleteOrCompensate.CS_START_LRA);
         assertThat(await(JaxRsCompleteOrCompensate.CS_COMPENSATE), is(lraId));
         assertFalse(getCompletable(JaxRsCompleteOrCompensate.CS_COMPLETE, lraId).isDone());
+        assertLoadBalancerCalledProperly();
     }
 
     @Test
@@ -206,6 +293,7 @@ public class BasicTest {
         URI lraId = await(CdiCompleteOrCompensate.CS_START_LRA);
         assertThat(await(CdiCompleteOrCompensate.CS_COMPLETE), is(lraId));
         assertFalse(getCompletable(CdiCompleteOrCompensate.CS_COMPENSATE).isDone());
+        assertLoadBalancerCalledProperly();
     }
 
     @Test
@@ -221,6 +309,7 @@ public class BasicTest {
         URI lraId = await(CdiCompleteOrCompensate.CS_START_LRA);
         assertThat(await(CdiCompleteOrCompensate.CS_COMPENSATE), is(lraId));
         assertFalse(getCompletable(CdiCompleteOrCompensate.CS_COMPLETE).isDone());
+        assertLoadBalancerCalledProperly();
     }
 
     @Test
@@ -330,6 +419,7 @@ public class BasicTest {
             assertFalse(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPENSATED, nestedLraId).isDone());
         }
 
+        assertLoadBalancerCalledProperly();
     }
 
     @Test
@@ -344,6 +434,7 @@ public class BasicTest {
         URI lraId = UriBuilder.fromPath(response.getHeaderString(LRA_HTTP_CONTEXT_HEADER)).build();
         assertThat(await(StartAndAfter.CS_START_LRA), is(lraId));
         await(CommonAfter.CS_AFTER, lraId);
+        assertLoadBalancerCalledProperly();
     }
 
     @Test
@@ -366,6 +457,7 @@ public class BasicTest {
                 .get(10, TimeUnit.SECONDS).getStatus(), AnyOf.anyOf(is(200), is(204)));
         await(DontEnd.CS_START_SECOND_LRA);
         assertClosedOrNotFound(lraId);
+        assertLoadBalancerCalledProperly();
     }
 
     @Test
@@ -380,6 +472,7 @@ public class BasicTest {
         URI lraId = UriBuilder.fromPath(response.getHeaderString(LRA_HTTP_CONTEXT_HEADER)).build();
         assertThat(await(Timeout.CS_START_LRA), is(lraId));
         assertThat(await(Timeout.CS_COMPENSATE), is(lraId));
+        assertLoadBalancerCalledProperly();
     }
 
     @Test
@@ -401,6 +494,7 @@ public class BasicTest {
         assertThat(await(Recovery.CS_COMPENSATE_SECOND), is(lraId));
         LocalDateTime second = LocalDateTime.now();
         System.out.println("Second compensate attempt after " + Duration.between(first, second));
+        assertLoadBalancerCalledProperly();
     }
 
     @Test
@@ -422,6 +516,7 @@ public class BasicTest {
         assertThat(await(Recovery.CS_COMPLETE_SECOND), is(lraId));
         LocalDateTime second = LocalDateTime.now();
         System.out.println("Second complete attempt after " + Duration.between(first, second));
+        assertLoadBalancerCalledProperly();
     }
 
     @Test
@@ -440,6 +535,7 @@ public class BasicTest {
         waitForRecovery(lraId);
         assertThat(await(RecoveryStatus.CS_STATUS, lraId), is(lraId));
         assertThat(await(RecoveryStatus.CS_COMPENSATE_SECOND, lraId), is(lraId));
+        assertLoadBalancerCalledProperly();
     }
 
     @Test
@@ -455,12 +551,13 @@ public class BasicTest {
         assertThat(response.getStatus(), is(500));
         URI lraId = UriBuilder.fromPath(response.getHeaderString(LRA_HTTP_CONTEXT_HEADER)).build();
         assertThat(await(RecoveryStatus.CS_START_LRA, lraId), is(lraId));
-        waitForRecovery(UriBuilder.fromPath("fake_non_existent").build());// just wait for any recovery
-        waitForRecovery(UriBuilder.fromPath("fake_non_existent").build());// just wait for any recovery
+        waitForRecovery(UriBuilder.fromPath("http://localhost:8075/lra-coordinator").build());// just wait for any recovery
+        waitForRecovery(UriBuilder.fromPath("http://localhost:8076/lra-coordinator").build());// just wait for any recovery
         assertThat("@Status method should have been called by compensator",
                 await(RecoveryStatus.CS_STATUS, lraId), is(lraId));
         assertThat("Second compensation shouldn't come, we reported Completed with @Status method",
                 getCompletable(RecoveryStatus.CS_COMPENSATE_SECOND, lraId).isDone(), is(not(true)));
+        assertLoadBalancerCalledProperly();
     }
 
     private void assertClosedOrNotFound(URI lraId) {
@@ -471,10 +568,19 @@ public class BasicTest {
         }
     }
 
+    private void assertLoadBalancerCalledProperly() {
+        try {
+            assertThat("LoadBalancer should be called only when starting new LRA, all subsequent calls needs to be direct ones.",
+                    forbiddenLoadBalancerCall.get(), isEmptyOrNullString());
+        } catch (NotFoundException e) {
+            // in case coordinator don't retain closed lra long enough
+        }
+    }
+
     private void waitForRecovery(URI lraId) {
         for (int i = 0; i < 10; i++) {
             WebClient client = WebClient.builder()
-                    .baseUri("http://localhost:8070/lra-coordinator")
+                    .baseUri(lraId)
                     .build();
 
             WebClientResponse response = client

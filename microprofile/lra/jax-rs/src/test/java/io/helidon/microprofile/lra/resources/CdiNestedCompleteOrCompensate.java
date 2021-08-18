@@ -26,7 +26,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 
-import io.helidon.microprofile.lra.BasicTest;
+import io.helidon.microprofile.lra.LoadBalancedCoordinatorTest;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
@@ -51,7 +51,7 @@ public class CdiNestedCompleteOrCompensate {
     public static final String CS_COMPENSATED = PATH_BASE + PATH_END_NESTED_LRA + "compensated";
 
     @Inject
-    BasicTest basicTest;
+    LoadBalancedCoordinatorTest basicTest;
 
     @PUT
     @Path(PATH_START_PARENT_LRA)

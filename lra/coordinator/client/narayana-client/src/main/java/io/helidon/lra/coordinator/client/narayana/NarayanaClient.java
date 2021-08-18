@@ -17,9 +17,6 @@
 package io.helidon.lra.coordinator.client.narayana;
 
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
@@ -40,8 +37,6 @@ import io.helidon.webclient.WebClientResponse;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
-import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_ENDED_CONTEXT_HEADER;
-import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_PARENT_CONTEXT_HEADER;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
 
 /**
@@ -56,50 +51,53 @@ public class NarayanaClient implements CoordinatorClient {
     private static final String QUERY_PARAM_TIME_LIMIT = "TimeLimit";
     private static final String QUERY_PARAM_PARENT_LRA = "ParentLRA";
     private static final String HEADER_LINK = "Link";
-    private static final Pattern LRA_ID_PATTERN = Pattern.compile(".*/([^/?]+).*");
+    private static final Pattern LRA_ID_PATTERN = Pattern.compile("(.*)/([^/?]+).*");
 
+    private URI coordinatorBaseUri;
     private Long coordinatorTimeout;
     private TimeUnit coordinatorTimeoutUnit;
-    private WebClient webClient;
 
     @Override
     public void init(String coordinatorUri, long timeout, TimeUnit timeoutUnit) {
+        this.coordinatorBaseUri = URI.create(coordinatorUri);
         this.coordinatorTimeout = timeout;
         this.coordinatorTimeoutUnit = timeoutUnit;
-        this.webClient = WebClient.builder()
-                .baseUri(coordinatorUri)
-                // Workaround for #3242
-                .keepAlive(false)
-                .addReader(new LraStatusReader())
-                .build();
     }
 
     @Override
     public URI start(String clientID, long timeout) {
-        return start("", clientID, timeout);
+        return startInternal(null, clientID, timeout);
     }
 
     @Override
     public URI start(URI parentLRAUri, String clientID, long timeout) {
-        String parentLra = URLEncoder.encode(parentLRAUri.toASCIIString(), StandardCharsets.UTF_8);
-        return start(parentLra, clientID, timeout);
+        //String parentLra = URLEncoder.encode(parentLRAUri.toASCIIString(), StandardCharsets.UTF_8);
+        return startInternal(parentLRAUri, clientID, timeout);
     }
 
-    private URI start(String parentLRA, String clientID, long timeout) {
+    private URI startInternal(URI parentLRA, String clientID, long timeout) {
         RuntimeException lastError = new IllegalStateException();
+
+        // We need to call coordinator which knows parent LRA
+        URI baseUri = Optional.ofNullable(parentLRA)
+                .map(p -> parseBaseUri(p.toASCIIString()))
+                .orElse(coordinatorBaseUri);
+
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {
             try {
-                WebClientResponse response = webClient
+                WebClientResponse response = prepareWebClient(baseUri)
                         .post()
                         .path("start")
                         .queryParam(QUERY_PARAM_CLIENT_ID, Optional.ofNullable(clientID).orElse(""))
                         .queryParam(QUERY_PARAM_TIME_LIMIT, String.valueOf(timeout))
-                        .queryParam(QUERY_PARAM_PARENT_LRA, parentLRA)
+                        .queryParam(QUERY_PARAM_PARENT_LRA, parentLRA == null ? "" : parentLRA.toASCIIString())
                         .submit()
                         .await(coordinatorTimeout, coordinatorTimeoutUnit);
 
                 if (response.status().code() != 201) {
                     throw coordinationConnectionError("Unexpected response " + response.status() + " from coordinator "
+                            + response.lastEndpointURI().toASCIIString()
+                            + ": "
                             + (response.content().as(String.class).await(coordinatorTimeout, coordinatorTimeoutUnit)), 500, null);
                 }
                 // TRM doesn't send lraId as LOCATION
@@ -110,7 +108,7 @@ public class NarayanaClient implements CoordinatorClient {
                         .orElseThrow(() ->
                                 new IllegalArgumentException("Coordinator needs to return lraId either as 'Location' or "
                                         + "'Long-Running-Action' header."));
-                return parseLRAId(lraId);
+                return URI.create(lraId); //parseLRAId(lraId);
             } catch (CoordinatorConnectionException e) {
                 lastError = e;
             } catch (CompletionException | IllegalStateException e) {
@@ -125,9 +123,12 @@ public class NarayanaClient implements CoordinatorClient {
         RuntimeException lastError = new IllegalStateException();
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {
             try {
-                WebClientResponse response = webClient
+                WebClientResponse response = WebClient.builder()
+                        .keepAlive(false)
+                        .baseUri(lraId.toASCIIString())
+                        .build()
                         .put()
-                        .path(lraId.toASCIIString() + "/cancel")
+                        .path("/cancel")
                         .submit()
                         .await(coordinatorTimeout, coordinatorTimeoutUnit);
 
@@ -155,9 +156,9 @@ public class NarayanaClient implements CoordinatorClient {
         RuntimeException lastError = new IllegalStateException();
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {
             try {
-                WebClientResponse response = webClient
+                WebClientResponse response = prepareWebClient(lraId)
                         .put()
-                        .path(lraId.toASCIIString() + "/close")
+                        .path("/close")
                         .submit()
                         .await(coordinatorTimeout, coordinatorTimeoutUnit);
 
@@ -190,9 +191,8 @@ public class NarayanaClient implements CoordinatorClient {
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {
             try {
                 String links = compensatorLinks(participant);
-                WebClientResponse response = webClient
+                WebClientResponse response = prepareWebClient(lraId)
                         .put()
-                        .path(lraId.toASCIIString())
                         .queryParam(QUERY_PARAM_TIME_LIMIT, String.valueOf(timeLimit))
                         .headers(h -> {
                             h.add(HEADER_LINK, links); // links are expected either in header
@@ -229,9 +229,9 @@ public class NarayanaClient implements CoordinatorClient {
         RuntimeException lastError = new IllegalStateException();
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {
             try {
-                WebClientResponse response = webClient
+                WebClientResponse response = prepareWebClient(lraId)
                         .put()
-                        .path(lraId.toASCIIString() + "/remove")
+                        .path("/remove")
                         .submit(compensatorLinks(participant))
                         .await(coordinatorTimeout, coordinatorTimeoutUnit);
 
@@ -259,9 +259,9 @@ public class NarayanaClient implements CoordinatorClient {
         RuntimeException lastError = new IllegalStateException();
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {
             try {
-                WebClientResponse response = webClient
+                WebClientResponse response = prepareWebClient(lraId)
                         .get()
-                        .path(lraId.toASCIIString() + "/status")
+                        .path("/status")
                         .request()
                         .await(coordinatorTimeout, coordinatorTimeoutUnit);
 
@@ -286,14 +286,18 @@ public class NarayanaClient implements CoordinatorClient {
         throw lastError;
     }
 
+    private WebClient prepareWebClient(URI uri) {
+        return WebClient.builder()
+                .baseUri(uri)
+                // Workaround for #3242
+                .keepAlive(false)
+                .addReader(new LraStatusReader())
+                .build();
+    }
+
     @Override
     public void preprocessHeaders(Headers headers) {
-        // Narayana sends coordinator url as part of lraId with LRA_HTTP_ENDED_CONTEXT_HEADER
-        // and parentLRA in lra header .../0_ffff7f000001_a76d_608fb07d_183a?ParentLRA=http%3A%2F%2...
-        cleanupLraId(LRA_HTTP_CONTEXT_HEADER, headers);
-        cleanupLraId(LRA_HTTP_ENDED_CONTEXT_HEADER, headers);
-        cleanupLraId(LRA_HTTP_RECOVERY_HEADER, headers);
-        cleanupLraId(LRA_HTTP_PARENT_CONTEXT_HEADER, headers);
+        // noop
     }
 
     /**
@@ -333,44 +337,13 @@ public class NarayanaClient implements CoordinatorClient {
                 .collect(Collectors.joining(","));
     }
 
-    /**
-     * Narayana sends coordinator url as part of lraId and sometimes even parentLRA as query param:
-     * http://127.0.0.1:8070/lra-coordinator/0_ffff7f000001_a76d_608fb07d_183a?ParentLRA=http%3A%2F%2...
-     * <p>
-     * Helidon client impl works with clean lraId, no unnecessary magic is needed.
-     *
-     * @param narayanaLRAId narayana lraId with uid hidden inside
-     * @return uid of LRA
-     */
-    static URI parseLRAId(String narayanaLRAId) {
-        Matcher m = LRA_ID_PATTERN.matcher(narayanaLRAId);
+    static URI parseBaseUri(String lraUri) {
+        Matcher m = LRA_ID_PATTERN.matcher(lraUri);
         if (!m.matches()) {
-            //LRA id format from Narayana
-            throw new RuntimeException("Error when parsing Narayana lraId: " + narayanaLRAId);
+            //LRA id uri format
+            throw new RuntimeException("Error when parsing lra uri: " + lraUri);
         }
         return URI.create(m.group(1));
-    }
-
-    private static void cleanupLraId(String headerKey, Headers headers) {
-        List<String> headerValues = Optional.ofNullable(headers.get(headerKey)).orElse(List.of());
-        if (headerValues.isEmpty()) {
-            return;
-        }
-        if (headerValues.size() > 1) {
-            LOGGER.log(Level.SEVERE, "Ambiguous LRA header {0}: {1}", new Object[] {
-                    headerKey, String.join(", ", headerValues)
-            });
-        }
-        String lraId = headerValues.get(0);
-        if (lraId != null && lraId.contains("/lra-coordinator/")) {
-
-            Matcher m = LRA_ID_PATTERN.matcher(lraId);
-            if (!m.matches()) {
-                //Unexpected header format from Narayana
-                throw new RuntimeException("Error when parsing Narayana header " + headerKey + ": " + lraId);
-            }
-            headers.putSingle(headerKey, m.group(1));
-        }
     }
 
     private CoordinatorConnectionException coordinationConnectionError(String message, int status, Throwable cause) {

@@ -24,6 +24,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
@@ -38,6 +40,7 @@ class LraDatabasePersistentRegistry implements LraPersistentRegistry {
     private final Map<String, Lra> lraMap = Collections.synchronizedMap(new HashMap<>());
     private final Config config;
     private final DbClient dbClient;
+    private static final Pattern LRA_ID_PATTERN = Pattern.compile(".*/([^/?]+).*");
 
     LraDatabasePersistentRegistry(Config config) {
         this.config = config;
@@ -131,7 +134,7 @@ class LraDatabasePersistentRegistry implements LraPersistentRegistry {
 
         lraMap.values()
                 .forEach(lra -> Optional.ofNullable(lra.parentId())
-                        .ifPresent(parentId -> lraMap.get(parentId).addChild(lra))
+                        .ifPresent(parentId -> lraMap.get(parseLRAId(parentId)).addChild(lra))
                 );
     }
 
@@ -190,6 +193,15 @@ class LraDatabasePersistentRegistry implements LraPersistentRegistry {
                         tx.namedDelete("delete-all-participants")
                 )
                 .reduce(Long::sum);
+    }
+
+    static String parseLRAId(String lraUri) {
+        Matcher m = LRA_ID_PATTERN.matcher(lraUri);
+        if (!m.matches()) {
+            //LRA uri format
+            throw new RuntimeException("Error when parsing lraUri: " + lraUri);
+        }
+        return m.group(1);
     }
 
 }

@@ -26,7 +26,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 
-import io.helidon.microprofile.lra.BasicTest;
+import io.helidon.microprofile.lra.LoadBalancedCoordinatorTest;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_ENDED_CONTEXT_HEADER;
 
@@ -39,7 +39,7 @@ public class CommonAfter {
     public static final String CS_AFTER = "after-lra";
 
     @Inject
-    BasicTest basicTest;
+    LoadBalancedCoordinatorTest basicTest;
 
     @AfterLRA
     @Path("/after")

@@ -30,7 +30,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 
-import io.helidon.microprofile.lra.BasicTest;
+import io.helidon.microprofile.lra.LoadBalancedCoordinatorTest;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
@@ -46,7 +46,7 @@ public class JaxRsCompleteOrCompensate {
     public static final String CS_COMPENSATE = PATH_BASE + PATH_COMPENSATE;
     
     @Inject
-    BasicTest basicTest;
+    LoadBalancedCoordinatorTest basicTest;
 
     @PUT
     @LRA(LRA.Type.REQUIRES_NEW)

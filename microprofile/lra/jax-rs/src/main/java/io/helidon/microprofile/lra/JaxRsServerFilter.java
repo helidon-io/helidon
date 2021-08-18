@@ -61,7 +61,9 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
             // if lraId already exists save it for later
             Optional.ofNullable(requestContext.getHeaders().getFirst(LRA_HTTP_CONTEXT_HEADER))
                     .map(h -> UriBuilder.fromPath(requestContext.getHeaders().getFirst(LRA_HTTP_CONTEXT_HEADER)).build())
-                    .ifPresent(lraId -> Contexts.context().get().register(LRA_HTTP_CONTEXT_HEADER, lraId));
+                    .ifPresent(lraId -> Contexts.context()
+                            .orElseThrow(() -> new IllegalStateException("LRA Jax-Rs resource executed out of Helidon context."))
+                            .register(LRA_HTTP_CONTEXT_HEADER, lraId));
 
             // Adapt JaxRs calls from specific coordinator
             coordinatorClient.preprocessHeaders(new Headers() {
@@ -102,7 +104,7 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
                 handler.handleJaxRsAfter(requestContext, responseContext, resourceInfo);
             }
         } catch (Throwable t) {
-            LOGGER.log(Level.SEVERE, "After LRA filter", t);
+            LOGGER.log(Level.SEVERE, "Error in after LRA filter", t);
         }
     }
 }

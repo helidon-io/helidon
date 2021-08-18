@@ -49,13 +49,14 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVER
 class Lra {
 
     private static final Logger LOGGER = Logger.getLogger(Lra.class.getName());
+    private final String coordinatorURL;
 
     private long timeout;
     private URI parentId;
     private final Set<String> compensatorLinks = Collections.synchronizedSet(new HashSet<>());
 
-    private String lraId;
-    private Config config;
+    private final String lraId;
+    private final Config config;
 
     private final List<Lra> children = Collections.synchronizedList(new ArrayList<>());
 
@@ -77,6 +78,9 @@ class Lra {
         lraId = lraUUID;
         this.config = config;
         lraCtr.inc();
+        coordinatorURL = config.get(CoordinatorService.COORDINATOR_URL_KEY)
+                .asString()
+                .orElse(CoordinatorService.DEFAULT_COORDINATOR_URL);
     }
 
     Lra(String lraUUID, URI parentId, Config config) {
@@ -84,6 +88,9 @@ class Lra {
         this.parentId = parentId;
         this.config = config;
         lraCtr.inc();
+        coordinatorURL = config.get(CoordinatorService.COORDINATOR_URL_KEY)
+                .asString()
+                .orElse(CoordinatorService.DEFAULT_COORDINATOR_URL);
     }
 
     String lraId() {
@@ -164,12 +171,12 @@ class Lra {
 
     Function<WebClientRequestHeaders, Headers> headers() {
         return headers -> {
-            headers.add(LRA_HTTP_CONTEXT_HEADER, lraId);
-            headers.add(LRA_HTTP_ENDED_CONTEXT_HEADER, lraId);
+            headers.add(LRA_HTTP_CONTEXT_HEADER, lraContextId());
+            headers.add(LRA_HTTP_ENDED_CONTEXT_HEADER, lraContextId());
             Optional.ofNullable(parentId)
                     .map(URI::toASCIIString)
                     .ifPresent(s -> headers.add(LRA_HTTP_PARENT_CONTEXT_HEADER, s));
-            headers.add(LRA_HTTP_RECOVERY_HEADER, lraId);
+            headers.add(LRA_HTTP_RECOVERY_HEADER, lraContextId() + "/recovery");
             return headers;
         };
     }
@@ -290,6 +297,10 @@ class Lra {
 
     AtomicReference<LRAStatus> status() {
         return status;
+    }
+
+    String lraContextId() {
+        return coordinatorURL + "/" + lraId;
     }
 
     private void sendComplete() {
