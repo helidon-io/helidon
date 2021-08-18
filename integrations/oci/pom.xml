@@ -38,6 +38,7 @@
         <module>objectstorage</module>
         <module>objectstorage-health</module>
         <module>vault</module>
+        <module>vault-health</module>
         <module>cdi</module>
     </modules>
 </project>
