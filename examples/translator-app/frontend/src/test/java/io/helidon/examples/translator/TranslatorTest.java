@@ -63,34 +63,34 @@ public class TranslatorTest {
 
     @Test
     public void testCzech() {
-        Response response = target.queryParam("q", "cloud")
+        try (Response response = target.queryParam("q", "cloud")
                                   .queryParam("lang", "czech")
                                   .request()
-                                  .get();
-
-        assertThat("Unexpected response! Status code: " + response.getStatus(),
-                          response.readEntity(String.class), is("oblak\n"));
+                                  .get()) {
+            assertThat("Unexpected response! Status code: " + response.getStatus(),
+                    response.readEntity(String.class), is("oblak\n"));
+        }
     }
 
     @Test
     public void testItalian() {
-        Response response = target.queryParam("q", "cloud")
+        try (Response response = target.queryParam("q", "cloud")
                                   .queryParam("lang", "italian")
                                   .request()
-                                  .get();
-
-        assertThat("Unexpected response! Status code: " + response.getStatus(),
-                          response.readEntity(String.class), is("nube\n"));
+                                  .get()) {
+            assertThat("Unexpected response! Status code: " + response.getStatus(),
+                    response.readEntity(String.class), is("nube\n"));
+        }
     }
 
     @Test
     public void testFrench() {
-        Response response = target.queryParam("q", "cloud")
+        try (Response response = target.queryParam("q", "cloud")
                                   .queryParam("lang", "french")
                                   .request()
-                                  .get();
-
-        assertThat("Unexpected response! Status code: " + response.getStatus(),
-                          response.readEntity(String.class), is("nuage\n"));
+                                  .get()) {
+            assertThat("Unexpected response! Status code: " + response.getStatus(),
+                    response.readEntity(String.class), is("nuage\n"));
+        }
     }
 }

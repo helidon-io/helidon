@@ -49,6 +49,7 @@
         <module>kafka</module>
         <module>jms</module>
         <module>config</module>
+        <module>jep290</module>
     </modules>
 
     <profiles>

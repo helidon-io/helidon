@@ -28,7 +28,7 @@ module io.helidon.microprofile.graphql.server {
     requires jakarta.enterprise.cdi.api;
     requires org.eclipse.yasson;
 
-    requires jandex;
+    requires org.jboss.jandex;
 
     requires io.helidon.config;
     requires io.helidon.webserver;

@@ -1,0 +1,60 @@
+<!--
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+  -->
+<configuration scan="true" scanPeriod="30 seconds" packagingData="true">
+    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+    <property name="defaultPattern" value="[%date] [%highlight(%-5level)] [%class{50}.%method:%line] %msg%rootException %X{name}%n" />
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>helidon.log</file>
+        <append>true</append>
+        <immediateFlush>false</immediateFlush>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>helidon.%d{yyyy-MM-dd}.gz</fileNamePattern>
+            <maxHistory>10</maxHistory>
+            <totalSizeCap>5GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>${defaultPattern}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE"/>
+        <queueSize>2048</queueSize>
+        <maxFlushTime>15000</maxFlushTime>
+        <neverBlock>true</neverBlock>
+        <includeCallerData>true</includeCallerData>
+    </appender>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${defaultPattern}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Loggers -->
+
+    <root level="info">
+        <appender-ref ref="ASYNC"/>
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+    <logger name="io.helidon.examples.logging.logback.aot" level="info"/>
+    <logger name="io.helidon" level="info"/>
+    <logger name="org.jboss.weld" level="warn"/>
+    <logger name="io.netty" level="warn"/>
+</configuration>

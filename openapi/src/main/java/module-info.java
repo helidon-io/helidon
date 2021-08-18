@@ -28,7 +28,7 @@ module io.helidon.openapi {
     requires io.helidon.webserver;
     requires io.helidon.webserver.cors;
 
-    requires jandex;
+    requires org.jboss.jandex;
 
     requires smallrye.open.api;
     requires java.json;

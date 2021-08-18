@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,20 +55,20 @@ class MicronautExampleTest {
 
     @Test
     void testNotFound() {
-        Response response = webTarget.path("/pets/Fino")
+        try (Response response = webTarget.path("/pets/Fino")
                 .request()
-                .get();
-
-        assertEquals(404, response.getStatus(), "Should be not found: 404");
+                .get()) {
+            assertEquals(404, response.getStatus(), "Should be not found: 404");
+        }
     }
 
     @Test
     void testValidationError() {
-        Response response = webTarget.path("/pets/a")
+        try (Response response = webTarget.path("/pets/a")
                 .request()
-                .get();
-
-        assertEquals(400, response.getStatus(), "Should be bad request: 400");
+                .get()) {
+            assertEquals(400, response.getStatus(), "Should be bad request: 400");
+        }
     }
 
 }

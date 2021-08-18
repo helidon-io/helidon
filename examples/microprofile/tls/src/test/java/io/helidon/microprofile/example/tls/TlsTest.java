@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,9 +74,10 @@ public class TlsTest {
     @Test
     public void testTls() {
         URI restUri = URI.create("https://localhost:" + server.port() + "/");
-        Response res = client.target(restUri).request().get();
-        assertThat(res.getStatus(), is(200));
-        assertThat(res.readEntity(String.class), is("Hello user!"));
+        try (Response res = client.target(restUri).request().get()) {
+            assertThat(res.getStatus(), is(200));
+            assertThat(res.readEntity(String.class), is("Hello user!"));
+        }
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,11 +79,11 @@ public abstract class DigestExampleTest {
     @Test
     public void testPublic() {
         //Must be accessible without authentication
-        Response response = client.target(getServerBase() + "/public").request().get();
-
-        assertThat(response.getStatus(), is(200));
-        String entity = response.readEntity(String.class);
-        assertThat(entity, containsString("<ANONYMOUS>"));
+        try (Response response = client.target(getServerBase() + "/public").request().get()) {
+            assertThat(response.getStatus(), is(200));
+            String entity = response.readEntity(String.class);
+            assertThat(entity, containsString("<ANONYMOUS>"));
+        }
     }
 
     @Test
@@ -138,26 +138,26 @@ public abstract class DigestExampleTest {
     public void getNoAuthn() {
         String url = getServerBase() + "/noAuthn";
         //Must NOT be accessible without authentication
-        Response response = client.target(url).request().get();
+        try (Response response = client.target(url).request().get()) {
+            // authentication is optional, so we are not challenged, only forbidden, as the role can never be there...
+            assertThat(response.getStatus(), is(403));
 
-        // authentication is optional, so we are not challenged, only forbidden, as the role can never be there...
-        assertThat(response.getStatus(), is(403));
-
-        // doesn't matter, we are never challenged
-        testProtectedDenied(url, "jack", "password");
-        testProtectedDenied(url, "jill", "password");
-        testProtectedDenied(url, "john", "password");
+            // doesn't matter, we are never challenged
+            testProtectedDenied(url, "jack", "password");
+            testProtectedDenied(url, "jill", "password");
+            testProtectedDenied(url, "john", "password");
+        }
     }
 
     private void testNotAuthorized(Client client, String uri) {
         //Must NOT be accessible without authentication
-        Response response = client.target(uri).request().get();
-
-        assertThat(response.getStatus(), is(401));
-        String header = response.getHeaderString("WWW-Authenticate");
-        assertThat(header, notNullValue());
-        assertThat(header.toLowerCase(), containsString("digest"));
-        assertThat(header, containsString("mic"));
+        try (Response response = client.target(uri).request().get()) {
+            assertThat(response.getStatus(), is(401));
+            String header = response.getHeaderString("WWW-Authenticate");
+            assertThat(header, notNullValue());
+            assertThat(header.toLowerCase(), containsString("digest"));
+            assertThat(header, containsString("mic"));
+        }
     }
 
     private Response callProtected(String uri, String username, String password) {
@@ -173,8 +173,9 @@ public abstract class DigestExampleTest {
                                      String username,
                                      String password) {
 
-        Response response = callProtected(uri, username, password);
-        assertThat(response.getStatus(), is(403));
+        try (Response response = callProtected(uri, username, password)) {
+            assertThat(response.getStatus(), is(403));
+        }
     }
 
     private void testProtected(String uri,
@@ -183,16 +184,16 @@ public abstract class DigestExampleTest {
                                Set<String> expectedRoles,
                                Set<String> invalidRoles) {
 
-        Response response = callProtected(uri, username, password);
+        try (Response response = callProtected(uri, username, password)) {
+            String entity = response.readEntity(String.class);
 
-        String entity = response.readEntity(String.class);
+            assertThat(response.getStatus(), is(200));
 
-        assertThat(response.getStatus(), is(200));
-
-        // check login
-        assertThat(entity, containsString("id='" + username + "'"));
-        // check roles
-        expectedRoles.forEach(role -> assertThat(entity, containsString(":" + role)));
-        invalidRoles.forEach(role -> assertThat(entity, not(containsString(":" + role))));
+            // check login
+            assertThat(entity, containsString("id='" + username + "'"));
+            // check roles
+            expectedRoles.forEach(role -> assertThat(entity, containsString(":" + role)));
+            invalidRoles.forEach(role -> assertThat(entity, not(containsString(":" + role))));
+        }
     }
 }

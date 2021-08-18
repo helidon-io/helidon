@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,37 +65,37 @@ class StaticContentTest {
 
     @Test
     void testWelcomePage() {
-        Response response = ClientBuilder.newClient()
+        try (Response response = ClientBuilder.newClient()
                 .target("http://localhost:" + Main.getPort())
                 .request()
                 .accept(MediaType.TEXT_HTML_TYPE)
-                .get();
+                .get()) {
+            assertThat("Status should be 200", response.getStatus(), is(Http.Status.OK_200.code()));
 
-        assertThat("Status should be 200", response.getStatus(), is(Http.Status.OK_200.code()));
+            String str = response.readEntity(String.class);
 
-        String str = response.readEntity(String.class);
-
-        assertAll(
-                () -> assertThat(response.getMediaType(), is(MediaType.TEXT_HTML_TYPE)),
-                () -> assertThat(str, containsString("server.static.classpath.location=/WEB"))
-        );
+            assertAll(
+                    () -> assertThat(response.getMediaType(), is(MediaType.TEXT_HTML_TYPE)),
+                    () -> assertThat(str, containsString("server.static.classpath.location=/WEB"))
+            );
+        }
     }
 
     @Test
     void testStaticResource() {
-        Response response = ClientBuilder.newClient()
+        try (Response response = ClientBuilder.newClient()
                 .target("http://localhost:" + Main.getPort() + "/resource.html")
                 .request()
                 .accept(MediaType.TEXT_HTML_TYPE)
-                .get();
+                .get()) {
+            assertThat("Status should be 200", response.getStatus(), is(Http.Status.OK_200.code()));
 
-        assertThat("Status should be 200", response.getStatus(), is(Http.Status.OK_200.code()));
+            String str = response.readEntity(String.class);
 
-        String str = response.readEntity(String.class);
-
-        assertAll(
-                () -> assertThat(response.getMediaType(), is(MediaType.TEXT_HTML_TYPE)),
-                () -> assertThat(str, containsString("server.static.classpath.location=/WEB"))
-        );
+            assertAll(
+                    () -> assertThat(response.getMediaType(), is(MediaType.TEXT_HTML_TYPE)),
+                    () -> assertThat(str, containsString("server.static.classpath.location=/WEB"))
+            );
+        }
     }
 }
