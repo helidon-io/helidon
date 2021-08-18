@@ -185,7 +185,7 @@ class OidcSupportTest {
                 .join();
 
         List<String> authorization = response.requestHeaders().get("Authorization");
-        assertThat("Authorization header", authorization, hasItem("bearer " + tokenContent));
+        assertThat("Authorization header", authorization, hasItem("Bearer " + tokenContent));
     }
 
     @Test
