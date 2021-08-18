@@ -49,6 +49,8 @@ import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -125,7 +127,7 @@ public class LraCdiExtension implements Extension {
             @Observes
             @WithAnnotations({
                     Path.class,
-                    GET.class, POST.class, PUT.class, DELETE.class,
+                    GET.class, POST.class, PUT.class, OPTIONS.class, PATCH.class, DELETE.class,
                     LRA.class,
                     AfterLRA.class, Compensate.class, Complete.class, Forget.class, Status.class
             }) ProcessAnnotatedType<?> pat) {
