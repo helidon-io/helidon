@@ -42,6 +42,7 @@ import javax.net.ssl.SSLContext;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
 import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
@@ -216,6 +217,7 @@ class NettyWebServer implements WebServer {
         }
 
         if (!started) {
+            SerializationConfig.configureRuntime();
 
             channelsUpFuture.thenAccept(this::started)
                             .exceptionally(throwable -> {

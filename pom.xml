@@ -100,7 +100,7 @@
         <version.plugin.helidon-build-tools>2.2.1</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
-        <version.plugin.jandex>1.0.6</version.plugin.jandex>
+        <version.plugin.jandex>1.1.0</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.javadoc>3.3.0</version.plugin.javadoc>
         <version.plugin.jaxb>0.14.0</version.plugin.jaxb>

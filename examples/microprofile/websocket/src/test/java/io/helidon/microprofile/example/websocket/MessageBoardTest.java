@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,9 +72,10 @@ public class MessageBoardTest {
         // Post messages using REST resource
         URI restUri = URI.create("http://localhost:" + server.port() + "/rest");
         for (String message : messages) {
-            Response res = restClient.target(restUri).request().post(Entity.text(message));
-            assertThat(res.getStatus(), is(204));
-            LOGGER.info("Posting message '" + message + "'");
+            try (Response res = restClient.target(restUri).request().post(Entity.text(message))) {
+                assertThat(res.getStatus(), is(204));
+                LOGGER.info("Posting message '" + message + "'");
+            }
         }
 
         // Now connect to message board using WS and them back

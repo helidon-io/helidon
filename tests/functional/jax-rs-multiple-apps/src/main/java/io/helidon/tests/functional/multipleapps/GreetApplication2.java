@@ -18,16 +18,25 @@ package io.helidon.tests.functional.multipleapps;
 import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
 /**
  * Second application.
  */
 @ApplicationScoped
+@ApplicationPath("app2")
 public class GreetApplication2 extends Application {
+
+    private static final Filter2 filter2 = new Filter2();
 
     @Override
     public Set<Class<?>> getClasses() {
-        return Set.of(GreetResource2.class);
+        return Set.of(GreetResource2.class, SharedFilter.class);
+    }
+
+    @Override
+    public Set<Object> getSingletons() {
+        return Set.of(filter2);
     }
 }
