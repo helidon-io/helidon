@@ -121,8 +121,10 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
 
         // create a new response
         AuthenticationResponse.Builder builder = AuthenticationResponse.builder();
+        previousResponse.description().ifPresent(builder::description);
+        builder.requestHeaders(previousResponse.requestHeaders());
 
-        CompletionStage<Subject> result;
+        CompletionStage<Subject> result = null;
         if (maybeUser.isPresent()) {
             if (supportedTypes.contains(SubjectType.USER)) {
                 // service will be done after use
@@ -133,30 +135,30 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
                         });
             } else {
                 builder.user(maybeUser.get());
-                result = CompletableFuture.completedStage(null);
             }
-        } else {
-            // if no user, immediately do service (or nothing, if it is not present as well)
-            result = CompletableFuture.completedStage(null);
         }
+
         if (maybeService.isPresent()) {
             if (supportedTypes.contains(SubjectType.SERVICE)) {
-                // enhance service after any previous operation is finished
-                result = result.thenCompose(ignored -> enhance(authenticatedRequest, previousResponse, maybeService.get()))
-                        .thenApply(it -> {
-                            builder.service(it);
-                            return it;
-                        });
+                if (result == null) {
+                    result = enhance(authenticatedRequest, previousResponse, maybeService.get());
+                } else {
+                    // enhance service after any previous operation is finished
+                    result = result.thenCompose(ignored -> enhance(authenticatedRequest, previousResponse, maybeService.get()));
+                }
+                result = result.thenApply(it -> {
+                    builder.service(it);
+                    return it;
+                });
             } else {
                 builder.service(maybeService.get());
             }
         }
-        return result.thenApply(ignored -> {
-            previousResponse.description().ifPresent(builder::description);
-            builder.requestHeaders(previousResponse.requestHeaders());
+        if (result == null) {
+            return CompletableFuture.completedStage(builder.build());
+        }
 
-            return builder.build();
-        });
+        return result.thenApply(ignored -> builder.build());
     }
 
     /**
