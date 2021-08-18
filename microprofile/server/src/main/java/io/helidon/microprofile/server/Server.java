@@ -128,10 +128,6 @@ public interface Server {
      * Builder to build {@link Server} instance.
      */
     final class Builder {
-        private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
-
-        // this constant is to ensure we initialize Helidon CDI at build time
-        private static final HelidonContainer CONTAINER = HelidonContainer.instance();
         private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.builder");
 
         private final List<Class<?>> resourceClasses = new LinkedList<>();
@@ -145,8 +141,6 @@ public interface Server {
         private boolean retainDiscovered = false;
 
         private Builder() {
-            LOGGER.finest(() -> "Container context id: " + CONTAINER.context().id());
-
             ServerCdiExtension server = null;
             try {
                 server = CDI.current()
@@ -177,6 +171,18 @@ public interface Server {
          * @throws MpException in case the server fails to be created
          */
         public Server build() {
+            STARTUP_LOGGER.entering(Builder.class.getName(), "build");
+
+            // configuration must be initialize before we start the container
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+
+            if (null == config) {
+                this.config = ConfigProviderResolver.instance().getConfig(classLoader);
+            }
+
+            // make sure the config is available to application
+            ConfigProviderResolver.instance().registerConfig(config, classLoader);
+
             // we may have shutdown the original instance, this is to ensure we use the current CDI.
             HelidonContainer instance = HelidonContainer.instance();
 
@@ -195,17 +201,6 @@ public interface Server {
         }
 
         private Server doBuild() {
-            STARTUP_LOGGER.entering(Builder.class.getName(), "build");
-
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-
-            if (null == config) {
-                this.config = ConfigProviderResolver.instance().getConfig(classLoader);
-            }
-
-            // make sure the config is available to application
-            ConfigProviderResolver.instance().registerConfig(config, classLoader);
-
             ServerCdiExtension server = CDI.current()
                     .getBeanManager()
                     .getExtension(ServerCdiExtension.class);
