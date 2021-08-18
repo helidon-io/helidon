@@ -32,9 +32,9 @@ interface Sample {
     }
 
     static Labeled labeled(long value) {
-        return new Labeled.Impl(value,
-                IS_EXEMPLAR_HANDLING_ACTIVE ? ExemplarServiceManager.exemplarLabel() : ExemplarServiceManager.INACTIVE_LABEL,
-                System.currentTimeMillis());
+        return IS_EXEMPLAR_HANDLING_ACTIVE
+                ? new Labeled.Impl(value, ExemplarServiceManager.exemplarLabel(), System.currentTimeMillis())
+                : new Labeled.Impl(value, ExemplarServiceManager.INACTIVE_LABEL, 0);
     }
 
     /**
