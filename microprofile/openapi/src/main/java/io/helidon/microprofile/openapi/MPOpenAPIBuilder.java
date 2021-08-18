@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.enterprise.inject.spi.CDI;
@@ -173,17 +174,30 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
          * Create an OpenAPIConfig instance to limit scanning to this app's classes by overriding any inclusions of classes or
          * packages specified in the config with our own inclusions based on this app's classes.
          */
-        OpenApiConfigImpl openAPIFilteringConfig = new OpenApiConfigImpl(mpConfig);
-        Set<String> scanClasses = openAPIFilteringConfig.scanClasses();
-        scanClasses.clear();
-        openAPIFilteringConfig.scanPackages().clear();
+        Pattern appRelatedClassesPattern = Pattern.compile(
+                appRelatedClassesToScan.stream()
+                        .map(Class::getName)
+                        .map(Pattern::quote)
+                        .collect(Collectors.joining("|")));
 
-        appRelatedClassesToScan.stream()
-                .map(Class::getName)
-                .forEach(scanClasses::add);
-
-        FilteredIndexView result = new FilteredIndexView(singleIndexViewSupplier.get(), openAPIFilteringConfig);
+        FilteredIndexView result = new FilteredIndexView(singleIndexViewSupplier.get(),
+                new FilteringOpenApiConfigImpl(mpConfig, appRelatedClassesPattern));
         return result;
+    }
+
+    private static class FilteringOpenApiConfigImpl extends OpenApiConfigImpl {
+
+        private final Pattern appRelatedClassNamesToScan;
+
+        FilteringOpenApiConfigImpl(Config config, Pattern appRelatedClassNamesToScan) {
+            super(config);
+            this.appRelatedClassNamesToScan = appRelatedClassNamesToScan;
+        }
+
+        @Override
+        public Pattern scanClasses() {
+            return appRelatedClassNamesToScan;
+        }
     }
 
     /**

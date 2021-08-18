@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.microprofile.openapi.models.OpenAPI;
+import org.eclipse.microprofile.openapi.models.Paths;
 import org.eclipse.microprofile.openapi.models.parameters.Parameter;
 
 import org.junit.jupiter.api.Test;
@@ -76,6 +77,38 @@ class ParserTest {
         assertThat(first, is(instanceOf(String.class)));
         String f = (String) first;
         assertThat(f, is(equalTo("one")));
+    }
+
+
+    @Test
+    void testYamlRef() throws IOException {
+        OpenAPI openAPI = parse(helper, "/petstore.yaml", OpenAPISupport.OpenAPIMediaType.YAML);
+        Paths paths = openAPI.getPaths();
+        String ref = paths.getPathItem("/pets")
+                .getGET()
+                .getResponses()
+                .getAPIResponse("200")
+                .getContent()
+                .getMediaType("application/json")
+                .getSchema()
+                .getRef();
+
+        assertThat("ref value", ref, is(equalTo("#/components/schemas/Pets")));
+    }
+
+    @Test
+    void testJsonRef() throws IOException {
+        OpenAPI openAPI = parse(helper, "/petstore.json", OpenAPISupport.OpenAPIMediaType.JSON);
+        Paths paths = openAPI.getPaths();
+        String ref = paths.getPathItem("/user")
+                .getPOST()
+                .getRequestBody()
+                .getContent()
+                .getMediaType("application/json")
+                .getSchema()
+                .getRef();
+
+                assertThat("ref value", ref, is(equalTo("#/components/schemas/User")));
     }
 
     @Test
