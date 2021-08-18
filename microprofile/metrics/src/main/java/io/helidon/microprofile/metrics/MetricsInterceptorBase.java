@@ -18,7 +18,6 @@ package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,7 +44,7 @@ abstract class MetricsInterceptorBase<M extends Metric> extends HelidonIntercept
     static final Logger LOGGER = Logger.getLogger(MetricsInterceptorBase.class.getName());
 
     private final Class<? extends Annotation> annotationType;
-    protected final Class<M> metricType;
+    private final Class<M> metricType;
 
     @Inject
     private MetricsCdiExtension extension;
@@ -112,8 +111,11 @@ abstract class MetricsInterceptorBase<M extends Metric> extends HelidonIntercept
     abstract static class WithPostCompletion<T extends Metric> extends MetricsInterceptorBase<T>
             implements HelidonInterceptor.WithPostCompletion<MetricWorkItem> {
 
+        private final Class<T> metricType;
+
         WithPostCompletion(Class<? extends Annotation> annotationType, Class<T> metricType) {
             super(annotationType, metricType);
+            this.metricType = metricType;
         }
 
         @Override
