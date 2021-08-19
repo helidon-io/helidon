@@ -89,7 +89,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
     private JwtProvider(Builder builder) {
         this.optional = builder.optional;
         this.authenticate = builder.authenticate;
-        this.propagate = builder.propagate;
+        this.propagate = builder.propagate && builder.outboundConfig.targets().size() > 0;
         this.allowImpersonation = builder.allowImpersonation;
         this.subjectType = builder.subjectType;
         this.atnTokenHandler = builder.atnTokenHandler;
@@ -259,7 +259,8 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
     public boolean isOutboundSupported(ProviderRequest providerRequest,
                                        SecurityEnvironment outboundEnv,
                                        EndpointConfig outboundConfig) {
-        return propagate;
+        // only propagate if we have an actual target configured
+        return propagate && this.outboundConfig.findTarget(outboundEnv).isPresent();
     }
 
     @Override
@@ -603,7 +604,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
                 .tokenHeader("Authorization")
                 .tokenPrefix("bearer ")
                 .build();
-        private OutboundConfig outboundConfig;
+        private OutboundConfig outboundConfig = OutboundConfig.builder().build();
         private JwkKeys verifyKeys;
         private JwkKeys signKeys;
         private String issuer;
