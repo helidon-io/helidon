@@ -19,6 +19,12 @@ import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.enterprise.inject.spi.CDI;
+
+import io.helidon.microprofile.server.ServerCdiExtension;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
@@ -28,11 +34,16 @@ import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
  * returns url without the trailing "/".
  */
 public class CoordinatorURLResourceProvider implements ResourceProvider {
+
+    private static final Logger LOGGER = Logger.getLogger(CoordinatorURLResourceProvider.class.getName());
+
     @Override
     public Object lookup(ArquillianResource arquillianResource, Annotation... annotations) {
         try {
-            return URI.create("http://localhost:8080/").toURL();
+            int port = CDI.current().getBeanManager().getExtension(ServerCdiExtension.class).port();
+            return URI.create("http://localhost:" + port + "/").toURL();
         } catch (MalformedURLException e) {
+            LOGGER.log(Level.SEVERE, "Error when preparing LRA client url", e);
             return null;
         }
     }

@@ -25,6 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -37,6 +38,7 @@ import javax.json.JsonObject;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.media.common.MessageBodyWriter;
@@ -78,22 +80,20 @@ public class CoordinatorService implements Service {
 
     private final LraPersistentRegistry lraPersistentRegistry;
 
-    private final String coordinatorURL;
+    private final LazyValue<URI> coordinatorURL;
     private final Config config;
     private Task recoveryTask;
     private Task persistTask = null;
 
-    CoordinatorService(LraPersistentRegistry lraPersistentRegistry, Config config) {
+    CoordinatorService(LraPersistentRegistry lraPersistentRegistry, Supplier<URI> coordinatorUriSupplier, Config config) {
         this.lraPersistentRegistry = lraPersistentRegistry;
-        coordinatorURL = config.get(COORDINATOR_URL_KEY)
-                .asString()
-                .orElse(DEFAULT_COORDINATOR_URL);
+        coordinatorURL = LazyValue.create(coordinatorUriSupplier);
         this.config = config;
         init();
     }
 
     private void init() {
-        lraPersistentRegistry.load();
+        lraPersistentRegistry.load(this);
         recoveryTask = Scheduling.fixedRateBuilder()
                 .delay(config.get("recovery-interval").asLong().orElse(300L))
                 .initialDelay(200)
@@ -157,17 +157,17 @@ public class CoordinatorService implements Service {
         String parentLRA = req.queryParams().first(PARENT_LRA_PARAM_NAME).orElse("");
 
         String lraUUID = UUID.randomUUID().toString();
-        URI lraId = URI.create(coordinatorURL + "/" + lraUUID);
+        URI lraId = coordinatorUriWithPath(lraUUID);
         if (!parentLRA.isEmpty()) {
-            Lra parent = lraPersistentRegistry.get(parentLRA.replace(coordinatorURL + "/", ""));
+            Lra parent = lraPersistentRegistry.get(parentLRA.replace(coordinatorURL.get().toASCIIString() + "/", ""));
             if (parent != null) {
-                Lra childLra = new Lra(lraUUID, URI.create(parentLRA), this.config);
+                Lra childLra = new Lra(this, lraUUID, URI.create(parentLRA), this.config);
                 childLra.setupTimeout(timeLimit);
                 lraPersistentRegistry.put(lraUUID, childLra);
                 parent.addChild(childLra);
             }
         } else {
-            Lra newLra = new Lra(lraUUID, config);
+            Lra newLra = new Lra(this, lraUUID, config);
             newLra.setupTimeout(timeLimit);
             lraPersistentRegistry.put(lraUUID, newLra);
         }
@@ -237,7 +237,7 @@ public class CoordinatorService implements Service {
             return;
         }
         lra.addParticipant(compensatorLink);
-        String recoveryUrl = coordinatorURL + "/" + lraId + "/recovery";
+        String recoveryUrl = coordinatorUriWithPath("/" + lraId + "/recovery").toASCIIString();
 
         res.headers().put(LRA_HTTP_RECOVERY_HEADER, recoveryUrl);
         res.headers().put("Location", recoveryUrl);
@@ -389,11 +389,19 @@ public class CoordinatorService implements Service {
         completedRecovery.getAndSet(new CompletableFuture<>()).complete(null);
     }
 
+    LazyValue<URI> getCoordinatorURL() {
+        return coordinatorURL;
+    }
+
     private Single<Void> nextRecoveryCycle() {
         return Single.create(completedRecovery.get(), true)
                 //wait for the second one, as first could have been in progress
                 .onCompleteResumeWith(Single.create(completedRecovery.get(), true))
                 .ignoreElements();
+    }
+
+    private URI coordinatorUriWithPath(String additionalPath) {
+        return URI.create(coordinatorURL.get().toASCIIString() + "/" + additionalPath);
     }
 
     /**
@@ -423,6 +431,9 @@ public class CoordinatorService implements Service {
 
         private Config config;
         private LraPersistentRegistry lraPersistentRegistry;
+        private Supplier<URI> uriSupplier = () -> URI.create(config.get(COORDINATOR_URL_KEY)
+                .asString()
+                .orElse(DEFAULT_COORDINATOR_URL));
 
         /**
          * Configuration needed for configuring coordinator.
@@ -447,6 +458,18 @@ public class CoordinatorService implements Service {
             return this;
         }
 
+        /**
+         * Supplier for coordinator url.
+         * For supplying url after we know the port of the started server.
+         *
+         * @param uriSupplier coordinator url
+         * @return this builder
+         */
+        public Builder url(Supplier<URI> uriSupplier) {
+            this.uriSupplier = uriSupplier;
+            return this;
+        }
+
         @Override
         public CoordinatorService build() {
             if (config == null) {
@@ -455,7 +478,7 @@ public class CoordinatorService implements Service {
             if (lraPersistentRegistry == null) {
                 lraPersistentRegistry = new LraDatabasePersistentRegistry(config);
             }
-            return new CoordinatorService(lraPersistentRegistry, config);
+            return new CoordinatorService(lraPersistentRegistry, uriSupplier, config);
         }
     }
 }

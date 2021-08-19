@@ -76,7 +76,7 @@ class LraDatabasePersistentRegistry implements LraPersistentRegistry {
     }
 
     @Override
-    public void load() {
+    public void load(CoordinatorService coordinatorService) {
         dbClient.inTransaction(tx -> tx.namedQuery("load")
                 .map(row -> {
 
@@ -103,7 +103,9 @@ class LraDatabasePersistentRegistry implements LraPersistentRegistry {
 
                     Lra lra = lraMap.get(lraId);
                     if (lra == null) {
-                        lra = new Lra(lraId, Optional.ofNullable(parentId).map(URI::create).orElse(null), config);
+                        lra = new Lra(coordinatorService, lraId,
+                                Optional.ofNullable(parentId).map(URI::create).orElse(null),
+                                config);
                         lra.setTimeout(timeout);
                         lra.setStatus(LRAStatus.valueOf(lraStatus));
                         lra.setChild(isChild);

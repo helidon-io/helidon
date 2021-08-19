@@ -15,18 +15,16 @@
  *
  */
 
-import java.net.Inet4Address;
-import java.net.UnknownHostException;
-import java.util.Map;
+import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
 import javax.json.JsonArray;
 import javax.json.JsonValue;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.MapConfigSource;
 import io.helidon.lra.coordinator.CoordinatorService;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
@@ -43,27 +41,28 @@ import org.junit.jupiter.api.Test;
 public class CoordinatorTest {
 
     private static final String CONTEXT_PATH = "/test";
+    private static final String COORDINATOR_ROUTING_NAME = "coordinator";
     private static WebServer server;
     private static String serverUrl;
     private static WebClient webClient;
     private static CoordinatorService coordinatorService;
 
     @BeforeAll
-    static void beforeAll() throws UnknownHostException {
+    static void beforeAll() {
+        LazyValue<URI> coordinatorUri = LazyValue.create(() ->
+                URI.create("http://localhost:" + server.port(COORDINATOR_ROUTING_NAME) + "/lra-coordinator"));
+
         coordinatorService = CoordinatorService.builder()
-                .config(Config.builder(() ->
-                                        ConfigSources.classpath("application.yaml").build(),
-                                MapConfigSource.create(Map.of(
-                                        CoordinatorService.CONFIG_PREFIX + ".url", "http://localhost:8077/lra-coordinator"
-                                )))
+                .url(coordinatorUri::get)
+                .config(Config.builder(() -> ConfigSources.classpath("application.yaml").build())
                         .build().get(CoordinatorService.CONFIG_PREFIX))
                 .build();
         server = WebServer.builder()
                 .addSocket(SocketConfiguration.builder()
-                        .name("coordinator")
+                        .name(COORDINATOR_ROUTING_NAME)
                         .port(8077)
                         .build())
-                .addNamedRouting("coordinator", Routing.builder()
+                .addNamedRouting(COORDINATOR_ROUTING_NAME, Routing.builder()
                         .register("/lra-coordinator", coordinatorService)
                         .build())
                 .routing(Routing.builder()
@@ -76,7 +75,7 @@ public class CoordinatorTest {
         serverUrl = "http://localhost:" + server.port();
         webClient = WebClient.builder()
                 .keepAlive(false)
-                .baseUri("http://localhost:8077/lra-coordinator")
+                .baseUri("http://localhost:" + server.port(COORDINATOR_ROUTING_NAME) + "/lra-coordinator")
                 .build();
     }
 

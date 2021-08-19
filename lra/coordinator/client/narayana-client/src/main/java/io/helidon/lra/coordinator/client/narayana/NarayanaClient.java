@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -53,13 +54,13 @@ public class NarayanaClient implements CoordinatorClient {
     private static final String HEADER_LINK = "Link";
     private static final Pattern LRA_ID_PATTERN = Pattern.compile("(.*)/([^/?]+).*");
 
-    private URI coordinatorBaseUri;
+    private Supplier<URI> coordinatorUriSupplier;
     private Long coordinatorTimeout;
     private TimeUnit coordinatorTimeoutUnit;
 
     @Override
-    public void init(String coordinatorUri, long timeout, TimeUnit timeoutUnit) {
-        this.coordinatorBaseUri = URI.create(coordinatorUri);
+    public void init(Supplier<URI> coordinatorUriSupplier, long timeout, TimeUnit timeoutUnit) {
+        this.coordinatorUriSupplier = coordinatorUriSupplier;
         this.coordinatorTimeout = timeout;
         this.coordinatorTimeoutUnit = timeoutUnit;
     }
@@ -71,7 +72,6 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public URI start(URI parentLRAUri, String clientID, long timeout) {
-        //String parentLra = URLEncoder.encode(parentLRAUri.toASCIIString(), StandardCharsets.UTF_8);
         return startInternal(parentLRAUri, clientID, timeout);
     }
 
@@ -81,7 +81,7 @@ public class NarayanaClient implements CoordinatorClient {
         // We need to call coordinator which knows parent LRA
         URI baseUri = Optional.ofNullable(parentLRA)
                 .map(p -> parseBaseUri(p.toASCIIString()))
-                .orElse(coordinatorBaseUri);
+                .orElse(coordinatorUriSupplier.get());
 
         for (int i = 0; i < RETRY_ATTEMPTS; i++) {
             try {

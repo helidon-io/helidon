@@ -31,12 +31,11 @@ public class HelidonLRARecoveryService implements LRARecoveryService {
 
     private static final Logger LOGGER = Logger.getLogger(HelidonLRARecoveryService.class.getName());
 
-    private static final String coordinatorUrl =
-            System.getProperty("lra.coordinator.url", CoordinatorDeployer.LOCAL_COORDINATOR_URL);
+    private static final String externalCoordinator = System.getProperty("lra.coordinator.url", "");
 
     @Override
     public void waitForCallbacks(URI lraId) {
-        if (CoordinatorDeployer.LOCAL_COORDINATOR_URL.equals(coordinatorUrl)) {
+        if ("".equals(externalCoordinator)) {
             // Helidon coordinator has simple recovery loop
             // Narayana does recovery with backoff, this would take ages
             try {
@@ -65,7 +64,7 @@ public class HelidonLRARecoveryService implements LRARecoveryService {
         try {
 
             Response response = client
-                    .target(coordinatorUrl)
+                    .target(lraId)
                     .path("recovery")
                     .queryParam("lraId", lraId.toASCIIString())
                     .request()

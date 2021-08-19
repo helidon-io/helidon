@@ -17,10 +17,12 @@
 
 package io.helidon.microprofile.lra;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -33,33 +35,47 @@ import io.helidon.lra.coordinator.client.CoordinatorClient;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import static io.helidon.lra.coordinator.client.CoordinatorClient.CONF_DEFAULT_COORDINATOR_URL;
 import static io.helidon.lra.coordinator.client.CoordinatorClient.CONF_KEY_COORDINATOR_TIMEOUT;
 import static io.helidon.lra.coordinator.client.CoordinatorClient.CONF_KEY_COORDINATOR_TIMEOUT_UNIT;
 import static io.helidon.lra.coordinator.client.CoordinatorClient.CONF_KEY_COORDINATOR_URL;
 
-class CoordinatorLocatorService {
+/**
+ * Service for locating of proper coordinator client.
+ */
+public class CoordinatorLocatorService {
 
     private final Optional<String> clientFqdn;
-    private final String coordinatorUrl;
     private final Long coordinatorTimeout;
     private final TimeUnit coordinatorTimeoutUnit;
+    private Supplier<URI> coordinatorUriSupplier;
 
     @Inject
     CoordinatorLocatorService(@ConfigProperty(name = "mp.lra.coordinator.client") Optional<String> clientFqdn,
-                                     @ConfigProperty(name = CONF_KEY_COORDINATOR_URL) String coordinatorUrl,
-                                     @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT, defaultValue = "10")
-                                             Long coordinatorTimeout,
-                                     @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT_UNIT, defaultValue = "SECONDS")
-                                             TimeUnit coordinatorTimeoutUnit) {
+                              @ConfigProperty(name = CONF_KEY_COORDINATOR_URL, defaultValue = CONF_DEFAULT_COORDINATOR_URL)
+                                      String coordinatorUrl,
+                              @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT, defaultValue = "10")
+                                      Long coordinatorTimeout,
+                              @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT_UNIT, defaultValue = "SECONDS")
+                                      TimeUnit coordinatorTimeoutUnit) {
         this.clientFqdn = clientFqdn;
-        this.coordinatorUrl = coordinatorUrl;
+        this.coordinatorUriSupplier = () -> URI.create(coordinatorUrl);
         this.coordinatorTimeout = coordinatorTimeout;
         this.coordinatorTimeoutUnit = coordinatorTimeoutUnit;
     }
 
+    /**
+     * Override standard supplier for getting coordinator uri from config.
+     *
+     * @param uriSupplier used for locating of coordinator
+     */
+    public void overrideCoordinatorUriSupplier(Supplier<URI> uriSupplier) {
+        coordinatorUriSupplier = uriSupplier;
+    }
+
     @Produces
     @ApplicationScoped
-    public CoordinatorClient coordinatorClient() {
+    CoordinatorClient coordinatorClient() {
         List<CoordinatorClient> candidates = HelidonServiceLoader.create(ServiceLoader.load(CoordinatorClient.class)).asList();
 
         if (candidates.isEmpty()) {
@@ -86,7 +102,7 @@ class CoordinatorLocatorService {
                     + " not found."));
         }
 
-        client.init(coordinatorUrl, coordinatorTimeout, coordinatorTimeoutUnit);
+        client.init(() -> coordinatorUriSupplier.get(), coordinatorTimeout, coordinatorTimeoutUnit);
 
         return client;
     }

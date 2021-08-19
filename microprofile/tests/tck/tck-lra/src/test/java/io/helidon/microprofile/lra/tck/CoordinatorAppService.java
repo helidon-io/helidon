@@ -17,6 +17,8 @@
 
 package io.helidon.microprofile.lra.tck;
 
+import java.net.URI;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Destroyed;
 import javax.enterprise.event.Observes;
@@ -26,8 +28,10 @@ import javax.inject.Inject;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.lra.coordinator.CoordinatorService;
+import io.helidon.microprofile.lra.CoordinatorLocatorService;
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
+import io.helidon.microprofile.server.ServerCdiExtension;
 
 @ApplicationScoped
 public class CoordinatorAppService {
@@ -35,9 +39,28 @@ public class CoordinatorAppService {
     @Inject
     Config config;
 
+    @Inject
+    ServerCdiExtension serverCdiExtension;
+
+    LazyValue<URI> coordinatorUri = LazyValue.create(() -> {
+        // Check if external coordinator is set or use internal with random port
+        int randomPort = serverCdiExtension.port(CoordinatorDeployer.COORDINATOR_ROUTING_NAME);
+        String port = System.getProperty("lra.coordinator.port", String.valueOf(randomPort));
+        String urlProperty = System.getProperty("lra.coordinator.url", "");
+        // Maven can't set null
+        urlProperty = urlProperty.isEmpty() ? "http://localhost:" + port + "/lra-coordinator" : urlProperty;
+        return URI.create(urlProperty);
+    });
+
     LazyValue<CoordinatorService> coordinatorService = LazyValue.create(() -> CoordinatorService.builder()
+            .url(() -> coordinatorUri.get())
             .config(config.get(CoordinatorService.CONFIG_PREFIX))
             .build());
+
+    @Inject
+    public CoordinatorAppService(CoordinatorLocatorService coordinatorLocatorService) {
+        coordinatorLocatorService.overrideCoordinatorUriSupplier(() -> coordinatorUri.get());
+    }
 
     @Produces
     @ApplicationScoped

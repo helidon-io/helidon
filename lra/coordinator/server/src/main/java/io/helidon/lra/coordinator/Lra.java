@@ -31,6 +31,7 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.http.Headers;
 import io.helidon.config.Config;
 import io.helidon.metrics.RegistryFactory;
@@ -49,7 +50,7 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVER
 class Lra {
 
     private static final Logger LOGGER = Logger.getLogger(Lra.class.getName());
-    private final String coordinatorURL;
+    private final LazyValue<URI> coordinatorURL;
 
     private long timeout;
     private URI parentId;
@@ -74,23 +75,19 @@ class Lra {
     private final Counter lraCtr = registry.counter("lractr");
     private final Timer.Context lraLifeSpanTmr = registry.timer("lralifespantmr").time();
 
-    Lra(String lraUUID, Config config) {
+    Lra(CoordinatorService coordinatorService, String lraUUID, Config config) {
         lraId = lraUUID;
         this.config = config;
         lraCtr.inc();
-        coordinatorURL = config.get(CoordinatorService.COORDINATOR_URL_KEY)
-                .asString()
-                .orElse(CoordinatorService.DEFAULT_COORDINATOR_URL);
+        coordinatorURL = LazyValue.create(coordinatorService.getCoordinatorURL());
     }
 
-    Lra(String lraUUID, URI parentId, Config config) {
+    Lra(CoordinatorService coordinatorService, String lraUUID, URI parentId, Config config) {
         lraId = lraUUID;
         this.parentId = parentId;
         this.config = config;
         lraCtr.inc();
-        coordinatorURL = config.get(CoordinatorService.COORDINATOR_URL_KEY)
-                .asString()
-                .orElse(CoordinatorService.DEFAULT_COORDINATOR_URL);
+        coordinatorURL = LazyValue.create(coordinatorService.getCoordinatorURL());
     }
 
     String lraId() {
@@ -131,10 +128,6 @@ class Lra {
 
     List<Participant> getParticipants() {
         return this.participants;
-    }
-
-    Iterable<String> getCompensatorLinks() {
-        return compensatorLinks;
     }
 
     void setupTimeout(long timeLimit) {
@@ -300,7 +293,7 @@ class Lra {
     }
 
     String lraContextId() {
-        return coordinatorURL + "/" + lraId;
+        return coordinatorURL.get().toASCIIString() + "/" + lraId;
     }
 
     private void sendComplete() {

@@ -27,7 +27,7 @@ interface LraPersistentRegistry {
     /**
      * Load persisted Lras.
      */
-    void load();
+    void load(CoordinatorService coordinatorService);
 
     /**
      * Persist Lras.

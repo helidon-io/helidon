@@ -16,6 +16,7 @@
 package io.helidon.microprofile.lra.tck;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import javax.enterprise.inject.se.SeContainer;
@@ -25,6 +26,7 @@ import io.helidon.config.mp.MpConfigSources;
 import io.helidon.lra.coordinator.CoordinatorService;
 import io.helidon.microprofile.arquillian.HelidonContainerConfiguration;
 import io.helidon.microprofile.arquillian.HelidonDeployableContainer;
+import io.helidon.microprofile.server.ServerCdiExtension;
 
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -39,29 +41,28 @@ public class CoordinatorDeployer {
     private static final Logger LOGGER = Logger.getLogger(CoordinatorDeployer.class.getName());
 
     static final String COORDINATOR_ROUTING_NAME = "coordinator";
-    static final String LOCAL_COORDINATOR_URL = "http://localhost:8071/lra-coordinator";
-    static final String LOCAL_COORDINATOR_PORT = "8071";
+
+    private final AtomicInteger coordinatorPort = new AtomicInteger(0);
+    private final AtomicInteger clientPort = new AtomicInteger(0);
 
     public void beforeStart(@Observes BeforeStart event, Container container) throws Exception {
         HelidonDeployableContainer helidonContainer = (HelidonDeployableContainer) container.getDeployableContainer();
         HelidonContainerConfiguration containerConfig = helidonContainer.getContainerConfig();
 
-        String coordinatorUrl = System.getProperty("lra.coordinator.url", LOCAL_COORDINATOR_URL);
-        String port = System.getProperty("lra.coordinator.port", LOCAL_COORDINATOR_PORT);
-
         containerConfig.addConfigBuilderConsumer(configBuilder -> {
             configBuilder.withSources(MpConfigSources.create(CoordinatorService.class.getResource("/application.yaml")),
                     MpConfigSources.create(Map.of(
-                            // LRA agent 
-                            "mp.lra.coordinator.url", coordinatorUrl,
-                            // LRA coordinator
-                            "helidon.lra.coordinator.url", coordinatorUrl,
-                            "helidon.lra.coordinator.timeout", "800",
+                            // Force client to use random port first time with 0
+                            // reuse port second time(TckRecoveryTests does redeploy)
+                            "server.port", String.valueOf(clientPort.get()),
                             "server.workers", "16",
                             "server.sockets.0.name", COORDINATOR_ROUTING_NAME,
-                            "server.sockets.0.port", port,
+                            // Force coordinator to use random port first time with 0
+                            // reuse port second time(TckRecoveryTests does redeploy)
+                            "server.sockets.0.port", String.valueOf(coordinatorPort.get()),
                             "server.sockets.0.workers", "16",
-                            "server.sockets.0.bind-address", "localhost"
+                            "server.sockets.0.bind-address", "localhost",
+                            "helidon.lra.coordinator.timeout", "800"
                     )));
         });
 
@@ -76,6 +77,10 @@ public class CoordinatorDeployer {
         // Gracefully stop the container so coordinator gets the chance to persist lra registry
         try {
             CDI<Object> current = CDI.current();
+            // Remember the ports for redeploy in TckRecoveryTests
+            ServerCdiExtension serverCdiExtension = current.getBeanManager().getExtension(ServerCdiExtension.class);
+            coordinatorPort.set(serverCdiExtension.port(COORDINATOR_ROUTING_NAME));
+            clientPort.set(serverCdiExtension.port());
             ((SeContainer) current).close();
         } catch (Throwable t) {
             t.printStackTrace();

@@ -17,8 +17,6 @@
     <name>Helidon Microprofile Tests TCK LRA</name>
 
     <properties>
-        <tck.lra.server.host>localhost</tck.lra.server.host>
-        <tck.lra.server.port>8080</tck.lra.server.port>
         <tck.lra.coordinator.url>http://localhost:8070/lra-coordinator</tck.lra.coordinator.url>
     </properties>
     
@@ -54,7 +52,8 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <tck.lra.coordinator.url>http://localhost:8071/lra-coordinator</tck.lra.coordinator.url>
+                <!-- Empty mean use internal coordinator with random port -->
+                <tck.lra.coordinator.url></tck.lra.coordinator.url>
             </properties>
         </profile>
     </profiles>
@@ -70,8 +69,6 @@
                         <dependency>org.eclipse.microprofile.lra:microprofile-lra-tck</dependency>
                     </dependenciesToScan>
                     <systemPropertyVariables>
-                        <server.host>${tck.lra.server.host}</server.host>
-                        <server.port>${tck.lra.server.port}</server.port>
                         <lra.coordinator.url>${tck.lra.coordinator.url}</lra.coordinator.url>
                     </systemPropertyVariables>
 
