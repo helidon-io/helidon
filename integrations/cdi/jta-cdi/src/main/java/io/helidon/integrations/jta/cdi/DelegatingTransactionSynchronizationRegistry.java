@@ -34,7 +34,10 @@ import javax.transaction.TransactionSynchronizationRegistry;
  * other non-{@code public} internal classes.</p>
  *
  * @see TransactionSynchronizationRegistry
+ *
+ * @deprecated An equivalent class now exists in Narayana itself.
  */
+@Deprecated(forRemoval = true)
 public abstract class DelegatingTransactionSynchronizationRegistry implements TransactionSynchronizationRegistry {
 
     private final TransactionSynchronizationRegistry delegate;

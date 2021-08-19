@@ -35,7 +35,10 @@ import javax.transaction.TransactionManager;
  * other non-{@code public} internal classes.</p>
  *
  * @see TransactionManager
+ *
+ * @deprecated An equivalent class now exists in Narayana itself.
  */
+@Deprecated(forRemoval = true)
 public abstract class DelegatingTransactionManager implements TransactionManager {
 
     private final TransactionManager delegate;

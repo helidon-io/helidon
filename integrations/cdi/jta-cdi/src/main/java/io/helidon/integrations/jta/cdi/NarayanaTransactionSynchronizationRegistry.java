@@ -16,6 +16,7 @@
 package io.helidon.integrations.jta.cdi;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Vetoed;
 import javax.inject.Inject;
 
 import com.arjuna.ats.jta.common.JTAEnvironmentBean;
@@ -28,8 +29,12 @@ import com.arjuna.ats.jta.common.JTAEnvironmentBean;
  * as its backing implementation.
  *
  * @see JTAEnvironmentBean#getTransactionSynchronizationRegistry()
+ *
+ * @deprecated An equivalent class now exists in Narayana itself.
  */
 @ApplicationScoped
+@Deprecated(forRemoval = true)
+@Vetoed
 class NarayanaTransactionSynchronizationRegistry extends DelegatingTransactionSynchronizationRegistry {
 
     /**
