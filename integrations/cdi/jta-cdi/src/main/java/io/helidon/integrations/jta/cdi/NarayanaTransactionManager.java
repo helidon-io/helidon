@@ -42,7 +42,7 @@ import com.arjuna.ats.jta.common.JTAEnvironmentBean;
  *
  * @see com.arjuna.ats.jta.common.JTAEnvironmentBean#getTransactionManager()
  *
- * @deprecated An equivalent class is now present in Narayana itself.
+ * @deprecated An equivalent class now exists in Narayana itself.
  */
 @ApplicationScoped
 @Deprecated(forRemoval = true)
