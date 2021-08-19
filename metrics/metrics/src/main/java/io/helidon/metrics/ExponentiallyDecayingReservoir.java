@@ -17,6 +17,7 @@
 package io.helidon.metrics;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -24,6 +25,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.min;
@@ -56,19 +59,38 @@ class ExponentiallyDecayingReservoir {
      */
     private static final long CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS = 250;
 
-    private final ScheduledExecutorService currentTimeUpdaterExecutorService;
+    private static final List<Runnable> CURRENT_TIME_IN_SECONDS_UPDATERS = new ArrayList<>();
+
+    private static final ScheduledExecutorService CURRENT_TIME_UPDATER_EXECUTOR_SERVICE = initCurrentTimeUpdater();
+
+    private static final Logger LOGGER = Logger.getLogger(ExponentiallyDecayingReservoir.class.getName());
 
     private volatile long currentTimeInSeconds;
 
-    private ScheduledExecutorService initCurrentTimeUpdater() {
+    private static ScheduledExecutorService initCurrentTimeUpdater() {
         ScheduledExecutorService result = Executors.newSingleThreadScheduledExecutor();
-        result.scheduleAtFixedRate(this::updateCurrentTimeInSeconds, CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS,
+        result.scheduleAtFixedRate(ExponentiallyDecayingReservoir::updateCurrentTimeInSecondsForAllReservoirs,
+                CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS,
                 CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS);
         return result;
     }
 
-    private void updateCurrentTimeInSeconds() {
-        currentTimeInSeconds = computeCurrentTimeInSeconds();
+    static void onServerShutdown() {
+        CURRENT_TIME_UPDATER_EXECUTOR_SERVICE.shutdown();
+        try {
+            boolean stoppedNormally =
+                    CURRENT_TIME_UPDATER_EXECUTOR_SERVICE.awaitTermination(CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS * 10,
+                            TimeUnit.MILLISECONDS);
+            if (!stoppedNormally) {
+                LOGGER.log(Level.WARNING, "Shutdown of current time updater timed out; continuing");
+            }
+        } catch (InterruptedException e) {
+            LOGGER.log(Level.WARNING, "InterruptedException caught while stopping the current time updater; continuing");
+        }
+    }
+
+    private static void updateCurrentTimeInSecondsForAllReservoirs() {
+        CURRENT_TIME_IN_SECONDS_UPDATERS.forEach(Runnable::run);
     }
 
     private long computeCurrentTimeInSeconds() {
@@ -107,7 +129,7 @@ class ExponentiallyDecayingReservoir {
         this.alpha = alpha;
         this.size = size;
         this.count = new AtomicLong(0);
-        currentTimeUpdaterExecutorService = initCurrentTimeUpdater();
+        CURRENT_TIME_IN_SECONDS_UPDATERS.add(this::computeCurrentTimeInSeconds);
         currentTimeInSeconds = computeCurrentTimeInSeconds();
         this.startTime = currentTimeInSeconds;
         this.nextScaleTime = new AtomicLong(clock.nanoTick() + RESCALE_THRESHOLD);
