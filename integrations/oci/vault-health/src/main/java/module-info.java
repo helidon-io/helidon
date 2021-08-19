@@ -18,18 +18,20 @@
  * OCI Vault Health.
  */
 module io.helidon.integrations.oci.vault.health {
-    requires io.helidon.integrations.oci.connect;
-    requires io.helidon.health;
-    requires io.helidon.health.common;
-    requires io.helidon.common;
-    requires io.helidon.config;
-    requires io.helidon.integrations.oci.vault;
-
     requires java.logging;
+    requires io.helidon.integrations.oci.connect;
+    requires io.helidon.common;
+
+    requires transitive io.helidon.health;
+    requires transitive io.helidon.health.common;
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.integrations.oci.vault;
 
     requires static microprofile.config.api;
     requires static jakarta.enterprise.cdi.api;
     requires static jakarta.inject.api;
+
+    exports io.helidon.integrations.oci.vault.health;
 
     opens io.helidon.integrations.oci.vault.health to weld.core.impl, io.helidon.microprofile.cdi;
 }

@@ -26,7 +26,7 @@ import io.helidon.health.common.BuiltInHealthCheck;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.vault.GetVault;
 import io.helidon.integrations.oci.vault.OciVault;
-
+import io.helidon.integrations.oci.vault.OciVaultRx;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
@@ -111,6 +111,7 @@ public final class OciVaultHealthCheck implements HealthCheck {
     public static final class Builder implements io.helidon.common.Builder<OciVaultHealthCheck> {
 
         private String vaultId;
+        private OciVaultRx vaultRx;
         private OciVault vault;
 
         private Builder() {
@@ -119,7 +120,10 @@ public final class OciVaultHealthCheck implements HealthCheck {
         @Override
         public OciVaultHealthCheck build() {
             Objects.requireNonNull(vaultId);
-            Objects.requireNonNull(vault);
+            if (vaultRx == null) {
+                vaultRx = OciVaultRx.create();
+            }
+            this.vault = OciVault.create(vaultRx);
             return new OciVaultHealthCheck(this);
         }
 
@@ -148,11 +152,11 @@ public final class OciVaultHealthCheck implements HealthCheck {
         /**
          * Set the vault client.
          *
-         * @param vault vault client.
+         * @param vaultRx vault client.
          * @return the builder.
          */
-        public Builder ociVault(OciVault vault) {
-            this.vault = vault;
+        public Builder ociVault(OciVaultRx vaultRx) {
+            this.vaultRx = vaultRx;
             return this;
         }
     }
