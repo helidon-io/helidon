@@ -87,17 +87,20 @@ public final class OciVaultHealthCheck implements HealthCheck {
     @Override
     public HealthCheckResponse call() {
         HealthCheckResponseBuilder builder = HealthCheckResponse.named("vault");
+        builder.withData("vaultId", vaultId);
         try {
             ApiOptionalResponse<GetVault.Response> r =  ociVault.getVault(GetVault.Request.builder().vaultId(vaultId));
             builder.state(r.status().equals(OK_200));
+            r.entity().ifPresent(e -> {
+                builder.withData("compartmentId", e.compartmentId());
+                builder.withData("displayName", e.displayName());
+            });
             LOGGER.fine(() -> "OCI vault health check " + vaultId + " returned status code " + r.status().code());
         } catch (Throwable t) {
             builder.down()
                     .withData("Error", t.getClass().getName())
                     .withData("Message", t.getMessage());
             LOGGER.fine(() -> "OCI vault health check " + vaultId + " exception " + t.getMessage());
-        } finally {
-            builder.withData("vaultId", vaultId);
         }
         return builder.build();
     }
