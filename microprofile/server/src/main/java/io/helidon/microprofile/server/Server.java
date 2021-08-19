@@ -173,7 +173,7 @@ public interface Server {
         public Server build() {
             STARTUP_LOGGER.entering(Builder.class.getName(), "build");
 
-            // configuration must be initialize before we start the container
+            // configuration must be initialized before we start the container
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
             if (null == config) {
