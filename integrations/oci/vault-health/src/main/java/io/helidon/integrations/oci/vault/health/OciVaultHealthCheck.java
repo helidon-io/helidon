@@ -16,10 +16,11 @@
 
 package io.helidon.integrations.oci.vault.health;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.util.Objects;
 import java.util.logging.Logger;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 import io.helidon.config.Config;
 import io.helidon.health.common.BuiltInHealthCheck;
@@ -27,6 +28,7 @@ import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.vault.GetVault;
 import io.helidon.integrations.oci.vault.OciVault;
 import io.helidon.integrations.oci.vault.OciVaultRx;
+
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
