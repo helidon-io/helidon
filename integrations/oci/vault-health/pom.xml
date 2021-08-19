@@ -26,7 +26,7 @@
     </parent>
 
     <artifactId>helidon-integrations-oci-vault-health</artifactId>
-    <name>Helidon Integrations OCI Vault Health</name>
+    <name>Helidon Integrations OCI Vault Health Check</name>
 
     <description>OCI Vault Health Support</description>
 
