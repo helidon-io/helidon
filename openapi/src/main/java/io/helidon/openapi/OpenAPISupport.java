@@ -331,8 +331,16 @@ public abstract class OpenAPISupport implements Service {
                 OpenApiAnnotationScanner scanner = new OpenApiAnnotationScanner(config, filteredIndexView,
                         List.of(new HelidonAnnotationScannerExtension()));
                 OpenAPI modelForApp = scanner.scan();
-                aggregateModelRef.set(MergeUtil.merge(aggregateModelRef.get(), modelForApp));
-            });
+                if (LOGGER.isLoggable(Level.FINER)) {
+
+                    LOGGER.log(Level.FINER, String.format("Intermediate model from filtered index view %s:%n%s",
+                            filteredIndexView.getKnownClasses(), formatDocument(Format.YAML, modelForApp)));
+                }
+                aggregateModelRef.set(
+                        MergeUtil.merge(aggregateModelRef.get(), modelForApp)
+                                .openapi(modelForApp.getOpenapi())); // SmallRye's merge skips openapi value.
+
+        });
         OpenApiDocument.INSTANCE.modelFromAnnotations(aggregateModelRef.get());
     }
 
@@ -401,8 +409,12 @@ public abstract class OpenAPISupport implements Service {
     }
 
     private String formatDocument(Format fmt) {
+        return formatDocument(fmt, model());
+    }
+
+    private String formatDocument(Format fmt, OpenAPI model) {
         StringWriter sw = new StringWriter();
-        Serializer.serialize(helper().types(), implsToTypes, model(), fmt, sw);
+        Serializer.serialize(helper().types(), implsToTypes, model, fmt, sw);
         return sw.toString();
 
     }
@@ -866,8 +878,8 @@ public abstract class OpenAPISupport implements Service {
                 LOGGER.log(Level.FINER,
                         candidatePaths.stream()
                                 .collect(Collectors.joining(
-                                        "No default static OpenAPI description file found; checked [",
                                         ",",
+                                        "No default static OpenAPI description file found; checked [",
                                         "]")));
             }
             return null;
