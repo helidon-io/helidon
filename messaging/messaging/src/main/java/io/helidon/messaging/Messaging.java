@@ -69,6 +69,8 @@ public interface Messaging {
      */
     final class Builder implements io.helidon.common.Builder<Messaging> {
 
+        private static final Logger LOGGER = Logger.getLogger(Messaging.class.getName());
+
         private final MessagingImpl messaging;
 
         private Builder() {
@@ -212,10 +214,9 @@ public interface Messaging {
         public <PAYLOAD> Builder listener(Channel<PAYLOAD> channel,
                                           Consumer<? super PAYLOAD> consumer) {
             this.messaging.registerChannel(channel);
-            Logger logger = Logger.getLogger(Messaging.class.getName());
             channel.setSubscriber(Builder.<PAYLOAD>unwrapProcessorBuilder()
                     .peek(consumer)
-                    .onError(t -> logger.log(Level.SEVERE, "Error detected in channel " + channel.name(), t))
+                    .onError(t -> LOGGER.log(Level.SEVERE, "Error detected in channel " + channel.name(), t))
                     .ignore()
                     .build());
             return this;
