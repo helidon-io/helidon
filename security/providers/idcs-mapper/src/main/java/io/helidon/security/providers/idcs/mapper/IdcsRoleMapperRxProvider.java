@@ -20,8 +20,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
@@ -104,15 +102,15 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
     }
 
     @Override
-    protected CompletionStage<Subject> enhance(ProviderRequest request,
-                                               AuthenticationResponse previousResponse,
-                                               Subject subject) {
+    protected Single<Subject> enhance(ProviderRequest request,
+                                      AuthenticationResponse previousResponse,
+                                      Subject subject) {
         String username = subject.principal().getName();
 
         Optional<List<Grant>> grants = roleCache.computeValue(username, Optional::empty);
         if (grants.isPresent()) {
             return addAdditionalGrants(subject, grants.get())
-                    .thenApply(it -> {
+                    .map(it -> {
                         List<Grant> allGrants = new LinkedList<>(grants.get());
                         allGrants.addAll(it);
                         return buildSubject(subject, allGrants);
@@ -123,19 +121,19 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
         // we leave this be (as the map of futures may be unlimited)
         List<Grant> result = new LinkedList<>();
         return computeGrants(subject)
-                .thenApply(it -> {
+                .map(it -> {
                     result.addAll(it);
                     return result;
                 })
-                .thenApply(newGrants -> roleCache.computeValue(username, () -> Optional.of(List.copyOf(newGrants)))
+                .map(newGrants -> roleCache.computeValue(username, () -> Optional.of(List.copyOf(newGrants)))
                         .orElseGet(List::of))
                 // additional grants may not be cached (leave this decision to overriding class)
-                .thenCompose(it -> addAdditionalGrants(subject, it))
-                .thenApply(newGrants -> {
+                .flatMapSingle(it -> addAdditionalGrants(subject, it))
+                .map(newGrants -> {
                     result.addAll(newGrants);
                     return result;
                 })
-                .thenApply(it -> buildSubject(subject, it));
+                .map(it -> buildSubject(subject, it));
     }
 
     /**
@@ -145,7 +143,7 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
      * @param subject to retrieve roles (or in general {@link io.helidon.security.Grant grants})
      * @return future with grants to be added to the subject
      */
-    protected CompletionStage<List<? extends Grant>> computeGrants(Subject subject) {
+    protected Single<List<? extends Grant>> computeGrants(Subject subject) {
         return getGrantsFromServer(subject);
     }
 
@@ -156,9 +154,9 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
      * @param idcsGrants grants obtained from IDCS
      * @return grants to add to the subject
      */
-    protected CompletionStage<List<? extends Grant>> addAdditionalGrants(Subject subject,
-                                                                         List<Grant> idcsGrants) {
-        return CompletableFuture.completedStage(List.of());
+    protected Single<List<? extends Grant>> addAdditionalGrants(Subject subject,
+                                                                List<Grant> idcsGrants) {
+        return Single.just(List.of());
     }
 
     /**
@@ -167,7 +165,7 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
      * @param subject to get grants for
      * @return optional list of grants to be added
      */
-    protected CompletionStage<List<? extends Grant>> getGrantsFromServer(Subject subject) {
+    protected Single<List<? extends Grant>> getGrantsFromServer(Subject subject) {
         String subjectName = subject.principal().getName();
         String subjectType = (String) subject.principal().abacAttribute("sub_type").orElse(defaultIdcsSubjectType());
 

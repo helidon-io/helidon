@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -109,56 +108,45 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
     }
 
     @Override
-    public CompletionStage<AuthenticationResponse> map(ProviderRequest authenticatedRequest,
-                                                       AuthenticationResponse previousResponse) {
+    public Single<AuthenticationResponse> map(ProviderRequest authenticatedRequest,
+                                              AuthenticationResponse previousResponse) {
 
         Optional<Subject> maybeUser = previousResponse.user();
         Optional<Subject> maybeService = previousResponse.service();
 
         if (maybeService.isEmpty() && maybeUser.isEmpty()) {
-            return CompletableFuture.completedStage(previousResponse);
+            return Single.just(previousResponse);
         }
 
         // create a new response
-        AuthenticationResponse.Builder builder = AuthenticationResponse.builder();
+        AuthenticationResponse.Builder builder = AuthenticationResponse.builder()
+                .requestHeaders(previousResponse.requestHeaders());
         previousResponse.description().ifPresent(builder::description);
-        builder.requestHeaders(previousResponse.requestHeaders());
 
-        CompletionStage<Subject> result = null;
+        Single<AuthenticationResponse.Builder> result = Single.just(builder);
+
         if (maybeUser.isPresent()) {
             if (supportedTypes.contains(SubjectType.USER)) {
                 // service will be done after use
-                result = enhance(authenticatedRequest, previousResponse, maybeUser.get())
-                        .thenApply(it -> {
-                            builder.user(it);
-                            return it;
-                        });
+                result = result.flatMapSingle(it -> enhance(authenticatedRequest, previousResponse, maybeUser.get())
+                        .peek(it::user)
+                        .map(ignored -> it));
             } else {
-                builder.user(maybeUser.get());
+                result = result.peek(it -> it.service(maybeUser.get()));
             }
         }
 
         if (maybeService.isPresent()) {
             if (supportedTypes.contains(SubjectType.SERVICE)) {
-                if (result == null) {
-                    result = enhance(authenticatedRequest, previousResponse, maybeService.get());
-                } else {
-                    // enhance service after any previous operation is finished
-                    result = result.thenCompose(ignored -> enhance(authenticatedRequest, previousResponse, maybeService.get()));
-                }
-                result = result.thenApply(it -> {
-                    builder.service(it);
-                    return it;
-                });
+                result = result.flatMapSingle(it -> enhance(authenticatedRequest, previousResponse, maybeService.get())
+                        .peek(it::user)
+                        .map(ignored -> it));
             } else {
-                builder.service(maybeService.get());
+                result = result.peek(it -> it.service(maybeService.get()));
             }
         }
-        if (result == null) {
-            return CompletableFuture.completedStage(builder.build());
-        }
 
-        return result.thenApply(ignored -> builder.build());
+        return result.map(AuthenticationResponse.Builder::build);
     }
 
     /**
@@ -169,9 +157,9 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
      * @param subject subject to enhance
      * @return future with enhanced subject
      */
-    protected abstract CompletionStage<Subject> enhance(ProviderRequest request,
-                                                        AuthenticationResponse previousResponse,
-                                                        Subject subject);
+    protected abstract Single<Subject> enhance(ProviderRequest request,
+                                               AuthenticationResponse previousResponse,
+                                               Subject subject);
 
     /**
      * Updates original subject with the list of grants.
@@ -395,7 +383,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
             this.tokenEndpointUri = tokenEndpointUri;
         }
 
-        protected CompletionStage<Optional<String>> getToken(RoleMapTracing tracing) {
+        protected Single<Optional<String>> getToken(RoleMapTracing tracing) {
             final CompletableFuture<AppTokenData> currentTokenData = token.get();
             if (currentTokenData == null) {
                 CompletableFuture<AppTokenData> future = new CompletableFuture<>();
@@ -405,25 +393,27 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
                     // another thread "stole" the data, return its future
                     future = token.get();
                 }
-                return future.thenApply(AppTokenData::tokenContent);
+                return Single.create(future).map(AppTokenData::tokenContent);
             }
             // there is an existing value
-            return currentTokenData.thenCompose(tokenData -> {
-                Jwt jwt = tokenData.appJwt();
-                if (jwt == null || !tokenData.appJwt().validate(TIME_VALIDATORS).isValid()) {
-                    // it is not valid - we must get a new value
-                    CompletableFuture<AppTokenData> future = new CompletableFuture<>();
-                    if (token.compareAndSet(currentTokenData, future)) {
-                        fromServer(tracing, future);
-                    } else {
-                        future = token.get();
-                    }
-                    return future.thenApply(AppTokenData::tokenContent);
-                } else {
-                    // present and valid
-                    return CompletableFuture.completedFuture(tokenData.tokenContent());
-                }
-            });
+            return Single.create(currentTokenData)
+                    .flatMapSingle(tokenData -> {
+                        Jwt jwt = tokenData.appJwt();
+                        if (jwt == null || !tokenData.appJwt().validate(TIME_VALIDATORS).isValid()) {
+                            // it is not valid - we must get a new value
+                            CompletableFuture<AppTokenData> future = new CompletableFuture<>();
+                            if (token.compareAndSet(currentTokenData, future)) {
+                                fromServer(tracing, future);
+                            } else {
+                                future = token.get();
+                            }
+                            return Single.create(future)
+                                    .map(AppTokenData::tokenContent);
+                        } else {
+                            // present and valid
+                            return Single.just(tokenData.tokenContent());
+                        }
+                    });
         }
 
         private void fromServer(RoleMapTracing tracing, CompletableFuture<AppTokenData> future) {

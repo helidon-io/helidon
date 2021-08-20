@@ -17,6 +17,8 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import javax.json.JsonObject;
 
@@ -40,7 +42,8 @@ class IdcsSupport {
     static JwkKeys signJwk(WebClient appWebClient,
                            WebClient generalClient,
                            URI tokenEndpointUri,
-                           URI signJwkUri) {
+                           URI signJwkUri,
+                           Duration clientTimeout) {
         //  need to get token to be able to request this endpoint
         FormParams form = FormParams.builder()
                 .add("grant_type", "client_credentials")
@@ -52,12 +55,12 @@ class IdcsSupport {
                     .uri(tokenEndpointUri)
                     .accept(MediaType.APPLICATION_JSON)
                     .submit(form)
-                    .await();
+                    .await(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
 
             if (response.status().family() == Http.ResponseStatus.Family.SUCCESSFUL) {
                 JsonObject json = response.content()
                         .as(JsonObject.class)
-                        .await();
+                        .await(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
 
                 String accessToken = json.getString("access_token");
 
@@ -69,13 +72,13 @@ class IdcsSupport {
                             return it;
                         })
                         .request(JsonObject.class)
-                        .await();
+                        .await(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
 
                 return JwkKeys.create(jwkJson);
             } else {
                 String errorEntity = response.content()
                         .as(String.class)
-                        .await();
+                        .await(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
                 throw new SecurityException("Failed to read JWK from IDCS. Status: " + response.status()
                                                     + ", entity: " + errorEntity);
             }

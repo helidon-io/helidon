@@ -236,7 +236,7 @@ public final class OidcSupport implements Service {
 
         OidcConfig.postJsonResponse(post,
                                     form.build(),
-                                     json -> processJsonResponse(req, res, json),
+                                    json -> processJsonResponse(req, res, json),
                                     (status, errorEntity) -> processError(res, status, errorEntity),
                                     (t, message) -> processError(res, t, message))
                 .ignoreElement();
@@ -249,11 +249,7 @@ public final class OidcSupport implements Service {
         String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
         res.status(Http.Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
-            if (state.contains("?")) {
-                state = state + "&" + oidcConfig.paramName() + "=" + tokenValue;
-            } else {
-                state = state + "?" + oidcConfig.paramName() + "=" + tokenValue;
-            }
+            state = (state.contains("?") ? "&" : "?") + oidcConfig.paramName() + "=" + tokenValue;
         }
 
         state = increaseRedirectCounter(state);

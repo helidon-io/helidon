@@ -17,8 +17,10 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -266,6 +268,11 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  *     <td>&nbsp;</td>
  *     <td>Type of identity server. Currently supported is {@code idcs} or not configured (for default).</td>
  * </tr>
+ * <tr>
+ *     <td>{@code client-timeout-millis}</td>
+ *     <td>30 seconds</td>
+ *     <td>Timeout on HTTP client calls</td>
+ * </tr>
  * </table>
  */
 public final class OidcConfig {
@@ -292,6 +299,8 @@ public final class OidcConfig {
     static final String DEFAULT_REALM = "helidon";
     static final String DEFAULT_ATTEMPT_PARAM = "h_ra";
     static final int DEFAULT_MAX_REDIRECTS = 5;
+    static final int DEFAULT_TIMEOUT_SECONDS = 30;
+
     private static final Logger LOGGER = Logger.getLogger(OidcConfig.class.getName());
     private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
     private final String redirectUri;
@@ -328,6 +337,7 @@ public final class OidcConfig {
     private final WebClient webClient;
     private final WebClient appWebClient;
     private final URI introspectUri;
+    private final Duration clientTimeout;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
@@ -356,6 +366,8 @@ public final class OidcConfig {
         this.tokenEndpointUri = builder.tokenEndpointUri;
         this.generalClient = builder.generalClient;
         this.tokenEndpointAuthentication = builder.tokenEndpointAuthentication;
+        this.clientTimeout = builder.clientTimeout;
+
         if (tokenEndpointAuthentication == ClientAuthentication.CLIENT_SECRET_POST) {
             // we should only store this if required
             this.clientSecret = builder.clientSecret;
@@ -823,6 +835,15 @@ public final class OidcConfig {
     }
 
     /**
+     * Expected timeout of HTTP client operations.
+     *
+     * @return client timeout
+     */
+    public Duration clientTimeout() {
+        return clientTimeout;
+    }
+
+    /**
      * Client Authentication methods that are used by Clients to authenticate to the Authorization
      * Server when using the Token Endpoint.
      */
@@ -960,6 +981,7 @@ public final class OidcConfig {
         private Client appClient;
         private WebClient appWebClient;
         private WebClient webClient;
+        private Duration clientTimeout = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS);
 
         @Override
         public OidcConfig build() {
@@ -1041,7 +1063,9 @@ public final class OidcConfig {
             ClientBuilder clientBuilder = ClientBuilder.newBuilder();
             WebClient.Builder webClientBuilder = WebClient.builder()
                     .addService(WebClientTracing.create())
-                    .addMediaSupport(JsonpSupport.create());
+                    .addMediaSupport(JsonpSupport.create())
+                    .connectTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS)
+                    .readTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
 
             clientBuilder.property(OutboundConfig.PROPERTY_DISABLE_OUTBOUND, Boolean.TRUE);
 
@@ -1090,7 +1114,7 @@ public final class OidcConfig {
                                                  null);
                     if (null != jwkUri) {
                         if ("idcs".equals(serverType)) {
-                            this.signJwk = IdcsSupport.signJwk(appWebClient, webClient, tokenEndpointUri, jwkUri);
+                            this.signJwk = IdcsSupport.signJwk(appWebClient, webClient, tokenEndpointUri, jwkUri, clientTimeout);
                         } else {
                             this.signJwk = JwkKeys.builder()
                                     .resource(Resource.create(jwkUri))
@@ -1220,6 +1244,8 @@ public final class OidcConfig {
             // type of the identity server
             // now uses hardcoded switch - should change to service loader eventually
             config.get("server-type").asString().ifPresent(this::serverType);
+
+            config.get("client-timeout-millis").asLong().ifPresent(this::clientTimeoutMillis);
 
             return this;
         }
@@ -1729,6 +1755,21 @@ public final class OidcConfig {
         public Builder serverType(String type) {
             this.serverType = type;
             return this;
+        }
+
+        /**
+         * Timeout of calls using web client.
+         *
+         * @param duration timeout
+         * @return updated builder
+         */
+        public Builder clientTimeout(Duration duration) {
+            this.clientTimeout = duration;
+            return this;
+        }
+
+        private void clientTimeoutMillis(long millis) {
+            this.clientTimeout(Duration.ofMillis(millis));
         }
     }
 }

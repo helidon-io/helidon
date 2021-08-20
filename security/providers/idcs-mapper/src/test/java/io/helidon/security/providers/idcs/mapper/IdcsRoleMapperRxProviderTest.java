@@ -18,7 +18,6 @@ package io.helidon.security.providers.idcs.mapper;
 
 import java.net.URI;
 import java.util.List;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.reactive.Single;
@@ -128,7 +127,7 @@ class IdcsRoleMapperRxProviderTest {
         }
 
         @Override
-        protected CompletionStage<List<? extends Grant>> getGrantsFromServer(Subject subject) {
+        protected Single<List<? extends Grant>> getGrantsFromServer(Subject subject) {
             String id = subject.principal().id();
             return Single.just(List.of(Role.create("counted_"+ COUNTER.incrementAndGet()),
                                        Role.create("fixed"),
@@ -136,7 +135,7 @@ class IdcsRoleMapperRxProviderTest {
         }
 
         @Override
-        protected CompletionStage<List<? extends Grant>> addAdditionalGrants(Subject subject, List<Grant> idcsGrants) {
+        protected Single<List<? extends Grant>> addAdditionalGrants(Subject subject, List<Grant> idcsGrants) {
             return Single.just(List.of(Role.create("additional_"+ COUNTER.incrementAndGet()),
                                        Role.create("additional-fixed")));
         }

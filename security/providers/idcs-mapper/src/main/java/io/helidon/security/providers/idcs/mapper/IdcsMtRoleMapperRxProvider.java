@@ -21,8 +21,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -130,9 +128,9 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
      * @return future with enhanced subject
      */
     @Override
-    protected CompletionStage<Subject> enhance(ProviderRequest request,
-                                               AuthenticationResponse previousResponse,
-                                               Subject subject) {
+    protected Single<Subject> enhance(ProviderRequest request,
+                                      AuthenticationResponse previousResponse,
+                                      Subject subject) {
 
         Optional<IdcsMtContext> maybeIdcsMtContext = extractIdcsMtContext(subject, request);
 
@@ -141,7 +139,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
                     + maybeIdcsMtContext
                     + ", subject: "
                     + subject);
-            return CompletableFuture.completedStage(subject);
+            return Single.just(subject);
         }
 
         IdcsMtContext idcsMtContext = maybeIdcsMtContext.get();
@@ -155,7 +153,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
                                        idcsMtContext.appId(),
                                        subject,
                                        grants.get())
-                    .thenApply(it -> {
+                    .map(it -> {
                         List<Grant> allGrants = new LinkedList<>(grants.get());
                         allGrants.addAll(it);
                         return buildSubject(subject, allGrants);
@@ -167,19 +165,19 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
         List<Grant> result = new LinkedList<>();
 
         return computeGrants(idcsMtContext.tenantId(), idcsMtContext.appId(), subject)
-                .thenApply(it -> {
+                .map(it -> {
                     result.addAll(it);
                     return result;
                 })
-                .thenApply(newGrants -> cache.computeValue(cacheKey, () -> Optional.of(List.copyOf(newGrants)))
+                .map(newGrants -> cache.computeValue(cacheKey, () -> Optional.of(List.copyOf(newGrants)))
                         .orElseGet(List::of))
                 // additional grants may not be cached (leave this decision to overriding class)
-                .thenCompose(it -> addAdditionalGrants(idcsMtContext.tenantId(), idcsMtContext.appId(), subject, it))
-                .thenApply(newGrants -> {
+                .flatMapSingle(it -> addAdditionalGrants(idcsMtContext.tenantId(), idcsMtContext.appId(), subject, it))
+                .map(newGrants -> {
                     result.addAll(newGrants);
                     return result;
                 })
-                .thenApply(it -> buildSubject(subject, it));
+                .map(it -> buildSubject(subject, it));
     }
 
     /**
@@ -190,7 +188,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
      * @param subject subject
      * @return future with grants to be added to the subject
      */
-    protected CompletionStage<List<? extends Grant>> computeGrants(String idcsTenantId, String idcsAppName, Subject subject) {
+    protected Single<List<? extends Grant>> computeGrants(String idcsTenantId, String idcsAppName, Subject subject) {
         return getGrantsFromServer(idcsTenantId, idcsAppName, subject);
     }
 
@@ -219,11 +217,11 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
      * @param idcsGrants   Roles already retrieved from IDCS
      * @return list with new grants to add to the enhanced subject
      */
-    protected CompletionStage<List<? extends Grant>> addAdditionalGrants(String idcsTenantId,
-                                                                         String idcsAppName,
-                                                                         Subject subject,
-                                                                         List<Grant> idcsGrants) {
-        return CompletableFuture.completedStage(List.of());
+    protected Single<List<? extends Grant>> addAdditionalGrants(String idcsTenantId,
+                                                                String idcsAppName,
+                                                                Subject subject,
+                                                                List<Grant> idcsGrants) {
+        return Single.just(List.of());
     }
 
     /**
@@ -234,9 +232,9 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
      * @param subject      subject to get grants for
      * @return optional list of grants from server
      */
-    protected CompletionStage<List<? extends Grant>> getGrantsFromServer(String idcsTenantId,
-                                                                         String idcsAppName,
-                                                                         Subject subject) {
+    protected Single<List<? extends Grant>> getGrantsFromServer(String idcsTenantId,
+                                                                String idcsAppName,
+                                                                Subject subject) {
         String subjectName = subject.principal().getName();
         String subjectType = (String) subject.principal().abacAttribute("sub_type").orElse(defaultIdcsSubjectType());
 
@@ -288,7 +286,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
      * @param tracing Role mapping tracing instance to correctly trace outbound calls
      * @return the token to be used to authenticate this service
      */
-    protected CompletionStage<Optional<String>> getAppToken(String idcsTenantId, RoleMapTracing tracing) {
+    protected Single<Optional<String>> getAppToken(String idcsTenantId, RoleMapTracing tracing) {
         // if cached and valid, use the cached token
         return tokenCache.computeIfAbsent(idcsTenantId, key -> new AppTokenRx(oidcConfig().appWebClient(),
                                                                               multitenantEndpoints.tokenEndpoint(idcsTenantId)))
