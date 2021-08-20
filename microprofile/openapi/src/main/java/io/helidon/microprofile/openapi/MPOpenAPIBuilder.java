@@ -178,10 +178,19 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
                 appRelatedClassesToScan.stream()
                         .map(Class::getName)
                         .map(Pattern::quote)
-                        .collect(Collectors.joining("|")));
+                        .map(name -> "^" + name + "$") // avoid false prefix matches
+                        .collect(Collectors.joining("|", "(", ")")));
 
         FilteredIndexView result = new FilteredIndexView(singleIndexViewSupplier.get(),
                 new FilteringOpenApiConfigImpl(mpConfig, appRelatedClassesPattern));
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE, String.format("FilteredIndexView for %n"
+                    + "  application classes %s%n"
+                    + "  will use pattern: %s%n"
+                    + "  with known classes %s",
+                    appRelatedClassesToScan, appRelatedClassesPattern, result.getKnownClasses()));
+        }
+
         return result;
     }
 
@@ -225,7 +234,7 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
 
     @Override
     protected Supplier<List<? extends IndexView>> indexViewsSupplier() {
-        return () -> buildPerAppFilteredIndexViews();
+        return this::buildPerAppFilteredIndexViews;
     }
 
     @Override
