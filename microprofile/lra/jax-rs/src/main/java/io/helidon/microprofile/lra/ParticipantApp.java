@@ -19,9 +19,12 @@ import java.util.Set;
 
 import javax.ws.rs.core.Application;
 
+import io.helidon.common.Reflected;
+
 /**
  * Register JaxRs resource for invoking CDI LRA methods.
  */
+@Reflected
 public class ParticipantApp extends Application {
     @Override
     public Set<Class<?>> getClasses() {

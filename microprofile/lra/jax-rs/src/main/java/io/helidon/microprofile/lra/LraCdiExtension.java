@@ -54,6 +54,9 @@ import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.core.Application;
+
+import io.helidon.common.Reflected;
 
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.Compensate;
@@ -74,6 +77,7 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 /**
  * MicroProfile Long Running Actions CDI extension.
  */
+@Reflected
 public class LraCdiExtension implements Extension {
 
     private static final Logger LOGGER = Logger.getLogger(LraCdiExtension.class.getName());
@@ -107,6 +111,7 @@ public class LraCdiExtension implements Extension {
                 Complete.class,
                 Forget.class,
                 Status.class,
+                Application.class,
                 ParticipantCdiResource.class).forEach(c -> runtimeIndex(DotName.createSimple(c.getName())));
 
         List<URL> indexFiles;

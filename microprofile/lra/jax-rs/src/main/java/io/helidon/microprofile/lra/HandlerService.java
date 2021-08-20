@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import io.helidon.common.Reflected;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -36,6 +37,7 @@ import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 import org.eclipse.microprofile.lra.annotation.ws.rs.Leave;
 import org.jboss.jandex.AnnotationInstance;
 
+@Reflected
 class HandlerService {
 
     private static final Map<String, AnnotationHandler.HandlerMaker> HANDLER_SUPPLIERS =

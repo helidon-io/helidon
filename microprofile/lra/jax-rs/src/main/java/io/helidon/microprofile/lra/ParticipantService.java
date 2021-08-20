@@ -29,10 +29,12 @@ import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 
+import io.helidon.common.Reflected;
 import io.helidon.lra.coordinator.client.Participant;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+@Reflected
 class ParticipantService {
 
     private final LraCdiExtension lraCdiExtension;

@@ -38,6 +38,8 @@ import javax.enterprise.inject.spi.DeploymentException;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
 
+import io.helidon.common.Reflected;
+
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
@@ -53,6 +55,7 @@ import org.jboss.jandex.IndexView;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Type;
 
+@Reflected
 class InspectionService {
 
     private static final Logger LOGGER = Logger.getLogger(InspectionService.class.getName());

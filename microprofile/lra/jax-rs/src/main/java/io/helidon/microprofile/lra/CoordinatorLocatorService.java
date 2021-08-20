@@ -30,6 +30,7 @@ import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.inject.Inject;
 
+import io.helidon.common.Reflected;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 
@@ -43,6 +44,7 @@ import static io.helidon.lra.coordinator.client.CoordinatorClient.CONF_KEY_COORD
 /**
  * Service for locating of proper coordinator client.
  */
+@Reflected
 public class CoordinatorLocatorService {
 
     private final Optional<String> clientFqdn;
