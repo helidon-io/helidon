@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,18 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import javax.json.JsonObject;
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
 
-import io.helidon.common.Errors;
+import io.helidon.common.http.FormParams;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
+import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
 
 /**
  * Oracle IDCS specific implementations for {@code idcs} server type.
@@ -37,32 +37,55 @@ class IdcsSupport {
     // prevent instantiation
     private IdcsSupport() {
     }
-    // load signature jwk with a token
-    static JwkKeys signJwk(Client generalClient, WebTarget tokenEndpoint, Errors.Collector collector, URI signJwkUri) {
+
+    // load signature jwk with a token, blocking operation
+    static JwkKeys signJwk(WebClient appWebClient,
+                           WebClient generalClient,
+                           URI tokenEndpointUri,
+                           URI signJwkUri,
+                           Duration clientTimeout) {
         //  need to get token to be able to request this endpoint
-        MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
-        formData.putSingle("grant_type", "client_credentials");
-        formData.putSingle("scope", "urn:opc:idm:__myscopes__");
+        FormParams form = FormParams.builder()
+                .add("grant_type", "client_credentials")
+                .add("scope", "urn:opc:idm:__myscopes__")
+                .build();
 
-        JsonObject response;
         try {
-            response = tokenEndpoint.request()
-                    .accept(MediaType.APPLICATION_JSON_TYPE)
-                    .post(Entity.form(formData), JsonObject.class);
-        } catch (ClientErrorException e) {
-            String errorMessage = e.getMessage();
-            String entity = e.getResponse().readEntity(String.class);
-            throw new SecurityException("Failed to read JWK from IDCS: " + errorMessage + ", entity: " + entity, e);
+            WebClientResponse response = appWebClient.post()
+                    .uri(tokenEndpointUri)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .submit(form)
+                    .await(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
+
+            if (response.status().family() == Http.ResponseStatus.Family.SUCCESSFUL) {
+                JsonObject json = response.content()
+                        .as(JsonObject.class)
+                        .await(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
+
+                String accessToken = json.getString("access_token");
+
+                // get the jwk from server
+                JsonObject jwkJson = generalClient.get()
+                        .uri(signJwkUri)
+                        .headers(it -> {
+                            it.add(Http.Header.AUTHORIZATION, "Bearer " + accessToken);
+                            return it;
+                        })
+                        .request(JsonObject.class)
+                        .await(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
+
+                return JwkKeys.create(jwkJson);
+            } else {
+                String errorEntity = response.content()
+                        .as(String.class)
+                        .await(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
+                throw new SecurityException("Failed to read JWK from IDCS. Status: " + response.status()
+                                                    + ", entity: " + errorEntity);
+            }
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new SecurityException("Failed to read JWK from IDCS", e);
         }
-        String accessToken = response.getString("access_token");
-
-        // get the jwk from server
-        JsonObject jwkJson = generalClient.target(signJwkUri)
-                .request()
-                .header("Authorization", "Bearer " + accessToken)
-                .get(JsonObject.class);
-
-        return JwkKeys.create(jwkJson);
     }
-
 }

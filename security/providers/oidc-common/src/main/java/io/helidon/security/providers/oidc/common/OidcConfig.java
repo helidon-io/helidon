@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,12 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Collections;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 import javax.json.Json;
@@ -29,10 +34,24 @@ import javax.ws.rs.client.WebTarget;
 
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.http.FormParams;
+import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.security.Security;
+import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.OutboundConfig;
+import io.helidon.security.providers.common.OutboundTarget;
+import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
+import io.helidon.security.providers.httpauth.HttpBasicOutboundConfig;
 import io.helidon.security.util.TokenHandler;
+import io.helidon.webclient.Proxy;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.webclient.security.WebClientSecurity;
+import io.helidon.webclient.tracing.WebClientTracing;
 
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
@@ -249,6 +268,11 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  *     <td>&nbsp;</td>
  *     <td>Type of identity server. Currently supported is {@code idcs} or not configured (for default).</td>
  * </tr>
+ * <tr>
+ *     <td>{@code client-timeout-millis}</td>
+ *     <td>30 seconds</td>
+ *     <td>Timeout on HTTP client calls</td>
+ * </tr>
  * </table>
  */
 public final class OidcConfig {
@@ -256,11 +280,6 @@ public final class OidcConfig {
      * Default name of the header we expect JWT in.
      */
     public static final String PARAM_HEADER_NAME = "X_OIDC_TOKEN_HEADER";
-
-    private static final Logger LOGGER = Logger.getLogger(OidcConfig.class.getName());
-
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
-
     static final int DEFAULT_PROXY_PORT = 80;
     static final String DEFAULT_OIDC_METADATA_URI = "/.well-known/openid-configuration";
     static final String DEFAULT_REDIRECT_URI = "/oidc/redirect";
@@ -274,14 +293,16 @@ public final class OidcConfig {
     static final boolean DEFAULT_PARAM_USE = false;
     static final boolean DEFAULT_HEADER_USE = false;
     static final String DEFAULT_PROXY_PROTOCOL = "http";
-
     static final String DEFAULT_BASE_SCOPES = "openid";
     static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
     static final boolean DEFAULT_REDIRECT = true;
     static final String DEFAULT_REALM = "helidon";
     static final String DEFAULT_ATTEMPT_PARAM = "h_ra";
     static final int DEFAULT_MAX_REDIRECTS = 5;
+    static final int DEFAULT_TIMEOUT_SECONDS = 30;
 
+    private static final Logger LOGGER = Logger.getLogger(OidcConfig.class.getName());
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
     private final String redirectUri;
     private final boolean useCookie;
     private final String cookieName;
@@ -291,6 +312,7 @@ public final class OidcConfig {
 
     private final URI identityUri;
     private final WebTarget tokenEndpoint;
+    private final URI tokenEndpointUri;
     private final String cookieValuePrefix;
     private final String scopeAudience;
     private final String redirectUriWithHost;
@@ -310,6 +332,12 @@ public final class OidcConfig {
     private final String realm;
     private final String redirectAttemptParam;
     private final int maxRedirects;
+    private final ClientAuthentication tokenEndpointAuthentication;
+    private final String clientSecret;
+    private final WebClient webClient;
+    private final WebClient appWebClient;
+    private final URI introspectUri;
+    private final Duration clientTimeout;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
@@ -332,8 +360,20 @@ public final class OidcConfig {
         this.redirectAttemptParam = builder.redirectAttemptParam;
         this.maxRedirects = builder.maxRedirects;
         this.appClient = builder.appClient;
+        this.appWebClient = builder.appWebClient;
+        this.webClient = builder.webClient;
         this.tokenEndpoint = builder.tokenEndpoint;
+        this.tokenEndpointUri = builder.tokenEndpointUri;
         this.generalClient = builder.generalClient;
+        this.tokenEndpointAuthentication = builder.tokenEndpointAuthentication;
+        this.clientTimeout = builder.clientTimeout;
+
+        if (tokenEndpointAuthentication == ClientAuthentication.CLIENT_SECRET_POST) {
+            // we should only store this if required
+            this.clientSecret = builder.clientSecret;
+        } else {
+            this.clientSecret = null;
+        }
 
         if (null == builder.signJwk) {
             this.signJwk = JwkKeys.builder().build();
@@ -343,7 +383,9 @@ public final class OidcConfig {
 
         if (validateJwtWithJwk) {
             this.introspectEndpoint = null;
+            this.introspectUri = null;
         } else {
+            this.introspectUri = builder.introspectUri;
             this.introspectEndpoint = appClient.target(builder.introspectUri);
         }
 
@@ -409,6 +451,50 @@ public final class OidcConfig {
     }
 
     /**
+     * Processing of {@link io.helidon.webclient.WebClient} submit using a POST method.
+     * This is a helper method to handle possible cases (success, failure with readable entity, failure).
+     *
+     * @param requestBuilder WebClient request builder
+     * @param toSubmit object to submit (such as {@link io.helidon.common.http.FormParams}
+     * @param jsonProcessor processor of successful JSON response
+     * @param errorEntityProcessor processor of an error that has an entity, to fail the single
+     * @param errorProcessor processor of an error that does not have an entity
+     * @param <T> type of the result the call
+     * @return a future that completes successfully if processed from json, or if an error processor returns a non-empty value,
+     *      completes with error otherwise
+     */
+    public static <T> Single<T> postJsonResponse(WebClientRequestBuilder requestBuilder,
+                                                 Object toSubmit,
+                                                 Function<JsonObject, T> jsonProcessor,
+                                                 BiFunction<Http.ResponseStatus, String, Optional<T>> errorEntityProcessor,
+                                                 BiFunction<Throwable, String, Optional<T>> errorProcessor) {
+        return requestBuilder.submit(toSubmit)
+                .flatMapSingle(response -> {
+                    if (response.status().family() == Http.ResponseStatus.Family.SUCCESSFUL) {
+                        return response.content()
+                                .as(JsonObject.class)
+                                .map(jsonProcessor)
+                                .onErrorResumeWithSingle(t -> errorProcessor.apply(t, "Failed to read JSON from response")
+                                        .map(Single::just)
+                                        .orElseGet(() -> Single.error(t)));
+                    } else {
+                        return response.content()
+                                .as(String.class)
+                                .flatMapSingle(it -> errorEntityProcessor.apply(response.status(), it)
+                                        .map(Single::just)
+                                        .orElseGet(() -> Single.error(new SecurityException("Failed to process request: " + it))))
+                                .onErrorResumeWithSingle(t -> errorProcessor.apply(t, "Failed to process error entity")
+                                        .map(Single::just)
+                                        .orElseGet(() -> Single.error(t)));
+                    }
+                })
+                .onErrorResumeWithSingle(t -> errorProcessor.apply(t, "Failed to invoke request")
+                        .map(Single::just)
+                        .orElseGet(() -> Single.error(t)));
+
+    }
+
+    /**
      * JWK used for signature validation.
      *
      * @return set of keys used use to verify tokens
@@ -433,9 +519,22 @@ public final class OidcConfig {
      *
      * @return target the endpoint is on
      * @see Builder#tokenEndpointUri(URI)
+     * @deprecated Please use {@link #appWebClient()} and {@link #tokenEndpointUri()} instead; result of moving to
+     *      reactive webclient from JAX-RS client
      */
+    @Deprecated(forRemoval = true, since = "2.4.0")
     public WebTarget tokenEndpoint() {
         return tokenEndpoint;
+    }
+
+    /**
+     * Token endpoint URI.
+     *
+     * @return endpoint URI
+     * @see Builder#tokenEndpointUri(java.net.URI)
+     */
+    public URI tokenEndpointUri() {
+        return tokenEndpointUri;
     }
 
     /**
@@ -584,9 +683,25 @@ public final class OidcConfig {
      *
      * @return introspection endpoint
      * @see Builder#introspectEndpointUri(URI)
+     *@deprecated Please use {@link #appWebClient()} and {@link #introspectUri()} instead; result of moving to
+     *      reactive webclient from JAX-RS client
      */
+    @Deprecated(forRemoval = true, since = "2.4.0")
     public WebTarget introspectEndpoint() {
         return introspectEndpoint;
+    }
+
+    /**
+     * Introspection endpoint URI.
+     *
+     * @return introspection endpoint URI
+     * @see Builder#introspectEndpointUri(java.net.URI)
+     */
+    public URI introspectUri() {
+        if (introspectUri == null) {
+            throw new SecurityException("Introspect URI is not configured when using validate with JWK.");
+        }
+        return introspectUri;
     }
 
     /**
@@ -623,18 +738,40 @@ public final class OidcConfig {
      * Client with configured proxy with no security.
      *
      * @return client for general use.
+     * @deprecated Use {@link #generalWebClient()} instead
      */
+    @Deprecated(forRemoval = true, since = "2.4.0")
     public Client generalClient() {
         return generalClient;
+    }
+
+    /**
+     * Client with configured proxy with no security.
+     *
+     * @return client for general use.
+     */
+    public WebClient generalWebClient() {
+        return webClient;
     }
 
     /**
      * Client with configured proxy and security of this OIDC client.
      *
      * @return client for communication with OIDC server
+     * @deprecated Use {@link #appWebClient()}
      */
+    @Deprecated(forRemoval = true, since = "2.4.0")
     public Client appClient() {
         return appClient;
+    }
+
+    /**
+     * Client with configured proxy and security.
+     *
+     * @return client for communicating with OIDC identity server
+     */
+    public WebClient appWebClient() {
+        return appWebClient;
     }
 
     /**
@@ -672,6 +809,111 @@ public final class OidcConfig {
      */
     public int maxRedirects() {
         return maxRedirects;
+    }
+
+    /**
+     * Type of authentication mechanism used for token endpoint.
+     *
+     * @return client authentication type
+     */
+    public ClientAuthentication tokenEndpointAuthentication() {
+        return tokenEndpointAuthentication;
+    }
+
+    /**
+     * Update request that uses form params with authentication.
+     *
+     * @param type type of the request
+     * @param request request builder
+     * @param form form params builder
+     */
+    public void updateRequest(RequestType type, WebClientRequestBuilder request, FormParams.Builder form) {
+        if (type == RequestType.CODE_TO_TOKEN && tokenEndpointAuthentication == ClientAuthentication.CLIENT_SECRET_POST) {
+            form.add("client_id", clientId);
+            form.add("client_secret", clientSecret);
+        }
+    }
+
+    /**
+     * Expected timeout of HTTP client operations.
+     *
+     * @return client timeout
+     */
+    public Duration clientTimeout() {
+        return clientTimeout;
+    }
+
+    /**
+     * Client Authentication methods that are used by Clients to authenticate to the Authorization
+     * Server when using the Token Endpoint.
+     */
+    public enum ClientAuthentication {
+        /**
+         * Clients that have received a client_secret value from the Authorization Server authenticate with the Authorization
+         * Server in accordance with Section 2.3.1 of OAuth 2.0 [RFC6749] using the HTTP Basic authentication scheme.
+         * This is the default client authentication.
+         */
+        CLIENT_SECRET_BASIC,
+        /**
+         * Clients that have received a client_secret value from the Authorization Server, authenticate with the Authorization
+         * Server in accordance with Section 2.3.1 of OAuth 2.0 [RFC6749] by including the Client Credentials in the request body.
+         */
+        CLIENT_SECRET_POST,
+        /**
+         * Clients that have received a client_secret value from the Authorization Server create a JWT using an HMAC SHA
+         * algorithm, such as HMAC SHA-256. The HMAC (Hash-based Message Authentication Code) is calculated using the octets of
+         * the UTF-8 representation of the client_secret as the shared key.
+         * The Client authenticates in accordance with JSON Web Token (JWT) Profile for OAuth 2.0 Client Authentication and
+         * Authorization Grants [OAuth.JWT] and Assertion Framework for OAuth 2.0 Client Authentication and Authorization
+         * Grants [OAuth.Assertions].
+         * <p>
+         * The JWT MUST contain the following REQUIRED Claim Values and MAY contain the following
+         * OPTIONAL Claim Values.
+         * <p>
+         * Required:
+         * {@code iss, sub, aud, jti, exp}
+         * <p>
+         * Optional:
+         * {@code iat}
+         *
+         *
+         */
+        CLIENT_SECRET_JWT,
+        /**
+         * Clients that have registered a public key sign a JWT using that key. The Client authenticates in accordance with
+         * JSON Web Token (JWT) Profile for OAuth 2.0 Client Authentication and Authorization Grants [OAuth.JWT] and Assertion
+         * Framework for OAuth 2.0 Client Authentication and Authorization Grants [OAuth.Assertions].
+         * <p>
+         * The JWT MUST contain the following REQUIRED Claim Values and MAY contain the following
+         * OPTIONAL Claim Values.
+         * <p>
+         * Required:
+         * {@code iss, sub, aud, jti, exp}
+         * <p>
+         * Optional:
+         * {@code iat}
+         */
+        PRIVATE_KEY_JWT,
+        /**
+         * The Client does not authenticate itself at the Token Endpoint, either because it uses only the Implicit Flow (and so
+         * does not use the Token Endpoint) or because it is a Public Client with no Client Secret or other authentication
+         * mechanism.
+         */
+        NONE
+    }
+
+    /**
+     * Types of requests to identity provider.
+     */
+    public enum RequestType {
+        /**
+         * Request to exchange code for a token issued against the token endpoint.
+         */
+        CODE_TO_TOKEN,
+        /**
+         * Request to validate a JWT against an introspection endpoint.
+         */
+        INTROSPECT_JWT;
     }
 
     /**
@@ -717,6 +959,8 @@ public final class OidcConfig {
                 .build();
 
         private URI tokenEndpointUri;
+        private ClientAuthentication tokenEndpointAuthentication
+                = ClientAuthentication.CLIENT_SECRET_BASIC;
         private URI authorizationEndpointUri;
         private JwkKeys signJwk;
         private boolean oidcMetadataWellKnown = true;
@@ -729,9 +973,15 @@ public final class OidcConfig {
         private int maxRedirects = DEFAULT_MAX_REDIRECTS;
         private boolean cookieSameSiteDefault = true;
         private String serverType;
+        @Deprecated
         private Client generalClient;
+        @Deprecated
         private WebTarget tokenEndpoint;
+        @Deprecated
         private Client appClient;
+        private WebClient appWebClient;
+        private WebClient webClient;
+        private Duration clientTimeout = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS);
 
         @Override
         public OidcConfig build() {
@@ -811,24 +1061,48 @@ public final class OidcConfig {
             }
 
             ClientBuilder clientBuilder = ClientBuilder.newBuilder();
+            WebClient.Builder webClientBuilder = WebClient.builder()
+                    .addService(WebClientTracing.create())
+                    .addMediaSupport(JsonpSupport.create())
+                    .connectTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS)
+                    .readTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
 
             clientBuilder.property(OutboundConfig.PROPERTY_DISABLE_OUTBOUND, Boolean.TRUE);
 
             if (proxyHost != null) {
                 clientBuilder.property(ClientProperties.PROXY_URI, proxyUri);
+                webClientBuilder.proxy(Proxy.builder()
+                                               .type(Proxy.ProxyType.HTTP)
+                                               .host(proxyProtocol + "://" + proxyHost)
+                                               .port(proxyPort)
+                                               .build());
             }
 
             this.generalClient = clientBuilder.build();
+            this.webClient = webClientBuilder.build();
 
+            if (tokenEndpointAuthentication == ClientAuthentication.CLIENT_SECRET_BASIC) {
+                HttpAuthenticationFeature basicAuth = HttpAuthenticationFeature.basicBuilder()
+                        .credentials(clientId, clientSecret)
+                        .build();
+                clientBuilder.register(basicAuth);
 
-            HttpAuthenticationFeature basicAuth = HttpAuthenticationFeature.basicBuilder()
-                    .credentials(clientId, clientSecret)
-                    .build();
+                HttpBasicAuthProvider httpBasicAuth = HttpBasicAuthProvider.builder()
+                        .addOutboundTarget(OutboundTarget.builder("oidc")
+                                                   .addHost("*")
+                                                   .customObject(HttpBasicOutboundConfig.class,
+                                                                 HttpBasicOutboundConfig.create(clientId, clientSecret))
+                                                   .build())
+                        .build();
+                Security tokenOutboundSecurity = Security.builder()
+                        .addOutboundSecurityProvider(httpBasicAuth)
+                        .build();
 
-            appClient = clientBuilder
-                    .register(basicAuth)
-                    .build();
+                webClientBuilder.addService(WebClientSecurity.create(tokenOutboundSecurity));
+            }
 
+            appClient = clientBuilder.build();
+            appWebClient = webClientBuilder.build();
             tokenEndpoint = appClient.target(tokenEndpointUri);
 
             if (validateJwtWithJwk) {
@@ -840,7 +1114,7 @@ public final class OidcConfig {
                                                  null);
                     if (null != jwkUri) {
                         if ("idcs".equals(serverType)) {
-                            this.signJwk = IdcsSupport.signJwk(generalClient, tokenEndpoint, collector, jwkUri);
+                            this.signJwk = IdcsSupport.signJwk(appWebClient, webClient, tokenEndpointUri, jwkUri, clientTimeout);
                         } else {
                             this.signJwk = JwkKeys.builder()
                                     .resource(Resource.create(jwkUri))
@@ -952,6 +1226,10 @@ public final class OidcConfig {
             config.get("sign-jwk.resource").as(Resource::create).ifPresent(this::signJwk);
             Resource.create(config, "sign-jwk").ifPresent(this::signJwk);
             config.get("token-endpoint-uri").as(URI.class).ifPresent(this::tokenEndpointUri);
+            config.get("token-endpoint-auth").asString()
+                    .map(String::toUpperCase)
+                    .map(ClientAuthentication::valueOf)
+                    .ifPresent(this::tokenEndpointAuthentication);
             config.get("authorization-endpoint-uri").as(URI.class).ifPresent(this::authorizationEndpointUri);
 
             config.get("introspect-endpoint-uri").as(URI.class).ifPresent(this::introspectEndpointUri);
@@ -966,6 +1244,8 @@ public final class OidcConfig {
             // type of the identity server
             // now uses hardcoded switch - should change to service loader eventually
             config.get("server-type").asString().ifPresent(this::serverType);
+
+            config.get("client-timeout-millis").asLong().ifPresent(this::clientTimeoutMillis);
 
             return this;
         }
@@ -1256,6 +1536,33 @@ public final class OidcConfig {
         }
 
         /**
+         * Type of authentication to use when invoking the token endpoint.
+         * Current supported options:
+         * <ul>
+         *     <li>{@link io.helidon.security.providers.oidc.common.OidcConfig.ClientAuthentication#CLIENT_SECRET_BASIC}</li>
+         *     <li>{@link io.helidon.security.providers.oidc.common.OidcConfig.ClientAuthentication#CLIENT_SECRET_POST}</li>
+         *     <li>{@link io.helidon.security.providers.oidc.common.OidcConfig.ClientAuthentication#NONE}</li>
+         * </ul>
+         *
+         * @param tokenEndpointAuthentication authentication type
+         * @return updated builder
+         */
+        public Builder tokenEndpointAuthentication(ClientAuthentication tokenEndpointAuthentication) {
+
+            switch (tokenEndpointAuthentication) {
+            case CLIENT_SECRET_BASIC:
+            case CLIENT_SECRET_POST:
+            case NONE:
+                break;
+            default:
+                throw new IllegalArgumentException("Token endpoint authentication type " + tokenEndpointAuthentication
+                                                           + " is not supported.");
+            }
+            this.tokenEndpointAuthentication = tokenEndpointAuthentication;
+            return this;
+        }
+
+        /**
          * URI of an authorization endpoint used to redirect users to for logging-in.
          *
          * If not defined, it is obtained from {@link #oidcMetadata(Resource)}, if that is not defined
@@ -1448,6 +1755,21 @@ public final class OidcConfig {
         public Builder serverType(String type) {
             this.serverType = type;
             return this;
+        }
+
+        /**
+         * Timeout of calls using web client.
+         *
+         * @param duration timeout
+         * @return updated builder
+         */
+        public Builder clientTimeout(Duration duration) {
+            this.clientTimeout = duration;
+            return this;
+        }
+
+        private void clientTimeoutMillis(long millis) {
+            this.clientTimeout(Duration.ofMillis(millis));
         }
     }
 }

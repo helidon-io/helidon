@@ -82,14 +82,13 @@
             <artifactId>helidon-security-integration-webserver</artifactId>
         </dependency>
         <dependency>
-            <!-- Config API + yaml support -->
-            <groupId>io.helidon.bundles</groupId>
-            <artifactId>helidon-bundles-config</artifactId>
-        </dependency>
-        <dependency>
-            <!-- Encryption of secrets + reference support in Config -->
+            <!-- Encryption of secrets -->
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-encryption</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
