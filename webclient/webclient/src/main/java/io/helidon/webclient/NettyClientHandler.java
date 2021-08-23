@@ -51,6 +51,7 @@ import static io.helidon.webclient.WebClientRequestBuilderImpl.RECEIVED;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST_ID;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.RESPONSE;
+import static io.helidon.webclient.WebClientRequestBuilderImpl.RESPONSE_RECEIVED;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.RESULT;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.RETURN;
 
@@ -101,6 +102,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             channel.config().setAutoRead(false);
             HttpResponse response = (HttpResponse) msg;
             this.requestId = channel.attr(REQUEST_ID).get();
+            channel.attr(RESPONSE_RECEIVED).set(true);
             WebClientRequestImpl clientRequest = channel.attr(REQUEST).get();
             RequestConfiguration requestConfiguration = clientRequest.configuration();
             LOGGER.finest(() -> "(client reqID: " + requestId + ") Initial http response message received");
