@@ -90,6 +90,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     static final AttributeKey<CompletableFuture<WebClientResponse>> RESULT = AttributeKey.valueOf("result");
     static final AttributeKey<AtomicBoolean> IN_USE = AttributeKey.valueOf("inUse");
     static final AttributeKey<AtomicBoolean> RETURN = AttributeKey.valueOf("finished");
+    static final AttributeKey<Boolean> RESPONSE_RECEIVED = AttributeKey.valueOf("responseReceived");
     static final AttributeKey<WebClientResponse> RESPONSE = AttributeKey.valueOf("response");
     static final AttributeKey<ConnectionIdent> CONNECTION_IDENT = AttributeKey.valueOf("connectionIdent");
     static final AttributeKey<Long> REQUEST_ID = AttributeKey.valueOf("requestID");
@@ -585,6 +586,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                 LOGGER.finest(() -> "(client reqID: " + requestId + ") "
                         + "Channel hashcode -> " + channelFuture.channel().hashCode());
                 channelFuture.channel().attr(REQUEST).set(clientRequest);
+                channelFuture.channel().attr(RESPONSE_RECEIVED).set(false);
                 channelFuture.channel().attr(RECEIVED).set(responseReceived);
                 channelFuture.channel().attr(COMPLETED).set(complete);
                 channelFuture.channel().attr(RESULT).set(result);

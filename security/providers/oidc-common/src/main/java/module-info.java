@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,13 @@ module io.helidon.security.providers.oidc.common {
     requires io.helidon.security.util;
     requires io.helidon.security.providers.common;
     requires io.helidon.security.jwt;
+    requires io.helidon.security.providers.httpauth;
     requires io.helidon.webclient.jaxrs;
+    requires io.helidon.webclient;
+    requires io.helidon.webclient.security;
+    requires io.helidon.webclient.tracing;
+    requires io.helidon.media.jsonp;
+
     requires jersey.client;
     requires java.ws.rs;
 

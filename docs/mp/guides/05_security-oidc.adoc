@@ -246,7 +246,7 @@ security:
     - abac:
       # Adds ABAC Provider - it does not require any configuration
     - oidc:
-        redirect-uri: "/oidc/redirect/*"
+        redirect-uri: "/oidc/redirect"
         audience: "account"
         client-id: "myClientID"   // <1>
         client-secret: "Client secret generated into Keycloak client credential"  // <2>

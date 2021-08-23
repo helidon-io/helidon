@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  */
 package io.helidon.openapi;
 
-import io.smallrye.openapi.runtime.io.OpenApiSerializer;
+import io.smallrye.openapi.runtime.io.Format;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -26,12 +26,15 @@ import javax.json.JsonObject;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import java.io.IOException;
+import java.io.LineNumberReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -52,7 +55,7 @@ class SerializerTest {
     public void testJSONSerialization() throws IOException {
         OpenAPI openAPI = ParserTest.parse(helper, "/openapi-greeting.yml", OpenAPISupport.OpenAPIMediaType.YAML);
         Writer writer = new StringWriter();
-        Serializer.serialize(helper.types(), implsToTypes, openAPI, OpenApiSerializer.Format.JSON, writer);
+        Serializer.serialize(helper.types(), implsToTypes, openAPI, Format.JSON, writer);
         JsonStructure json = TestUtil.jsonFromReader(new StringReader(writer.toString()));
 
         assertThat(json.getValue("/x-my-personal-map/owner/last").toString(), is("\"Myself\""));
@@ -128,7 +131,7 @@ class SerializerTest {
     public void testYAMLSerialization() throws IOException {
         OpenAPI openAPI = ParserTest.parse(helper, "/openapi-greeting.yml", OpenAPISupport.OpenAPIMediaType.YAML);
         Writer writer = new StringWriter();
-        Serializer.serialize(helper.types(), implsToTypes, openAPI, OpenApiSerializer.Format.YAML, writer);
+        Serializer.serialize(helper.types(), implsToTypes, openAPI, Format.YAML, writer);
         try (Reader reader = new StringReader(writer.toString())) {
             openAPI = OpenAPIParser.parse(helper.types(), reader, OpenAPISupport.OpenAPIMediaType.JSON);
         }
@@ -151,5 +154,49 @@ class SerializerTest {
                 .getSchema()
                 .getRequired();
         assertThat(required, hasItem("greeting"));
+    }
+
+    @Test
+    void testRefSerializationAsOpenAPI() throws IOException {
+        OpenAPI openAPI = ParserTest.parse(helper, "/petstore.yaml", OpenAPISupport.OpenAPIMediaType.YAML);
+        Writer writer = new StringWriter();
+        Serializer.serialize(helper.types(), implsToTypes, openAPI, Format.YAML, writer);
+
+        try (Reader reader = new StringReader(writer.toString())) {
+            openAPI = OpenAPIParser.parse(helper.types(), reader, OpenAPISupport.OpenAPIMediaType.JSON);
+        }
+
+        String ref = openAPI.getPaths()
+                .getPathItem("/pets")
+                .getGET()
+                .getResponses()
+                .getDefaultValue()
+                .getContent()
+                .getMediaType("application/json")
+                .getSchema()
+                .getRef();
+        assertThat("/pets.GET.responses.default.content.application/json.schema.ref", ref,
+                is(equalTo("#/components/schemas/Error")));
+    }
+
+    @Test
+    void testRefSerializationAsText() throws IOException {
+        // This test basically replicates the other ref test but without re-parsing, just in case there might be
+        // compensating bugs in the parsing and the serialization.
+        Pattern refPattern = Pattern.compile("\\s\\$ref\\: '([^']+)");
+
+        OpenAPI openAPI = ParserTest.parse(helper, "/petstore.yaml", OpenAPISupport.OpenAPIMediaType.YAML);
+        Writer writer = new StringWriter();
+        Serializer.serialize(helper.types(), implsToTypes, openAPI, Format.YAML, writer);
+
+        try (LineNumberReader reader = new LineNumberReader(new StringReader(writer.toString()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                Matcher refMatcher = refPattern.matcher(line);
+                if (refMatcher.matches()) {
+                    assertThat("Apparent reference to component", refMatcher.group(1), startsWith("#/components"));
+                }
+            }
+        }
     }
 }

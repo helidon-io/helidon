@@ -16,8 +16,12 @@
  */
 package io.helidon.openapi;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.Paths;
@@ -32,10 +36,12 @@ import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 import org.eclipse.microprofile.openapi.models.servers.ServerVariables;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.NodeId;
 import org.yaml.snakeyaml.nodes.SequenceNode;
+import org.yaml.snakeyaml.nodes.Tag;
 
 /**
  * Specialized SnakeYAML constructor for modifying {@code Node} objects for OpenAPI types that extend {@code Map} to adjust the
@@ -63,6 +69,8 @@ final class CustomConstructor extends Constructor {
 
     // maps OpenAPI interfaces which extend Map<?, List<type>> to the type that appears in the list
     private static final Map<Class<?>, Class<?>> CHILD_MAP_OF_LIST_TYPES = new HashMap<>();
+
+    private static final Logger LOGGER = Logger.getLogger(CustomConstructor.class.getName());
 
     static {
         CHILD_MAP_TYPES.put(Paths.class, PathItem.class);
@@ -99,6 +107,28 @@ final class CustomConstructor extends Constructor {
                 }
             });
         }
+
+        // Older releases silently accepted numbers for APIResponse status values; they should be strings.
+        if (parentType.equals(APIResponses.class)) {
+            convertIntHttpStatuses(node);
+        }
         super.constructMapping2ndStep(node, mapping);
+    }
+
+    private void convertIntHttpStatuses(MappingNode node) {
+        List<Mark> numericHttpStatusMarks = new ArrayList<>();
+        node.getValue().forEach(t -> {
+            Node keyNode = t.getKeyNode();
+            if (keyNode.getTag().equals(Tag.INT)) {
+                numericHttpStatusMarks.add(keyNode.getStartMark());
+                keyNode.setTag(Tag.STR);
+            }
+        });
+        if (!numericHttpStatusMarks.isEmpty()) {
+            LOGGER.log(Level.WARNING,
+                    "Numeric HTTP status value(s) should be quoted. "
+                    + "Please change the following; unquoted numeric values might be rejected in a future release: {0}",
+                    numericHttpStatusMarks);
+        }
     }
 }

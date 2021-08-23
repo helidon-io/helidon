@@ -20,7 +20,7 @@ import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
 
 /**
- * Service for {@link IdcsRoleMapperProvider}.
+ * Service for {@link IdcsRoleMapperRxProvider}.
  */
 public class IdcsRoleMapperProviderService implements SecurityProviderService {
     @Override
@@ -28,6 +28,7 @@ public class IdcsRoleMapperProviderService implements SecurityProviderService {
         return "idcs-role-mapper";
     }
 
+    // This is for backward compatibility only. This will be changed in 3.x
     @Override
     public Class<? extends SecurityProvider> providerClass() {
         return IdcsRoleMapperProvider.class;
@@ -36,8 +37,10 @@ public class IdcsRoleMapperProviderService implements SecurityProviderService {
     @Override
     public SecurityProvider providerInstance(Config config) {
         if (config.get("multitenant").asBoolean().orElse(true)) {
-            return IdcsMtRoleMapperProvider.create(config);
+            return IdcsMtRoleMapperRxProvider.create(config);
         }
-        return IdcsRoleMapperProvider.create(config);
+        // we now use the new reactive implementation by default
+        // the behavior is backward compatible (and configuration as well)
+        return IdcsRoleMapperRxProvider.create(config);
     }
 }

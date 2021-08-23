@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public class HttpBasicOutboundConfig {
      */
     public static final TokenHandler DEFAULT_TOKEN_HANDLER = TokenHandler.builder()
             .tokenHeader("Authorization")
-            .tokenPrefix("basic ")
+            .tokenPrefix("Basic ")
             .build();
 
     private final TokenHandler tokenHandler;

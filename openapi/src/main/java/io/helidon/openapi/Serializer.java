@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.smallrye.openapi.api.models.OpenAPIImpl;
-import io.smallrye.openapi.runtime.io.OpenApiSerializer;
+import io.smallrye.openapi.runtime.io.Format;
 import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
+import org.eclipse.microprofile.openapi.models.Reference;
 import org.eclipse.microprofile.openapi.models.parameters.Parameter;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -70,9 +71,9 @@ class Serializer {
     }
 
     static void serialize(Map<Class<?>, ExpandedTypeDescription> types, Map<Class<?>, ExpandedTypeDescription> implsToTypes,
-            OpenAPI openAPI, OpenApiSerializer.Format fmt,
+            OpenAPI openAPI, Format fmt,
             Writer writer) {
-        if (fmt == OpenApiSerializer.Format.JSON) {
+        if (fmt == Format.JSON) {
             serialize(types, implsToTypes, openAPI, writer, JSON_DUMPER_OPTIONS, DumperOptions.ScalarStyle.DOUBLE_QUOTED);
         } else {
             serialize(types, implsToTypes, openAPI, writer, YAML_DUMPER_OPTIONS, DumperOptions.ScalarStyle.PLAIN);
@@ -149,8 +150,15 @@ class Serializer {
                 v = e.toString();
             }
             NodeTuple result = okToProcess(javaBean, property)
-                    ? super.representJavaBeanProperty(javaBean, p, v, customTag) : null;
+                    ? doRepresentJavaBeanProperty(javaBean, p, v, customTag) : null;
             return result;
+        }
+
+        private NodeTuple doRepresentJavaBeanProperty(Object javaBean, Property property, Object propertyValue, Tag customTag) {
+            NodeTuple defaultTuple = super.representJavaBeanProperty(javaBean, property, propertyValue, customTag);
+            return (javaBean instanceof Reference) && property.getName().equals("ref")
+                    ? new NodeTuple(representData("$ref"), defaultTuple.getValueNode())
+                    : defaultTuple;
         }
 
         private Object adjustPropertyValue(Object propertyValue) {
