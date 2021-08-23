@@ -30,6 +30,7 @@ import javax.inject.Inject;
 import io.helidon.common.Reflected;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.Complete;
 import org.eclipse.microprofile.lra.annotation.Status;
@@ -54,14 +55,18 @@ class HandlerService {
     private final InspectionService inspectionService;
     private final ParticipantService participantService;
     private final Map<Method, List<AnnotationHandler>> handlerCache = new ConcurrentHashMap<>();
+    private final boolean propagate;
 
     @Inject
     HandlerService(CoordinatorClient coordinatorClient,
                    InspectionService inspectionService,
-                   ParticipantService participantService) {
+                   ParticipantService participantService,
+                   @ConfigProperty(name = "mp.lra.propagation.active", defaultValue = "true")
+                           boolean propagate) {
         this.coordinatorClient = coordinatorClient;
         this.inspectionService = inspectionService;
         this.participantService = participantService;
+        this.propagate = propagate;
     }
 
     List<AnnotationHandler> getHandlers(Method method) {
@@ -70,6 +75,9 @@ class HandlerService {
 
     private List<AnnotationHandler> createHandlers(Method m) {
         Set<AnnotationInstance> lraAnnotations = inspectionService.lookUpLraAnnotations(m);
+        if (lraAnnotations.isEmpty()) {
+            return List.of(new NonLraAnnotationHandler(propagate));
+        }
 
         if (lraAnnotations.stream()
                 .map(a -> a.name().toString())

@@ -17,13 +17,21 @@
 
 package io.helidon.microprofile.lra;
 
+import java.net.URI;
+import java.util.List;
+import java.util.Optional;
+
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ResourceInfo;
 
+
+import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 
 import org.jboss.jandex.AnnotationInstance;
+
+import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
 interface AnnotationHandler {
 
@@ -33,6 +41,17 @@ interface AnnotationHandler {
     void handleJaxRsAfter(ContainerRequestContext requestContext,
                           ContainerResponseContext responseContext,
                           ResourceInfo resourceInfo);
+
+    default Optional<URI> getLraContext(ContainerRequestContext reqCtx) {
+        return Optional.ofNullable(reqCtx.getHeaders()
+                        .get(LRA_HTTP_CONTEXT_HEADER))
+                .orElseGet(List::of)
+                .stream()
+                .findFirst()
+                .map(URI::create)
+                .or(() -> Contexts.context()
+                        .flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class)));
+    }
 
     @FunctionalInterface
     interface HandlerMaker {

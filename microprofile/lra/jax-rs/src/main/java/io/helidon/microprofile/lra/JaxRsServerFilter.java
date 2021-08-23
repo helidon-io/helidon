@@ -17,9 +17,6 @@ package io.helidon.microprofile.lra;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.URI;
-import java.util.List;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,12 +31,7 @@ import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 
-import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
 @ConstrainedTo(RuntimeType.SERVER)
 class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilter {
@@ -55,22 +47,13 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Inject
     private HandlerService handlerService;
 
-    @ConfigProperty(name = "mp.lra.propagation.active", defaultValue = "true")
-    private boolean propagate;
-
     @Override
     public void filter(ContainerRequestContext reqCtx) throws IOException {
         try {
             Method method = resourceInfo.getResourceMethod();
-            List<AnnotationHandler> lraHandlers = handlerService.getHandlers(method);
-
-            if (propagate || !lraHandlers.isEmpty()) {
-                // if propagate for non lra endpoints is on or method is LRA resource
-                setLraContext(reqCtx);
-            }
 
             // select proper lra annotation handlers and process
-            for (var handler : lraHandlers) {
+            for (var handler : handlerService.getHandlers(method)) {
                 handler.handleJaxRsBefore(reqCtx, resourceInfo);
             }
         } catch (WebApplicationException e) {
@@ -97,13 +80,5 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
         } catch (Throwable t) {
             LOGGER.log(Level.SEVERE, "Error in after LRA filter", t);
         }
-    }
-
-    private void setLraContext(ContainerRequestContext reqCtx) {
-        Optional.ofNullable(reqCtx.getHeaders().getFirst(LRA_HTTP_CONTEXT_HEADER))
-                .map(URI::create)
-                .ifPresent(lraId -> Contexts.context()
-                        .orElseThrow(() -> new IllegalStateException("LRA Jax-Rs resource executed out of Helidon context."))
-                        .register(LRA_HTTP_CONTEXT_HEADER, lraId));
     }
 }

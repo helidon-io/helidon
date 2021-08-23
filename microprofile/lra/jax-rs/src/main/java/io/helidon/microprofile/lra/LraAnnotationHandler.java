@@ -64,7 +64,7 @@ class LraAnnotationHandler implements AnnotationHandler {
         Method method = resourceInfo.getResourceMethod();
         URI baseUri = reqCtx.getUriInfo().getBaseUri();
         Participant participant = participantService.participant(baseUri, resourceInfo.getResourceClass());
-        Optional<URI> existingLraId = Contexts.context().flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class));
+        Optional<URI> existingLraId = getLraContext(reqCtx);
         long timeLimit = Duration.of(annotation.timeLimit(), annotation.timeUnit()).toMillis();
         String clientId = method.getDeclaringClass().getName() + "#" + method.getName();
 

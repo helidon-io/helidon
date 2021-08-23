@@ -23,7 +23,6 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ResourceInfo;
 
-import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.Participant;
 
@@ -40,14 +39,14 @@ class LeaveAnnotationHandler implements AnnotationHandler {
     }
 
     @Override
-    public void handleJaxRsBefore(ContainerRequestContext requestContext, ResourceInfo resourceInfo) {
-        Contexts.context().flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class))
+    public void handleJaxRsBefore(ContainerRequestContext reqCtx, ResourceInfo resourceInfo) {
+        getLraContext(reqCtx)
                 .ifPresent(lraId -> {
-                    URI baseUri = requestContext.getUriInfo().getBaseUri();
+                    URI baseUri = reqCtx.getUriInfo().getBaseUri();
                     Participant p = participantService.participant(baseUri, resourceInfo.getResourceClass());
                     coordinatorClient.leave(lraId, p);
-                    requestContext.getHeaders().add(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString());
-                    requestContext.setProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
+                    reqCtx.getHeaders().add(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString());
+                    reqCtx.setProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
                 });
 
     }
