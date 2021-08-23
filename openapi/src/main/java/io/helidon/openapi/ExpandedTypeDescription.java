@@ -97,7 +97,7 @@ class ExpandedTypeDescription extends TypeDescription {
      * @return this type description
      */
     ExpandedTypeDescription addRef() {
-        PropertySubstitute sub = new PropertySubstitute("$ref", String.class, "getRef", "setRef");
+        PropertySubstitute sub = new PropertySubstitute("ref", String.class, "getRef", "setRef");
         sub.setTargetType(impl);
         substituteProperty(sub);
         return this;
@@ -117,7 +117,13 @@ class ExpandedTypeDescription extends TypeDescription {
 
     @Override
     public Property getProperty(String name) {
-        return isExtension(name) ? new ExtensionProperty(name) : super.getProperty(name);
+        if (isExtension(name)) {
+            return new ExtensionProperty(name);
+        }
+        if (isRef(name)) {
+            return new RenamedProperty(this.getType(), "ref");
+        }
+        return super.getProperty(name);
     }
 
     Property getPropertyNoEx(String name) {
@@ -205,6 +211,10 @@ class ExpandedTypeDescription extends TypeDescription {
 
     private static boolean isExtension(String name) {
         return name.startsWith(EXTENSION_PROPERTY_PREFIX);
+    }
+
+    private static boolean isRef(String name) {
+        return name.equals("$ref");
     }
 
     /**
@@ -307,6 +317,24 @@ class ExpandedTypeDescription extends TypeDescription {
                         object.getClass().getName(), Extensible.class.getName()));
             }
             return (Extensible<?>) object;
+        }
+    }
+
+    /**
+     * Specialized property with a different name in the YAML vs. the POJO.
+     */
+    static class RenamedProperty extends MethodProperty {
+
+        RenamedProperty(Class<?> c, String pojoName) {
+            super(propertyDescriptor(c, pojoName));
+        }
+
+        private static PropertyDescriptor propertyDescriptor(Class<?> c, String pojoName) {
+            try {
+                return new PropertyDescriptor("ref", c, "getRef", "setRef");
+            } catch (IntrospectionException e) {
+                throw new YAMLException("Error describing property " + pojoName + " for class " + c.getName());
+            }
         }
     }
 }
