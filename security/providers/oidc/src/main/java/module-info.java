@@ -28,8 +28,7 @@ module io.helidon.security.providers.oidc {
     requires io.helidon.security.util;
     requires io.helidon.security.abac.scope;
     requires io.helidon.security.jwt;
-    requires jersey.client;
-    requires java.ws.rs;
+    requires io.helidon.webclient;
     requires io.helidon.webserver;
     requires io.helidon.security.integration.webserver;
 

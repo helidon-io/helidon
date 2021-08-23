@@ -51,13 +51,6 @@
             <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.microprofile.config</groupId>
-            <artifactId>microprofile-config-api</artifactId>
-            <!-- this does not work correctly with JPMS and usage of service loader -->
-<!--            <scope>provided</scope>-->
-<!--            <optional>true</optional>-->
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-testing</artifactId>
             <scope>test</scope>

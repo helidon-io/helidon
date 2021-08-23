@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpRequest;
 import io.helidon.config.Config;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.AuthenticationResponse;
@@ -46,6 +47,7 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityRequest;
 import io.helidon.security.SecurityRequestBuilder;
 import io.helidon.security.SecurityResponse;
+import io.helidon.security.Subject;
 import io.helidon.security.integration.common.AtnTracing;
 import io.helidon.security.integration.common.AtzTracing;
 import io.helidon.security.integration.common.SecurityTracing;
@@ -577,9 +579,13 @@ public final class SecurityHandler implements Handler {
         Set<String> rolesSet = rolesAllowed.orElse(Set.of());
 
         if (!rolesSet.isEmpty()) {
+            /*
+            As this part bypasses authorization providers, audit logging is not done, we need to explicitly audit this!
+             */
             // first validate roles - RBAC is supported out of the box by security, no need to invoke provider
             if (explicitAuthorizer.isPresent()) {
                 if (rolesSet.stream().noneMatch(role -> context.isUserInRole(role, explicitAuthorizer.get()))) {
+                    auditRoleMissing(context, req.path(), context.user(), rolesSet);
                     abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), Map.of());
                     future.complete(AtxResult.STOP);
                     atzTracing.finish();
@@ -587,6 +593,7 @@ public final class SecurityHandler implements Handler {
                 }
             } else {
                 if (rolesSet.stream().noneMatch(context::isUserInRole)) {
+                    auditRoleMissing(context, req.path(), context.user(), rolesSet);
                     abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), Map.of());
                     future.complete(AtxResult.STOP);
                     atzTracing.finish();
@@ -641,6 +648,18 @@ public final class SecurityHandler implements Handler {
         });
 
         return future;
+    }
+
+    private void auditRoleMissing(SecurityContext context,
+                                  HttpRequest.Path path,
+                                  Optional<Subject> user,
+                                  Set<String> rolesSet) {
+
+        context.audit(SecurityAuditEvent.failure(AuditEvent.AUTHZ_TYPE_PREFIX + ".authorize",
+                                                 "User is not in any of the required roles: %s. Path %s. Subject %s")
+                              .addParam(AuditEvent.AuditParam.plain("roles", rolesSet))
+                              .addParam(AuditEvent.AuditParam.plain("path", path))
+                              .addParam(AuditEvent.AuditParam.plain("subject", user)));
     }
 
     /**
@@ -839,6 +858,7 @@ public final class SecurityHandler implements Handler {
     // WARNING: builder methods must not have side-effects, as they are used to build instance from configuration
     // if you want side effects, use methods on SecurityHandler
     private static final class Builder implements io.helidon.common.Builder<SecurityHandler> {
+        private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
         private Optional<Set<String>> rolesAllowed = Optional.empty();
         private Optional<ClassToInstanceStore<Object>> customObjects = Optional.empty();
         private Optional<Config> config = Optional.empty();
@@ -850,7 +870,6 @@ public final class SecurityHandler implements Handler {
         private Optional<Boolean> audited = Optional.empty();
         private Optional<String> auditEventType = Optional.empty();
         private Optional<String> auditMessageFormat = Optional.empty();
-        private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
         private boolean combined;
 
         private Builder() {
@@ -1030,10 +1049,10 @@ public final class SecurityHandler implements Handler {
 
         Builder rolesAllowed(Collection<String> roles) {
             rolesAllowed.ifPresentOrElse(strings -> strings.addAll(roles),
-                                                              () -> {
-                                                                  Set<String> newRoles = new HashSet<>(roles);
-                                                                  rolesAllowed = Optional.of(newRoles);
-                                                              });
+                                         () -> {
+                                             Set<String> newRoles = new HashSet<>(roles);
+                                             rolesAllowed = Optional.of(newRoles);
+                                         });
             return this;
         }
     }

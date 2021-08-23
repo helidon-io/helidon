@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,10 @@ import io.helidon.security.util.TokenHandler;
 /**
  * {@link io.helidon.security.spi.SubjectMappingProvider} to obtain roles from IDCS server for a user.
  * Supports multi tenancy in IDCS.
+ *
+ * @deprecated use {@link io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperRxProvider} instead
  */
+@Deprecated(forRemoval = true, since = "2.4.0")
 public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
     /**
      * Name of the header containing the IDCS tenant. This is the default used, can be overriden

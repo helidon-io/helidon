@@ -19,6 +19,8 @@ package io.helidon.messaging;
 import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
@@ -66,6 +68,8 @@ public interface Messaging {
      * Fluent API builder for {@link io.helidon.messaging.Messaging}.
      */
     final class Builder implements io.helidon.common.Builder<Messaging> {
+
+        private static final Logger LOGGER = Logger.getLogger(Messaging.class.getName());
 
         private final MessagingImpl messaging;
 
@@ -211,7 +215,9 @@ public interface Messaging {
                                           Consumer<? super PAYLOAD> consumer) {
             this.messaging.registerChannel(channel);
             channel.setSubscriber(Builder.<PAYLOAD>unwrapProcessorBuilder()
-                    .forEach(consumer)
+                    .peek(consumer)
+                    .onError(t -> LOGGER.log(Level.SEVERE, "Error detected in channel " + channel.name(), t))
+                    .ignore()
                     .build());
             return this;
         }

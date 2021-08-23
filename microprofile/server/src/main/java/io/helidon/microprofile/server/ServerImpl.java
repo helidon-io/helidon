@@ -30,6 +30,10 @@ import io.helidon.microprofile.cdi.HelidonContainer;
  * Server to handle lifecycle of microprofile implementation.
  */
 public class ServerImpl implements Server {
+    private static final Logger LOGGER = Logger.getLogger(Server.class.getName());
+    // this constant is to ensure we initialize Helidon CDI at build time
+    private static final HelidonContainer CONTAINER = HelidonContainer.instance();
+
     private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
 
     private final HelidonContainer helidonContainer = HelidonContainer.instance();
@@ -41,6 +45,7 @@ public class ServerImpl implements Server {
 
     ServerImpl(Builder builder) {
         this.container = (SeContainer) CDI.current();
+        LOGGER.finest(() -> "Container context id: " + CONTAINER.context().id());
 
         InetAddress listenHost;
         if (null == builder.host()) {

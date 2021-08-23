@@ -22,7 +22,6 @@ import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +105,7 @@ class WebClientConfiguration {
         this.context = builder.context;
         this.readerContext = builder.readerContext;
         this.writerContext = builder.writerContext;
-        this.clientServices = Collections.unmodifiableList(builder.clientServices);
+        this.clientServices = List.copyOf(builder.clientServices);
         this.uri = builder.uri;
         this.keepAlive = builder.keepAlive;
         this.validateHeaders = builder.validateHeaders;
@@ -288,6 +287,7 @@ class WebClientConfiguration {
 
         private final WebClientRequestHeaders clientHeaders;
         private final Map<String, String> defaultCookies;
+        private final List<WebClientService> clientServices;
 
         private Config config;
         private Context context;
@@ -305,7 +305,6 @@ class WebClientConfiguration {
         private URI uri;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
-        private List<WebClientService> clientServices;
         private boolean validateHeaders;
         @SuppressWarnings("unchecked")
         private B me = (B) this;
@@ -567,7 +566,8 @@ class WebClientConfiguration {
         }
 
         B clientServices(List<WebClientService> clientServices) {
-            this.clientServices = clientServices;
+            this.clientServices.clear();
+            this.clientServices.addAll(clientServices);
             return me;
         }
 
