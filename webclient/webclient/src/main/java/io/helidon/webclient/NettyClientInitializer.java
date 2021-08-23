@@ -17,6 +17,7 @@ package io.helidon.webclient;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -42,6 +43,8 @@ import io.netty.util.concurrent.FutureListener;
 
 import static io.helidon.webclient.WebClientRequestBuilderImpl.CONNECTION_IDENT;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.IN_USE;
+import static io.helidon.webclient.WebClientRequestBuilderImpl.RECEIVED;
+import static io.helidon.webclient.WebClientRequestBuilderImpl.RESPONSE_RECEIVED;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.RESULT;
 
 /**
@@ -129,13 +132,20 @@ class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
 
         @Override
         public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+            Channel channel = ctx.channel();
             if (ctx.channel().hasAttr(CONNECTION_IDENT)) {
-                Channel channel = ctx.channel();
                 WebClientRequestBuilderImpl.ConnectionIdent key = channel.attr(CONNECTION_IDENT).get();
                 LOGGER.finest(() -> "Channel closed -> " + channel.hashCode());
                 if (key != null) {
                     WebClientRequestBuilderImpl.removeChannelFromCache(key, channel);
                 }
+            }
+            if (!ctx.channel().attr(RESPONSE_RECEIVED).get().get()) {
+                CompletableFuture<WebClientServiceResponse> responseReceived = channel.attr(RECEIVED).get();
+                CompletableFuture<WebClientResponse> responseFuture = channel.attr(RESULT).get();
+                WebClientException exception = new WebClientException("Connection reset by the host");
+                responseReceived.completeExceptionally(exception);
+                responseFuture.completeExceptionally(exception);
             }
             super.channelInactive(ctx);
         }

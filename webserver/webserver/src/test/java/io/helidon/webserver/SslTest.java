@@ -69,8 +69,7 @@ public class SslTest {
     }
 
     @Test
-    public void testSecuredServerWithJerseyClient() throws Exception {
-
+    public void testSecuredServerWithWebClient() throws Exception {
         client.get()
                 .uri("https://localhost:" + webServer.port())
                 .request(String.class)
