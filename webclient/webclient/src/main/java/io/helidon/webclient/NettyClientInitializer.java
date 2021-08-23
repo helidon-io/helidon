@@ -140,7 +140,7 @@ class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
                     WebClientRequestBuilderImpl.removeChannelFromCache(key, channel);
                 }
             }
-            if (!channel.attr(RESPONSE_RECEIVED).get().get()) {
+            if (!channel.attr(RESPONSE_RECEIVED).get()) {
                 CompletableFuture<WebClientServiceResponse> responseReceived = channel.attr(RECEIVED).get();
                 CompletableFuture<WebClientResponse> responseFuture = channel.attr(RESULT).get();
                 WebClientException exception = new WebClientException("Connection reset by the host");
