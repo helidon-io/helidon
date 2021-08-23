@@ -102,7 +102,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             channel.config().setAutoRead(false);
             HttpResponse response = (HttpResponse) msg;
             this.requestId = channel.attr(REQUEST_ID).get();
-            channel.attr(RESPONSE_RECEIVED).get().compareAndSet(false, true);
+            channel.attr(RESPONSE_RECEIVED).get().set(true);
             WebClientRequestImpl clientRequest = channel.attr(REQUEST).get();
             RequestConfiguration requestConfiguration = clientRequest.configuration();
             LOGGER.finest(() -> "(client reqID: " + requestId + ") Initial http response message received");
