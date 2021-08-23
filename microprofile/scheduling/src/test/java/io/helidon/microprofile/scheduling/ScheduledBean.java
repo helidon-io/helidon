@@ -43,9 +43,9 @@ public class ScheduledBean {
 
     @Scheduled("0/2 * * * * ? *")
     public void test2sec() {
-        countDownLatch.countDown();
         duration = System.currentTimeMillis() - stamp;
         stamp = System.currentTimeMillis();
+        countDownLatch.countDown();
         LOGGER.fine(() -> "Executed at " + LocalTime.now().toString());
     }
 
