@@ -73,7 +73,7 @@
                             <failOnMissingClassifierArtifact>true</failOnMissingClassifierArtifact>
                             <outputDirectory>${openapi-impls-dir}</outputDirectory>
                             <includeGroupIds>io.smallrye</includeGroupIds>
-                            <includeArtifactIds>smallrye-open-api</includeArtifactIds>
+                            <includeArtifactIds>smallrye-open-api-core</includeArtifactIds>
                             <includes>io/smallrye/openapi/api/models/**/*.java</includes>
                         </configuration>
                     </execution>
@@ -123,6 +123,7 @@
         <dependency>
             <groupId>io.smallrye</groupId>
             <artifactId>smallrye-open-api</artifactId>
+            <type>pom</type>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>

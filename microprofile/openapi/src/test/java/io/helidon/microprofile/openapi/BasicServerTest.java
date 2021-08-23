@@ -16,61 +16,63 @@
  */
 package io.helidon.microprofile.openapi;
 
-import java.net.HttpURLConnection;
 import java.util.Map;
 
-import io.helidon.common.http.MediaType;
-import io.helidon.config.Config;
-import io.helidon.microprofile.openapi.other.TestApp2;
-import io.helidon.microprofile.server.Server;
+import javax.inject.Inject;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import io.helidon.common.http.Http;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.openapi.OpenAPISupport;
+
 import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.Yaml;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test that MP OpenAPI support works when retrieving the OpenAPI document
  * from the server's /openapi endpoint.
  */
+@HelidonTest
+@AddBean(TestApp.class)
+@AddBean(TestApp3.class)
 public class BasicServerTest {
-
-    private static final String OPENAPI_PATH = "/openapi";
-
-    private static Server server;
-
-    private static HttpURLConnection cnx;
 
     private static Map<String, Object> yaml;
 
+    @Inject
+    WebTarget webTarget;
+
+    private static Map<String, Object> retrieveYaml(WebTarget webTarget) {
+        try (Response response = webTarget
+                .path(OpenAPISupport.DEFAULT_WEB_CONTEXT)
+                .request(OpenAPISupport.DEFAULT_RESPONSE_MEDIA_TYPE.toString())
+                .get()) {
+            assertThat("Fetch of OpenAPI document from server status", response.getStatus(),
+                    is(equalTo(Http.Status.OK_200.code())));
+            String yamlText = response.readEntity(String.class);
+            return new Yaml().load(yamlText);
+        }
+    }
+
+    private static Map<String, Object> yaml(WebTarget webTarget) {
+        if (yaml == null) {
+            yaml = retrieveYaml(webTarget);
+        }
+        return yaml;
+    }
+
+    private Map<String, Object> yaml() {
+        return yaml(webTarget);
+    }
+
     public BasicServerTest() {
-    }
-
-    /**
-     * Start the server to run the test app and read the response from the
-     * /openapi endpoint into a map that all tests can use.
-     *
-     * @throws Exception in case of error reading the response as yaml
-     */
-    @BeforeAll
-    public static void startServer() throws Exception {
-        server = TestUtil.startServer(Config.create(), TestApp.class, TestApp3.class);
-        cnx = TestUtil.getURLConnection(
-                server.port(),
-                "GET",
-                OPENAPI_PATH,
-                MediaType.APPLICATION_OPENAPI_YAML);
-
-        yaml = TestUtil.yamlFromResponse(cnx);
-    }
-
-    /**
-     * Stop the server.
-     */
-    @AfterAll
-    public static void stopServer() {
-        TestUtil.cleanup(server, cnx);
     }
 
     /**
@@ -79,16 +81,18 @@ public class BasicServerTest {
      *
      * @throws Exception in case of errors reading the HTTP response
      */
-    @SuppressWarnings("unchecked")
     @Test
     public void simpleTest() throws Exception {
-        String goSummary = TestUtil.fromYaml(yaml, "paths./testapp/go.get.summary", String.class);
-        assertEquals(TestApp.GO_SUMMARY, goSummary);
+        checkPathValue("paths./testapp/go.get.summary", TestApp.GO_SUMMARY);
     }
 
     @Test
     public void testMultipleApps() {
-        String goSummary3 = TestUtil.fromYaml(yaml, "paths./testapp3/go3.get.summary", String.class);
-        assertEquals(TestApp3.GO_SUMMARY, goSummary3);
+        checkPathValue("paths./testapp3/go3.get.summary", TestApp3.GO_SUMMARY);
+    }
+
+    private void checkPathValue(String pathExpression, String expected) {
+        String result = TestUtil.fromYaml(yaml(), pathExpression, String.class);
+        assertThat(pathExpression, result, is(equalTo(expected)));
     }
 }

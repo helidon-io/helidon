@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,13 +38,9 @@ class ImplTypeDescription extends TypeDescription {
         delegate = td;
     }
 
-    public ExpandedTypeDescription addRef() {
-        return delegate.addRef();
-    }
-
     @Override
     public Property getProperty(String name) {
-        return delegate.getProperty(name);
+        return name.equals("$ref") ? delegate.getProperty("ref") : delegate.getProperty(name);
     }
 
     @Override
