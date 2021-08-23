@@ -24,7 +24,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -57,10 +56,11 @@ class StatusBodyMapper implements MessageBodyReader<Enum>, MessageBodyWriter<Enu
                          Annotation[] annotations,
                          MediaType mediaType,
                          MultivaluedMap<String, String> httpHeaders,
-                         InputStream entityStream) throws IOException, WebApplicationException {
+                         InputStream entityStream) {
         String textBody = new BufferedReader(new InputStreamReader(entityStream, StandardCharsets.UTF_8))
                 .lines()
-                .collect(Collectors.joining("\n"));
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Empty enum value can't be mapped to " + type.getName()));
 
         return Enum.valueOf(type, textBody);
     }

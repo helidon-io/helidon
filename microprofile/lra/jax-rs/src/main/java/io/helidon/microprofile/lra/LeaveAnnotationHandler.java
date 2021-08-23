@@ -18,7 +18,6 @@
 package io.helidon.microprofile.lra;
 
 import java.net.URI;
-import java.util.Optional;
 
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
@@ -26,6 +25,7 @@ import javax.ws.rs.container.ResourceInfo;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
+import io.helidon.lra.coordinator.client.Participant;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
@@ -41,16 +41,14 @@ class LeaveAnnotationHandler implements AnnotationHandler {
 
     @Override
     public void handleJaxRsBefore(ContainerRequestContext requestContext, ResourceInfo resourceInfo) {
-        Optional<URI> existingLraId = Contexts.context().flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class));
-
-        if (existingLraId.isPresent()) {
-            var lraId = existingLraId.get();
-            var baseUri = requestContext.getUriInfo().getBaseUri();
-            var participant = participantService.participant(baseUri, resourceInfo.getResourceClass());
-            coordinatorClient.leave(lraId, participant);
-            requestContext.getHeaders().add(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString());
-            requestContext.setProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
-        }
+        Contexts.context().flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class))
+                .ifPresent(lraId -> {
+                    URI baseUri = requestContext.getUriInfo().getBaseUri();
+                    Participant p = participantService.participant(baseUri, resourceInfo.getResourceClass());
+                    coordinatorClient.leave(lraId, p);
+                    requestContext.getHeaders().add(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString());
+                    requestContext.setProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
+                });
 
     }
 

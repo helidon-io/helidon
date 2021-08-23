@@ -22,6 +22,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.ws.rs.WebApplicationException;
@@ -30,7 +31,6 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
@@ -68,24 +68,19 @@ class LraAnnotationHandler implements AnnotationHandler {
         long timeLimit = Duration.of(annotation.timeLimit(), annotation.timeUnit()).toMillis();
         String clientId = method.getDeclaringClass().getName() + "#" + method.getName();
 
-        URI lraId = null;
-        URI parentLraId = null;
+        final URI lraId;
         try {
             switch (annotation.value()) {
                 case NESTED:
                     if (existingLraId.isPresent()) {
-                        parentLraId = existingLraId.get();
-                        reqCtx.getHeaders().putSingle(LRA_HTTP_PARENT_CONTEXT_HEADER, existingLraId.get().toASCIIString());
-                        lraId = coordinatorClient.start(existingLraId.get(), clientId, timeLimit);
-                        coordinatorClient.join(lraId, timeLimit, participant)
-                                .map(URI::toASCIIString)
-                                .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
+                        URI parentLraId = existingLraId.get();
+                        setParentContext(reqCtx, parentLraId);
+                        lraId = coordinatorClient.start(parentLraId, clientId, timeLimit);
                     } else {
                         lraId = coordinatorClient.start(clientId, timeLimit);
-                        coordinatorClient.join(lraId, timeLimit, participant)
-                                .map(URI::toASCIIString)
-                                .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
                     }
+                    join(reqCtx, lraId, timeLimit, participant);
+                    setLraContext(reqCtx, lraId);
                     break;
                 case NEVER:
                     if (existingLraId.isPresent()) {
@@ -100,11 +95,9 @@ class LraAnnotationHandler implements AnnotationHandler {
                     return;
                 case SUPPORTS:
                     if (existingLraId.isPresent()) {
-                        coordinatorClient.join(existingLraId.get(), timeLimit, participant)
-                                .map(URI::toASCIIString)
-                                .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
                         lraId = existingLraId.get();
-                        break;
+                        join(reqCtx, lraId, timeLimit, participant);
+                        setLraContext(reqCtx, lraId);
                     }
                     break;
                 case MANDATORY:
@@ -117,66 +110,71 @@ class LraAnnotationHandler implements AnnotationHandler {
                     // existing lra, fall thru to required
                 case REQUIRED:
                     if (existingLraId.isPresent()) {
-                        coordinatorClient.join(existingLraId.get(), timeLimit, participant)
-                                .map(URI::toASCIIString)
-                                .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
                         lraId = existingLraId.get();
+                        join(reqCtx, lraId, timeLimit, participant);
+                        setLraContext(reqCtx, lraId);
                         break;
                     }
                     // non existing lra, fall thru to requires_new
                 case REQUIRES_NEW:
                     lraId = coordinatorClient.start(clientId, timeLimit);
-                    coordinatorClient.join(lraId, timeLimit, participant)
-                            .map(URI::toASCIIString)
-                            .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
+                    join(reqCtx, lraId, timeLimit, participant);
+                    setLraContext(reqCtx, lraId);
                     break;
                 default:
                     LOGGER.severe("Unsupported LRA type " + annotation.value() + " on method " + method.getName());
                     reqCtx.abortWith(Response.status(500).build());
+                    break;
             }
         } catch (CoordinatorConnectionException e) {
             throw new WebApplicationException(e.getMessage(), e.getCause(), e.status());
         }
-        lraId = lraId != null ? lraId : existingLraId.orElse(null);
-        if (lraId != null) {
-            reqCtx.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString());
-            Optional<Context> ctx = Contexts.context();
-            if (ctx.isPresent()) {
-                ctx.get().register(LRA_HTTP_CONTEXT_HEADER, lraId);
-            }
-            reqCtx.setProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
-        }
-        if (parentLraId != null) {
-            reqCtx.getHeaders().putSingle(LRA_HTTP_PARENT_CONTEXT_HEADER, parentLraId.toASCIIString());
-            reqCtx.setProperty(LRA_HTTP_PARENT_CONTEXT_HEADER, parentLraId);
-        }
     }
 
     @Override
-    public void handleJaxRsAfter(ContainerRequestContext requestContext,
-                                 ContainerResponseContext responseContext,
+    public void handleJaxRsAfter(ContainerRequestContext reqCtx,
+                                 ContainerResponseContext resCtx,
                                  ResourceInfo resourceInfo) {
-        Optional<URI> lraId = Optional.ofNullable((URI) requestContext.getProperty(LRA_HTTP_CONTEXT_HEADER))
+        Optional<URI> lraId = Optional.ofNullable((URI) reqCtx.getProperty(LRA_HTTP_CONTEXT_HEADER))
                 .or(() -> Contexts.context().flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class)));
 
-        var end = annotation.end();
-        var cancelOnFamilies = annotation.cancelOnFamily();
-        var cancelOnStatuses = annotation.cancelOn();
+        boolean end = annotation.end();
+        Set<Response.Status.Family> cancelOnFamilies = annotation.cancelOnFamily();
+        Set<Response.Status> cancelOnStatuses;
+        cancelOnStatuses = annotation.cancelOn();
 
         if (lraId.isPresent()
-                && (cancelOnFamilies.contains(responseContext.getStatusInfo().getFamily())
-                || cancelOnStatuses.contains(responseContext.getStatusInfo().toEnum()))) {
+                && (cancelOnFamilies.contains(resCtx.getStatusInfo().getFamily())
+                || cancelOnStatuses.contains(resCtx.getStatusInfo().toEnum()))) {
             coordinatorClient.cancel(lraId.get());
         } else if (lraId.isPresent() && end) {
             coordinatorClient.close(lraId.get());
         }
-        URI suppressedLra = (URI) requestContext.getProperty(LRA_HTTP_PARENT_CONTEXT_HEADER);
+        URI suppressedLra = (URI) reqCtx.getProperty(LRA_HTTP_PARENT_CONTEXT_HEADER);
         if (suppressedLra != null) {
-            responseContext.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, suppressedLra.toASCIIString());
+            resCtx.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, suppressedLra.toASCIIString());
         }
 
-        if (lraId.isPresent()) {
-            responseContext.getHeaders().putIfAbsent(LRA_HTTP_CONTEXT_HEADER, List.of(lraId.get().toASCIIString()));
-        }
+        lraId.ifPresent(uri -> resCtx.getHeaders().putIfAbsent(LRA_HTTP_CONTEXT_HEADER, List.of(uri.toASCIIString())));
+    }
+
+    private void join(ContainerRequestContext reqCtx, URI lraId, long timeLimit, Participant participant) {
+        coordinatorClient.join(lraId, timeLimit, participant)
+                .map(URI::toASCIIString)
+                .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
+    }
+
+    private void setLraContext(ContainerRequestContext reqCtx, URI lraId) {
+        reqCtx.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString());
+        reqCtx.setProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
+        Contexts.context()
+                .ifPresent(context -> context.register(LRA_HTTP_CONTEXT_HEADER, lraId));
+    }
+
+    private void setParentContext(ContainerRequestContext reqCtx, URI lraId) {
+        reqCtx.getHeaders().putSingle(LRA_HTTP_PARENT_CONTEXT_HEADER, lraId.toASCIIString());
+        reqCtx.setProperty(LRA_HTTP_PARENT_CONTEXT_HEADER, lraId);
+        Contexts.context()
+                .ifPresent(context -> context.register(LRA_HTTP_PARENT_CONTEXT_HEADER, lraId));
     }
 }

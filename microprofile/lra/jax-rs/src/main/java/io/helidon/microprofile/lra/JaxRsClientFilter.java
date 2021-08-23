@@ -19,7 +19,6 @@ package io.helidon.microprofile.lra;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Optional;
 
 import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.RuntimeType;
@@ -34,10 +33,14 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT
 class JaxRsClientFilter implements ClientRequestFilter {
     @Override
     public void filter(final ClientRequestContext requestContext) throws IOException {
-        Optional<URI> lraId = Contexts.context().flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class));
-        if ((!requestContext.getHeaders().containsKey(LRA_HTTP_CONTEXT_HEADER)) && lraId.isPresent()) {
-            // no explicit lraId header, add the one saved in thread local
-            requestContext.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, lraId.get().toASCIIString());
+        if (requestContext.getHeaders().containsKey(LRA_HTTP_CONTEXT_HEADER)) {
+            return;
         }
+
+        Contexts.context()
+                .flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class))
+                .ifPresent(lraId ->
+                        // no explicit lraId header, add the one saved in Helidon context
+                        requestContext.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString()));
     }
 }

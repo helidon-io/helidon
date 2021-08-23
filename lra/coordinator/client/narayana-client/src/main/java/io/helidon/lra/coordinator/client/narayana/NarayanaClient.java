@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
-import io.helidon.lra.coordinator.client.Headers;
 import io.helidon.lra.coordinator.client.Participant;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
@@ -293,11 +292,6 @@ public class NarayanaClient implements CoordinatorClient {
                 .keepAlive(false)
                 .addReader(new LraStatusReader())
                 .build();
-    }
-
-    @Override
-    public void preprocessHeaders(Headers headers) {
-        // noop
     }
 
     /**

@@ -17,6 +17,7 @@ package io.helidon.microprofile.lra;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -32,11 +33,11 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.UriBuilder;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
-import io.helidon.lra.coordinator.client.Headers;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
@@ -54,33 +55,23 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Inject
     private HandlerService handlerService;
 
+    @ConfigProperty(name = "mp.lra.propagation.active", defaultValue = "true")
+    private boolean propagate;
+
     @Override
-    public void filter(ContainerRequestContext requestContext) throws IOException {
+    public void filter(ContainerRequestContext reqCtx) throws IOException {
         try {
             Method method = resourceInfo.getResourceMethod();
-            // if lraId already exists save it for later
-            Optional.ofNullable(requestContext.getHeaders().getFirst(LRA_HTTP_CONTEXT_HEADER))
-                    .map(h -> UriBuilder.fromPath(requestContext.getHeaders().getFirst(LRA_HTTP_CONTEXT_HEADER)).build())
-                    .ifPresent(lraId -> Contexts.context()
-                            .orElseThrow(() -> new IllegalStateException("LRA Jax-Rs resource executed out of Helidon context."))
-                            .register(LRA_HTTP_CONTEXT_HEADER, lraId));
+            List<AnnotationHandler> lraHandlers = handlerService.getHandlers(method);
 
-            // Adapt JaxRs calls from specific coordinator
-            coordinatorClient.preprocessHeaders(new Headers() {
-                @Override
-                public List<String> get(String name) {
-                    return requestContext.getHeaders().get(name);
-                }
+            if (propagate || !lraHandlers.isEmpty()) {
+                // if propagate for non lra endpoints is on or method is LRA resource
+                setLraContext(reqCtx);
+            }
 
-                @Override
-                public void putSingle(String name, String value) {
-                    requestContext.getHeaders().putSingle(name, value);
-                }
-            });
-
-            // select current lra annotation handler and process
-            for (var handler : handlerService.createHandler(method)) {
-                handler.handleJaxRsBefore(requestContext, resourceInfo);
+            // select proper lra annotation handlers and process
+            for (var handler : lraHandlers) {
+                handler.handleJaxRsBefore(reqCtx, resourceInfo);
             }
         } catch (WebApplicationException e) {
             // Rethrow error responses
@@ -100,11 +91,19 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
             }
 
             // select current lra annotation handler and process
-            for (var handler : handlerService.createHandler(method)) {
+            for (var handler : handlerService.getHandlers(method)) {
                 handler.handleJaxRsAfter(requestContext, responseContext, resourceInfo);
             }
         } catch (Throwable t) {
             LOGGER.log(Level.SEVERE, "Error in after LRA filter", t);
         }
+    }
+
+    private void setLraContext(ContainerRequestContext reqCtx) {
+        Optional.ofNullable(reqCtx.getHeaders().getFirst(LRA_HTTP_CONTEXT_HEADER))
+                .map(URI::create)
+                .ifPresent(lraId -> Contexts.context()
+                        .orElseThrow(() -> new IllegalStateException("LRA Jax-Rs resource executed out of Helidon context."))
+                        .register(LRA_HTTP_CONTEXT_HEADER, lraId));
     }
 }

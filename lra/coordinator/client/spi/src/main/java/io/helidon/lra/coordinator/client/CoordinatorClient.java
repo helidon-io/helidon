@@ -115,11 +115,4 @@ public interface CoordinatorClient {
      * @return {@link org.eclipse.microprofile.lra.annotation.LRAStatus} of the queried LRA
      */
     LRAStatus status(URI lraId);
-
-    /**
-     * Adapt all calls that may come from coordinator.
-     *
-     * @param headers editable call headers
-     */
-    void preprocessHeaders(Headers headers);
 }
