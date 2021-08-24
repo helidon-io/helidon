@@ -12,22 +12,29 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
-package io.helidon.integrations.micrometer.cdi;
+package io.helidon.servicecommon.restcdi;
+
+import io.helidon.config.mp.MpConfig;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
-import javax.inject.Singleton;
 
-import io.micrometer.core.instrument.MeterRegistry;
-
+/**
+ * Producer of the test service so the resource can inject the service.
+ */
 @ApplicationScoped
-class MeterRegistryProducer {
+public class TestSupportProducer {
+
+    static final String CONFIG_KEY = "test";
 
     @Produces
-    @Singleton
-    private static MeterRegistry meterRegistry(MicrometerCdiExtension micrometerCdiExtension) {
-        return micrometerCdiExtension.meterRegistry();
+    static public ConfiguredTestSupport getConfiguredTestSupport() {
+        Config mpConfig = ConfigProvider.getConfig();
+        return ConfiguredTestSupport.builder().config(
+                        MpConfig.toHelidonConfig(mpConfig).get(CONFIG_KEY))
+                .build();
     }
 }

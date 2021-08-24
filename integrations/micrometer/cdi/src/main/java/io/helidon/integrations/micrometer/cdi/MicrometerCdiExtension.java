@@ -18,6 +18,7 @@ package io.helidon.integrations.micrometer.cdi;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -25,8 +26,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+import javax.annotation.Priority;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.AnnotatedCallable;
 import javax.enterprise.inject.spi.AnnotatedType;
+import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
@@ -39,7 +45,9 @@ import javax.interceptor.Interceptor;
 import javax.interceptor.InterceptorBinding;
 
 import io.helidon.integrations.micrometer.MicrometerSupport;
+import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
+import io.helidon.webserver.Routing;
 
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
@@ -48,6 +56,8 @@ import io.micrometer.core.instrument.LongTaskTimer;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * CDI extension for handling Micrometer artifacts.
@@ -59,7 +69,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSu
     private static final List<Class<? extends Annotation>> METRIC_ANNOTATIONS
             = Arrays.asList(Counted.class, Timed.class);
 
-    private final MeterRegistry meterRegistry;
+    private final List<DeferredMeterCreation> annotationsForMeters = new ArrayList<>();
 
     private final WorkItemsManager<MeterWorkItem> workItemsManager = WorkItemsManager.create();
 
@@ -67,8 +77,11 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSu
      * Creates new extension instance.
      */
     public MicrometerCdiExtension() {
-        super(LOGGER, config -> MeterRegistryProducer.getMicrometerSupport(), "micrometer");
-        meterRegistry = MeterRegistryProducer.getMeterRegistry();
+        super(LOGGER, MicrometerSupport::create, "micrometer");
+    }
+
+    MeterRegistry meterRegistry() {
+        return serviceSupport().registry();
     }
 
     @Override
@@ -85,6 +98,8 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSu
             return;
         }
 
+        // Record the annotation information so we can create the meters later, after we can get the runtime configuration
+        // which could affect the creation of the MeterRegistry.
         Stream.of(pmb.getAnnotatedBeanClass().getMethods(),
                   pmb.getAnnotatedBeanClass().getConstructors())
                 .flatMap(Set::stream)
@@ -94,38 +109,63 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSu
                 .filter(annotatedCallable -> clazz.equals(annotatedCallable.getDeclaringType().getJavaClass()))
                 .forEach(annotatedCallable ->
                         Stream.of(Counted.class, Timed.class)
-                                .flatMap(annotationType -> annotatedCallable.getAnnotations(annotationType).stream())
-                                    .forEach(annotation -> {
-
-                                        Meter newMeter;
-                                        boolean isOnlyOnException = false;
-
-                                        if (annotation instanceof Counted) {
-                                            Counter counter = MeterProducer.produceCounter(meterRegistry, (Counted) annotation);
-                                            LOGGER.log(Level.FINE, () -> "Registered counter " + counter.getId()
-                                                    .toString());
-                                            newMeter = counter;
-                                            isOnlyOnException = ((Counted) annotation).recordFailuresOnly();
-                                        } else {
-                                            Timed timed = (Timed) annotation;
-                                            if (timed.longTask()) {
-                                                LongTaskTimer longTaskTimer =
-                                                        MeterProducer.produceLongTaskTimer(meterRegistry, timed);
-                                                LOGGER.log(Level.FINE, () -> "Registered long task timer " + longTaskTimer.getId()
-                                                        .toString());
-                                                newMeter = longTaskTimer;
-                                            } else {
-                                                Timer timer = MeterProducer.produceTimer(meterRegistry, timed);
-                                                LOGGER.log(Level.FINE, () -> "Registered timer " + timer.getId()
-                                                        .toString());
-                                                newMeter = timer;
-                                            }
-                                        }
-                                        workItemsManager.put(Executable.class.cast(annotatedCallable.getJavaMember()),
-                                                annotation.annotationType(),
-                                                MeterWorkItem.create(newMeter, isOnlyOnException));
-                                    }));
+                                .forEach(annotationType -> {
+                                    annotatedCallable.getAnnotations(annotationType).stream()
+                                            .forEach(annotation -> recordMeterToCreate(annotation, annotatedCallable));
+                                }));
     }
+
+    /**
+     * Registers the service-related endpoint, after security and as CDI initializes the app scope, returning the default routing
+     * for optional use by the caller.
+     *
+     * @param adv    app-scoped initialization event
+     * @param bm     BeanManager
+     * @return default routing
+     */
+    @Override
+    protected Routing.Builder registerService(
+            @Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
+            BeanManager bm, ServerCdiExtension serverCdiExtension) {
+        Routing.Builder result = super.registerService(adv, bm, serverCdiExtension);
+
+        MeterRegistry meterRegistry = serviceSupport().registry();
+
+        annotationsForMeters.forEach(deferredAnnotation -> {
+
+            Annotation annotation = deferredAnnotation.annotation;
+            AnnotatedCallable<?> annotatedCallable = deferredAnnotation.annotatedCallable;
+            Meter newMeter;
+            boolean isOnlyOnException = false;
+
+            if (annotation instanceof Counted) {
+                Counter counter = MeterProducer.produceCounter(meterRegistry, (Counted) annotation);
+                LOGGER.log(Level.FINE, () -> "Registered counter " + counter.getId()
+                        .toString());
+                newMeter = counter;
+                isOnlyOnException = ((Counted) annotation).recordFailuresOnly();
+            } else {
+                Timed timed = (Timed) annotation;
+                if (timed.longTask()) {
+                    LongTaskTimer longTaskTimer =
+                            MeterProducer.produceLongTaskTimer(meterRegistry, timed);
+                    LOGGER.log(Level.FINE, () -> "Registered long task timer " + longTaskTimer.getId()
+                            .toString());
+                    newMeter = longTaskTimer;
+                } else {
+                    Timer timer = MeterProducer.produceTimer(meterRegistry, timed);
+                    LOGGER.log(Level.FINE, () -> "Registered timer " + timer.getId()
+                            .toString());
+                    newMeter = timer;
+                }
+            }
+            workItemsManager.put(Executable.class.cast(annotatedCallable.getJavaMember()),
+                    annotation.annotationType(),
+                    MeterWorkItem.create(newMeter, isOnlyOnException));
+        });
+        return result;
+    }
+
 
     /**
      * Initializes the extension prior to bean discovery.
@@ -134,9 +174,6 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSu
      */
     protected void before(@Observes BeforeBeanDiscovery discovery) {
         LOGGER.log(Level.FINE, () -> "Before bean discovery " + discovery);
-
-        // Initialize our implementation
-        MeterRegistryProducer.clear();
 
         // Register types manually
         discovery.addAnnotatedType(MeterRegistryProducer.class, "MeterRegistryProducer");
@@ -235,6 +272,11 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSu
         }
     }
 
+    private void recordMeterToCreate(Annotation annotation, AnnotatedCallable<?> annotatedCallable) {
+        LOGGER.log(Level.FINE, () -> "Recording meter for deferred creation per annotation " + annotation);
+        annotationsForMeters.add(new DeferredMeterCreation(annotation, annotatedCallable));
+    }
+
     static final class InterceptorBindingLiteral extends AnnotationLiteral<InterceptorBinding> implements InterceptorBinding {
 
         static final InterceptorBindingLiteral INSTANCE = new InterceptorBindingLiteral();
@@ -304,6 +346,16 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSu
         @Override
         public String description() {
             return "";
+        }
+    }
+
+    private static class DeferredMeterCreation {
+        private final Annotation annotation;
+        private final AnnotatedCallable<?> annotatedCallable;
+
+        private DeferredMeterCreation(Annotation annotation, AnnotatedCallable<?> annotatedCallable) {
+            this.annotation = annotation;
+            this.annotatedCallable = annotatedCallable;
         }
     }
 }

@@ -101,7 +101,7 @@ public class MicrometerSupport extends HelidonRestServiceSupport {
     @Override
     protected void postConfigureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules) {
         defaultRules
-                .any(new MetricsContextHandler(meterRegistryFactory.meterRegistry()))
+                .any(new MetricsContextHandler(registry()))
                 .get(context(), this::getOrOptions)
                 .options(context(), this::getOrOptions);
     }
