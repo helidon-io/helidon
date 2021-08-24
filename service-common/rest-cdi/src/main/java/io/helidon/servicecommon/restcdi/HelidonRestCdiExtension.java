@@ -46,6 +46,7 @@ import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.interceptor.Interceptor;
 
 import io.helidon.config.Config;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
@@ -236,7 +237,7 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
             @Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
             BeanManager bm, ServerCdiExtension server) {
 
-        Config config = ((Config) ConfigProvider.getConfig()).get(configPrefix);
+        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(configPrefix);
         serviceSupport = serviceSupportFactory.apply(config);
 
         RoutingBuilders routingBuilders = RoutingBuilders.create(config);
