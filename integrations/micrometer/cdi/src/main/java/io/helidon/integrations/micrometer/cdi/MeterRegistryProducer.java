@@ -21,10 +21,12 @@ import javax.enterprise.inject.Produces;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.integrations.micrometer.MeterRegistryFactory;
 import io.helidon.integrations.micrometer.MicrometerSupport;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 @ApplicationScoped
 class MeterRegistryProducer {
@@ -55,7 +57,7 @@ class MeterRegistryProducer {
     }
 
     private static MicrometerSupport createMicrometerSupport() {
-        Config micrometerConfig = Config.create().get(CONFIG_KEY);
+        Config micrometerConfig = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(CONFIG_KEY);
         MeterRegistryFactory factory = MeterRegistryFactory.getInstance(
                 MeterRegistryFactory.builder()
                     .config(micrometerConfig));
