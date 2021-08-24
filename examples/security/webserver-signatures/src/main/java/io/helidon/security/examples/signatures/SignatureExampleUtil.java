@@ -16,18 +16,12 @@
 
 package io.helidon.security.examples.signatures;
 
-import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
-import io.helidon.security.SecurityContext;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -40,7 +34,22 @@ final class SignatureExampleUtil {
 
     private static final int START_TIMEOUT_SECONDS = 10;
 
+    private static final AtomicInteger SERVER_2_PORT = new AtomicInteger();
+
     private SignatureExampleUtil() {
+    }
+
+    static void server2Port(int port) {
+        SERVER_2_PORT.set(port);
+    }
+
+    static int server2Port() {
+        return SERVER_2_PORT.get();
+    }
+
+    static WebServer startServer(WebServer server) {
+        return server.start()
+                .await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 
     /**
@@ -50,54 +59,11 @@ final class SignatureExampleUtil {
      * @return started web server instance
      */
     public static WebServer startServer(Routing routing, int port) {
-        WebServer server = WebServer.builder(routing)
+        return WebServer.builder(routing)
                 .port(port)
-                .build();
-        long t = System.nanoTime();
-
-        CountDownLatch cdl = new CountDownLatch(1);
-
-        server.start().thenAccept(webServer -> {
-            long time = System.nanoTime() - t;
-
-            System.out.printf("Server started in %d ms ms%n", TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS));
-            System.out.printf("Started server on localhost:%d%n", webServer.port());
-            System.out.println();
-            cdl.countDown();
-        }).exceptionally(throwable -> {
-            throw new RuntimeException("Failed to start server", throwable);
-        });
-
-        try {
-            cdl.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Failed to start server within defined timeout: " + START_TIMEOUT_SECONDS + " seconds");
-        }
-        return server;
-    }
-
-    static void processService1Request(ServerRequest req, ServerResponse res, String path, int svc2port) {
-        Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-
-        res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
-
-        securityContext.ifPresentOrElse(context -> {
-            CLIENT.get()
-                    .uri("http://localhost:" + svc2port + path)
-                    .request()
-                    .thenAccept(it -> {
-                        if (it.status() == Http.Status.OK_200) {
-                            it.content().as(String.class)
-                                    .thenAccept(res::send)
-                                    .exceptionally(throwable -> {
-                                        res.send("Getting server response failed!");
-                                        return null;
-                                    });
-                        } else {
-                            res.send("Request failed, status: " + it.status());
-                        }
-                    });
-
-        }, () -> res.send("Security context is null"));
+                .build()
+                .start()
+                .peek(it -> System.out.printf("Started server on localhost:%d%n", it.port()))
+                .await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 }

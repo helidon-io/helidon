@@ -27,4 +27,7 @@ module io.helidon.security.integration.webserver {
     requires io.helidon.security.integration.common;
 
     exports io.helidon.security.integration.webserver;
+
+    provides io.helidon.webserver.spi.WebServerServiceProvider
+            with io.helidon.security.integration.webserver.WebSecurityServiceProvider;
 }

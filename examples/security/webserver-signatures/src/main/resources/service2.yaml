@@ -14,6 +14,17 @@
 # limitations under the License.
 #
 
+# we want to override this using system properties
+server2.port: 9080
+
+server:
+  port: "${server2.port}"
+  services:
+    security:
+      config-key: "security"
+    example-service-2:
+      path-pattern: "/service2"
+
 security:
   config:
     # Configuration of secured config (encryption of passwords in property files)
@@ -23,9 +34,8 @@ security:
   provider-policy:
     type: "COMPOSITE"
     authentication:
-      # first resolve signature, then resolve basic-auth
+      # must be present
       - name: "http-signatures"
-        flag: "OPTIONAL"
       # must be present
       - name: "http-basic-auth"
   providers:
@@ -71,5 +81,5 @@ security:
     paths:
       - path: "/service2"
         roles-allowed: [ "user" ]
-      - path: "/service2-rsa"
+      - path: "/service2/rsa"
         roles-allowed: [ "user" ]

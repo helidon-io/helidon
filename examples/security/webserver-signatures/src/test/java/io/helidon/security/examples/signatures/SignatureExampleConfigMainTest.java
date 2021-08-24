@@ -28,6 +28,9 @@ public class SignatureExampleConfigMainTest extends SignatureExampleTest {
 
     @BeforeAll
     public static void initClass() {
+        // override configuration to use random ports
+        System.setProperty("server1.port", "0");
+        System.setProperty("server2.port", "0");
         SignatureExampleConfigMain.main(null);
         svc1Port = SignatureExampleConfigMain.getService1Server().port();
         svc2Port = SignatureExampleConfigMain.getService2Server().port();

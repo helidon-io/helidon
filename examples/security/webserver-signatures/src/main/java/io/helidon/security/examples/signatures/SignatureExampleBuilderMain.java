@@ -26,14 +26,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.http.MediaType;
 import io.helidon.common.pki.KeyConfig;
-import io.helidon.security.CompositeProviderFlag;
 import io.helidon.security.CompositeProviderSelectionPolicy;
 import io.helidon.security.Security;
-import io.helidon.security.SecurityContext;
-import io.helidon.security.Subject;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
@@ -44,6 +41,8 @@ import io.helidon.security.providers.httpsign.InboundClientDefinition;
 import io.helidon.security.providers.httpsign.OutboundTargetDefinition;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
+
+import static io.helidon.security.examples.signatures.SignatureExampleUtil.startServer;
 
 /**
  * Example of authentication of service with http signatures, using configuration file as much as possible.
@@ -100,12 +99,8 @@ public class SignatureExampleBuilderMain {
      * @param args ignored
      */
     public static void main(String[] args) {
-        // to allow us to set host header explicitly
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
-
-        // start service 2 first, as it is required by service 1
-        service2Server = SignatureExampleUtil.startServer(routing2(), 9080);
-        service1Server = SignatureExampleUtil.startServer(routing1(), 8080);
+        LogConfig.configureRuntime();
+        startServers(9080, 8080);
 
         System.out.println("Signature example: from builder");
         System.out.println();
@@ -120,29 +115,26 @@ public class SignatureExampleBuilderMain {
         System.out.println("Basic authentication, user role required, will use symmetric signatures for outbound:");
         System.out.printf("  http://localhost:%1$d/service1%n", service1Server.port());
         System.out.println("Basic authentication, user role required, will use asymmetric signatures for outbound:");
-        System.out.printf("  http://localhost:%1$d/service1-rsa%n", service2Server.port());
+        System.out.printf("  http://localhost:%1$d/service1/rsa%n", service1Server.port());
         System.out.println();
     }
 
-    private static Routing routing2() {
+    // for tests
+    static void startServers(int port1, int port2) {
+        // start service 2 first, as it is required by service 1
+        service2Server = startServer(routing2(), port1);
+        SignatureExampleUtil.server2Port(service2Server.port());
 
+        service1Server = startServer(routing1(), port2);
+    }
+
+    private static Routing routing2() {
         // build routing (security is loaded from config)
         return Routing.builder()
                 // helper method to load both security and web server security from configuration
                 .register(WebSecurity.create(security2()).securityDefaults(WebSecurity.authenticate()))
-                .get("/service2", WebSecurity.rolesAllowed("user"))
-                .get("/service2-rsa", WebSecurity.rolesAllowed("user"))
-                // web server does not (yet) have possibility to configure routes in config files, so explicit...
-                .get("/{*}", (req, res) -> {
-                    Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                    res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
-                    res.send("Response from service2, you are: \n" + securityContext
-                            .flatMap(SecurityContext::user)
-                            .map(Subject::toString)
-                            .orElse("Security context is null") + ", service: " + securityContext
-                            .flatMap(SecurityContext::service)
-                            .map(Subject::toString));
-                })
+                .get("/service2[/{*}]", WebSecurity.rolesAllowed("user"))
+                .register("/service2", new Service2())
                 .build();
     }
 
@@ -150,23 +142,19 @@ public class SignatureExampleBuilderMain {
         // build routing (security is loaded from config)
         return Routing.builder()
                 .register(WebSecurity.create(security1()).securityDefaults(WebSecurity.authenticate()))
-                .get("/service1",
-                     WebSecurity.rolesAllowed("user"),
-                     (req, res) -> SignatureExampleUtil.processService1Request(req, res, "/service2", service2Server.port()))
-                .get("/service1-rsa",
-                     WebSecurity.rolesAllowed("user"),
-                     (req, res) -> SignatureExampleUtil.processService1Request(req, res, "/service2-rsa", service2Server.port()))
+                .any("/service1[/{*}]", WebSecurity.rolesAllowed("user"))
+                .register("/service1", new Service1())
                 .build();
     }
 
     private static Security security2() {
         return Security.builder()
                 .providerSelectionPolicy(CompositeProviderSelectionPolicy.builder()
-                                                 .addAuthenticationProvider("http-signatures", CompositeProviderFlag.OPTIONAL)
+                                                 .addAuthenticationProvider("http-signatures")
                                                  .addAuthenticationProvider("basic-auth")
                                                  .build())
                 .addProvider(HttpBasicAuthProvider.builder()
-                                     .realm("mic")
+                                     .realm("helidon")
                                      .userStore(users()),
                              "basic-auth")
                 .addProvider(HttpSignProvider.builder()
@@ -195,7 +183,7 @@ public class SignatureExampleBuilderMain {
                                                  .addOutboundProvider("http-signatures")
                                                  .build())
                 .addProvider(HttpBasicAuthProvider.builder()
-                                     .realm("mic")
+                                     .realm("helidon")
                                      .userStore(users())
                                      .addOutboundTarget(OutboundTarget.builder("propagate-all").build()),
                              "basic-auth")
@@ -211,7 +199,7 @@ public class SignatureExampleBuilderMain {
     private static OutboundTarget rsaTarget() {
         return OutboundTarget.builder("service2-rsa")
                 .addHost("localhost")
-                .addPath("/service2-rsa.*")
+                .addPath("/service2/rsa.*")
                 .customObject(OutboundTargetDefinition.class,
                               OutboundTargetDefinition.builder("service1-rsa")
                                       .privateKeyConfig(KeyConfig.keystoreBuilder()

@@ -234,6 +234,11 @@ public interface WebServer {
         return builder(routing).build();
     }
 
+    static WebServer create(Config config) {
+        return builder(Routing.create(config))
+                .config(config.get("server"))
+                .build();
+    }
     /**
      * Creates new instance from provided configuration and routing.
      *

@@ -41,4 +41,7 @@ module io.helidon.webserver {
     requires io.netty.codec.http2;
 
     exports io.helidon.webserver;
+    exports io.helidon.webserver.spi;
+
+    uses io.helidon.webserver.spi.WebServerServiceProvider;
 }

@@ -28,7 +28,8 @@ public class SignatureExampleBuilderMainTest extends SignatureExampleTest {
 
     @BeforeAll
     public static void initClass() {
-        SignatureExampleBuilderMain.main(null);
+        // using random ports for testing
+        SignatureExampleBuilderMain.startServers(0, 0);
         svc1Port = SignatureExampleBuilderMain.getService1Server().port();
         svc2Port = SignatureExampleBuilderMain.getService2Server().port();
     }

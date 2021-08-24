@@ -17,11 +17,20 @@
 package io.helidon.webserver;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
+import io.helidon.common.Prioritized;
 import io.helidon.common.http.Http;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.common.serviceloader.Priorities;
+import io.helidon.config.Config;
+import io.helidon.webserver.spi.WebServerServiceProvider;
 
 /**
  * Routing represents composition of HTTP request-response handlers with routing rules.
@@ -32,14 +41,6 @@ import io.helidon.common.http.Http;
 public interface Routing {
 
     /**
-     * Process bare minimal request and response using this routing.
-     *
-     * @param bareRequest HTTP request to process
-     * @param bareResponse HTTP response to process
-     */
-    void route(BareRequest bareRequest, BareResponse bareResponse);
-
-    /**
      * Creates new instance of {@link Builder routing builder}.
      *
      * @return a new instance
@@ -47,6 +48,18 @@ public interface Routing {
     static Builder builder() {
         return new Builder();
     }
+
+    static Routing create(Config config) {
+        return builder().config(config).build();
+    }
+
+    /**
+     * Process bare minimal request and response using this routing.
+     *
+     * @param bareRequest HTTP request to process
+     * @param bareResponse HTTP response to process
+     */
+    void route(BareRequest bareRequest, BareResponse bareResponse);
 
     /**
      * Creates new {@link WebServer} instance with provided configuration and this routing.
@@ -444,7 +457,98 @@ public interface Routing {
         private Builder() {
         }
 
-        // --------------- ROUTING API
+        /**
+         * Update routing from configuration.
+         * This class expects the root of the configuration and looks
+         * for {@code server.services} to be added to routing.
+         * Each service must have appropriate {@link io.helidon.webserver.spi.WebServerServiceProvider}
+         * service provider implementation.
+         *
+         * @param config root configuration node
+         * @return updated routing builder
+         */
+        public Builder config(Config config) {
+            Logger logger = Logger.getLogger(Routing.class.getName());
+            List<ServiceRegistration> all = new LinkedList<>();
+
+            List<WebServerServiceProvider> providers = HelidonServiceLoader.builder(ServiceLoader.load(
+                            WebServerServiceProvider.class))
+                    .defaultPriority(Prioritized.DEFAULT_PRIORITY)
+                    .build()
+                    .asList();
+            Config servicesConfig = config.get("server.services");
+
+            for (WebServerServiceProvider provider : providers) {
+                String s = provider.configKey();
+                Config providerConfig = servicesConfig.get(s);
+                if (providerConfig.exists()) {
+                    Config providerSpecificConfig = providerConfig.get("config-key")
+                            .asString()
+                            .map(config::get)
+                            .orElseGet(() -> config.get("config"));
+
+                    int prio = providerPriority(provider, providerConfig);
+                    String path = providerPath(provider, providerConfig);
+
+                    logger.finest(() -> "Adding server service " + provider.getClass().getName()
+                            + ", priority: " + prio
+                            + ", path: " + path);
+                    provider.create(providerSpecificConfig)
+                            .forEach(it -> all.add(new ServiceRegistration(prio, path, it)));
+                }
+            }
+
+            all.sort(Comparator.comparingInt(ServiceRegistration::priority));
+
+            List<ServiceRegistration> beforeRoutes = new LinkedList<>();
+            List<ServiceRegistration> afterRoutes = new LinkedList<>();
+
+            for (ServiceRegistration serviceRegistration : all) {
+                if (serviceRegistration.priority < Prioritized.DEFAULT_PRIORITY) {
+                    beforeRoutes.add(serviceRegistration);
+                } else {
+                    afterRoutes.add(serviceRegistration);
+                }
+            }
+
+            for (ServiceRegistration route : beforeRoutes) {
+                if (route.path == null) {
+                    register(route.service);
+                } else {
+                    register(route.path, route.service);
+                }
+            }
+
+            for (ServiceRegistration route : afterRoutes) {
+                if (route.path == null) {
+                    register(route.service);
+                } else {
+                    register(route.path, route.service);
+                }
+            }
+
+            // TODO - all registrations done through methods should be kept
+            // in build method:
+            // then services before routes should be registered
+            // then all registrations done through methods
+            // then services after routes should be registered
+            // also if the total set of routes is empty, at least log a warning
+
+            return this;
+        }
+
+        private String providerPath(WebServerServiceProvider provider, Config providerConfig) {
+            return providerConfig.get("path-pattern")
+                    .asString()
+                    .or(provider::defaultPathPattern)
+                    .orElse(null);
+        }
+
+        private int providerPriority(WebServerServiceProvider provider, Config providerConfig) {
+            return providerConfig.get("priority")
+                    .asInt()
+                    .orElseGet(() -> Priorities.find(provider, Prioritized.DEFAULT_PRIORITY));
+        }
 
         @Override
         public Builder register(WebTracingConfig webTracingConfig) {
@@ -452,6 +556,8 @@ public interface Routing {
             delegate.register(webTracingConfig);
             return this;
         }
+
+        // --------------- ROUTING API
 
         @Override
         public Builder register(Supplier<? extends Service>... serviceBuilders) {
@@ -666,7 +772,6 @@ public interface Routing {
             delegate.onNewWebServer(webServerConsumer);
             return this;
         }
-        // --------------- ERROR API
 
         /**
          * Registers an error handler that handles the given type of exceptions.
@@ -684,8 +789,7 @@ public interface Routing {
 
             return this;
         }
-
-        // --------------- BUILD API
+        // --------------- ERROR API
 
         /**
          * Builds a new routing instance.
@@ -699,6 +803,8 @@ public interface Routing {
             RouteListRoutingRules.Aggregation aggregate = delegate.aggregate();
             return new RequestRouting(aggregate.routeList(), errorHandlerRecords, aggregate.newWebServerCallbacks());
         }
+
+        // --------------- BUILD API
 
         /**
          * Creates new {@link WebServer} instance with provided configuration and this routing.
@@ -741,6 +847,22 @@ public interface Routing {
         @Deprecated
         public WebServer createServer() {
             return WebServer.create(this.build());
+        }
+
+        private static class ServiceRegistration {
+            private final int priority;
+            private final String path;
+            private final Service service;
+
+            ServiceRegistration(int priority, String path, Service service) {
+                this.priority = priority;
+                this.path = path;
+                this.service = service;
+            }
+
+            int priority() {
+                return priority;
+            }
         }
     }
 }

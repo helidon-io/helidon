@@ -16,16 +16,12 @@
 
 package io.helidon.security.examples.signatures;
 
-import java.util.Optional;
-
-import io.helidon.common.http.MediaType;
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.security.SecurityContext;
-import io.helidon.security.Subject;
-import io.helidon.security.integration.webserver.WebSecurity;
-import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
+
+import static io.helidon.security.examples.signatures.SignatureExampleUtil.startServer;
 
 /**
  * Example of authentication of service with http signatures, using configuration file as much as possible.
@@ -45,12 +41,13 @@ public class SignatureExampleConfigMain {
      * @param args ignored
      */
     public static void main(String[] args) {
-        // to allow us to set host header explicitly
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+        LogConfig.configureRuntime();
 
         // start service 2 first, as it is required by service 1
-        service2Server = SignatureExampleUtil.startServer(routing2(), 9080);
-        service1Server = SignatureExampleUtil.startServer(routing1(), 8080);
+        service2Server = startServer(WebServer.create(config("service2.yaml")));
+        SignatureExampleUtil.server2Port(service2Server.port());
+
+        service1Server = startServer(WebServer.create(config("service1.yaml")));
 
         System.out.println("Signature example: from configuration");
         System.out.println();
@@ -65,51 +62,15 @@ public class SignatureExampleConfigMain {
         System.out.println("Basic authentication, user role required, will use symmetric signatures for outbound:");
         System.out.printf("  http://localhost:%1$d/service1%n", service1Server.port());
         System.out.println("Basic authentication, user role required, will use asymmetric signatures for outbound:");
-        System.out.printf("  http://localhost:%1$d/service1-rsa%n", service1Server.port());
+        System.out.printf("  http://localhost:%1$d/service1/rsa%n", service1Server.port());
         System.out.println();
-    }
-
-    private static Routing routing2() {
-        Config config = config("service2.yaml");
-        // build routing (security is loaded from config)
-        return Routing.builder()
-                // helper method to load both security and web server security from configuration
-                .register(WebSecurity.create(config.get("security")))
-                // web server does not (yet) have possibility to configure routes in config files, so explicit...
-                .get("/{*}", (req, res) -> {
-                    Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                    res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
-                    res.send("Response from service2, you are: \n" + securityContext
-                            .flatMap(SecurityContext::user)
-                            .map(Subject::toString)
-                            .orElse("Security context is null") + ", service: " + securityContext
-                            .flatMap(SecurityContext::service)
-                            .map(Subject::toString));
-                })
-                .build();
-    }
-
-    private static Routing routing1() {
-        Config config = config("service1.yaml");
-
-        // build routing (security is loaded from config)
-        return Routing.builder()
-                // helper method to load both security and web server security from configuration
-                .register(WebSecurity.create(config.get("security")))
-                // web server does not (yet) have possibility to configure routes in config files, so explicit...
-                .get("/service1", (req, res) -> {
-                    SignatureExampleUtil.processService1Request(req, res, "/service2", service2Server.port());
-                })
-                .get("/service1-rsa", (req, res) -> {
-                    SignatureExampleUtil.processService1Request(req, res, "/service2-rsa", service2Server.port());
-                })
-                .build();
     }
 
     private static Config config(String confFile) {
         // load configuration
         return Config.builder()
-                .sources(ConfigSources.classpath(confFile))
+                .addSource(ConfigSources.systemProperties())
+                .addSource(ConfigSources.classpath(confFile))
                 .build();
     }
 

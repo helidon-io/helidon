@@ -82,7 +82,7 @@ public abstract class SignatureExampleTest {
 
     @Test
     public void testService1Rsa() {
-        testProtected("http://localhost:" + getService1Port() + "/service1-rsa",
+        testProtected("http://localhost:" + getService1Port() + "/service1/rsa",
                       "jack",
                       "password",
                       Set.of("user", "admin"),

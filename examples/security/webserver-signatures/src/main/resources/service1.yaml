@@ -14,6 +14,27 @@
 # limitations under the License.
 #
 
+# we want to override this using system properties
+server1.port: 8080
+
+server:
+  port: "${server1.port}"
+  services:
+    security:
+      config-key: "security"
+    example-service-1:
+      path-pattern: "/service1"
+      #    tracing:
+      #      config:
+      #        enabled: true
+#    config-based-routing:
+#      path-pattern: "/"
+#      config:
+#        path: "/fixed"
+#        status: 200
+#        entity: "Hello World"
+#        methods: ["GET"]
+
 security:
   config:
     # Configuration of secured config (encryption of passwords in property files)
@@ -55,7 +76,7 @@ security:
               hmac.secret: "${CLEAR=somePasswordForHmacShouldBeEncrypted}"
           - name: "service2-rsa"
             hosts: ["localhost"]
-            paths: ["/service2-rsa.*"]
+            paths: ["/service2/rsa"]
             signature:
               key-id: "service1-rsa"
               private-key:
@@ -78,6 +99,6 @@ security:
       - path: "/service1"
         methods: ["get"]
         roles-allowed: ["user"]
-      - path: "/service1-rsa"
+      - path: "/service1/rsa"
         methods: ["get"]
         roles-allowed: ["user"]
