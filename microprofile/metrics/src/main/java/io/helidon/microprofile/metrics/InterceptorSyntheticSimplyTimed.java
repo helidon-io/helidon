@@ -16,16 +16,9 @@
 
 package io.helidon.microprofile.metrics;
 
-import java.util.Map;
-
 import javax.annotation.Priority;
 import javax.inject.Inject;
 import javax.interceptor.Interceptor;
-
-import org.eclipse.microprofile.metrics.Metric;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
 /**
  * Interceptor for synthetic {@link SyntheticSimplyTimed} annotations.
@@ -39,16 +32,8 @@ import org.eclipse.microprofile.metrics.annotation.RegistryType;
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 10)
 final class InterceptorSyntheticSimplyTimed extends InterceptorSimplyTimedBase {
 
-    private final Map<MetricID, Metric> metricsForVerification;
-
     @Inject
-    InterceptorSyntheticSimplyTimed(@RegistryType(type = MetricRegistry.Type.BASE) MetricRegistry baseRegistry) {
+    InterceptorSyntheticSimplyTimed() {
         super(SyntheticSimplyTimed.class);
-        metricsForVerification = baseRegistry.getMetrics();
-    }
-
-    @Override
-    Map<MetricID, Metric> metricsForVerification() {
-        return metricsForVerification;
     }
 }

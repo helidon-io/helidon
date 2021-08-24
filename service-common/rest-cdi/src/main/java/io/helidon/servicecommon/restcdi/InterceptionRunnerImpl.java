@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -52,6 +53,8 @@ class InterceptionRunnerImpl implements InterceptionRunner {
      */
     private static final InterceptionRunner INSTANCE = new InterceptionRunnerImpl();
 
+    private static final Map<Method, Integer> ASYNC_RESPONSE_SLOTS = new ConcurrentHashMap<>();
+
     /**
      * Returns the appropriate {@code InterceptionRunner} for the executable.
      *
@@ -76,7 +79,9 @@ class InterceptionRunnerImpl implements InterceptionRunner {
             InvocationContext context,
             Iterable<T> workItems,
             PreInvocationHandler<T> preInvocationHandler) throws Exception {
-        workItems.forEach(workItem -> preInvocationHandler.accept(context, workItem));
+        for (T workItem : workItems) {
+            preInvocationHandler.accept(context, workItem);
+        }
         return context.proceed();
     }
 
@@ -86,7 +91,9 @@ class InterceptionRunnerImpl implements InterceptionRunner {
             Iterable<T> workItems,
             PreInvocationHandler<T> preInvocationHandler,
             PostCompletionHandler<T> postCompletionHandler) throws Exception {
-        workItems.forEach(workItem -> preInvocationHandler.accept(context, workItem));
+        for (T workItem : workItems) {
+            preInvocationHandler.accept(context, workItem);
+        }
 
         Object result = null;
         Exception exceptionFromContextProceed = null;
@@ -135,7 +142,9 @@ class InterceptionRunnerImpl implements InterceptionRunner {
             // use it in the completion callback. Any other null argument would trigger an NPE from the current call stack.
             Objects.requireNonNull(postCompletionHandler, "postCompletionHandler");
 
-            workItems.forEach(workItem -> preInvocationHandler.accept(context, workItem));
+            for (T workItem : workItems) {
+                preInvocationHandler.accept(context, workItem);
+            }
 
             Object[] params = context.getParameters();
             AsyncResponse asyncResponse = AsyncResponse.class.cast(context.getParameters()[asyncResponseSlot]);
@@ -315,13 +324,16 @@ class InterceptionRunnerImpl implements InterceptionRunner {
     }
 
     private static int asyncResponseSlot(Method interceptedMethod) {
-        int result = 0;
+        return ASYNC_RESPONSE_SLOTS.computeIfAbsent(interceptedMethod, InterceptionRunnerImpl::computeAsyncResponseSlot);
+    }
 
+    private static int computeAsyncResponseSlot(Method interceptedMethod) {
+        int newResult = 0;
         for (Parameter p : interceptedMethod.getParameters()) {
             if (AsyncResponse.class.isAssignableFrom(p.getType()) && p.getAnnotation(Suspended.class) != null) {
-                return result;
+                return newResult;
             }
-            result++;
+            newResult++;
         }
         return -1;
     }
