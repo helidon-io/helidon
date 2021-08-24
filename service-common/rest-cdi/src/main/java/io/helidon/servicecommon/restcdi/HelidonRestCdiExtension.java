@@ -19,9 +19,11 @@ package io.helidon.servicecommon.restcdi;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -265,19 +267,23 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
         private WorkItemsManager() {
         }
 
-        private final Map<Executable, Map<Class<? extends Annotation>, Set<W>>> workItemsByExecutable = new HashMap<>();
+        private final Map<Executable, Map<Class<? extends Annotation>, List<W>>> workItemsByExecutable = new HashMap<>();
 
         public void put(Executable executable, Class<? extends Annotation> annotationType, W workItem) {
-            workItemsByExecutable
+            List<W> workItems = workItemsByExecutable
                     .computeIfAbsent(executable, e -> new HashMap<>())
-                    .computeIfAbsent(annotationType, t -> new HashSet<>())
-                    .add(workItem);
+                    .computeIfAbsent(annotationType, t -> new ArrayList<>());
+            // This method is invoked only during annotation processing from CDI extensions, so linear scans of the lists
+            // does not hurt runtime performance during request handling.
+            if (!workItems.contains(workItem)) {
+                workItems.add(workItem);
+            }
         }
 
         public Iterable<W> workItems(Executable executable, Class<? extends Annotation> annotationType) {
             return workItemsByExecutable
                     .getOrDefault(executable, Collections.emptyMap())
-                    .getOrDefault(annotationType, Collections.emptySet());
+                    .getOrDefault(annotationType, Collections.emptyList());
         }
     }
 
