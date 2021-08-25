@@ -143,6 +143,10 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         sslContext = context;
     }
 
+    boolean hasTls() {
+        return sslContext != null;
+    }
+
     /**
      * Initializes pipeline for new socket channel.
      *

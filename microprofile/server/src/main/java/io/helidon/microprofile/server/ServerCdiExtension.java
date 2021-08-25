@@ -205,14 +205,13 @@ public class ServerCdiExtension implements Extension {
 
         long initializationElapsedTime = ManagementFactory.getRuntimeMXBean().getUptime();
 
-        if ("0.0.0.0".equals(listenHost)) {
-            // listening on all addresses
-            LOGGER.info(() -> "Server started on http://localhost:" + port + " (and all other host addresses)"
-                    + " in " + initializationElapsedTime + " milliseconds (since JVM startup).");
-        } else {
-            LOGGER.info(() -> "Server started on http://" + listenHost + ":" + port
-                    + " in " + initializationElapsedTime + " milliseconds (since JVM startup).");
-        }
+        String protocol = "http" + (webserver.hasTls() ? "s" : "");
+        String host = "0.0.0.0".equals(listenHost) ? "localhost": listenHost;
+        String note = "0.0.0.0".equals(listenHost) ? " (and all other host addresses)" : "";
+
+        LOGGER.info(() -> "Server started on "
+                + protocol + "://" + host + ":" + port
+                + note + " in " + initializationElapsedTime + " milliseconds (since JVM startup).");
 
         // this is not needed at runtime, collect garbage
         serverBuilder = null;
