@@ -78,7 +78,7 @@
         <version.lib.jboss.classfilewriter>1.2.5.Final</version.lib.jboss.classfilewriter>
         <version.lib.jboss.logging>3.2.1.Final</version.lib.jboss.logging>
         <version.lib.jboss.transaction-api>1.0.0.Final</version.lib.jboss.transaction-api>
-        <version.lib.jboss.transaction-spi>7.6.0.Final</version.lib.jboss.transaction-spi>
+        <version.lib.jboss.transaction-spi>7.6.1.Final</version.lib.jboss.transaction-spi>
         <!-- Force upgrade version used by maven-jaxb2-plugin. Needed to support Java 16 -->
         <version.lib.jaxb-runtime>2.3.3</version.lib.jaxb-runtime>
         <version.lib.jedis>3.6.3</version.lib.jedis>
@@ -116,7 +116,7 @@
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.neo4j>4.2.4</version.lib.neo4j>
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
-        <version.lib.narayana>5.9.3.Final</version.lib.narayana>
+        <version.lib.narayana>5.12.0.Final</version.lib.narayana>
         <version.lib.netty>4.1.63.Final</version.lib.netty>
         <version.lib.oci-java-sdk-objectstorage>2.3.0</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>19.8.0.0</version.lib.ojdbc8>
