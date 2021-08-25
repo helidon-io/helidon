@@ -20,9 +20,9 @@ package io.helidon.microprofile.lra;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import javax.ws.rs.WebApplicationException;
@@ -32,6 +32,7 @@ import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Response;
 
 import io.helidon.common.context.Contexts;
+import io.helidon.common.reactive.Single;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
 import io.helidon.lra.coordinator.client.Participant;
@@ -75,9 +76,9 @@ class LraAnnotationHandler implements AnnotationHandler {
                     if (existingLraId.isPresent()) {
                         URI parentLraId = existingLraId.get();
                         setParentContext(reqCtx, parentLraId);
-                        lraId = coordinatorClient.start(parentLraId, clientId, timeLimit);
+                        lraId = start(parentLraId, clientId, timeLimit);
                     } else {
-                        lraId = coordinatorClient.start(clientId, timeLimit);
+                        lraId = start(clientId, timeLimit);
                     }
                     join(reqCtx, lraId, timeLimit, participant);
                     setLraContext(reqCtx, lraId);
@@ -117,7 +118,7 @@ class LraAnnotationHandler implements AnnotationHandler {
                     }
                     // non existing lra, fall thru to requires_new
                 case REQUIRES_NEW:
-                    lraId = coordinatorClient.start(clientId, timeLimit);
+                    lraId = coordinatorClient.start(clientId, timeLimit).await();
                     join(reqCtx, lraId, timeLimit, participant);
                     setLraContext(reqCtx, lraId);
                     break;
@@ -135,33 +136,51 @@ class LraAnnotationHandler implements AnnotationHandler {
     public void handleJaxRsAfter(ContainerRequestContext reqCtx,
                                  ContainerResponseContext resCtx,
                                  ResourceInfo resourceInfo) {
+
         Optional<URI> lraId = Optional.ofNullable((URI) reqCtx.getProperty(LRA_HTTP_CONTEXT_HEADER))
-                .or(() -> Contexts.context().flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class)));
+                .or(() -> Contexts.context()
+                        .flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class))
+                );
 
+        Response.Status resStatus = resCtx.getStatusInfo().toEnum();
+        Response.Status.Family resFamily = resCtx.getStatusInfo().getFamily();
         boolean end = annotation.end();
-        Set<Response.Status.Family> cancelOnFamilies = annotation.cancelOnFamily();
-        Set<Response.Status> cancelOnStatuses;
-        cancelOnStatuses = annotation.cancelOn();
+        boolean cancel = annotation.cancelOnFamily().contains(resFamily)
+                || annotation.cancelOn().contains(resStatus);
 
-        if (lraId.isPresent()
-                && (cancelOnFamilies.contains(resCtx.getStatusInfo().getFamily())
-                || cancelOnStatuses.contains(resCtx.getStatusInfo().toEnum()))) {
-            coordinatorClient.cancel(lraId.get());
-        } else if (lraId.isPresent() && end) {
-            coordinatorClient.close(lraId.get());
-        }
-        URI suppressedLra = (URI) reqCtx.getProperty(LRA_HTTP_PARENT_CONTEXT_HEADER);
-        if (suppressedLra != null) {
-            resCtx.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, suppressedLra.toASCIIString());
-        }
+        lraId.ifPresent(id -> {
+            if (cancel) {
+                cancel(id);
+            } else if (end) {
+                close(id);
+            }
+            resCtx.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, id);
+        });
 
-        lraId.ifPresent(uri -> resCtx.getHeaders().putIfAbsent(LRA_HTTP_CONTEXT_HEADER, List.of(uri.toASCIIString())));
+        Optional.ofNullable(reqCtx.getProperty(LRA_HTTP_PARENT_CONTEXT_HEADER))
+                .map(URI.class::cast)
+                .ifPresent(suppressedLra -> resCtx.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, suppressedLra));
+    }
+
+    private URI start(String clientId, long timeOut) {
+        return awaitCoordinator(coordinatorClient.start(clientId, timeOut));
+    }
+
+    private URI start(URI parentLraId, String clientId, long timeOut) {
+        return awaitCoordinator(coordinatorClient.start(parentLraId, clientId, timeOut));
     }
 
     private void join(ContainerRequestContext reqCtx, URI lraId, long timeLimit, Participant participant) {
-        coordinatorClient.join(lraId, timeLimit, participant)
-                .map(URI::toASCIIString)
-                .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri));
+        awaitCoordinator(coordinatorClient.join(lraId, timeLimit, participant))
+                .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri.toASCIIString()));
+    }
+
+    private void close(URI lraId) {
+        awaitCoordinator(coordinatorClient.close(lraId));
+    }
+
+    private void cancel(URI lraId) {
+        awaitCoordinator(coordinatorClient.cancel(lraId));
     }
 
     private void setLraContext(ContainerRequestContext reqCtx, URI lraId) {
@@ -176,5 +195,20 @@ class LraAnnotationHandler implements AnnotationHandler {
         reqCtx.setProperty(LRA_HTTP_PARENT_CONTEXT_HEADER, lraId);
         Contexts.context()
                 .ifPresent(context -> context.register(LRA_HTTP_PARENT_CONTEXT_HEADER, lraId));
+    }
+
+    private <T> T awaitCoordinator(Single<T> single) {
+        try {
+            // Connection timeout should be handled by client impl separately
+            return single.await(5, TimeUnit.SECONDS);
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof CoordinatorConnectionException) {
+                throw new WebApplicationException(cause.getMessage(), cause.getCause(),
+                        ((CoordinatorConnectionException) cause).status());
+            } else {
+                throw e;
+            }
+        }
     }
 }

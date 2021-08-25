@@ -186,4 +186,14 @@ class ParticipantImpl implements Participant {
         return methods;
     }
 
+    @Override
+    public String toString() {
+        return "ParticipantImpl{"
+                + this.complete()
+                .or(this::compensate)
+                .or(this::after)
+                .map(URI::toASCIIString)
+                .orElse(null)
+                + "}";
+    }
 }

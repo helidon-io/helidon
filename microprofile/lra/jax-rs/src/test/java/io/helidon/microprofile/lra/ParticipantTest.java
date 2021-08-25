@@ -19,15 +19,39 @@ package io.helidon.microprofile.lra;
 
 import javax.ws.rs.core.UriBuilder;
 
+
 import org.junit.jupiter.api.Test;
 
+
 import java.net.URI;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+
 
 import io.helidon.microprofile.lra.resources.DontEnd;
 
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ParticipantTest {
+
+    private static final Logger LOGGER = Logger.getLogger(LoadBalancedCoordinatorTest.class.getName());
+
+    @Test
+    void name() {
+        logFine("Participant {0} left LRA - ", () -> List.of("part1"));
+    }
+
+    void logFine(String msg, Supplier<List<?>> params) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE, msg, params.get().toArray());
+        }
+    }
+
     @Test
     void methodScan() throws NoSuchMethodException {
         ParticipantImpl p = new ParticipantImpl(UriBuilder.fromPath("http://localhost:8888").build(), DontEnd.class);

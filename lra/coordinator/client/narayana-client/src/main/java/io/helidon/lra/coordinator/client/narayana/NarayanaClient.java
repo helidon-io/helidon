@@ -17,9 +17,9 @@
 package io.helidon.lra.coordinator.client.narayana;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -28,6 +28,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+
+import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
+import io.helidon.faulttolerance.Retry;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
 import io.helidon.lra.coordinator.client.Participant;
@@ -56,233 +60,213 @@ public class NarayanaClient implements CoordinatorClient {
     private Supplier<URI> coordinatorUriSupplier;
     private Long coordinatorTimeout;
     private TimeUnit coordinatorTimeoutUnit;
+    private Retry retry;
 
     @Override
     public void init(Supplier<URI> coordinatorUriSupplier, long timeout, TimeUnit timeoutUnit) {
         this.coordinatorUriSupplier = coordinatorUriSupplier;
         this.coordinatorTimeout = timeout;
         this.coordinatorTimeoutUnit = timeoutUnit;
+        this.retry = Retry.builder()
+                .retryPolicy(Retry.JitterRetryPolicy.builder()
+                        .calls(RETRY_ATTEMPTS)
+                        .build())
+                .build();
     }
 
     @Override
-    public URI start(String clientID, long timeout) {
+    public Single<URI> start(String clientID, long timeout) {
         return startInternal(null, clientID, timeout);
     }
 
     @Override
-    public URI start(URI parentLRAUri, String clientID, long timeout) {
+    public Single<URI> start(URI parentLRAUri, String clientID, long timeout) {
         return startInternal(parentLRAUri, clientID, timeout);
     }
 
-    private URI startInternal(URI parentLRA, String clientID, long timeout) {
-        RuntimeException lastError = new IllegalStateException();
-
+    private Single<URI> startInternal(URI parentLRA, String clientID, long timeout) {
         // We need to call coordinator which knows parent LRA
         URI baseUri = Optional.ofNullable(parentLRA)
                 .map(p -> parseBaseUri(p.toASCIIString()))
                 .orElse(coordinatorUriSupplier.get());
 
-        for (int i = 0; i < RETRY_ATTEMPTS; i++) {
-            try {
-                WebClientResponse response = prepareWebClient(baseUri)
-                        .post()
-                        .path("start")
-                        .queryParam(QUERY_PARAM_CLIENT_ID, Optional.ofNullable(clientID).orElse(""))
-                        .queryParam(QUERY_PARAM_TIME_LIMIT, String.valueOf(timeout))
-                        .queryParam(QUERY_PARAM_PARENT_LRA, parentLRA == null ? "" : parentLRA.toASCIIString())
-                        .submit()
-                        .await(coordinatorTimeout, coordinatorTimeoutUnit);
-
-                if (response.status().code() != 201) {
-                    throw coordinationConnectionError("Unexpected response " + response.status() + " from coordinator "
-                            + response.lastEndpointURI().toASCIIString()
-                            + ": "
-                            + (response.content().as(String.class).await(coordinatorTimeout, coordinatorTimeoutUnit)), 500, null);
-                }
-                // TRM doesn't send lraId as LOCATION
-                String lraId = response.headers()
+        return retry.invoke(() -> prepareWebClient(baseUri)
+                .post()
+                .path("start")
+                .queryParam(QUERY_PARAM_CLIENT_ID, Optional.ofNullable(clientID).orElse(""))
+                .queryParam(QUERY_PARAM_TIME_LIMIT, String.valueOf(timeout))
+                .queryParam(QUERY_PARAM_PARENT_LRA, parentLRA == null ? "" : parentLRA.toASCIIString())
+                .submit()
+                .flatMap(res -> {
+                    Http.ResponseStatus status = res.status();
+                    if (status.code() != 201) {
+                        return res.content().as(String.class).flatMap(cont ->
+                                connectionError("Unexpected response " + status + " from coordinator "
+                                        + res.lastEndpointURI() + ": " + cont, null));
+                    } else {
+                        return Single.just(res);
+                    }
+                })
+                .map(res -> res
+                        .headers()
                         .location()
-                        .map(URI::toASCIIString)
-                        .or(() -> response.headers().first(LRA_HTTP_CONTEXT_HEADER))
+                        // TRM doesn't send lraId as LOCATION
+                        .or(() -> res.headers()
+                                .first(LRA_HTTP_CONTEXT_HEADER)
+                                .map(URI::create))
                         .orElseThrow(() ->
-                                new IllegalArgumentException("Coordinator needs to return lraId either as 'Location' or "
-                                        + "'Long-Running-Action' header."));
-                return URI.create(lraId); //parseLRAId(lraId);
-            } catch (CoordinatorConnectionException e) {
-                lastError = e;
-            } catch (CompletionException | IllegalStateException e) {
-                lastError = coordinationConnectionError("Unable to start LRA", 500, e);
-            }
-        }
-        throw lastError;
+                                new IllegalArgumentException(
+                                        "Coordinator needs to return lraId either as 'Location' or "
+                                                + "'Long-Running-Action' header."))
+                )
+                .onErrorResumeWith(t -> connectionError("Unable to start LRA", t))
+                .peek(lraId -> logF("LRA started - LRAID: {1}", () -> List.of(lraId)))
+                .first());
     }
 
     @Override
-    public void cancel(URI lraId) {
-        RuntimeException lastError = new IllegalStateException();
-        for (int i = 0; i < RETRY_ATTEMPTS; i++) {
-            try {
-                WebClientResponse response = WebClient.builder()
-                        .keepAlive(false)
-                        .baseUri(lraId.toASCIIString())
-                        .build()
-                        .put()
-                        .path("/cancel")
-                        .submit()
-                        .await(coordinatorTimeout, coordinatorTimeoutUnit);
-
-                switch (response.status().family()) {
-                    case SUCCESSFUL:
-                        return;
-                    case CLIENT_ERROR:
-                    default:
-                        if (404 == response.status().code()) {
-                            LOGGER.warning("Cancel LRA - Coordinator can't find LRAID: " + lraId.toASCIIString());
-                            return;
-                        }
-                        LOGGER.warning("Cancelling LRA - Unable to call coordinator to cancel LRAID: " + lraId.toASCIIString());
-                        throw new CoordinatorConnectionException("Unable to cancel lra " + lraId, response.status().code());
-                }
-            } catch (CompletionException | IllegalStateException e) {
-                lastError = coordinationConnectionError("Unable to cancel LRA " + lraId.toASCIIString(), 500, e);
-            }
-        }
-        throw lastError;
+    public Single<Void> cancel(URI lraId) {
+        return retry.invoke(() -> prepareWebClient(lraId)
+                .put()
+                .path("/cancel")
+                .submit()
+                .map(WebClientResponse::status)
+                .flatMap(status -> {
+                    switch (status.family()) {
+                        case SUCCESSFUL:
+                            logF("LRA cancelled - LRAID: {1}", () -> List.of(lraId));
+                            return Single.empty();
+                        case CLIENT_ERROR:
+                        default:
+                            if (404 == status.code()) {
+                                LOGGER.warning("Cancel LRA - Coordinator can't find id - LRAID: " + lraId);
+                                return Single.empty();
+                            }
+                            return connectionError("Unable to cancel lra " + lraId, status.code());
+                    }
+                })
+                .onErrorResumeWith(t -> connectionError("Unable to cancel LRA " + lraId, t))
+                .first()
+                .map(Void.TYPE::cast)
+        );
     }
 
     @Override
-    public void close(URI lraId) {
-        RuntimeException lastError = new IllegalStateException();
-        for (int i = 0; i < RETRY_ATTEMPTS; i++) {
-            try {
-                WebClientResponse response = prepareWebClient(lraId)
-                        .put()
-                        .path("/close")
-                        .submit()
-                        .await(coordinatorTimeout, coordinatorTimeoutUnit);
-
-                switch (response.status().family()) {
-                    case SUCCESSFUL:
-                        return;
-                    case CLIENT_ERROR:
-                    default:
-                        if (410 == response.status().code()) {
-                            // Already closed/cancelled
-                            return;
-                        }
-                        LOGGER.warning("Closing LRA - Unable to call coordinator to close LRAID: " + lraId.toASCIIString());
-                        throw new CoordinatorConnectionException("Unable to close lra " + lraId, response.status().code());
-                }
-            } catch (CoordinatorConnectionException e) {
-                lastError = e;
-            } catch (CompletionException | IllegalStateException e) {
-                lastError = coordinationConnectionError("Unable to close LRA", 500, e);
-            }
-        }
-        throw lastError;
+    public Single<Void> close(URI lraId) {
+        return retry.invoke(() -> prepareWebClient(lraId)
+                .put()
+                .path("/close")
+                .submit()
+                .map(WebClientResponse::status)
+                .flatMap(status -> {
+                    switch (status.family()) {
+                        case SUCCESSFUL:
+                            logF("LRA closed - LRAID: {1}", () -> List.of(lraId));
+                            return Single.empty();
+                        case CLIENT_ERROR:
+                        default:
+                            if (410 == status.code()) {
+                                logF("LRA already closed - LRAID: {1}", () -> List.of(lraId));
+                                return Single.empty();
+                            }
+                            return connectionError("Unable to close lra - LRAID: " + lraId, status.code());
+                    }
+                })
+                .onErrorResumeWith(t -> connectionError("Unable to close LRA " + lraId, t))
+                .first()
+                .map(Void.TYPE::cast)
+        );
     }
 
     @Override
-    public Optional<URI> join(URI lraId,
-                              long timeLimit,
-                              Participant participant) {
-        RuntimeException lastError = new IllegalStateException();
-        for (int i = 0; i < RETRY_ATTEMPTS; i++) {
-            try {
-                String links = compensatorLinks(participant);
-                WebClientResponse response = prepareWebClient(lraId)
-                        .put()
-                        .queryParam(QUERY_PARAM_TIME_LIMIT, String.valueOf(timeLimit))
-                        .headers(h -> {
-                            h.add(HEADER_LINK, links); // links are expected either in header
-                            return h;
-                        })
-                        .submit(links)    // or as a body
-                        .await(coordinatorTimeout, coordinatorTimeoutUnit);
+    public Single<Optional<URI>> join(URI lraId,
+                                      long timeLimit,
+                                      Participant p) {
+        String links = compensatorLinks(p);
 
-                switch (response.status().code()) {
-                    case 412:
-                        throw new CoordinatorConnectionException("Too late to join LRA " + lraId, 412);
-                    case 404:
-                        throw new CoordinatorConnectionException("Not found " + lraId, 404);
-                    case 200:
-                        return response
-                                .headers()
-                                .first(LRA_HTTP_RECOVERY_HEADER)
-                                .map(URI::create);
-                    default:
-                        throw new IllegalStateException("Unexpected coordinator response " + response.status());
-                }
+        return retry.invoke(() -> prepareWebClient(lraId)
+                .put()
+                .queryParam(QUERY_PARAM_TIME_LIMIT, String.valueOf(timeLimit))
+                .headers(h -> {
+                    h.add(HEADER_LINK, links); // links are expected either in header
+                    return h;
+                })
+                .submit(links) // or as a body
+                .flatMap(res -> {
+                    switch (res.status().code()) {
+                        case 412:
+                            return connectionError(res.lastEndpointURI()
+                                    + "Too late to join LRA - LRAID: " + lraId, 412);
+                        case 404:
+                            return connectionError("Not found " + lraId, 404);
+                        case 200:
+                            return Single.just(res
+                                    .headers()
+                                    .first(LRA_HTTP_RECOVERY_HEADER)
+                                    .map(URI::create));
 
-            } catch (CoordinatorConnectionException e) {
-                lastError = e;
-            } catch (CompletionException | IllegalStateException e) {
-                lastError = coordinationConnectionError("Unable to join LRA " + lraId, 500, e);
-            }
-        }
-        throw lastError;
+                        default:
+                            return connectionError("Unexpected coordinator response ", res.status().code());
+                    }
+                })
+                .onErrorResumeWith(t -> connectionError("Unable to join LRA", t))
+                .peek(uri -> logF("Participant {0} joined - LRAID: {1}", () -> List.of(p, lraId)))
+                .first());
     }
 
     @Override
-    public void leave(URI lraId, Participant participant) {
-        RuntimeException lastError = new IllegalStateException();
-        for (int i = 0; i < RETRY_ATTEMPTS; i++) {
-            try {
-                WebClientResponse response = prepareWebClient(lraId)
-                        .put()
-                        .path("/remove")
-                        .submit(compensatorLinks(participant))
-                        .await(coordinatorTimeout, coordinatorTimeoutUnit);
-
-                switch (response.status().code()) {
-                    case 404:
-                        LOGGER.warning("Leaving LRA - Coordinator can't find LRAID: " + lraId.toASCIIString());
-                        break;
-                    case 200:
-                        LOGGER.log(Level.INFO, "Left LRA - " + lraId.toASCIIString());
-                        return;
-                    default:
-                        throw new IllegalStateException("Unexpected coordinator response " + response.status());
-                }
-
-            } catch (CompletionException | IllegalStateException e) {
-                lastError = coordinationConnectionError("Unable to leave LRA " + lraId, 500, e);
-            }
-        }
-        throw lastError;
+    public Single<Void> leave(URI lraId, Participant p) {
+        return retry.invoke(() -> prepareWebClient(lraId)
+                .put()
+                .path("/remove")
+                .submit(compensatorLinks(p))
+                .flatMap(res -> {
+                    switch (res.status().code()) {
+                        case 404:
+                            LOGGER.log(Level.WARNING,
+                                    "Participant {0} leaving LRA - Coordinator can't find id - LRAID: {1}",
+                                    new Object[]{p, lraId});
+                            return Single.empty();
+                        case 200:
+                            logF("Participant {0} left - LRAID: {1}", () -> List.of(p, lraId));
+                            return Single.empty();
+                        default:
+                            throw new IllegalStateException("Unexpected coordinator response " + res.status());
+                    }
+                })
+                .onErrorResumeWith(t -> connectionError("Unable to leave LRA " + lraId, t))
+                .first()
+                .map(Void.TYPE::cast)
+        );
     }
 
 
     @Override
-    public LRAStatus status(URI lraId) {
-        RuntimeException lastError = new IllegalStateException();
-        for (int i = 0; i < RETRY_ATTEMPTS; i++) {
-            try {
-                WebClientResponse response = prepareWebClient(lraId)
-                        .get()
-                        .path("/status")
-                        .request()
-                        .await(coordinatorTimeout, coordinatorTimeoutUnit);
-
-                switch (response.status().code()) {
-                    case 404:
-                        LOGGER.warning("Status LRA - Coordinator can't find LRAID: " + lraId.toASCIIString());
-                        return LRAStatus.Closed;
-                    case 200:
-                    case 202:
-                        return response
-                                .content()
-                                .as(LRAStatus.class)
-                                .await(coordinatorTimeout, coordinatorTimeoutUnit);
-                    default:
-                        throw new IllegalStateException("Unexpected coordinator response " + response.status());
-                }
-
-            } catch (CompletionException | IllegalStateException e) {
-                lastError = new CoordinatorConnectionException("Unable to retrieve status of LRA " + lraId, e, 500);
-            }
-        }
-        throw lastError;
+    public Single<LRAStatus> status(URI lraId) {
+        return retry.invoke(() -> prepareWebClient(lraId)
+                .get()
+                .path("/status")
+                .request()
+                .flatMap(res -> {
+                    switch (res.status().code()) {
+                        case 404:
+                            LOGGER.warning("Status LRA - Coordinator can't find id - LRAID: " + lraId);
+                            return Single.just(LRAStatus.Closed);
+                        case 200:
+                        case 202:
+                            return res
+                                    .content()
+                                    .as(LRAStatus.class)
+                                    .peek(status -> logF("LRA status {0} retrieved - LRAID: {1}",
+                                            () -> List.of(status, lraId)));
+                        default:
+                            throw new IllegalStateException("Unexpected coordinator response " + res.status());
+                    }
+                })
+                .onErrorResumeWith(t ->
+                        connectionError("Unable to retrieve LRA status of " + lraId, t))
+                .first()
+        );
     }
 
     private WebClient prepareWebClient(URI uri) {
@@ -290,6 +274,8 @@ public class NarayanaClient implements CoordinatorClient {
                 .baseUri(uri)
                 // Workaround for #3242
                 .keepAlive(false)
+                .connectTimeout(coordinatorTimeout, coordinatorTimeoutUnit)
+                .readTimeout(coordinatorTimeout, coordinatorTimeoutUnit)
                 .addReader(new LraStatusReader())
                 .build();
     }
@@ -340,9 +326,23 @@ public class NarayanaClient implements CoordinatorClient {
         return URI.create(m.group(1));
     }
 
-    private CoordinatorConnectionException coordinationConnectionError(String message, int status, Throwable cause) {
-        LOGGER.log(Level.SEVERE, message, cause);
-        return new CoordinatorConnectionException(message, cause, status);
+    private <T> Single<T> connectionError(String message, int status) {
+        LOGGER.warning(message);
+        return Single.error(new CoordinatorConnectionException(message, status));
+    }
+
+    private <T> Single<T> connectionError(String message, Throwable cause) {
+        LOGGER.log(Level.WARNING, message, cause);
+        if (cause instanceof CoordinatorConnectionException) {
+            return Single.error(cause);
+        }
+        return Single.error(new CoordinatorConnectionException(message, cause, 500));
+    }
+
+    private void logF(String msg, Supplier<List<?>> params) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE, msg, params.get().toArray());
+        }
     }
 }
 

@@ -36,5 +36,9 @@
             <artifactId>microprofile-lra-api</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-reactive</artifactId>
+        </dependency>
     </dependencies>
 </project>

@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import io.helidon.common.reactive.Single;
+
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 
 /**
@@ -63,7 +65,7 @@ public interface CoordinatorClient {
      * @param timeout  after what time should be LRA cancelled automatically
      * @return id of the new LRA
      */
-    URI start(String clientID, long timeout);
+    Single<URI> start(String clientID, long timeout);
 
     /**
      * Ask coordinator to start new LRA and return its id.
@@ -73,7 +75,7 @@ public interface CoordinatorClient {
      * @param timeout   after what time should be LRA cancelled automatically
      * @return id of the new LRA
      */
-    URI start(URI parentLRA, String clientID, long timeout);
+    Single<URI> start(URI parentLRA, String clientID, long timeout);
 
     /**
      * Join existing LRA with participant.
@@ -83,30 +85,33 @@ public interface CoordinatorClient {
      * @param participant participant metadata with URLs to be called when complete/compensate ...
      * @return recovery URI if supported by coordinator or empty
      */
-    Optional<URI> join(URI lraId, long timeLimit, Participant participant);
+    Single<Optional<URI>> join(URI lraId, long timeLimit, Participant participant);
 
     /**
      * Cancel LRA if its active. Should cause coordinator to compensate its participants.
      *
      * @param lraId id of the LRA to be cancelled
+     * @return single future of the cancel call
      */
-    void cancel(URI lraId);
+    Single<Void> cancel(URI lraId);
 
     /**
      * Close LRA if its active. Should cause coordinator to complete its participants.
      *
      * @param lraId id of the LRA to be closed
+     * @return single future of the cancel call
      */
-    void close(URI lraId);
+    Single<Void> close(URI lraId);
 
     /**
      * Leave LRA. Supplied participant won't be part of specified LRA any more,
      * no compensation or completion will be executed on it.
      *
      * @param lraId       id of the LRA that should be left by supplied participant
-     * @param participant participant which will leave LRA
+     * @param participant participant which will leave
+     * @return single future of the cancel call
      */
-    void leave(URI lraId, Participant participant);
+    Single<Void> leave(URI lraId, Participant participant);
 
     /**
      * Return status of specified LRA.
@@ -114,5 +119,5 @@ public interface CoordinatorClient {
      * @param lraId id of the queried LRA
      * @return {@link org.eclipse.microprofile.lra.annotation.LRAStatus} of the queried LRA
      */
-    LRAStatus status(URI lraId);
+    Single<LRAStatus> status(URI lraId);
 }
