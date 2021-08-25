@@ -206,7 +206,7 @@ public class ServerCdiExtension implements Extension {
         long initializationElapsedTime = ManagementFactory.getRuntimeMXBean().getUptime();
 
         String protocol = "http" + (webserver.hasTls() ? "s" : "");
-        String host = "0.0.0.0".equals(listenHost) ? "localhost": listenHost;
+        String host = "0.0.0.0".equals(listenHost) ? "localhost" : listenHost;
         String note = "0.0.0.0".equals(listenHost) ? " (and all other host addresses)" : "";
 
         LOGGER.info(() -> "Server started on "
