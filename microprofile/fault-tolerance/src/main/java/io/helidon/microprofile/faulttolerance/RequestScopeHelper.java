@@ -15,16 +15,23 @@
  */
 package io.helidon.microprofile.faulttolerance;
 
-import java.util.concurrent.Callable;
-
-import javax.enterprise.context.control.RequestContextController;
-import javax.enterprise.inject.Instance;
+import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.spi.CDI;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.process.internal.RequestContext;
 import org.glassfish.jersey.process.internal.RequestScope;
 import org.glassfish.jersey.weld.se.WeldRequestScope;
+
+import org.jboss.weld.context.WeldAlterableContext;
+import org.jboss.weld.context.api.ContextualInstance;
+import org.jboss.weld.context.bound.BoundLiteral;
+import org.jboss.weld.context.bound.BoundRequestContext;
+import org.jboss.weld.manager.api.WeldManager;
 
 class RequestScopeHelper {
 
@@ -34,11 +41,6 @@ class RequestScopeHelper {
     }
 
     private State state = State.CLEARED;
-
-    /**
-     * CDI's request scope controller used for activation/deactivation.
-     */
-    private RequestContextController requestController;
 
     /**
      * Jersey's request scope object. Will be non-null if request scope is active.
@@ -56,6 +58,16 @@ class RequestScopeHelper {
     private InjectionManager injectionManager;
 
     /**
+     * Store access to {@code WeldManager} for instance migration.
+     */
+    private WeldManager weldManager;
+
+    /**
+     * Collection of instances in request scope.
+     */
+    private Collection<ContextualInstance<?>> requestScopeInstances;
+
+    /**
      * Store request context information from the current thread. State
      * related to Jersey and CDI to handle {@code @Context} and {@code @Inject}
      * injections.
@@ -64,11 +76,17 @@ class RequestScopeHelper {
         if (state == State.STORED) {
             throw new IllegalStateException("Request scope state already stored");
         }
-        // CDI scope
-        Instance<RequestContextController> rcc = CDI.current().select(RequestContextController.class);
-        if (rcc.isResolvable()) {
-            requestController = rcc.get();
+
+        // Collect instances for request scope only
+        weldManager = CDI.current().select(WeldManager.class).get();
+        if (weldManager != null) {
+            for (WeldAlterableContext context : weldManager.getActiveWeldAlterableContexts()) {
+                if (context.getScope() == RequestScoped.class) {
+                    requestScopeInstances = context.getAllContextualInstances();
+                }
+            }
         }
+
         // Jersey scope
         injectionManager = WeldRequestScope.actualInjectorManager.get();        // thread local
         try {
@@ -96,29 +114,59 @@ class RequestScopeHelper {
             return () -> requestScope.runInScope(requestContext,
                     (Callable<?>) (() -> {
                         InjectionManager old = WeldRequestScope.actualInjectorManager.get();
+                        BoundRequestContext boundRequestContext = null;
                         try {
-                            requestController.activate();
+                            // requestController.activate();
+                            boundRequestContext = migrateRequestContext();
                             WeldRequestScope.actualInjectorManager.set(injectionManager);
                             return supplier.get();
                         } catch (Throwable t) {
                             throw t instanceof Exception ? ((Exception) t) : new RuntimeException(t);
                         } finally {
-                            requestController.deactivate();
+                            // requestController.deactivate();
+                            if (boundRequestContext != null) {
+                                boundRequestContext.deactivate();
+                            }
                             WeldRequestScope.actualInjectorManager.set(old);
                         }
                     }));
-        } else if (requestController != null) {         // CDI only
+        } else if (weldManager != null) {         // CDI only
             return () -> {
+                BoundRequestContext boundRequestContext = null;
                 try {
-                    requestController.activate();
+                    boundRequestContext = migrateRequestContext();
                     return supplier.get();
                 } finally {
-                    requestController.deactivate();
+                    if (boundRequestContext != null) {
+                        boundRequestContext.deactivate();
+                    }
                 }
             };
         } else {
             return supplier;
         }
+    }
+
+    /**
+     * Migrates a CDI request context into the new thread. This method will actually
+     * set the instances from the original context into the new context so that code
+     * running in the new thread can continue to access request scope beans. Note that
+     * if a request scope bean in the original context was not accessed/proxied, it
+     * will not be carried over.
+     *
+     * @return the request context
+     */
+    private BoundRequestContext migrateRequestContext() {
+        if (requestScopeInstances != null) {
+            BoundRequestContext requestContext = weldManager.instance()
+                    .select(BoundRequestContext.class, BoundLiteral.INSTANCE).get();
+            Map<String, Object> requestMap = new HashMap<>();
+            requestContext.associate(requestMap);
+            requestContext.activate();
+            requestContext.clearAndSet(requestScopeInstances);
+            return requestContext;
+        }
+        return null;
     }
 
     /**
@@ -133,8 +181,12 @@ class RequestScopeHelper {
             CDI.current().destroy(requestScope);
             requestScope = null;
         }
-        requestController = null;
         injectionManager = null;
+        if (requestScopeInstances != null) {
+            requestScopeInstances.clear();
+            requestScopeInstances = null;
+        }
+        weldManager = null;
         state = State.CLEARED;
     }
 }
