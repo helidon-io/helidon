@@ -40,6 +40,25 @@ import io.helidon.common.serviceloader.HelidonServiceLoader;
  */
 public interface MapperManager {
     /**
+     * Shared instance of a mapper manager.
+     * This instance is used by components that do not have access to a specific mapper manager.
+     *
+     * @return shared instance of mapper manager
+     */
+    static MapperManager shared() {
+        return SharedManagerHandler.get();
+    }
+
+    /**
+     * Configure a shared mapper manager.
+     * This should be done just once at application startup, to prevent issues at runtime.
+     *
+     * @param manager manager to use
+     */
+    static void shared(MapperManager manager) {
+        SharedManagerHandler.set(manager);
+    }
+    /**
      * Create a fluent API builder to create a customized mapper manager.
      *
      * @return a new builder
@@ -115,21 +134,20 @@ public interface MapperManager {
     final class Builder implements io.helidon.common.Builder<MapperManager> {
         private HelidonServiceLoader.Builder<MapperProvider> providers = HelidonServiceLoader
                 .builder(ServiceLoader.load(MapperProvider.class));
+        private boolean useBuiltIn;
+        private boolean builtInsAdded;
 
         private Builder() {
         }
 
         @Override
         public MapperManager build() {
+            if (useBuiltIn && !builtInsAdded) {
+                // very low priority for builtins, so any custom mapper has higher priority
+                providers.addService(new BuiltInMappers(), Prioritized.DEFAULT_PRIORITY + 10000);
+                builtInsAdded = true;
+            }
             return new MapperManagerImpl(this);
-        }
-
-        private Builder mapperProviders(HelidonServiceLoader<MapperProvider> serviceLoader) {
-            providers = HelidonServiceLoader.builder(ServiceLoader.load(MapperProvider.class))
-                    .useSystemServiceLoader(false);
-
-            serviceLoader.forEach(providers::addService);
-            return this;
         }
 
         /**
@@ -251,9 +269,28 @@ public interface MapperManager {
             return this;
         }
 
+        /**
+         * Whether to use built-in mappers.
+         *
+         * @return updated builder
+         */
+        public Builder useBuiltIn(boolean useBuiltIn) {
+            this.useBuiltIn = true;
+            return this;
+        }
+
         // used by the implementation
         List<MapperProvider> mapperProviders() {
             return providers.build().asList();
+        }
+
+        private Builder mapperProviders(HelidonServiceLoader<MapperProvider> serviceLoader) {
+            providers = HelidonServiceLoader.builder(ServiceLoader.load(MapperProvider.class))
+                    .useSystemServiceLoader(false);
+
+            serviceLoader.forEach(providers::addService);
+            builtInsAdded = false;
+            return this;
         }
     }
 }

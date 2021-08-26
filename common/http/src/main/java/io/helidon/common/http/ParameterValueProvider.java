@@ -32,7 +32,7 @@ class ParameterValueProvider implements ValueProvider {
     ParameterValueProvider(String name, List<String> values) {
         this.name = name;
         this.values = values;
-        this.mapperManager = MapperManager.create();
+        this.mapperManager = MapperManager.shared();
     }
 
     @Override

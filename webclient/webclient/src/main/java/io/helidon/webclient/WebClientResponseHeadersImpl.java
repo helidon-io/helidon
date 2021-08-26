@@ -34,7 +34,7 @@ import io.helidon.common.http.SetCookie;
 class WebClientResponseHeadersImpl extends ReadOnlyParameters implements WebClientResponseHeaders {
 
     private WebClientResponseHeadersImpl(Map<String, List<String>> headers) {
-        super(headers);
+        super("ClientResponseHeader", headers);
     }
 
     /**

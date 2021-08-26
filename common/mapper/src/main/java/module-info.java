@@ -21,6 +21,7 @@ module io.helidon.common.mapper {
     requires java.logging;
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.serviceloader;
+    requires io.helidon.common.context;
 
     exports io.helidon.common.mapper;
     exports io.helidon.common.mapper.spi;

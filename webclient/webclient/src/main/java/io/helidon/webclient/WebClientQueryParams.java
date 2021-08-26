@@ -152,6 +152,11 @@ class WebClientQueryParams implements Parameters {
         return rawParams.toMap();
     }
 
+    @Override
+    public String name() {
+        return "ClientQueryParam";
+    }
+
     void skipEncoding() {
         this.skipEncoding = true;
     }

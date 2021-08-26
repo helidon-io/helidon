@@ -107,4 +107,8 @@ class UnmodifiableParameters implements Parameters {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public String name() {
+        return parameters.name();
+    }
 }

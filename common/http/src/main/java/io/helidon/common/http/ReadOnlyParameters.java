@@ -37,6 +37,7 @@ public class ReadOnlyParameters implements Parameters {
      */
     private static final ReadOnlyParameters EMPTY = new ReadOnlyParameters((Parameters) null);
 
+    private final String name;
     private final Map<String, List<String>> data;
 
     /**
@@ -45,6 +46,17 @@ public class ReadOnlyParameters implements Parameters {
      * @param data multi-map data to copy.
      */
     public ReadOnlyParameters(Map<String, List<String>> data) {
+        this("ReadOnly", data);
+    }
+
+    /**
+     * Creates an instance from provided multi-map.
+     *
+     * @param name name of these parameters
+     * @param data multi-map data to copy.
+     */
+    public ReadOnlyParameters(String name, Map<String, List<String>> data) {
+        this.name = name;
         this.data = copyMultimapAsImutable(data);
     }
 
@@ -55,6 +67,16 @@ public class ReadOnlyParameters implements Parameters {
      */
     public ReadOnlyParameters(Parameters parameters) {
         this(parameters == null ? null : parameters.toMap());
+    }
+
+    /**
+     * Creates an instance from provided multi-map.
+     *
+     * @param name name of these parameters
+     * @param parameters parameters to copy.
+     */
+    public ReadOnlyParameters(String name, Parameters parameters) {
+        this(name, parameters == null ? null : parameters.toMap());
     }
 
     /**
@@ -81,6 +103,11 @@ public class ReadOnlyParameters implements Parameters {
             data.forEach((k, v) -> h.put(k, Collections.unmodifiableList(new ArrayList<>(v))));
             return Collections.unmodifiableMap(h);
         }
+    }
+
+    @Override
+    public String name() {
+        return name;
     }
 
     @Override

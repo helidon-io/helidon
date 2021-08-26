@@ -263,6 +263,11 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
         return Collections.unmodifiableMap(new HashMap<>(headers));
     }
 
+    @Override
+    public String name() {
+        return "ClientRequestHeader";
+    }
+
     private List<String> iterableToList(Iterable<String> iterable) {
         return StreamSupport
                 .stream(iterable.spliterator(), false)

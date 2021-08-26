@@ -47,7 +47,7 @@ public interface ValueProvider {
      * @return value provider
      */
     static ValueProvider create(String name, String value) {
-        return create(MapperManager.create(), name, value);
+        return create(MapperManager.shared(), name, value);
     }
 
     /**

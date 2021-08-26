@@ -40,7 +40,7 @@ class FormParamsImpl extends ReadOnlyParameters implements FormParams {
             MediaType.TEXT_PLAIN, preparePattern("\n"));
 
     private FormParamsImpl(Map<String, List<String>> params) {
-        super(params);
+        super("FormParam", params);
     }
 
     FormParamsImpl(FormParams.Builder builder) {

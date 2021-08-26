@@ -16,7 +16,20 @@
 
 package io.helidon.common.mapper;
 
+import java.io.File;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ServiceLoader;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.spi.MapperProvider;
@@ -32,6 +45,54 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Unit test for {@link MapperManager}.
  */
 class MapperManagerTest {
+    @Test
+    void testBuiltIns() throws MalformedURLException {
+        MapperManager mm = MapperManager.builder(HelidonServiceLoader.builder(ServiceLoader.load(MapperProvider.class))
+                                                         .useSystemServiceLoader(false)
+                                                         .build())
+                .useBuiltIn(true)
+                .build();
+
+        test(mm,"true", Boolean.class, true);
+        test(mm, "true", Boolean.class, true);
+        test(mm, "1", Boolean.class, true);
+        test(mm, "yes", Boolean.class, true);
+        test(mm, "y", Boolean.class, true);
+        test(mm, "on", Boolean.class, true);
+        test(mm, "false", Boolean.class, false);
+        test(mm, "random", Boolean.class, false);
+        test(mm, "42", Byte.class, (byte) 42);
+        test(mm, "42", Short.class, (short) 42);
+        test(mm, "42", Integer.class, 42);
+        test(mm, "42", Long.class, 42L);
+        test(mm, "42", Float.class, 42f);
+        test(mm, "42", Double.class, 42.0);
+        test(mm, "a", Character.class, 'a');
+        test(mm, MapperManager.class.getName(), Class.class, MapperManager.class);
+        test(mm, "42", BigDecimal.class, new BigDecimal("42"));
+        test(mm, "42", BigInteger.class, new BigInteger("42"));
+        test(mm, "pom.xml", File.class, new File("pom.xml"));
+        test(mm, "pom.xml", Path.class, Paths.get("pom.xml"));
+        test(mm, "UTF-8", Charset.class, StandardCharsets.UTF_8);
+        test(mm, "http://localhost:8080/path", URI.class, URI.create("http://localhost:8080/path"));
+        test(mm, "http://localhost:8080/path", URL.class, URI.create("http://localhost:8080/path").toURL());
+        UUID uuid = UUID.randomUUID();
+        test(mm, uuid.toString(), UUID.class, uuid);
+        Duration duration = Duration.ofMinutes(79);
+        test(mm, duration.toString(), Duration.class, duration);
+
+        // pattern does not have equals implemented
+        String regex = ".*\\d.*?";
+        Pattern pattern = mm.map(regex, String.class, Pattern.class);
+        assertThat("From String to Pattern", pattern.pattern(), is(regex));
+
+    }
+
+    private <T> void test(MapperManager mm, String stringValue, Class<T> type, T expected) {
+        T mappedValue = mm.map(stringValue, String.class, type);
+        assertThat("From String to " + type.getName(), mappedValue, is(expected));
+    }
+
     @Test
     void testUsingServiceLoader() {
         MapperManager mm = MapperManager.create();
@@ -58,7 +119,7 @@ class MapperManagerTest {
         shortResult = mm.map(source, ServiceLoaderMapper2.STRING_TYPE, ServiceLoaderMapper2.SHORT_TYPE);
         assertThat(shortResult, is((short) 10));
 
-        assertThrows(MapperException.class, () -> mm.map(source, String.class, Object.class));
+        assertThrows(MapperException.class, () -> mm.map(source, String.class, NotMappedType.class));
     }
 
     @Test
@@ -88,7 +149,7 @@ class MapperManagerTest {
         assertThrows(MapperException.class, () -> mm.map(source, String.class, Short.class));
         assertThrows(MapperException.class, () -> mm.map(source, ServiceLoaderMapper2.STRING_TYPE,
                                                          ServiceLoaderMapper2.SHORT_TYPE));
-        assertThrows(MapperException.class, () -> mm.map(source, String.class, Object.class));
+        assertThrows(MapperException.class, () -> mm.map(source, String.class, NotMappedType.class));
     }
 
     @Test
@@ -120,7 +181,7 @@ class MapperManagerTest {
         shortResult = mm.map(source, ServiceLoaderMapper2.STRING_TYPE, ServiceLoaderMapper2.SHORT_TYPE);
         assertThat(shortResult, is((short) 10));
 
-        assertThrows(MapperException.class, () -> mm.map(source, String.class, Object.class));
+        assertThrows(MapperException.class, () -> mm.map(source, String.class, NotMappedType.class));
 
         // and add tests for integer and short types
         String stringResult = mm.map(42, Integer.class, String.class);
@@ -128,9 +189,13 @@ class MapperManagerTest {
         stringResult = mm.map(42, GenericType.create(Integer.class), ServiceLoaderMapper2.STRING_TYPE);
         assertThat(stringResult, is("42"));
 
-        stringResult = mm.map((short)42, Short.class, String.class);
+        stringResult = mm.map((short) 42, Short.class, String.class);
         assertThat(stringResult, is("42"));
-        stringResult = mm.map((short)42, ServiceLoaderMapper2.SHORT_TYPE, ServiceLoaderMapper2.STRING_TYPE);
+        stringResult = mm.map((short) 42, ServiceLoaderMapper2.SHORT_TYPE, ServiceLoaderMapper2.STRING_TYPE);
         assertThat(stringResult, is("42"));
+    }
+
+    private static final class NotMappedType {
+
     }
 }
