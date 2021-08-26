@@ -74,7 +74,7 @@ public class FtService implements Service {
     }
 
     private void timeoutHandler(ServerRequest request, ServerResponse response) {
-        long sleep = Long.parseLong(request.path().param("millis"));
+        long sleep = request.path().parameter("millis").asLong().get();
 
         timeout.invoke(() -> sleep(sleep))
                 .thenAccept(response::send)
@@ -82,7 +82,7 @@ public class FtService implements Service {
     }
 
     private void retryHandler(ServerRequest request, ServerResponse response) {
-        int count = Integer.parseInt(request.path().param("count"));
+        int count = request.path().parameter("count").asInt().get();
 
         AtomicInteger call = new AtomicInteger(1);
         AtomicInteger failures = new AtomicInteger();

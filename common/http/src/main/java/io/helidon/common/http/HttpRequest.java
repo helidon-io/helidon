@@ -19,6 +19,8 @@ package io.helidon.common.http;
 import java.net.URI;
 import java.util.List;
 
+import io.helidon.common.mapper.ValueProvider;
+
 /**
  * Common attributes of an HTTP Request, that are used both in server requests and in client requests.
  */
@@ -96,6 +98,24 @@ public interface HttpRequest {
          * @return a parameter value or {@code null} if not exist
          */
         String param(String name);
+
+        /**
+         * Returns value of single parameter resolved from path pattern.
+         *
+         * @param name a parameter name
+         * @return a parameter value provider
+         */
+        default ValueProvider parameter(String name) {
+            String value = param(name);
+
+            String valueName = "PathParam(" + name + ")";
+
+            if (value == null) {
+                return ValueProvider.empty(valueName);
+            } else {
+                return ValueProvider.create(valueName, value);
+            }
+        }
 
         /**
          * Returns path as a list of its segments.

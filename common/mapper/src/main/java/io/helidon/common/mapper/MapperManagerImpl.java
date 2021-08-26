@@ -65,8 +65,8 @@ final class MapperManagerImpl implements MapperManager {
                                                    GenericType<?> targetType,
                                                    Throwable throwable) {
 
-        throw new MapperException(GenericType.create(sourceType),
-                                  GenericType.create(targetType),
+        throw new MapperException(sourceType,
+                                  targetType,
                                   "Failed to map source of class '" + source.getClass().getName() + "'",
                                   throwable);
     }
@@ -81,6 +81,10 @@ final class MapperManagerImpl implements MapperManager {
                     .orElseGet(() -> {
                         GenericType<SOURCE> sourceGenericType = GenericType.create(sourceType);
                         GenericType<TARGET> targetGenericType = GenericType.create(targetType);
+                        if (targetType.isAssignableFrom(sourceType)) {
+                            // the same type
+                            return it -> it;
+                        }
                         if (fromTypes) {
                             return notFoundMapper(sourceGenericType, targetGenericType);
                         }
@@ -101,6 +105,9 @@ final class MapperManagerImpl implements MapperManager {
                         // and then by classes (unless we are already called from findMapper(Class, Class)
                         if (!fromClasses && (sourceType.isClass() && targetType.isClass())) {
                             return findMapper((Class<SOURCE>) sourceType.rawType(), (Class<TARGET>) targetType.rawType(), true);
+                        }
+                        if (sourceType.equals(targetType)) {
+                            return it -> it;
                         }
                         return notFoundMapper(sourceType, targetType);
                     });

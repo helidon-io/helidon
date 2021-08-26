@@ -15,13 +15,11 @@
  */
 package io.helidon.config;
 
-import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
+
+import io.helidon.common.mapper.Value;
 
 /**
  * A typed value of a {@link Config} node.
@@ -35,7 +33,7 @@ import java.util.stream.Stream;
  * @see Config#as(Function)
  * @see Config#as(io.helidon.common.GenericType)
  */
-public interface ConfigValue<T> {
+public interface ConfigValue<T> extends Value<T> {
     /**
      * Returns the fully-qualified key of the originating {@code Config} node.
      * <p>
@@ -79,22 +77,10 @@ public interface ConfigValue<T> {
      * @see #key()
      * @see Config.Key#name()
      */
+    @Override
     default String name() {
         return key().name();
     }
-
-    /**
-     * Returns a typed value as {@link Optional}.
-     * Returns a {@link Optional#empty() empty} for nodes without a value.
-     * As this class implements all methods of {@link Optional}, this is only a utility method if an actual {@link Optional}
-     * instance is needed.
-     *
-     * @return value as type instance as {@link Optional}, {@link Optional#empty() empty} in case the node does not have
-     * a direct value
-     * @throws ConfigMappingException in case the value cannot be converted to the expected type
-     * @see #get()
-     */
-    Optional<T> asOptional() throws ConfigMappingException;
 
     /**
      * Typed value of the represented {@link Config} node.
@@ -104,6 +90,7 @@ public interface ConfigValue<T> {
      * @throws MissingValueException  in case the node is {@link Config.Type#MISSING}.
      * @throws ConfigMappingException in case the value cannot be converted to the expected type
      */
+    @Override
     default T get() throws MissingValueException, ConfigMappingException {
         return asOptional()
                 .orElseThrow(() -> MissingValueException.create(key()));
@@ -116,6 +103,7 @@ public interface ConfigValue<T> {
      * @param <N>    type of the returned {@code ConfigValue}
      * @return a new value with the new type
      */
+    @Override
     <N> ConfigValue<N> as(Function<T, N> mapper);
 
     /**
@@ -155,199 +143,4 @@ public interface ConfigValue<T> {
      * @see #supplier()
      */
     Supplier<Optional<T>> optionalSupplier();
-
-    // it is a pity that Optional is not an interface :(
-
-    /**
-     * If the underlying {@code Optional} does not have a value, set it to the
-     * {@code Optional} produced by the supplying function.
-     *
-     * @param supplier the supplying function that produces an {@code Optional}
-     * @return returns current value using {@link #asOptional()} if present,
-     *   otherwise value produced by the supplying function.
-     * @throws NullPointerException if the supplying function is {@code null} or
-     *                              produces a {@code null} result
-     */
-    default Optional<T> or(Supplier<? extends Optional<T>> supplier) {
-        Objects.requireNonNull(supplier);
-
-        Optional<T> optional = asOptional();
-        if (optional.isEmpty()) {
-            Optional<T> supplied = supplier.get();
-            Objects.requireNonNull(supplied);
-            optional = supplied;
-        }
-        return optional;
-    }
-
-    /**
-     * Return {@code true} if there is a value present, otherwise {@code false}.
-     * <p>
-     * Copied from {@link Optional}. You can get real optional from {@link #asOptional()}.
-     *
-     * @return {@code true} if there is a value present, otherwise {@code false}
-     * @see Optional#isPresent()
-     */
-    default boolean isPresent() {
-        return asOptional().isPresent();
-    }
-
-    /**
-     * If a value is present, performs the given action with the value,
-     * otherwise performs the given empty-based action.
-     *
-     * @param action      the action to be performed, if a value is present
-     * @param emptyAction the empty-based action to be performed, if no value is
-     *                    present
-     * @throws NullPointerException if a value is present and the given action
-     *                              is {@code null}, or no value is present and the given empty-based
-     *                              action is {@code null}.
-     */
-    default void ifPresentOrElse(Consumer<T> action, Runnable emptyAction) {
-        Optional<T> optional = asOptional();
-        if (optional.isPresent()) {
-            action.accept(optional.get());
-        } else {
-            emptyAction.run();
-        }
-    }
-
-    /**
-     * If a value is present, invoke the specified consumer with the value,
-     * otherwise do nothing.
-     * <p>
-     * Copied from {@link Optional}. You can get real optional from {@link #asOptional()}.
-     *
-     * @param consumer block to be executed if a value is present
-     * @throws NullPointerException if value is present and {@code consumer} is
-     *                              null
-     * @see Optional#ifPresent(Consumer)
-     */
-    default void ifPresent(Consumer<? super T> consumer) {
-        asOptional().ifPresent(consumer);
-    }
-
-    /**
-     * If a value is present, and the value matches the given predicate,
-     * return an {@code Optional} describing the value, otherwise return an
-     * empty {@code Optional}.
-     * <p>
-     * Copied from {@link Optional}. You can get real optional from {@link #asOptional()}.
-     *
-     * @param predicate a predicate to apply to the value, if present
-     * @return an {@code Optional} describing the value of this {@code Optional}
-     * if a value is present and the value matches the given predicate,
-     * otherwise an empty {@code Optional}
-     * @throws NullPointerException if the predicate is null
-     * @see Optional#filter(Predicate)
-     */
-    default Optional<T> filter(Predicate<? super T> predicate) {
-        return asOptional().filter(predicate);
-    }
-
-    /**
-     * If a value is present, apply the provided mapping function to it,
-     * and if the result is non-null, return an {@code Optional} describing the
-     * result.  Otherwise return an empty {@code Optional}.
-     *
-     * @param <U>    The type of the result of the mapping function
-     * @param mapper a mapping function to apply to the value, if present
-     * @return an {@code Optional} describing the result of applying a mapping
-     * function to the value of this {@code Optional}, if a value is present,
-     * otherwise an empty {@code Optional}
-     * @throws NullPointerException if the mapping function is null
-     *
-     *                              <p>
-     *                              Copied from {@link Optional}. You can get real optional from {@link #asOptional()}.
-     * @see Optional#map(Function)
-     */
-    default <U> Optional<U> map(Function<? super T, ? extends U> mapper) {
-        return asOptional().map(mapper);
-    }
-
-    /**
-     * If a value is present, apply the provided {@code Optional}-bearing
-     * mapping function to it, return that result, otherwise return an empty
-     * {@code Optional}.  This method is similar to {@link #map(Function)},
-     * but the provided mapper is one whose result is already an {@code Optional},
-     * and if invoked, {@code flatMap} does not wrap it with an additional
-     * {@code Optional}.
-     *
-     * <p>
-     * Copied from {@link Optional}. You can get real optional from {@link #asOptional()}.
-     *
-     * @param <U>    The type parameter to the {@code Optional} returned by
-     * @param mapper a mapping function to apply to the value, if present
-     *               the mapping function
-     * @return the result of applying an {@code Optional}-bearing mapping
-     * function to the value of this {@code Optional}, if a value is present,
-     * otherwise an empty {@code Optional}
-     * @throws NullPointerException if the mapping function is null or returns
-     *                              a null result
-     * @see Optional#flatMap(Function)
-     */
-    default <U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper) {
-        return asOptional().flatMap(mapper);
-    }
-
-    /**
-     * Return the value if present, otherwise return {@code other}.
-     * <p>
-     * Copied from {@link Optional}. You can get real optional from {@link #asOptional()}.
-     *
-     * @param other the value to be returned if there is no value present, may
-     *              be null
-     * @return the value, if present, otherwise {@code other}
-     * @see Optional#orElse(Object)
-     */
-    default T orElse(T other) {
-        return asOptional().orElse(other);
-    }
-
-    /**
-     * Return the value if present, otherwise invoke {@code other} and return
-     * the result of that invocation.
-     * <p>
-     * Copied from {@link Optional}. You can get real optional from {@link #asOptional()}.
-     *
-     * @param other a {@code Supplier} whose result is returned if no value
-     *              is present
-     * @return the value if present otherwise the result of {@code other.get()}
-     * @throws NullPointerException if value is not present and {@code other} is
-     *                              null
-     * @see Optional#orElseGet(Supplier)
-     */
-    default T orElseGet(Supplier<? extends T> other) {
-        return asOptional().orElseGet(other);
-    }
-
-    /**
-     * Return the contained value, if present, otherwise throw an exception
-     * to be created by the provided supplier.
-     *
-     * <p>
-     * Copied from {@link Optional}. You can get real optional from {@link #asOptional()}.
-     *
-     * @param <X>               Type of the exception to be thrown
-     * @param exceptionSupplier The supplier which will return the exception to
-     *                          be thrown
-     * @return the present value
-     * @throws X                    if there is no value present
-     * @throws NullPointerException if no value is present and
-     *                              {@code exceptionSupplier} is null
-     * @see Optional#orElseThrow(Supplier)
-     */
-    default <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
-        return asOptional().orElseThrow(exceptionSupplier);
-    }
-
-    /**
-     * If a value is present, returns a sequential {@link Stream} containing
-     * only that value, otherwise returns an empty {@code Stream}.
-     *
-     * @return the optional value as a {@code Stream}
-     */
-    default Stream<T> stream() {
-        return asOptional().stream();
-    }
 }

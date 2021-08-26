@@ -22,6 +22,7 @@ module io.helidon.common.http {
     requires io.helidon.common;
     requires io.helidon.common.context;
     requires io.helidon.common.reactive;
+    requires io.helidon.common.mapper;
 
     exports io.helidon.common.http;
 }

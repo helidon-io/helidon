@@ -64,7 +64,7 @@ final class UriComponent {
      * @return the multivalued map of query parameters.
      */
     static Parameters decodeQuery(String query, boolean decodeNames, boolean decodeValues) {
-        Parameters queryParameters = HashParameters.create();
+        Parameters queryParameters = HashParameters.create("QueryParam");
 
         if (query == null || query.isEmpty()) {
             return queryParameters;

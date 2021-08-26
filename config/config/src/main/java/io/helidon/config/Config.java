@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.mapper.ValueProvider;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
@@ -238,7 +239,7 @@ import io.helidon.config.spi.OverrideSource;
  * config system merges these together so that values from config sources with higher priority have
  * precedence over values from config sources with lower priority.
  */
-public interface Config {
+public interface Config extends ValueProvider {
     /**
      * Returns empty instance of {@code Config}.
      *
@@ -680,6 +681,7 @@ public interface Config {
      * @param <T>         type of the returned value
      * @return properly typed config value
      */
+    @Override
     <T> ConfigValue<T> as(GenericType<T> genericType);
 
     /**
@@ -693,6 +695,7 @@ public interface Config {
      * @see ConfigValue#get()
      * @see ConfigValue#orElse(Object)
      */
+    @Override
     <T> ConfigValue<T> as(Class<T> type);
 
     /**
@@ -713,6 +716,7 @@ public interface Config {
      *
      * @return typed value
      */
+    @Override
     default ConfigValue<Boolean> asBoolean() {
         return as(Boolean.class);
     }
@@ -722,6 +726,7 @@ public interface Config {
      *
      * @return typed value
      */
+    @Override
     default ConfigValue<String> asString() {
         return as(String.class);
     }
@@ -731,6 +736,7 @@ public interface Config {
      *
      * @return typed value
      */
+    @Override
     default ConfigValue<Integer> asInt() {
         return as(Integer.class);
     }
@@ -740,6 +746,7 @@ public interface Config {
      *
      * @return typed value
      */
+    @Override
     default ConfigValue<Long> asLong() {
         return as(Long.class);
     }
@@ -749,6 +756,7 @@ public interface Config {
      *
      * @return typed value
      */
+    @Override
     default ConfigValue<Double> asDouble() {
         return as(Double.class);
     }
@@ -761,6 +769,7 @@ public interface Config {
      * @return a typed list with values
      * @throws ConfigMappingException in case of problem to map property value.
      */
+    @Override
     <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException;
 
     /**

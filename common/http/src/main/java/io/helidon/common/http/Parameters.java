@@ -22,6 +22,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.mapper.ValueProvider;
+
 /**
  * Parameters represents {@code key : value} pairs where {@code key} is a {@code String} with potentially multiple values.
  * <p>
@@ -82,6 +84,29 @@ public interface Parameters {
      * @throws NullPointerException if name is {@code null}
      */
     List<String> all(String name);
+
+    /**
+     * Named query parameter with methods for typed retrieval of value(s).
+     *
+     * @param name name of the parameter
+     * @return value provider with methods for typed accessors
+     */
+    default ValueProvider get(String name) {
+        String valueName = name() + "(" + name + ")";
+
+        if (this.first(name).isEmpty()) {
+            return ValueProvider.empty(name);
+        }
+        return new ParameterValueProvider(valueName, all(name));
+    }
+
+    /**
+     * Name of these parameters.
+     * Used to construct {@link io.helidon.common.mapper.ValueProvider} in method {@link #get(String)}
+     *
+     * @return name
+     */
+    String name();
 
     /**
      * Associates specified values with the specified key (optional operation).

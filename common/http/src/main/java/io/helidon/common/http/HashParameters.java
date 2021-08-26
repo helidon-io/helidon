@@ -39,14 +39,23 @@ public class HashParameters implements Parameters {
     private static final List<String> EMPTY_STRING_LIST = Collections.emptyList();
 
     private final ConcurrentMap<String, List<String>> content;
+    private final String name;
 
     /**
-     * Creates a new instance.
+     * Creates a new named instance.
+     *
+     * @param name name of these parameters
      */
-    protected HashParameters() {
-        this((Parameters) null);
+    protected HashParameters(String name) {
+        this(name, (Parameters) null);
     }
 
+    /**
+     * Creates a new instance with default name.
+     */
+    protected HashParameters() {
+        this("HashParameters");
+    }
     /**
      * Creates a new instance from provided data.
      * Initial data are copied.
@@ -54,6 +63,19 @@ public class HashParameters implements Parameters {
      * @param initialContent initial content.
      */
     protected HashParameters(Map<String, List<String>> initialContent) {
+        this("HashParameters", initialContent);
+    }
+
+    /**
+     * Creates a new instance from provided data.
+     * Initial data are copied.
+     *
+     * @param name name of these parameters
+     * @param initialContent initial content.
+     */
+    protected HashParameters(String name, Map<String, List<String>> initialContent) {
+        this.name = name;
+
         if (initialContent == null) {
             content = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
         } else {
@@ -82,7 +104,18 @@ public class HashParameters implements Parameters {
      * @param initialContent initial content.
      */
     protected HashParameters(Parameters initialContent) {
-        this(initialContent == null ? null : initialContent.toMap());
+        this("HashParameters", initialContent);
+    }
+
+    /**
+     * Creates a new instance from provided data.
+     * Initial data is copied.
+     *
+     * @param name name of these parameters
+     * @param initialContent initial content.
+     */
+    protected HashParameters(String name, Parameters initialContent) {
+        this(name, initialContent == null ? null : initialContent.toMap());
     }
 
     /**
@@ -91,7 +124,17 @@ public class HashParameters implements Parameters {
      * @return a new instance of {@link HashParameters}.
      */
     public static HashParameters create() {
-        return new HashParameters();
+        return create("Parameters");
+    }
+
+    /**
+     * Creates a new named empty instance {@link HashParameters}.
+     *
+     * @param name name of these parameters (such as QueryParam, PathParam, Header)
+     * @return a new named instance of {@link HashParameters}.
+     */
+    public static HashParameters create(String name) {
+        return new HashParameters(name);
     }
 
     /**
@@ -198,6 +241,11 @@ public class HashParameters implements Parameters {
                 return Collections.unmodifiableList(result);
             }
         }
+    }
+
+    @Override
+    public String name() {
+        return name;
     }
 
     @Override
