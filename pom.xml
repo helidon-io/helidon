@@ -126,7 +126,7 @@
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/2.9/</javadoc.link.jackson-annotations>
         <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/2.9/</javadoc.link.jackson-core>
         <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/2.9/</javadoc.link.jackson-databind>
-        <javadoc.link.jaxrs>https://eclipse-ee4j.github.io/apidocs/${version.lib.jaxrs-api}</javadoc.link.jaxrs>
+        <javadoc.link.jaxrs>https://eclipse-ee4j.github.io/jaxrs-api/apidocs/${version.lib.jaxrs-api}</javadoc.link.jaxrs>
         <javadoc.link.netty>https://static.javadoc.io/io.netty/netty-transport/${version.lib.netty}</javadoc.link.netty>
         <javadoc.link.cdi>http://docs.jboss.org/cdi/api/${version.lib.cdi-api}</javadoc.link.cdi>
         <javadoc.link.javax-inject>http://javax-inject.github.io/javax-inject/api/</javadoc.link.javax-inject>
@@ -729,6 +729,16 @@
                             <goal>highest-basedir</goal>
                         </goals>
                         <phase>validate</phase>
+                        <configuration>
+                            <property>top.parent.basedir</property>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-top-parent-basedir-site</id>
+                        <goals>
+                            <goal>highest-basedir</goal>
+                        </goals>
+                        <phase>pre-site</phase>
                         <configuration>
                             <property>top.parent.basedir</property>
                         </configuration>
