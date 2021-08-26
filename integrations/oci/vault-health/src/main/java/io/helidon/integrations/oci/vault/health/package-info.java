@@ -15,13 +15,6 @@
  */
 
 /**
- * Example of OCI Vault integration in a reactive application.
+ * OCI Vault Health.
  */
-module io.helidon.examples.integrations.oci.vault.reactive {
-    requires io.helidon.integrations.oci.vault;
-    requires io.helidon.integrations.oci.vault.health;
-    requires io.helidon.webserver;
-    requires io.helidon.health;
-
-    exports io.helidon.examples.integrations.oci.vault.reactive;
-}
+package io.helidon.integrations.oci.vault.health;

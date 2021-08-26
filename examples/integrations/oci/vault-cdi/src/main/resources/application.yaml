@@ -34,3 +34,6 @@ oci:
     vault:
       # named OCI configuration
       cryptographic-endpoint: "${oci.properties.cryptographic-endpoint}"
+  vault:
+    vault-ocid: "${oci.properties.vault-ocid}"    # Vault healthcheck property
+

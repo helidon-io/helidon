@@ -18,7 +18,9 @@ package io.helidon.examples.integrations.oci.vault.reactive;
 
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
+import io.helidon.health.HealthSupport;
 import io.helidon.integrations.oci.vault.OciVaultRx;
+import io.helidon.integrations.oci.vault.health.OciVaultHealthCheck;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -57,9 +59,18 @@ public final class OciVaultMain {
         // ~/.oci/config
         OciVaultRx ociVault = OciVaultRx.create(config.get("oci"));
 
+        // setup vault health check
+        HealthSupport health = HealthSupport.builder()
+                .addLiveness(OciVaultHealthCheck.builder()
+                        .vaultId(vaultOcid)
+                        .ociVault(ociVault)
+                        .build())
+                .build();
+
         WebServer.builder()
                 .config(config.get("server"))
                 .routing(Routing.builder()
+                                 .register(health)
                                  .register("/vault", new VaultService(ociVault,
                                                                       vaultOcid,
                                                                       compartmentOcid,
