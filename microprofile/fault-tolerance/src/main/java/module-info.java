@@ -29,6 +29,7 @@ module io.helidon.microprofile.faulttolerance {
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.metrics;
+    requires io.helidon.config.mp;
 
     requires jakarta.enterprise.cdi.api;
 

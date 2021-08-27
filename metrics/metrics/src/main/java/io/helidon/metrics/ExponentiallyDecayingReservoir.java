@@ -17,11 +17,16 @@
 package io.helidon.metrics;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.min;
@@ -48,6 +53,49 @@ class ExponentiallyDecayingReservoir {
     private static final int DEFAULT_SIZE = 1028;
     private static final double DEFAULT_ALPHA = 0.015;
     private static final long RESCALE_THRESHOLD = TimeUnit.HOURS.toNanos(1);
+
+    /*
+     * Avoid computing the current time in seconds during every reservoir update by updating its value on a scheduled basis.
+     */
+    private static final long CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS = 250;
+
+    private static final List<Runnable> CURRENT_TIME_IN_SECONDS_UPDATERS = new ArrayList<>();
+
+    private static final ScheduledExecutorService CURRENT_TIME_UPDATER_EXECUTOR_SERVICE = initCurrentTimeUpdater();
+
+    private static final Logger LOGGER = Logger.getLogger(ExponentiallyDecayingReservoir.class.getName());
+
+    private volatile long currentTimeInSeconds;
+
+    private static ScheduledExecutorService initCurrentTimeUpdater() {
+        ScheduledExecutorService result = Executors.newSingleThreadScheduledExecutor();
+        result.scheduleAtFixedRate(ExponentiallyDecayingReservoir::updateCurrentTimeInSecondsForAllReservoirs,
+                CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS,
+                CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        return result;
+    }
+
+    static void onServerShutdown() {
+        CURRENT_TIME_UPDATER_EXECUTOR_SERVICE.shutdown();
+        try {
+            boolean stoppedNormally =
+                    CURRENT_TIME_UPDATER_EXECUTOR_SERVICE.awaitTermination(CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS * 10,
+                            TimeUnit.MILLISECONDS);
+            if (!stoppedNormally) {
+                LOGGER.log(Level.WARNING, "Shutdown of current time updater timed out; continuing");
+            }
+        } catch (InterruptedException e) {
+            LOGGER.log(Level.WARNING, "InterruptedException caught while stopping the current time updater; continuing");
+        }
+    }
+
+    private static void updateCurrentTimeInSecondsForAllReservoirs() {
+        CURRENT_TIME_IN_SECONDS_UPDATERS.forEach(Runnable::run);
+    }
+
+    private long computeCurrentTimeInSeconds() {
+        return TimeUnit.MILLISECONDS.toSeconds(clock.milliTime());
+    }
 
     private final ConcurrentSkipListMap<Double, WeightedSnapshot.WeightedSample> values;
     private final ReentrantReadWriteLock lock;
@@ -81,7 +129,9 @@ class ExponentiallyDecayingReservoir {
         this.alpha = alpha;
         this.size = size;
         this.count = new AtomicLong(0);
-        this.startTime = currentTimeInSeconds();
+        CURRENT_TIME_IN_SECONDS_UPDATERS.add(this::computeCurrentTimeInSeconds);
+        currentTimeInSeconds = computeCurrentTimeInSeconds();
+        this.startTime = currentTimeInSeconds;
         this.nextScaleTime = new AtomicLong(clock.nanoTick() + RESCALE_THRESHOLD);
     }
 
@@ -90,7 +140,7 @@ class ExponentiallyDecayingReservoir {
     }
 
     public void update(long value, String label) {
-        update(value, currentTimeInSeconds(), label);
+        update(value, currentTimeInSeconds, label);
     }
 
     /**
@@ -143,10 +193,6 @@ class ExponentiallyDecayingReservoir {
         }
     }
 
-    private long currentTimeInSeconds() {
-        return TimeUnit.MILLISECONDS.toSeconds(clock.milliTime());
-    }
-
     private double weight(long t) {
         return exp(alpha * t);
     }
@@ -174,7 +220,7 @@ class ExponentiallyDecayingReservoir {
         try {
             if (nextScaleTime.compareAndSet(next, now + RESCALE_THRESHOLD)) {
                 final long oldStartTime = startTime;
-                this.startTime = currentTimeInSeconds();
+                this.startTime = currentTimeInSeconds;
                 final double scalingFactor = exp(-alpha * (startTime - oldStartTime));
                 if (Double.compare(scalingFactor, 0) == 0) {
                     values.clear();

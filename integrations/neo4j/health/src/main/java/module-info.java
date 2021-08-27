@@ -21,6 +21,8 @@ module io.helidon.integrations.neo4j.health {
     requires microprofile.health.api;
     requires org.neo4j.driver;
 
+    requires io.helidon.health.common;
+
     requires static jakarta.enterprise.cdi.api;
     requires static jakarta.inject.api;
 
