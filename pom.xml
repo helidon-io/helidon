@@ -124,9 +124,10 @@
         <version.helidon-cli>2.2.0</version.helidon-cli>
 
         <!-- Links to external javadocs. If you see a hardcoded version it means the javadocs for the version we use is not available. -->
-        <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/2.9/</javadoc.link.jackson-annotations>
-        <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/2.9/</javadoc.link.jackson-core>
-        <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/2.9/</javadoc.link.jackson-databind>
+        <javadoc.jackson.version>2.12</javadoc.jackson.version>
+        <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
+        <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-core>
+        <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-databind>
         <javadoc.link.jaxrs>https://eclipse-ee4j.github.io/jaxrs-api/apidocs/${version.lib.jaxrs-api}</javadoc.link.jaxrs>
         <javadoc.link.netty>https://static.javadoc.io/io.netty/netty-transport/${version.lib.netty}</javadoc.link.netty>
         <javadoc.link.cdi>http://docs.jboss.org/cdi/api/2.0</javadoc.link.cdi>
@@ -140,7 +141,7 @@
         <javadoc.link.zipkin>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/2.12.3</javadoc.link.zipkin>
         <javadoc.link.jakarta-jsonb>https://static.javadoc.io/jakarta.json.bind/jakarta.json.bind-api/${version.lib.jsonb-api}</javadoc.link.jakarta-jsonb>
         <javadoc.link.jakarta-persistence>https://static.javadoc.io/jakarta.persistence/jakarta.persistence-api/${version.lib.persistence-api}</javadoc.link.jakarta-persistence>
-        <javadoc.link.jakarta-jsonp>https://static.javadoc.io/jakarta.json/jakarta.json-api/1.1.6</javadoc.link.jakarta-jsonp>
+        <javadoc.link.jakarta-jsonp>https://static.javadoc.io/jakarta.json/jakarta.json-api/${version.lib.jsonp-api}</javadoc.link.jakarta-jsonp>
         <javadoc.link.javax-jsonb>https://static.javadoc.io/javax.json.bind/javax.json.bind-api/1.0</javadoc.link.javax-jsonb>
         <javadoc.link.javax-jaxb>https://static.javadoc.io/javax.xml.bind/jaxb-api/2.3.1</javadoc.link.javax-jaxb>
         <javadoc.link.javax-persistence>https://static.javadoc.io/javax.persistence/javax.persistence-api/2.2</javadoc.link.javax-persistence>
