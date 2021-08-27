@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,17 @@ public class Registry extends MetricRegistry {
      */
     public static Registry create(Type type) {
         return new Registry(type);
+    }
+
+    /**
+     * Indicates whether the specific metrics has been marked as deleted.
+     *
+     * @param metric the metric to check
+     * @return true if it's a Helidon metric and has been marked as deleted; false otherwise
+     */
+    public static boolean isMarkedAsDeleted(Metric metric) {
+        return (metric instanceof HelidonMetric)
+                && ((HelidonMetric) metric).isDeleted();
     }
 
     @Override
@@ -225,12 +236,14 @@ public class Registry extends MetricRegistry {
      */
     @Override
     public synchronized boolean remove(String name) {
-        final List<MetricID> metricIDs = allMetricIDsByName.get(name);
-        if (metricIDs == null) {
+        final List<Map.Entry<MetricID, HelidonMetric>> doomedMetrics = getMetricsByName(name);
+        if (doomedMetrics.isEmpty()) {
             return false;
         }
-        final boolean result = metricIDs.stream()
-                .map(metricID -> allMetrics.remove(metricID) != null)
+
+        final boolean result = doomedMetrics.stream()
+                .peek(entry -> entry.getValue().markAsDeleted())
+                .map(entry -> allMetrics.remove(entry.getKey()) != null)
                 .reduce((a, b) -> a || b)
                 .orElse(false);
         allMetricIDsByName.remove(name);
@@ -256,7 +269,11 @@ public class Registry extends MetricRegistry {
             allMetadata.remove(metricID.getName());
         }
 
-        return allMetrics.remove(metricID) != null;
+        HelidonMetric doomedMetric = allMetrics.remove(metricID);
+        if (doomedMetric != null) {
+            doomedMetric.markAsDeleted();
+        }
+        return doomedMetric != null;
     }
 
     @Override
