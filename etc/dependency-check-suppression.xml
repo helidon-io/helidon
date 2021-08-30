@@ -133,4 +133,14 @@
    <cve>CVE-2021-21409</cve>
 </suppress>
 
+<!-- This CVE was fixed in the EL implementations com.sun.el:el-ri:3.0.4 and org.glassfish:jakarta.el:3.0.4
+     which we have upgraded to. But the scan triggers a false positive on the API: jakarta.el:jakarta.el-api:3.0.3 -->
+<suppress>
+   <notes><![CDATA[
+   file name: jakarta.el-api-3.0.3.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/jakarta\.el/jakarta\.el\-api@.*$</packageUrl>
+   <cve>CVE-2021-28170</cve>
+</suppress>
+
 </suppressions>
