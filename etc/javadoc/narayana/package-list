@@ -28,6 +28,7 @@ com.arjuna.ats.jdbc.common
 com.arjuna.ats.jdbc.logging
 com.arjuna.ats.jta
 com.arjuna.ats.jta.cdi
+com.arjuna.ats.jta.cdi.async
 com.arjuna.ats.jta.cdi.transactional
 com.arjuna.ats.jta.common
 com.arjuna.ats.jta.exceptions
