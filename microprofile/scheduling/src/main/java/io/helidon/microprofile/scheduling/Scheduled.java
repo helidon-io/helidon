@@ -24,12 +24,12 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Marks the method to be invoked periodically according to supplied cron expression.
- * <p>
+ * <br>
  * Cron expression format:
  * <pre>{@code
  *  <seconds> <minutes> <hours> <day-of-month> <month> <day-of-week> <year>
  * }</pre>
- *
+ * <br>
  * <table>
  *  <caption><b>Cron expression fields</b></caption>
  *  <tr>
@@ -91,9 +91,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *      </tr>
  * </tbody>
  * </table>
- *
- * <p>
- *
+ * <br>
  * <table>
  *  <caption><b>Field formats</b></caption>
  *  <tr>
@@ -159,7 +157,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *      </tr>
  * </tbody>
  * </table>
- *
+ * <br>
  * <table>
  *  <caption><b>Examples</b></caption>
  *  <tr>
@@ -185,8 +183,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *      </tr>
  * </tbody>
  * </table>
- *
- * <p>
  */
 @Retention(RUNTIME)
 @Target({METHOD})
