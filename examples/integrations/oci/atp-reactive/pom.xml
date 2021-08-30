@@ -34,7 +34,7 @@
     <description>Reactive integration with OCI ATP.</description>
 
     <properties>
-        <mainClass>io.helidon.examples.integrations.oci.atp.reactive.OciATPMain</mainClass>
+        <mainClass>io.helidon.examples.integrations.oci.atp.reactive.OciAtpMain</mainClass>
     </properties>
 
     <dependencies>
