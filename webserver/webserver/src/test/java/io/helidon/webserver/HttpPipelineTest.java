@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,12 +65,17 @@ public class HttpPipelineTest {
                 .routing(Routing.builder()
                         .put("/", (req, res) -> {
                             counter.set(0);
+                            log("put server");
                             res.send();
                         })
                         .get("/", (req, res) -> {
+                            log("get server");
                             int n = counter.getAndIncrement();
                             int delay = (n % 2 == 0) ? 1000 : 0;    // alternate delay 1 second and no delay
-                            executor.schedule(() -> res.status(Http.Status.OK_200).send("Response " + n + "\n"),
+                            executor.schedule(() -> {
+                                        log("get server schedule");
+                                        res.status(Http.Status.OK_200).send("Response " + n + "\n");
+                                    },
                                     delay, TimeUnit.MILLISECONDS);
                         })
                         .build())
@@ -95,12 +100,19 @@ public class HttpPipelineTest {
             s.request(Http.Method.PUT, "/");        // reset server
             s.request(Http.Method.GET, "/");        // request_0
             s.request(Http.Method.GET, "/");        // request_1
-            String put = s.receive();
-            assertThat(put, notNullValue());
-            String get0 = s.receive();
-            assertThat(get0, containsString("Response 0"));
-            String get1 = s.receive();
-            assertThat(get1, containsString("Response 1"));
+            log("put client");
+            String reset = s.receive();
+            assertThat(reset, notNullValue());
+            log("request0 client");
+            String request_0 = s.receive();
+            assertThat(request_0, containsString("Response 0"));
+            log("request1 client");
+            String request_1 = s.receive();
+            assertThat(request_1, containsString("Response 1"));
         }
+    }
+
+    private static void log(String prefix) {
+        LOGGER.info(() -> prefix + " " + Thread.currentThread());
     }
 }

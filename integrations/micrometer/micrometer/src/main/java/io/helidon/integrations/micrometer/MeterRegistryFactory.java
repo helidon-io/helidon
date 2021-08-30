@@ -341,37 +341,37 @@ public final class MeterRegistryFactory {
          * @param registriesConfig {@code Config} object for the 1 or more {@code builtin-registries} entries
          */
         private void enrollBuiltInRegistries(Config registriesConfig) {
-
-            if (registriesConfig.type() != Config.Type.LIST) {
-                throw new IllegalArgumentException("Expected Micrometer config " + BUILTIN_REGISTRIES_CONFIG_KEY + " as a LIST "
-                        + "but found " + registriesConfig.type().name());
-            }
-
+            // in case config is created from MP config, node type is OBJECT instead of LIST
+            // as MP config flattens everything
             Map<BuiltInRegistryType, MicrometerBuiltInRegistrySupport> candidateBuiltInRegistryTypes =
                     new HashMap<>();
             List<String> unrecognizedTypes = new ArrayList<>();
 
-            for (Config registryConfig : registriesConfig.asNodeList().get()) {
-                String registryType = registryConfig.get("type").asString().get();
-                try {
-                    BuiltInRegistryType type =
-                            BuiltInRegistryType.valueByName(registryType);
+            registriesConfig.asList(Config.class)
+                    .ifPresent(confList -> {
+                        for (Config registryConfig : confList) {
+                            String registryType = registryConfig.get("type").asString().get();
+                            try {
+                                BuiltInRegistryType type =
+                                        BuiltInRegistryType.valueByName(registryType);
 
-                    MicrometerBuiltInRegistrySupport builtInRegistrySupport =
-                            MicrometerBuiltInRegistrySupport.create(type, registryConfig.asNode());
-                    if (builtInRegistrySupport != null) {
-                        candidateBuiltInRegistryTypes.put(type, builtInRegistrySupport);
-                    }
-                } catch (BuiltInRegistryType.UnrecognizedBuiltInRegistryTypeException e) {
-                    unrecognizedTypes.add(e.unrecognizedType());
-                    logRecords.add(new LogRecord(Level.WARNING,
-                            String.format("Ignoring unrecognized Micrometer built-in registry type %s", e.unrecognizedType())));
-                }
-            }
+                                MicrometerBuiltInRegistrySupport builtInRegistrySupport =
+                                        MicrometerBuiltInRegistrySupport.create(type, registryConfig.asNode());
+
+                                candidateBuiltInRegistryTypes.put(type, builtInRegistrySupport);
+                            } catch (BuiltInRegistryType.UnrecognizedBuiltInRegistryTypeException e) {
+                                unrecognizedTypes.add(e.unrecognizedType());
+                                logRecords.add(new LogRecord(Level.WARNING,
+                                                             String.format(
+                                                                     "Ignoring unrecognized Micrometer built-in registry type %s",
+                                                                     e.unrecognizedType())));
+                            }
+                        }
+                    });
 
             if (!unrecognizedTypes.isEmpty()) {
                 LOGGER.log(Level.WARNING, String.format("Ignoring unrecognized Micrometer built-in registries: %s",
-                        unrecognizedTypes.toString()));
+                                                        unrecognizedTypes));
             }
 
             // Do not change previous settings if we did not find any valid new built-in registries selected.
@@ -379,7 +379,7 @@ public final class MeterRegistryFactory {
                 builtInRegistriesRequested.clear();
                 builtInRegistriesRequested.putAll(candidateBuiltInRegistryTypes);
                 LOGGER.log(Level.FINE,
-                        () -> "Selecting built-in Micrometer registries " + candidateBuiltInRegistryTypes.toString());
+                        () -> "Selecting built-in Micrometer registries " + candidateBuiltInRegistryTypes);
             }
         }
     }

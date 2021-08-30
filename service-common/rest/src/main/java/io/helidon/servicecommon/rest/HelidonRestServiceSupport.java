@@ -46,6 +46,7 @@ public abstract class HelidonRestServiceSupport implements Service {
     private final String context;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
     private final Logger logger;
+    private int webServerCount;
 
     /**
      * Shared initialization for new service support instances.
@@ -83,6 +84,11 @@ public abstract class HelidonRestServiceSupport implements Service {
      * @param serviceEndpointRoutingRules actual rules (if different from default) for the service endpoint
      */
     public final void configureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules) {
+        defaultRules.onNewWebServer(webserver -> {
+            webServerStarted();
+            webserver.whenShutdown()
+                    .thenRun(this::webServerStopped);
+        });
         // CORS first
         defaultRules.any(context, corsEnabledServiceHelper.processor());
         if (defaultRules != serviceEndpointRoutingRules) {
@@ -98,6 +104,19 @@ public abstract class HelidonRestServiceSupport implements Service {
      * @param serviceEndpointRoutingRules actual rules (if different from the default ones) to be updated for the service endpoint
      */
     protected abstract void postConfigureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules);
+
+    private void webServerStarted() {
+        webServerCount++;
+    }
+
+    private void webServerStopped() {
+        if (--webServerCount == 0) {
+            onShutdown();
+        }
+    }
+
+    protected void onShutdown() {
+    }
 
     protected String context() {
         return context;

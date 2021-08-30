@@ -389,6 +389,15 @@ final class FeatureCatalog {
                     .flavor(HelidonFlavor.MP)
                     .experimental(true));
 
+        add("io.helidon.microprofile.lra",
+                FeatureDescriptor.builder()
+                        .name("Long Running Actions")
+                        .description("MicroProfile Long Running Actions")
+                        .path("LRA")
+                        .flavor(HelidonFlavor.MP)
+                        .nativeSupported(true)
+                        .experimental(true));
+
         /*
          * Common modules
          */

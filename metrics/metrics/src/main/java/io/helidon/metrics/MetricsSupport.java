@@ -430,6 +430,11 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
         configureEndpoint(rules, rules);
     }
 
+    @Override
+    protected void onShutdown() {
+        ExponentiallyDecayingReservoir.onServerShutdown();
+    }
+
     private static KeyPerformanceIndicatorSupport.Context kpiContext(ServerRequest request) {
         return request.context()
                 .get(KeyPerformanceIndicatorSupport.Context.class)

@@ -41,6 +41,10 @@
             <artifactId>microprofile-health-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health-common</artifactId>
+        </dependency>
+        <dependency>
             <!-- only needed for compilation, not required in runtime -->
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>

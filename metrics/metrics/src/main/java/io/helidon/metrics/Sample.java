@@ -21,6 +21,8 @@ package io.helidon.metrics;
  */
 interface Sample {
 
+    boolean IS_EXEMPLAR_HANDLING_ACTIVE = ExemplarServiceManager.isActive();
+
     static Derived derived(double value, Sample.Labeled reference) {
         return new Derived.Impl(value, reference);
     }
@@ -30,7 +32,9 @@ interface Sample {
     }
 
     static Labeled labeled(long value) {
-        return new Labeled.Impl(value, ExemplarServiceManager.exemplarLabel(), System.currentTimeMillis());
+        return IS_EXEMPLAR_HANDLING_ACTIVE
+                ? new Labeled.Impl(value, ExemplarServiceManager.exemplarLabel(), System.currentTimeMillis())
+                : new Labeled.Impl(value, ExemplarServiceManager.INACTIVE_LABEL, 0);
     }
 
     /**

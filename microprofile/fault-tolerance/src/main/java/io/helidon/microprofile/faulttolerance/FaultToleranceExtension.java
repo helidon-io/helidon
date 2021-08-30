@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import javax.inject.Inject;
 
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.faulttolerance.FaultTolerance;
 
 import org.eclipse.microprofile.config.Config;
@@ -270,7 +271,7 @@ public class FaultToleranceExtension implements Extension {
         }
 
         // Initialize executors for MP FT - default size of 16
-        io.helidon.config.Config config = io.helidon.config.Config.create();
+        io.helidon.config.Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
         scheduledThreadPoolSupplier = ScheduledThreadPoolSupplier.builder()
                 .threadNamePrefix("ft-mp-schedule-")
                 .corePoolSize(16)
