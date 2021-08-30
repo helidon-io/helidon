@@ -82,15 +82,15 @@ final class MetricsDuplexConnection implements DuplexConnection {
         this.delegate = Objects.requireNonNull(delegate, "Delegate must not be null");
         Objects.requireNonNull(metricsRegistry, "Metrics Registry must not be null");
 
-        Tag[] closeTags = Stream.concat(Arrays.stream(tags), Stream.of(new Tag("connection-type",
+        Tag[] closeTags = Stream.concat(Arrays.stream(tags), Stream.of(new Tag("connectionType",
                 connectionType.name()))).toArray(Tag[]::new);
         this.close =
                 metricsRegistry.counter(
-                        "rsocket-duplex-connection-close",
+                        "rsocketDuplexConnectionClose",
                         closeTags);
         this.dispose =
                 metricsRegistry.counter(
-                        "rsocket-duplex-connection-dispose",
+                        "rsocketDuplexConnectionDispose",
                         closeTags);
         this.frameCounters = new FrameCounters(connectionType, metricsRegistry, tags);
     }
@@ -225,11 +225,11 @@ final class MetricsDuplexConnection implements DuplexConnection {
                 Type connectionType, MetricRegistry metricRegistry, String frameType, Tag... tags) {
 
             Tag[] allTags = Stream.concat(Arrays.stream(tags), Stream.of(
-                    new Tag("connection-type", connectionType.name()),
-                    new Tag("frame-type", frameType)))
+                    new Tag("connectionType", connectionType.name()),
+                    new Tag("frameType", frameType)))
                     .toArray(Tag[]::new);
             return metricRegistry.counter(
-                    "rsocket-frame", allTags);
+                    "rsocketFrame", allTags);
         }
 
         @Override

@@ -65,11 +65,11 @@ final class MetricsRSocket implements RSocket {
         this.delegate = Objects.requireNonNull(delegate, "Delegate must not be null");
         Objects.requireNonNull(metricRegistry, "MetricRegistry must not be null");
 
-        this.metadataPush = new InteractionCounters(metricRegistry, "metadata-push", tags);
-        this.requestChannel = new InteractionCounters(metricRegistry, "request-channel", tags);
-        this.requestFireAndForget = new InteractionCounters(metricRegistry, "request-FnF", tags);
-        this.requestResponse = new InteractionTimers(metricRegistry, "request-response", tags);
-        this.requestStream = new InteractionCounters(metricRegistry, "request-stream", tags);
+        this.metadataPush = new InteractionCounters(metricRegistry, "metadataPush", tags);
+        this.requestChannel = new InteractionCounters(metricRegistry, "requestChannel", tags);
+        this.requestFireAndForget = new InteractionCounters(metricRegistry, "requestFnF", tags);
+        this.requestResponse = new InteractionTimers(metricRegistry, "requestResponse", tags);
+        this.requestStream = new InteractionCounters(metricRegistry, "requestStream", tags);
     }
 
     /**
@@ -170,10 +170,10 @@ final class MetricsRSocket implements RSocket {
                 MetricRegistry meterRegistry, String interactionModel, SignalType signalType, Tag... tags) {
 
             Tag[] resultTags = Stream.concat(Arrays.stream(tags),
-                    Stream.of(new Tag("signal-type", signalType.name())))
+                    Stream.of(new Tag("signalType", signalType.name())))
                     .toArray(Tag[]::new);
             return meterRegistry.counter(
-                    "rsocket-" + interactionModel, resultTags);
+                    "rsocket" + interactionModel, resultTags);
         }
     }
 
@@ -202,17 +202,17 @@ final class MetricsRSocket implements RSocket {
         }
 
         Timer start() {
-            return metricRegistry.timer("request-timer");
+            return metricRegistry.timer("requestTimer");
         }
 
         private static Timer timer(
                 MetricRegistry metricRegistry, String interactionModel, SignalType signalType, Tag... tags) {
 
             Tag[] resultTags = Stream.concat(Arrays.stream(tags),
-                    Stream.of(new Tag("signal-type", signalType.name())))
+                    Stream.of(new Tag("signalType", signalType.name())))
                     .toArray(Tag[]::new);
             return metricRegistry.timer(
-                    "rsocket-" + interactionModel, resultTags);
+                    "rsocket" + interactionModel, resultTags);
         }
     }
 }
