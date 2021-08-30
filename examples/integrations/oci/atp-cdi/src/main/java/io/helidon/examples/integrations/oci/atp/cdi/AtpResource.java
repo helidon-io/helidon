@@ -34,7 +34,7 @@ import javax.ws.rs.core.StreamingOutput;
 
 import io.helidon.common.http.Http;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
-import io.helidon.integrations.oci.atp.OciAutonomousDB;
+import io.helidon.integrations.oci.atp.OciAutonomousDb;
 import io.helidon.integrations.oci.atp.GenerateAutonomousDatabaseWallet;
 import io.helidon.integrations.oci.atp.GenerateAutonomousDatabaseWalletRx;
 
@@ -44,12 +44,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * JAX-RS resource - REST API for the atp example.
  */
 @Path("/atp")
-public class ATPResource {
-    private final OciAutonomousDB autonomousDB;
+public class AtpResource {
+    private final OciAutonomousDb autonomousDb;
 
     @Inject
-    ATPResource(OciAutonomousDB autonomousDB) {
-        this.autonomousDB = autonomousDB;
+    AtpResource(OciAutonomousDb autonomousDb) {
+        this.autonomousDb = autonomousDb;
     }
 
     /**
@@ -60,7 +60,7 @@ public class ATPResource {
     @GET
     @Path("/wallet")
     public Response generateWallet() {
-        ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response> ociResponse = autonomousDB.generateWallet(GenerateAutonomousDatabaseWalletRx.Request.builder());
+        ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response> ociResponse = autonomousDb.generateWallet(GenerateAutonomousDatabaseWalletRx.Request.builder());
         Optional<GenerateAutonomousDatabaseWallet.Response> entity = ociResponse.entity();
 
         if (entity.isEmpty()) {
@@ -74,7 +74,6 @@ public class ATPResource {
         Response.ResponseBuilder ok = Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM_TYPE)
                 .header("opc-request-id", ociResponse.headers().first("opc-request-id").orElse(""))
                 .header("request-id", ociResponse.requestId());
-        //.header(Http.Header.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
 
         ociResponse.headers()
                 .first(Http.Header.CONTENT_TYPE)

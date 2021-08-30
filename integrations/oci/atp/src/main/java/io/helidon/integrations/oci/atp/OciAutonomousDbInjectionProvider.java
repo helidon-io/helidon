@@ -27,20 +27,20 @@ import io.helidon.integrations.oci.connect.spi.InjectionProvider;
  * @deprecated do not use directly
  */
 @Deprecated
-public class OciAutonomousDBInjectionProvider implements InjectionProvider {
+public class OciAutonomousDbInjectionProvider implements InjectionProvider {
     private static final List<InjectionType<?>> INJECTABLES;
 
     static {
         List<InjectionType<?>> injectables = new LinkedList<>();
 
-        injectables.add(InjectionType.create(OciAutonomousDBRx.class,
-                                             (restApi, config) -> OciAutonomousDBRx.builder()
+        injectables.add(InjectionType.create(OciAutonomousDbRx.class,
+                                             (restApi, config) -> OciAutonomousDbRx.builder()
                                                      .restApi(restApi)
                                                      .config(config)
                                                      .build()));
 
-        injectables.add(InjectionType.create(OciAutonomousDB.class,
-                                             (restApi, config) -> OciAutonomousDB.create(OciAutonomousDBRx.builder()
+        injectables.add(InjectionType.create(OciAutonomousDb.class,
+                                             (restApi, config) -> OciAutonomousDb.create(OciAutonomousDbRx.builder()
                                                                                           .restApi(restApi)
                                                                                           .config(config)
                                                                                           .build())));
@@ -53,7 +53,7 @@ public class OciAutonomousDBInjectionProvider implements InjectionProvider {
      * @deprecated do not use
      */
     @Deprecated
-    public OciAutonomousDBInjectionProvider() {
+    public OciAutonomousDbInjectionProvider() {
     }
 
     @Override

@@ -21,9 +21,9 @@ import io.helidon.integrations.common.rest.ApiOptionalResponse;
 /**
  * Blocking OCI ATP API.
  * All methods block the current thread. This implementation is not suitable for reactive programming.
- * Use {@link io.helidon.integrations.oci.atp.OciAutonomousDBRx} in reactive code.
+ * Use {@link OciAutonomousDbRx} in reactive code.
  */
-public interface OciAutonomousDB {
+public interface OciAutonomousDb {
     /**
      * Create a blocking ATP integration from its reactive counterpart.
      * When running within an injection capable environment (such as CDI), instances of this
@@ -32,8 +32,8 @@ public interface OciAutonomousDB {
      * @param reactive reactive OCI ATP
      * @return blocking OCI ATP
      */
-    static OciAutonomousDB create(OciAutonomousDBRx reactive) {
-        return new OciAutonomousDBImpl(reactive);
+    static OciAutonomousDb create(OciAutonomousDbRx reactive) {
+        return new OciAutonomousDbImpl(reactive);
     }
 
     /**

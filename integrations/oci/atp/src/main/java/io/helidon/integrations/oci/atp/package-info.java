@@ -17,7 +17,7 @@
 /**
  * OCI ATP integration.
  *
- * @see io.helidon.integrations.oci.atp.OciAutonomousDB
- * @see io.helidon.integrations.oci.atp.OciAutonomousDBRx
+ * @see io.helidon.integrations.oci.atp.OciAutonomousDb
+ * @see io.helidon.integrations.oci.atp.OciAutonomousDbRx
  */
 package io.helidon.integrations.oci.atp;

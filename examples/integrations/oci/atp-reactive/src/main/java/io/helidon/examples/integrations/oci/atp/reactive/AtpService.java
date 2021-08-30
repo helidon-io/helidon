@@ -21,18 +21,18 @@ import java.util.OptionalLong;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.integrations.oci.atp.OciAutonomousDBRx;
+import io.helidon.integrations.oci.atp.OciAutonomousDbRx;
 import io.helidon.integrations.oci.atp.GenerateAutonomousDatabaseWalletRx;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-class ATPService implements Service {
-    private final OciAutonomousDBRx atpDB;
+class AtpService implements Service {
+    private final OciAutonomousDbRx autonomousDbRx;
 
-    ATPService(OciAutonomousDBRx atpDB) {
-        this.atpDB = atpDB;
+    AtpService(OciAutonomousDbRx autonomousDbRx) {
+        this.autonomousDbRx = autonomousDbRx;
     }
 
     @Override
@@ -44,7 +44,7 @@ class ATPService implements Service {
      * Generate wallet file for the configured ATP.
      */
     private void generateWallet(ServerRequest req, ServerResponse res) {
-        atpDB.generateWallet(GenerateAutonomousDatabaseWalletRx.Request.builder())
+        autonomousDbRx.generateWallet(GenerateAutonomousDatabaseWalletRx.Request.builder())
                 .forSingle(apiResponse -> {
                     Optional<GenerateAutonomousDatabaseWalletRx.Response> entity = apiResponse.entity();
                     if (entity.isEmpty()) {

@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
+import io.helidon.integrations.oci.atp.OciAutonomousDb;
+import io.helidon.integrations.oci.atp.OciAutonomousDbInjectionProvider;
+import io.helidon.integrations.oci.atp.OciAutonomousDbRx;
+
 /**
  * OCI ATP integration.
  *
- * @see io.helidon.integrations.oci.atp.OciAutonomousDB
- * @see io.helidon.integrations.oci.atp.OciAutonomousDBRx
+ * @see OciAutonomousDb
+ * @see OciAutonomousDbRx
  */
 module io.helidon.integrations.oci.atp {
     requires transitive java.json;
@@ -34,7 +38,7 @@ module io.helidon.integrations.oci.atp {
     // this is the intended usage, deprecation is to warn about accidental usage in code
     //noinspection deprecation
     provides io.helidon.integrations.oci.connect.spi.InjectionProvider
-            with io.helidon.integrations.oci.atp.OciAutonomousDBInjectionProvider;
+            with OciAutonomousDbInjectionProvider;
 
     opens io.helidon.integrations.oci.atp to weld.core.impl, io.helidon.microprofile.cdi;
 }

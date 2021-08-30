@@ -26,7 +26,7 @@ import io.helidon.integrations.oci.connect.OciRestApi;
 /**
  * Reactive API for OCI ATP.
  */
-public interface OciAutonomousDBRx {
+public interface OciAutonomousDbRx {
     /**
      * Version of ATP API supported by this client.
      */
@@ -56,7 +56,7 @@ public interface OciAutonomousDBRx {
      *
      * @return OCI ATP instance connecting based on {@code DEFAULT} profile
      */
-    static OciAutonomousDBRx create() {
+    static OciAutonomousDbRx create() {
         return builder().build();
     }
 
@@ -65,9 +65,9 @@ public interface OciAutonomousDBRx {
      *
      * @param config configuration on the node of OCI configuration
      * @return OCI ATP instance configured from the configuration
-     * @see OciAutonomousDBRx.Builder#config(io.helidon.config.Config)
+     * @see OciAutonomousDbRx.Builder#config(io.helidon.config.Config)
      */
-    static OciAutonomousDBRx create(Config config) {
+    static OciAutonomousDbRx create(Config config) {
         return builder().config(config).build();
     }
 
@@ -81,9 +81,9 @@ public interface OciAutonomousDBRx {
             GenerateAutonomousDatabaseWalletRx.Request request);
 
     /**
-     * Fluent API Builder for {@link io.helidon.integrations.oci.atp.OciAutonomousDBRx}.
+     * Fluent API Builder for {@link OciAutonomousDbRx}.
      */
-    class Builder implements io.helidon.common.Builder<OciAutonomousDBRx> {
+    class Builder implements io.helidon.common.Builder<OciAutonomousDbRx> {
         private final OciRestApi.Builder apiBuilder = OciRestApi.builder();
 
         private String hostPrefix = API_HOST_PREFIX;
@@ -96,11 +96,11 @@ public interface OciAutonomousDBRx {
         }
 
         @Override
-        public OciAutonomousDBRx build() {
+        public OciAutonomousDbRx build() {
             if (restApi == null) {
                 restApi = apiBuilder.build();
             }
-            return new OciAutonomousDBRxImpl(this);
+            return new OciAutonomousDbRxImpl(this);
         }
 
         /**

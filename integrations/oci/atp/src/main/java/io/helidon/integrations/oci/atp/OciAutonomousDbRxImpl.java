@@ -25,14 +25,14 @@ import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.connect.OciRestApi;
 
-class OciAutonomousDBRxImpl implements OciAutonomousDBRx {
+class OciAutonomousDbRxImpl implements OciAutonomousDbRx {
     private final OciRestApi restApi;
     private final String hostPrefix;
     private final Optional<String> endpoint;
     private final String ocid;
     private final String walletPassword;
 
-    OciAutonomousDBRxImpl(Builder builder) {
+    OciAutonomousDbRxImpl(Builder builder) {
         this.restApi = builder.restApi();
         this.hostPrefix = builder.hostPrefix();
         this.endpoint = Optional.ofNullable(builder.endpoint());
@@ -47,11 +47,11 @@ class OciAutonomousDBRxImpl implements OciAutonomousDBRx {
 
         if (!request.endpoint().isPresent()) {
             endpoint.ifPresent(request::endpoint);
-            request.hostFormat(OciAutonomousDBRx.API_HOST_FORMAT)
+            request.hostFormat(OciAutonomousDbRx.API_HOST_FORMAT)
                     .hostPrefix(hostPrefix);
         }
 
-        request.setPassword(this.walletPassword);
+        request.password(this.walletPassword);
 
         return restApi.invokePublisherResponse(Http.Method.POST,
                 apiPath,

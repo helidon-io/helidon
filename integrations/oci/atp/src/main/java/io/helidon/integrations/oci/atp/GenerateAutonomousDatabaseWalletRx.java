@@ -55,7 +55,7 @@ public final class GenerateAutonomousDatabaseWalletRx {
          * @param walletPassword walletPassword
          * @return updated request
          */
-        public Request setPassword(String walletPassword) {
+        public Request password(String walletPassword) {
             return add("password", walletPassword);
         }
     }

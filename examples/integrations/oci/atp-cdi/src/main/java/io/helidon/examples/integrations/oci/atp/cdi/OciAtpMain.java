@@ -31,8 +31,8 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * Main class of the example.
  * This example sets up a web server to serve REST API to retrieve ATP wallet.
  */
-public final class OciATPMain {
-    private OciATPMain() {
+public final class OciAtpMain {
+    private OciAtpMain() {
     }
 
     /**

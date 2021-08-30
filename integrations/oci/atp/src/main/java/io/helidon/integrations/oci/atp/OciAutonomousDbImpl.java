@@ -18,10 +18,10 @@ package io.helidon.integrations.oci.atp;
 
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
 
-class OciAutonomousDBImpl implements OciAutonomousDB {
-    private final OciAutonomousDBRx delegate;
+class OciAutonomousDbImpl implements OciAutonomousDb {
+    private final OciAutonomousDbRx delegate;
 
-    OciAutonomousDBImpl(OciAutonomousDBRx delegate) {
+    OciAutonomousDbImpl(OciAutonomousDbRx delegate) {
         this.delegate = delegate;
     }
 

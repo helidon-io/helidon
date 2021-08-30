@@ -18,7 +18,7 @@ package io.helidon.examples.integrations.oci.atp.reactive;
 
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
-import io.helidon.integrations.oci.atp.OciAutonomousDBRx;
+import io.helidon.integrations.oci.atp.OciAutonomousDbRx;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -29,8 +29,8 @@ import static io.helidon.config.ConfigSources.file;
  * Main class of the example.
  * This example sets up a web server to serve REST API to retrieve ATP wallet.
  */
-public final class OciATPMain {
-    private OciATPMain() {
+public final class OciAtpMain {
+    private OciAtpMain() {
     }
 
     /**
@@ -50,12 +50,12 @@ public final class OciATPMain {
 
         // this requires OCI configuration in the usual place
         // ~/.oci/config
-        OciAutonomousDBRx atpDB = OciAutonomousDBRx.create(ociConfig);
+        OciAutonomousDbRx autonomousDbRx = OciAutonomousDbRx.create(ociConfig);
 
         WebServer.builder()
                 .config(config.get("server"))
                 .routing(Routing.builder()
-                                 .register("/atp", new ATPService(atpDB)))
+                                 .register("/atp", new AtpService(autonomousDbRx)))
                 .build()
                 .start()
                 .await();
