@@ -1,6 +1,7 @@
 com.fasterxml.jackson.core
 com.fasterxml.jackson.core.async
 com.fasterxml.jackson.core.base
+com.fasterxml.jackson.core.exc
 com.fasterxml.jackson.core.filter
 com.fasterxml.jackson.core.format
 com.fasterxml.jackson.core.io
