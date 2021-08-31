@@ -117,14 +117,12 @@ class RequestScopeHelper {
                         InjectionManager old = WeldRequestScope.actualInjectorManager.get();
                         BoundRequestContext boundRequestContext = null;
                         try {
-                            // requestController.activate();
                             boundRequestContext = migrateRequestContext();
                             WeldRequestScope.actualInjectorManager.set(injectionManager);
                             return supplier.get();
                         } catch (Throwable t) {
                             throw t instanceof Exception ? ((Exception) t) : new RuntimeException(t);
                         } finally {
-                            // requestController.deactivate();
                             if (boundRequestContext != null) {
                                 boundRequestContext.deactivate();
                             }
