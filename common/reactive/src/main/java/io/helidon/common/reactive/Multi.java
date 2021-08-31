@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -630,6 +631,25 @@ public interface Multi<T> extends Subscribable<T> {
     default <U> Multi<U> flatMap(Function<? super T, ? extends Flow.Publisher<? extends U>> mapper,
                                  long maxConcurrency, boolean delayErrors, long prefetch) {
         return new MultiFlatMapPublisher<>(this, mapper, maxConcurrency, prefetch, delayErrors);
+    }
+
+    /**
+     * Transform item with supplied function and flatten resulting {@link java.util.concurrent.CompletionStage} results
+     * to downstream. As reactive streams forbids null values, CompletionStage result is mapped to
+     * {@link java.util.Optional}.
+     *
+     * @param mapper {@link Function} receiving item as parameter and returning {@link java.util.concurrent.CompletionStage}
+     * @param <U>    output item type
+     * @return Multi
+     * @throws NullPointerException if mapper is {@code null}
+     */
+    default <U> Multi<Optional<U>> flatMapCompletionStage(Function<? super T, ? extends CompletionStage<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return flatMap(t ->
+                Multi.create(
+                        mapper.apply(t)
+                                .thenApply(Optional::ofNullable)
+                ), 1, false, 1);
     }
 
     /**
