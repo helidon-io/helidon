@@ -144,6 +144,23 @@ public interface WebServer {
     int port(String socketName);
 
     /**
+     * Returns {@code true} if TLS is configured for the default socket.
+     *
+     * @return whether TLS is enabled for the default socket
+     */
+    default boolean hasTls() {
+        return hasTls(WebServer.DEFAULT_SOCKET_NAME);
+    }
+
+    /**
+     * Returns {@code true} if TLS is configured for the named socket.
+     *
+     * @param socketName the name of a socket
+     * @return whether TLS is enabled for the socket, returns {@code false} if the socket does not exists
+     */
+    boolean hasTls(String socketName);
+
+    /**
      * Update the TLS configuration of the default socket {@link WebServer#DEFAULT_SOCKET_NAME}.
      *
      * @param tls new TLS configuration

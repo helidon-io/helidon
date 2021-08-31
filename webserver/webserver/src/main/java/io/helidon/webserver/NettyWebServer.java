@@ -272,7 +272,9 @@ class NettyWebServer implements WebServer {
                         }
 
                         Channel channel = ((ChannelFuture) channelFuture).channel();
-                        LOGGER.info(() -> "Channel '" + name + "' started: " + channel);
+                        LOGGER.info(() -> "Channel '" + name + "' started: " + channel
+                                + (socketConfig.tls().isPresent() ? " with TLS " : ""));
+
                         channels.put(name, channel);
 
                         channel.closeFuture().addListener(future -> {
@@ -436,6 +438,15 @@ class NettyWebServer implements WebServer {
         }
         SocketAddress address = channel.localAddress();
         return address instanceof InetSocketAddress ? ((InetSocketAddress) address).getPort() : -1;
+    }
+
+    @Override
+    public boolean hasTls(String socketName) {
+        HttpInitializer httpInitializer = initializers.get(socketName);
+        if (httpInitializer == null) {
+            return false;
+        }
+        return httpInitializer.hasTls();
     }
 
     @Override
