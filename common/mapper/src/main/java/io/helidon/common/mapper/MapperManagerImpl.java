@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.common.mapper;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,12 +29,32 @@ import io.helidon.common.mapper.spi.MapperProvider;
  * Implementation of {@link io.helidon.common.mapper.MapperManager}.
  */
 final class MapperManagerImpl implements MapperManager {
+    private static final Map<Class<?>, Class<?>> REPLACED_TYPES = new HashMap<>();
+
+    static {
+        REPLACED_TYPES.put(Byte.TYPE, Byte.class);
+        REPLACED_TYPES.put(Short.TYPE, Short.class);
+        REPLACED_TYPES.put(Integer.TYPE, Integer.class);
+        REPLACED_TYPES.put(Long.TYPE, Long.class);
+        REPLACED_TYPES.put(Float.TYPE, Float.class);
+        REPLACED_TYPES.put(Double.TYPE, Double.class);
+        REPLACED_TYPES.put(Boolean.TYPE, Boolean.class);
+        REPLACED_TYPES.put(Character.TYPE, Character.class);
+    }
+
     private final List<MapperProvider> providers;
     private final Map<ClassCacheKey, Mapper<?, ?>> classCache = new ConcurrentHashMap<>();
     private final Map<GenericCacheKey, Mapper<?, ?>> typeCache = new ConcurrentHashMap<>();
 
     MapperManagerImpl(Builder builder) {
         this.providers = builder.mapperProviders();
+    }
+
+    private static <SOURCE, TARGET> Mapper<SOURCE, TARGET> notFoundMapper(GenericType<SOURCE> sourceType,
+                                                                          GenericType<TARGET> targetType) {
+        return source -> {
+            throw new MapperException(sourceType, targetType, "Failed to find mapper.");
+        };
     }
 
     @Override
@@ -48,10 +69,31 @@ final class MapperManagerImpl implements MapperManager {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <SOURCE, TARGET> TARGET map(SOURCE source, Class<SOURCE> sourceType, Class<TARGET> targetType) {
+        Class<SOURCE> sourceTypeToUse = sourceType;
+        Class<TARGET> targetTypeToUse = targetType;
+
+        if (sourceType.isPrimitive()) {
+            sourceTypeToUse = (Class<SOURCE>) REPLACED_TYPES.get(sourceTypeToUse);
+            if (sourceTypeToUse == null) {
+                throw new MapperException(GenericType.create(source),
+                                          GenericType.create(targetType),
+                                          "Cannot find boxed type for source primitive type.");
+            }
+        }
+        if (targetType.isPrimitive()) {
+            targetTypeToUse = (Class<TARGET>) REPLACED_TYPES.get(targetTypeToUse);
+            if (targetTypeToUse == null) {
+                throw new MapperException(GenericType.create(source),
+                                          GenericType.create(targetType),
+                                          "Cannot find boxed type for target primitive type.");
+            }
+        }
+
         try {
-            return findMapper(sourceType, targetType, false)
+            return findMapper(sourceTypeToUse, targetTypeToUse, false)
                     .map(source);
         } catch (MapperException e) {
             throw e;
@@ -116,24 +158,17 @@ final class MapperManagerImpl implements MapperManager {
     }
 
     private <SOURCE, TARGET> Optional<Mapper<?, ?>> fromProviders(Class<SOURCE> sourceType,
-                                                                            Class<TARGET> targetType) {
+                                                                  Class<TARGET> targetType) {
         return providers.stream()
                 .flatMap(provider -> provider.mapper(sourceType, targetType).stream())
                 .findFirst();
     }
 
     private <SOURCE, TARGET> Optional<Mapper<?, ?>> fromProviders(GenericType<SOURCE> sourceType,
-                                                                            GenericType<TARGET> targetType) {
+                                                                  GenericType<TARGET> targetType) {
         return providers.stream()
                 .flatMap(provider -> provider.mapper(sourceType, targetType).stream())
                 .findFirst();
-    }
-
-    private static <SOURCE, TARGET> Mapper<SOURCE, TARGET> notFoundMapper(GenericType<SOURCE> sourceType,
-                                                                          GenericType<TARGET> targetType) {
-        return source -> {
-            throw new MapperException(sourceType, targetType, "Failed to find mapper.");
-        };
     }
 
     private static final class GenericCacheKey {

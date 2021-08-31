@@ -40,6 +40,14 @@ import io.helidon.common.serviceloader.HelidonServiceLoader;
  */
 public interface MapperManager {
     /**
+     * Classifier for format. A custom format can be used for parsing a formatted type (such as date time types)
+     * if this classifier is configured with {@link io.helidon.common.context.Context#register(Object, Object)}.
+     * The format may be a String (should be supported by any formatted parser), or of the specific type,
+     * such as {@link java.time.format.DateTimeFormatter}, which may be supported by a subset of parsers only.
+     */
+    String FORMAT_CLASSIFIER = MapperManagerImpl.class.getName() + ".format";
+
+    /**
      * Shared instance of a mapper manager.
      * This instance is used by components that do not have access to a specific mapper manager.
      *
@@ -275,7 +283,7 @@ public interface MapperManager {
          * @return updated builder
          */
         public Builder useBuiltIn(boolean useBuiltIn) {
-            this.useBuiltIn = true;
+            this.useBuiltIn = useBuiltIn;
             return this;
         }
 

@@ -87,13 +87,13 @@ class BuiltInMappers implements MapperProvider {
         //time/date operations
         addStringMapper(mappers, Duration.class, BuiltInMappers::asDuration);
         addStringMapper(mappers, Period.class, BuiltInMappers::asPeriod);
+        addStringMapper(mappers, ZoneId.class, BuiltInMappers::asZoneId);
+        addStringMapper(mappers, ZoneOffset.class, BuiltInMappers::asZoneOffset);
         // time/date formatted operations
-        addStringMapper(mappers, LocalDate.class, );
+        addStringMapper(mappers, LocalDate.class, BuiltInMappers::asLocalDate);
         addStringMapper(mappers, LocalDateTime.class, BuiltInMappers::asLocalDateTime);
         addStringMapper(mappers, LocalTime.class, BuiltInMappers::asLocalTime);
         addStringMapper(mappers, ZonedDateTime.class, BuiltInMappers::asZonedDateTime);
-        addStringMapper(mappers, ZoneId.class, BuiltInMappers::asZoneId);
-        addStringMapper(mappers, ZoneOffset.class, BuiltInMappers::asZoneOffset);
         addStringMapper(mappers, Instant.class, BuiltInMappers::asInstant);
         addStringMapper(mappers, OffsetTime.class, BuiltInMappers::asOffsetTime);
         addStringMapper(mappers, OffsetDateTime.class, BuiltInMappers::asOffsetDateTime);
@@ -102,12 +102,74 @@ class BuiltInMappers implements MapperProvider {
         MAPPERS = Map.copyOf(mappers);
     }
 
+    private static YearMonth asYearMonth(String stringValue) {
+        return parseCalendarType(stringValue,
+                                 YearMonth::parse,
+                                 YearMonth::parse);
+    }
+
+    private static OffsetDateTime asOffsetDateTime(String stringValue) {
+        return parseCalendarType(stringValue,
+                                 OffsetDateTime::parse,
+                                 OffsetDateTime::parse);
+    }
+
+    private static OffsetTime asOffsetTime(String stringValue) {
+        return parseCalendarType(stringValue,
+                                 OffsetTime::parse,
+                                 OffsetTime::parse);
+    }
+
+    private static Instant asInstant(String stringValue) {
+        return Contexts.context()
+                .flatMap(it -> it.get(MapperManager.FORMAT_CLASSIFIER, DateTimeFormatter.class)
+                        .or(() -> it.get(MapperManager.FORMAT_CLASSIFIER, String.class)
+                                .map(DateTimeFormatter::ofPattern)))
+                .map(it -> it.parse(stringValue, Instant::from))
+                .orElseGet(() -> Instant.parse(stringValue));
+    }
+
+    private static ZoneOffset asZoneOffset(String stringValue) {
+        return ZoneOffset.of(stringValue);
+    }
+
+    private static ZoneId asZoneId(String stringValue) {
+        return ZoneId.of(stringValue);
+    }
+
+    private static ZonedDateTime asZonedDateTime(String stringValue) {
+        return parseCalendarType(stringValue,
+                                 ZonedDateTime::parse,
+                                 ZonedDateTime::parse);
+    }
+
+    private static LocalTime asLocalTime(String stringValue) {
+        return parseCalendarType(stringValue,
+                                 LocalTime::parse,
+                                 LocalTime::parse);
+    }
+
+    private static LocalDateTime asLocalDateTime(String stringValue) {
+        return parseCalendarType(stringValue,
+                                 LocalDateTime::parse,
+                                 LocalDateTime::parse);
+    }
+
+    private static LocalDate asLocalDate(String stringValue) {
+        return parseCalendarType(stringValue,
+                                 LocalDate::parse,
+                                 LocalDate::parse);
+    }
+
     private static <T> T parseCalendarType(String stringValue,
                                            Function<String, T> baseParser,
                                            BiFunction<String, DateTimeFormatter, T> formattedParser) {
+
         return Contexts.context()
-                .flatMap(it -> it.get(Mapper.class.getComponentType() + ".format", String.class))
-                .map(it -> formattedParser.apply(stringValue, DateTimeFormatter.ofPattern(it)))
+                .flatMap(it -> it.get(MapperManager.FORMAT_CLASSIFIER, DateTimeFormatter.class)
+                        .or(() -> it.get(MapperManager.FORMAT_CLASSIFIER, String.class)
+                                .map(DateTimeFormatter::ofPattern)))
+                .map(it -> formattedParser.apply(stringValue, it))
                 .orElseGet(() -> baseParser.apply(stringValue));
     }
 
@@ -345,7 +407,7 @@ class BuiltInMappers implements MapperProvider {
         return Optional.empty();
     }
 
-    private static final class ClassPair {
+    static final class ClassPair {
         private final Class<?> source;
         private final Class<?> target;
 

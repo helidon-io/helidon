@@ -16,6 +16,7 @@
 
 package io.helidon.common.mapper;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -39,5 +40,25 @@ class BackedValue<T> extends EmptyValue<T> {
             return new EmptyValue<>(name());
         }
         return new BackedValue<>(name(), result);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        BackedValue<?> that = (BackedValue<?>) o;
+        return Objects.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), value);
     }
 }
