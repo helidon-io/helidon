@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -378,7 +378,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          *
          * This is a mandatory parameter.
          *
-         * @param consumerSupplier
+         * @param consumerSupplier instantiated Kafka consumer
          * @return updated builder instance
          */
         public Builder<K, V> consumerSupplier(Supplier<Consumer<K, V>> consumerSupplier) {
@@ -391,7 +391,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          *
          * This is a mandatory parameter if topicPattern is empty.
          *
-         * @param topics
+         * @param topics list of topics to subscribe to
          * @return updated builder instance
          */
         public Builder<K, V> topics(List<String> topics) {
@@ -400,11 +400,11 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
         }
 
         /**
-         * The list of topics to subscribe to.
+         * The pattern for selecting multiple topics.
          *
          * This is a mandatory parameter if topics is empty.
          *
-         * @param topicPattern
+         * @param topicPattern pattern for selecting multiple topics
          * @return updated builder instance
          */
         public Builder<K, V> topicPattern(Pattern topicPattern) {
@@ -418,7 +418,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          *
          * This is a mandatory parameter.
          *
-         * @param scheduler
+         * @param scheduler scheduler that will read ad process messages
          * @return updated builder instance
          */
         public Builder<K, V> scheduler(ScheduledExecutorService scheduler) {
@@ -430,7 +430,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          * Specifies the period in milliseconds between successive scheduler executions.
          * The default value is 100 milliseconds.
          *
-         * @param periodExecutions
+         * @param periodExecutions period in milliseconds
          * @return updated builder instance
          */
         public Builder<K, V> periodExecutions(long periodExecutions) {
@@ -442,7 +442,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          * Specifies maximum time in milliseconds to block polling messages from Kafka.
          * The default value is 50 milliseconds.
          *
-         * @param pollTimeout
+         * @param pollTimeout maximum time in milliseconds to block polling
          * @return updated builder instance
          */
         public Builder<K, V> pollTimeout(long pollTimeout) {
@@ -452,16 +452,16 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
 
         /**
          * This flag defines the strategy of committing messages to Kafka.
-         * When true, the messages are committed in the moment they are polled from Kafka.
+         * When true, the messages are committed at the moment they are polled from Kafka.
          * When false, the messages are committed when {@link KafkaMessage#ack()} is invoked.
          *
-         * This value is mandatory to be specified and it must be consistent with the value enable.auto.commit
+         * This value is mandatory to be specified, and it must be consistent with the value enable.auto.commit
          * in Kafka properties. Failing to do this will result the next scenarios:
          * - For autoCommit = true and enable.auto.commit = false, messages will never be committed in Kafka.
          * - For autoCommit = false and enable.auto.commit = true, all messages will be committed and
          * {@link KafkaMessage#ack()} will have no effect.
          *
-         * @param autoCommit
+         * @param autoCommit strategy of committing
          * @return updated builder instance
          */
         public Builder<K, V> autoCommit(boolean autoCommit) {
@@ -476,7 +476,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          *
          * The default value is Long.MAX_VALUE
          *
-         * @param ackTimeout
+         * @param ackTimeout time in milliseconds
          * @return updated builder instance
          */
         public Builder<K, V> ackTimeout(long ackTimeout) {
@@ -492,7 +492,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          * The intention of this value is to fail gracefully when there are many pending commits,
          * instead of failing with OutOfMemoryError.
          *
-         * @param limitNoAck
+         * @param limitNoAck limit of messages waiting to be committed
          * @return updated builder instance
          */
         public Builder<K, V> limitNoAck(int limitNoAck) {
