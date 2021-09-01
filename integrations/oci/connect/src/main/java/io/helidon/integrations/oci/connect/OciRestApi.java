@@ -485,7 +485,6 @@ public class OciRestApi extends RestApiBase {
 
         @Override
         protected void preBuild() {
-            super.preBuild();
             if (ociConfigProvider == null) {
                 LOGGER.finest("Config provider is not configured explicitly. Config type: " + configType);
                 switch (configType) {
@@ -512,6 +511,9 @@ public class OciRestApi extends RestApiBase {
 
             // this must happen only once
             webClientSecurity();
+
+            // this method creates a client instance, must be after we set up client security
+            super.preBuild();
         }
 
         @Override
