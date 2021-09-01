@@ -158,7 +158,7 @@ public class PlainTest {
     @Test
     public void getWithLargePayloadDeferredTest() throws Exception {
         String s = SocketHttpClient.sendAndReceive("/deferred", Http.Method.GET, SocketHttpClient.longData(100_000).toString(), webServer);
-        assertThat(cutPayloadAndCheckHeadersFormat(s), is("d\nI'm deferred!\n0\nConnection: close\n\n"));
+        assertThat(cutPayloadAndCheckHeadersFormat(s), is("d\nI'm deferred!\n0\n\n"));
     }
 
     @Test
@@ -251,7 +251,7 @@ public class PlainTest {
             s.request(Http.Method.GET, SocketHttpClient.longData(100_000).toString());
 
             // assert
-            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("9\nIt works!\n0\nConnection: close\n\n"));
+            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("9\nIt works!\n0\n\n"));
             SocketHttpClient.assertConnectionIsClosed(s);
         }
     }
@@ -289,7 +289,7 @@ public class PlainTest {
             // get
             s.request(Http.Method.GET, "/deferred", SocketHttpClient.longData(100_000).toString());
             // assert
-            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("d\nI'm deferred!\n0\nConnection: close\n\n"));
+            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("d\nI'm deferred!\n0\n\n"));
             SocketHttpClient.assertConnectionIsClosed(s);
         }
     }
@@ -329,7 +329,7 @@ public class PlainTest {
             s.request(Http.Method.POST, "/unconsumed", SocketHttpClient.longData(100_000).toString());
 
             // assert
-            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("15\nPayload not consumed!\n0\nConnection: close\n\n"));
+            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("15\nPayload not consumed!\n0\n\n"));
             SocketHttpClient.assertConnectionIsClosed(s);
         }
     }
@@ -342,7 +342,7 @@ public class PlainTest {
             s.request(Http.Method.POST, "/deferred", SocketHttpClient.longData(100_000).toString());
 
             // assert
-            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("d\nI'm deferred!\n0\nConnection: close\n\n"));
+            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("d\nI'm deferred!\n0\n\n"));
             SocketHttpClient.assertConnectionIsClosed(s);
         }
     }

@@ -42,6 +42,7 @@ public class BareResponseSubscriberTckTest extends FlowSubscriberWhiteboxVerific
     public Flow.Subscriber<DataChunk> createFlowSubscriber(WhiteboxSubscriberProbe<DataChunk> probe) {
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         HttpRequest httpRequest = Mockito.mock(HttpRequest.class);
+        RequestContext requestContext = Mockito.mock(RequestContext.class);
         Channel channel = Mockito.mock(Channel.class);
         ChannelFuture channelFuture = Mockito.mock(ChannelFuture.class);
 
@@ -52,6 +53,7 @@ public class BareResponseSubscriberTckTest extends FlowSubscriberWhiteboxVerific
 
         return new BareResponseImpl(ctx,
                 httpRequest,
+                requestContext,
                 () -> true,
                 () -> false,
                 CompletableFuture.completedFuture(null),

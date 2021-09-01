@@ -88,7 +88,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private long actualPayloadSize;
     private boolean ignorePayload;
 
-    private CompletableFuture<ChannelFutureListener> requestDrained;
+    private CompletableFuture<ChannelFutureListener> requestEntityAnalyzed;
     private CompletableFuture<?> prevRequestFuture;
     private boolean lastContent;
     private boolean hadContentAlready;
@@ -243,11 +243,16 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 prevRequestFuture = null;
             }
 
-            requestDrained = new CompletableFuture<>();
+            requestEntityAnalyzed = new CompletableFuture<>();
+
+            //If the keep alive is not set, we know we will be closing the connection
+            if (!HttpUtil.isKeepAlive(requestContext.request())) {
+                this.requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
+            }
             // Create response and handler for its completion
             BareResponseImpl bareResponse =
-                    new BareResponseImpl(ctx, request, publisher::isCompleted, publisher::hasRequests,
-                                         prevRequestFuture, requestDrained, requestId);
+                    new BareResponseImpl(ctx, request, requestContext, publisher::isCompleted, publisher::hasRequests,
+                                         prevRequestFuture, requestEntityAnalyzed, requestId);
             prevRequestFuture = new CompletableFuture<>();
             CompletableFuture<?> thisResp = prevRequestFuture;
             bareResponse.whenCompleted()
@@ -312,7 +317,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 if (HttpMethod.TRACE.equals(method)) {
                     // regarding the TRACE method, we're failing when payload is present only when the payload is actually
                     // consumed; if not, the request might proceed when payload is small enough
-                    requestDrained.complete(ChannelFutureListener.CLOSE_ON_FAILURE);
+                    requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
                     LOGGER.finer(() -> log("Closing connection illegal payload; method: ", ctx, method));
                     throw new BadRequestException("It is illegal to send a payload with http method: " + method);
                 }
@@ -348,18 +353,22 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     requestContext.complete();
                     requestContext = null; // just to be sure that current http req/res session doesn't interfere with other ones
                 }
-                requestDrained.complete(ChannelFutureListener.CLOSE_ON_FAILURE);
+                requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE_ON_FAILURE);
             } else if (!content.isReadable()) {
                 // this is here to handle the case when the content is not readable but we didn't
                 // exceptionally complete the publisher and close the connection
                 throw new IllegalStateException("It is not expected to not have readable content.");
-            } else if (!requestContext.hasRequests() && HttpUtil.isKeepAlive(requestContext.request())) {
+            } else if (!requestContext.hasRequests()
+                    && HttpUtil.isKeepAlive(requestContext.request())
+                    && !requestEntityAnalyzed.isDone()) {
                 if (hadContentAlready) {
-                    requestDrained.complete(ChannelFutureListener.CLOSE);
+                    LOGGER.finest(() -> "More then one unhandled content present. Closing the connection.");
+                    requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
                 } else {
-                    //We are draining the entity, but we cannot be sure if connection should be closed or not.
+                    //We are checking the unhandled entity, but we cannot be sure if connection should be closed or not.
                     //Next content has to be checked if it is last chunk. If not close connection.
                     hadContentAlready = true;
+                    LOGGER.finest(() -> "Requesting the next chunk to determine if the connection should be closed.");
                     ctx.channel().read();
                 }
             }

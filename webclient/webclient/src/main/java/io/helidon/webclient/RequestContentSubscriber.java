@@ -37,6 +37,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
+import static io.helidon.webclient.WebClientRequestBuilderImpl.RECEIVED;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST_ID;
 
@@ -155,12 +156,14 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
                 .addListener(future -> {
                     if (future.isSuccess()) {
                         sent.complete(serviceRequest);
+                        System.out.println("Client: Full entity sent, Thread: " + Thread.currentThread().getName());
                         LOGGER.finest(() -> "(client reqID: " + requestId + ") Request sent");
                     }
                 });
     }
 
     private void sendData(DataChunk data) {
+//        System.out.println("Sending data");
         LOGGER.finest(() -> "(client reqID: " + requestId + ") Sending data chunk");
         DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
         channel.writeAndFlush(httpContent)
@@ -176,7 +179,12 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
     private GenericFutureListener<Future<? super Void>> completeOnFailureListener(String message) {
         return future -> {
             if (!future.isSuccess()) {
-                completeRequestFuture(new IllegalStateException(message, future.cause()));
+                Throwable cause = future.cause();
+                if (channel.attr(RECEIVED).get().isDone() || !channel.isActive()) {
+                    completeRequestFuture(new IllegalStateException("(client reqID: " + requestId + ") Connection reset by the host", cause));
+                } else {
+                    completeRequestFuture(new IllegalStateException(message, cause));
+                }
             }
         };
     }
