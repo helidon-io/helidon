@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.webclient;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
@@ -32,18 +33,18 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     private final Http.RequestMethod method;
     private final Http.Version version;
     private final Map<String, String> parameters;
-    private final Single<WebClientServiceRequest> sent;
-    private final Single<WebClientServiceResponse> responseReceived;
-    private final Single<WebClientServiceResponse> complete;
+    private final CompletableFuture<WebClientServiceRequest> sent;
+    private final CompletableFuture<WebClientServiceResponse> responseReceived;
+    private final CompletableFuture<WebClientServiceResponse> complete;
     private final WebClientRequestBuilderImpl requestBuilder;
     private String schema;
     private String host;
     private int port;
 
     WebClientServiceRequestImpl(WebClientRequestBuilderImpl requestBuilder,
-                                Single<WebClientServiceRequest> sent,
-                                Single<WebClientServiceResponse> responseReceived,
-                                Single<WebClientServiceResponse> complete) {
+                                CompletableFuture<WebClientServiceRequest> sent,
+                                CompletableFuture<WebClientServiceResponse> responseReceived,
+                                CompletableFuture<WebClientServiceResponse> complete) {
         this.headers = requestBuilder.headers();
         this.method = requestBuilder.method();
         this.version = requestBuilder.httpVersion();
@@ -80,17 +81,17 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
 
     @Override
     public Single<WebClientServiceRequest> whenSent() {
-        return sent;
+        return Single.create(sent);
     }
 
     @Override
     public Single<WebClientServiceResponse> whenResponseReceived() {
-        return responseReceived;
+        return Single.create(responseReceived);
     }
 
     @Override
     public Single<WebClientServiceResponse> whenComplete() {
-        return complete;
+        return Single.create(complete);
     }
 
     @Override

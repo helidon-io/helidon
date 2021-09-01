@@ -59,7 +59,10 @@ mp.messaging.incoming.from-connector-channel.connector: example-connector
 [source,java]
 .Example producing to connector:
 ----
+Config config = Config.create();
+
 Messaging.builder()
+         .config(config)
          .connector(new ExampleConnector())
          .publisher(Channel.create("to-connector-channel"),
                 ReactiveStreams.of("fee", "fie")
@@ -178,7 +181,10 @@ mp.messaging.connector.example-connector.second-test-prop: bar<3>
 [source,java]
 .Example consuming from connector:
 ----
+Config config = Config.create();
+
 Messaging.builder()
+        .config(config)
         .connector(new ExampleConnector())
         .listener(Channel.create("from-connector-channel"),
                     s -> System.out.println("Consuming: " + s))

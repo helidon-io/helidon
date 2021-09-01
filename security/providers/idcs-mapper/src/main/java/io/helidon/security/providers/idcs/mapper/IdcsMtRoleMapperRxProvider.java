@@ -440,7 +440,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
 
         /**
          * Creates endpoints from provided OIDC configuration using default URIs.
-         * <p>
+         * <br>
          * <ul>
          * <li>For Asserter endpoint: {@code /admin/v1/Asserter}</li>
          * <li>For Token endpoint: {@code /oauth2/v1/token?IDCS_CLIENT_TENANT=}</li>

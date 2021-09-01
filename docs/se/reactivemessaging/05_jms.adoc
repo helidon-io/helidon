@@ -123,11 +123,14 @@ mp.messaging:
 [source,java]
 .Example of consuming from JMS:
 ----
+Config config = Config.create();
+
 Channel<String> fromJms = Channel.create("from-jms");
 
 JmsConnector jmsConnector = JmsConnector.create();<1>
 
 Messaging messaging = Messaging.builder()
+        .config(config)
         .connector(jmsConnector)
         .listener(fromJms, payload -> {
             System.out.println("Jms says: " + payload);
@@ -140,11 +143,14 @@ Messaging messaging = Messaging.builder()
 [source,java]
 .Example of producing to JMS:
 ----
+Config config = Config.create();
+
 Channel<String> toJms = Channel.create("to-jms");
 
 JmsConnector jmsConnector = JmsConnector.create();<1>
 
 messaging = Messaging.builder()
+        .config(config)
         .publisher(toJms, Multi.just("test1", "test2").map(Message::of))
         .connector(jmsConnector)
         .build()

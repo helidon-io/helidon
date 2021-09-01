@@ -259,6 +259,7 @@ public interface AnnotationAnalyzer {
              *
              * @param theClass class to register the instance by
              * @param anInstance instance to register
+             * @param <T> type of the instance
              * @return updated builder instance
              */
             public <T> Builder register(Class<? super T> theClass, T anInstance) {

@@ -457,6 +457,17 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
         return new MultiOnCompleteResumeWith<>(Multi.create(this), publisher);
     }
 
+
+    /**
+     * Resume stream with supplied single if onComplete signal is intercepted.
+     *
+     * @param onComplete function for supplying new Single with optional upstream value as a parameter
+     * @return Single
+     */
+    default Single<T> onCompleteResumeWithSingle(Function<Optional<T>, ? extends Single<? extends T>> onComplete) {
+        return new SingleOnCompleteResumeWith<>(this, onComplete);
+    }
+
     /**
      * Executes given {@link java.lang.Runnable} when any of signals onComplete, onCancel or onError is received.
      *
