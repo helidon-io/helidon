@@ -181,7 +181,8 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
             if (!future.isSuccess()) {
                 Throwable cause = future.cause();
                 if (channel.attr(RECEIVED).get().isDone() || !channel.isActive()) {
-                    completeRequestFuture(new IllegalStateException("(client reqID: " + requestId + ") Connection reset by the host", cause));
+                    completeRequestFuture(new IllegalStateException("(client reqID: " + requestId + ") "
+                                                                            + "Connection reset by the host", cause));
                 } else {
                     completeRequestFuture(new IllegalStateException(message, cause));
                 }
