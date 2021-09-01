@@ -40,5 +40,6 @@
         <module>vault</module>
         <module>vault-health</module>
         <module>cdi</module>
+        <module>atp</module>
     </modules>
 </project>
