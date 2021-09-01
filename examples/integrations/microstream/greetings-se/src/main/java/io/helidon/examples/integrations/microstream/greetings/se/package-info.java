@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
- /**
-  * An example that uses Microstream to persist a log entry for every greeting.
-  */
+/**
+ * An example that uses Microstream to persist a log entry for every greeting.
+ */
 package io.helidon.examples.integrations.microstream.greetings.se;

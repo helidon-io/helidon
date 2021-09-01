@@ -70,7 +70,7 @@ public class GreetingService implements Service {
         greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
 
         mctx = new GreetingServiceMicrostreamContext(EmbeddedStorageManagerBuilder.create(config.get("microstream")));
-        mctx.start().thenAccept(st-> {
+        mctx.start().thenAccept(st -> {
             mctx.initRootElement();
         });
     }
@@ -82,22 +82,22 @@ public class GreetingService implements Service {
     @Override
     public void update(Routing.Rules rules) {
         rules
-        .get("/", this::getDefaultMessageHandler)
-        .get("/logs", this::getLog)
-        .get("/{name}", this::getMessageHandler)
-        .put("/greeting", this::updateGreetingHandler);
+                .get("/", this::getDefaultMessageHandler)
+                .get("/logs", this::getLog)
+                .get("/{name}", this::getMessageHandler)
+                .put("/greeting", this::updateGreetingHandler);
     }
 
     private void getLog(ServerRequest request,
-            ServerResponse response) {
+                        ServerResponse response) {
 
         mctx.getLogs().thenAccept((logs) -> {
             JsonArrayBuilder arrayBuilder = JSON.createArrayBuilder();
             logs.forEach((entry) -> arrayBuilder.add(
                     JSON.createObjectBuilder()
-                    .add("name", entry.getName())
-                    .add("time", entry.getDateTime().toString())
-                    ));
+                            .add("name", entry.getName())
+                            .add("time", entry.getDateTime().toString())
+            ));
             response.send(arrayBuilder.build());
         }).exceptionally(e -> processErrors(e, request, response));
     }
@@ -108,7 +108,7 @@ public class GreetingService implements Service {
      * @param response the server response
      */
     private void getDefaultMessageHandler(ServerRequest request,
-            ServerResponse response) {
+                                          ServerResponse response) {
         sendResponse(response, "World");
     }
 
@@ -118,7 +118,7 @@ public class GreetingService implements Service {
      * @param response the server response
      */
     private void getMessageHandler(ServerRequest request,
-            ServerResponse response) {
+                                   ServerResponse response) {
         String name = request.path().param("name");
         sendResponse(response, name);
     }
@@ -138,14 +138,14 @@ public class GreetingService implements Service {
 
         ex.printStackTrace();
 
-        if (ex.getCause() instanceof JsonException){
+        if (ex.getCause() instanceof JsonException) {
 
             LOGGER.log(Level.FINE, "Invalid JSON", ex);
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                     .add("error", "Invalid JSON")
                     .build();
             response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
-        }  else {
+        } else {
 
             LOGGER.log(Level.FINE, "Internal error", ex);
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
@@ -164,7 +164,7 @@ public class GreetingService implements Service {
                     .add("error", "No greeting provided")
                     .build();
             response.status(Http.Status.BAD_REQUEST_400)
-            .send(jsonErrorObject);
+                    .send(jsonErrorObject);
             return;
         }
 
@@ -178,10 +178,10 @@ public class GreetingService implements Service {
      * @param response the server response
      */
     private void updateGreetingHandler(ServerRequest request,
-            ServerResponse response) {
+                                       ServerResponse response) {
         request.content().as(JsonObject.class)
-        .thenAccept(jo -> updateGreetingFromJson(jo, response))
-        .exceptionally(ex -> processErrors(ex, request, response));
+                .thenAccept(jo -> updateGreetingFromJson(jo, response))
+                .exceptionally(ex -> processErrors(ex, request, response));
     }
 
 }

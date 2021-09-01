@@ -14,48 +14,41 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.microstream.cdi;
+package io.helidon.examples.integrations.microstream.greetings.mp;
 
 import java.nio.file.Path;
 
 import javax.inject.Inject;
+import javax.json.JsonObject;
+import javax.ws.rs.client.WebTarget;
 
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
-import one.microstream.storage.embedded.types.EmbeddedStorageManager;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @HelidonTest
-class MicrostreamExtensionTest {
+class MicrostreamExampleGreetingsMpTest {
+
+    @Inject
+    private WebTarget webTarget;
 
     @TempDir
     static Path tempDir;
 
-    @Inject
-    @MicrostreamStorage(configNode = "one.microstream.storage.my_storage")
-    EmbeddedStorageManager storage;
-
     @BeforeAll
     static void beforeAll() {
-        System.setProperty("one.microstream.storage.my_storage.storage-directory", tempDir.toString());
-    }
-
-    @AfterAll
-    static void afterAll() {
-        System.clearProperty("one.microstream.storage.my_storage.storage-directory");
+        System.setProperty("one.microstream.storage.greetings.storage-directory", tempDir.toString());
     }
 
     @Test
-    void testInjectedInstances() {
-        assertThat(storage, notNullValue());
-        assertThat(storage.isRunning(), equalTo(true));
+    void testGreeting() {
+        JsonObject response = webTarget.path("/greet").request().get(JsonObject.class);
+
+        assertEquals("Hello World!", response.getString("message"), "response should be 'Hello World' ");
     }
 
 }

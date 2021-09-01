@@ -45,8 +45,9 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  */
 public class EmbeddedStorageManagerExtension implements Extension {
 
-    private Config config;
     private final Map<Set<Annotation>, Object> embeddedStorageBeans;
+
+    private Config config;
 
     /**
      * Creates a new {@link EmbeddedStorageManagerExtension}.
@@ -86,13 +87,13 @@ public class EmbeddedStorageManagerExtension implements Extension {
                         assert qualifiers != null;
                         assert !qualifiers.isEmpty();
                         event.<EmbeddedStorageManager>addBean().scope(ApplicationScoped.class)
-                        .addTransitiveTypeClosure(EmbeddedStorageManager.class)
-                        .beanClass(EmbeddedStorageManager.class)
-                        .qualifiers(qualifiers)
-                        .createWith(cc -> {
-                            return EmbeddedStorageManagerBuilder.create(getConfigNode(qualifiers)).start();
-                        })
-                        .destroyWith((storageManager, context) -> storageManager.shutdown());
+                                .addTransitiveTypeClosure(EmbeddedStorageManager.class)
+                                .beanClass(EmbeddedStorageManager.class)
+                                .qualifiers(qualifiers)
+                                .createWith(cc -> {
+                                    return EmbeddedStorageManagerBuilder.create(getConfigNode(qualifiers)).start();
+                                })
+                                .destroyWith((storageManager, context) -> storageManager.shutdown());
                     }
                 }
             }

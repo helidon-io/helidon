@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
- /**
-  * An example that uses Microstream to persist the greetings.
-  */
+/**
+ * An example that uses Microstream to persist the greetings.
+ */
 package io.helidon.examples.integrations.microstream.greetings.mp;

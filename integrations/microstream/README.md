@@ -1,12 +1,15 @@
-#Microstream integration into Helidon
+# Microstream integration into Helidon
+
 This projects add [Microstream](https://microstream.one) support to Helidon.
 
 The offical [Microstream documentation](https://manual.docs.microstream.one/) can be found here.
 
-##helidon-integrations-microstream
+## helidon-integrations-microstream
+
 Adds basic support for Microstream
 
-###Prerequisites
+### Prerequisites
+
 Use the following maven dependency
 
 ```
@@ -16,7 +19,8 @@ Use the following maven dependency
 </dependency>
 ```
 
-###API
+### API
+
 Use the EmbeddedStorageManagerBuilder to create a Microstream instance:
 
 ```
@@ -25,7 +29,7 @@ EmbeddedStorageManager embeddedStorageManager = EmbeddedStorageManagerBuilder
 		.build();
 ```
 
-Configuration can either be done by the builders methods or by supplying a helidon configuration node 
+Configuration can either be done by the builders methods or by supplying a helidon configuration node
 
 ```
 Config config = Config.create();
@@ -36,9 +40,10 @@ EmbeddedStorageManager embeddedStorageManager = EmbeddedStorageManagerBuilder
 	.build();
 ```
 
-for a list of all possible properties see [Microstream configuration properties](https://manual.docs.microstream.one/data-store/configuration/properties)
+for a list of all possible properties
+see [Microstream configuration properties](https://manual.docs.microstream.one/data-store/configuration/properties)
 
-###CDI extension for Microstream
+### CDI extension for Microstream
 
 the example below shows how to create a Microstream instance using a provided configuration.
 
@@ -52,11 +57,12 @@ public YourConstructor(@MicrostreamStorage(configNode = "one.microstream.storage
 }
 ```
 
+## helidon-integrations-microstream-cache
 
-##helidon-integrations-microstream-cache
 Adds basic support for the Microstream JCache implementation
 
-###Prerequisites
+### Prerequisites
+
 Use the following maven dependency
 
 ```
@@ -66,7 +72,8 @@ Use the following maven dependency
 </dependency>
 ```
 
-###API
+### API
+
 Use the CacheBuilder to create Microstream JCache instance:
 
 Create a CacheConfiguration first
@@ -75,13 +82,14 @@ Create a CacheConfiguration first
 CacheConfiguration<Integer, String> cacheConfig = MicrostreamCacheConfigurationBuilder
 	.builder(config.get("cache"), Integer.class, String.class).build();
 ```
+
 Then build the cache
 
 ```
 Cache<Integer, String> cache = CacheBuilder.builder(cacheConfig, Integer.class, String.class).build("myCache");
 ```
 
-Configuration can either be done by the MicrostreamCacheConfigurationBuilder or by supplying a helidon configuration node 
+Configuration can either be done by the MicrostreamCacheConfigurationBuilder or by supplying a helidon configuration node
 
 ```
 Config config = Config.create();
@@ -90,9 +98,11 @@ Cache<Integer, String> cache = CacheBuilder.create("myCache", config, Integer.cl
 
 ```
 
-for a list of all possible properties see [Microstream Cache configuration properties](https://manual.docs.microstream.one/cache/configuration/properties)
+for a list of all possible properties
+see [Microstream Cache configuration properties](https://manual.docs.microstream.one/cache/configuration/properties)
 
-###CDI extention for Microstream
+### CDI extention for Microstream
+
 the example below shows how to create a Microstream-Cache instance using a provided configuration.
 
 ```
@@ -104,10 +114,12 @@ public YourConstructor(@MicrostreamCache(configNode = "one.microstream.cache", n
 }
 ```
 
-##helidon-integrations-microstream-health
-This module provides helpers to create basic health checks for Microstream 
+## helidon-integrations-microstream-health
 
-###Prerequisites
+This module provides helpers to create basic health checks for Microstream
+
+### Prerequisites
+
 Use the following maven dependency
 
 ```
@@ -117,13 +129,16 @@ Use the following maven dependency
 </dependency>
 ```
 
-###Usage
+### Usage
+
 Register an instance of MicrostreamHealthCheck to your server to provide a HealtCheck for a specific microstream instance.
 
-##helidon-integrations-microstream-metrics
-This module provides helpers to create a set of default metrics for Microstream 
+## helidon-integrations-microstream-metrics
 
-###Prerequisites
+This module provides helpers to create a set of default metrics for Microstream
+
+### Prerequisites
+
 Use the following maven dependency
 
 ```
@@ -133,5 +148,6 @@ Use the following maven dependency
 </dependency>
 ```
 
-###Usage
+### Usage
+
 The MicrostreamMetricsSupport class provides a set of default metrics

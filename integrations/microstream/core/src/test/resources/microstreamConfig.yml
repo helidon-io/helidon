@@ -15,9 +15,9 @@
 #
 
 openapi:
-    web-context: /otheropenapi
-    port: 0
-    
+  web-context: /otheropenapi
+  port: 0
+
 microstream:
-    channel-count           : 4
-    housekeeping-interval   : 2000ms
+  channel-count: 4
+  housekeeping-interval: 2000ms

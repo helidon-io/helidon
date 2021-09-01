@@ -36,6 +36,6 @@ module io.helidon.integrations.microstream.cdi {
     requires microstream.storage.embedded;
 
     provides javax.enterprise.inject.spi.Extension
-    with io.helidon.integrations.microstream.cdi.EmbeddedStorageManagerExtension,
-    io.helidon.integrations.microstream.cdi.CacheExtension;
+            with io.helidon.integrations.microstream.cdi.EmbeddedStorageManagerExtension,
+                    io.helidon.integrations.microstream.cdi.CacheExtension;
 }

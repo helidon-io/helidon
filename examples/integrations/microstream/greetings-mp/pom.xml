@@ -17,30 +17,30 @@
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
         <version>2.4.0-SNAPSHOT</version>
         <relativePath>../../../../applications/mp/pom.xml</relativePath>
     </parent>
 
-	<artifactId>helidon-examples-integrations-microstream-greetings-mp</artifactId>
-	<name>Helidon Microstream Integration Example Greetings mp</name>
+    <artifactId>helidon-examples-integrations-microstream-greetings-mp</artifactId>
+    <name>Helidon Microstream Integration Example Greetings mp</name>
 
-	<dependencies>
-		<dependency>
-			<groupId>io.helidon.microprofile.bundles</groupId>
-			<artifactId>helidon-microprofile</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.helidon.integrations.microstream</groupId>
-			<artifactId>helidon-integrations-microstream-cdi</artifactId>
-		</dependency>
-		
-		<!-- Test dependencies -->
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.microstream</groupId>
+            <artifactId>helidon-integrations-microstream-cdi</artifactId>
+        </dependency>
+
+        <!-- Test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -55,10 +55,10 @@
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-microprofile-tests-junit5</artifactId>
             <scope>test</scope>
-        </dependency>		
-	</dependencies>
+        </dependency>
+    </dependencies>
 
-	<build>
+    <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -80,5 +80,5 @@
             </plugin>
         </plugins>
     </build>
-    
+
 </project>
