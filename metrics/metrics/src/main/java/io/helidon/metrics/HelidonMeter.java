@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -311,5 +311,15 @@ final class HelidonMeter extends MetricImpl implements Meter {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), delegate);
+    }
+
+    @Override
+    protected String toStringDetails() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(", count='").append(getCount()).append('\'');
+        sb.append(", fifteenMinuteRate='").append(getFifteenMinuteRate()).append('\'');
+        sb.append(", fiveMinuteRate='").append(getFiveMinuteRate()).append('\'');
+        sb.append(", meanRate='").append(getMeanRate()).append('\'');
+        return sb.toString();
     }
 }
