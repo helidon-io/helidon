@@ -35,9 +35,10 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * <p>
  * Support for JEP 290 - deserialization filtering.
  * Configuration options mentioned below will differ in Helidon 3.0.0, the following table lists the options:
- * <p>
+ * </p>
  * <table class="config">
  * <caption>Configuration Options</caption>
  * <tr>
@@ -73,13 +74,14 @@ import java.util.stream.Collectors;
  * As an alternative, a file {@link #PROPERTY_FILE} can be created on the classpath with the following content, to
  * configure filter for a specific library. Do not add a global reject to these patterns!:
  * {@code pattern=oracle.sql.converter.*}
+ * </p>
  * <h3>Deserialization tracing</h3>
  * A tracing filter can be configured using system property {@value #PROP_TRACE} to log information
  * messages for each deserialization request.
  * <p>
  * To discover class patterns needed, set "no config" and "wrong config" actions to warn or ignore, and configure {@code basic}
  * tracing.
- * <p>
+ * </p>
  * Options are:
  * <ul>
  *     <li>{@code none} to disable tracing (this is the default)</li>

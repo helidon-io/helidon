@@ -89,8 +89,6 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
     static class HelidonInjectionManager implements InjectionManager {
         private static final Logger LOGGER = Logger.getLogger(HelidonInjectionManager.class.getName());
 
-        private Set<Class<?>> classes;
-        private Set<Object> singletons;
         private final ResourceConfig resourceConfig;
         private final InjectionManager shared;
         private final InjectionManager forApplication;
@@ -261,33 +259,23 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         }
 
         /**
-         * Calls {@code getClasses} method and caches the result.
+         * Calls {@code getClasses} method in resource config.
          *
          * @return set of classes returned from {@code Application} object.
          */
         private Set<Class<?>> getClasses() {
-            if (classes == null) {
-                Application application = resourceConfig.getApplication();
-                if (application != null) {
-                    classes = application.getClasses();
-                }
-            }
-            return classes != null ? classes : Collections.emptySet();
+            Application application = resourceConfig.getApplication();
+            return application != null ? resourceConfig.getClasses() : Collections.emptySet();
         }
 
         /**
-         * Calls {@code getSingletons} method and caches the result.
+         * Calls {@code getSingletons} method in resource config.
          *
          * @return set of singletons returned from {@code Application} object.
          */
         private Set<Object> getSingletons() {
-            if (singletons == null) {
-                Application application = resourceConfig.getApplication();
-                if (application != null) {
-                    singletons = application.getSingletons();
-                }
-            }
-            return singletons != null ? singletons : Collections.emptySet();
+            Application application = resourceConfig.getApplication();
+            return application != null ? resourceConfig.getSingletons() : Collections.emptySet();
         }
 
         /**

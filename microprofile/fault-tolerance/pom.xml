@@ -93,6 +93,14 @@
             <groupId>org.glassfish.jersey.ext.cdi</groupId>
             <artifactId>jersey-weld2-se</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.jboss.weld</groupId>
+            <artifactId>weld-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.weld</groupId>
+            <artifactId>weld-spi</artifactId>
+        </dependency>
         <!-- To keep HK2 from complaining when run with Java9+ -->
         <dependency>
             <groupId>jakarta.activation</groupId>

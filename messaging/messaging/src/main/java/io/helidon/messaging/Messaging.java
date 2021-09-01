@@ -354,7 +354,7 @@ public interface Messaging {
          */
         public Messaging build() {
             if (messaging.getConfig() == null) {
-                messaging.setConfig(Config.create());
+                messaging.setConfig(Config.empty());
             }
             return messaging;
         }

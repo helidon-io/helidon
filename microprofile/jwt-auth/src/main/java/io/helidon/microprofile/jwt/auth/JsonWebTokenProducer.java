@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,11 @@ import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
 import javax.ws.rs.core.Context;
 
+import io.helidon.security.Principal;
 import io.helidon.security.SecurityContext;
+import io.helidon.security.Subject;
+import io.helidon.security.jwt.SignedJwt;
+import io.helidon.security.providers.common.TokenCredential;
 
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
@@ -34,9 +38,20 @@ class JsonWebTokenProducer {
 
     @Produces
     public JsonWebToken produceToken() {
-        return securityContext.userPrincipal()
-                .map(JsonWebToken.class::cast)
-                .orElse(null);
+        return securityContext.user()
+                .map(this::toJsonWebToken)
+                .orElseGet(JsonWebTokenImpl::empty);
+    }
+
+    private JsonWebTokenImpl toJsonWebToken(Subject subject) {
+        Principal principal = subject.principal();
+        if (principal instanceof JsonWebTokenImpl) {
+            return (JsonWebTokenImpl) principal;
+        }
+        return subject.publicCredential(TokenCredential.class)
+                .flatMap(it -> it.getTokenInstance(SignedJwt.class))
+                .map(JsonWebTokenImpl::create)
+                .orElseGet(JsonWebTokenImpl::empty);
     }
 
     @Produces
