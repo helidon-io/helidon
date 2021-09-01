@@ -156,14 +156,12 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
                 .addListener(future -> {
                     if (future.isSuccess()) {
                         sent.complete(serviceRequest);
-                        System.out.println("Client: Full entity sent, Thread: " + Thread.currentThread().getName());
                         LOGGER.finest(() -> "(client reqID: " + requestId + ") Request sent");
                     }
                 });
     }
 
     private void sendData(DataChunk data) {
-//        System.out.println("Sending data");
         LOGGER.finest(() -> "(client reqID: " + requestId + ") Sending data chunk");
         DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
         channel.writeAndFlush(httpContent)
