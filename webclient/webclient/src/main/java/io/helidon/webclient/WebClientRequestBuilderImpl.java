@@ -95,6 +95,11 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     static final AttributeKey<ConnectionIdent> CONNECTION_IDENT = AttributeKey.valueOf("connectionIdent");
     static final AttributeKey<Long> REQUEST_ID = AttributeKey.valueOf("requestID");
 
+    /**
+     * Whether the channel will be closed and keep-alive caching should not be applied.
+     */
+    static final AttributeKey<Boolean> WILL_CLOSE = AttributeKey.valueOf("willClose");
+
     private static final AtomicLong REQUEST_NUMBER = new AtomicLong(0);
     private static final String DEFAULT_TRANSPORT_PROTOCOL = "http";
     private static final Map<String, Integer> DEFAULT_SUPPORTED_PROTOCOLS = new HashMap<>();
@@ -524,13 +529,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         CompletableFuture<WebClientServiceRequest> sent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> responseReceived = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> complete = new CompletableFuture<>();
-        Single<WebClientServiceRequest> singleSent = Single.create(sent);
-        Single<WebClientServiceResponse> singleResponseReceived = Single.create(responseReceived);
-        Single<WebClientServiceResponse> singleComplete = Single.create(complete);
-        WebClientServiceRequest completedRequest = new WebClientServiceRequestImpl(this,
-                                                                                   singleSent,
-                                                                                   singleResponseReceived,
-                                                                                   singleComplete);
+        WebClientServiceRequest completedRequest = new WebClientServiceRequestImpl(this, sent, responseReceived, complete);
         CompletionStage<WebClientServiceRequest> rcs = CompletableFuture.completedFuture(completedRequest);
 
         for (WebClientService service : services) {
@@ -589,6 +588,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                 channelFuture.channel().attr(RESPONSE_RECEIVED).set(false);
                 channelFuture.channel().attr(RECEIVED).set(responseReceived);
                 channelFuture.channel().attr(COMPLETED).set(complete);
+                channelFuture.channel().attr(WILL_CLOSE).set(!keepAlive);
                 channelFuture.channel().attr(RESULT).set(result);
                 channelFuture.channel().attr(REQUEST_ID).set(requestId);
                 Throwable cause = future.cause();
