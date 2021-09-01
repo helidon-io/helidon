@@ -46,8 +46,9 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  */
 public class CacheExtension implements Extension {
 
+    private final Set<Descriptor> cacheBeans;
+
     private Config config;
-    private Set<Descriptor> cacheBeans;
 
     /**
      * Creates a new {@link CacheExtension}.
@@ -96,15 +97,15 @@ public class CacheExtension implements Extension {
                     String name = getName(qualifiers);
 
                     event.<Cache<?, ?>>addBean()
-                    .qualifiers(qualifiers)
-                    .scope(ApplicationScoped.class)
-                    .addTransitiveTypeClosure(Cache.class)
-                    .addTypes(types)
-                    .createWith(cc -> {
-                        return CacheBuilder.create(name, getConfigNode(qualifiers), keyType.rawType(),
-                                valueType.rawType());
-                    })
-                    .destroyWith((cache, context) -> cache.close());
+                            .qualifiers(qualifiers)
+                            .scope(ApplicationScoped.class)
+                            .addTransitiveTypeClosure(Cache.class)
+                            .addTypes(types)
+                            .createWith(cc -> {
+                                return CacheBuilder.create(name, getConfigNode(qualifiers), keyType.rawType(),
+                                                           valueType.rawType());
+                            })
+                            .destroyWith((cache, context) -> cache.close());
                 }
             }
         }
@@ -132,8 +133,7 @@ public class CacheExtension implements Extension {
         Optional<Annotation> optAnnotation = qualifiers.stream().filter(e -> e instanceof MicrostreamCache).findFirst();
         if (optAnnotation.isPresent()) {
             MicrostreamCache annotation = (MicrostreamCache) optAnnotation.get();
-            String name = annotation.name();
-            return name;
+            return annotation.name();
         }
         return null;
     }

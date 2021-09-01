@@ -37,8 +37,8 @@ import one.microstream.storage.embedded.types.EmbeddedStorageManager;
  */
 public class MicrostreamSingleThreadedExecutionContext {
 
-    private EmbeddedStorageManager storage;
-    private ExecutorService executor;
+    private final EmbeddedStorageManager storage;
+    private final ExecutorService executor;
 
     /**
      * Creates a MicrostreamSingleThreadedExecutionContext.
@@ -46,9 +46,8 @@ public class MicrostreamSingleThreadedExecutionContext {
      * @param storageManager the used EmbeddedStorageManager.
      */
     public MicrostreamSingleThreadedExecutionContext(EmbeddedStorageManager storageManager) {
-        super();
         this.storage = storageManager;
-        executor = Executors.newSingleThreadExecutor();
+        this.executor = Executors.newSingleThreadExecutor();
     }
 
     /**
@@ -65,7 +64,7 @@ public class MicrostreamSingleThreadedExecutionContext {
      *
      * @return the used ExecutorService.
      */
-    public  ExecutorService executor() {
+    public ExecutorService executor() {
         return executor;
     }
 
@@ -76,7 +75,7 @@ public class MicrostreamSingleThreadedExecutionContext {
      */
     public Single<EmbeddedStorageManager> start() {
         CompletableFuture<EmbeddedStorageManager> completableFuture = CompletableFuture.supplyAsync(
-            ()->storage.start(), executor);
+                storage::start, executor);
 
         return Single.create(completableFuture);
     }
@@ -88,12 +87,12 @@ public class MicrostreamSingleThreadedExecutionContext {
      */
     public Single<EmbeddedStorageManager> shutdown() {
         CompletableFuture<EmbeddedStorageManager> completableFuture = CompletableFuture.supplyAsync(
-            ()->{
-                storage.shutdown();
-                LazyReferenceManager.get().stop();
-                executor.shutdown();
-                return storage;
-            }, executor);
+                () -> {
+                    storage.shutdown();
+                    LazyReferenceManager.get().stop();
+                    executor.shutdown();
+                    return storage;
+                }, executor);
 
         return Single.create(completableFuture);
     }
@@ -101,14 +100,15 @@ public class MicrostreamSingleThreadedExecutionContext {
     /**
      * Return the persistent object graph's root object.
      *
-     * @param <T>
+     * @param <T> type of the root object
      * @return a Single containing the graph's root object casted to <T>
      */
     public <T> Single<T> root() {
         @SuppressWarnings("unchecked")
-        CompletableFuture<T> completableFuture = CompletableFuture.supplyAsync(()->{
-            return (T) storage.root(); }, executor);
-        return (Single<T>) Single.create(completableFuture);
+        CompletableFuture<T> completableFuture = CompletableFuture.supplyAsync(() -> {
+            return (T) storage.root();
+        }, executor);
+        return Single.create(completableFuture);
     }
 
     /**
@@ -118,8 +118,9 @@ public class MicrostreamSingleThreadedExecutionContext {
      * @return Single containing the new root object
      */
     public Single<Object> setRoot(Object object) {
-        CompletableFuture<Object> completableFuture = CompletableFuture.supplyAsync(()->{
-            return storage.setRoot(object); }, executor);
+        CompletableFuture<Object> completableFuture = CompletableFuture.supplyAsync(() -> {
+            return storage.setRoot(object);
+        }, executor);
         return Single.create(completableFuture);
     }
 
@@ -129,8 +130,7 @@ public class MicrostreamSingleThreadedExecutionContext {
      * @return Single containing the root instance's objectId.
      */
     public Single<Long> storeRoot() {
-        CompletableFuture<Long> completableFuture = CompletableFuture.supplyAsync(()->{
-            return storage.storeRoot(); }, executor);
+        CompletableFuture<Long> completableFuture = CompletableFuture.supplyAsync(storage::storeRoot, executor);
         return Single.create(completableFuture);
     }
 
@@ -141,8 +141,9 @@ public class MicrostreamSingleThreadedExecutionContext {
      * @return Single containing the object id representing the passed instance.
      */
     public Single<Long> store(Object object) {
-        CompletableFuture<Long> completableFuture = CompletableFuture.supplyAsync(()->{
-            return storage.store(object); }, executor);
+        CompletableFuture<Long> completableFuture = CompletableFuture.supplyAsync(() -> {
+            return storage.store(object);
+        }, executor);
         return Single.create(completableFuture);
     }
 
@@ -154,8 +155,9 @@ public class MicrostreamSingleThreadedExecutionContext {
      * @return the new CompletableFuture
      */
     public <R> CompletableFuture<R> execute(Supplier<R> supplier) {
-        CompletableFuture<R> completableFuture = CompletableFuture.supplyAsync(()->{
-            return supplier.get(); }, executor);
+        CompletableFuture<R> completableFuture = CompletableFuture.supplyAsync(() -> {
+            return supplier.get();
+        }, executor);
         return completableFuture;
     }
 }

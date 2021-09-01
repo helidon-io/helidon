@@ -47,7 +47,7 @@ public class GreetingServiceMicrostreamContext extends MicrostreamSingleThreaded
      * @return Void
      */
     public CompletableFuture<Void> addLogEntry(String name) {
-        return execute(()->{
+        return execute(() -> {
             @SuppressWarnings("unchecked")
             List<LogEntry> logs = (List<LogEntry>) storageManager().root();
             logs.add(new LogEntry(name, LocalDateTime.now()));
@@ -62,7 +62,7 @@ public class GreetingServiceMicrostreamContext extends MicrostreamSingleThreaded
      * @return Void
      */
     public CompletableFuture<Void> initRootElement() {
-        return execute(()->{
+        return execute(() -> {
             if (storageManager().root() == null) {
                 storageManager().setRoot(new ArrayList<LogEntry>());
                 storageManager().storeRoot();
@@ -78,7 +78,7 @@ public class GreetingServiceMicrostreamContext extends MicrostreamSingleThreaded
      */
     public Single<List<LogEntry>> getLogs() {
         @SuppressWarnings("unchecked")
-        CompletableFuture<List<LogEntry>> completableFuture = CompletableFuture.supplyAsync(()->{
+        CompletableFuture<List<LogEntry>> completableFuture = CompletableFuture.supplyAsync(() -> {
             return (List<LogEntry>) storageManager().root();
         }, executor());
         return (Single<List<LogEntry>>) Single.create(completableFuture);

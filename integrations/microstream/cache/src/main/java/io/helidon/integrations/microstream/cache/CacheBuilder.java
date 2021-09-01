@@ -33,9 +33,10 @@ import one.microstream.cache.types.CachingProvider;
  */
 public class CacheBuilder<K, V> {
     private static final String MICROSTREAM_CACHING_PROVIDER = "one.microstream.cache.types.CachingProvider";
-    private CachingProvider provider;
-    private CacheManager cacheManager;
-    private CacheConfiguration<K, V> configuration;
+
+    private final CachingProvider provider;
+    private final CacheManager cacheManager;
+    private final CacheConfiguration<K, V> configuration;
 
     protected CacheBuilder(CacheConfiguration<K, V> configuration) {
         super();
@@ -61,9 +62,10 @@ public class CacheBuilder<K, V> {
      * @param valueType class of the cache key
      * @return cache builder
      */
-    public static <K, V> CacheBuilder<K, V> builder(CacheConfiguration<K, V> configuration, Class<K> keyType,
-            Class<V> valueType) {
-        return new CacheBuilder<K, V>(configuration);
+    public static <K, V> CacheBuilder<K, V> builder(CacheConfiguration<K, V> configuration,
+                                                    Class<K> keyType,
+                                                    Class<V> valueType) {
+        return new CacheBuilder<>(configuration);
     }
 
     /**

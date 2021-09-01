@@ -16,24 +16,23 @@
 
 package io.helidon.integrations.microstream.cdi;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.time.Duration;
 import java.util.HashMap;
 
 import javax.cache.Cache;
 import javax.inject.Inject;
 
-import org.junit.jupiter.api.Test;
-
 import io.helidon.integrations.microstream.cache.ConfigException;
-import io.helidon.integrations.microstream.cdi.MicrostreamCache;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @HelidonTest
 @AddConfig(key = "one.microstream.cache-HashMap.key-type", value = "java.lang.Integer")

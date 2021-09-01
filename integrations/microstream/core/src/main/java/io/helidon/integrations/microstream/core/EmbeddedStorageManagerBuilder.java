@@ -75,7 +75,7 @@ public class EmbeddedStorageManagerBuilder implements io.helidon.common.Builder<
     public EmbeddedStorageManagerBuilder config(Config config) {
         Map<String, String> configMap = config.detach().asMap().get();
 
-        configMap.forEach((k, v) -> configurationBuilder.set(k, v));
+        configMap.forEach(configurationBuilder::set);
 
         return this;
     }

@@ -51,6 +51,7 @@ import javax.ws.rs.core.Response;
 public class GreetResource {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
     private final GreetingProvider greetingProvider;
 
     /**

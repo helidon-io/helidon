@@ -32,14 +32,10 @@ public class MicrostreamHealthCheck implements HealthCheck {
     private static final String DEFAULT_NAME = "Microstream";
     private static final long DEFAULT_TIMEOUT_SECONDS = 10;
 
-    private EmbeddedStorageManager embeddedStorageManager;
-    private long timeoutDuration;
-    private TimeUnit timeoutUnit;
-    private String name;
-
-    private MicrostreamHealthCheck() {
-        super();
-    }
+    private final EmbeddedStorageManager embeddedStorageManager;
+    private final long timeoutDuration;
+    private final TimeUnit timeoutUnit;
+    private final String name;
 
     private MicrostreamHealthCheck(Builder builder) {
         this.embeddedStorageManager = builder.embeddedStorageManager;
@@ -97,7 +93,8 @@ public class MicrostreamHealthCheck implements HealthCheck {
      */
     public static class Builder implements io.helidon.common.Builder<MicrostreamHealthCheck> {
 
-        private EmbeddedStorageManager embeddedStorageManager;
+        private final EmbeddedStorageManager embeddedStorageManager;
+
         private long timeoutDuration;
         private TimeUnit timeoutUnit;
         private String name;

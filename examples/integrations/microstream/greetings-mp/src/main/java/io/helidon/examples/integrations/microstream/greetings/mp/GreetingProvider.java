@@ -34,11 +34,11 @@ import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 @ApplicationScoped
 public class GreetingProvider {
 
-    private EmbeddedStorageManager storage;
-    private List<String> greetingMessages;
-    private Random rnd = new Random();
-
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
+    private final EmbeddedStorageManager storage;
+    private final Random rnd = new Random();
+
+    private List<String> greetingMessages;
 
     /**
      * Creates new GreetingProvider using a microstream EmbeddedStorageManager.
@@ -47,7 +47,8 @@ public class GreetingProvider {
      */
     @SuppressWarnings("unchecked")
     @Inject
-    public GreetingProvider(@MicrostreamStorage(configNode = "one.microstream.storage.greetings")EmbeddedStorageManager storage) {
+    public GreetingProvider(@MicrostreamStorage(configNode = "one.microstream.storage.greetings")
+                                    EmbeddedStorageManager storage) {
         super();
         this.storage = storage;
 
@@ -56,7 +57,7 @@ public class GreetingProvider {
 
         //  Initialize storage if empty
         if (greetingMessages == null) {
-            greetingMessages = new ArrayList<String>();
+            greetingMessages = new ArrayList<>();
             storage.setRoot(greetingMessages);
             storage.storeRoot();
             addGreeting("Hello");

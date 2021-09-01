@@ -41,9 +41,10 @@ import one.microstream.configuration.types.Configuration;
  * @param <V> type of the cache value
  */
 public class MicrostreamCacheConfigurationBuilder<K, V> implements CacheConfigurationPropertyNames,
-CacheConfiguration.Builder<K, V>, io.helidon.common.Builder<CacheConfiguration<K, V>> {
+                                                                   CacheConfiguration.Builder<K, V>,
+                                                                   io.helidon.common.Builder<CacheConfiguration<K, V>> {
 
-    private Builder<K, V> cacheConfigBuilder;
+    private final Builder<K, V> cacheConfigBuilder;
 
     protected MicrostreamCacheConfigurationBuilder(Class<K> keyType, Class<V> valueType) {
         super();
@@ -53,7 +54,9 @@ CacheConfiguration.Builder<K, V>, io.helidon.common.Builder<CacheConfiguration<K
     protected MicrostreamCacheConfigurationBuilder(Configuration configuration, Class<K> keyType, Class<V> valueType) {
         super();
         cacheConfigBuilder = CacheConfigurationBuilderConfigurationBased.New().buildCacheConfiguration(configuration,
-                CacheConfiguration.Builder(keyType, valueType));
+                                                                                                       CacheConfiguration.Builder(
+                                                                                                               keyType,
+                                                                                                               valueType));
     }
 
     /**
@@ -91,7 +94,7 @@ CacheConfiguration.Builder<K, V>, io.helidon.common.Builder<CacheConfiguration<K
      * @return a new CacheConfiguration builder
      */
     public static <K, V> MicrostreamCacheConfigurationBuilder<K, V> builder(Config config, Class<K> keyType,
-            Class<V> valueType) {
+                                                                            Class<V> valueType) {
         one.microstream.configuration.types.Configuration.Builder configurationBuilder = Configuration.Builder();
         if (config.exists()) {
             config.detach().asMap().get().forEach(configurationBuilder::set);
@@ -101,7 +104,7 @@ CacheConfiguration.Builder<K, V>, io.helidon.common.Builder<CacheConfiguration<K
         configuration.opt(KEY_TYPE).ifPresent((s) -> verifyType(s, keyType));
         configuration.opt(VALUE_TYPE).ifPresent((s) -> verifyType(s, valueType));
 
-        return new MicrostreamCacheConfigurationBuilder<K, V>(configuration, keyType, valueType);
+        return new MicrostreamCacheConfigurationBuilder<>(configuration, keyType, valueType);
     }
 
     @Override
@@ -182,7 +185,7 @@ CacheConfiguration.Builder<K, V>, io.helidon.common.Builder<CacheConfiguration<K
     private static void verifyType(String typeName, Class<?> actualType) {
         if (!typeName.equals(actualType.getTypeName())) {
             throw new ConfigException("Microstream cache-config type missmatch, expected value from configuration: " + typeName
-                    + " but got: " + actualType.getTypeName());
+                                              + " but got: " + actualType.getTypeName());
         }
     }
 }

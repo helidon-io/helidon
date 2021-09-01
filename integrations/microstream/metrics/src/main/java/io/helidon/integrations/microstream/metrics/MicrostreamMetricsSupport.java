@@ -31,7 +31,6 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 
-
 /**
  *
  * Helper class that provides the default metrics for an Microstream EmbeddedStorageManager.
@@ -66,19 +65,20 @@ public class MicrostreamMetricsSupport {
             .withUnit(MetricUnits.BYTES)
             .build();
 
-    private Config config;
-    private EmbeddedStorageManager embeddedStorageManager;
-    private RegistryFactory registryFactory;
-    private MetricRegistry vendorRegistry;
+    private final Config config;
+    private final EmbeddedStorageManager embeddedStorageManager;
+    private final RegistryFactory registryFactory;
+    private final MetricRegistry vendorRegistry;
 
     private MicrostreamMetricsSupport(Builder builder) {
         super();
         this.config = builder.config();
         this.embeddedStorageManager = builder.embeddedStorageManager();
-        this.registryFactory = builder.registryFactory();
 
-        if (registryFactory == null) {
+        if (builder.registryFactory() == null) {
             registryFactory = RegistryFactory.getInstance(config);
+        } else {
+            registryFactory = builder.registryFactory();
         }
 
         this.vendorRegistry = registryFactory.getRegistry(MetricRegistry.Type.VENDOR);
@@ -111,13 +111,12 @@ public class MicrostreamMetricsSupport {
         register(TOTAL_DATA_LENGTH, (Gauge<Long>) () -> embeddedStorageManager.createStorageStatistics().totalDataLength());
     }
 
-
     /**
      * A fluent API builder to build instances of {@link MetricsSupport}.
      */
     public static final class Builder implements io.helidon.common.Builder<MicrostreamMetricsSupport> {
 
-        private EmbeddedStorageManager embeddedStorageManager;
+        private final EmbeddedStorageManager embeddedStorageManager;
         private Config config = Config.empty();
         private RegistryFactory registryFactory;
 

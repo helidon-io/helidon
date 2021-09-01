@@ -16,6 +16,8 @@
 
 package io.helidon.examples.integrations.microstream.greetings.se;
 
+import java.util.concurrent.TimeUnit;
+
 import io.helidon.common.LogConfig;
 import io.helidon.config.ClasspathConfigSource;
 import io.helidon.config.Config;
@@ -43,10 +45,8 @@ public class Main {
      * @param args command line arguments.
      */
     public static void main(String[] args) {
-        @SuppressWarnings("unused")
-        WebServer server = startServer();
+        startServer();
     }
-
 
     static WebServer startServer() {
 
@@ -64,17 +64,18 @@ public class Main {
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
         server.start()
-        .thenAccept(ws -> {
-            System.out.println(
-                    "WEB server is up! http://localhost:" + ws.port() + "/greet");
-            ws.whenShutdown().thenRun(()
-                    -> System.out.println("WEB server is DOWN. Good bye!"));
-        })
-        .exceptionally(t -> {
-            System.err.println("Startup failed: " + t.getMessage());
-            t.printStackTrace(System.err);
-            return null;
-        });
+                .thenAccept(ws -> {
+                    System.out.println(
+                            "WEB server is up! http://localhost:" + ws.port() + "/greet");
+                    ws.whenShutdown().thenRun(()
+                                                      -> System.out.println("WEB server is DOWN. Good bye!"));
+                })
+                .exceptionally(t -> {
+                    System.err.println("Startup failed: " + t.getMessage());
+                    t.printStackTrace(System.err);
+                    return null;
+                })
+                .await(10, TimeUnit.SECONDS);
 
         // Server threads are not daemon. No need to block. Just react.
         return server;
