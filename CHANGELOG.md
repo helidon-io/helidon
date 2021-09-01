@@ -9,7 +9,7 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ## [2.3.3]
 
-This is a bug fix release of Helidon. It contains bug fixes and minor enhancements. We recommend all Helidon 2.x users upgrade to this release.
+This is a bug fix release of Helidon. It contains bug and performance fixes. We recommend all Helidon 2.x users upgrade to this release.
 
 ### Compatibility
 
@@ -17,7 +17,21 @@ This is a bug fix release of Helidon. It contains bug fixes and minor enhancemen
 
 ### CHANGES
 
-- TBD
+- WebServer and WebClient race conditions fixed [3351](https://github.com/oracle/helidon/pull/3351)
+- WebServer: Fix missing CORS headers if response has 404 status (#3206) [3280](https://github.com/oracle/helidon/pull/3280)
+- WebClient: HTTP to HTTPS request hang fix [3351](https://github.com/oracle/helidon/pull/3351)
+- Tracing: Modified Jaeger logic to not close scopes before switching threads [3274](https://github.com/oracle/helidon/pull/3274)
+- Security: Fix NPE in outbound of JWT provider. (#3295) [3297](https://github.com/oracle/helidon/pull/3297)
+- Reactive: 3129 3216 BEP refactor backport [3327](https://github.com/oracle/helidon/pull/3327)
+- MicroProfile: Use MP config instead of Config.create() in MP components. [3291](https://github.com/oracle/helidon/pull/3291)
+- Metrics: Performance: Improve some interceptor code paths in metrics (#3251) [3328](https://github.com/oracle/helidon/pull/3328)
+- Metrics: Metrics and routings fixes (#3260) [3324](https://github.com/oracle/helidon/pull/3324)
+- Metrics: Add the KPI metrics handler (with no qualifying path) exactly once each routing (#3255) [3282](https://github.com/oracle/helidon/pull/3282)
+- Metrics: Suppress empty labels in exemplars which result in {}; yield a truly empty string instead [3281](https://github.com/oracle/helidon/pull/3281)
+- Fault Tolerance: Explicitly destroy bean instance obtained from CDI object [3274](https://github.com/oracle/helidon/pull/3274)
+- Docs: Helidon config documentation updates (#3187) [3284](https://github.com/oracle/helidon/pull/3284)
+- Dependencies: Upgrade org.glassfish:jakarta.el to 3.0.4 [3331](https://github.com/oracle/helidon/pull/3331)
+- Dependencies: Upgrade helidon-build-tools to 2.2.2. Fixes issue with Maven 3.8 [TBD](https://github.com/oracle/helidon/pull/TBD)
 
 ## [2.3.2]
 
