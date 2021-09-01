@@ -232,7 +232,6 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
         sb.append(", count='").append(getCount()).append('\'');
         sb.append(", min='").append(getMin()).append('\'');
         sb.append(", max='").append(getMax()).append('\'');
-        sb.append(", unit='").append(getUnits()).append('\'');
         return sb.toString();
     }
 }

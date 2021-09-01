@@ -135,7 +135,6 @@ final class HelidonGauge<T /* extends Number */> extends MetricImpl implements G
 
     @Override
     protected String toStringDetails() {
-        return ", value='" + getValue() + '\''
-                + ", units='" + getUnits()  + '\'';
+        return ", value='" + getValue() + '\'';
     }
 }
