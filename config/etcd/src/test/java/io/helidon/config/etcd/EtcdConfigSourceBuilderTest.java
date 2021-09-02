@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public class EtcdConfigSourceBuilderTest {
     public void testBuilderWithoutUri() {
         assertThrows(IllegalArgumentException.class, () -> {
             EtcdConfigSource.builder()
-                    .uri(null)
+                    .uri()
                     .key("/registry")
                     .api(EtcdApi.v2)
                     .mediaType("my/media/type")
@@ -109,7 +109,7 @@ public class EtcdConfigSourceBuilderTest {
     @Test
     public void testPollingStrategy() {
         URI uri = URI.create("http://localhost:2379");
-        EtcdConfigSourceBuilder builder = EtcdConfigSource.builder()
+        EtcdConfigSource.builder()
                 .uri(uri)
                 .key("/registry")
                 .api(EtcdApi.v2)
@@ -131,9 +131,9 @@ public class EtcdConfigSourceBuilderTest {
                         "key", "/registry",
                         "api", "v3"))));
 
-        assertThat(builder.target().uri(), is(URI.create("http://localhost:2379")));
-        assertThat(builder.target().key(), is("/registry"));
-        assertThat(builder.target().api(), is(EtcdApi.v3));
+        assertThat(builder.target(0).uri(), is(URI.create("http://localhost:2379")));
+        assertThat(builder.target(0).key(), is("/registry"));
+        assertThat(builder.target(0).api(), is(EtcdApi.v3));
     }
 
     @Test
@@ -145,9 +145,9 @@ public class EtcdConfigSourceBuilderTest {
                         "api", "v3",
                         "polling-strategy.type", TestingEtcdPollingStrategyProvider.TYPE))));
 
-        assertThat(builder.target().uri(), is(URI.create("http://localhost:2379")));
-        assertThat(builder.target().key(), is("/registry"));
-        assertThat(builder.target().api(), is(EtcdApi.v3));
+        assertThat(builder.target(0).uri(), is(URI.create("http://localhost:2379")));
+        assertThat(builder.target(0).key(), is("/registry"));
+        assertThat(builder.target(0).api(), is(EtcdApi.v3));
     }
 
     @Test
@@ -159,9 +159,9 @@ public class EtcdConfigSourceBuilderTest {
                         "api", "v3",
                         "change-watcher.type", EtcdWatcherProvider.TYPE))));
 
-        assertThat(builder.target().uri(), is(URI.create("http://localhost:2379")));
-        assertThat(builder.target().key(), is("/registry"));
-        assertThat(builder.target().api(), is(EtcdApi.v3));
+        assertThat(builder.target(0).uri(), is(URI.create("http://localhost:2379")));
+        assertThat(builder.target(0).key(), is("/registry"));
+        assertThat(builder.target(0).api(), is(EtcdApi.v3));
     }
 
     @Test
