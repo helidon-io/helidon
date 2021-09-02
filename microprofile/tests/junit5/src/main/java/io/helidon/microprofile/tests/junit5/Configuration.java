@@ -48,4 +48,12 @@ public @interface Configuration {
      * @return config sources to add
      */
     String[] configSources() default {};
+
+    /**
+     * Configuration Profile.
+     * By default it is set to "test".
+     *
+     * @return test profile
+     */
+    String profile() default "test";
 }
