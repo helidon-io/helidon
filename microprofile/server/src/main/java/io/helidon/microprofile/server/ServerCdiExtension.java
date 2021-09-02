@@ -113,6 +113,7 @@ public class ServerCdiExtension implements Extension {
             throw new IllegalStateException("There is another builder in progress, or another Server running. "
                                                     + "You cannot run more than one in parallel");
         }
+        LOGGER.finest("Builders ready");
     }
 
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
@@ -217,6 +218,8 @@ public class ServerCdiExtension implements Extension {
         serverBuilder = null;
         routingBuilder = null;
         namedRoutings = null;
+
+        LOGGER.finest("Server created");
     }
 
     private void registerJaxRsApplications(BeanManager beanManager) {
@@ -232,6 +235,7 @@ public class ServerCdiExtension implements Extension {
                     : Injections.createInjectionManager();
             jaxRsApplications.forEach(it -> addApplication(jaxRs, it, shared));
         }
+        LOGGER.finest("Registered jersey application(s)");
     }
 
     private void registerDefaultRedirect() {
@@ -270,6 +274,7 @@ public class ServerCdiExtension implements Extension {
         } else {
             routingBuilder.register(staticContent);
         }
+        LOGGER.finest("Static path");
     }
 
     private void registerClasspathStaticContent(Config config) {
@@ -289,6 +294,7 @@ public class ServerCdiExtension implements Extension {
         } else {
             routingBuilder.register(staticContent);
         }
+        LOGGER.finest("Static classpath");
     }
 
     private void stopServer(@Observes @Priority(PLATFORM_BEFORE) @BeforeDestroyed(ApplicationScoped.class) Object event) {
@@ -400,6 +406,7 @@ public class ServerCdiExtension implements Extension {
             Service service = (Service) objBean.create(context);
             registerWebServerService(serviceBeans.remove(bean), service);
         }
+        LOGGER.finest("Registered WebServer services");
     }
 
     private static List<Bean<?>> prioritySort(Set<Bean<?>> beans) {
