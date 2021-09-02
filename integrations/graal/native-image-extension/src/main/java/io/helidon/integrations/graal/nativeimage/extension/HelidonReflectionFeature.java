@@ -116,6 +116,9 @@ public class HelidonReflectionFeature implements Feature {
         // all classes, fields and methods annotated with @Reflected
         addAnnotatedWithReflected(context);
 
+        // all classes used as return types and parameters in JAX-RS resources
+        processJaxRsTypes(context);
+
         // JAX-RS types required for headers, query params etc.
         addJaxRsConversions(context);
 
@@ -220,6 +223,17 @@ public class HelidonReflectionFeature implements Feature {
                 }
             }
         }
+    }
+
+    private void processJaxRsTypes(BeforeAnalysisContext context) {
+        tracer.parsing(() -> "Looking up JAX-RS resource methods.");
+
+        new JaxRsMethodAnalyzer(context, util)
+                .find()
+                .forEach(it -> {
+                    tracer.parsing(() -> " class " + it);
+                    context.register(it).addAll();
+                });
     }
 
     private void addAnnotatedWithReflected(BeforeAnalysisContext context) {
@@ -461,7 +475,7 @@ public class HelidonReflectionFeature implements Feature {
         }
     }
 
-    private final class BeforeAnalysisContext {
+    final class BeforeAnalysisContext {
         private final BeforeAnalysisAccess access;
         private final Set<Class<?>> processed = new HashSet<>();
         private final Set<Class<?>> excluded = new HashSet<>();
