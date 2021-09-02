@@ -16,21 +16,22 @@
 
 package io.helidon.common.mapper;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Objects;
 
 final class SharedManagerHandler {
-    private static final AtomicReference<MapperManager> SHARED = new AtomicReference<>(MapperManager.builder()
-                                                                                               .useBuiltIn(true)
-                                                                                               .build());
+    private static volatile MapperManager sharedInstance = MapperManager.builder()
+            .useBuiltIn(true)
+            .build();
 
     private SharedManagerHandler() {
     }
 
     static MapperManager get() {
-        return SHARED.get();
+        return sharedInstance;
     }
 
     static void set(MapperManager manager) {
-        SHARED.set(manager);
+        Objects.requireNonNull(manager);
+        sharedInstance = manager;
     }
 }

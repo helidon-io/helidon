@@ -27,6 +27,17 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface Mapper<SOURCE, TARGET> extends Function<SOURCE, TARGET> {
     /**
+     * A mapper that returns the same instance.
+     *
+     * @param <SOURCE> type of source
+     * @param <TARGET> type of target
+     * @return mapper that returns the source without any mapping
+     */
+    static <SOURCE extends TARGET, TARGET> Mapper<SOURCE, TARGET> noop() {
+        return MapperManagerImpl.noopMapper();
+    }
+
+    /**
      * Map an instance of source type to an instance of target type.
      *
      * @param source object to map

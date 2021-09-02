@@ -29,6 +29,7 @@ import io.helidon.common.mapper.spi.MapperProvider;
  * Implementation of {@link io.helidon.common.mapper.MapperManager}.
  */
 final class MapperManagerImpl implements MapperManager {
+    @SuppressWarnings("rawtypes") private static final Mapper NOOP = o -> o;
     private static final Map<Class<?>, Class<?>> REPLACED_TYPES = new HashMap<>();
 
     static {
@@ -48,6 +49,11 @@ final class MapperManagerImpl implements MapperManager {
 
     MapperManagerImpl(Builder builder) {
         this.providers = builder.mapperProviders();
+    }
+
+    @SuppressWarnings("unchecked")
+    static <SOURCE extends TARGET, TARGET> Mapper<SOURCE, TARGET> noopMapper() {
+        return NOOP;
     }
 
     private static <SOURCE, TARGET> Mapper<SOURCE, TARGET> notFoundMapper(GenericType<SOURCE> sourceType,
@@ -125,7 +131,7 @@ final class MapperManagerImpl implements MapperManager {
                         GenericType<TARGET> targetGenericType = GenericType.create(targetType);
                         if (targetType.isAssignableFrom(sourceType)) {
                             // the same type
-                            return it -> it;
+                            return noopMapper();
                         }
                         if (fromTypes) {
                             return notFoundMapper(sourceGenericType, targetGenericType);

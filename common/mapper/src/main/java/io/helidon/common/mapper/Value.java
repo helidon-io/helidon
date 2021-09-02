@@ -229,7 +229,7 @@ public interface Value<T> {
      *                              a null result
      * @see Optional#flatMap(Function)
      */
-    default <U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper) {
+    default <U> Optional<U> flatMap(Function<? super T, Optional<? extends U>> mapper) {
         return asOptional().flatMap(mapper);
     }
 
