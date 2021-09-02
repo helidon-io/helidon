@@ -47,8 +47,8 @@
         <version.plugin.dependency>3.1.2</version.plugin.dependency>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
-        <version.plugin.helidon>2.2.0</version.plugin.helidon>
-        <version.plugin.helidon-cli>2.2.0</version.plugin.helidon-cli>
+        <version.plugin.helidon>2.2.2</version.plugin.helidon>
+        <version.plugin.helidon-cli>2.2.2</version.plugin.helidon-cli>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.protobuf>0.5.1</version.plugin.protobuf>

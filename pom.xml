@@ -99,7 +99,7 @@
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>2.2.1</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>2.2.2</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
@@ -123,7 +123,7 @@
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
         <version.plugin.wiremock>2.14.0</version.plugin.wiremock>
 
-        <version.helidon-cli>2.2.0</version.helidon-cli>
+        <version.helidon-cli>2.2.2</version.helidon-cli>
 
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/2.9/</javadoc.link.jackson-annotations>
         <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/2.9/</javadoc.link.jackson-core>
