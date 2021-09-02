@@ -225,4 +225,13 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
     public int hashCode() {
         return Objects.hash(super.hashCode(), delegate);
     }
+
+    @Override
+    protected String toStringDetails() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(", count='").append(getCount()).append('\'');
+        sb.append(", min='").append(getMin()).append('\'');
+        sb.append(", max='").append(getMax()).append('\'');
+        return sb.toString();
+    }
 }

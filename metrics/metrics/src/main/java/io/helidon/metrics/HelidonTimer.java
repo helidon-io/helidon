@@ -362,4 +362,14 @@ final class HelidonTimer extends MetricImpl implements Timer {
     public int hashCode() {
         return Objects.hash(super.hashCode(), delegate);
     }
+
+    @Override
+    protected String toStringDetails() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(", count='").append(getCount()).append('\'');
+        sb.append(", fifteenMinuteRate='").append(getFifteenMinuteRate()).append('\'');
+        sb.append(", fiveMinuteRate='").append(getFiveMinuteRate()).append('\'');
+        sb.append(", meanRate='").append(getMeanRate()).append('\'');
+        return sb.toString();
+    }
 }
