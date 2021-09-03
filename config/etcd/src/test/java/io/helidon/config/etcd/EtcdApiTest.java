@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +26,30 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link EtcdApi}.
  */
 public class EtcdApiTest {
+
     @Test
     public void testClientVersion() {
         assertThat(EtcdApi.v2.clientFactory().createClient(URI.create("http://localhost")), instanceOf(EtcdV2Client.class));
         assertThat(EtcdApi.v3.clientFactory().createClient(URI.create("http://localhost")), instanceOf(EtcdV3Client.class));
+    }
+
+    @Test
+    public void testMultipleUrisV2() {
+        assertThat(EtcdApi.v2.clientFactory().createClient(
+                        URI.create("http://localhost"), URI.create("http://localhost")),
+                instanceOf(EtcdV2Client.class));
+    }
+
+    @Test
+    public void testMultipleUrisV3() {
+        assertThrows(IllegalArgumentException.class,
+                () -> EtcdApi.v3.clientFactory().createClient(
+                        URI.create("http://localhost"), URI.create("http://localhost")));
     }
 }
