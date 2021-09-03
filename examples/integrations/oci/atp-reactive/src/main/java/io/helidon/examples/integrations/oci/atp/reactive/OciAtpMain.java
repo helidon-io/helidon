@@ -52,13 +52,21 @@ public final class OciAtpMain {
         // ~/.oci/config
         OciAutonomousDbRx autonomousDbRx = OciAutonomousDbRx.create(ociConfig);
 
-        WebServer.builder()
+        // Prepare routing for the server
+        WebServer server = WebServer.builder()
                 .config(config.get("server"))
                 .routing(Routing.builder()
-                                 .register("/atp", new AtpService(autonomousDbRx)))
-                .build()
-                .start()
-                .await();
+                        .register("/atp", new AtpService(autonomousDbRx)))
+                .build();
+
+        // Start the server and print some info.
+        server.start().thenAccept(ws -> {
+            System.out.println(
+                    "WEB server is up! http://localhost:" + ws.port() + "/");
+        });
+
+        // Server threads are not daemon. NO need to block. Just react.
+        server.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
     }
 
     private static Config buildConfig() {

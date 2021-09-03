@@ -17,6 +17,8 @@
 package io.helidon.examples.integrations.oci.atp.reactive;
 
 import java.io.ByteArrayInputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.zip.ZipEntry;
@@ -32,6 +34,8 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 class AtpService implements Service {
+    private static final Logger LOGGER = Logger.getLogger(AtpService.class.getName());
+
     private final OciAutonomousDbRx autonomousDbRx;
 
     AtpService(OciAutonomousDbRx autonomousDbRx) {
@@ -55,13 +59,12 @@ class AtpService implements Service {
                     } else {
                         GenerateAutonomousDatabaseWallet.Response response = entity.get();
                         try {
-                            System.out.println("***********************");
-                            System.out.println(response.walletArchive().getContent().length);
+                            LOGGER.log(Level.INFO, "Wallet Content Length: " + response.walletArchive().getContent().length);
                             ZipInputStream zipStream = new ZipInputStream(new ByteArrayInputStream(response.walletArchive().getContent()));
                             ZipEntry entry = null;
                             while ((entry = zipStream.getNextEntry()) != null) {
                                 String entryName = entry.getName();
-                                System.out.println("entryName is :" + entryName);
+                                LOGGER.log(Level.INFO, "Wallet FileEntry:" + entryName);
                                 //FileOutputStream out = new FileOutputStream(entryName);
                                 //byte[] byteBuff = new byte[4096];
                                 //int bytesRead = 0;
@@ -72,9 +75,9 @@ class AtpService implements Service {
                                 zipStream.closeEntry();
                             }
                             zipStream.close();
-                            System.out.println("***********************");
                         } catch (Exception e) {
-                            System.out.println("got exception while processing byte" + e);
+                            LOGGER.log(Level.WARNING, "Exception while processing wallet content", e);
+                            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
                         }
                         res.status(Http.Status.OK_200).send();
                     }

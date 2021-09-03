@@ -17,6 +17,8 @@
 package io.helidon.examples.integrations.oci.atp.cdi;
 
 import java.io.ByteArrayInputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -45,6 +47,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  */
 @Path("/atp")
 public class AtpResource {
+    private static final Logger LOGGER = Logger.getLogger(AtpResource.class.getName());
+
     private final OciAutonomousDb autonomousDb;
 
     @Inject
@@ -70,13 +74,12 @@ public class AtpResource {
         GenerateAutonomousDatabaseWallet.Response response = entity.get();
 
         try {
-            System.out.println("***********************");
-            System.out.println(response.walletArchive().getContent().length);
+            LOGGER.log(Level.INFO, "Wallet Content Length: " + response.walletArchive().getContent().length);
             ZipInputStream zipStream = new ZipInputStream(new ByteArrayInputStream(response.walletArchive().getContent()));
             ZipEntry entry = null;
             while ((entry = zipStream.getNextEntry()) != null) {
                 String entryName = entry.getName();
-                System.out.println("entryName is :" + entryName);
+                LOGGER.log(Level.INFO, "Wallet FileEntry:" + entryName);
                 //FileOutputStream out = new FileOutputStream(entryName);
                 //byte[] byteBuff = new byte[4096];
                 //int bytesRead = 0;
@@ -87,9 +90,9 @@ public class AtpResource {
                 zipStream.closeEntry();
             }
             zipStream.close();
-            System.out.println("***********************");
         } catch (Exception e) {
-            System.out.println("got exception while processing byte" + e);
+            LOGGER.log(Level.WARNING, "Exception while processing wallet content", e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
         }
 
         return Response.status(Response.Status.OK).build();
