@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,22 +21,21 @@ server:
     print-details: true
 
 tracing:
-  service: jdbc-db
+  service: mongo-db
 
 # docker run --rm --name mongo -p 27017:27017 mongo
 db:
   source: "mongoDb"
   connection:
     url: "mongodb://127.0.0.1:27017/pokemon"
-  interceptors:
+  services:
     tracing:
-      global:
+      - enabled: true
     metrics:
-      global:
-        - type: METER
+      - type: METER
   statements:
-    ## Ping statement
-    ping: '{
+    # Health check statement. HealthCheck statement type must be query.
+    health-check: '{
             "operation": "command",
             "query": { ping: 1 }
         }'

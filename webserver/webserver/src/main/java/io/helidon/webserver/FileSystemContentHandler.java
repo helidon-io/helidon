@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,17 @@ import java.time.Instant;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
+import io.helidon.media.common.DefaultMediaSupport;
+import io.helidon.media.common.MessageBodyWriter;
 
 /**
  * Serves files from the filesystem as a static WEB content.
  */
+@Deprecated
 class FileSystemContentHandler extends StaticContentHandler {
     private static final Logger LOGGER = Logger.getLogger(FileSystemContentHandler.class.getName());
+    private static final MessageBodyWriter<Path> PATH_WRITER = DefaultMediaSupport.pathWriter();
+
     private final Path root;
 
     FileSystemContentHandler(String welcomeFilename, ContentTypeSelector contentTypeSelector, Path root) {
@@ -77,13 +82,16 @@ class FileSystemContentHandler extends StaticContentHandler {
     }
 
     static void sendFile(Http.RequestMethod method,
-                         Path path,
+                         Path pathParam,
                          ServerRequest request,
                          ServerResponse response,
                          ContentTypeSelector contentTypeSelector,
                          String welcomePage)
             throws IOException {
 
+        LOGGER.fine(() -> "Sending static content from file: " + pathParam);
+
+        Path path = pathParam;
         // we know the file exists, though it may be a directory
         //First doHandle a directory case
         if (Files.isDirectory(path)) {
@@ -116,8 +124,12 @@ class FileSystemContentHandler extends StaticContentHandler {
         if (method == Http.Method.HEAD) {
             response.send();
         } else {
-            response.send(path);
+            send(response, path);
         }
+    }
+
+    static void send(ServerResponse response, Path path) {
+        response.send(PATH_WRITER.marshall(path));
     }
 
     /**

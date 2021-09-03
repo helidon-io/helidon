@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.webserver.examples.basics;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
 import javax.json.Json;
@@ -29,16 +28,16 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
-import io.helidon.common.http.Reader;
-import io.helidon.media.common.ContentReaders;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.common.MediaContext;
+import io.helidon.media.common.MessageBodyReader;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.RequestPredicate;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
+import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 /**
  * This example consists of few first tutorial steps of WebServer API. Each step is represented by a single method.
@@ -77,14 +76,17 @@ public class Main {
     }
 
     /**
-     * {@link Routing} instance together with optional {@link io.helidon.webserver.ServerConfiguration configuration} parameter
-     * can be used to create {@link WebServer} instance. It provides a simple, non-blocking lifecycle API returning
+     * {@link Routing} instance can be used to create {@link WebServer} instance.
+     * It provides a simple, non-blocking life-cycle API returning
      * {@link java.util.concurrent.CompletionStage CompletionStages} to provide reactive access.
      *
      * @param routing the routing to drive by WebServer instance
+     * @param mediaContext media support
      */
-    protected void startServer(Routing routing) {
-        WebServer.create(routing)
+    protected void startServer(Routing routing, MediaContext mediaContext) {
+        WebServer.builder(routing)
+                .mediaContext(mediaContext)
+                .build()
                  .start()
                  // All lifecycle operations are non-blocking and provides CompletionStage
                  .whenComplete((ws, thr) -> {
@@ -95,6 +97,17 @@ public class Main {
                          thr.printStackTrace(System.out);
                      }
                  });
+    }
+
+    /**
+     * {@link Routing}
+     * can be used to create {@link WebServer} instance.It provides a simple, non-blocking life-cycle API returning
+     * {@link java.util.concurrent.CompletionStage CompletionStages} to provide reactive access.
+     *
+     * @param routing the routing to drive by WebServer instance
+     */
+    protected void startServer(Routing routing) {
+        startServer(routing, MediaContext.create());
     }
 
     /**
@@ -150,13 +163,13 @@ public class Main {
                     // Request headers
                     req.headers()
                        .first("foo")
-                       .ifPresent(v -> sb.append("foo: " + v + "\n"));
+                       .ifPresent(v -> sb.append("foo: ").append(v).append("\n"));
                     // Request parameters
                     req.queryParams()
                        .first("bar")
-                       .ifPresent(v -> sb.append("bar: " + v + "\n"));
+                       .ifPresent(v -> sb.append("bar: ").append(v).append("\n"));
                     // Path parameters
-                    sb.append("id: " + req.path().param("id"));
+                    sb.append("id: ").append(req.path().param("id"));
                     // Response headers
                     res.headers().contentType(MediaType.TEXT_PLAIN);
                     // Response entity (payload)
@@ -230,38 +243,23 @@ public class Main {
     }
 
     /**
-     * It is possible register custom request content {@link Reader Reader}. It collects
-     * all {@link DataChunk RequestChunks} into a single entity of the given type.
-     * <p>
-     * It is also possible to register filters which can modify original {@link java.util.concurrent.Flow Flow} of
-     * {@link DataChunk RequestChunks}.
+     * Use a custom {@link MessageBodyReader reader} to convert the request content into an object of a given type.
      */
-    public void filterAndProcessEntity() {
+    public void mediaReader() {
         Routing routing = Routing.builder()
-                                 // Handler (filter) to register custom reader
-                                 .any((req, res) -> {
-                                     // Register 'name' reader only for "application/name" Content-Type
-                                     if (req.headers()
-                                            .contentType()
-                                            .map(ct -> MediaType.parse("application/name").equals(ct))
-                                            .orElse(false)) {
-                                         req.content()
-                                            .registerReader(Name.class, (publisher, clazz) -> ContentReaders
-                                                    .stringReader(StandardCharsets.UTF_8)
-                                                    .apply(publisher, String.class)
-                                                    .thenApply(Name::new));
-                                     }
-                                     // Reader registration is typically done in a 'filter' - req.next() must be called
-                                     req.next();
-                                 })
-                                 // Registered reader can be used by following handlers
                                  .post("/create-record", Handler.create(Name.class, (req, res, name) -> {
                                      System.out.println("Name: " + name);
                                      res.status(Http.Status.CREATED_201)
                                         .send(name.toString());
                                  }))
                                  .build();
-        startServer(routing);
+
+        // Create a media support that contains the defaults and our custom Name reader
+        MediaContext mediaContext = MediaContext.builder()
+                .addReader(NameReader.create())
+                .build();
+
+        startServer(routing, mediaContext);
     }
 
     /**
@@ -272,7 +270,6 @@ public class Main {
     public void supports() {
         Routing routing = Routing.builder()
                                  .register(StaticContentSupport.create("/static"))
-                                 .register("/hello", JsonSupport.create())
                                  .get("/hello/{what}", (req, res) -> res.send(JSON.createObjectBuilder()
                                                                                   .add("message",
                                                                                        "Hello " + req.path()
@@ -282,7 +279,12 @@ public class Main {
                                                                 .register(HelloWorldResource.class)
                                                                 .build())
                                  .build();
-        startServer(routing);
+
+        MediaContext mediaContext = MediaContext.builder()
+                .addWriter(JsonpSupport.writer())
+                .build();
+
+        startServer(routing, mediaContext);
     }
 
     /**
@@ -326,7 +328,7 @@ public class Main {
         hlp.append("Example method names:\n");
         Method[] methods = Main.class.getDeclaredMethods();
         for (Method method : methods) {
-            if (!Modifier.isPrivate(method.getModifiers()) && !Modifier.isStatic(method.getModifiers())) {
+            if (Modifier.isPublic(method.getModifiers()) && !Modifier.isStatic(method.getModifiers())) {
                 hlp.append("    ").append(method.getName()).append('\n');
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.OverrideSource;
@@ -33,13 +34,58 @@ import io.helidon.config.spi.RetryPolicy;
 
 /**
  * Meta configuration.
- *
- * TODO document meta configuration
- *  - files loaded as part of meta config lookup
- *  - options to specify in meta configuration
+ * <p>
+ * Configuration allows configuring itself using meta configuration.
+ * Config looks for {@code meta-config.*} files in the current directory and on the classpath, where the {@code *} is
+ * one of the supported media type suffixes (such as {@code yaml} when {@code helidon-config-yaml} module is on the classpath).
+ * <p>
+ * Meta configuration can define which config sources to load, including possible retry policy, polling strategy and change
+ * watchers.
+ * <p>
+ * Example of a YAML meta configuration file:
+ * <pre>
+ * sources:
+ *   - type: "environment-variables"
+ *   - type: "system-properties"
+ *   - type: "file"
+ *     properties:
+ *       path: "conf/dev.yaml"
+ *       optional: true
+ *   - type: "file"
+ *     properties:
+ *       path: "conf/config.yaml"
+ *       optional: true
+ *   - type: "classpath"
+ *     properties:
+ *       resource: "default.yaml"
+ * </pre>
+ * This configuration would load the following config sources (in the order specified):
+ * <ul>
+ *     <li>Environment variables config source
+ *     <li>System properties config source</li>
+ *     <li>File config source from file {@code conf/dev.yaml} that is optional</li>
+ *     <li>File config source from file {@code conf/config.yaml} that is optional</li>
+ *     <li>Classpath resource config source for resource {@code default.yaml} that is mandatory</li>
+ * </ul>
  */
 public final class MetaConfig {
     private static final Logger LOGGER = Logger.getLogger(MetaConfig.class.getName());
+    private static final Set<String> SUPPORTED_MEDIA_TYPES;
+    private static final List<String> SUPPORTED_SUFFIXES;
+
+    static {
+        Set<String> supportedMediaTypes = new HashSet<>();
+        List<String> supportedSuffixes = new LinkedList<>();
+
+        HelidonServiceLoader.create(ServiceLoader.load(ConfigParser.class))
+                .forEach(parser -> {
+                    supportedMediaTypes.addAll(parser.supportedMediaTypes());
+                    supportedSuffixes.addAll(parser.supportedSuffixes());
+                });
+
+        SUPPORTED_MEDIA_TYPES = Set.copyOf(supportedMediaTypes);
+        SUPPORTED_SUFFIXES = List.copyOf(supportedSuffixes);
+    }
 
     private MetaConfig() {
     }
@@ -74,18 +120,33 @@ public final class MetaConfig {
      * @return meta configuration if present, or empty
      */
     public static Optional<Config> metaConfig() {
-        return MetaConfigFinder.findMetaConfig(supportedMediaTypes());
+        return MetaConfigFinder.findMetaConfig(SUPPORTED_MEDIA_TYPES::contains, SUPPORTED_SUFFIXES);
     }
 
     /**
      * Load a polling strategy based on its meta configuration.
      *
      * @param metaConfig meta configuration of a polling strategy
-     * @return a function that creates a polling strategy instance for an instance of target type
+     * @return a polling strategy instance
      */
-    public static Function<Object, PollingStrategy> pollingStrategy(Config metaConfig) {
+    public static PollingStrategy pollingStrategy(Config metaConfig) {
         return MetaProviders.pollingStrategy(metaConfig.get("type").asString().get(),
                                              metaConfig.get("properties"));
+    }
+
+    /**
+     * Load a change watcher based on its meta configuration.
+     *
+     * @param metaConfig meta configuration of a change watcher
+     * @return a change watcher instance
+     */
+    public static ChangeWatcher<?> changeWatcher(Config metaConfig) {
+        String type = metaConfig.get("type").asString().get();
+        ChangeWatcher<?> changeWatcher = MetaProviders.changeWatcher(type, metaConfig.get("properties"));
+
+        LOGGER.fine(() -> "Loaded change watcher of type \"" + type + "\", class: " + changeWatcher.getClass().getName());
+
+        return changeWatcher;
     }
 
     /**
@@ -96,8 +157,7 @@ public final class MetaConfig {
      */
     public static RetryPolicy retryPolicy(Config metaConfig) {
         String type = metaConfig.get("type").asString().get();
-        RetryPolicy retryPolicy = MetaProviders.retryPolicy(type,
-                                                            metaConfig.get("properties"));
+        RetryPolicy retryPolicy = MetaProviders.retryPolicy(type, metaConfig.get("properties"));
 
         LOGGER.fine(() -> "Loaded retry policy of type \"" + type + "\", class: " + retryPolicy.getClass().getName());
 
@@ -105,21 +165,33 @@ public final class MetaConfig {
     }
 
     /**
-     * Load a config source based on its meta configuration.
+     * Load a config source (or config sources) based on its meta configuration.
      * The metaConfig must contain a key {@code type} that defines the type of the source to be found via providers, and
      *   a key {@code properties} with configuration of the config sources
      * @param sourceMetaConfig meta configuration of a config source
      * @return config source instance
      * @see Config.Builder#config(Config)
      */
-    public static ConfigSource configSource(Config sourceMetaConfig) {
+    public static List<ConfigSource> configSource(Config sourceMetaConfig) {
         String type = sourceMetaConfig.get("type").asString().get();
-        ConfigSource source = MetaProviders.configSource(type,
-                                                         sourceMetaConfig.get("properties"));
+        boolean multiSource = sourceMetaConfig.get("multi-source").asBoolean().orElse(false);
 
-        LOGGER.fine(() -> "Loaded source of type \"" + type + "\", class: " + source.getClass().getName());
+        Config sourceProperties = sourceMetaConfig.get("properties");
 
-        return source;
+        if (multiSource) {
+            List<ConfigSource> sources = MetaProviders.configSources(type, sourceProperties);
+
+            LOGGER.fine(() -> "Loaded sources of type \"" + type + "\", values: " + sources);
+
+            return sources;
+        } else {
+            ConfigSource source = MetaProviders.configSource(type, sourceProperties);
+
+            LOGGER.fine(() -> "Loaded source of type \"" + type + "\", class: " + source.getClass().getName());
+
+            return List.of(source);
+        }
+
     }
 
     // override config source
@@ -138,36 +210,27 @@ public final class MetaConfig {
 
         metaConfig.get("sources")
                 .asNodeList()
-                .ifPresent(list -> list.forEach(it -> configSources.add(MetaConfig.configSource(it))));
+                .ifPresent(list -> list.forEach(it -> configSources.addAll(MetaConfig.configSource(it))));
 
         return configSources;
     }
 
     // only interested in config source
-    static List<ConfigSource> configSources(Function<String, Boolean> supportedMediaType) {
+    static List<ConfigSource> configSources(Function<String, Boolean> supportedMediaType, List<String> supportedSuffixes) {
         Optional<Config> metaConfigOpt = metaConfig();
 
         return metaConfigOpt
                 .map(MetaConfig::configSources)
-                .orElseGet(() -> MetaConfigFinder.findConfigSource(supportedMediaType)
+                .orElseGet(() -> MetaConfigFinder.findConfigSource(supportedMediaType, supportedSuffixes)
                         .map(List::of)
                         .orElseGet(List::of));
 
     }
 
-    private static Function<String, Boolean> supportedMediaTypes() {
-        Set<String> supportedMediaTypes = new HashSet<>();
-
-        HelidonServiceLoader.create(ServiceLoader.load(ConfigParser.class))
-                .forEach(parser -> supportedMediaTypes.addAll(parser.supportedMediaTypes()));
-
-        return supportedMediaTypes::contains;
-    }
-
     private static Config createDefault() {
         // use defaults
         Config.Builder builder = Config.builder();
-        MetaConfigFinder.findConfigSource(supportedMediaTypes()).ifPresent(builder::addSource);
+        MetaConfigFinder.findConfigSource(SUPPORTED_MEDIA_TYPES::contains, SUPPORTED_SUFFIXES).ifPresent(builder::addSource);
         return builder.build();
     }
 }

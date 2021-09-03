@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,3 +23,15 @@ server:
 
 tracing:
   service: "helidon-se"
+  protocol: "http"
+  host: "localhost"
+  port: 7076
+  api-version: 2
+  # mocked zipkin
+  path: "/zipkin/api/v2/spans"
+
+client:
+  follow-redirects: true
+  max-redirects: 5
+  services:
+    tracing:

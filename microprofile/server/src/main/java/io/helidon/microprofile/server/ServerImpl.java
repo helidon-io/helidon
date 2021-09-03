@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,14 @@ import javax.enterprise.inject.spi.CDI;
 
 import io.helidon.microprofile.cdi.HelidonContainer;
 
-import static io.helidon.microprofile.server.Server.Builder.IN_PROGRESS_OR_RUNNING;
-
 /**
  * Server to handle lifecycle of microprofile implementation.
  */
 public class ServerImpl implements Server {
-    private static final Logger LOGGER = Logger.getLogger(ServerImpl.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(Server.class.getName());
+    // this constant is to ensure we initialize Helidon CDI at build time
+    private static final HelidonContainer CONTAINER = HelidonContainer.instance();
+
     private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
 
     private final HelidonContainer helidonContainer = HelidonContainer.instance();
@@ -44,6 +45,7 @@ public class ServerImpl implements Server {
 
     ServerImpl(Builder builder) {
         this.container = (SeContainer) CDI.current();
+        LOGGER.finest(() -> "Container context id: " + CONTAINER.context().id());
 
         InetAddress listenHost;
         if (null == builder.host()) {
@@ -61,7 +63,7 @@ public class ServerImpl implements Server {
 
         this.serverExtension = beanManager.getExtension(ServerCdiExtension.class);
 
-        serverExtension.serverConfigBuilder()
+        serverExtension.serverBuilder()
                 .context(helidonContainer.context())
                 .port(builder.port())
                 .bindAddress(listenHost);
@@ -97,7 +99,6 @@ public class ServerImpl implements Server {
     @Override
     public Server stop() {
         container.close();
-        IN_PROGRESS_OR_RUNNING.set(false);
         return this;
     }
 

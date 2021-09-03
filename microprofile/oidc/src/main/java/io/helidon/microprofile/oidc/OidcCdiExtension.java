@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -33,9 +31,6 @@ import io.helidon.security.providers.oidc.OidcSupport;
  * Microprofile extension that brings support for Open ID Connect.
  */
 public final class OidcCdiExtension implements Extension {
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "Security", "MP", "OIDC");
-    }
 
     private Config config;
 
@@ -44,8 +39,13 @@ public final class OidcCdiExtension implements Extension {
     }
 
     private void registerOidcSupport(@Observes @Initialized(ApplicationScoped.class) Object adv, BeanManager bm) {
-        ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
+        if (config.get("security.enabled")
+                .asBoolean()
+                .orElse(true)) {
+            // only configure if security is enabled
+            ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
 
-        server.serverRoutingBuilder().register(OidcSupport.create(config));
+            server.serverRoutingBuilder().register(OidcSupport.create(config));
+        }
     }
 }

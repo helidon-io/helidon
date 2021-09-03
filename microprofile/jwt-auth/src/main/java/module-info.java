@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@
 module io.helidon.microprofile.jwt.auth {
     requires java.logging;
 
-    requires cdi.api;
-    requires javax.inject;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject.api;
     requires java.ws.rs;
     requires microprofile.config.api;
     requires transitive microprofile.jwt.auth.api;
@@ -40,5 +40,10 @@ module io.helidon.microprofile.jwt.auth {
 
     exports io.helidon.microprofile.jwt.auth;
 
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.jwt.auth to weld.core.impl, io.helidon.microprofile.cdi;
+
+    provides io.helidon.security.providers.common.spi.AnnotationAnalyzer with io.helidon.microprofile.jwt.auth.JwtAuthAnnotationAnalyzer;
+    provides io.helidon.security.spi.SecurityProviderService with io.helidon.microprofile.jwt.auth.JwtAuthProviderService;
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.jwt.auth.JwtAuthCdiExtension;
 }

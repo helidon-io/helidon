@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,33 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import javax.inject.Inject;
+
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddConfig;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * This test class should run in its own VM to avoid clashes with system
- * properties. Our Config provider caches system properties so removing a
- * system property does not prevent other tests to be affected by it.
+ * Test overrides using method overrides.
  */
-public class ConfigMethodTest extends FaultToleranceTest {
+@AddBean(RetryBean.class)
+@AddConfig(key = "io.helidon.microprofile.faulttolerance.RetryBean/retryOne/Retry/maxRetries", value = "0")
+@AddConfig(key = "io.helidon.microprofile.faulttolerance.RetryBean/retryWithFallback/Retry/maxRetries", value = "3")
+class ConfigMethodTest extends FaultToleranceTest {
 
-    static {
-        System.setProperty(RetryBean.class.getName() + "/retryOne/Retry/maxRetries", "0");
-        System.setProperty(RetryBean.class.getName() + "/retryWithFallback/Retry/maxRetries", "3");
+    @Inject
+    private RetryBean bean;
+
+    @Test
+    void testRetryOverrideMethod() {
+        bean.retry();       // passes due to class annotation
     }
 
     @Test
-    public void testRetryOverrideMethod() {
-        RetryBean bean = newBean(RetryBean.class);
-        bean.retry();   // passes due to class annotation
-    }
-
-    @Test
-    public void testRetryWithFallbackOverrideMethod() {
-        RetryBean bean = newBean(RetryBean.class);
+    void testRetryWithFallbackOverrideMethod() {
         assertThat(bean.retryWithFallback(), is("success"));      // passes no fallback
     }
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: http://localhost:8000
+  - url: http://localhost:8080
     description: Local test server
 
 paths:
@@ -51,7 +51,7 @@ paths:
                 summary: Example greeting message to update
                 value: New greeting message
       responses:
-        200:
+        "200":
           description: OK
           content:
             application/json: {}

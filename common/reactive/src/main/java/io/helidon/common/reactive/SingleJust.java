@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.concurrent.Flow.Subscriber;
  *
  * @param <T> item type
  */
-final class SingleJust<T> implements Single<T> {
+final class SingleJust<T> extends CompletionSingle<T> {
 
     private final T value;
 

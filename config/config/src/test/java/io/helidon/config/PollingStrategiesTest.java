@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,16 @@
 package io.helidon.config;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.PollingStrategy;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * Tests {@link PollingStrategies}.
@@ -37,29 +37,16 @@ public class PollingStrategiesTest {
     public void testTicksNop() throws InterruptedException {
         PollingStrategy pollingStrategy = PollingStrategies.nop();
 
+        AtomicInteger count = new AtomicInteger();
         CountDownLatch onComplete = new CountDownLatch(1);
-        pollingStrategy.ticks().subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscription.request(Long.MAX_VALUE);
-            }
 
-            @Override
-            public void onNext(PollingStrategy.PollingEvent item) {
-                fail("onNext should not be invoked");
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail("onError should not be invoked");
-            }
-
-            @Override
-            public void onComplete() {
-                onComplete.countDown();
-            }
+        pollingStrategy.start(when -> {
+            count.incrementAndGet();
+            onComplete.countDown();
+            return ChangeEventType.UNCHANGED;
         });
-        assertThat(onComplete.await(10, TimeUnit.MILLISECONDS), is(true));
+
+        assertThat(onComplete.await(100, TimeUnit.MILLISECONDS), is(false));
     }
 
 }

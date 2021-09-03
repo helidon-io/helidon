@@ -18,8 +18,6 @@ package io.helidon.microprofile.example.helloworld.explicit;
 
 import io.helidon.microprofile.server.Server;
 
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-
 /**
  * Explicit example.
  */
@@ -28,17 +26,12 @@ public class Main {
     }
 
     /**
-     * Starts server and initializes CDI container manually.
+     * Starts server manually.
      *
      * @param args command line arguments (ignored)
      */
     public static void main(String[] args) {
         Server server = Server.builder()
-                .addApplication(HelloWorldApplication.class)
-                // using a customized helidon config instance (in this case the default...)
-                .config(ConfigProviderResolver.instance()
-                                .getBuilder()
-                                .build())
                 .host("localhost")
                 // use a random free port
                 .port(0)
@@ -51,7 +44,5 @@ public class Main {
         System.out.println("Metrics available on       " + endpoint + "/metrics");
         System.out.println("Heatlh checks available on " + endpoint + "/health");
 
-        // the easiest possible explicit way to start an application:
-        // Server.create(HelloWorldApplication.class).start();
     }
 }

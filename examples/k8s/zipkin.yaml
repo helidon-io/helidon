@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +14,16 @@
 # limitations under the License.
 #
 
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: zipkin
   labels:
     app: zipkin
 spec:
+  selector:
+    matchLabels:
+      app: zipkin
   replicas: 1
   template:
     metadata:
@@ -28,12 +31,11 @@ spec:
         app: zipkin
     spec:
       containers:
-      - image: openzipkin/zipkin:2
-        imagePullPolicy: Always
-        name: zipkin
-        ports:
-        - containerPort: 9411
-      restartPolicy: Always
+        - name: zipkin
+          image: openzipkin/zipkin:2
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9411
 ---
 
 apiVersion: v1
@@ -53,16 +55,19 @@ spec:
 
 ---
 
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: zipkin-ingress
 spec:
   rules:
-  - host: localhost
-    http:
-      paths:
-      - path: /zipkin
-        backend:
-          serviceName: zipkin
-          servicePort: 9411
+    - host: localhost
+      http:
+        paths:
+          - path: /zipkin
+            pathType: Prefix
+            backend:
+              service:
+                name: zipkin
+                port:
+                  number: 9411

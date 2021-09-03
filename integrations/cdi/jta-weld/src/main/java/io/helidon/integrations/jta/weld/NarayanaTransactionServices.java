@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import org.jboss.weld.transaction.spi.TransactionServices;
  *
  * @see TransactionServices
  */
-final class NarayanaTransactionServices implements TransactionServices {
+public final class NarayanaTransactionServices implements TransactionServices {
 
 
     /*
@@ -71,8 +71,10 @@ final class NarayanaTransactionServices implements TransactionServices {
 
     /**
      * Creates a new {@link NarayanaTransactionServices}.
+     * @deprecated Only intended for service loader, do not instantiate
      */
-    private NarayanaTransactionServices() {
+    @Deprecated
+    public NarayanaTransactionServices() {
         super();
         final String cn = NarayanaTransactionServices.class.getName();
         if (LOGGER.isLoggable(Level.FINER)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.security.integration.jersey.client;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,13 +30,13 @@ import javax.ws.rs.RuntimeType;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.ext.Provider;
 
-import io.helidon.common.HelidonFeatures;
+import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
 import io.helidon.security.OutboundSecurityResponse;
+import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
@@ -48,16 +49,12 @@ import io.helidon.security.integration.common.SecurityTracing;
  * Only works as part of integration with Security component.
  * This class is public to allow unit testing from providers (without invoking an HTTP request)
  */
-@Provider
 @ConstrainedTo(RuntimeType.CLIENT)
 @Priority(Priorities.AUTHENTICATION)
 public class ClientSecurityFilter implements ClientRequestFilter {
 
     private static final Logger LOGGER = Logger.getLogger(ClientSecurityFilter.class.getName());
-
-    static {
-        HelidonFeatures.register("Security", "Integration", "Jersey Client");
-    }
+    private static final AtomicLong CONTEXT_COUNTER = new AtomicLong();
 
     /**
      * Create an instance of this filter (used by Jersey or for unit tests, do not use explicitly in your production code).
@@ -83,9 +80,29 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         if (securityContext.isPresent()) {
             outboundSecurity(requestContext, securityContext.get());
         } else {
-            LOGGER.finest("Security not propagated, as security context is not available "
-                                  + "neither in context, nor as the property \""
+            LOGGER.finest("Security context not available, using empty one. You can define it using "
+                                  + "property \""
                                   + ClientSecurity.PROPERTY_CONTEXT + "\" on request");
+
+            // use current context, or create a new one if we run outside of Helidon context
+            Context context = Contexts.context()
+                    .orElseGet(() -> Context.builder()
+                            .id("security-" + CONTEXT_COUNTER.incrementAndGet())
+                            .build());
+
+            // create a new security context for current request (not authenticated)
+            Optional<SecurityContext> newSecurityContext = context.get(Security.class)
+                .map(it -> it.createContext(context.id()));
+
+            if (newSecurityContext.isPresent()) {
+                // run in the context we obtained above with the new security context
+                // we may still propagate security information (such as when we explicitly configure outbound
+                // security in outbound target of a provider
+                Contexts.runInContext(context, () -> outboundSecurity(requestContext, newSecurityContext.get()));
+            } else {
+                // we cannot do anything - security is not available in global or current context, cannot propagate
+                LOGGER.finest("Security is not available in global or current context, cannot propagate identity.");
+            }
         }
     }
 
@@ -95,7 +112,10 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         Optional<String> explicityProvider = property(requestContext, String.class, ClientSecurity.PROPERTY_PROVIDER);
 
         try {
-            SecurityEnvironment.Builder outboundEnv = securityContext.env().derive();
+            SecurityEnvironment.Builder outboundEnv = securityContext.env()
+                    .derive()
+                    .clearHeaders();
+
             outboundEnv.method(requestContext.getMethod())
                     .path(requestContext.getUri().getPath())
                     .targetUri(requestContext.getUri())
@@ -114,7 +134,6 @@ public class ClientSecurityFilter implements ClientRequestFilter {
             OutboundSecurityClientBuilder clientBuilder = securityContext.outboundClientBuilder()
                     .outboundEnvironment(outboundEnv)
                     .tracingSpan(tracing.findParent().orElse(null))
-                    .tracingSpan(tracing.findParentSpan().orElse(null))
                     .outboundEndpointConfig(outboundEp);
 
             explicityProvider.ifPresent(clientBuilder::explicitProvider);

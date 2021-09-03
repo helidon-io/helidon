@@ -17,11 +17,9 @@
 package io.helidon.config;
 
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -91,7 +89,7 @@ class ClasspathSourceHelper {
 
     static <T> T content(String resource,
                          String description,
-                         BiFunction<InputStreamReader, Instant, T> processor) throws ConfigException {
+                         BiFunction<InputStream, Instant, T> processor) throws ConfigException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
         InputStream inputStream = classLoader.getResourceAsStream(resource);
@@ -110,7 +108,7 @@ class ClasspathSourceHelper {
             LOGGER.log(Level.FINE, "Error to get resource '" + resource + "' path. Used ClassLoader: " + classLoader, ex);
         }
 
-        return processor.apply(new InputStreamReader(inputStream, StandardCharsets.UTF_8), resourceTimestamp);
+        return processor.apply(inputStream, resourceTimestamp);
     }
 
 }

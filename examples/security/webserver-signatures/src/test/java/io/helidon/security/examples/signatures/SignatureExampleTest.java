@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,21 +20,18 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.Response;
-
+import io.helidon.security.Security;
+import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServer;
 
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.glassfish.jersey.client.authentication.HttpAuthenticationFeature.HTTP_AUTHENTICATION_PASSWORD;
-import static org.glassfish.jersey.client.authentication.HttpAuthenticationFeature.HTTP_AUTHENTICATION_USERNAME;
+import static io.helidon.security.providers.httpauth.HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD;
+import static io.helidon.security.providers.httpauth.HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -42,20 +39,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Actual unit tests are shared by config and builder example.
  */
 public abstract class SignatureExampleTest {
-    private static Client client;
-    private static Client authFeatureClient;
+    private static WebClient client;
 
     @BeforeAll
     public static void classInit() {
-        client = ClientBuilder.newClient();
-        authFeatureClient = ClientBuilder.newClient()
-                .register(HttpAuthenticationFeature.basicBuilder().nonPreemptive().build());
-    }
+        Security security = Security.builder()
+                .addProvider(HttpBasicAuthProvider.builder().build())
+                .build();
 
-    @AfterAll
-    public static void classDestroy() {
-        client.close();
-        authFeatureClient.close();
+        client = WebClient.builder()
+                .addService(WebClientSecurity.create(security))
+                .build();
     }
 
     static void stopServer(WebServer server) throws InterruptedException {
@@ -96,22 +90,6 @@ public abstract class SignatureExampleTest {
                       "Service1 - RSA signature");
     }
 
-    private Response callProtected(String uri, String username, String password) {
-        // here we call the endpoint
-        return authFeatureClient.target(uri)
-                .request()
-                .property(HTTP_AUTHENTICATION_USERNAME, username)
-                .property(HTTP_AUTHENTICATION_PASSWORD, password)
-                .get();
-    }
-
-    private void testProtectedDenied(String uri,
-                                     String username,
-                                     String password) {
-
-        Response response = callProtected(uri, username, password);
-        assertThat(response.getStatus(), is(403));
-    }
 
     private void testProtected(String uri,
                                String username,
@@ -119,19 +97,20 @@ public abstract class SignatureExampleTest {
                                Set<String> expectedRoles,
                                Set<String> invalidRoles,
                                String service) {
+        client.get()
+                .uri(uri)
+                .property(EP_PROPERTY_OUTBOUND_USER, username)
+                .property(EP_PROPERTY_OUTBOUND_PASSWORD, password)
+                .request(String.class)
+                .thenAccept(it -> {
+                    // check login
+                    assertThat(it, containsString("id='" + username + "'"));
+                    // check roles
+                    expectedRoles.forEach(role -> assertThat(it, containsString(":" + role)));
+                    invalidRoles.forEach(role -> assertThat(it, not(containsString(":" + role))));
 
-        Response response = callProtected(uri, username, password);
-
-        String entity = response.readEntity(String.class);
-
-        assertThat(response.getStatus(), is(200));
-
-        // check login
-        assertThat(entity, containsString("id='" + username + "'"));
-        // check roles
-        expectedRoles.forEach(role -> assertThat(entity, containsString(":" + role)));
-        invalidRoles.forEach(role -> assertThat(entity, not(containsString(":" + role))));
-
-        assertThat(entity, containsString("id='" + service + "'"));
+                    assertThat(it, containsString("id='" + service + "'"));
+                })
+                .await();
     }
 }

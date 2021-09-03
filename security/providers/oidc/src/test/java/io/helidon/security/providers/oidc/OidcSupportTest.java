@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -180,10 +180,12 @@ class OidcSupportTest {
                 .build();
         EndpointConfig endpointConfig = EndpointConfig.builder().build();
 
-        OutboundSecurityResponse response = provider.syncOutbound(providerRequest, outboundEnv, endpointConfig);
+        OutboundSecurityResponse response = provider.outboundSecurity(providerRequest, outboundEnv, endpointConfig)
+                .toCompletableFuture()
+                .join();
 
         List<String> authorization = response.requestHeaders().get("Authorization");
-        assertThat("Authorization header", authorization, hasItem("bearer " + tokenContent));
+        assertThat("Authorization header", authorization, hasItem("Bearer " + tokenContent));
     }
 
     @Test
@@ -212,7 +214,9 @@ class OidcSupportTest {
         boolean outboundSupported = provider.isOutboundSupported(providerRequest, outboundEnv, endpointConfig);
         assertThat("Outbound should not be supported by default", outboundSupported, is(false));
 
-        OutboundSecurityResponse response = provider.syncOutbound(providerRequest, outboundEnv, endpointConfig);
+        OutboundSecurityResponse response = provider.outboundSecurity(providerRequest, outboundEnv, endpointConfig)
+                .toCompletableFuture()
+                .join();
 
         assertThat("Disabled target should have empty headers", response.requestHeaders().size(), is(0));
     }

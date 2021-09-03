@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,29 +27,32 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.openapi.OpenAPISupport;
 
-import io.smallrye.openapi.api.OpenApiConfigImpl;
 import org.jboss.jandex.CompositeIndex;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexReader;
 import org.jboss.jandex.IndexView;
 import org.jboss.jandex.Indexer;
+
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 /**
  * Portable extension to allow construction of a Jandex index (to pass to
@@ -62,12 +65,14 @@ public class OpenApiCdiExtension implements Extension {
 
     private static final Logger LOGGER = Logger.getLogger(OpenApiCdiExtension.class.getName());
 
-    private final List<URL> indexURLs;
+    private final String[] indexPaths;
+    private final int indexURLCount;
 
     private final Set<Class<?>> annotatedTypes = new HashSet<>();
 
     private org.eclipse.microprofile.config.Config mpConfig;
     private Config config;
+    private MPOpenAPISupport openApiSupport;
 
     /**
      * Creates a new instance of the index builder.
@@ -79,7 +84,9 @@ public class OpenApiCdiExtension implements Extension {
     }
 
     OpenApiCdiExtension(String... indexPaths) throws IOException {
-        indexURLs = findIndexFiles(indexPaths);
+        this.indexPaths = indexPaths;
+        List<URL> indexURLs = findIndexFiles(indexPaths);
+        indexURLCount = indexURLs.size();
         if (indexURLs.isEmpty()) {
             LOGGER.log(Level.INFO, () -> String.format(
                     "OpenAPI support could not locate the Jandex index file %s "
@@ -97,17 +104,21 @@ public class OpenApiCdiExtension implements Extension {
         this.config = config;
     }
 
-    void registerOpenApi(@Observes @Initialized(ApplicationScoped.class) Object adv, BeanManager bm) {
-        try {
-            OpenAPISupport openApiSupport = new MPOpenAPIBuilder()
-                    .openAPIConfig(new OpenApiConfigImpl(mpConfig))
-                    .indexView(indexView())
-                    .build();
+    void registerOpenApi(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object event) {
+        Config openapiNode = config.get(OpenAPISupport.Builder.CONFIG_KEY);
+        openApiSupport = new MPOpenAPIBuilder()
+                .config(mpConfig)
+                .singleIndexViewSupplier(this::indexView)
+                .config(openapiNode)
+                .build();
 
-            openApiSupport.configureEndpoint(RoutingBuilders.create(config.get("openapi")).routingBuilder());
-        } catch (IOException e) {
-            throw new DeploymentException("Failed to obtain index view", e);
-        }
+        openApiSupport
+                .configureEndpoint(RoutingBuilders.create(openapiNode).routingBuilder());
+    }
+
+    // Must run after the server has created the Application instances.
+    void buildModel(@Observes @Priority(PLATFORM_AFTER + 100 + 10) @Initialized(ApplicationScoped.class) Object event) {
+        openApiSupport.prepareModel();
     }
 
     /**
@@ -118,7 +129,7 @@ public class OpenApiCdiExtension implements Extension {
      * @param event {@code ProcessAnnotatedType} event
      */
     private <X> void processAnnotatedType(@Observes ProcessAnnotatedType<X> event) {
-        if (indexURLs.isEmpty()) {
+        if (indexURLCount == 0) {
             Class<?> c = event.getAnnotatedType()
                     .getJavaClass();
             annotatedTypes.add(c);
@@ -130,11 +141,14 @@ public class OpenApiCdiExtension implements Extension {
      * annotated classes for endpoints.
      *
      * @return {@code IndexView} describing discovered classes
-     * @throws java.io.IOException in case of error reading an existing index file or
-     * reading class bytecode from the classpath
      */
-    public IndexView indexView() throws IOException {
-        return !indexURLs.isEmpty() ? existingIndexFileReader() : indexFromHarvestedClasses();
+    public IndexView indexView() {
+        try {
+            return indexURLCount > 0 ? existingIndexFileReader() : indexFromHarvestedClasses();
+        } catch (IOException e) {
+            // wrap so we can use this method in a reference
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -145,13 +159,16 @@ public class OpenApiCdiExtension implements Extension {
      */
     private IndexView existingIndexFileReader() throws IOException {
         List<IndexView> indices = new ArrayList<>();
-        for (URL indexURL : indexURLs) {
+        /*
+         * Do not reuse the previously-computed indexURLs; those values will be incorrect with native images.
+         */
+        for (URL indexURL : findIndexFiles(indexPaths)) {
             try (InputStream indexIS = indexURL.openStream()) {
-                LOGGER.log(Level.FINE, "Adding Jandex index at {0}", indexURL.toString());
+                LOGGER.log(Level.CONFIG, "Adding Jandex index at {0}", indexURL.toString());
                 indices.add(new IndexReader(indexIS).read());
             } catch (IOException ex) {
                 throw new IOException("Attempted to read from previously-located index file "
-                        + indexURL + " but the file cannot be found", ex);
+                        + indexURL + " but the index cannot be found", ex);
             }
         }
         return indices.size() == 1 ? indices.get(0) : CompositeIndex.create(indices);
@@ -159,20 +176,30 @@ public class OpenApiCdiExtension implements Extension {
 
     private IndexView indexFromHarvestedClasses() throws IOException {
         Indexer indexer = new Indexer();
-        for (Class<?> c : annotatedTypes) {
-            try (InputStream is = contextClassLoader().getResourceAsStream(resourceNameForClass(c))) {
-                indexer.index(is);
-            } catch (IOException ex) {
-                throw new IOException("Cannot load bytecode from class "
-                                              + c.getName() + " at " + resourceNameForClass(c)
-                                              + " for annotation processing", ex);
-            }
-        }
+        annotatedTypes.forEach(c -> addClassToIndexer(indexer, c));
 
-        LOGGER.log(Level.FINE, "Using internal Jandex index created from CDI bean discovery");
+        /*
+         * Some apps might be added dynamically, not via annotation processing. Add those classes to the index if they are not
+         * already present.
+         */
+        MPOpenAPIBuilder.jaxRsApplicationsToRun().stream()
+                .map(JaxRsApplication::applicationClass)
+                .filter(Optional::isPresent)
+                .forEach(appClassOpt -> addClassToIndexer(indexer, appClassOpt.get()));
+
+        LOGGER.log(Level.CONFIG, "Using internal Jandex index created from CDI bean discovery");
         Index result = indexer.complete();
         dumpIndex(Level.FINER, result);
         return result;
+    }
+
+    private void addClassToIndexer(Indexer indexer, Class<?> c) {
+        try (InputStream is = contextClassLoader().getResourceAsStream(resourceNameForClass(c))) {
+            indexer.index(is);
+        } catch (IOException ex) {
+            throw new RuntimeException(String.format("Cannot load bytecode from class %s at %s for annotation processing",
+                    c.getName(), resourceNameForClass(c)), ex);
+        }
     }
 
     private List<URL> findIndexFiles(String... indexPaths) throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -30,18 +29,19 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
-import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.MergingStrategy;
 import io.helidon.config.spi.OverrideSource;
 
 /**
  * <h1>Configuration</h1>
  * Immutable tree-structured configuration.
  * <h2>Loading Configuration</h2>
- * Load the default configuration using the {@link #create} method.
+ * Load the default configuration using the {@link Config#create} method.
  * <pre>{@code
  * Config config = Config.create();
  * }</pre> Use {@link Config.Builder} to construct a new {@code Config} instance
@@ -234,29 +234,9 @@ import io.helidon.config.spi.OverrideSource;
  * <h2><a id="multipleSources">Handling Multiple Configuration
  * Sources</a></h2>
  * A {@code Config} instance, including the default {@code Config} returned by
- * {@link #create}, might be associated with multiple {@link ConfigSource}s. The
- * config system deals with multiple sources as follows.
- * <p>
- * The {@link ConfigSources.CompositeBuilder} class handles multiple config
- * sources; in fact the config system uses an instance of that builder
- * automatically when your application invokes {@link Config#create} and
- * {@link Config#builder}, for example. Each such composite builder has a
- * merging strategy that controls how the config system will search the multiple
- * config sources for a given key. By default each {@code CompositeBuilder} uses
- * the {@link FallbackMergingStrategy}: configuration sources earlier in the
- * list have a higher priority than the later ones. The system behaves as if,
- * when resolving a value of a key, it checks each source in sequence order. As
- * soon as one source contains a value for the key the system returns that
- * value, ignoring any sources that fall later in the list.
- * <p>
- * Your application can set a different strategy by constructing its own
- * {@code CompositeBuilder} and invoking
- * {@link ConfigSources.CompositeBuilder#mergingStrategy(ConfigSources.MergingStrategy)}, passing the strategy
- * to be used:
- * <pre>
- * Config.withSources(ConfigSources.create(source1, source2, source3)
- *                      .mergingStrategy(new MyMergingStrategy());
- * </pre>
+ * {@link Config#create}, might be associated with multiple {@link ConfigSource}s. The
+ * config system merges these together so that values from config sources with higher priority have
+ * precedence over values from config sources with lower priority.
  */
 public interface Config {
     /**
@@ -353,9 +333,6 @@ public interface Config {
      * @see Builder#sources(List)
      * @see Builder#disableEnvironmentVariablesSource()
      * @see Builder#disableSystemPropertiesSource()
-     * @see ConfigSources#create(Supplier[])
-     * @see ConfigSources.CompositeBuilder
-     * @see ConfigSources.MergingStrategy
      */
     @SafeVarargs
     static Config create(Supplier<? extends ConfigSource>... configSources) {
@@ -383,9 +360,6 @@ public interface Config {
      * @see Builder#sources(List)
      * @see Builder#disableEnvironmentVariablesSource()
      * @see Builder#disableSystemPropertiesSource()
-     * @see ConfigSources#create(Supplier[])
-     * @see ConfigSources.CompositeBuilder
-     * @see ConfigSources.MergingStrategy
      */
     @SafeVarargs
     static Builder builder(Supplier<? extends ConfigSource>... configSources) {
@@ -399,6 +373,22 @@ public interface Config {
      */
     static Builder builder() {
         return new BuilderImpl();
+    }
+
+    /**
+     * Creates a new {@link Config} loaded from the specified {@link ConfigSource}s.
+     * No other sources will be included.
+     *
+     * @param configSources ordered list of configuration sources
+     * @return new instance of {@link Config}
+     * @see #builder(Supplier[])
+     */
+    @SafeVarargs
+    static Config just(Supplier<? extends ConfigSource>... configSources) {
+        return builder(configSources)
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
     }
 
     /**
@@ -661,6 +651,13 @@ public interface Config {
      */
     <T> T convert(Class<T> type, String value) throws ConfigMappingException;
 
+    /**
+     * The mapper used by this config instance.
+     *
+     * @return configuration mapper
+     */
+    ConfigMapper mapper();
+
     //
     // accessors
     //
@@ -838,67 +835,6 @@ public interface Config {
     //
 
     /**
-     * Allows to subscribe on change on whole Config as well as on particular Config node.
-     * <p>
-     * A user can subscribe on root Config node and than will be notified on any change of Configuration.
-     * You can also subscribe on any sub-node, i.e. you will receive notification events just about sub-configuration.
-     * No matter how much the sub-configuration has changed you will receive just one notification event that is associated
-     * with a node you are subscribed on.
-     * If a user subscribes on older instance of Config and ones has already been published the last one is automatically
-     * submitted to new-subscriber.
-     * <p>
-     * The {@code Config} notification support is based on {@link ConfigSource#changes() ConfigSource changes support}.
-     * <p>
-     * Method {@link Flow.Subscriber#onError(Throwable)} is never called.
-     * Method {@link Flow.Subscriber#onComplete()} is called in case an associated
-     * {@link ConfigSource#changes() ConfigSource's changes Publisher} signals {@code onComplete} as well.
-     * <p>
-     * Note: It does not matter what instance version of Config (related to single {@link Builder} initialization)
-     * a user subscribes on. It is enough to subscribe just on single (e.g. on the first) Config instance.
-     * There is no added value to subscribe again on new Config instance.
-     *
-     * @return {@link Flow.Publisher} to be subscribed in. Never returns {@code null}.
-     * @see Config#onChange(Function)
-     */
-    @Deprecated
-    default Flow.Publisher<Config> changes() {
-        return Flow.Subscriber::onComplete;
-    }
-
-    /**
-     * Directly subscribes {@code onNextFunction} function on change on whole Config or on particular Config node.
-     * <p>
-     * It automatically creates {@link ConfigHelper#subscriber(Function) Flow.Subscriber} that will
-     * delegate {@link Flow.Subscriber#onNext(Object)} to specified {@code onNextFunction} function.
-     * Created subscriber automatically {@link Flow.Subscription#request(long) requests} {@link Long#MAX_VALUE all events}
-     * in it's {@link Flow.Subscriber#onSubscribe(Flow.Subscription)} method.
-     * Function {@code onNextFunction} returns {@code false} in case user wants to {@link Flow.Subscription#cancel() cancel}
-     * current subscription.
-     * <p>
-     * A user can subscribe on root Config node and than will be notified on any change of Configuration.
-     * You can also subscribe on any sub-node, i.e. you will receive notification events just about sub-configuration.
-     * No matter how much the sub-configuration has changed you will receive just one notification event that is associated
-     * with a node you are subscribed on.
-     * If a user subscribes on older instance of Config and ones has already been published the last one is automatically
-     * submitted to new-subscriber.
-     * <p>
-     * The {@code Config} notification support is based on {@link ConfigSource#changes() ConfigSource changes support}.
-     * <p>
-     * Note: It does not matter what instance version of Config (related to single {@link Builder} initialization)
-     * a user subscribes on. It is enough to subscribe just on single (e.g. on the first) Config instance.
-     * There is no added value to subscribe again on new Config instance.
-     *
-     * @param onNextFunction {@link Flow.Subscriber#onNext(Object)} functionality
-     * @see Config#changes()
-     * @see ConfigHelper#subscriber(Function)
-     * @deprecated use {@link #onChange(Consumer)} instead
-     */
-    @Deprecated
-    default void onChange(Function<Config, Boolean> onNextFunction) {
-        changes().subscribe(ConfigHelper.subscriber(onNextFunction));
-    }
-
-    /**
      * Register a {@link Consumer} that is invoked each time a change occurs on whole Config or on a particular Config node.
      * <p>
      * A user can subscribe on root Config node and than will be notified on any change of Configuration.
@@ -915,11 +851,7 @@ public interface Config {
      * @param onChangeConsumer consumer invoked on change
      */
     default void onChange(Consumer<Config> onChangeConsumer) {
-        // temporary workaround before change support is replaced by one not using Flow API
-        changes().subscribe(ConfigHelper.subscriber(config -> {
-            onChangeConsumer.accept(config);
-            return true;
-        }));
+        // no-op
     }
 
     /**
@@ -946,14 +878,14 @@ public interface Config {
      * @see Config#key()
      */
     interface Key extends Comparable<Key> {
-
         /**
          * Returns instance of Key that represents key of parent config node.
          * <p>
-         * If the key represents root config node it returns {@code null}.
+         * If the key represents root config node it throws an exception.
          *
          * @return key that represents key of parent config node.
          * @see #isRoot()
+         * @throws java.lang.IllegalStateException in case you attempt to call this method on a root node
          */
         Key parent();
 
@@ -964,9 +896,7 @@ public interface Config {
          * @return {@code true} in case the key represents root node, otherwise {@code false}.
          * @see #parent()
          */
-        default boolean isRoot() {
-            return parent() == null;
-        }
+        boolean isRoot();
 
         /**
          * Returns the name of Config node.
@@ -1019,8 +949,7 @@ public interface Config {
             }
             StringBuilder sb = new StringBuilder();
             char[] chars = name.toCharArray();
-            for (int i = 0; i < chars.length; i++) {
-                char ch = chars[i];
+            for (char ch : chars) {
                 if (ch == '~') {
                     sb.append("~0");
                 } else if (ch == '.') {
@@ -1054,12 +983,12 @@ public interface Config {
     enum Type {
         /**
          * Config node is an object of named members
-         * ({@link #VALUE values}, {@link #LIST lists} or other {@link #OBJECT objects}).
+         * ({@link #VALUE values}, {@link #LIST lists} or other objects).
          */
         OBJECT(true, false),
         /**
          * Config node is a list of indexed elements
-         * ({@link #VALUE values}, {@link #OBJECT objects} or other {@link #LIST lists}).
+         * ({@link #VALUE values}, {@link #OBJECT objects} or other lists).
          */
         LIST(true, false),
         /**
@@ -1072,8 +1001,8 @@ public interface Config {
          */
         MISSING(false, false);
 
-        private boolean exists;
-        private boolean isLeaf;
+        private final boolean exists;
+        private final boolean isLeaf;
 
         Type(boolean exists, boolean isLeaf) {
             this.exists = exists;
@@ -1123,7 +1052,7 @@ public interface Config {
          * Returns instance of Config node related to same Config {@link Config#key() key}
          * as original {@link Config#context() node} used to get Context from.
          * <p>
-         * If the configuration has not been reloaded yet it returns original Config node instance.
+         * This method uses the last known value of the node, as provided through change support.
          *
          * @return the last instance of Config node associated with same key as original node
          * @see Config#context()
@@ -1211,14 +1140,6 @@ public interface Config {
      */
     interface Builder {
         /**
-         * Disable loading of config sources from Java service loader.
-         * This disables loading of MicroProfile Config sources.
-         *
-         * @return updated builder instance
-         */
-        Builder disableSourceServices();
-
-        /**
          * Sets ordered list of {@link ConfigSource} instance to be used as single source of configuration
          * to be wrapped into {@link Config} API.
          * <p>
@@ -1227,15 +1148,6 @@ public interface Config {
          * the value is found in a configuration source, the value immediately is returned without consulting any of the remaining
          * configuration sources in the prioritized collection.
          * <p>
-         * This is default implementation of
-         * {@link ConfigSources#create(Supplier...)} Composite ConfigSource} provided by
-         * {@link ConfigSources.MergingStrategy#fallback() Fallback MergingStrategy}.
-         * It is possible to {@link ConfigSources.CompositeBuilder#mergingStrategy(ConfigSources.MergingStrategy)
-         * use custom implementation of merging strategy}.
-         * <pre>
-         * builder.source(ConfigSources.create(source1, source2, source3)
-         *                      .mergingStrategy(new MyMergingStrategy));
-         * </pre>
          * Target source is composed from following sources, in order:
          * <ol>
          * <li>{@link ConfigSources#environmentVariables() environment variables config source}<br>
@@ -1249,9 +1161,6 @@ public interface Config {
          * @return an updated builder instance
          * @see #disableEnvironmentVariablesSource()
          * @see #disableSystemPropertiesSource()
-         * @see ConfigSources#create(Supplier...)
-         * @see ConfigSources.CompositeBuilder
-         * @see ConfigSources.MergingStrategy
          */
         Builder sources(List<Supplier<? extends ConfigSource>> configSources);
 
@@ -1263,6 +1172,21 @@ public interface Config {
          */
         Builder addSource(ConfigSource source);
 
+        /**
+         * Merging Strategy to use when more than one config source is used.
+         *
+         * @param strategy strategy to use, defaults to a strategy where a value for first source wins over values from later
+         *                sources
+         * @return updated builder instance
+         */
+        Builder mergingStrategy(MergingStrategy strategy);
+
+        /**
+         * Add a single config source to this builder.
+         *
+         * @param source config source to add
+         * @return updated builder instance
+         */
         default Builder addSource(Supplier<? extends ConfigSource> source) {
             return addSource(source.get());
         }
@@ -1361,7 +1285,7 @@ public interface Config {
          * @param overridingSource a source with overriding key patterns and assigned values
          * @return an updated builder instance
          */
-        Builder overrides(Supplier<OverrideSource> overridingSource);
+        Builder overrides(Supplier<? extends OverrideSource> overridingSource);
 
         /**
          * Disables an usage of resolving key tokens.
@@ -1378,7 +1302,9 @@ public interface Config {
          * <p>
          * A value can contain tokens enclosed in {@code ${}} (i.e. ${name}), that are resolved by default and tokens are replaced
          * with a value of the key with the token as a key.
-         *
+         * <p>
+         * By default a value resolving filter is added to configuration. When this method is called, the filter will
+         *  not be added and value resolving will be disabled
          * @return an updated builder instance
          */
         Builder disableValueResolving();
@@ -1487,10 +1413,10 @@ public interface Config {
         Builder disableMapperServices();
 
         /**
-         * Registers a {@link ConfigParser} instance that can be used by registered {@link ConfigSource}s to
-         * parse {@link ConfigParser.Content configuration content}.
-         * Parsers are tried to be used by {@link io.helidon.config.spi.ConfigContext#findParser(String)}
-         * in same order as was registered by the {@link #addParser(ConfigParser)} method.
+         * Registers a {@link ConfigParser} instance that can be used by config system to parse
+         * parse {@link io.helidon.config.spi.ConfigParser.Content} of {@link io.helidon.config.spi.ParsableSource}.
+         * Parsers {@link io.helidon.config.spi.ConfigParser#supportedMediaTypes()} is queried
+         * in same order as was registered by this method.
          * Programmatically registered parsers have priority over other options.
          * <p>
          * As another option, parsers are loaded automatically as a {@link java.util.ServiceLoader service}, if not
@@ -1518,7 +1444,7 @@ public interface Config {
          * Registers a {@link ConfigFilter} instance that will be used by {@link Config} to
          * filter elementary value before it is returned to a user.
          * <p>
-         * Filters are applied in same order as was registered by the {@link #addFilter(ConfigFilter)}, {@link
+         * Filters are applied in same order as was registered by the this method, {@link
          * #addFilter(Function)} or {@link #addFilter(Supplier)} method.
          * <p>
          * {@link ConfigFilter} is actually a {@link java.util.function.BiFunction}&lt;{@link String},{@link String},{@link
@@ -1545,12 +1471,13 @@ public interface Config {
          * Registers a {@link ConfigFilter} provider as a {@link Function}&lt;{@link Config}, {@link ConfigFilter}&gt;. An
          * obtained filter will be used by {@link Config} to filter elementary value before it is returned to a user.
          * <p>
-         * Filters are applied in same order as was registered by the {@link #addFilter(ConfigFilter)}, {@link
-         * #addFilter(Function)} or {@link #addFilter(Supplier)} method.
+         * Filters are applied in same order as was registered by the {@link #addFilter(ConfigFilter)}, this method,
+         * or {@link #addFilter(Supplier)} method.
          * <p>
          * Registered provider's {@link Function#apply(Object)} method is called every time the new Config is created. Eg. when
-         * this builder's {@link #build} method creates the {@link Config} or when the new {@link Config#changes() change event}
-         * is fired with new Config instance with its own filter instance is created.
+         * this builder's {@link #build} method creates the {@link Config} or when the new
+         * {@link Config#onChange(java.util.function.Consumer)} is fired with new Config instance with its own filter instance
+         * is created.
          *
          * @param configFilterProvider a config filter provider as a function of {@link Config} to {@link ConfigFilter}
          * @return an updated builder instance
@@ -1565,10 +1492,11 @@ public interface Config {
          * returned to a user.
          * <p>
          * Filters are applied in same order as was registered by the {@link #addFilter(ConfigFilter)}, {@link
-         * #addFilter(Function)} or {@link #addFilter(Supplier)} method.
+         * #addFilter(Function)}, or this method.
          * <p>
          * Registered provider's {@link Function#apply(Object)} method is called every time the new Config is created. Eg. when
-         * this builder's {@link #build} method creates the {@link Config} or when the new {@link Config#changes() change event}
+         * this builder's {@link #build} method creates the {@link Config} or when the new
+         * {@link Config#onChange(java.util.function.Consumer)} change event
          * is fired with new Config instance with its own filter instance is created.
          *
          * @param configFilterSupplier a config filter provider as a supplier of a function of {@link Config} to {@link
@@ -1606,36 +1534,18 @@ public interface Config {
         Builder disableCaching();
 
         /**
-         * Specifies "observe-on" {@link Executor} to be used by {@link Config#changes()} to deliver new Config instance.
-         * Executor is also used to process reloading of config from appropriate {@link ConfigSource#changes() source}.
+         * Specifies "observe-on" {@link Executor} to be used by {@link Config#onChange(java.util.function.Consumer)} to deliver
+         * new Config instance.
+         * Executor is also used to process reloading of config from appropriate {@link ConfigSource source}.
          * <p>
          * By default dedicated thread pool that creates new threads as needed, but
          * will reuse previously constructed threads when they are available is used.
          *
-         * @param changesExecutor the executor to use for async delivery of {@link Config#changes()} events
+         * @param changesExecutor the executor to use for async delivery of {@link Config#onChange(java.util.function.Consumer)}
          * @return an updated builder instance
-         * @see #changesMaxBuffer(int)
-         * @see Config#changes()
-         * @see Config#onChange(Function)
-         * @see ConfigSource#changes()
+         * @see Config#onChange(java.util.function.Consumer)
          */
         Builder changesExecutor(Executor changesExecutor);
-
-        /**
-         * Specifies maximum capacity for each subscriber's buffer to be used by by {@link Config#changes()}
-         * to deliver new Config instance.
-         * <p>
-         * By default {@link Flow#defaultBufferSize()} is used.
-         * <p>
-         * Note: Not consumed events will be dropped off.
-         *
-         * @param changesMaxBuffer the maximum capacity for each subscriber's buffer of {@link Config#changes()} events.
-         * @return an updated builder instance
-         * @see #changesExecutor(Executor)
-         * @see Config#changes()
-         * @see Config#onChange(Function)
-         */
-        Builder changesMaxBuffer(int changesMaxBuffer);
 
         /**
          * Builds new instance of {@link Config}.
@@ -1733,6 +1643,12 @@ public interface Config {
          *     <td>{@link io.helidon.config.spi.ConfigSourceProvider#create(String, Config)}</td>
          * </tr>
          * <tr>
+         *     <td>multi-source</td>
+         *     <td>{@code false}</td>
+         *     <td>If set to true, the provider creates more than one config source to be added</td>
+         *     <td>{@link io.helidon.config.spi.ConfigSourceProvider#createMulti(String, Config)}</td>
+         * </tr>
+         * <tr>
          *     <td>properties</td>
          *     <td>&nbsp;</td>
          *     <td>Configuration options to configure the config source (meta configuration of a source)</td>
@@ -1742,21 +1658,28 @@ public interface Config {
          * <tr>
          *     <td>properties.optional</td>
          *     <td>false</td>
-         *     <td>Most config sources can be configured to be optional</td>
-         *     <td>{@link io.helidon.config.spi.AbstractSource.Builder#optional(boolean)}</td>
+         *     <td>Config sources can be configured to be optional</td>
+         *     <td>{@link io.helidon.config.spi.Source#optional()}</td>
          * </tr>
          * <tr>
          *     <td>properties.polling-strategy</td>
          *     <td>&nbsp;</td>
          *     <td>Some config sources can have a polling strategy defined</td>
-         *     <td>{@link io.helidon.config.spi.AbstractSource.Builder#pollingStrategy(java.util.function.Function)},
+         *     <td>{@link io.helidon.config.spi.PollableSource.Builder#pollingStrategy(io.helidon.config.spi.PollingStrategy)},
          *          {@link MetaConfig#pollingStrategy(Config)}</td>
+         * </tr>
+         * <tr>
+         *     <td>properties.change-watcher</td>
+         *     <td>&nbsp;</td>
+         *     <td>Some config sources can have a change watcher defined</td>
+         *     <td>{@link io.helidon.config.spi.WatchableSource.Builder#changeWatcher(io.helidon.config.spi.ChangeWatcher)},
+         *          {@link MetaConfig#changeWatcher(Config)}</td>
          * </tr>
          * <tr>
          *     <td>properties.retry-policy</td>
          *     <td>&nbsp;</td>
-         *     <td>Some config sources can have a retry policy defined</td>
-         *     <td>{@link io.helidon.config.spi.AbstractSource.Builder#retryPolicy(io.helidon.config.spi.RetryPolicy)},
+         *     <td>Config sources can have a retry policy defined</td>
+         *     <td>{@link io.helidon.config.spi.Source#retryPolicy()},
          *          {@link MetaConfig#retryPolicy(Config)}</td>
          * </tr>
          * </table>
@@ -1771,7 +1694,7 @@ public interface Config {
          *       optional: true
          *       path: "conf/dev-application.yaml"
          *       polling-strategy:
-         *         type: "watch"
+         *         type: "regular"
          *       retry-policy:
          *         type: "repeat"
          *         properties:
@@ -1781,6 +1704,9 @@ public interface Config {
          *        optional: true
          *        resource: "application.yaml"
          * </pre>
+         *
+         * @param metaConfig meta configuration to set this builder up
+         * @return updated builder from meta configuration
          */
         Builder config(Config metaConfig);
     }

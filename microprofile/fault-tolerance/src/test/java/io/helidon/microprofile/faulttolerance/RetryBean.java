@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,7 @@ package io.helidon.microprofile.faulttolerance;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.enterprise.context.Dependent;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Fallback;
@@ -33,18 +30,21 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceTest.printSta
 /**
  * Class RetryBean.
  */
-@Dependent
 @Retry(maxRetries = 2, delay = 50L)
-public class RetryBean {
+class RetryBean {
 
     private AtomicInteger invocations = new AtomicInteger(0);
 
-    public int getInvocations() {
+    int getInvocations() {
         return invocations.get();
     }
 
+    void reset() {
+        invocations.set(0);
+    }
+
     // See class annotation @Retry(maxRetries = 2, delay = 50L)
-    public String retry() {
+    String retry() {
         if (invocations.incrementAndGet() <= 2) {
             printStatus("RetryBean::retryOne()", "failure");
             throw new RuntimeException("Oops");
@@ -55,7 +55,7 @@ public class RetryBean {
 
     @Retry(maxRetries = 1, jitter = 400L)
     @Fallback(fallbackMethod = "onFailure")
-    public String retryWithFallback() {
+    String retryWithFallback() {
         if (invocations.incrementAndGet() <= 2) {
             printStatus("RetryBean::retryWithFallback()", "failure");
             throw new RuntimeException("Oops");
@@ -64,24 +64,27 @@ public class RetryBean {
         return "success";
     }
 
-    public String onFailure() {
+    String onFailure() {
         printStatus("RetryBean::onFailure()", "success");
         return "fallback";
     }
 
     @Asynchronous
     @Retry(maxRetries = 2)
-    public Future<String> retryAsync() {
+    CompletableFuture<String> retryAsync() {
+        CompletableFuture<String> future = new CompletableFuture<>();
         if (invocations.incrementAndGet() <= 2) {
             printStatus("RetryBean::retryAsync()", "failure");
-            throw new RuntimeException("Oops");
+            future.completeExceptionally(new RuntimeException("Oops"));
+        } else {
+            printStatus("RetryBean::retryAsync()", "success");
+            future.complete("success");
         }
-        printStatus("RetryBean::retryAsync()", "success");
-        return CompletableFuture.completedFuture("success");
+        return future;
     }
 
     @Retry(maxRetries = 4, delay = 100L, jitter = 50L)
-    public String retryWithDelayAndJitter() {
+    void retryWithDelayAndJitter() {
         if (invocations.incrementAndGet() <= 4) {
             printStatus("RetryBean::retryWithDelayAndJitter()",
                         "failure " + System.currentTimeMillis());
@@ -89,12 +92,11 @@ public class RetryBean {
         }
         printStatus("RetryBean::retryWithDelayAndJitter()",
                     "success " + System.currentTimeMillis());
-        return "success";
     }
 
     @Asynchronous
     @Retry(maxRetries = 2)
-    public CompletionStage<String> retryWithException() {
+    CompletionStage<String> retryWithException() {
         invocations.incrementAndGet();
         // always fail
         CompletableFuture<String> future = new CompletableFuture<>();
@@ -110,14 +112,14 @@ public class RetryBean {
      */
     @Asynchronous
     @Retry(maxRetries = 2)
-    public CompletionStage<String> retryWithUltimateSuccess() {
-        if (invocations.incrementAndGet() < 3) {
-        // fails twice
-            throw new RuntimeException("Simulated error");
-        }
-
+    CompletionStage<String> retryWithUltimateSuccess() {
         CompletableFuture<String> future = new CompletableFuture<>();
-        future.complete("Success");
+        if (invocations.incrementAndGet() < 3) {
+            // fails twice
+            future.completeExceptionally(new RuntimeException("Simulated error"));
+        } else {
+            future.complete("Success");
+        }
         return future;
     }
 }

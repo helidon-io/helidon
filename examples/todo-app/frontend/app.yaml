@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,10 +26,12 @@ data:
     backend.endpoint: http://helidon-examples-todo-backend:8854
 ---
 
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: helidon-examples-todo-frontend
+  labels:
+    app: helidon-examples-todo-frontend
 spec:
   replicas: 1
   template:
@@ -38,18 +40,18 @@ spec:
         app: helidon-examples-todo-frontend
     spec:
       containers:
-      - name: helidon-examples-todo-frontend
-        image: helidon-examples-todo-frontend
-        imagePullPolicy: Never
-        ports:
-          - containerPort: 8080
-        volumeMounts:
-        - name: config-volume
-          mountPath: /conf
-      volumes:
-      - name: config-volume
-        configMap:
+        - image: helidon-examples-todo-frontend
+          imagePullPolicy: Never
           name: helidon-examples-todo-frontend
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - mountPath: /conf
+              name: config-volume
+      volumes:
+        - name: config-volume
+          configMap:
+            name: helidon-examples-todo-frontend
 
 ---
 
@@ -67,18 +69,21 @@ spec:
   sessionAffinity: None
 ---
 
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  name: helidon-examples-todo-frontend
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$1
-  name: helidon-examples-todo-frontend
 spec:
   rules:
-  - host: localhost
-    http:
-      paths:
-      - path: /todo/(.*)
-        backend:
-          serviceName: helidon-examples-todo-frontend
-          servicePort: 8080
+    - host: localhost
+      http:
+        paths:
+          - path: /todo/(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: helidon-examples-todo-frontend
+                port:
+                  number: 8080

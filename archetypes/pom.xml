@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
     limitations under the License.
 
 -->
-
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>2.4.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.archetypes</groupId>
     <artifactId>helidon-archetypes-project</artifactId>
@@ -31,70 +31,24 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>mp</module>
-        <module>se</module>
+        <module>bare-se</module>
+        <module>bare-mp</module>
+        <module>quickstart-se</module>
+        <module>quickstart-mp</module>
+        <module>database-mp</module>
+        <module>database-se</module>
+        <module>catalog</module>
     </modules>
 
     <build>
-        <extensions>
-            <extension>
-                <groupId>org.apache.maven.archetype</groupId>
-                <artifactId>archetype-packaging</artifactId>
-                <version>${version.plugin.archetype-packaging}</version>
-            </extension>
-        </extensions>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-                <includes>
-                    <include>archetype-resources/pom.xml</include>
-                </includes>
-            </resource>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>false</filtering>
-                <excludes>
-                    <exclude>archetype-resources/pom.xml</exclude>
-                </excludes>
-            </resource>
-        </resources>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-resources-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>default-resources</id>
-                            <configuration>
-                                <useDefaultDelimiters>false</useDefaultDelimiters>
-                                <delimiters>
-                                    <delimiter>@</delimiter>
-                                </delimiters>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-            </plugins>
-        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>io.helidon.build-tools.archetype</groupId>
+                <artifactId>helidon-archetype-maven-plugin</artifactId>
+                <version>${version.plugin.helidon-build-tools}</version>
+                <extensions>true</extensions>
+            </plugin>
+        </plugins>
     </build>
-
-    <!-- Force the reactor to build the applications poms before the archetypes -->
-    <dependencies>
-        <dependency>
-            <groupId>io.helidon.applications</groupId>
-            <artifactId>helidon-se</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.applications</groupId>
-            <artifactId>helidon-mp</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-            <optional>true</optional>
-        </dependency>
-    </dependencies>
 </project>
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.SetCookie;
+import io.helidon.common.reactive.Single;
 
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.jupiter.api.Test;
@@ -123,6 +124,28 @@ public class HashResponseHeadersTest {
     }
 
     @Test
+    public void addAndClearCookies() {
+        HashResponseHeaders h = new HashResponseHeaders(null);
+        h.addCookie("foo1", "bar1");
+        h.addCookie("foo2", "bar2");
+        assertThat(h.all(Http.Header.SET_COOKIE), contains(
+                "foo1=bar1",
+                "foo2=bar2"));
+        h.clearCookie("foo1");
+        assertThat(h.all(Http.Header.SET_COOKIE), contains(
+                "foo1=deleted; Expires=Thu, 1 Jan 1970 00:00:00 GMT; Path=/",
+                "foo2=bar2"));
+    }
+
+    @Test
+    public void clearCookie() {
+        HashResponseHeaders h = new HashResponseHeaders(null);
+        h.clearCookie("foo1");
+        assertThat(h.all(Http.Header.SET_COOKIE), contains(
+                "foo1=deleted; Expires=Thu, 1 Jan 1970 00:00:00 GMT; Path=/"));
+    }
+
+    @Test
     public void immutableWhenCompleted() throws Exception {
         HashResponseHeaders h = new HashResponseHeaders(mockBareResponse());
         h.put("a", "b");
@@ -182,8 +205,8 @@ public class HashResponseHeadersTest {
         CompletableFuture<BareResponse> headersFuture = new CompletableFuture<>();
         CompletableFuture<BareResponse> future = new CompletableFuture<>();
         BareResponse result = mock(BareResponse.class);
-        when(result.whenHeadersCompleted()).thenReturn(headersFuture);
-        when(result.whenCompleted()).thenReturn(future);
+        when(result.whenHeadersCompleted()).thenReturn(Single.create(headersFuture));
+        when(result.whenCompleted()).thenReturn(Single.create(future));
         doAnswer(invocationOnMock -> {
             headersFuture.complete(result);
             return null;

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<FindBugsFilter
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="https://github.com/spotbugs/filter/3.0.0"
+        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
+
+    <Match>
+        <!-- Stack trace written to log file -->
+        <Class name="io.helidon.microprofile.graphql.server.SchemaGeneratorHelper"/>
+        <Method name="getStackTrace"/>
+        <Bug pattern="INFORMATION_EXPOSURE_THROUGH_AN_ERROR_MESSAGE"/>
+    </Match>
+
+    <!-- Used to find a jandex index by absolute path or by name on classpath -->
+    <Match>
+        <Class name="io.helidon.microprofile.graphql.server.JandexUtils"/>
+        <Method name="findIndexFiles"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+    <!-- Used to find a jandex index by name on classpath -->
+    <Match>
+        <Class name="io.helidon.microprofile.graphql.server.JandexUtils"/>
+        <Bug pattern="URLCONNECTION_SSRF_FD"/>
+    </Match>
+
+</FindBugsFilter>

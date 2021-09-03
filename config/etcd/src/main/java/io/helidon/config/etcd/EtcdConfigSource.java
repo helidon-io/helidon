@@ -16,21 +16,28 @@
 
 package io.helidon.config.etcd;
 
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.AbstractConfigSource;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
-import io.helidon.config.spi.AbstractParsableConfigSource;
+import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ConfigParser.Content;
+import io.helidon.config.spi.ParsableSource;
+import io.helidon.config.spi.PollableSource;
+import io.helidon.config.spi.PollingStrategy;
+import io.helidon.config.spi.WatchableSource;
 
 /**
  * A config source which loads a configuration document from Etcd.
@@ -39,13 +46,10 @@ import io.helidon.config.spi.ConfigParser;
  *
  * @see EtcdConfigSourceBuilder
  */
-public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
+public class EtcdConfigSource extends AbstractConfigSource
+        implements PollableSource<Long>, WatchableSource<EtcdEndpoint>, ParsableSource {
 
     private static final Logger LOGGER = Logger.getLogger(EtcdConfigSource.class.getName());
-
-    static {
-        HelidonFeatures.register("Config", "etcd");
-    }
 
     private final EtcdEndpoint endpoint;
     private final EtcdClient client;
@@ -60,31 +64,49 @@ public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
     }
 
     @Override
-    protected Optional<String> mediaType() {
-        return super.mediaType()
-                .or(this::probeContentType);
-    }
-
-    private Optional<String> probeContentType() {
-        return MediaTypes.detectType(endpoint.key());
-    }
-
-    @Override
     protected String uid() {
         return endpoint.uri() + "#" + endpoint.key();
     }
 
     @Override
-    protected Optional<Long> dataStamp() {
-        try {
-            return Optional.of(etcdClient().revision(endpoint.key()));
-        } catch (EtcdClientException e) {
-            return Optional.empty();
-        }
+    public Optional<ConfigParser> parser() {
+        return super.parser();
     }
 
     @Override
-    protected ConfigParser.Content<Long> content() throws ConfigException {
+    public Optional<String> mediaType() {
+        return super.mediaType();
+    }
+
+    @Override
+    public Optional<PollingStrategy> pollingStrategy() {
+        return super.pollingStrategy();
+    }
+
+    @Override
+    public Optional<ChangeWatcher<Object>> changeWatcher() {
+        return super.changeWatcher();
+    }
+
+    @Override
+    public EtcdEndpoint target() {
+        return endpoint;
+    }
+
+    @Override
+    public Class<EtcdEndpoint> targetType() {
+        return EtcdEndpoint.class;
+    }
+
+    @Override
+    public boolean isModified(Long stamp) {
+        return dataStamp()
+                .map(newStamp -> (newStamp > stamp))
+                .orElse(false);
+    }
+
+    @Override
+    public Optional<Content> load() throws ConfigException {
         String content;
         try {
             content = etcdClient().get(endpoint.key());
@@ -95,15 +117,29 @@ public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
 
         // a KV pair does not exist
         if (content == null) {
-            throw new ConfigException(String.format("Key '%s' does not contain any value", endpoint.key()));
+            return Optional.empty();
         }
 
-        ConfigParser.Content.Builder<Long> builder = ConfigParser.Content.builder(new StringReader(content));
+        Content.Builder builder = Content.builder()
+                .data(toInputStream(content))
+                .charset(StandardCharsets.UTF_8);
 
-        mediaType().ifPresent(builder::mediaType);
+        MediaTypes.detectType(endpoint.key()).ifPresent(builder::mediaType);
         dataStamp().ifPresent(builder::stamp);
 
-        return builder.build();
+        return Optional.of(builder.build());
+    }
+
+    private InputStream toInputStream(String content) {
+        return new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private Optional<Long> dataStamp() {
+        try {
+            return Optional.of(etcdClient().revision(endpoint.key()));
+        } catch (EtcdClientException e) {
+            return Optional.empty();
+        }
     }
 
     EtcdEndpoint etcdEndpoint() {

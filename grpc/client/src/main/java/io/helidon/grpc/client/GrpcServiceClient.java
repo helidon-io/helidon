@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.core.PriorityBag;
@@ -47,9 +45,6 @@ import io.grpc.stub.StreamObserver;
  * A gRPC Client for a specific gRPC service.
  */
 public class GrpcServiceClient {
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "gRPC Client");
-    }
 
     private final HashMap<String, GrpcMethodStub> methodStubs;
 

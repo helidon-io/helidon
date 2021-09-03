@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,16 @@ public final class JwkKeys {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Create Jwk keys from its JSON representation.
+     *
+     * @param json json with jwk keys
+     * @return keys set up from the provided json
+     */
+    public static JwkKeys create(JsonObject json) {
+        return builder().json(json).build();
     }
 
     /**
@@ -147,11 +157,28 @@ public final class JwkKeys {
             return this;
         }
 
+        /**
+         * Load keys from JSON.
+         *
+         * @param json the JSON data
+         * @return updated builder instance
+         */
+        public Builder json(JsonObject json) {
+            addKeys(json);
+            return this;
+        }
+
         private void addKeys(JsonObject jsonObject) {
             JsonArray keyArray = jsonObject.getJsonArray("keys");
             keyArray.forEach(it -> {
                 JsonObject aKey = (JsonObject) it;
-                addKey(Jwk.create(aKey));
+                try {
+                    addKey(Jwk.create(aKey));
+                } catch (Exception e) {
+                    LOGGER.log(Level.WARNING,
+                               "Could not process a key from JWK JSON, this key will not be available",
+                               e);
+                }
             });
         }
     }

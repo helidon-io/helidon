@@ -1,0 +1,152 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Message
+:toc:
+:toc-placement: preamble
+:description: Reactive Messaging Message in Helidon MP
+:keywords: helidon, mp, messaging, message
+:h1Prefix: MP
+
+== Message
+The Reactive Messaging
+https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_message[Message]
+class can be used to wrap or unwrap data items between methods and connectors.
+The message wrapping and unwrapping can be performed explicitly by using
+`org.eclipse.microprofile.reactive.messaging.Message#of(T)` or implicitly through the messaging core.
+
+[source,java]
+.Example of explicit and implicit wrapping and unwrapping
+----
+@Outgoing("publisher-payload")
+public PublisherBuilder<Integer> streamOfMessages() {
+    return ReactiveStreams.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+}
+
+@Incoming("publisher-payload")
+@Outgoing("wrapped-message")
+public Message<String> rewrapMessageManually(Message<Integer> message) {
+    return Message.of(Integer.toString(message.getPayload()));
+}
+
+@Incoming("wrapped-message")
+public void consumeImplicitlyUnwrappedMessage(String value) {
+    System.out.println("Consuming message: " + value);
+}
+----
+
+=== Acknowledgement
+Message carries a callback for reception acknowledgement, acknowledgement in messaging methods is possible manually by
+`org.eclipse.microprofile.reactive.messaging.Message#ack` or automatically according explicit
+or implicit acknowledgement strategy by messaging core. Explicit strategy configuration is possible
+with `@Acknowledgment` annotation which has one required attribute `value` that expects the strategy type from enum
+`org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy`. More information about supported signatures
+and implicit automatic acknowledgement can be found in specification
+https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_message_acknowledgement[Message acknowledgement].
+
+[[terms]]
+.Acknowledgement strategies
+|===
+|`@Acknowledgment(Acknowledgment.Strategy.NONE)`| No acknowledgment
+|`@Acknowledgment(Acknowledgment.Strategy.MANUAL)`| No automatic acknowledgment
+|`@Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)`| Ack automatically before method invocation or processing
+|`@Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)`| Ack automatically after method invocation or processing
+|===
+
+[source,java]
+.Example of manual acknowledgment
+----
+@Outgoing("consume-and-ack")
+public PublisherBuilder<Integer> streamOfMessages() {
+    return ReactiveStreams.of(Message.of("This is Payload", () -> {
+            System.out.println("This particular message was acked!");
+            return CompletableFuture.completedFuture(null);
+        })).buildRs();
+}
+
+@Incoming("consume-and-ack")
+@Acknowledgment(Acknowledgment.Strategy.MANUAL)
+public void receiveAndAckMessage(Message<String> msg) {
+    msg.ack();<1>
+}
+----
+<1> Calling ack() will print "This particular message was acked!" to System.out
+
+[source,java]
+.Example of manual acknowledgment
+----
+@Outgoing("consume-and-ack")
+public PublisherBuilder<Integer> streamOfMessages() {
+    return ReactiveStreams.of(Message.of("This is Payload", () -> {
+            System.out.println("This particular message was acked!");
+            return CompletableFuture.completedFuture(null);
+        })).buildRs();
+}
+
+@Incoming("consume-and-ack")
+@Acknowledgment(Acknowledgment.Strategy.MANUAL)
+public void receiveAndAckMessage(Message<String> msg) {
+    msg.ack();<1>
+}
+----
+<1> Calling ack() will print "This particular message was acked!" to System.out
+
+[source,java]
+.Example of explicit pre-process acknowledgment
+----
+@Outgoing("consume-and-ack")
+public PublisherBuilder<Integer> streamOfMessages() {
+    return ReactiveStreams.of(Message.of("This is Payload", () -> {
+            System.out.println("This particular message was acked!");
+            return CompletableFuture.completedFuture(null);
+        })).buildRs();
+}
+
+/**
+* Prints to the console:
+* > This particular message was acked!
+* > Method invocation!
+*/
+@Incoming("consume-and-ack")
+@Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
+public void receiveAndAckMessage(Message<String> msg) {
+    System.out.println("Method invocation!");
+}
+----
+[source,java]
+.Example of explicit post-rocess acknowledgment
+----
+@Outgoing("consume-and-ack")
+public PublisherBuilder<Integer> streamOfMessages() {
+    return ReactiveStreams.of(Message.of("This is Payload", () -> {
+            System.out.println("This particular message was acked!");
+            return CompletableFuture.completedFuture(null);
+        })).buildRs();
+}
+
+/**
+* Prints to the console:
+* > Method invocation!
+* > This particular message was acked!
+*/
+@Incoming("consume-and-ack")
+@Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
+public void receiveAndAckMessage(Message<String> msg) {
+    System.out.println("Method invocation!");
+}
+----

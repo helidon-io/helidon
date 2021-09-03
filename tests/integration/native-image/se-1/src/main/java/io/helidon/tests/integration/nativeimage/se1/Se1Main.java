@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,25 @@
  */
 package io.helidon.tests.integration.nativeimage.se1;
 
-import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.logging.LogManager;
+import java.util.Set;
 
+import javax.websocket.server.ServerEndpointConfig;
+
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
-import io.helidon.config.PollingStrategies;
+import io.helidon.config.FileSystemWatcher;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.jsonb.JsonbSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
-import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.staticcontent.StaticContentSupport;
+import io.helidon.webserver.tyrus.TyrusSupport;
 
 import org.eclipse.microprofile.health.HealthCheckResponse;
 
@@ -50,33 +53,31 @@ public final class Se1Main {
     /**
      * Application main entry point.
      * @param args command line arguments.
-     * @throws java.io.IOException if there are problems reading logging properties
      */
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
         startServer();
     }
 
     /**
      * Start the server.
      * @return the created {@link io.helidon.webserver.WebServer} instance
-     * @throws IOException if there are problems reading logging properties
      */
-    static WebServer startServer() throws IOException {
-
+    static WebServer startServer() {
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Se1Main.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
         Config config = buildConfig();
 
         // Get webserver config from the "server" section of application.yaml
-        ServerConfiguration serverConfig =
-                ServerConfiguration.builder(config.get("server"))
-                        .tracer(TracerBuilder.create(config.get("tracing")).buildAndRegister())
-                        .build();
-
-        WebServer server = WebServer.create(serverConfig, createRouting(config));
+        WebServer server = WebServer.builder()
+                .routing(createRouting(config))
+                .config(config.get("server"))
+                .tracer(TracerBuilder.create(config.get("tracing")).build())
+                .addMediaSupport(JsonpSupport.create())
+                .addMediaSupport(JsonbSupport.create())
+                .printFeatureDetails(true)
+                .build();
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
@@ -103,7 +104,7 @@ public final class Se1Main {
                 .sources(
                         classpath("se-test.yaml").optional(),
                         file("conf/se.yaml")
-                                .pollingStrategy(PollingStrategies::watch)
+                                .changeWatcher(FileSystemWatcher.create())
                                 .optional(),
                         classpath("application.yaml"))
                 .build();
@@ -119,6 +120,8 @@ public final class Se1Main {
 
         MetricsSupport metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
+        MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
+        WebClientService webClientService = new WebClientService(config, zipkinService);
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .addLiveness(() -> HealthCheckResponse.named("custom") // a custom health check
@@ -131,11 +134,18 @@ public final class Se1Main {
                 .register("/static/path", StaticContentSupport.create(Paths.get("web")))
                 .register("/static/classpath", StaticContentSupport.create("web"))
                 .register("/static/jar", StaticContentSupport.create("web-jar"))
-                .register(JsonSupport.create())
                 .register(WebSecurity.create(config.get("security")))
                 .register(health)                   // Health at "/health"
                 .register(metrics)                  // Metrics at "/metrics"
                 .register("/greet", greetService)
+                .register("/wc", webClientService)
+                .register("/zipkin", zipkinService)
+                .register("/ws",
+                        TyrusSupport.builder().register(
+                                ServerEndpointConfig.Builder.create(
+                                        WebSocketEndpoint.class, "/messages")
+                                        .build())
+                                .build())
                 .build();
     }
 

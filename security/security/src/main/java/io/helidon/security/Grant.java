@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.security;
 
 import java.security.Principal;
 import java.util.Collection;
+import java.util.Objects;
 
 import io.helidon.security.util.AbacSupport;
 
@@ -105,18 +106,37 @@ public class Grant implements AbacSupport, Principal {
         return origin;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Grant)) {
+            return false;
+        }
+        Grant grant = (Grant) o;
+        return type.equals(grant.type)
+                && getName().equals(grant.getName())
+                && origin.equals(grant.origin);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, getName(), origin);
+    }
+
     /**
      * A fluent API builder for {@link Grant} to be extended by other {@link Grant} implementations.
      *
      * @param <T> type of the builder, needed for builder inheritance
      */
     public static class Builder<T extends Builder<T>> implements io.helidon.common.Builder<Grant> {
+        private final T instance;
+
         private BasicAttributes properties = BasicAttributes.create();
         private String type;
         private String name;
         private String origin = "builder";
-
-        private final T instance;
 
         /**
          * Create a new instance.

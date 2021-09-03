@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,13 @@ module io.helidon.config.encryption {
 
     // for RSA encrypted keys
     requires transitive io.helidon.common.pki;
+    requires transitive io.helidon.common.crypto;
     requires transitive io.helidon.config;
+
+    requires static io.helidon.config.mp;
 
     exports io.helidon.config.encryption;
 
     provides io.helidon.config.spi.ConfigFilter with io.helidon.config.encryption.EncryptionFilterService;
+    provides io.helidon.config.mp.spi.MpConfigFilter with io.helidon.config.encryption.MpEncryptionFilter;
 }

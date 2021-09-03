@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import io.helidon.config.Config;
 
@@ -46,13 +49,15 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
     private final Map<String, Set<String>> operationServers;
     private final Map<String, Set<String>> pathServers;
     private Boolean scanDisable = Boolean.TRUE;
-    private final Set<String> scanPackages = Collections.emptySet();
-    private final Set<String> scanClasses = Collections.emptySet();
-    private final Set<String> scanExcludePackages = Collections.emptySet();
-    private final Set<String> scanExcludeClasses = Collections.emptySet();
+    private final Pattern scanPackages;
+    private final Pattern scanClasses;
+    private final Pattern scanExcludePackages;
+    private final Pattern scanExcludeClasses;
     private final Set<String> servers;
     private final Boolean scanDependenciesDisable = Boolean.TRUE;
     private final Set<String> scanDependenciesJars = Collections.emptySet();
+    private final String customSchemaRegistryClass;
+    private final Boolean applicationPathDisable;
 
     private OpenAPIConfigImpl(Builder builder) {
         modelReader = builder.modelReader;
@@ -61,6 +66,12 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         pathServers = builder.pathServers;
         servers = new HashSet<>(builder.servers);
         scanDisable = builder.scanDisable;
+        scanPackages = builder.scanPackages;
+        scanClasses = builder.scanClasses;
+        scanExcludePackages = builder.scanExcludePackages;
+        scanExcludeClasses = builder.scanExcludeClasses;
+        customSchemaRegistryClass = builder.customSchemaRegistryClass;
+        applicationPathDisable = builder.applicationPathDisable;
     }
 
     /**
@@ -88,22 +99,22 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
     }
 
     @Override
-    public Set<String> scanPackages() {
+    public Pattern scanPackages() {
         return scanPackages;
     }
 
     @Override
-    public Set<String> scanClasses() {
+    public Pattern scanClasses() {
         return scanClasses;
     }
 
     @Override
-    public Set<String> scanExcludePackages() {
+    public Pattern scanExcludePackages() {
         return scanExcludePackages;
     }
 
     @Override
-    public Set<String> scanExcludeClasses() {
+    public Pattern scanExcludeClasses() {
         return scanExcludeClasses;
     }
 
@@ -130,6 +141,27 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
     @Override
     public Set<String> scanDependenciesJars() {
         return scanDependenciesJars;
+    }
+
+    /**
+     * Reports whether schema-reference following is enabled; note this is now always {$code true}. Provided for backward
+     * compatibility only.
+     *
+     * @return true
+     */
+    @Deprecated
+    public boolean schemaReferencesEnable() {
+        return true;
+    }
+
+    @Override
+    public String customSchemaRegistryClass() {
+        return customSchemaRegistryClass;
+    }
+
+    @Override
+    public boolean applicationPathDisable() {
+        return applicationPathDisable;
     }
 
     private static <T, U> Set<U> chooseEntry(Map<T, Set<U>> map, T key) {
@@ -159,15 +191,22 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
      */
     public static final class Builder implements io.helidon.common.Builder<OpenApiConfig> {
 
-        private static final String CONFIG_PREFIX = "openapi.";
+        private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
+
+        private static final Pattern MATCH_EVERYTHING = Pattern.compile(".*");
 
         // Key names are inspired by the MP OpenAPI config key names
-        static final String MODEL_READER = CONFIG_PREFIX + "model.reader";
-        static final String FILTER = CONFIG_PREFIX + "filter";
-        static final String SERVERS = CONFIG_PREFIX + "servers";
-        static final String SERVERS_PATH = CONFIG_PREFIX + "servers.path";
-        static final String SERVERS_OPERATION = CONFIG_PREFIX + "servers.operation";
-        static final String SCHEMA_REFERENCES_ENABLED = CONFIG_PREFIX + "schema-references.enable";
+        static final String MODEL_READER = "model.reader";
+        static final String FILTER = "filter";
+        static final String SERVERS = "servers";
+        static final String SERVERS_PATH = "servers.path";
+        static final String SERVERS_OPERATION = "servers.operation";
+
+        @Deprecated
+        static final String SCHEMA_REFERENCES_ENABLE = "schema-references.enable";
+
+        static final String CUSTOM_SCHEMA_REGISTRY_CLASS = "custom-schema-registry.class";
+        static final String APPLICATION_PATH_DISABLE = "application-path.disable";
 
         static final List<String> CONFIG_KEYS = Arrays.asList(new String[] {MODEL_READER, FILTER, SERVERS});
 
@@ -177,6 +216,13 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         private final Map<String, Set<String>> pathServers = new HashMap<>();
         private final Set<String> servers = new HashSet<>();
         private boolean scanDisable = true;
+        private Pattern scanPackages = MATCH_EVERYTHING;
+        private Pattern scanClasses = MATCH_EVERYTHING;
+        private Pattern scanExcludePackages = null;
+        private Pattern scanExcludeClasses = null;
+
+        private String customSchemaRegistryClass;
+        private Boolean applicationPathDisable;
 
         private Builder() {
         }
@@ -188,9 +234,9 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
 
         /**
          * Sets the builder's attributes according to the corresponding entries
-         * (if present) in the specified {@link Config} object.
+         * (if present) in the specified openapi {@link Config} object.
          *
-         * @param config {@code} Config object to process
+         * @param config {@code} openapi Config object to process
          * @return updated builder
          */
         public Builder config(Config config) {
@@ -199,6 +245,9 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
             stringFromConfig(config, SERVERS, this::servers);
             listFromConfig(config, SERVERS_PATH, this::pathServers);
             listFromConfig(config, SERVERS_OPERATION, this::operationServers);
+            booleanFromConfig(config, SCHEMA_REFERENCES_ENABLE, this::schemaReferencesEnable);
+            stringFromConfig(config, CUSTOM_SCHEMA_REGISTRY_CLASS, this::customSchemaRegistryClass);
+            booleanFromConfig(config, APPLICATION_PATH_DISABLE, this::applicationPathDisable);
             return this;
         }
 
@@ -305,6 +354,42 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          */
         public Builder scanDisable(boolean value) {
             scanDisable = value;
+            return this;
+        }
+
+        /**
+         * NO LONGER FUNCTIONAL; sets whether schema references are enabled.
+         *
+         * @param value new setting for schema references enabled
+         * @return updated builder
+         */
+        @Deprecated
+        public Builder schemaReferencesEnable(Boolean value) {
+            LOGGER.log(Level.WARNING,
+                    String.format("OpenAPI configuration setting %s is no longer supported but was set to '%b'; "
+                            + "it is always treated as 'true'", SCHEMA_REFERENCES_ENABLE, value));
+            return this;
+        }
+
+        /**
+         * Sets the custom schema registry class.
+         *
+         * @param className class to be assigned
+         * @return updated builder
+         */
+        public Builder customSchemaRegistryClass(String className) {
+            customSchemaRegistryClass = className;
+            return this;
+        }
+
+        /**
+         * Sets whether the app path search should be disabled.
+         *
+         * @param value true/false
+         * @return updated builder
+         */
+        public Builder applicationPathDisable(Boolean value) {
+            applicationPathDisable = value;
             return this;
         }
 

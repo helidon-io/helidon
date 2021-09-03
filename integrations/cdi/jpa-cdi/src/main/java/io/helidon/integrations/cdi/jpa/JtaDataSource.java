@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,8 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
 
     private final DataSource delegate;
 
+    private final String dataSourceName;
+
     private final TransactionManager transactionManager;
 
 
@@ -78,9 +80,11 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
 
 
     JtaDataSource(final DataSource delegate,
+                  final String dataSourceName,
                   final TransactionManager transactionManager) {
         super();
         this.delegate = Objects.requireNonNull(delegate);
+        this.dataSourceName = dataSourceName;
         this.transactionManager = Objects.requireNonNull(transactionManager);
     }
 
@@ -137,21 +141,29 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
             break;
         }
 
+        // Get all of the TransactionSpecificConnections we have
+        // released into the world via our getConnection() and
+        // getConnection(String, String) methods, and inform them that
+        // the transaction is over.  Then remove them from the map
+        // since the transaction is over.  These particular
+        // Connections out in the world will not participate in future
+        // JTA transactions, even if such transactions are started on
+        // this thread.
         @SuppressWarnings("unchecked")
-        final Map<?, ? extends TransactionSpecificConnection> connectionMap =
+        final Map<?, ? extends TransactionSpecificConnection> myThreadLocalConnectionMap =
             (Map<?, ? extends TransactionSpecificConnection>) CONNECTION_STORAGE.get().get(this);
 
-        if (connectionMap != null && !connectionMap.isEmpty()) {
-            final Collection<? extends TransactionSpecificConnection> connections = connectionMap.values();
-            assert connections != null;
+        if (myThreadLocalConnectionMap != null && !myThreadLocalConnectionMap.isEmpty()) {
+            final Collection<? extends TransactionSpecificConnection> myConnections = myThreadLocalConnectionMap.values();
+            assert myConnections != null;
             try {
                 if (badStatusException != null) {
                     throw badStatusException;
                 } else {
-                    complete(connections, consumer);
+                    complete(myConnections, consumer);
                 }
             } finally {
-                connections.clear();
+                myConnections.clear();
             }
         }
     }
@@ -173,6 +185,15 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
      * <p>The {@link TransactionSpecificConnection}s will also be
      * closed if a caller has requested their closing prior to this
      * method executing.</p>
+     *
+     * <p>If a user has not requested their closing prior to this
+     * method executing, the {@link TransactionSpecificConnection}s
+     * will not be closed, but will become closeable by the end user
+     * (allowing them to be released back to any backing connection
+     * pool that might exist).  They will no longer take part in any
+     * new JTA transactions from this point forward (a new {@link
+     * Connection} will have to be acquired while a JTA transaction is
+     * active for that behavior).</p>
      *
      * @param connections an {@link Iterable} of {@link
      * TransactionSpecificConnection} instances; may be {@code null}
@@ -457,7 +478,6 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
         if (status == Status.STATUS_ACTIVE) {
             final Map<JtaDataSource, Map<Object, TransactionSpecificConnection>> connectionStorageMap = CONNECTION_STORAGE.get();
             assert connectionStorageMap != null;
-            // @SuppressWarnings("unchecked")
             Map<Object, TransactionSpecificConnection> myConnectionMap = connectionStorageMap.get(this);
             if (myConnectionMap == null) {
                 myConnectionMap = new HashMap<>();
@@ -479,7 +499,7 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
                 }
                 myConnectionMap.put(id, tsc);
             } else {
-                tsc.resetCloseCalled();
+                tsc.setCloseCalled(false);
             }
             returnValue = tsc;
         } else if (useZeroArgumentForm) {
@@ -525,7 +545,8 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
         private boolean closeCalled;
 
         private TransactionSpecificConnection(final Connection delegate) throws SQLException {
-            super(delegate, false);
+            super(delegate, false /* not closeable */);
+            assert !this.isCloseable();
             this.oldAutoCommit = this.getAutoCommit();
             this.setAutoCommit(false);
         }
@@ -536,7 +557,7 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
 
         @Override
         public void close() throws SQLException {
-            this.closeCalled = true;
+            this.setCloseCalled(true);
             super.close();
         }
 
@@ -544,8 +565,8 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
             return this.closeCalled || this.isClosed();
         }
 
-        private void resetCloseCalled() {
-            this.closeCalled = false;
+        private void setCloseCalled(final boolean closeCalled) {
+            this.closeCalled = closeCalled;
         }
 
     }

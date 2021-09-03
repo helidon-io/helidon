@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public final class ConfigValues {
      * @return a config value that is empty
      */
     public static <T> ConfigValue<T> empty() {
-        return new ConfigValueBase<T>(Config.Key.create("")) {
+        return new ConfigValueBase<>(Config.Key.create("")) {
             @Override
             public Optional<T> asOptional() {
                 return Optional.empty();
@@ -83,7 +83,7 @@ public final class ConfigValues {
      * @return a config value that uses the value provided
      */
     public static <T> ConfigValue<T> simpleValue(T value) {
-        return new ConfigValueBase<T>(Config.Key.create("")) {
+        return new ConfigValueBase<>(Config.Key.create("")) {
             @Override
             public Optional<T> asOptional() {
                 return Optional.ofNullable(value);
@@ -259,7 +259,7 @@ public final class ConfigValues {
 
         @Override
         public String toString() {
-            return key() + ": " + asOptional();
+            return key() + ": " + asOptional().map(String::valueOf).orElse("");
         }
     }
 

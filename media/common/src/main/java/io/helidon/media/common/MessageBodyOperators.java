@@ -32,10 +32,10 @@ import io.helidon.common.GenericType;
  */
 final class MessageBodyOperators<T extends MessageBodyOperator<?>> implements Iterable<T>, AutoCloseable {
 
-    private final MessageBodyOperators<T> parent;
     private final LinkedList<T> operators;
     private final ReadWriteLock lock;
     private final AtomicBoolean readLocked;
+    private MessageBodyOperators<T> parent;
 
     /**
      * Create a new parented registry.
@@ -92,83 +92,35 @@ final class MessageBodyOperators<T extends MessageBodyOperator<?>> implements It
     }
 
     /**
-     * Select an operator using {@link Operator#accept}.
+     * Select an operator using {@link MessageBodyOperator#accept}.
      * @param type the type representation
      * @param context the message body context
-     * @return operator found, or {@code null} or no operator was found
-     */
-    <U extends MessageBodyOperator<V>, V extends MessageBodyContext> T select(GenericType<?> type, V context) {
-        return select(type, context, /* fallback */ null);
-    }
-
-    /**
-     * Select an operator using {@link Operator#accept}.
-     * @param type the type representation
-     * @param context the message body context
-     * @param fallback a fallback registry to use if the operator is not
-     * found in this registry hierarchy
      * @return operator, or {@code null} or no operator was found
      */
     @SuppressWarnings("unchecked")
-    <U extends MessageBodyOperator<V>, V extends MessageBodyContext> T select(GenericType<?> type, V context,
-            MessageBodyOperators<T> fallback) {
-
+    <U extends MessageBodyOperator<V>, V extends MessageBodyContext> T select(GenericType<?> type, V context) {
         Objects.requireNonNull(type, "type is null!");
         Objects.requireNonNull(context, "context is null!");
-        try {
-            lock.readLock().lock();
-            for (T operator : operators) {
-                if (((U) operator).accept(type, context)) {
-                    return operator;
-                }
-            }
-        } finally {
-            lock.readLock().unlock();
-        }
-        if (parent != null) {
-            return parent.select(type, context, fallback);
-        }
-        if (fallback != null) {
-            return fallback.select(type, context, fallback);
-        }
-        return null;
-    }
+        T assignableOperator = null;
+        MessageBodyOperators<T> current = this;
 
-    /**
-     * Select an operator by it class.
-     * @param operatorClass required operator class
-     * @return operator, or {@code null} or no operator was found
-     */
-    T get(Class<? extends MessageBodyOperator> operatorClass) {
-        return get(operatorClass, null);
-    }
-
-    /**
-     * Select an operator by it class.
-     * @param operatorClass required operator class
-     * @param fallback a fallback registry to use if the operator is not
-     * found in this registry hierarchy
-     * @return operator, or {@code null} or no operator was found
-     */
-    T get(Class<? extends MessageBodyOperator> operatorClass, MessageBodyOperators<T> fallback) {
-        Objects.requireNonNull(operatorClass, "operatorClass is null!");
-        try {
-            lock.readLock().lock();
-            for (T operator : operators) {
-                if (operator.getClass().equals(operatorClass)) {
-                    return operator;
+        while (current != null) {
+            try {
+                current.lock.readLock().lock();
+                for (T operator : current.operators) {
+                    MessageBodyOperator.PredicateResult accept = ((U) operator).accept(type, context);
+                    if (accept == MessageBodyOperator.PredicateResult.COMPATIBLE && assignableOperator == null) {
+                        assignableOperator = operator;
+                    } else if (accept == MessageBodyOperator.PredicateResult.SUPPORTED) {
+                        return operator;
+                    }
                 }
+            } finally {
+                current.lock.readLock().unlock();
             }
-        } finally {
-            lock.readLock().unlock();
+            current = current.parent;
         }
-        if (parent != null) {
-            return parent.get(operatorClass, fallback);
-        }
-        if (fallback != null) {
-            return fallback.get(operatorClass, fallback);
-        }
-        return null;
+        return assignableOperator;
     }
 
     @Override

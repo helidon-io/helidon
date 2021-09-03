@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
@@ -51,19 +52,19 @@ final class PemReader {
     private static final Logger LOGGER = Logger.getLogger(PemReader.class.getName());
 
     private static final Pattern CERT_PATTERN = Pattern.compile(
-            "-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+" + // Header
-                    "([a-z0-9+/=\\r\\n]+)" +                    // Base64 text
-                    "-+END\\s+.*CERTIFICATE[^-]*-+",            // Footer
+            "-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+" // Header
+                    + "([a-z0-9+/=\\r\\n]+)"                        // Base64 text
+                    + "-+END\\s+.*CERTIFICATE[^-]*-+",              // Footer
             Pattern.CASE_INSENSITIVE);
     private static final Pattern KEY_PATTERN = Pattern.compile(
-            "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" + // Header
-                    "([a-z0-9+/=\\r\\n]+)" +                       // Base64 text
-                    "-+END\\s+.*PRIVATE\\s+KEY[^-]*-+",            // Footer
+            "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" // Header
+                    + "([a-z0-9+/=\\r\\n]+)"                           // Base64 text
+                    + "-+END\\s+.*PRIVATE\\s+KEY[^-]*-+",              // Footer
             Pattern.CASE_INSENSITIVE);
     private static final Pattern PUBLIC_KEY_PATTERN = Pattern.compile(
-            "-+BEGIN\\s+.*PUBLIC\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" + // Header
-                    "([a-z0-9+/=\\r\\n\\s]+)" +                       // Base64 text
-                    "-+END\\s+.*PUBLIC\\s+KEY[^-]*-+",            // Footer
+            "-+BEGIN\\s+.*PUBLIC\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+"  // Header
+                    + "([a-z0-9+/=\\r\\n\\s]+)"                        // Base64 text
+                    + "-+END\\s+.*PUBLIC\\s+KEY[^-]*-+",               // Footer
             Pattern.CASE_INSENSITIVE);
 
     private PemReader() {
@@ -90,22 +91,69 @@ final class PemReader {
     }
 
     static PrivateKey readPrivateKey(InputStream input, char[] password) {
-        byte[] pkBytes = readPrivateKeyBytes(input);
 
-        PKCS8EncodedKeySpec keySpec = generateKeySpec(pkBytes, password);
+        PrivateKeyInfo pkInfo = readPrivateKeyBytes(input);
+
+        switch (pkInfo.type) {
+        case "PKCS1-RSA":
+            return rsaPrivateKey(pkcs1RsaKeySpec(pkInfo.bytes));
+        case "PKCS1-DSA":
+            throw new UnsupportedOperationException("PKCS#1 DSA private key is not supported");
+        case "PKCS1-EC":
+            throw new UnsupportedOperationException("PKCS#1 EC private key is not supported");
+        case "PKCS8":
+        default:
+            return pkcs8(generateKeySpec(pkInfo.bytes, password));
+        }
+    }
+
+    private static KeySpec pkcs1RsaKeySpec(byte[] bytes) {
+        DerUtils.checkEnabled();
+        return DerUtils.pkcs1RsaKeySpec(bytes);
+    }
+
+    private static PrivateKey pkcs8(KeySpec keySpec) {
+        try {
+            return rsaPrivateKey(keySpec);
+        } catch (Exception rsaException) {
+            try {
+                return dsaPrivateKey(keySpec);
+            } catch (Exception dsaException) {
+                try {
+                    return ecPrivateKey(keySpec);
+                } catch (Exception ecException) {
+                    PkiException e = new PkiException("Failed to get private key. It is not RSA, DSA or EC.");
+                    e.addSuppressed(rsaException);
+                    e.addSuppressed(dsaException);
+                    e.addSuppressed(ecException);
+                    throw e;
+                }
+            }
+        }
+    }
+
+    private static PrivateKey ecPrivateKey(KeySpec keySpec) {
+        try {
+            return KeyFactory.getInstance("EC").generatePrivate(keySpec);
+        } catch (Exception e) {
+            throw new PkiException("Failed to get EC private key", e);
+        }
+    }
+
+    private static PrivateKey dsaPrivateKey(KeySpec keySpec) {
+        try {
+            return KeyFactory.getInstance("DSA").generatePrivate(keySpec);
+        } catch (Exception e) {
+            throw new PkiException("Failed to get DSA private key", e);
+        }
+    }
+
+    private static PrivateKey rsaPrivateKey(KeySpec keySpec) {
 
         try {
             return KeyFactory.getInstance("RSA").generatePrivate(keySpec);
-        } catch (Exception ignore) {
-            try {
-                return KeyFactory.getInstance("DSA").generatePrivate(keySpec);
-            } catch (Exception ignore2) {
-                try {
-                    return KeyFactory.getInstance("EC").generatePrivate(keySpec);
-                } catch (Exception e) {
-                    throw new PkiException("Failed to get private key. It is not RSA, DSA or EC.", e);
-                }
-            }
+        } catch (Exception e) {
+            throw new PkiException("Failed to get RSA private key", e);
         }
     }
 
@@ -151,7 +199,7 @@ final class PemReader {
         return certs;
     }
 
-    private static PKCS8EncodedKeySpec generateKeySpec(byte[] keyBytes, char[] password) {
+    private static KeySpec generateKeySpec(byte[] keyBytes, char[] password) {
         if (password == null) {
             return new PKCS8EncodedKeySpec(keyBytes);
         }
@@ -175,7 +223,7 @@ final class PemReader {
         return new X509EncodedKeySpec(bytes);
     }
 
-    private static byte[] readPrivateKeyBytes(InputStream in) {
+    private static PrivateKeyInfo readPrivateKeyBytes(InputStream in) {
         String content;
         try {
             content = readContent(in);
@@ -191,7 +239,26 @@ final class PemReader {
         }
 
         byte[] base64 = m.group(1).getBytes(StandardCharsets.US_ASCII);
-        return Base64.getMimeDecoder().decode(base64);
+        String type;
+        if (content.startsWith("-----BEGIN PRIVATE KEY-----")
+                || content.startsWith("-----BEGIN ENCRYPTED PRIVATE KEY-----")) {
+            // in this case, we do not know the type, we must try all
+            type = "PKCS8";
+        } else if (content.startsWith("-----BEGIN RSA PRIVATE KEY-----")) {
+            type = "PKCS1-RSA";
+        } else if (content.startsWith("-----BEGIN DSA PRIVATE KEY-----")) {
+            type = "PKCS1-DSA";
+        } else if (content.startsWith("-----BEGIN EC PRIVATE KEY-----")) {
+            type = "PKCS1-EC";
+        } else {
+            int firstEol = content.indexOf("\n");
+            if (firstEol < 1) {
+                throw new PkiException("Could not find a PKCS#8 private key in input stream");
+            } else {
+                throw new PkiException("Unsupported key type: " + content.substring(0, firstEol));
+            }
+        }
+        return new PrivateKeyInfo(type, Base64.getMimeDecoder().decode(base64));
     }
 
     private static byte[] readPublicKeyBytes(InputStream in) {
@@ -243,6 +310,16 @@ final class PemReader {
             out.close();
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Failed to close a stream.", e);
+        }
+    }
+
+    private static final class PrivateKeyInfo {
+        private final String type;
+        private final byte[] bytes;
+
+        PrivateKeyInfo(String type, byte[] bytes) {
+            this.type = type;
+            this.bytes = bytes;
         }
     }
 }

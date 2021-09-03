@@ -16,10 +16,9 @@
 
 package io.helidon.security.examples.idcs;
 
-import java.io.IOException;
 import java.util.Optional;
-import java.util.logging.LogManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
@@ -28,7 +27,6 @@ import io.helidon.security.Subject;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.oidc.OidcSupport;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import static io.helidon.config.ConfigSources.classpath;
@@ -51,11 +49,10 @@ public final class IdcsMain {
      * Start the example.
      *
      * @param args ignored
-     * @throws IOException if logging configuration fails
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(IdcsMain.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         Config config = buildConfig();
 
@@ -75,8 +72,7 @@ public final class IdcsMain {
                             .orElse("Security context is null"));
                 });
 
-        theServer = WebServer.create(ServerConfiguration.create(config.get("server")),
-                                     routing);
+        theServer = WebServer.create(routing, config.get("server"));
 
         IdcsUtil.start(theServer);
     }

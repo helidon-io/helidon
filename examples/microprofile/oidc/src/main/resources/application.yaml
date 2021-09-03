@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ security:
     # The redirect URI used is ${frontend-uri}${redirect-uri}
     # Webserver is by default listening on /oidc/redirect - this can be modified by `redirect-uri` option in oidc configuration
     frontend-uri: "http://localhost:7987"
+    server-type: "@default"
   providers:
     - abac:
       # Adds ABAC Provider - it does not require any configuration
@@ -42,9 +43,10 @@ security:
         header-use: true
         # the default redirect-uri, where the webserver listens on redirects from identity server
         redirect-uri: "/oidc/redirect"
-        issuer: "${ALIAS=security.properties.oidc-issuer}"
-        audience: "${ALIAS=security.properties.oidc-audience}"
-        client-id: "${ALIAS=security.properties.oidc-client-id}"
-        client-secret: "${ALIAS=security.properties.oidc-client-secret}"
-        identity-uri: "${ALIAS=security.properties.oidc-identity-uri}"
-        frontend-uri: "${ALIAS=security.properties.frontend-uri}"
+        issuer: "${security.properties.oidc-issuer}"
+        audience: "${security.properties.oidc-audience}"
+        client-id: "${security.properties.oidc-client-id}"
+        client-secret: "${security.properties.oidc-client-secret}"
+        identity-uri: "${security.properties.oidc-identity-uri}"
+        frontend-uri: "${security.properties.frontend-uri}"
+        server-type: "${security.properties.server-type}"

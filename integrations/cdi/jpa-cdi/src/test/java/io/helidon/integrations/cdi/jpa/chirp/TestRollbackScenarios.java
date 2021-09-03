@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -190,10 +190,6 @@ class TestRollbackScenarios {
         // Create a JPA entity and insert it.
         Author author = new Author("Abraham Lincoln");
         em.persist(author);
-
-        // No trip to the database has happened yet, so the author's
-        // identifier isn't set yet.
-        assertNull(author.getId());
 
         // Commit the transaction.  Because we're relying on the
         // default flush mode, this will cause a flush to the

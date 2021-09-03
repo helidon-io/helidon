@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -739,159 +739,6 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
      * Static methods.
      */
 
-
-    /**
-     * Given a {@link Persistence} (a Java object representation of a
-     * {@code META-INF/persistence.xml} resource), a {@link URL}
-     * representing the root of all persistence units, a {@link Map}
-     * of unlisted managed classes (entity classes, mapped
-     * superclasses and so on) indexed by persistence unit name, and a
-     * {@link DataSourceProvider} that can provide {@link DataSource}
-     * instances, returns a {@link Collection} of {@link
-     * PersistenceUnitInfoBean} instances representing all the
-     * persistence units in play.
-     *
-     * <p>This method never returns {@code null}.</p>
-     *
-     * @param persistence a {@link Persistence} containing bootstrap
-     * information from which persistence units and their
-     * configuration may be deduced; may be {@code null} in which case
-     * an {@linkplain Collection#isEmpty() empty} {@link Collection}
-     * will be returned
-     *
-     * @param classLoader a {@link ClassLoader} that the resulting
-     * {@link PersistenceUnitInfoBean} instances will use; may be
-     * {@code null}
-     *
-     * @param tempClassLoaderSupplier a {@link Supplier} of a {@link
-     * ClassLoader} that will be used to implement the {@link
-     * PersistenceUnitInfo#getNewTempClassLoader()} method; may be
-     * {@code null}
-     *
-     * @param rootUrl the {@link URL} representing the root of all
-     * persistence units; must not be {@code null}
-     *
-     * @param unlistedClasses a {@link Map} of managed classes indexed
-     * by persistence unit name whose values might not be explicitly
-     * listed in a {@link PersistenceUnit}; may be {@code null}
-     *
-     * @param dataSourceProvider a {@link DataSourceProvider}; must
-     * not be {@code null}
-     *
-     * @return a non-{@code null} {@link Collection} of {@link
-     * PersistenceUnitInfoBean} instances
-     *
-     * @exception MalformedURLException if a {@link URL} could not be
-     * constructed
-     *
-     * @exception NullPointerException if {@code rootUrl} or {@code
-     * dataSourceProvider} is {@code null}
-     *
-     * @see #fromPersistenceUnit(Persistence.PersistenceUnit,
-     * ClassLoader, Supplier, URL, Map, DataSourceProvider)
-     *
-     * @see PersistenceUnitInfo
-     *
-     * @deprecated Please use the {@link
-     * #fromPersistenceUnit(PersistenceUnit, ClassLoader, Supplier,
-     * URL, Map, Supplier)} method instead.
-     */
-    @Deprecated
-    public static final Collection<? extends PersistenceUnitInfoBean>
-        fromPersistence(final Persistence persistence,
-                        final ClassLoader classLoader,
-                        final Supplier<? extends ClassLoader> tempClassLoaderSupplier,
-                        final URL rootUrl,
-                        Map<? extends String, ? extends Set<? extends Class<?>>> unlistedClasses,
-                        final DataSourceProvider dataSourceProvider)
-        throws MalformedURLException {
-        return fromPersistence(persistence,
-                               classLoader,
-                               tempClassLoaderSupplier,
-                               rootUrl,
-                               unlistedClasses,
-                               () -> dataSourceProvider);
-    }
-
-    /**
-     * Creates and returns a {@link Collection} of {@link {@link
-     * PersistenceUnitInfoBean} instances from a supplied {@link
-     * Persistence} object.
-     *
-     * @param persistence the {@link Persistence} from which {@link
-     * PersistenceUnitInfoBean} instances should be synthesized; must
-     * not be {@code null}
-     *
-     * @param classLoader classLoader a {@link ClassLoader} that the resulting
-     * {@link PersistenceUnitInfoBean}s will use; may be {@code null}
-     *
-     * @param tempClassLoaderSupplier a {@link Supplier} of a {@link
-     * ClassLoader} that will be used to implement the {@link
-     * PersistenceUnitInfo#getNewTempClassLoader()} method; may be
-     * {@code null}
-     *
-     * @param rootUrl the {@link URL} representing the root of the
-     * persistence units; must not be {@code null}
-     *
-     * @param unlistedClasses a {@link Map} of managed classes indexed
-     * by persistence unit name whose values might not be explicitly
-     * listed in the supplied {@link PersistenceUnit}s; may be {@code
-     * null}
-     *
-     * @param dataSourceProviderSupplier a {@link Supplier} capable of
-     * producing {@link DataSourceProvider} instances; must not be
-     * {@code null}
-     *
-     * @return a non-{@code null} {@link Collection} of {@link
-     * PersistenceUnitInfoBean}s
-     *
-     * @exception MalformedURLException if a {@link URL} could not be
-     * constructed
-     *
-     * @exception NullPointerException if {@code persistence}, {@code
-     * rootUrl} or {@code dataSourceProviderSupplier} is {@code null}
-     *
-     * @deprecated Please use the {@link
-     * #fromPersistenceUnit(PersistenceUnit, ClassLoader, Supplier,
-     * URL, Map, Supplier)} method instead.
-     */
-    @Deprecated
-    public static final Collection<? extends PersistenceUnitInfoBean>
-        fromPersistence(final Persistence persistence,
-                        final ClassLoader classLoader,
-                        final Supplier<? extends ClassLoader> tempClassLoaderSupplier,
-                        final URL rootUrl,
-                        Map<? extends String, ? extends Set<? extends Class<?>>> unlistedClasses,
-                        final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier)
-        throws MalformedURLException {
-
-        Objects.requireNonNull(rootUrl);
-        if (unlistedClasses == null) {
-            unlistedClasses = Collections.emptyMap();
-        }
-        final Collection<PersistenceUnitInfoBean> returnValue;
-        if (persistence == null) {
-            returnValue = Collections.emptySet();
-        } else {
-            final Collection<? extends PersistenceUnit> persistenceUnits = persistence.getPersistenceUnit();
-            if (persistenceUnits == null || persistenceUnits.isEmpty()) {
-                returnValue = Collections.emptySet();
-            } else {
-                returnValue = new ArrayList<>();
-                for (final PersistenceUnit persistenceUnit : persistenceUnits) {
-                    assert persistenceUnit != null;
-                    returnValue.add(fromPersistenceUnit(persistenceUnit,
-                                                        classLoader,
-                                                        tempClassLoaderSupplier,
-                                                        rootUrl,
-                                                        unlistedClasses,
-                                                        dataSourceProviderSupplier));
-                }
-            }
-        }
-        return returnValue;
-    }
-
     /**
      * Given a {@link PersistenceUnit} (a Java object representation
      * of a {@code <persistence-unit>} element in a {@code
@@ -961,8 +808,8 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
      * META-INF/persistence.xml} resource), a {@link URL} representing
      * the persistence unit's root, a {@link Map} of unlisted managed
      * classes (entity classes, mapped superclasses and so on) indexed
-     * by persistence unit name, and a {@link
-     * DataSourceProviderSupplier} that can supply {@link
+     * by persistence unit name, and a {@code
+     * DataSourceProviderSupplier} that can supply {@code
      * DataSourceProvider} instances, returns a {@link
      * PersistenceUnitInfoBean} representing the persistence unit in
      * question.
@@ -1215,11 +1062,13 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         }
 
         if (tempClassLoaderSupplier == null) {
-            if (classLoader instanceof URLClassLoader) {
-                tempClassLoaderSupplier = () -> new URLClassLoader(((URLClassLoader) classLoader).getURLs());
-            } else {
-                tempClassLoaderSupplier = () -> classLoader;
-            }
+            tempClassLoaderSupplier = () -> {
+                if (classLoader instanceof URLClassLoader) {
+                    return new URLClassLoader(((URLClassLoader) classLoader).getURLs());
+                } else {
+                    return classLoader;
+                }
+            };
         }
 
         final PersistenceUnitInfoBean returnValue =

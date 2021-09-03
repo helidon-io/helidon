@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,21 @@
 package io.helidon.security.integration.webserver;
 
 import java.util.Set;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.Response;
+import java.util.concurrent.ExecutionException;
 
 import io.helidon.common.http.Http;
 import io.helidon.security.AuditEvent;
+import io.helidon.security.Security;
+import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
+import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServer;
 
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.glassfish.jersey.client.authentication.HttpAuthenticationFeature.HTTP_AUTHENTICATION_PASSWORD;
-import static org.glassfish.jersey.client.authentication.HttpAuthenticationFeature.HTTP_AUTHENTICATION_USERNAME;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -50,28 +49,31 @@ public abstract class WebSecurityTests {
     static final String AUDIT_MESSAGE_FORMAT = "Unit test message format";
     static UnitTestAuditProvider myAuditProvider;
     static WebServer server;
-    private static Client authFeatureClient;
-    private static Client client;
+    private static WebClient securitySetup;
+    private static WebClient webClient;
 
     @BeforeAll
     static void buildClients() {
-        authFeatureClient = ClientBuilder.newClient()
-                .register(HttpAuthenticationFeature.universalBuilder().build());
-        client = ClientBuilder.newClient();
+        Security security = Security.builder()
+                .addProvider(HttpBasicAuthProvider.builder().build())
+                .build();
+
+        securitySetup = WebClient.builder()
+                .addService(WebClientSecurity.create(security))
+                .build();
+
+        webClient = WebClient.create();
     }
 
     @AfterAll
     static void stopIt() throws InterruptedException {
-        authFeatureClient.close();
-        client.close();
-
         WebSecurityTestUtil.stopServer(server);
     }
 
     abstract String serverBaseUri();
 
     @Test
-    void basicTestJohn() {
+    void basicTestJohn() throws ExecutionException, InterruptedException {
         String username = "john";
         String password = "password";
 
@@ -83,7 +85,7 @@ public abstract class WebSecurityTests {
     }
 
     @Test
-    void basicTestJack() {
+    void basicTestJack() throws ExecutionException, InterruptedException {
         String username = "jack";
         String password = "jackIsGreat";
 
@@ -106,7 +108,7 @@ public abstract class WebSecurityTests {
     }
 
     @Test
-    void basicTestJill() {
+    void basicTestJill() throws ExecutionException, InterruptedException {
         String username = "jill";
         String password = "password";
 
@@ -125,29 +127,45 @@ public abstract class WebSecurityTests {
     }
 
     @Test
-    void basicTest401() {
-        // here we call the endpoint
-        Response response = client.target(serverBaseUri() + "/noRoles")
+    void basicTest401() throws ExecutionException, InterruptedException {
+        webClient.get()
+                .uri(serverBaseUri() + "/noRoles")
                 .request()
+                .thenAccept(it -> {
+                    assertThat(it.status(), is(Http.Status.UNAUTHORIZED_401));
+                    it.headers()
+                            .first(Http.Header.WWW_AUTHENTICATE)
+                            .ifPresentOrElse(header -> assertThat(header.toLowerCase(), is("basic realm=\"mic\"")),
+                                             () -> {
+                                                 throw new IllegalStateException("Header " + Http.Header.WWW_AUTHENTICATE + " is"
+                                                                                         + " not present in response!");
+                                             });
+                })
+                .toCompletableFuture()
                 .get();
 
-        assertThat(response.getStatus(), is(401));
-        String authHeader = response.getHeaderString(Http.Header.WWW_AUTHENTICATE);
-        assertThat(authHeader, notNullValue());
-        assertThat(authHeader.toLowerCase(), is("basic realm=\"mic\""));
-
-        response = callProtected(serverBaseUri() + "/noRoles", "invalidUser", "invalidPassword");
-        assertThat(response.getStatus(), is(401));
-        authHeader = response.getHeaderString(Http.Header.WWW_AUTHENTICATE);
-        assertThat(authHeader, notNullValue());
-        assertThat(authHeader.toLowerCase(), is("basic realm=\"mic\""));
+        WebClientResponse webClientResponse = callProtected(serverBaseUri() + "/noRoles", "invalidUser", "invalidPassword");
+        assertThat(webClientResponse.status(), is(Http.Status.UNAUTHORIZED_401));
+        webClientResponse.headers()
+                .first(Http.Header.WWW_AUTHENTICATE)
+                .ifPresentOrElse(header -> assertThat(header.toLowerCase(), is("basic realm=\"mic\"")),
+                                 () -> {
+                                     throw new IllegalStateException("Header " + Http.Header.WWW_AUTHENTICATE + " is"
+                                                                             + " not present in response!");
+                                 });
     }
 
     @Test
-    void testCustomizedAudit() throws InterruptedException {
-        Response response = client.target(serverBaseUri() + "/auditOnly").request().get();
-
-        assertThat(response.getStatus(), is(200));
+    void testCustomizedAudit() throws InterruptedException, ExecutionException {
+        webClient.get()
+                .uri(serverBaseUri() + "/auditOnly")
+                .request()
+                .thenCompose(it -> {
+                    assertThat(it.status(), is(Http.Status.OK_200));
+                    return it.close();
+                })
+                .toCompletableFuture()
+                .get();
 
         // audit
         AuditEvent auditEvent = myAuditProvider.getAuditEvent();
@@ -156,38 +174,44 @@ public abstract class WebSecurityTests {
         assertThat(auditEvent.severity(), is(AuditEvent.AuditSeverity.SUCCESS));
     }
 
-    private void testForbidden(String uri, String username, String password) {
-        Response response = callProtected(uri, username, password);
+    private void testForbidden(String uri, String username, String password) throws ExecutionException, InterruptedException {
+        WebClientResponse response = callProtected(uri, username, password);
         assertThat(uri + " for user " + username + " should be forbidden",
-                   response.getStatus(),
-                   is(Http.Status.FORBIDDEN_403.code()));
+                   response.status(),
+                   is(Http.Status.FORBIDDEN_403));
     }
 
     private void testProtected(String uri,
                                String username,
                                String password,
                                Set<String> expectedRoles,
-                               Set<String> invalidRoles) {
+                               Set<String> invalidRoles) throws ExecutionException, InterruptedException {
 
-        Response response = callProtected(uri, username, password);
+        WebClientResponse response = callProtected(uri, username, password);
 
-        String entity = response.readEntity(String.class);
+        assertThat(response.status(), is(Http.Status.OK_200));
 
-        assertThat(response.getStatus(), is(200));
-
-        // check login
-        assertThat(entity, containsString("id='" + username + "'"));
-        // check roles
-        expectedRoles.forEach(role -> assertThat(entity, containsString(":" + role)));
-        invalidRoles.forEach(role -> assertThat(entity, not(containsString(":" + role))));
+        response.content()
+                .as(String.class)
+                .thenAccept(it -> {
+                    // check login
+                    assertThat(it, containsString("id='" + username + "'"));
+                    // check roles
+                    expectedRoles.forEach(role -> assertThat(it, containsString(":" + role)));
+                    invalidRoles.forEach(role -> assertThat(it, not(containsString(":" + role))));
+                })
+                .toCompletableFuture()
+                .get();
     }
 
-    private Response callProtected(String uri, String username, String password) {
-        // here we call the endpoint
-        return authFeatureClient.target(uri)
+    private WebClientResponse callProtected(String uri, String username, String password)
+            throws ExecutionException, InterruptedException {
+        return securitySetup.get()
+                .uri(uri)
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, username)
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, password)
                 .request()
-                .property(HTTP_AUTHENTICATION_USERNAME, username)
-                .property(HTTP_AUTHENTICATION_PASSWORD, password)
+                .toCompletableFuture()
                 .get();
     }
 

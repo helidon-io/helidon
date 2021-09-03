@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,17 +15,14 @@
 # limitations under the License.
 #
 
-set -o pipefail || true  # trace ERR through pipes
-set -o errtrace || true # trace ERR through commands and functions
-set -o errexit || true  # exit the script if any statement returns a non-true return value
+# Path to this script
+[ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
 
-on_error(){
-    CODE="${?}" && \
-    set +x && \
-    printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-        "${CODE}" "${BASH_SOURCE}" "${LINENO}" "${BASH_COMMAND}"
-}
-trap on_error ERR
+# Load error handling functions and define error handling
+. $(dirname -- "${SCRIPT_PATH}")/includes/error_handlers.sh
+
+# Setup error handling using default settings (defined in includes/error_handlers.sh)
+error_trap_setup
 
 usage(){
   cat <<EOF

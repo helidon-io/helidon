@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,8 @@ public class BuilderImplMappersTest {
     public void testUserDefinedHasPrecedenceInteger() {
         MapperProviders providers = MapperProviders.create();
         providers.add(() -> Map.of(Integer.class, config -> 42));
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               providers);
+        ConfigMapperManager manager = BuilderImpl.buildMappers(providers);
+
         Config config = Config.builder()
                 .sources(ConfigSources.create(Map.of("int-p", "2147483647")))
                 .build();
@@ -55,8 +55,8 @@ public class BuilderImplMappersTest {
     public void testUserDefinedHasPrecedenceOptionalInt() {
         MapperProviders providers = MapperProviders.create();
         providers.add(() -> Map.of(OptionalInt.class, config -> OptionalInt.of(42)));
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               providers);
+        ConfigMapperManager manager = BuilderImpl.buildMappers(providers);
+
         Config config = Config.builder()
                 .sources(ConfigSources.create(Map.of("int-p", "2147483647")))
                 .build();

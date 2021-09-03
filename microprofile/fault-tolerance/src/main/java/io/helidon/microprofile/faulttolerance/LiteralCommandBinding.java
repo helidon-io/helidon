@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import javax.enterprise.util.AnnotationLiteral;
 /**
  * Class LiteralCommandBinding.
  */
-public class LiteralCommandBinding extends AnnotationLiteral<CommandBinding> implements CommandBinding {
+class LiteralCommandBinding extends AnnotationLiteral<CommandBinding> implements CommandBinding {
     private static final long serialVersionUID = 1L;
 
     private static final CommandBinding INSTANCE = new LiteralCommandBinding();

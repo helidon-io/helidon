@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,47 +16,91 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import javax.inject.Inject;
+import java.util.concurrent.CompletableFuture;
+
+import io.helidon.microprofile.tests.junit5.AddBean;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
 /**
- * Class TimeoutTest.
+ * Test beans with timeout methods.
  */
-public class TimeoutTest extends FaultToleranceTest {
+@AddBean(TimeoutBean.class)
+@AddBean(TimeoutNoRetryBean.class)
+class TimeoutTest extends FaultToleranceTest {
 
-    @Test
-    public void testForceTimeout() throws Exception {
-        TimeoutBean bean = newBean(TimeoutBean.class);
-        assertThrows(TimeoutException.class, () -> {
-            bean.forceTimeout();
-        });
+    @Inject
+    private TimeoutBean timeoutBean;
+
+    @Inject
+    private TimeoutNoRetryBean timeoutNoRetryBean;
+
+    @Override
+    void reset() {
+        timeoutBean.reset();
     }
 
     @Test
-    public void testNoTimeout() throws Exception {
-        TimeoutBean bean = newBean(TimeoutBean.class);
-        assertThat(bean.noTimeout(), is("success"));
+    void testForceTimeout() {
+        assertThrows(TimeoutException.class, timeoutBean::forceTimeout);
     }
 
     @Test
-    public void testTimeoutWithRetries() throws Exception {
-        TimeoutBean bean = newBean(TimeoutBean.class);
-        assertThat(bean.timeoutWithRetries(), is("success"));
+    void testForceTimeoutAsync() throws Exception {
+        CompletableFuture<String> future = timeoutBean.forceTimeoutAsync();
+        assertCompleteExceptionally(future, TimeoutException.class);
     }
 
     @Test
-    public void testTimeoutWithFallback() throws Exception {
-        TimeoutBean bean = newBean(TimeoutBean.class);
-        assertThat(bean.timeoutWithFallback(), is("fallback"));
+    void testNoTimeout() throws Exception {
+        assertThat(timeoutBean.noTimeout(), is("success"));
     }
 
     @Test
-    public void testTimeoutWithRetriesAndFallback() throws Exception {
-        TimeoutBean bean = newBean(TimeoutBean.class);
-        assertThat(bean.timeoutWithRetriesAndFallback(), is("fallback"));
+    void testForceTimeoutWithCatch() {
+        assertThrows(TimeoutException.class, timeoutBean::forceTimeoutWithCatch);
+    }
+
+    @Test
+    void testTimeoutWithRetries() throws Exception {
+        assertThat(timeoutBean.timeoutWithRetries(), is("success"));
+    }
+
+    @Test
+    void testTimeoutWithFallback() throws Exception {
+        assertThat(timeoutBean.timeoutWithFallback(), is("fallback"));
+    }
+
+    @Test
+    void testTimeoutWithRetriesAndFallback() throws Exception {
+        assertThat(timeoutBean.timeoutWithRetriesAndFallback(), is("fallback"));
+    }
+
+    @Test
+    void testForceTimeoutSleep() {
+        long start = System.currentTimeMillis();
+        try {
+            timeoutNoRetryBean.forceTimeoutSleep();       // can interrupt
+        } catch (InterruptedException | TimeoutException e) {
+            assertThat(System.currentTimeMillis() - start, is(lessThan(2000L)));
+        }
+     }
+
+    @Test
+    void testForceTimeoutLoop() {
+        long start = System.currentTimeMillis();
+        try {
+            timeoutNoRetryBean.forceTimeoutLoop();        // cannot interrupt
+        } catch (TimeoutException e) {
+            assertThat(System.currentTimeMillis() - start, is(greaterThanOrEqualTo(2000L)));
+        }
     }
 }

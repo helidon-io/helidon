@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,17 @@ import io.helidon.common.http.MediaType;
  * Serves 'static content' (files) from filesystem or using a classloader to the {@link WebServer WebServer}
  * {@link Routing}. It is possible to {@link Routing.Builder#register(Service...) register} it on the routing.
  * <pre>{@code
- * // Server content of attached '/static/pictures' on '/pictures'
+ * // Serve content of attached '/static/pictures' on '/pics'
  * Routing.builder()
  *        .register("/pics", StaticContentSupport.create("/static/pictures"))
  *        .build()
  * }</pre>
  * <p>
  * Content is served ONLY on HTTP {@code GET} method.
+ *
+ * @deprecated please use module {@code helidon-webserver-static-content}
  */
+@Deprecated(since = "2.3.0", forRemoval = true)
 public class StaticContentSupport implements Service {
 
     private final StaticContentHandler handler;
@@ -166,6 +169,7 @@ public class StaticContentSupport implements Service {
 
         private final Map<String, MediaType> specificContentTypes = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         private String welcomeFileName;
+        private Path tmpDir;
 
         Builder(Path fsRoot) {
             Objects.requireNonNull(fsRoot, "Attribute fsRoot is null!");
@@ -192,6 +196,17 @@ public class StaticContentSupport implements Service {
          */
         public Builder welcomeFileName(String welcomeFileName) {
             this.welcomeFileName = welcomeFileName;
+            return this;
+        }
+
+        /**
+         * Sets custom temporary folder for extracting static content from a jar.
+         *
+         * @param tmpDir custom temporary folder
+         * @return updated builder
+         */
+        public Builder tmpDir(Path tmpDir) {
+            this.tmpDir = tmpDir;
             return this;
         }
 
@@ -230,7 +245,7 @@ public class StaticContentSupport implements Service {
             if (fsRoot != null) {
                 handler = FileSystemContentHandler.create(welcomeFileName, selector, fsRoot);
             } else if (clRoot != null) {
-                handler = ClassPathContentHandler.create(welcomeFileName, selector, clRoot, classLoader);
+                handler = ClassPathContentHandler.create(welcomeFileName, selector, clRoot, tmpDir, classLoader);
             } else {
                 throw new IllegalArgumentException("Builder was created without specified static content root!");
             }

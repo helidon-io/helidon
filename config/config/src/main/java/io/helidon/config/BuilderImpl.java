@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,77 +16,55 @@
 
 package io.helidon.config;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Flow;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import javax.annotation.Priority;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.Prioritized;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.common.serviceloader.Priorities;
 import io.helidon.config.ConfigMapperManager.MapperProviders;
-import io.helidon.config.internal.ConfigThreadFactory;
-import io.helidon.config.internal.ConfigUtils;
-import io.helidon.config.spi.AbstractMpSource;
-import io.helidon.config.spi.AbstractSource;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
-import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.MergingStrategy;
 import io.helidon.config.spi.OverrideSource;
-
-import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
-import org.eclipse.microprofile.config.spi.Converter;
 
 /**
  * {@link Config} Builder implementation.
  */
 class BuilderImpl implements Config.Builder {
-    static final Executor DEFAULT_CHANGES_EXECUTOR = Executors.newCachedThreadPool(new ConfigThreadFactory("config"));
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "Config");
-    }
-
     /*
      * Config sources
      */
-    // sources to be sorted by priority
-    private final List<PrioritizedConfigSource> prioritizedSources = new ArrayList<>();
     // sources "pre-sorted" - all user defined sources without priority will be ordered
-    // as added
+    // as added, as well as config sources from meta configuration
     private final List<ConfigSource> sources = new LinkedList<>();
-    private boolean configSourceServicesEnabled;
+    // to use when more than one source is configured
+    private MergingStrategy mergingStrategy = MergingStrategy.fallback();
+    private boolean hasSystemPropertiesSource;
+    private boolean hasEnvVarSource;
     /*
      * Config mapper providers
      */
     private final List<PrioritizedMapperProvider> prioritizedMappers = new ArrayList<>();
     private final MapperProviders mapperProviders;
     private boolean mapperServicesEnabled;
-    private boolean mpMapperServicesEnabled;
     /*
      * Config parsers
      */
@@ -97,59 +75,46 @@ class BuilderImpl implements Config.Builder {
      */
     private final List<Function<Config, ConfigFilter>> filterProviders;
     private boolean filterServicesEnabled;
-    /**
-     * Change support now uses Flow API, which seems like an overkill.
-     * @deprecated change support must be refactored, it is too complex
+
+    /*
+     * change support
      */
-    @Deprecated
     private Executor changesExecutor;
-    private int changesMaxBuffer;
     /*
      * Other configuration.
      */
     private OverrideSource overrideSource;
-    private ClassLoader classLoader;
+
     /*
      * Other switches
      */
     private boolean cachingEnabled;
     private boolean keyResolving;
+    private boolean valueResolving;
     private boolean systemPropertiesSourceEnabled;
     private boolean environmentVariablesSourceEnabled;
     private boolean envVarAliasGeneratorEnabled;
-    private boolean mpDiscoveredSourcesAdded;
-    private boolean mpDiscoveredConvertersAdded;
 
     BuilderImpl() {
-        configSourceServicesEnabled = true;
         overrideSource = OverrideSources.empty();
         mapperProviders = MapperProviders.create();
         mapperServicesEnabled = true;
-        mpMapperServicesEnabled = true;
         parsers = new ArrayList<>();
         parserServicesEnabled = true;
         filterProviders = new ArrayList<>();
         filterServicesEnabled = true;
         cachingEnabled = true;
-        changesExecutor = DEFAULT_CHANGES_EXECUTOR;
-        changesMaxBuffer = Flow.defaultBufferSize();
         keyResolving = true;
+        valueResolving = true;
         systemPropertiesSourceEnabled = true;
         environmentVariablesSourceEnabled = true;
         envVarAliasGeneratorEnabled = false;
     }
 
     @Override
-    public Config.Builder disableSourceServices() {
-        this.configSourceServicesEnabled = false;
-        return this;
-    }
-
-    @Override
     public Config.Builder sources(List<Supplier<? extends ConfigSource>> sourceSuppliers) {
         // replace current config sources with the ones provided
         sources.clear();
-        prioritizedSources.clear();
 
         sourceSuppliers.stream()
                 .map(Supplier::get)
@@ -163,12 +128,15 @@ class BuilderImpl implements Config.Builder {
         sources.add(source);
         if (source instanceof ConfigSources.EnvironmentVariablesConfigSource) {
             envVarAliasGeneratorEnabled = true;
+            hasEnvVarSource = true;
+        } else if (source instanceof ConfigSources.SystemPropertiesConfigSource) {
+            hasSystemPropertiesSource = true;
         }
         return this;
     }
 
     @Override
-    public Config.Builder overrides(Supplier<OverrideSource> overridingSource) {
+    public Config.Builder overrides(Supplier<? extends OverrideSource> overridingSource) {
         this.overrideSource = overridingSource.get();
         return this;
     }
@@ -179,15 +147,14 @@ class BuilderImpl implements Config.Builder {
         return this;
     }
 
-    void disableMpMapperServices() {
-        this.mpMapperServicesEnabled = false;
-    }
-
     @Override
     public <T> Config.Builder addStringMapper(Class<T> type, Function<String, T> mapper) {
         Objects.requireNonNull(type);
         Objects.requireNonNull(mapper);
 
+        if (String.class.equals(type)) {
+            return this;
+        }
         addMapper(type, config -> mapper.apply(config.asString().get()));
 
         return this;
@@ -289,12 +256,6 @@ class BuilderImpl implements Config.Builder {
     }
 
     @Override
-    public Config.Builder changesMaxBuffer(int changesMaxBuffer) {
-        this.changesMaxBuffer = changesMaxBuffer;
-        return this;
-    }
-
-    @Override
     public Config.Builder disableKeyResolving() {
         keyResolving = false;
         return this;
@@ -302,6 +263,7 @@ class BuilderImpl implements Config.Builder {
 
     @Override
     public Config.Builder disableValueResolving() {
+        this.valueResolving = false;
         return this;
     }
 
@@ -319,26 +281,75 @@ class BuilderImpl implements Config.Builder {
 
     @Override
     public AbstractConfigImpl build() {
-        if (configSourceServicesEnabled) {
-            // add MP config sources from service loader (if not already done)
-            mpAddDiscoveredSources();
+        if (valueResolving) {
+            addFilter(ConfigFilters.valueResolving());
         }
-        if (mpMapperServicesEnabled) {
-            // add MP discovered converters from service loader (if not already done)
-            mpAddDiscoveredConverters();
+        if (null == changesExecutor) {
+            changesExecutor = Executors.newCachedThreadPool(new ConfigThreadFactory("config-changes"));
         }
 
-        return buildProvider().newConfig();
+        /*
+         * Now prepare the config runtime.
+         * We need the following setup:
+         * 1. Mappers
+         * 2. Filters
+         * 3. Config Sources
+         */
+
+        /*
+         Mappers
+         */
+        ConfigMapperManager configMapperManager = buildMappers(prioritizedMappers,
+                                                               mapperProviders,
+                                                               mapperServicesEnabled);
+
+        /*
+         Filters
+         */
+        if (filterServicesEnabled) {
+            addAutoLoadedFilters();
+        }
+
+        /*
+         Config Sources
+         */
+        // collect all sources (in correct order)
+        ConfigContextImpl context = new ConfigContextImpl(changesExecutor, buildParsers(parserServicesEnabled, parsers));
+        ConfigSourcesRuntime configSources = buildConfigSources(context);
+
+        Function<String, List<String>> aliasGenerator = envVarAliasGeneratorEnabled
+                ? EnvironmentVariableAliases::aliasesOf
+                : null;
+
+        //config provider
+        return createProvider(configMapperManager,
+                              configSources,
+                              new OverrideSourceRuntime(overrideSource),
+                              filterProviders,
+                              cachingEnabled,
+                              changesExecutor,
+                              keyResolving,
+                              aliasGenerator)
+                .newConfig();
+    }
+
+    private static void addBuiltInMapperServices(List<PrioritizedMapperProvider> prioritizedMappers) {
+        // we must add default mappers using a known priority (200), so they can be overridden by services
+        // and yet we can still define a service that is only used after these (such as config beans)
+        prioritizedMappers
+                .add(new HelidonMapperWrapper(new InternalMapperProvider(ConfigMappers.essentialMappers(),
+                                                                         "essential"), 200));
+        prioritizedMappers
+                .add(new HelidonMapperWrapper(new InternalMapperProvider(ConfigMappers.builtInMappers(),
+                                                                         "built-in"), 200));
     }
 
     @Override
     public Config.Builder config(Config metaConfig) {
         metaConfig.get("caching.enabled").asBoolean().ifPresent(this::cachingEnabled);
         metaConfig.get("key-resolving.enabled").asBoolean().ifPresent(this::keyResolvingEnabled);
-        metaConfig.get("value-resolving.enabled").asBoolean().ifPresent(this::valueResolvingEnabled);
         metaConfig.get("parsers.enabled").asBoolean().ifPresent(this::parserServicesEnabled);
         metaConfig.get("mappers.enabled").asBoolean().ifPresent(this::mapperServicesEnabled);
-        metaConfig.get("config-source-services.enabled").asBoolean().ifPresent(this::configSourceServicesEnabled);
 
         disableSystemPropertiesSource();
         disableEnvironmentVariablesSource();
@@ -347,7 +358,7 @@ class BuilderImpl implements Config.Builder {
 
         metaConfig.get("sources")
                 .asNodeList()
-                .ifPresent(list -> list.forEach(it -> sourceList.add(MetaConfig.configSource(it))));
+                .ifPresent(list -> list.forEach(it -> sourceList.addAll(MetaConfig.configSource(it))));
 
         sourceList.forEach(this::addSource);
         sourceList.clear();
@@ -360,124 +371,10 @@ class BuilderImpl implements Config.Builder {
         return this;
     }
 
-    private void configSourceServicesEnabled(boolean enabled) {
-        this.configSourceServicesEnabled = enabled;
-    }
-
-    void mpWithConverters(Converter<?>... converters) {
-        for (Converter<?> converter : converters) {
-            addMpConverter(converter);
-        }
-    }
-
-    <T> void mpWithConverter(Class<T> type, int ordinal, Converter<T> converter) {
-        // priority 1 is highest, 100 is default
-        // MP ordinal 1 is lowest, 100 is default
-
-        // 100 - priority 1
-        // 101 - priority 0
-        int priority = 101 - ordinal;
-        prioritizedMappers.add(new MpConverterWrapper(type, converter, priority));
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> void addMpConverter(Converter<T> converter) {
-        Class<T> type = (Class<T>) getTypeOfMpConverter(converter.getClass());
-        if (type == null) {
-            throw new IllegalStateException("Converter " + converter.getClass() + " must be a ParameterizedType");
-        }
-
-        mpWithConverter(type,
-                        Priorities.find(converter.getClass(), 100),
-                        converter);
-    }
-
-    void mpAddDefaultSources() {
-        prioritizedSources.add(new HelidonSourceWrapper(ConfigSources.systemProperties(), 100));
-        prioritizedSources.add(new HelidonSourceWrapper(ConfigSources.environmentVariables(), 100));
-        prioritizedSources.add(new HelidonSourceWrapper(ConfigSources.classpath("application.yaml").optional().build(), 100));
-        ConfigSources.classpathAll("META-INF/microprofile-config.properties")
-                .stream()
-                .map(AbstractSource.Builder::build)
-                .map(source -> new HelidonSourceWrapper(source, 100))
-                .forEach(prioritizedSources::add);
-    }
-
-    void mpAddDiscoveredSources() {
-        if (mpDiscoveredSourcesAdded) {
-            return;
-        }
-        this.mpDiscoveredSourcesAdded = true;
-        this.configSourceServicesEnabled = true;
-        final ClassLoader usedCl = ((null == classLoader) ? Thread.currentThread().getContextClassLoader() : classLoader);
-
-        List<org.eclipse.microprofile.config.spi.ConfigSource> mpSources = new LinkedList<>();
-
-        // service loader MP sources
-        HelidonServiceLoader
-                .create(ServiceLoader.load(org.eclipse.microprofile.config.spi.ConfigSource.class, usedCl))
-                .forEach(mpSources::add);
-
-        // config source providers
-        HelidonServiceLoader.create(ServiceLoader.load(ConfigSourceProvider.class, usedCl))
-                .forEach(csp -> csp.getConfigSources(usedCl)
-                        .forEach(mpSources::add));
-
-        for (org.eclipse.microprofile.config.spi.ConfigSource source : mpSources) {
-            prioritizedSources.add(new MpSourceWrapper(source));
-        }
-    }
-
-    void mpAddDiscoveredConverters() {
-        if (mpDiscoveredConvertersAdded) {
-            return;
-        }
-        this.mpDiscoveredConvertersAdded = true;
-        this.mpMapperServicesEnabled = true;
-
-        final ClassLoader usedCl = ((null == classLoader) ? Thread.currentThread().getContextClassLoader() : classLoader);
-
-        HelidonServiceLoader.create(ServiceLoader.load(Converter.class, usedCl))
-                .forEach(this::addMpConverter);
-    }
-
-    void mpForClassLoader(ClassLoader loader) {
-        this.classLoader = loader;
-    }
-
-    void mpWithSources(org.eclipse.microprofile.config.spi.ConfigSource... sources) {
-        for (org.eclipse.microprofile.config.spi.ConfigSource source : sources) {
-            PrioritizedConfigSource pcs;
-
-            if (source instanceof AbstractMpSource) {
-                pcs = new HelidonSourceWrapper((AbstractMpSource<?>) source);
-            } else {
-                pcs = new MpSourceWrapper(source);
-            }
-            this.prioritizedSources.add(pcs);
-        }
-    }
-
-    private Type getTypeOfMpConverter(Class<?> clazz) {
-        if (clazz.equals(Object.class)) {
-            return null;
-        }
-
-        Type[] genericInterfaces = clazz.getGenericInterfaces();
-        for (Type genericInterface : genericInterfaces) {
-            if (genericInterface instanceof ParameterizedType) {
-                ParameterizedType pt = (ParameterizedType) genericInterface;
-                if (pt.getRawType().equals(Converter.class)) {
-                    Type[] typeArguments = pt.getActualTypeArguments();
-                    if (typeArguments.length != 1) {
-                        throw new IllegalStateException("Converter " + clazz + " must be a ParameterizedType.");
-                    }
-                    return typeArguments[0];
-                }
-            }
-        }
-
-        return getTypeOfMpConverter(clazz.getSuperclass());
+    @Override
+    public Config.Builder mergingStrategy(MergingStrategy strategy) {
+        this.mergingStrategy = strategy;
+        return this;
     }
 
     private void cachingEnabled(boolean enabled) {
@@ -492,114 +389,55 @@ class BuilderImpl implements Config.Builder {
         parserServicesEnabled = aBoolean;
     }
 
-    private void valueResolvingEnabled(Boolean aBoolean) {
-        // TODO this is a noop as is disableValueResolving
-    }
-
     private void keyResolvingEnabled(Boolean aBoolean) {
         this.keyResolving = aBoolean;
     }
 
-    private ProviderImpl buildProvider() {
+    private ConfigSourcesRuntime buildConfigSources(ConfigContextImpl context) {
+        List<ConfigSourceRuntimeImpl> targetSources = new LinkedList<>();
 
-        //context
-        ConfigContext context = new ConfigContextImpl(buildParsers(parserServicesEnabled, parsers));
-
-        //source
-        ConfigSourceConfiguration targetConfigSource = targetConfigSource(context);
-
-        //mappers
-        Priorities.sort(prioritizedMappers);
-        // as the mapperProviders.add adds the last as first, we need to reverse order
-        Collections.reverse(prioritizedMappers);
-        prioritizedMappers.forEach(mapperProviders::add);
-        ConfigMapperManager configMapperManager = buildMappers(mapperServicesEnabled, mapperProviders);
-
-        if (filterServicesEnabled) {
-            addAutoLoadedFilters();
+        if (systemPropertiesSourceEnabled && !hasSystemPropertiesSource) {
+            hasSystemPropertiesSource = true;
+            targetSources.add(context.sourceRuntimeBase(ConfigSources.systemProperties().build()));
         }
 
-        Function<String, List<String>> aliasGenerator = envVarAliasGeneratorEnabled
-                ? EnvironmentVariableAliases::aliasesOf
-                : null;
-
-        //config provider
-        return createProvider(configMapperManager,
-                              targetConfigSource,
-                              overrideSource,
-                              filterProviders,
-                              cachingEnabled,
-                              changesExecutor,
-                              changesMaxBuffer,
-                              keyResolving,
-                              aliasGenerator);
-    }
-
-    private ConfigSourceConfiguration targetConfigSource(ConfigContext context) {
-        List<ConfigSource> targetSources = new LinkedList<>();
-
-        if (systemPropertiesSourceEnabled
-                && !hasSourceType(ConfigSources.SystemPropertiesConfigSource.class)) {
-            targetSources.add(ConfigSources.systemProperties());
+        if (environmentVariablesSourceEnabled && !hasEnvVarSource) {
+            hasEnvVarSource = true;
+            targetSources.add(context.sourceRuntimeBase(ConfigSources.environmentVariables()));
         }
 
-        if (hasSourceType(ConfigSources.EnvironmentVariablesConfigSource.class)) {
-            envVarAliasGeneratorEnabled = true;
-        } else if (environmentVariablesSourceEnabled) {
-            targetSources.add(ConfigSources.environmentVariables());
+        if (hasEnvVarSource) {
             envVarAliasGeneratorEnabled = true;
         }
 
-        if (sources.isEmpty() && prioritizedSources.isEmpty()) {
-            // if there are no sources configured, use meta-configuration (only in case we have no prioritized sources)
-            targetSources.addAll(MetaConfig.configSources(mediaType -> context.findParser(mediaType).isPresent()));
+        boolean nothingConfigured = sources.isEmpty();
+
+        if (nothingConfigured) {
+            // use meta configuration to load all sources
+            MetaConfig.configSources(mediaType -> context.findParser(mediaType).isPresent(), context.supportedSuffixes())
+                    .stream()
+                    .map(context::sourceRuntimeBase)
+                    .forEach(targetSources::add);
         } else {
-            targetSources.addAll(sources);
+            // add all configured or discovered sources
+
+            // configured sources are always first in the list (explicitly added by user)
+            sources.stream()
+                    .map(context::sourceRuntimeBase)
+                    .forEach(targetSources::add);
         }
 
-        // initialize all target sources
-        targetSources.forEach(it -> it.init(context));
-
-        if (!prioritizedSources.isEmpty()) {
-            // initialize all prioritized sources (before we sort them - otherwise we cannot get priority)
-            prioritizedSources.forEach(it -> it.init(context));
-            Priorities.sort(prioritizedSources);
-            targetSources.addAll(prioritizedSources);
-        }
-
-        if (targetSources.size() == 1) {
-            // the only source does not require a composite wrapper
-            return new ConfigSourceConfiguration(targetSources.get(0), targetSources);
-        }
-
-        return new ConfigSourceConfiguration(ConfigSources.create(targetSources.toArray(new ConfigSource[0])).build(),
-                                             targetSources);
-    }
-
-    private boolean hasSourceType(Class<?> sourceType) {
-
-        for (ConfigSource source : sources) {
-            if (sourceType.isAssignableFrom(source.getClass())) {
-                return true;
-            }
-        }
-
-        for (PrioritizedConfigSource prioritizedSource : prioritizedSources) {
-            if (sourceType.isAssignableFrom(prioritizedSource.configSourceClass())) {
-                return true;
-            }
-        }
-        return false;
+        // targetSources now contain runtimes correctly ordered for each config source
+        return new ConfigSourcesRuntime(targetSources, mergingStrategy);
     }
 
     @SuppressWarnings("ParameterNumber")
     ProviderImpl createProvider(ConfigMapperManager configMapperManager,
-                                ConfigSourceConfiguration targetConfigSource,
-                                OverrideSource overrideSource,
+                                ConfigSourcesRuntime targetConfigSource,
+                                OverrideSourceRuntime overrideSource,
                                 List<Function<Config, ConfigFilter>> filterProviders,
                                 boolean cachingEnabled,
                                 Executor changesExecutor,
-                                int changesMaxBuffer,
                                 boolean keyResolving,
                                 Function<String, List<String>> aliasGenerator) {
         return new ProviderImpl(configMapperManager,
@@ -608,7 +446,6 @@ class BuilderImpl implements Config.Builder {
                                 filterProviders,
                                 cachingEnabled,
                                 changesExecutor,
-                                changesMaxBuffer,
                                 keyResolving,
                                 aliasGenerator);
     }
@@ -624,40 +461,40 @@ class BuilderImpl implements Config.Builder {
         return parsers;
     }
 
-    static ConfigMapperManager buildMappers(boolean servicesEnabled,
-                                            MapperProviders userDefinedProviders) {
+    // this is a unit test method
+    static ConfigMapperManager buildMappers(MapperProviders userDefinedProviders) {
+        return buildMappers(new ArrayList<>(), userDefinedProviders, false);
+    }
+
+    static ConfigMapperManager buildMappers(List<PrioritizedMapperProvider> prioritizedMappers,
+                                            MapperProviders userDefinedProviders,
+                                            boolean mapperServicesEnabled) {
+
+        // prioritized mapper providers
+        if (mapperServicesEnabled) {
+            loadMapperServices(prioritizedMappers);
+        }
+        addBuiltInMapperServices(prioritizedMappers);
+        Priorities.sort(prioritizedMappers);
+
+        // as the mapperProviders.add adds the last as first, we need to reverse order
+        Collections.reverse(prioritizedMappers);
 
         MapperProviders providers = MapperProviders.create();
 
-        List<ConfigMapperProvider> prioritizedProviders = new LinkedList<>();
-
-        // we must add default mappers using a known priority (49), so they can be overridden by services
-        // and yet we can still define a service that is only used after these (such as config beans)
-        prioritizedProviders.add(new InternalPriorityMapperProvider(ConfigMappers.essentialMappers()));
-        prioritizedProviders.add(new InternalPriorityMapperProvider(ConfigMappers.builtInMappers()));
-
-        if (servicesEnabled) {
-            loadMapperServices(prioritizedProviders);
-        }
-
-        prioritizedProviders = ConfigUtils
-                .asPrioritizedStream(prioritizedProviders, ConfigMapperProvider.PRIORITY)
-                .collect(Collectors.toList());
-
-        // add built in converters and converters from service loader
-        prioritizedProviders.forEach(providers::add);
-
+        // these are added first, as they end up last
+        prioritizedMappers.forEach(providers::add);
         // user defined converters always have priority over anything else
         providers.addAll(userDefinedProviders);
 
         return new ConfigMapperManager(providers);
     }
 
-    private static void loadMapperServices(List<ConfigMapperProvider> providers) {
+    private static void loadMapperServices(List<PrioritizedMapperProvider> providers) {
         HelidonServiceLoader.builder(ServiceLoader.load(ConfigMapperProvider.class))
                 .defaultPriority(ConfigMapperProvider.PRIORITY)
                 .build()
-                .forEach(providers::add);
+                .forEach(mapper -> providers.add(new HelidonMapperWrapper(mapper, Priorities.find(mapper, 100))));
     }
 
     private static List<ConfigParser> loadParserServices() {
@@ -690,7 +527,7 @@ class BuilderImpl implements Config.Builder {
                 .build()
                 .asList()
                 .stream()
-                .map(filter -> (Function<Config, ConfigFilter>) (Config t) -> filter)
+                .map(LoadedFilterProvider::new)
                 .forEach(this::addFilter);
     }
 
@@ -698,28 +535,46 @@ class BuilderImpl implements Config.Builder {
      * {@link ConfigContext} implementation.
      */
     static class ConfigContextImpl implements ConfigContext {
+        private final Map<ConfigSource, ConfigSourceRuntimeImpl> runtimes = new IdentityHashMap<>();
 
+        private final Executor changesExecutor;
         private final List<ConfigParser> configParsers;
 
-        /**
-         * Creates a config context.
-         *
-         * @param configParsers a config parsers
-         */
-        ConfigContextImpl(List<ConfigParser> configParsers) {
+        ConfigContextImpl(Executor changesExecutor, List<ConfigParser> configParsers) {
+            this.changesExecutor = changesExecutor;
             this.configParsers = configParsers;
         }
 
         @Override
-        public Optional<ConfigParser> findParser(String mediaType) {
-            if (mediaType == null) {
-                throw new NullPointerException("Unknown media type of resource.");
-            }
+        public ConfigSourceRuntime sourceRuntime(ConfigSource source) {
+            return sourceRuntimeBase(source);
+        }
+
+        private ConfigSourceRuntimeImpl sourceRuntimeBase(ConfigSource source) {
+            return runtimes.computeIfAbsent(source, it -> new ConfigSourceRuntimeImpl(this, source));
+        }
+
+        Optional<ConfigParser> findParser(String mediaType) {
+            Objects.requireNonNull(mediaType, "Unknown media type of resource.");
+
             return configParsers.stream()
                     .filter(parser -> parser.supportedMediaTypes().contains(mediaType))
                     .findFirst();
         }
 
+        Executor changesExecutor() {
+            return changesExecutor;
+        }
+
+        List<String> supportedSuffixes() {
+            List<String> result = new LinkedList<>();
+
+            configParsers.stream()
+                    .map(ConfigParser::supportedSuffixes)
+                    .forEach(result::addAll);
+
+            return result;
+        }
     }
 
     /**
@@ -735,54 +590,22 @@ class BuilderImpl implements Config.Builder {
                 // config sources
                 .sources(ConfigSources.empty())
                 .overrides(OverrideSources.empty())
-                .disableSourceServices()
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableParserServices()
                 .disableFilterServices()
+                .changesExecutor(command -> {})
                 .build();
 
     }
 
-    /**
-     * Internal mapper with low priority to enable overrides.
-     */
-    @Priority(200)
-    static class InternalPriorityMapperProvider implements ConfigMapperProvider {
+    static class InternalMapperProvider implements ConfigMapperProvider {
         private final Map<Class<?>, Function<Config, ?>> converterMap;
+        private final String name;
 
-        InternalPriorityMapperProvider(Map<Class<?>, Function<Config, ?>> converterMap) {
+        InternalMapperProvider(Map<Class<?>, Function<Config, ?>> converterMap, String name) {
             this.converterMap = converterMap;
-        }
-
-        @Override
-        public Map<Class<?>, Function<Config, ?>> mappers() {
-            return converterMap;
-        }
-    }
-
-    private interface PrioritizedMapperProvider extends Prioritized,
-                                                        ConfigMapperProvider {
-    }
-
-    private static final class MpConverterWrapper implements PrioritizedMapperProvider {
-        private final Map<Class<?>, Function<Config, ?>> converterMap = new HashMap<>();
-        private final Converter<?> converter;
-        private final int priority;
-
-        private MpConverterWrapper(Class<?> theClass,
-                                   Converter<?> converter,
-                                   int priority) {
-            this.converter = converter;
-            this.priority = priority;
-            this.converterMap.put(theClass, config -> {
-                return config.asString().as(converter::convert).get();
-            });
-        }
-
-        @Override
-        public int priority() {
-            return priority;
+            this.name = name;
         }
 
         @Override
@@ -792,8 +615,12 @@ class BuilderImpl implements Config.Builder {
 
         @Override
         public String toString() {
-            return converter.toString();
+            return name + " internal mappers";
         }
+    }
+
+    private interface PrioritizedMapperProvider extends Prioritized,
+                                                        ConfigMapperProvider {
     }
 
     private static final class HelidonMapperWrapper implements PrioritizedMapperProvider {
@@ -829,212 +656,78 @@ class BuilderImpl implements Config.Builder {
         public <T> Optional<BiFunction<Config, ConfigMapper, T>> mapper(GenericType<T> type) {
             return delegate.mapper(type);
         }
-    }
-
-    private interface PrioritizedConfigSource extends Prioritized,
-                                                      ConfigSource,
-                                                      org.eclipse.microprofile.config.spi.ConfigSource {
-        Class<?> configSourceClass();
-    }
-
-    private static final class MpSourceWrapper implements PrioritizedConfigSource {
-        private final org.eclipse.microprofile.config.spi.ConfigSource delegate;
-
-        private MpSourceWrapper(org.eclipse.microprofile.config.spi.ConfigSource delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public Class<?> configSourceClass() {
-            return delegate.getClass();
-        }
-
-        @Override
-        public int priority() {
-            // MP config is using "ordinals" - the higher the number, the more important it is
-            // We are using "priorities" - the lower the number, the more important it is
-            String value = delegate.getValue(CONFIG_ORDINAL);
-
-            int priority;
-
-            if (null != value) {
-                priority = Integer.parseInt(value);
-            } else {
-                priority = Priorities.find(delegate, 100);
-            }
-
-            // priority from Prioritized and annotation (MP has it reversed)
-            // it is a tough call how to merge priorities and ordinals
-            // now we use a "101" as a constant, so components with ordinal 100 will have
-            // priority of 1
-            return 101 - priority;
-        }
-
-        @Override
-        public Optional<ConfigNode.ObjectNode> load() throws ConfigException {
-            return Optional.of(ConfigUtils.mapToObjectNode(getProperties(), false));
-        }
-
-        @Override
-        public Map<String, String> getProperties() {
-            return delegate.getProperties();
-        }
-
-        @Override
-        public String getValue(String propertyName) {
-            return delegate.getValue(propertyName);
-        }
-
-        @Override
-        public String getName() {
-            return delegate.getName();
-        }
-
-        @Override
-        public String description() {
-            return delegate.toString();
-        }
 
         @Override
         public String toString() {
-            return description();
+            return priority + ": " + delegate;
         }
     }
 
-    static final class HelidonSourceWrapper implements PrioritizedConfigSource {
+    private static final class PrioritizedConfigSource implements Prioritized {
+        private final HelidonSourceWithPriority source;
+        private final ConfigContext context;
 
-        private final AbstractMpSource<?> delegate;
-        private Integer explicitPriority;
-
-        private HelidonSourceWrapper(AbstractMpSource<?> delegate) {
-            this.delegate = delegate;
+        private PrioritizedConfigSource(HelidonSourceWithPriority source, ConfigContext context) {
+            this.source = source;
+            this.context = context;
         }
 
-        private HelidonSourceWrapper(AbstractMpSource<?> delegate, int explicitPriority) {
-            this.delegate = delegate;
-            this.explicitPriority = explicitPriority;
-        }
-
-        AbstractMpSource<?> unwrap() {
-            return delegate;
-        }
-
-        @Override
-        public Class<?> configSourceClass() {
-            return delegate.getClass();
+        private ConfigSourceRuntimeImpl runtime(ConfigContextImpl context) {
+            return context.sourceRuntimeBase(source.unwrap());
         }
 
         @Override
         public int priority() {
-            // ordinal from data
-            String value = delegate.getValue(CONFIG_ORDINAL);
-            if (null != value) {
-                return 101 - Integer.parseInt(value);
-            }
+            return source.priority(context);
+        }
+    }
 
+    private static final class HelidonSourceWithPriority {
+        private final ConfigSource configSource;
+        private final Integer explicitPriority;
+
+        private HelidonSourceWithPriority(ConfigSource configSource, Integer explicitPriority) {
+            this.configSource = configSource;
+            this.explicitPriority = explicitPriority;
+        }
+
+        ConfigSource unwrap() {
+            return configSource;
+        }
+
+        int priority(ConfigContext context) {
+            // first - explicit priority. If configured by user, return it
             if (null != explicitPriority) {
                 return explicitPriority;
             }
 
-            // priority from Prioritized and annotation
-            return Priorities.find(delegate, 100);
+            // ordinal from data
+            return context.sourceRuntime(configSource)
+                    .node("config_priority")
+                    .flatMap(node -> node.value()
+                            .map(Integer::parseInt))
+                    .orElseGet(() -> {
+                        // the config source does not have an ordinal configured, I need to get it from other places
+                        return Priorities.find(configSource, 100);
+                    });
+        }
+    }
+
+    private static class LoadedFilterProvider implements Function<Config, ConfigFilter> {
+        private final ConfigFilter filter;
+
+        private LoadedFilterProvider(ConfigFilter filter) {
+            this.filter = filter;
         }
 
         @Override
-        public Map<String, String> getProperties() {
-            return delegate.getProperties();
-        }
-
-        @Override
-        public String getValue(String propertyName) {
-            return delegate.getValue(propertyName);
-        }
-
-        @Override
-        public String getName() {
-            return delegate.getName();
-        }
-
-        @Override
-        public Set<String> getPropertyNames() {
-            return delegate.getPropertyNames();
-        }
-
-        @Override
-        public String description() {
-            return delegate.description();
-        }
-
-        @Override
-        public Optional<ConfigNode.ObjectNode> load() throws ConfigException {
-            return delegate.load();
-        }
-
-        @Override
-        public ConfigSource get() {
-            return delegate.get();
-        }
-
-        @Override
-        public void init(ConfigContext context) {
-            delegate.init(context);
-        }
-
-        @Override
-        public Flow.Publisher<Optional<ConfigNode.ObjectNode>> changes() {
-            return delegate.changes();
-        }
-
-        @Override
-        public void close() throws Exception {
-            delegate.close();
+        public ConfigFilter apply(Config config) {
+            return filter;
         }
 
         @Override
         public String toString() {
-            return description();
-        }
-    }
-
-    static final class ConfigSourceConfiguration {
-        private static final ConfigSourceConfiguration EMPTY =
-                new ConfigSourceConfiguration(ConfigSources.empty(), List.of(ConfigSources.empty()));
-        private final ConfigSource compositeSource;
-        private final List<ConfigSource> allSources;
-
-        private ConfigSourceConfiguration(ConfigSource compositeSource, List<ConfigSource> allSources) {
-            this.compositeSource = compositeSource;
-            this.allSources = allSources;
-        }
-
-        static ConfigSourceConfiguration empty() {
-            return EMPTY;
-        }
-
-        ConfigSource compositeSource() {
-            return compositeSource;
-        }
-
-        List<ConfigSource> allSources() {
-            return allSources;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            ConfigSourceConfiguration that = (ConfigSourceConfiguration) o;
-            return compositeSource.equals(that.compositeSource)
-                    && allSources.equals(that.allSources);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(compositeSource, allSources);
+            return filter.toString();
         }
     }
 }

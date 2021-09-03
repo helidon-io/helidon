@@ -1,0 +1,107 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Jersey (JAX-RS) Support
+:h1Prefix: SE
+:description: Helidon Reactive WebServer Jersey JAX-RS support
+:keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
+:feature-name: Jersey (JAX-RS) Support
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-jersey</artifactId>
+</dependency>
+----
+
+== JAX-RS Support
+You can register a Jersey (JAX-RS) application at a _context root_ using the
+ `JerseySupport` class.
+
+=== Registering a Jersey Application
+To register a *Jersey* application at a context root, use the
+ `JerseySupport` class and its `JerseySupport.Builder` builder.
+
+`JerseySupport` can register the JAX-RS resources directly.
+[source,java]
+.Jersey (JAX-RS) `HelloWorld` resource
+----
+@Path("/")
+public class HelloWorld {
+
+    @GET
+    @Path("hello")
+    public Response hello() {
+        return Response.ok("Hello World!").build();
+    }
+}
+----
+
+[source,java]
+.Registering the `HelloWorld` resource
+----
+Routing.builder()
+       .register("/jersey", // <1>
+                 JerseySupport.builder()
+                              .register(HelloWorld.class) // <2>
+                              .build())
+       .build();
+----
+<1> Register the Jersey application at `/jersey` context root
+<2> The Jersey `Application` stays hidden and consists of a single `HelloWorld`
+ resource class
+
+As a result, an HTTP GET request to `/jersey/hello` would yield a `Hello World!`
+ response string.
+
+==== Registering a JAX-RS Application
+You can also register the JAX-RS `Application` object.
+[source,java]
+.Register the `HelloWorld` resource
+----
+Routing.builder()
+       .register("/jersey", // <1>
+                 JerseySupport.builder(new MyApplication()) // <2>
+                              .build())
+       .build();
+----
+<1> Register the Jersey application at `/jersey` context root
+<2> `MyApplication` handles requests made to /jersey context root.
+
+==== Accessing WebServer Internals from a JAX-RS Application
+
+You can inject WebServer request and response objects into your
+JAX-RS application using `@Context`.
+
+[source,java]
+.Injection of WebServer internal objects
+----
+@Path("/")
+@RequestScoped
+public class HelloWorld {
+    @Context
+    private ServerRequest request;
+
+    @Context
+    private ServerResponse response;
+}
+----

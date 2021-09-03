@@ -5,7 +5,7 @@ We welcome your contributions! There are multiple ways to contribute.
 
 ## Discussion
 
-Join us at [#helidon-users](https://join.slack.com/t/helidon/shared_invite/enQtNDM1NjU3MjkyNDg2LTFkZTM4NmI3OWUyNjUxYWQ5Njc0NGNiMzY3MTZiZmMwNzAxYmI4YzUzOWNkNzNlZTEwNDRkZGU4YzMzZjhkNTE) and participate in discussions.
+Join us at [#helidon-users](http://slack.helidon.io) and participate in discussions.
 
 ## Issues
 
@@ -30,7 +30,7 @@ The process:
 0. Sign the [OCA](https://www.oracle.com/technetwork/community/oca-486395.html)
 1. Fork the repo
 2. Fix an issue or create an issue and fix it
-3. Create a Pull Request that fixes the issue
+3. Create a Pull Request that fixes the issue. Follow [DEV-GUIDELINES](DEV-GUIDELINES.md) for a list of rules and best practices followed by project Helidon.
 4. Watch your PR for pipeline results. If there are failures then fix them.
 5. We will review your PR and merge as appropriate.
 

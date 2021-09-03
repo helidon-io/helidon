@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 package io.helidon.health.checks;
 
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.List;
 
-import io.helidon.common.HelidonFeatures;
+import io.helidon.common.NativeImageHelper;
+import io.helidon.config.Config;
 
 import org.eclipse.microprofile.health.HealthCheck;
 
@@ -27,11 +30,8 @@ import org.eclipse.microprofile.health.HealthCheck;
  * @see #healthChecks()
  */
 public final class HealthChecks {
-    private static final boolean IS_GRAAL_VM = Boolean.getBoolean("com.oracle.graalvm.isaot");
 
-    static {
-        HelidonFeatures.register("Health", "Built-ins");
-    }
+    static final String CONFIG_KEY_HEALTH_PREFIX = "helidon.health";
 
     private HealthChecks() {
     }
@@ -58,6 +58,18 @@ public final class HealthChecks {
     }
 
     /**
+     * Disk space health check, set up via config.
+     *
+     * @param config configuration to use in setting up the disk space check
+     * @return disk space health check with default configuration
+     * @see io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)
+     * @see DiskSpaceHealthCheck#builder()
+     */
+    public static HealthCheck diskSpaceCheck(Config config) {
+        return DiskSpaceHealthCheck.builder().config(config).build();
+    }
+
+    /**
      * Memory health check.
      *
      * @return memory health check with default configuration
@@ -69,13 +81,25 @@ public final class HealthChecks {
     }
 
     /**
+     * Memory health check.
+     *
+     * @param config the configuration to use in setting up the heap memory check
+     * @return memory health check with default configuration
+     * @see io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)
+     * @see HeapMemoryHealthCheck#builder()
+     */
+    public static HeapMemoryHealthCheck heapMemoryCheck(Config config) {
+        return HeapMemoryHealthCheck.builder().config(config).build();
+    }
+
+    /**
      * Built-in health checks.
      *
      * @return built-in health checks to be configured with {@link io.helidon.health.HealthSupport}
      * @see io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)
      */
     public static HealthCheck[] healthChecks() {
-        if (IS_GRAAL_VM) {
+        if (NativeImageHelper.isNativeImage()) {
             return new HealthCheck[] {
                     //diskSpaceCheck(), // - bug
                     heapMemoryCheck()
@@ -87,5 +111,23 @@ public final class HealthChecks {
                     heapMemoryCheck()
             };
         }
+    }
+
+    /**
+     * Built-in health checks, set up using "helidon.health" configuration.
+     *
+     * @param config configuration rooted at "helidon.health"
+     * @return built-in health checks, set up using the provided configuration
+     * @see io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)
+     */
+    public static HealthCheck[] healthChecks(Config config) {
+        List<HealthCheck> result = new ArrayList<>();
+        if (!NativeImageHelper.isNativeImage()) {
+            result.add(deadlockCheck());
+            result.add(diskSpaceCheck(config.get(DiskSpaceHealthCheck.CONFIG_KEY_DISKSPACE_PREFIX)));
+        }
+        result.add(heapMemoryCheck(config.get(HeapMemoryHealthCheck.CONFIG_KEY_HEAP_PREFIX)));
+
+        return result.toArray(new HealthCheck[0]);
     }
 }

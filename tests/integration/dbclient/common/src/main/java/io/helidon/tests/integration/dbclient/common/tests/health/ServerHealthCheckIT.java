@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,23 +33,24 @@ import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 
+import io.helidon.common.reactive.Multi;
+import io.helidon.config.Config;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.health.HealthSupport;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
+import org.eclipse.microprofile.health.HealthCheck;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.CONFIG;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -64,8 +65,9 @@ public class ServerHealthCheckIT {
     private static String URL;
 
     private static Routing createRouting() {
+        HealthCheck check = DbClientHealthCheck.create(DB_CLIENT, CONFIG.get("db.health-check"));
         final HealthSupport health = HealthSupport.builder()
-                .addLiveness(DbClientHealthCheck.create(DB_CLIENT))
+                .addLiveness(check)
                 .build();
         return Routing.builder()
                 .register(health) // Health at "/health"
@@ -80,9 +82,7 @@ public class ServerHealthCheckIT {
      */
     @BeforeAll
     public static void startup() throws InterruptedException, ExecutionException {
-        final ServerConfiguration serverConfig = ServerConfiguration.builder(CONFIG.get("server"))
-                .build();
-        final WebServer server = WebServer.create(serverConfig, createRouting());
+        final WebServer server = WebServer.create(createRouting(), CONFIG.get("server"));
         final CompletionStage<WebServer> serverFuture = server.start();
         serverFuture.thenAccept(srv -> {
             LOGGER.info(() -> String.format("WEB server is running at http://%s:%d", srv.configuration().bindAddress(), srv.port()));
@@ -127,12 +127,12 @@ public class ServerHealthCheckIT {
      * @throws IOException if an I/O error occurs when sending or receiving HTTP request
      */
     @Test
-    public void testHttpHealth() throws IOException, InterruptedException, ExecutionException {
+    public void testHttpHealth() throws IOException, InterruptedException {
         // Call select-pokemons to warm up server
-        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-pokemons")
-        ).toCompletableFuture().get();
-        List<DbRow> pokemonList = rows.collect().toCompletableFuture().get();
+        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .namedQuery("select-pokemons"));
+
+        List<DbRow> pokemonList = rows.collectList().await();
         // Read and process health check response
         String response = get(URL + "/health");
         LOGGER.info("RESPONSE: " + response);
@@ -144,13 +144,15 @@ public class ServerHealthCheckIT {
         }
         JsonArray checks = jsonResponse.asJsonObject().getJsonArray("checks");
         assertThat(checks.size(), greaterThan(0));
-        for (JsonValue check : checks) {
+        checks.stream().map((check) -> {
             String name = check.asJsonObject().getString("name");
+            return check;
+        }).forEachOrdered((check) -> {
             String state = check.asJsonObject().getString("state");
             String status = check.asJsonObject().getString("status");
             assertThat(state, equalTo("UP"));
             assertThat(status, equalTo("UP"));
-        }
+        });
     }
 
 

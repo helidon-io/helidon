@@ -1,7 +1,5 @@
-package io.helidon.tests.integration.dbclient.common;
-
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +13,13 @@ package io.helidon.tests.integration.dbclient.common;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.tests.integration.dbclient.common;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
@@ -36,10 +36,15 @@ public abstract class AbstractIT {
     /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(AbstractIT.class.getName());
 
-    public static final Config CONFIG = Config.create(ConfigSources.classpath("test.yaml"));
+    public static final Config CONFIG = Config.create(ConfigSources.classpath(ConfigIT.configFile()));
 
     public static final DbClient DB_CLIENT = initDbClient();
 
+    /**
+     * Initialize database client.
+     *
+     * @return database client instance
+     */
     public static DbClient initDbClient() {
         Config dbConfig = CONFIG.get("db");
         return DbClient.builder(dbConfig).build();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -70,11 +69,6 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
             .build();
     static final String ATTRIB_NAME_KEY_ID = HttpSignProvider.class.getName() + ".keyId";
 
-    static {
-        HelidonFeatures.register("Security", "Authentication", "Http-Sign");
-        HelidonFeatures.register("Security", "Outbound", "Http-Sign");
-    }
-
     private final boolean optional;
     private final String realm;
     private final Set<HttpSignHeader> acceptHeaders;
@@ -83,6 +77,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
     private final OutboundConfig outboundConfig;
     // cache of target name to a signature configuration for outbound calls
     private final Map<String, OutboundTargetDefinition> targetKeys = new HashMap<>();
+    private final boolean backwardCompatibleEol;
 
     private HttpSignProvider(Builder builder) {
         this.optional = builder.optional;
@@ -94,10 +89,11 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         this.inboundRequiredHeaders = builder.inboundRequiredHeaders;
         this.inboundKeys = builder.inboundKeys;
         this.outboundConfig = builder.outboundConfig;
+        this.backwardCompatibleEol = builder.backwardCompatibleEol;
 
         outboundConfig.targets().forEach(target -> target.getConfig().ifPresent(targetConfig -> {
             OutboundTargetDefinition outboundTargetDefinition = targetConfig.get("signature")
-                    .as(OutboundTargetDefinition.class)
+                    .as(OutboundTargetDefinition::create)
                     .get();
             targetKeys.put(target.name(), outboundTargetDefinition);
         }));
@@ -199,7 +195,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         String lastError = signatures.isEmpty() ? "No signature values for Signature header" : null;
 
         for (String signature : signatures) {
-            HttpSignature httpSignature = HttpSignature.fromHeader(signature);
+            HttpSignature httpSignature = HttpSignature.fromHeader(signature, backwardCompatibleEol);
             Optional<String> validate = httpSignature.validate();
             if (validate.isPresent()) {
                 lastError = validate.get();
@@ -278,7 +274,10 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
 
             Map<String, List<String>> newHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
             newHeaders.putAll(outboundEnv.headers());
-            HttpSignature signature = HttpSignature.sign(outboundEnv, targetConfig, newHeaders);
+            HttpSignature signature = HttpSignature.sign(outboundEnv,
+                                                         targetConfig,
+                                                         newHeaders,
+                                                         targetConfig.backwardCompatibleEol());
 
             OutboundSecurityResponse.Builder builder = OutboundSecurityResponse.builder()
                     .requestHeaders(newHeaders)
@@ -290,6 +289,12 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
                 break;
             case AUTHORIZATION:
                 builder.requestHeader("Authorization", "Signature " + signature.toSignatureHeader());
+                break;
+            case CUSTOM:
+                Map<String, List<String>> headers = new HashMap<>();
+                targetConfig.tokenHandler()
+                        .addHeader(headers, signature.toSignatureHeader());
+                headers.forEach(builder::requestHeader);
                 break;
             default:
                 throw new HttpSignatureException("Invalid header configuration: " + targetConfig.header());
@@ -318,6 +323,10 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         private SignedHeadersConfig inboundRequiredHeaders = SignedHeadersConfig.builder().build();
         private OutboundConfig outboundConfig = OutboundConfig.builder().build();
         private final Map<String, InboundClientDefinition> inboundKeys = new HashMap<>();
+        // not to self - we need to switch default to false in 3.0.0
+        // and probably remove this in 4.0.0
+        @Deprecated
+        private boolean backwardCompatibleEol = true;
 
         private Builder() {
         }
@@ -343,6 +352,8 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
             config.get("inbound.keys")
                     .asList(InboundClientDefinition::create)
                     .ifPresent(list -> list.forEach(inbound -> inboundKeys.put(inbound.keyId(), inbound)));
+
+            config.get("backward-compatible-eol").asBoolean().ifPresent(this::backwardCompatibleEol);
 
             return this;
         }
@@ -465,11 +476,24 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
          * Realm to use for challenging inbound requests that do not have "Authorization" header
          * in case header is {@link HttpSignHeader#AUTHORIZATION} and singatures are not optional.
          *
-         * @param realm realm to challenge with, defautls to "prime"
+         * @param realm realm to challenge with, defautls to "helidon"
          * @return updated builder instance
          */
         public Builder realm(String realm) {
             this.realm = realm;
+            return this;
+        }
+
+        /**
+         * Until version 3.0.0 (exclusive) there is a trailing end of line added to the signed
+         * data.
+         * To be able to communicate cross versions, we must configure this for newer versions
+         *
+         * @param backwardCompatible whether to run in backward compatible mode
+         * @return updated builder instance
+         */
+        public Builder backwardCompatibleEol(Boolean backwardCompatible) {
+            this.backwardCompatibleEol = backwardCompatible;
             return this;
         }
     }

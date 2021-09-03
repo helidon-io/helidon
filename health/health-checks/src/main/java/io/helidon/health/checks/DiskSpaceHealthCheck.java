@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.Locale;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import io.helidon.config.Config;
 import io.helidon.health.HealthCheckException;
 import io.helidon.health.common.BuiltInHealthCheck;
 
@@ -40,20 +41,24 @@ import org.eclipse.microprofile.health.Liveness;
  * A health check that verifies whether the server is running out of disk space. This health check will
  * check whether the usage of the disk associated with a specific path exceeds a given threshold. If it does,
  * then the health check will fail.
- *
+ * <p>
  * By default, this health check has a threshold of 100%, meaning that it will never fail the threshold check.
- * Also, by defaut, it will check the root path "/". These defaults can be modified using the
- * {@code healthCheck.diskSpace.path} property, and the {@code healthCheck.diskSpace.thresholdPercent}
- * property. The threshold should be set to a fraction, such as .50 for 50% or .99 for 99%. If disk usage
+ * Also, by default, it will check the root path {@code /}. These defaults can be modified using the
+ * {@value CONFIG_KEY_PATH} property (default {@value DEFAULT_PATH}), and the {@value CONFIG_KEY_THRESHOLD_PERCENT}
+ * property (default {@value DEFAULT_THRESHOLD}, virtually 100). The threshold should be set to a percent, such as 50 for 50% or
+ * 99 for 99%. If disk usage
  * exceeds this threshold, then the health check will fail.
- *
+ * </p>
+ * <p>
  * Unless ephemeral disk space is being used, it is often not sufficient to simply restart a server in the event
  * that that health check fails.
- *
+ *<p>
  * This health check is automatically created and registered through CDI.
- *
- * This health check can be referred to in properties as "diskSpace". So for example, to exclude this
- * health check from being exposed, use "helidon.health.exclude: diskSpace".
+ *</p>
+ * <p>
+ * This health check can be referred to in properties as {@code diskSpace}. So for example, to exclude this
+ * health check from being exposed, use {@code helidon.health.exclude: diskSpace}.
+ * </p>
  */
 @Liveness
 @ApplicationScoped // this will be ignored if not within CDI
@@ -74,14 +79,25 @@ public final class DiskSpaceHealthCheck implements HealthCheck {
      * {@link org.eclipse.microprofile.health.HealthCheckResponse.State#DOWN}.
      */
     public static final double DEFAULT_THRESHOLD = 99.999;
+
+    static final String CONFIG_KEY_DISKSPACE_PREFIX = "diskSpace";
+
+    static final String CONFIG_KEY_PATH_SUFFIX = "path";
+    static final String CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX = "thresholdPercent";
+
     /**
-     * Configuration key for path, when configured through Microprofile config.
+     * Full configuration key for path, when configured through MicroProfile config.
      */
-    public static final String CONFIG_KEY_PATH = "helidon.health.diskSpace.path";
+    public static final String CONFIG_KEY_PATH = HealthChecks.CONFIG_KEY_HEALTH_PREFIX
+            + "." + CONFIG_KEY_DISKSPACE_PREFIX
+            + "." + CONFIG_KEY_PATH_SUFFIX;
+
     /**
-     * Configuration key for threshold percent, when configured through Microprofile config.
+     * Full configuration key for threshold percent, when configured through Microprofile config.
      */
-    public static final String CONFIG_KEY_THRESHOLD_PERCENT = "helidon.health.diskSpace.thresholdPercent";
+    public static final String CONFIG_KEY_THRESHOLD_PERCENT = HealthChecks.CONFIG_KEY_HEALTH_PREFIX
+            + "." + CONFIG_KEY_DISKSPACE_PREFIX
+            + "." + CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX;
 
     private static final long KB = 1024;
     private static final long MB = 1024 * KB;
@@ -151,7 +167,7 @@ public final class DiskSpaceHealthCheck implements HealthCheck {
      * Create a new disk space health check to use, using defaults for all configurable values.
      *
      * @return a new health check to register with
-     *         {@link io.helidon.health.HealthSupport.Builder#add(org.eclipse.microprofile.health.HealthCheck...)}
+     *         {@link io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)}
      * @see #DEFAULT_PATH
      * @see #DEFAULT_THRESHOLD
      */
@@ -232,6 +248,47 @@ public final class DiskSpaceHealthCheck implements HealthCheck {
          */
         public Builder thresholdPercent(double threshold) {
             this.threshold = threshold;
+            return this;
+        }
+
+        /**
+         * Set up the disk space health check via config keys, if present.
+         *
+         * Configuration options:
+         * <table class="config">
+         * <caption>Disk space health check configuration</caption>
+         * <tr>
+         *     <th>Key</th>
+         *     <th>Default Value</th>
+         *     <th>Description</th>
+         *     <th>Builder method</th>
+         * </tr>
+         * <tr>
+         *     <td>{@value CONFIG_KEY_PATH_SUFFIX}</td>
+         *     <td>{@value DEFAULT_PATH}</td>
+         *     <td>Path for the device for which this health checks available space</td>
+         *     <td>{@link #path(Path)} or {@link #path(String)}</td>
+         * </tr>
+         * <tr>
+         *     <td>{@value CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX}</td>
+         *     <td>{@value DEFAULT_THRESHOLD}</td>
+         *     <td>Minimum percent of disk space consumed for this health check to fail</td>
+         *     <td>{@link #thresholdPercent(double)}</td>
+         * </tr>
+         * </table>
+         *
+         * @param config {@code Config} node for disk space
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get(CONFIG_KEY_PATH_SUFFIX)
+                    .as(Path.class)
+                    .ifPresent(this::path);
+
+            config.get(CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX)
+                    .asDouble()
+                    .ifPresent(this::thresholdPercent);
+
             return this;
         }
     }

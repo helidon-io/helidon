@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ public interface MediaPublisher extends Flow.Publisher<DataChunk> {
                 .map(Charset::forName)
                 .orElse(StandardCharsets.UTF_8)
                 .encode(charSequence.toString());
-        Flow.Publisher<DataChunk> publisher = Multi.just(DataChunk.create(data));
+        Flow.Publisher<DataChunk> publisher = Multi.singleton(DataChunk.create(data));
         return new MediaPublisher() {
             @Override
             public MediaType mediaType() {

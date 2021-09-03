@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,21 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
-import java.io.IOException;
-import java.util.logging.LogManager;
-
+import io.helidon.common.LogConfig;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.media.jackson.server.JacksonSupport;
-import io.helidon.media.jsonb.server.JsonBindingSupport;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.jackson.JacksonSupport;
+import io.helidon.media.jsonb.JsonbSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.ExperimentalConfiguration;
 import io.helidon.webserver.Http2Configuration;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.SSLContextBuilder;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerTls;
 
 /**
  * Simple Hello World rest application.
@@ -58,9 +55,8 @@ public final class Main {
      * Application main entry point.
      *
      * @param args command line arguments.
-     * @throws IOException if there are problems reading logging properties
      */
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
         startServer();
     }
 
@@ -68,9 +64,8 @@ public final class Main {
      * Start the server.
      *
      * @return the created {@link WebServer} instance
-     * @throws IOException if there are problems reading logging properties
      */
-    static WebServer startServer() throws IOException {
+    static WebServer startServer() {
         return startServer(false, false);
     }
 
@@ -80,34 +75,21 @@ public final class Main {
      * @param ssl Enable ssl support.
      * @param http2 Enable http2 support.
      * @return the created {@link WebServer} instance
-     * @throws IOException if there are problems reading logging properties
      */
-    static WebServer startServer(boolean ssl, boolean http2) throws IOException {
+    static WebServer startServer(boolean ssl, boolean http2) {
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
         // Build server config based on params
-        ServerConfiguration.Builder configBuilder = ServerConfiguration.builder(config.get("server"));
-        if (ssl) {
-            configBuilder.ssl(
-                    SSLContextBuilder.create(
-                            KeyConfig.keystoreBuilder()
-                                    .keystore(Resource.create("certificate.p12"))
-                                    .keystorePassphrase("helidon".toCharArray())
-                                    .build())
-                            .build());
-        }
-        if (http2) {
-            configBuilder.experimental(
-                    ExperimentalConfiguration.builder()
-                            .http2(Http2Configuration.builder().enable(true).build()).build());
-        }
-
-        WebServer server = WebServer.create(configBuilder.build(), createRouting(config));
+        WebServer server = WebServer.builder(createRouting(config))
+                .config(config.get("server"))
+                .update(it -> configureJsonSupport(it, config))
+                .update(it -> configureSsl(it, ssl))
+                .update(it -> configureHttp2(it, http2))
+                .build();
 
         // Start the server and print some info.
         server.start().thenAccept(ws -> {
@@ -116,10 +98,50 @@ public final class Main {
         });
 
         // Server threads are not daemon. NO need to block. Just react.
-        server.whenShutdown().thenRun(()
-                -> System.out.println("WEB server is DOWN. Good bye!"));
+        server.whenShutdown()
+                .thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
 
         return server;
+    }
+
+    private static void configureJsonSupport(WebServer.Builder wsBuilder, Config config) {
+        JsonLibrary jsonLibrary = getJsonLibrary(config);
+
+        switch (jsonLibrary) {
+        case JSONP:
+            wsBuilder.addMediaSupport(JsonpSupport.create());
+            break;
+        case JSONB:
+            wsBuilder.addMediaSupport(JsonbSupport.create());
+            break;
+        case JACKSON:
+            wsBuilder.addMediaSupport(JacksonSupport.create());
+            break;
+        default:
+            throw new RuntimeException("Unknown JSON library " + jsonLibrary);
+        }
+    }
+
+    private static void configureHttp2(WebServer.Builder wsBuilder, boolean useHttp2) {
+        if (!useHttp2) {
+            return;
+        }
+        wsBuilder.experimental(
+                ExperimentalConfiguration.builder()
+                        .http2(Http2Configuration.builder().enable(true).build()).build());
+    }
+
+    private static void configureSsl(WebServer.Builder wsBuilder, boolean useSsl) {
+        if (!useSsl) {
+            return;
+        }
+
+        wsBuilder.tls(WebServerTls.builder()
+                              .privateKey(KeyConfig.keystoreBuilder()
+                                                  .keystore(Resource.create("certificate.p12"))
+                                                  .keystorePassphrase("helidon".toCharArray())
+                                                  .build())
+                              .build());
     }
 
     /**
@@ -133,32 +155,18 @@ public final class Main {
                 .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .build();
 
-        JsonLibrary jsonLibrary = getJsonLibrary(config);
-
-        Routing.Builder builder = Routing.builder();
-        switch (jsonLibrary) {
-            case JSONP:
-                builder.register(JsonSupport.create());
-                break;
-            case JSONB:
-                builder.register(JsonBindingSupport.create());
-                break;
-            case JACKSON:
-                builder.register(JacksonSupport.create());
-                break;
-            default:
-                throw new RuntimeException("Unknown JSON library " + jsonLibrary);
-        }
-
-        return builder.register(health)                   // Health at "/health"
+        return Routing.builder()
+                .register(health)                   // Health at "/health"
                 .register(MetricsSupport.create())  // Metrics at "/metrics"
                 .register(SERVICE_PATH, new BookService(config))
                 .build();
     }
 
     static JsonLibrary getJsonLibrary(Config config) {
-        Config jl = config.get("app").get("json-library");
-        return !jl.exists() ? JsonLibrary.JSONP
-                : JsonLibrary.valueOf(jl.asString().get().toUpperCase());
+        return config.get("app.json-library")
+                .asString()
+                .map(String::toUpperCase)
+                .map(JsonLibrary::valueOf)
+                .orElse(JsonLibrary.JSONP);
     }
 }

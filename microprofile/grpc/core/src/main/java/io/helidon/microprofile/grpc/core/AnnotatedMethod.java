@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,17 +38,17 @@ public class AnnotatedMethod implements AnnotatedElement {
      * The set of meta-annotations that are used to identify an annotated gRPC method.
      */
     private static final Set<Class<? extends Annotation>> METHOD_META_ANNOTATIONS
-            = Set.of(RpcMethod.class);
+            = Set.of(GrpcMethod.class);
 
     /**
      * The set of annotations that are used to identify an annotated gRPC method.
      */
     private static final Set<Class<? extends Annotation>> METHOD_ANNOTATIONS
-            = Set.of(RpcMethod.class,
-                                      Bidirectional.class,
-                                      ClientStreaming.class,
-                                      ServerStreaming.class,
-                                      Unary.class);
+            = Set.of(GrpcMethod.class,
+                     Bidirectional.class,
+                     ClientStreaming.class,
+                     ServerStreaming.class,
+                     Unary.class);
 
     /**
      * The set of method parameter annotations that are used to identify an annotated gRPC method.
@@ -113,7 +113,7 @@ public class AnnotatedMethod implements AnnotatedElement {
     /**
      * Get the underlying Java method.
      * <p>
-     * This will be the method that is actually annotated with {@link io.helidon.microprofile.grpc.core.RpcMethod},
+     * This will be the method that is actually annotated with {@link GrpcMethod},
      * which may be the same as or overridden by the method returned by {@link #declaredMethod()}.
      *
      * @return the actual annotated Java method.

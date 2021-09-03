@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,19 @@
 
 package io.helidon.config.spi;
 
-import java.nio.file.Path;
-import java.time.Instant;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 /**
- * Transforms config {@link Content} into a {@link ConfigNode.ObjectNode} that
+ * Transforms config {@link io.helidon.config.spi.ConfigParser.Content} into a {@link ConfigNode.ObjectNode} that
  * represents the original structure and values from the content.
  * <p>
  * The application can register parsers on a {@code Builder} using the
@@ -40,10 +41,11 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
  * <p>
  * A parser can specify a {@link javax.annotation.Priority}. If no priority is
  * explicitly assigned, the value of {@value PRIORITY} is assumed.
+ * <p>
+ * Parser is used by the config system and a config source provides data as an input stream.
  *
  * @see io.helidon.config.Config.Builder#addParser(ConfigParser)
- * @see ConfigSource#load()
- * @see AbstractParsableConfigSource
+ * @see io.helidon.config.spi.ParsableSource
  * @see ConfigParsers ConfigParsers - access built-in implementations.
  */
 public interface ConfigParser {
@@ -56,167 +58,174 @@ public interface ConfigParser {
     /**
      * Returns set of supported media types by the parser.
      * <p>
-     * Set of supported media types is used while {@link ConfigContext#findParser(String) looking for appropriate parser}
-     * by {@link ConfigSource} implementations.
+     * Set of supported media types is used when config system looks for appropriate parser based on media type
+     * of content.
      * <p>
-     * {@link ConfigSource} implementations usually use {@link java.nio.file.Files#probeContentType(Path)} method
-     * to guess source media type, if not explicitly set.
+     * {@link io.helidon.config.spi.ParsableSource} implementations can use {@link io.helidon.common.media.type.MediaTypes}
+     * to probe for media type of content to provide it to config system through
+     * {@link io.helidon.config.spi.ConfigParser.Content.Builder#mediaType(String)}.
      *
      * @return supported media types by the parser
      */
     Set<String> supportedMediaTypes();
 
     /**
-     * Parses a specified {@link Content} into a {@link ObjectNode hierarchical configuration representation}.
+     * Parses a specified {@link ConfigContent} into a {@link ObjectNode hierarchical configuration representation}.
      * <p>
      * Never returns {@code null}.
      *
      * @param content a content to be parsed
-     * @param <S>     a type of data stamp
      * @return parsed hierarchical configuration representation
      * @throws ConfigParserException in case of problem to parse configuration from the source
      */
-    <S> ObjectNode parse(Content<S> content) throws ConfigParserException;
+    ObjectNode parse(Content content) throws ConfigParserException;
 
     /**
-     * {@link ConfigSource} configuration Content to be {@link ConfigParser#parse(Content) parsed} into
-     * {@link ObjectNode hierarchical configuration representation}.
+     * Config parser can define supported file suffixes. If such are defined, Helidon will
+     * use these to discover default configuration sources.
+     * For example if there is a {@code ConfigParser} that returns {@code xml}, config would look for
+     * {@code meta-config.xml} to discover meta configuration, and for {@code application.xml} on file
+     * system and on classpath to discover configuration files.
+     * <p>
+     * Note that the suffixes must resolve into a media type supported by a config parser
+     * (see {@link io.helidon.common.media.type.MediaTypes#detectExtensionType(String)}).
      *
-     * @param <S> a type of data stamp
+     * @return a set of file suffixes supported by this config parser.
      */
-    interface Content<S> {
+    default List<String> supportedSuffixes() {
+        return List.of();
+    }
 
-        default void close() throws ConfigException {
-        }
-
+    /**
+     * Config content to be parsed by a {@link ConfigParser}.
+     */
+    interface Content extends ConfigContent {
         /**
-         * A modification stamp of the content.
-         * <p>
-         * Default implementation returns {@link Instant#EPOCH}.
-         *
-         * @return a stamp of the content
-         */
-        default Optional<S> stamp() {
-            return Optional.empty();
-        }
-
-        /**
-         * Returns configuration content media type.
+         * Media type of the content. This method is only called if
+         * there is no parser configured.
          *
          * @return content media type if known, {@code empty} otherwise
          */
         Optional<String> mediaType();
 
         /**
-         * Returns a {@link Readable} that is use to read configuration content from.
+         * Data of this config source.
          *
-         * @param <T> return type that is {@link Readable} as well as {@link AutoCloseable}
-         * @return a content as {@link Readable}
+         * @return the data of the underlying source to be parsed by a {@link ConfigParser}
          */
-        <T extends Readable & AutoCloseable> T asReadable();
+        InputStream data();
 
         /**
-         * Create a fluent API builder for content.
+         * Charset configured by the config source or {@code UTF-8} if none configured.
          *
-         * @param readable readable to base this content builder on
-         * @param <S> type of the stamp to use
-         * @param <T> dual type of readable and autocloseable parameter
-         * @return a new fluent API builder for content
+         * @return charset to use when reading {@link #data()} if needed by the parser
          */
-        static <S, T extends Readable & AutoCloseable> Builder<S> builder(T readable) {
-            Objects.requireNonNull(readable, "Readable must not be null when creating content");
-            return new Builder<>(readable);
+        Charset charset();
+
+        /**
+         * A fluent API builder for {@link io.helidon.config.spi.ConfigParser.Content}.
+         *
+         * @return a new builder instance
+         */
+        static Builder builder() {
+            return new Builder();
         }
 
         /**
-         * Creates {@link Content} from given {@link Readable readable content} and
-         * with specified {@code mediaType} of configuration format.
+         * Create content from data, media type and a stamp.
+         * If not all are available, construct content using {@link #builder()}
          *
-         * @param readable  a readable providing configuration.
-         * @param mediaType a configuration mediaType
-         * @param stamp     content stamp
-         * @param <S>       a type of data stamp
-         * @param <T>       dual type of readable and autocloseable parameter
-         * @return a config content
+         * @param data input stream to underlying data
+         * @param mediaType content media type
+         * @param stamp stamp of the content
+         * @return content built from provided information
          */
-        static <S, T extends Readable & AutoCloseable> Content<S> create(T readable, String mediaType, S stamp) {
-            Objects.requireNonNull(mediaType, "Media type must not be null when creating content using Content.create()");
-            Objects.requireNonNull(stamp, "Stamp must not be null when creating content using Content.create()");
-
-            Builder<S> builder = builder(readable);
-
-            return builder
+        static Content create(InputStream data, String mediaType, Object stamp) {
+            return builder().data(data)
                     .mediaType(mediaType)
                     .stamp(stamp)
                     .build();
         }
 
         /**
-         * Fluent API builder for {@link io.helidon.config.spi.ConfigParser.Content}.
-         *
-         * @param <S> type of the stamp of the built content
+         * Fluent API builder for {@link Content}.
          */
-        class Builder<S> implements io.helidon.common.Builder<Content<S>> {
-            private final AutoCloseable readable;
+        class Builder extends ConfigContent.Builder<Builder> implements io.helidon.common.Builder<Content> {
+            private InputStream data;
             private String mediaType;
-            private S stamp;
+            private Charset charset = StandardCharsets.UTF_8;
 
-            private <T extends Readable & AutoCloseable> Builder(T readable) {
-                this.readable = readable;
-            }
-
-            @Override
-            public Content<S> build() {
-                final Optional<String> mediaType = Optional.ofNullable(this.mediaType);
-                final Optional<S> stamp = Optional.ofNullable(this.stamp);
-
-                return new Content<>() {
-                    @Override
-                    public Optional<String> mediaType() {
-                        return mediaType;
-                    }
-
-                    @SuppressWarnings("unchecked")
-                    @Override
-                    public <T extends Readable & AutoCloseable> T asReadable() {
-                        return (T) readable;
-                    }
-
-                    @Override
-                    public void close() throws ConfigException {
-                        try {
-                            readable.close();
-                        } catch (ConfigException ex) {
-                            throw ex;
-                        } catch (Exception ex) {
-                            throw new ConfigException("Error while closing readable [" + readable + "].", ex);
-                        }
-                    }
-
-                    @Override
-                    public Optional<S> stamp() {
-                        return stamp;
-                    }
-                };
+            private Builder() {
             }
 
             /**
-             * Content media type.
-             * @param mediaType type of the content
+             * Data of the config source as loaded from underlying storage.
+             *
+             * @param data to be parsed
+             * @return updated builder instance
              */
-            public Builder<S> mediaType(String mediaType) {
+            public Builder data(InputStream data) {
+                Objects.requireNonNull(data, "Parsable input stream must be provided");
+                this.data = data;
+                return this;
+            }
+
+            /**
+             * Media type of the content if known by the config source.
+             * Media type is configured on content, as sometimes you need the actual file to exist to be able to
+             * "guess" its media type, and this is the place we are sure it exists.
+             *
+             * @param mediaType media type of the content as understood by the config source
+             * @return updated builder instance
+             */
+            public Builder mediaType(String mediaType) {
+                Objects.requireNonNull(mediaType, "Media type must be provided, or this method should not be called");
                 this.mediaType = mediaType;
                 return this;
             }
 
             /**
-             * Content stamp.
+             * A shortcut method to invoke with result of {@link io.helidon.common.media.type.MediaTypes#detectType(String)}
+             *  and similar methods. Only sets media type if the parameter is present.
              *
-             * @param stamp stamp of the content
+             * @param mediaType optional of media type
+             * @return updated builder instance
              */
-            public Builder<S> stamp(S stamp) {
-                this.stamp = stamp;
+            public Builder mediaType(Optional<String> mediaType) {
+                mediaType.ifPresent(this::mediaType);
                 return this;
+            }
+
+            /**
+             * Configure charset if known by the config source.
+             *
+             * @param charset charset to use if the content should be read using a reader
+             * @return updated builder instance
+             */
+            public Builder charset(Charset charset) {
+                Objects.requireNonNull(charset, "Charset must be provided, or this method should not be called");
+                this.charset = charset;
+                return this;
+            }
+
+            InputStream data() {
+                return data;
+            }
+
+            String mediaType() {
+                return mediaType;
+            }
+
+            Charset charset() {
+                return charset;
+            }
+
+            @Override
+            public Content build() {
+                if (null == data) {
+                    throw new ConfigParserException("Parsable content exists, yet input stream was not configured.");
+                }
+                return new ContentImpl.ParsableContentImpl(this);
             }
         }
     }

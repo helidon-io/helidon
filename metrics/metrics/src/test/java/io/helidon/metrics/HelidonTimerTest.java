@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,16 @@
 package io.helidon.metrics;
 
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import javax.json.Json;
+import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
@@ -32,6 +35,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.metrics.HelidonMetricsMatcher.withinTolerance;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -66,11 +70,13 @@ class HelidonTimerTest {
 
     @BeforeAll
     static void initClass() {
-        meta = new HelidonMetadata("response_time",
-                            "Responses",
-                            "Server response time for /index.html",
-                            MetricType.TIMER,
-                            MetricUnits.NANOSECONDS);
+        meta = Metadata.builder()
+				.withName("response_time")
+				.withDisplayName("Responses")
+				.withDescription("Server response time for /index.html")
+				.withType(MetricType.TIMER)
+				.withUnit(MetricUnits.NANOSECONDS)
+				.build();
 
         dataSetTimer = HelidonTimer.create("application", meta, dataSetTimerClock);
         dataSetTimerID = new MetricID("response_time");
@@ -152,14 +158,14 @@ class HelidonTimerTest {
         Snapshot snapshot = dataSetTimer.getSnapshot();
 
         assertAll("Testing statistical values for snapshot",
-                  () -> withTolerance("median", snapshot.getMedian(), 480),
-                  () -> withTolerance("75th percentile", snapshot.get75thPercentile(), 750),
-                  () -> withTolerance("95th percentile", snapshot.get95thPercentile(), 960),
-                  () -> withTolerance("78th percentile", snapshot.get98thPercentile(), 980),
-                  () -> withTolerance("99th percentile", snapshot.get99thPercentile(), 980),
-                  () -> withTolerance("999th percentile", snapshot.get999thPercentile(), 990),
-                  () -> withTolerance("mean", snapshot.getMean(), 506.3),
-                  () -> withTolerance("stddev", snapshot.getStdDev(), 294.3),
+                  () -> assertThat("median", snapshot.getMedian(), is(withinTolerance(480))),
+                  () -> assertThat("75th percentile", snapshot.get75thPercentile(), is(withinTolerance(750))),
+                  () -> assertThat("95th percentile", snapshot.get95thPercentile(), is(withinTolerance(960))),
+                  () -> assertThat("78th percentile", snapshot.get98thPercentile(), is(withinTolerance(980))),
+                  () -> assertThat("99th percentile", snapshot.get99thPercentile(), is(withinTolerance(980))),
+                  () -> assertThat("999th percentile", snapshot.get999thPercentile(), is(withinTolerance(990))),
+                  () -> assertThat("mean", snapshot.getMean(), is(withinTolerance(506.3))),
+                  () -> assertThat("stddev", snapshot.getStdDev(), is(withinTolerance(294.3))),
                   () -> assertThat("min", snapshot.getMin(), Matchers.is(0L)),
                   () -> assertThat("max", snapshot.getMax(), Matchers.is(990L)),
                   () -> assertThat("size", snapshot.size(), Matchers.is(200))
@@ -178,18 +184,18 @@ class HelidonTimerTest {
         JsonObject metricData = json.getJsonObject("response_time");
 
         assertThat(metricData, notNullValue());
-        assertThat(metricData.getJsonNumber("count").longValue(), Matchers.is(200L));
-        assertThat(metricData.getJsonNumber("min").longValue(), Matchers.is(0L));
-        assertThat(metricData.getJsonNumber("max").longValue(), Matchers.is(990L));
-        withTolerance("mean", metricData.getJsonNumber("mean").doubleValue(), 506.349);
-        withTolerance("stddev", metricData.getJsonNumber("stddev").doubleValue(), 294.389);
-        assertThat(metricData.getJsonNumber("p50").intValue(), Matchers.is(480));
-        assertThat(metricData.getJsonNumber("p75").intValue(), Matchers.is(750));
-        assertThat(metricData.getJsonNumber("p95").intValue(), Matchers.is(960));
-        assertThat(metricData.getJsonNumber("p98").intValue(), Matchers.is(980));
-        assertThat(metricData.getJsonNumber("p99").intValue(), Matchers.is(980));
-        assertThat(metricData.getJsonNumber("p999").intValue(), Matchers.is(990));
-        assertThat(metricData.getJsonNumber("meanRate").intValue(), is(200));
+        assertThat("count", metricData.getJsonNumber("count").longValue(), is(withinTolerance(200L)));
+        assertThat("min", metricData.getJsonNumber("min").longValue(), is(withinTolerance(0L)));
+        assertThat("max", metricData.getJsonNumber("max").longValue(), is(withinTolerance(990L)));
+        assertThat("mean", metricData.getJsonNumber("mean").doubleValue(),  is(withinTolerance(506.349)));
+        assertThat("stddev", metricData.getJsonNumber("stddev").doubleValue(),  is(withinTolerance(294.389)));
+        assertThat(metricData.getJsonNumber("p50").intValue(), is(withinTolerance(480)));
+        assertThat(metricData.getJsonNumber("p75").intValue(), is(withinTolerance(750)));
+        assertThat(metricData.getJsonNumber("p95").intValue(), is(withinTolerance(960)));
+        assertThat(metricData.getJsonNumber("p98").intValue(), is(withinTolerance(980)));
+        assertThat(metricData.getJsonNumber("p99").intValue(), is(withinTolerance(980)));
+        assertThat(metricData.getJsonNumber("p999").intValue(), is(withinTolerance(990)));
+        assertThat(metricData.getJsonNumber("meanRate").intValue(), is(withinTolerance(200)));
         assertThat(metricData.getJsonNumber("oneMinRate").intValue(), is(0));
         assertThat(metricData.getJsonNumber("fiveMinRate").intValue(), is(0));
         assertThat(metricData.getJsonNumber("fifteenMinRate").intValue(), is(0));
@@ -198,7 +204,7 @@ class HelidonTimerTest {
     @Test
     void testPrometheus() {
         final StringBuilder sb = new StringBuilder();
-        dataSetTimer.prometheusData(sb, dataSetTimerID);
+        dataSetTimer.prometheusData(sb, dataSetTimerID, true);
         final String prometheusData = sb.toString();
         assertThat(prometheusData, startsWith("# TYPE application_response_time_rate_per_second gauge\n"
                                                       + "application_response_time_rate_per_second 200.0\n"
@@ -219,12 +225,52 @@ class HelidonTimerTest {
                                                           + "application_response_time_seconds_count 200"));
     }
 
-    private void withTolerance(String field, double actual, double expectedValue) {
-        double min = expectedValue * 0.999;
-        double max = expectedValue * 1.001;
+    @Test
+    void testNaNAvoidance() {
+        TestClock testClock = TestClock.create();
+        HelidonTimer helidonTimer = HelidonTimer.create("application", meta, testClock);
+        MetricID metricID = new MetricID("idleTimer");
 
-        if ((actual < min) || (actual > max)) {
-            fail(field + ": expected: <" + expectedValue + ">, but actual value was: <" + actual + ">");
+        JsonObjectBuilder builder = MetricImpl.JSON.createObjectBuilder();
+        helidonTimer.update(1L, TimeUnit.MILLISECONDS);
+
+        for (int i = 1; i < 48; i++) {
+            testClock.add(1L, TimeUnit.HOURS);
+            try {
+                helidonTimer.jsonData(builder, metricID);
+            } catch (Throwable t) {
+                fail("Failed after simulating " + i + " hours");
+            }
         }
+    }
+
+    @Test
+    void testUnitsOnHistogram() {
+        TestClock testClock = TestClock.create();
+        String timerName = "jsonDataUnitsTimer";
+        Metadata metadata = Metadata.builder()
+                .withName(timerName)
+                .withDisplayName("Response time test")
+                .withDescription("Server response time for checking histo units")
+                .withType(MetricType.TIMER)
+                .withUnit(MetricUnits.MILLISECONDS)
+                .build();
+
+        HelidonTimer helidonTimer = HelidonTimer.create(MetricRegistry.Type.APPLICATION.getName(), metadata, testClock);
+
+        Stream.of(24L, 28L, 32L, 36L)
+                .forEach(value -> {
+                    testClock.addNanos(450, TimeUnit.MILLISECONDS);
+                    helidonTimer.update(value, TimeUnit.MILLISECONDS);
+                });
+        MetricID timerID = new MetricID(timerName);
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        helidonTimer.jsonData(builder, timerID);
+        JsonObject jsonObject = builder.build();
+        JsonObject metricObject = jsonObject.getJsonObject(timerName);
+        assertThat("Metric JSON object", metricObject, is(notNullValue()));
+        JsonNumber jsonNumber = metricObject.getJsonNumber("min");
+        assertThat("Min JSON value", jsonNumber, is(notNullValue()));
+        assertThat("Min histo value", jsonNumber.longValue(), is(24L));
     }
 }

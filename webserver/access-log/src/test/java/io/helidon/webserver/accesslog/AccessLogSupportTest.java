@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 
-import io.helidon.common.http.ContextualRegistry;
+import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.webserver.RequestHeaders;
@@ -55,7 +55,7 @@ class AccessLogSupportTest {
         AccessLogSupport accessLog = AccessLogSupport.create();
 
         ServerRequest request = mock(ServerRequest.class);
-        ContextualRegistry context = ContextualRegistry.create();
+        Context context = Context.create();
         when(request.remoteAddress()).thenReturn(REMOTE_IP);
         when(request.context()).thenReturn(context);
         when(request.method()).thenReturn(Http.Method.PUT);
@@ -93,7 +93,7 @@ class AccessLogSupportTest {
                 .build();
 
         ServerRequest request = mock(ServerRequest.class);
-        ContextualRegistry context = ContextualRegistry.create();
+        Context context = Context.create();
         when(request.remoteAddress()).thenReturn(REMOTE_IP);
         when(request.context()).thenReturn(context);
         when(request.method()).thenReturn(Http.Method.PUT);
@@ -132,7 +132,7 @@ class AccessLogSupportTest {
                 .build();
 
         ServerRequest request = mock(ServerRequest.class);
-        ContextualRegistry context = ContextualRegistry.create();
+        Context context = Context.create();
         when(request.remoteAddress()).thenReturn(REMOTE_IP);
         when(request.context()).thenReturn(context);
         when(request.method()).thenReturn(Http.Method.PUT);

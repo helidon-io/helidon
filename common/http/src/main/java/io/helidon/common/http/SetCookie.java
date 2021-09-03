@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,8 @@ public class SetCookie {
     private final Duration maxAge;
     private final String domain;
     private final String path;
-    private final Boolean secure;
-    private final Boolean httpOnly;
+    private final boolean secure;
+    private final boolean httpOnly;
 
     private SetCookie(Builder builder) {
         this.name = builder.name;
@@ -53,6 +53,15 @@ public class SetCookie {
     }
 
     /**
+     * Gets cookie's name.
+     *
+     * @return the name.
+     */
+    public String name() {
+        return name;
+    }
+
+    /**
      * Creates a new fluent API builder.
      *
      * @param name  a cookie name.
@@ -61,6 +70,76 @@ public class SetCookie {
      */
     public static Builder builder(String name, String value) {
         return new Builder(name, value);
+    }
+
+    /**
+     * Parses new instance of {@link SetCookie} from the String representation.
+     *
+     * @param setCookie string representation
+     * @return new instance
+     */
+    public static SetCookie parse(String setCookie) {
+        String[] cookieParts = setCookie.split(PARAM_SEPARATOR);
+        String nameAndValue = cookieParts[0];
+        int equalsIndex = nameAndValue.indexOf('=');
+        String name = nameAndValue.substring(0, equalsIndex);
+        String value = nameAndValue.length() == equalsIndex ? null : nameAndValue.substring(equalsIndex + 1);
+        Builder builder = builder(name, value);
+
+        for (int i = 1; i < cookieParts.length; i++) {
+            String cookiePart = cookieParts[i];
+            equalsIndex = cookiePart.indexOf('=');
+            String partName;
+            String partValue;
+            if (equalsIndex > -1) {
+                partName = cookiePart.substring(0, equalsIndex);
+                partValue = cookiePart.length() == equalsIndex ? null : cookiePart.substring(equalsIndex + 1);
+            } else {
+                partName = cookiePart;
+                partValue = null;
+            }
+            switch (partName.toLowerCase()) {
+            case "expires":
+                hasValue(partName, partValue);
+                builder.expires(Http.DateTime.parse(partValue));
+                break;
+            case "max-age":
+                hasValue(partName, partValue);
+                builder.maxAge(Duration.ofSeconds(Long.parseLong(partValue)));
+                break;
+            case "domain":
+                hasValue(partName, partValue);
+                builder.domain(partValue);
+                break;
+            case "path":
+                hasValue(partName, partValue);
+                builder.path(partValue);
+                break;
+            case "secure":
+                hasNoValue(partName, partValue);
+                builder.secure(true);
+                break;
+            case "httponly":
+                hasNoValue(partName, partValue);
+                builder.httpOnly(true);
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected Set-Cookie part: " + partName);
+            }
+        }
+        return builder.build();
+    }
+
+    private static void hasNoValue(String partName, String partValue) {
+        if (partValue != null) {
+            throw new IllegalArgumentException("Set-Cookie parameter " + partName + " has to have no value!");
+        }
+    }
+
+    private static void hasValue(String partName, String partValue) {
+        if (partValue == null) {
+            throw new IllegalArgumentException("Set-Cookie parameter " + partName + " has to have a value!");
+        }
     }
 
     /**
@@ -105,11 +184,11 @@ public class SetCookie {
             result.append("Path=");
             result.append(path);
         }
-        if (secure != null) {
+        if (secure) {
             result.append(PARAM_SEPARATOR);
             result.append("Secure");
         }
-        if (httpOnly != null) {
+        if (httpOnly) {
             result.append(PARAM_SEPARATOR);
             result.append("HttpOnly");
         }
@@ -126,8 +205,8 @@ public class SetCookie {
         private Duration maxAge;
         private String domain;
         private String path;
-        private Boolean secure;
-        private Boolean httpOnly;
+        private boolean secure = false;
+        private boolean httpOnly = false;
 
         private Builder(String name, String value) {
             Objects.requireNonNull(name, "Parameter 'name' is null!");

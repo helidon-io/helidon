@@ -16,32 +16,15 @@
 
 package io.helidon.config;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.Flow;
 
-import io.helidon.config.ClasspathConfigSource.ClasspathBuilder;
-import io.helidon.config.spi.ConfigContext;
-import io.helidon.config.spi.ConfigNode.ObjectNode;
-import io.helidon.config.spi.ConfigParser;
-import io.helidon.config.spi.ConfigParserException;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.config.spi.PollingStrategy;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.mock;
 
 /**
  * Tests {@link io.helidon.config.ClasspathConfigSource}.
@@ -66,11 +49,9 @@ public class ClasspathConfigSourceTest {
 
     @Test
     public void testGetMediaTypeSet() {
-        ClasspathConfigSource configSource = (ClasspathConfigSource) ConfigSources.classpath("application.conf")
+        ClasspathConfigSource configSource = ConfigSources.classpath("application.conf")
                 .optional()
                 .mediaType(TEST_MEDIA_TYPE)
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
                 .build();
 
         assertThat(configSource.mediaType(), is(Optional.of(TEST_MEDIA_TYPE)));
@@ -78,21 +59,17 @@ public class ClasspathConfigSourceTest {
 
     @Test
     public void testGetMediaTypeGuessed() {
-        ClasspathConfigSource configSource = (ClasspathConfigSource) ConfigSources.classpath("application.properties")
+        ClasspathConfigSource configSource = ConfigSources.classpath("logging.properties")
                 .optional()
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
                 .build();
 
-        assertThat(configSource.mediaType(), is(Optional.of("text/x-java-properties")));
+        assertThat(configSource.load().get().mediaType(), is(Optional.of("text/x-java-properties")));
     }
 
     @Test
     public void testGetMediaTypeUnknown() {
         ClasspathConfigSource configSource = (ClasspathConfigSource) ConfigSources.classpath("application.unknown")
                 .optional()
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
                 .build();
 
         assertThat(configSource.mediaType(), is(Optional.empty()));
@@ -101,17 +78,9 @@ public class ClasspathConfigSourceTest {
     @Test
     public void testLoadNotExists() {
         ClasspathConfigSource configSource = (ClasspathConfigSource) ConfigSources.classpath("application.unknown")
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
                 .build();
 
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            configSource.init(mock(ConfigContext.class));
-            configSource.load();
-        });
-        
-        assertThat(ex.getCause(), instanceOf(ConfigException.class));
-        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
+        assertThat(configSource.load(), is(Optional.empty()));
     }
 
     @Test
@@ -119,31 +88,6 @@ public class ClasspathConfigSourceTest {
         ConfigSource configSource = ConfigSources.classpath("io/helidon/config/application.conf")
                 .mediaType("application/hocon")
                 .build();
-
-        configSource.init(content -> Optional.of(new ConfigParser() {
-            @Override
-            public Set<String> supportedMediaTypes() {
-                return new HashSet<String>() {{
-                    add("application/hocon");
-                }};
-            }
-
-            @Override
-            public ObjectNode parse(Content content) throws ConfigParserException {
-                assertThat(content, notNullValue());
-                assertThat(content.mediaType(), is(Optional.of("application/hocon")));
-                try {
-                    assertThat((char) ConfigHelper.createReader(content.asReadable()).read(), is('#'));
-                } catch (IOException e) {
-                    fail("Cannot read from source's reader", e);
-                }
-                return ObjectNode.empty();
-            }
-        }));
-        Optional<ObjectNode> objectNode = configSource.load();
-
-        assertThat(objectNode, notNullValue());
-        assertThat(objectNode.isPresent(), is(true));
     }
 
     @Test
@@ -161,47 +105,4 @@ public class ClasspathConfigSourceTest {
 
         assertThat(configSource, notNullValue());
     }
-
-    @Test
-    public void testBuilderPollingStrategyNotExistingResource() {
-        ClasspathBuilder builder = (ClasspathBuilder) ConfigSources.classpath("not-exists")
-                .pollingStrategy(TestingPathPollingStrategy::new);
-
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            assertThat(builder.pollingStrategyInternal(), is(PollingStrategies.nop()));
-        });
-        assertThat(ex.getMessage(), startsWith("Could not find a filesystem path for resource 'not-exists'"));
-        
-    }
-
-    @Test
-    public void testBuilderPollingStrategyExistingResource() throws URISyntaxException {
-        ClasspathBuilder builder = (ClasspathBuilder) ConfigSources.classpath("io/helidon/config/application.conf")
-                .pollingStrategy(TestingPathPollingStrategy::new);
-
-        assertThat(builder.pollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));
-        assertThat(((TestingPathPollingStrategy) builder.pollingStrategyInternal()).getPath(),
-                   is(ClasspathSourceHelper.resourcePath("io/helidon/config/application.conf")));
-    }
-
-    private static class TestingPathPollingStrategy implements PollingStrategy {
-
-        private final Path path;
-
-        public TestingPathPollingStrategy(Path path) {
-            this.path = path;
-
-            assertThat(path, notNullValue());
-        }
-
-        @Override
-        public Flow.Publisher<PollingEvent> ticks() {
-            return Flow.Subscriber::onComplete;
-        }
-
-        public Path getPath() {
-            return path;
-        }
-    }
-
 }

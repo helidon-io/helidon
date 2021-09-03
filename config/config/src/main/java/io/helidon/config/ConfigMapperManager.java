@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -189,8 +189,7 @@ class ConfigMapperManager implements ConfigMapper {
         <T> Optional<Mapper<T>> findMapper(GenericType<T> type, Config.Key key) {
             return providers.stream()
                     .map(provider -> provider.apply(type))
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
+                    .flatMap(Optional::stream)
                     .findFirst()
                     .map(mapper -> castMapper(type, mapper, key))
                     .map(Mapper::create);
@@ -320,6 +319,11 @@ class ConfigMapperManager implements ConfigMapper {
         @Override
         public ConfigValue<Config> asNode() {
             return as(Config.class);
+        }
+
+        @Override
+        public ConfigMapper mapper() {
+            return mapperManager;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -360,8 +360,8 @@ public final class Http {
 
         /**
          * The GET method means retrieve whatever information (in the form of an entity) is identified by the Request-URI.
-         * If the Request-URI refers to a data-producing tryProcess, it is the produced data which shall be returned as the entity
-         * in the response and not the source text of the tryProcess, unless that text happens to be the output of the tryProcess.
+         * If the Request-URI refers to a data-producing process, it is the produced data which shall be returned as the entity
+         * in the response and not the source text of the process, unless that text happens to be the output of the tryProcess.
          */
         GET,
 
@@ -397,6 +397,15 @@ public final class Http {
          * a 501 (Not Implemented) response in such cases.
          */
         PUT,
+
+        /**
+         * The PATCH method as described in RFC 5789 is used to perform an update to an existing resource, where the request
+         * payload only has to contain the instructions on how to perform the update. This is in contrast to PUT which
+         * requires that the payload contains the new version of the resource.
+         * If an existing resource is modified, either the 200 (OK) or 204 (No Content) response codes SHOULD be sent to indicate
+         * successful completion of the request.
+         */
+        PATCH,
 
         /**
          * The DELETE method requests that the origin server delete the resource identified by the Request-URI.
@@ -1007,6 +1016,12 @@ public final class Http {
          * Indicates the authentication scheme that should be used to access the requested entity.
          */
         public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
+        /**
+         * The <code>{@value}</code> header name.
+         * Corresponds to the certificate CN subject value when client authentication enabled.
+         * This header will be removed if it is part of the request.
+         */
+        public static final String X_HELIDON_CN = "X-HELIDON-CN";
 
         private Header() {
         }

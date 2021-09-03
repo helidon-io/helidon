@@ -16,29 +16,30 @@
 
 package io.helidon.config;
 
-import java.nio.file.Path;
-import java.time.Instant;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import io.helidon.config.spi.AbstractOverrideSource;
+import io.helidon.config.spi.ConfigContent.OverrideContent;
 import io.helidon.config.spi.OverrideSource;
-import io.helidon.config.spi.PollingStrategy;
 
 /**
  * {@link OverrideSource} implementation that loads override definitions from a resource on a classpath.
  *
- * @see Builder
+ * @see io.helidon.config.spi.Source.Builder
  */
-public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
+public class ClasspathOverrideSource extends AbstractSource implements OverrideSource {
     private final String resource;
+    private final URL resourceUrl;
 
-    ClasspathOverrideSource(ClasspathBuilder builder) {
+    ClasspathOverrideSource(Builder builder) {
         super(builder);
-        String builderResource = builder.resource;
 
-        this.resource = builderResource.startsWith("/")
-                ? builderResource.substring(1)
-                : builderResource;
+        this.resource = builder.resource;
+        this.resourceUrl = builder.url;
     }
 
     @Override
@@ -47,19 +48,22 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
     }
 
     @Override
-    protected Optional<Instant> dataStamp() {
-        return Optional.of(ClasspathSourceHelper.resourceTimestamp(resource));
-    }
+    public Optional<OverrideContent> load() throws ConfigException {
+        if (null == resourceUrl) {
+            return Optional.empty();
+        }
 
-    @Override
-    public Data<OverrideData, Instant> loadData() throws ConfigException {
-        return ClasspathSourceHelper.content(resource,
-                                             description(),
-                                             (inputStreamReader, instant) -> {
-                                                 return new Data<>(
-                                                         Optional.of(OverrideData.create(inputStreamReader)),
-                                                         Optional.of(instant));
-                                             });
+        InputStream inputStream;
+        try {
+            inputStream = resourceUrl.openStream();
+        } catch (IOException e) {
+            throw new ConfigException("Failed to read configuration from classpath, resource: " + resource, e);
+        }
+
+        OverrideData data = OverrideData.create(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+        return Optional.of(OverrideContent.builder()
+                           .data(data)
+                           .build());
     }
 
     /**
@@ -76,8 +80,8 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
      *
      * @return a new builder
      */
-    public static ClasspathBuilder builder() {
-        return new ClasspathBuilder();
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -92,55 +96,16 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
      * If the {@code OverrideSource} is {@code mandatory} and the {@code resource} does not exist
      * then {@link OverrideSource#load} throws {@link ConfigException}.
      */
-    public static final class ClasspathBuilder extends Builder<ClasspathBuilder, Path> {
+    public static final class Builder extends AbstractSourceBuilder<Builder, Void>
+            implements io.helidon.common.Builder<ClasspathOverrideSource> {
 
+        private URL url;
         private String resource;
 
         /**
          * Initialize builder.
          */
-        private ClasspathBuilder() {
-            super(Path.class);
-        }
-
-        /**
-         * Configure the classpath resource to be used as a source.
-         *
-         * @param resource classpath resource path
-         * @return updated builder instance
-         */
-        public ClasspathBuilder resource(String resource) {
-            this.resource = resource;
-            return this;
-        }
-
-        /**
-         * Update builder from meta configuration.
-         *
-         * @param metaConfig meta configuration to load this override source from
-         * @return updated builder instance
-         */
-        public ClasspathBuilder config(Config metaConfig) {
-            metaConfig.get("resource").asString().ifPresent(this::resource);
-            return super.config(metaConfig);
-        }
-
-        @Override
-        protected Path target() {
-            if (null == resource) {
-                throw new IllegalArgumentException("Resource name must be defined.");
-            }
-
-            try {
-                Path resourcePath = ClasspathSourceHelper.resourcePath(resource);
-                if (resourcePath != null) {
-                    return resourcePath;
-                } else {
-                    throw new ConfigException("Could not find a filesystem path for resource '" + resource + "'.");
-                }
-            } catch (Exception ex) {
-                throw new ConfigException("Could not find a filesystem path for resource '" + resource + "'.", ex);
-            }
+        private Builder() {
         }
 
         /**
@@ -153,8 +118,34 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
             return new ClasspathOverrideSource(this);
         }
 
-        PollingStrategy pollingStrategyInternal() { //just for testing purposes
-            return super.pollingStrategy();
+        /**
+         * Update builder from meta configuration.
+         *
+         * @param metaConfig meta configuration to load this override source from
+         * @return updated builder instance
+         */
+        public Builder config(Config metaConfig) {
+            metaConfig.get("resource").asString().ifPresent(this::resource);
+            return super.config(metaConfig);
+        }
+
+        /**
+         * Configure the classpath resource to be used as a source.
+         *
+         * @param resource classpath resource path
+         * @return updated builder instance
+         */
+        public Builder resource(String resource) {
+            String cleaned = resource.startsWith("/") ? resource.substring(1) : resource;
+
+            this.resource = resource;
+
+            // the URL may not exist, and that is fine - maybe we are an optional config source
+            this.url = Thread.currentThread()
+                    .getContextClassLoader()
+                    .getResource(cleaned);
+
+            return this;
         }
     }
 }

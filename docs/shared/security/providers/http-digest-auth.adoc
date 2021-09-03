@@ -1,0 +1,111 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+=== HTTP Digest Authentication Provider
+:description: Helidon Security HTTP Digest Provider
+:keywords: helidon, security, digest
+
+HTTP Digest authentication support
+
+==== Setup
+
+[source,xml]
+.Maven dependency
+----
+<dependency>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-http-auth</artifactId>
+</dependency>
+----
+
+[source,text]
+.Provider class name
+----
+io.helidon.security.providers.httpauth.HttpDigestAuthProvider
+----
+
+[source,text]
+.Provider configuration key
+----
+http-digest-auth
+----
+
+==== Example code
+
+[source,yaml]
+.Configuration example
+----
+security:
+  providers:
+  - http-digest-auth:
+      realm: "helidon"
+      server-secret: "${CLEAR=service-wide-secret-not-known-outside}"
+      users:
+      - login: "john"
+        password: "${CLEAR=password}"
+        roles: ["admin"]
+      - login: "jack"
+        password: "password"
+        roles: ["user", "admin"]
+----
+
+==== Configuration options
+The following table shows all configuration options of the provider and their default values
+
+[cols="2,2,5"]
+
+|===
+|key |default value |description
+
+|`optional` |`false` |If set to `true`, failure to authenticate will return `ABSTAIN` result instead of `FAILURE`. This is
+an important distinction when more than one provider is used
+|`realm` |`helidon` |The realm shown in challenge when user accesses a service without authentication
+|`principal-type` |`USER` |Type of authenticated entity - either `USER` or `SERVICE`, can be used in combination with
+                            other authentication mechanism to authenticate both the user (as in person sitting in front of a computer)
+                            and a service (as in the application requesting this service on user's behalf)
+|`users` |{nbsp} |List of users when using configuration based approach. As an alternative, you can implement a java service (see below).
+|`algorithm` |`MD5` |Only `MD5` supported
+|`nonce-timeout-millis` |1 day |Number of milliseconds for the nonce timeout
+|`server-secret` |random |A string to use as a server secret - this is to use digest auth between multiple servers (e.g. when in a cluster). Used to encrypt nonce. This must not be known outside of this app, as others may create digest requests we would trust.
+|`qop` |`NONE` |only `AUTH` supported. If left empty, uses the legacy approach (older RFC version). `AUTH-INT` is not supported.
+|===
+
+==== How does it work?
+See https://tools.ietf.org/html/rfc7616[].
+
+*Authentication of request*
+
+When a request is received without the `Authorization: digest ....` header, a challenge is returned to provide such
+authentication using `WWW-Authenticate` header.
+
+When a request is received with the `Authorization: digest ....` header, the request is validated
+against configured users (and users obtained from custom service if any provided).
+
+Subject is created based on the username and roles provided by the user store.
+
+*Custom user store*
+
+Java service loader service `io.helidon.security.providers.httpauth.spi.UserStoreService` can be implemented to provide
+ users to the provider, such as when validated against an internal database or LDAP server.
+The user store is defined so you never need the clear text password of the user.
+
+_Note on security of HTTP Digest Authenticaton_
+
+These authentication schemes
+should be _obsolete_, though they provide a very easy way to test a protected resource.
+

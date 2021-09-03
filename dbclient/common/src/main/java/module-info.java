@@ -26,4 +26,6 @@ module io.helidon.dbclient.common {
     requires transitive io.helidon.dbclient;
 
     exports io.helidon.dbclient.common;
+
+    provides io.helidon.common.mapper.spi.MapperProvider with io.helidon.dbclient.common.DbClientMapperProvider;
 }

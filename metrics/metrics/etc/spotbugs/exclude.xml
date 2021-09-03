@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -52,5 +52,12 @@
         <Method name="jsonData" />
         <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT" />
     </Match>
-    
+
+    <Match>
+        <!-- Used to distribute data, not cryptology -->
+        <Class name="io.helidon.metrics.ExponentiallyDecayingReservoir" />
+        <Method name="update" />
+        <Bug pattern="PREDICTABLE_RANDOM" />
+    </Match>
+
 </FindBugsFilter>

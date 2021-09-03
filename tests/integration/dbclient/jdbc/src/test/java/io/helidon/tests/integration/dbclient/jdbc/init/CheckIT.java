@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,20 @@ package io.helidon.tests.integration.dbclient.jdbc.init;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.tests.integration.dbclient.common.ConfigIT;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -41,7 +43,7 @@ public class CheckIT {
     private static final Logger LOGGER = Logger.getLogger(CheckIT.class.getName());
 
     /** Test configuration. */
-    public static final Config CONFIG = Config.create(ConfigSources.classpath("test.yaml"));
+    public static final Config CONFIG = Config.create(ConfigSources.classpath(ConfigIT.configFile()));
 
     /** Timeout in seconds to wait for database to come up. */
     private static final int TIMEOUT = 60;
@@ -69,6 +71,7 @@ public class CheckIT {
                     connected = true;
                     return;
                 } catch (SQLException ex) {
+                    LOGGER.info(() -> String.format("Connection check: %s", ex.getMessage()));
                     if (System.currentTimeMillis() > endTm) {
                         return;
                     }
@@ -85,14 +88,14 @@ public class CheckIT {
     /**
      * Store database connection configuration and build {@link Connection} instance.
      */
-    private static final class ConnectionBuilder implements Consumer<Config> {
+    static final class ConnectionBuilder implements Consumer<Config> {
 
         private boolean hasConfig;
         private String url;
         private String username;
         private String password;
 
-        private ConnectionBuilder() {
+        ConnectionBuilder() {
             hasConfig = false;
         }
 
@@ -104,7 +107,7 @@ public class CheckIT {
             hasConfig = true;
         }
 
-        private Connection createConnection() throws SQLException {
+        Connection createConnection() throws SQLException {
             if (!hasConfig) {
                 fail("No db.connection configuration node was found.");
             }
@@ -115,8 +118,6 @@ public class CheckIT {
 
     /**
      * Wait for database server to start.
-     *
-     * @param dbClient Helidon database client
      */
     private static void waitForStart() {
         ConnectionCheck check = new ConnectionCheck();
@@ -132,7 +133,6 @@ public class CheckIT {
      */
     @BeforeAll
     public static void setup() {
-        LOGGER.info(() -> String.format("Initializing Integration Tests"));
         waitForStart();
     }
 
@@ -145,12 +145,22 @@ public class CheckIT {
     @Test
     public void testDmlStatementExecution() throws SQLException {
         ConnectionBuilder builder = new ConnectionBuilder();
-        String ping = CONFIG.get("db.statements.ping").asString().get();
+        String ping = CONFIG.get("db.health-check.statement").asString().get();
+        String typeStr = CONFIG.get("db.health-check.type").asString().get();
+        boolean pingDml = typeStr != null && "dml".equals(typeStr.toLowerCase());
         CONFIG.get("db.connection").ifExists(builder);
         Connection conn = builder.createConnection();
-        int result = conn.createStatement().executeUpdate(ping);
-        assertThat(result, equalTo(0));
-        LOGGER.info(() -> String.format("Command ping result: %d", result));
+        if (pingDml) {
+            int result = conn.createStatement().executeUpdate(ping);
+            assertThat(result, equalTo(0));
+            LOGGER.info(() -> String.format("Command ping result: %d", result));
+        } else {
+            ResultSet rs = conn.createStatement().executeQuery(ping);
+            rs.next();
+            int result = rs.getInt(1);
+            assertThat(result, equalTo(0));
+            LOGGER.info(() -> String.format("Command ping result: %d", result));
+        }
     }
 
 }

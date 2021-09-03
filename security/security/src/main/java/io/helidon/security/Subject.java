@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -364,7 +364,7 @@ public final class Subject implements AbacSupport {
          * If {@link #principal(Principal)} was not invoked prior to this method, it will also set the "main" principal.
          *
          * @param principal principal to add to this subject
-         * @return udpated builder instance
+         * @return updated builder instance
          */
         public Builder addPrincipal(Principal principal) {
             if (null == this.principal) {

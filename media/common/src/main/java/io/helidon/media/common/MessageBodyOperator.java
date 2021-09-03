@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,42 @@ public interface MessageBodyOperator<T extends MessageBodyContext> {
      *
      * @param type the requested type
      * @param context the context providing the headers abstraction
-     * @return {@code true} if the operator can convert the specified type in
-     * the given context, {@code false} otherwise
+     * @return {@link PredicateResult} result
      */
-    boolean accept(GenericType<?> type, T context);
+    PredicateResult accept(GenericType<?> type, T context);
+
+    /**
+     * Status whether requested class type is supported by the operator.
+     */
+    enum PredicateResult {
+
+        /**
+         * Requested type not supported.
+         */
+        NOT_SUPPORTED,
+
+        /**
+         * Requested type is compatible with this operator, but it is not exact match.
+         */
+        COMPATIBLE,
+
+        /**
+         * Requested type is supported by that specific operator.
+         */
+        SUPPORTED;
+
+        /**
+         * Whether handled class is supported.
+         * Method {@link Class#isAssignableFrom(Class)} is invoked to verify if class under expected parameter is
+         * supported by by the class under actual parameter.
+         *
+         * @param expected expected type
+         * @param actual actual type
+         * @return if supported or not
+         */
+        public static PredicateResult supports(Class<?> expected, GenericType<?> actual) {
+            return expected.isAssignableFrom(actual.rawType()) ? SUPPORTED : NOT_SUPPORTED;
+        }
+
+    }
 }

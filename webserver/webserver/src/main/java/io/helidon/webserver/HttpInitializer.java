@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,32 @@
 
 package io.helidon.webserver;
 
-
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.security.Principal;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLPeerUnverifiedException;
 
-import io.helidon.common.http.DataChunk;
 import io.helidon.webserver.HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder;
+import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.codec.http.HttpServerCodec;
@@ -41,49 +52,131 @@ import io.netty.handler.codec.http2.Http2ServerUpgradeCodec;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AsciiString;
+import io.netty.util.AttributeKey;
+import io.netty.util.concurrent.Future;
 
 /**
  * The HttpInitializer.
  */
 class HttpInitializer extends ChannelInitializer<SocketChannel> {
     private static final Logger LOGGER = Logger.getLogger(HttpInitializer.class.getName());
+    static final AttributeKey<String> CLIENT_CERTIFICATE_NAME = AttributeKey.valueOf("client_certificate_name");
+    static final AttributeKey<X509Certificate> CLIENT_CERTIFICATE = AttributeKey.valueOf("client_certificate");
+    static final AttributeKey<Certificate[]> CLIENT_CERTIFICATE_CHAIN = AttributeKey.valueOf("client_certificate_chain");
 
-    private final SslContext sslContext;
     private final NettyWebServer webServer;
+    private final SocketConfiguration soConfig;
     private final Routing routing;
-    private final Queue<ReferenceHoldingQueue<DataChunk>> queues = new ConcurrentLinkedQueue<>();
+    private final AtomicBoolean clearLock = new AtomicBoolean();
+    private volatile SslContext sslContext;
 
-    HttpInitializer(SslContext sslContext, Routing routing, NettyWebServer webServer) {
+    /**
+     * Reference queue that collects ReferenceHoldingQueue's when they become
+     * ready for garbage collection. ReferenceHoldingQueue's extracted from
+     * this collection that cannot be fully released (some buffers still in
+     * use) will be added to {@code unreleasedQueues} for later retries.
+     */
+    private final ReferenceQueue<Object> queues = new ReferenceQueue<>();
+
+    /**
+     * Concurrent queue to track all ReferenceHoldingQueue's not fully released
+     * (some buffers still in use) after becoming ready for garbage collection.
+     */
+    private final Queue<ReferenceHoldingQueue<?>> unreleasedQueues = new ConcurrentLinkedQueue<>();
+
+    HttpInitializer(SocketConfiguration soConfig,
+                    SslContext sslContext,
+                    Routing routing,
+                    NettyWebServer webServer) {
+        this.soConfig = soConfig;
         this.routing = routing;
         this.sslContext = sslContext;
         this.webServer = webServer;
     }
 
+    /**
+     * Calls release on every ReferenceHoldingQueue that has been deemed ready for
+     * garbage collection and added to {@code queues}. The ReferenceHoldingQueue's not
+     * fully released are added to {@code unreleasedQueues} for later retries. Uses
+     * a lock to avoid concurrent modifications to {@code queues}.
+     */
+    @SuppressWarnings("unchecked")
     private void clearQueues() {
-        queues.removeIf(ReferenceHoldingQueue::release);
+        if (clearLock.get() || !clearLock.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            for (Reference<?> r = queues.poll(); r != null; r = queues.poll()) {
+                if (!(r instanceof IndirectReference<?, ?>)) {
+                    LOGGER.finer(() -> log("Unexpected reference in queues", null));
+                    continue;
+                }
+                ReferenceHoldingQueue<?> q = ((IndirectReference<?, ReferenceHoldingQueue<?>>) r).acquire();
+                if (q == null) {
+                    continue;       // no longer referenced
+                }
+                if (!q.release()) {
+                    unreleasedQueues.add(q);
+                }
+            }
+            unreleasedQueues.removeIf(ReferenceHoldingQueue::release);
+        } finally {
+            clearLock.lazySet(false);
+        }
     }
 
+    /**
+     * Clears and shuts down all remaining ReferenceHoldingQueue's still being tracked.
+     */
     void queuesShutdown() {
-        queues.removeIf(queue -> {
+        clearQueues();
+        unreleasedQueues.removeIf(queue -> {
             queue.shutdown();
             return true;
         });
     }
 
+    void updateSslContext(SslContext context) {
+        if (sslContext == null) {
+            throw new IllegalStateException("Current TLS context is not set, update not allowed");
+        }
+        sslContext = context;
+    }
+
+    boolean hasTls() {
+        return sslContext != null;
+    }
+
+    /**
+     * Initializes pipeline for new socket channel.
+     *
+     * @param ch the socket channel.
+     */
     @Override
     public void initChannel(SocketChannel ch) {
+        LOGGER.finer(() -> log("Initializing channel", ch));
+
         final ChannelPipeline p = ch.pipeline();
 
         SSLEngine sslEngine = null;
-        if (sslContext != null) {
-            SslHandler sslHandler = sslContext.newHandler(ch.alloc());
+        SslContext context = sslContext;
+        if (context != null) {
+            SslHandler sslHandler = context.newHandler(ch.alloc());
             sslEngine = sslHandler.engine();
             p.addLast(sslHandler);
+            sslHandler.handshakeFuture().addListener(future -> obtainClientCN(future, ch, sslHandler));
         }
 
         // Set up HTTP/2 pipeline if feature is enabled
         ServerConfiguration serverConfig = webServer.configuration();
+        HttpRequestDecoder requestDecoder = new HttpRequestDecoder(soConfig.maxInitialLineLength(),
+                                                                   soConfig.maxHeaderSize(),
+                                                                   soConfig.maxChunkSize(),
+                                                                   soConfig.validateHeaders(),
+                                                                   soConfig.initialBufferSize());
         if (serverConfig.isHttp2Enabled()) {
+            LOGGER.finer(() -> log("Setting up HTTP/2 pipeline", ch));
+
             ExperimentalConfiguration experimental = serverConfig.experimental();
             Http2Configuration http2Config = experimental.http2();
             HttpServerCodec sourceCodec = new HttpServerCodec();
@@ -100,26 +193,86 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
             p.addLast(cleartextHttp2ServerUpgradeHandler);
             p.addLast(new HelidonEventLogger());
         } else {
-            p.addLast(new HttpRequestDecoder());
+            p.addLast(requestDecoder);
             // Uncomment the following line if you don't want to handle HttpChunks.
             //        p.addLast(new HttpObjectAggregator(1048576));
             p.addLast(new HttpResponseEncoder());
-            // Remove the following line if you don't want automatic content compression.
-            //p.addLast(new HttpContentCompressor());
+
+            // Enable compression via "Accept-Encoding" header if configured
+            if (serverConfig.enableCompression()) {
+                LOGGER.finer(() -> log("Compression negotiation enabled (gzip, deflate)", ch));
+                p.addLast(new HttpContentCompressor());
+            }
         }
 
         // Helidon's forwarding handler
-        p.addLast(new ForwardingHandler(routing, webServer, sslEngine, queues));
+        p.addLast(new ForwardingHandler(routing, webServer, sslEngine, queues, this::clearQueues,
+                                        requestDecoder, soConfig.maxPayloadSize()));
 
         // Cleanup queues as part of event loop
         ch.eventLoop().execute(this::clearQueues);
     }
 
-    private static final class HelidonEventLogger extends ChannelInboundHandlerAdapter {
+    /**
+     * Sets {@code CERTIFICATE_NAME} in socket channel.
+     *
+     * @param future future passed to listener
+     * @param ch the socket channel
+     * @param sslHandler the SSL handler
+     */
+    private void obtainClientCN(Future<? super Channel> future, SocketChannel ch, SslHandler sslHandler) {
+        if (future.cause() == null) {
+            try {
+                Certificate[] peerCertificates = sslHandler.engine().getSession().getPeerCertificates();
+                if (peerCertificates.length >= 1) {
+                    Certificate certificate = peerCertificates[0];
+                    X509Certificate cert = (X509Certificate) certificate;
+                    Principal principal = cert.getSubjectDN();
+
+                    int start = principal.getName().indexOf("CN=");
+                    String tmpName = "Unknown CN";
+                    if (start >= 0) {
+                        tmpName = principal.getName().substring(start + 3);
+                        int end = tmpName.indexOf(",");
+                        if (end > 0) {
+                            tmpName = tmpName.substring(0, end);
+                        }
+                    }
+                    ch.attr(CLIENT_CERTIFICATE_NAME).set(tmpName);
+                    ch.attr(CLIENT_CERTIFICATE).set(cert);
+                    ch.attr(CLIENT_CERTIFICATE_CHAIN).set(peerCertificates);
+                }
+            } catch (SSLPeerUnverifiedException ignored) {
+                //User not authenticated. Client authentication probably set to OPTIONAL or NONE
+            }
+
+        }
+    }
+
+    /**
+     * Event logger for HTTP/2 events.
+     */
+    private final class HelidonEventLogger extends ChannelInboundHandlerAdapter {
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-            LOGGER.finer(() -> "Event Triggered: " + evt);
+            LOGGER.finest(() -> log("Event: %s", ctx.channel(), evt));
             ctx.fireUserEventTriggered(evt);
         }
+    }
+
+    /**
+     * Log message formatter for this class.
+     *
+     * @param template template suffix.
+     * @param channel channel.
+     * @param params template suffix paframs.
+     * @return string to log.
+     */
+    private String log(String template, Object channel, Object... params) {
+        List<Object> list = new ArrayList<>(params.length + 2);
+        list.add(System.identityHashCode(this));
+        list.add(channel != null ? System.identityHashCode(channel) : "N/A");
+        list.addAll(Arrays.asList(params));
+        return String.format("[Initializer: %s, Channel: %s] " + template, list.toArray());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -70,10 +69,6 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
      */
     public static final String EP_PROPERTY_OUTBOUND_USER = "io.helidon.security.outbound.user";
 
-    static {
-        HelidonFeatures.register("Security", "Authentication", "JWT");
-    }
-
     private final boolean optional;
     private final boolean authenticate;
     private final boolean propagate;
@@ -94,7 +89,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
     private JwtProvider(Builder builder) {
         this.optional = builder.optional;
         this.authenticate = builder.authenticate;
-        this.propagate = builder.propagate;
+        this.propagate = builder.propagate && builder.outboundConfig.targets().size() > 0;
         this.allowImpersonation = builder.allowImpersonation;
         this.subjectType = builder.subjectType;
         this.atnTokenHandler = builder.atnTokenHandler;
@@ -123,10 +118,6 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
 
         if (!verifySignature) {
             LOGGER.info("JWT Signature validation is disabled. Any JWT will be accepted.");
-        }
-
-        if (propagate) {
-            HelidonFeatures.register("Security", "Outbound", "JWT");
         }
     }
 
@@ -158,23 +149,12 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         try {
             maybeToken = atnTokenHandler.extractToken(providerRequest.env().headers());
         } catch (Exception e) {
-            if (optional) {
-                // maybe the token is for somebody else
-                return AuthenticationResponse.abstain();
-            } else {
-                return AuthenticationResponse.failed("JWT header not available or in a wrong format", e);
-            }
+            return failOrAbstain("JWT header not available or in a wrong format" + e);
         }
 
         return maybeToken
                 .map(this::authenticateToken)
-                .orElseGet(() -> {
-                    if (optional) {
-                        return AuthenticationResponse.abstain();
-                    } else {
-                        return AuthenticationResponse.failed("JWT header not available or in a wrong format");
-                    }
-                });
+                .orElseGet(() -> failOrAbstain("JWT header not available or in a wrong format"));
     }
 
     private AuthenticationResponse authenticateToken(String token) {
@@ -183,7 +163,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
             signedJwt = SignedJwt.parseToken(token);
         } catch (Exception e) {
             //invalid token
-            return AuthenticationResponse.failed("Invalid token", e);
+            return failOrAbstain("Invalid token" + e);
         }
         if (verifySignature) {
             Errors errors = signedJwt.verifySignature(verifyKeys, defaultJwk);
@@ -194,13 +174,27 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
                 if (validate.isValid()) {
                     return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
                 } else {
-                    return AuthenticationResponse.failed("Audience is invalid or missing: " + expectedAudience);
+                    return failOrAbstain("Audience is invalid or missing: " + expectedAudience);
                 }
             } else {
-                return AuthenticationResponse.failed(errors.toString());
+                return failOrAbstain(errors.toString());
             }
         } else {
             return AuthenticationResponse.success(buildSubject(signedJwt.getJwt(), signedJwt));
+        }
+    }
+
+    private AuthenticationResponse failOrAbstain(String message) {
+        if (optional) {
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description(message)
+                    .build();
+        } else {
+            return AuthenticationResponse.builder()
+                    .status(AuthenticationResponse.SecurityStatus.FAILURE)
+                    .description(message)
+                    .build();
         }
     }
 
@@ -265,7 +259,8 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
     public boolean isOutboundSupported(ProviderRequest providerRequest,
                                        SecurityEnvironment outboundEnv,
                                        EndpointConfig outboundConfig) {
-        return propagate;
+        // only propagate if we have an actual target configured
+        return propagate && this.outboundConfig.findTarget(outboundEnv).isPresent();
     }
 
     @Override
@@ -609,7 +604,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
                 .tokenHeader("Authorization")
                 .tokenPrefix("bearer ")
                 .build();
-        private OutboundConfig outboundConfig;
+        private OutboundConfig outboundConfig = OutboundConfig.builder().build();
         private JwkKeys verifyKeys;
         private JwkKeys signKeys;
         private String issuer;
@@ -793,12 +788,12 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            config.get("optional").as(Boolean.class).ifPresent(this::optional);
-            config.get("authenticate").as(Boolean.class).ifPresent(this::authenticate);
-            config.get("propagate").as(Boolean.class).ifPresent(this::propagate);
+            config.get("optional").asBoolean().ifPresent(this::optional);
+            config.get("authenticate").asBoolean().ifPresent(this::authenticate);
+            config.get("propagate").asBoolean().ifPresent(this::propagate);
             config.get("allow-impersonation").asBoolean().ifPresent(this::allowImpersonation);
-            config.get("principal-type").as(SubjectType.class).ifPresent(this::subjectType);
-            config.get("atn-token.handler").as(TokenHandler.class).ifPresent(this::atnTokenHandler);
+            config.get("principal-type").asString().map(SubjectType::valueOf).ifPresent(this::subjectType);
+            config.get("atn-token.handler").as(TokenHandler::create).ifPresent(this::atnTokenHandler);
             config.get("atn-token").ifExists(this::verifyKeys);
             config.get("atn-token.jwt-audience").asString().ifPresent(this::expectedAudience);
             config.get("atn-token.verify-signature").asBoolean().ifPresent(this::verifySignature);
@@ -832,13 +827,21 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         }
 
         private void verifyKeys(Config config) {
+            config.get("jwk.resource").as(Resource::create).ifPresent(this::verifyJwk);
+
+            // backward compatibility
             Resource.create(config, "jwk").ifPresent(this::verifyJwk);
         }
 
         private void outbound(Config config) {
-            // jwk is optional, we may be propagating existing token
-            Resource.create(config, "jwk").ifPresent(this::signJwk);
             config.get("jwt-issuer").asString().ifPresent(this::issuer);
+
+
+            // jwk is optional, we may be propagating existing token
+            config.get("jwk.resource").as(Resource::create).ifPresent(this::signJwk);
+            // backward compatibility
+            Resource.create(config, "jwk").ifPresent(this::signJwk);
+
         }
     }
 }

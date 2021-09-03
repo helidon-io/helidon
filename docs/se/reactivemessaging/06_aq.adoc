@@ -1,0 +1,84 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= AQ Connector
+:toc:
+:toc-placement: preamble
+:description: Reactive Messaging support for Oracle AQ in Helidon SE
+:keywords: helidon, se, messaging, jms, aq
+:h1Prefix: SE
+:feature-name: AQ Connector
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.messaging.aq</groupId>
+    <artifactId>helidon-messaging-aq</artifactId>
+</dependency>
+----
+
+== Reactive Oracle AQ Connector
+
+=== Sending and receiving
+
+[source,java]
+.Example of producing to and consuming from Oracle AQ:
+----
+PoolDataSource pds = PoolDataSourceFactory.getPoolDataSource();<1>
+pds.setConnectionFactoryClassName("oracle.jdbc.pool.OracleDataSource");
+pds.setURL("jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(Host=192.168.0.123)(Port=1521))(CONNECT_DATA=(SID=XE)))");
+pds.setUser("frank");
+pds.setPassword("frank");
+
+AqConnector seConn = AqConnector.builder()<2>
+    .dataSource("test-ds", pds)
+    .build();
+
+Channel<String> toAq = Channel.<String>builder()<3>
+    .name("toAq")
+    .subscriberConfig(AqConnector.configBuilder()
+        .queue("example_queue_1")
+        .dataSource("test-ds")
+        .build())
+    .build();
+
+Channel<String> fromAq = Channel.<String>builder()<4>
+    .name("fromAq")
+    .publisherConfig(AqConnector.configBuilder()
+        .queue("example_queue_1")
+        .dataSource("test-ds")
+        .build())
+    .build();
+
+Messaging.builder()<5>
+    .connector(seConn)
+    .publisher(toAq, Multi.just("Hello", "world", "from", "Oracle", "DB!").map(Message::of))<6>
+    .listener(fromAq, s -> System.out.pritln("Message received: "+s))<7>
+    .build()
+    .start();
+----
+<1> Prepare Oracle UCP
+<2> Setup AQ connector and provide datasource with an identifier `test-ds`
+<3> Setup channel for sending messages to queue `example_queue_1` with datasource `test-ds`
+<4> Setup channel for receiving messages from queue `example_queue_1` with datasource `test-ds`
+<5> Register connector and channels
+<6> Add a publisher for several test messages to publish them to `example_queue_1` immediately
+<7> Subscribe callback for any message coming from `example_queue_1`

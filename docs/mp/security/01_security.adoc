@@ -1,0 +1,61 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Adding Security
+:h1Prefix: MP
+:description: Helidon MicroProfile security
+:keywords: helidon, microprofile, micro-profile
+:feature-name: Security
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+
+To add security, such as protecting
+resource methods with authentication, to a MicroProfile application, add the Helidon
+ security integration dependency to your project.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.helidon.microprofile</groupId>
+  <artifactId>helidon-microprofile-security</artifactId>
+</dependency>
+----
+
+=== Securing a JAX-RS Resource
+
+For JAX-RS resources, declare security by adding annotations to a resource class or
+ method. 
+
+[source,java]
+.Protected resource method
+----
+@GET
+@io.helidon.security.annotations.Authenticated
+@io.helidon.security.annotations.Authorized
+// you can also use io.helidon.security.abac.role.RoleValidator.Roles
+@RolesAllowed("admin")
+public String adminResource(@Context io.helidon.security.SecurityContext securityContext) {
+  return "you are " + securityContext.userName();
+}
+----
+
+Security in Helidon MicroProfile is built on top of Jersey's and can be enabled/disabled
+using the property `security.jersey.enabled=[true|false]`.
+
+include::../../shared/security/helidon-endpoints.adoc[]

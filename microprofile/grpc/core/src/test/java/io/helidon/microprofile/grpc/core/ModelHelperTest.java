@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,31 +30,31 @@ public class ModelHelperTest {
 
     @Test
     public void shouldGetAnnotatedSuperClass() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildOne.class, RpcService.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildOne.class, Grpc.class);
         assertThat(cls, equalTo(Parent.class));
     }
 
     @Test
     public void shouldGetSelfIfAnnotated() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(Parent.class, RpcService.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(Parent.class, Grpc.class);
         assertThat(cls, equalTo(Parent.class));
     }
 
     @Test
     public void shouldGetSelfIfNothingAnnotated() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(NoAnnotated.class, RpcService.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(NoAnnotated.class, Grpc.class);
         assertThat(cls, equalTo(NoAnnotated.class));
     }
 
     @Test
     public void shouldGetAnnotatedSuperClassBeforeInterface() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildTwo.class, RpcService.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildTwo.class, Grpc.class);
         assertThat(cls, equalTo(Parent.class));
     }
 
     @Test
     public void shouldGetAnnotatedInterface() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildThree.class, RpcService.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildThree.class, Grpc.class);
         assertThat(cls, equalTo(IFaceOne.class));
     }
 
@@ -80,11 +80,11 @@ public class ModelHelperTest {
     public void explicitDefaultMarshaller() {
     }
 
-    @RpcService
+    @Grpc
     public static class GrandParent {
     }
 
-    @RpcService
+    @Grpc
     public static class Parent
             extends GrandParent {
     }
@@ -93,7 +93,7 @@ public class ModelHelperTest {
             extends Parent {
     }
 
-    @RpcService
+    @Grpc
     public interface IFaceOne {
     }
 

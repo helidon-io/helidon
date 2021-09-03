@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +25,15 @@ db:
   source: "mongoDb"
   connection:
     url: "mongodb://127.0.0.1:27017/pokemon"
+  health-check:
+    type: "query"
+    statementName: "health-check"
   statements:
+    # Health check statement. HealthCheck statement type must be query.
+    health-check: '{
+            "operation": "command",
+            "query": { ping: 1 }
+        }'
     # Insert operation contains collection name, operation type and data to be inserted.
     # Name variable is stored as MongoDB primary key attribute _id
     insert2: '{

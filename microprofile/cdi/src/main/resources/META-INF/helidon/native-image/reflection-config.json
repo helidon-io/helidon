@@ -7,6 +7,7 @@
     ],
     "class-hierarchy": [
         "org.slf4j.Logger",
+        "javax.enterprise.event.Event",
         "javax.inject.Provider",
         "javax.enterprise.inject.spi.Extension",
         "org.jboss.weld.environment.se.events.WeldContainerEvent",
@@ -15,6 +16,7 @@
         "javax.enterprise.context.BeforeDestroyed"
     ],
     "classes": [
+        "javax.enterprise.event.ObserverException"
     ],
     "exclude": [
     ]

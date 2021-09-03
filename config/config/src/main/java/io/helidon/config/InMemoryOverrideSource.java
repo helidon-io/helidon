@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,18 +23,17 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.config.spi.AbstractOverrideSource;
+import io.helidon.config.spi.ConfigContent.OverrideContent;
 import io.helidon.config.spi.OverrideSource;
 
 /**
  * In-memory implementation of override source.
  */
-class InMemoryOverrideSource extends AbstractOverrideSource<Object> {
+public class InMemoryOverrideSource implements OverrideSource {
 
     private final OverrideData overrideData;
 
     private InMemoryOverrideSource(Builder builder) {
-        super(builder);
         this.overrideData = builder.overrideData;
     }
 
@@ -45,28 +44,22 @@ class InMemoryOverrideSource extends AbstractOverrideSource<Object> {
                                    .collect(Collectors.toList()));
     }
 
-    static Builder builder(List<Map.Entry<String, String>> overrideValues) {
-        return new Builder(overrideValues);
-    }
-
     @Override
-    protected Optional<Object> dataStamp() {
-        return Optional.of(this);
+    public Optional<OverrideContent> load() throws ConfigException {
+        return Optional.of(OverrideContent.builder()
+                                   .data(overrideData)
+                                   .build());
     }
 
-    @Override
-    protected Data<OverrideData, Object> loadData() throws ConfigException {
-        return new Data<>(Optional.of(overrideData), Optional.of(this));
-    }
-
-    static final class Builder extends AbstractOverrideSource.Builder<InMemoryOverrideSource.Builder, Void> {
+    /**
+     * Fluent API builder for {@link io.helidon.config.InMemoryOverrideSource}.
+     */
+    public static final class Builder implements io.helidon.common.Builder<InMemoryOverrideSource> {
 
         private OverrideData overrideData;
         private List<Map.Entry<String, String>> overrideWildcards;
 
         Builder(List<Map.Entry<String, String>> overrideWildcards) {
-            super(Void.class);
-
             Objects.requireNonNull(overrideWildcards, "overrideValues cannot be null");
 
             this.overrideWildcards = overrideWildcards;

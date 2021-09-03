@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Class BulkheadAntn.
  */
-public class BulkheadAntn extends MethodAntn implements Bulkhead {
+class BulkheadAntn extends MethodAntn implements Bulkhead {
 
     /**
      * Constructor.
@@ -32,7 +32,7 @@ public class BulkheadAntn extends MethodAntn implements Bulkhead {
      * @param beanClass Bean class.
      * @param method The method.
      */
-    public BulkheadAntn(Class<?> beanClass, Method method) {
+    BulkheadAntn(Class<?> beanClass, Method method) {
         super(beanClass, method);
     }
 

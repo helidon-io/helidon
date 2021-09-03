@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package io.helidon.tracing.jersey;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
 
 import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.RuntimeType;
@@ -26,7 +28,6 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.PreMatching;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.config.SpanTracingConfig;
@@ -48,13 +49,11 @@ import io.opentracing.util.GlobalTracer;
 @ConstrainedTo(RuntimeType.SERVER)
 @PreMatching
 public abstract class AbstractTracingFilter implements ContainerRequestFilter, ContainerResponseFilter {
-
     private static final String SPAN_PROPERTY = AbstractTracingFilter.class.getName() + ".span";
     private static final String SPAN_SCOPE_PROPERTY = AbstractTracingFilter.class.getName() + ".spanScope";
-
-    static {
-        HelidonFeatures.register("Tracing", "Integration", "Jersey");
-    }
+    private static final String SPAN_FINISHED_PROPERTY = AbstractTracingFilter.class.getName() + ".spanFinished";
+    private static final Logger LOGGER = Logger.getLogger(AbstractTracingFilter.class.getName());
+    private static final AtomicBoolean DOUBLE_FINISH_LOGGED = new AtomicBoolean();
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
@@ -90,11 +89,12 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
             Span span = spanBuilder.start();
             Scope spanScope = tracer.scopeManager().activate(span);
 
-            requestContext.setProperty(SPAN_PROPERTY, span);
-            requestContext.setProperty(SPAN_SCOPE_PROPERTY, spanScope);
+            context.register(span);
+            context.register(spanScope);
             context.register(ClientTracingFilter.class, span.context());
+            requestContext.setProperty(SPAN_PROPERTY, span);
 
-            if (!context.get(TracingContext.class).isPresent()) {
+            if (context.get(TracingContext.class).isEmpty()) {
                 context.register(TracingContext.create(tracer, requestContext.getHeaders()));
             }
 
@@ -135,6 +135,16 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
             return; // not tracing
         }
 
+        if (requestContext.getProperty(SPAN_FINISHED_PROPERTY) != null) {
+            if (DOUBLE_FINISH_LOGGED.compareAndSet(false, true)) {
+                LOGGER.warning("Response filter called twice. Most likely a response with streaming output was"
+                                       + " returned, where response had 200 status code, but streaming failed with another "
+                                       + "error. Status: " + responseContext.getStatusInfo());
+            }
+
+            return; // tracing already finished
+        }
+
         switch (responseContext.getStatusInfo().getFamily()) {
         case INFORMATIONAL:
         case SUCCESSFUL:
@@ -153,12 +163,11 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
 
         Tags.HTTP_STATUS.set(span, responseContext.getStatus());
 
+        requestContext.setProperty(SPAN_FINISHED_PROPERTY, true);
         span.finish();
 
-        Scope spanScope = (Scope) requestContext.getProperty(SPAN_SCOPE_PROPERTY);
-        if (null != spanScope) {
-            spanScope.close();
-        }
+        Context context = Contexts.context().orElseThrow(() -> new IllegalStateException("Context must be available in Jersey"));
+        context.get(Scope.class).ifPresent(Scope::close);
     }
 
     /**

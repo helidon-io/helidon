@@ -13,22 +13,37 @@ pass proxy system properties to javadoc:
 export JAVA_TOOL_OPTIONS="-DproxyHost=yourproxy.com -DproxyPort=80 -DnonProxyHosts=localhost|127.0.0.1"
 ```
 
-Then build:
+First do a priming build to ensure your local Maven repo cache is populated with
+Helidon artifacts. These are needed to build the aggregated javadocs.
 
 ```
-mvn clean install -Pjavadoc,docs -DskipTests
+mvn clean install -DskipTests
+```
+
+Next build the docs (including aggregated javadocs):
+
+```
+mvn site
+```
+
+Without javadocs:
+
+```
+mvn site -Dmaven.javadoc.skip
 ```
 
 ## View the docs
 
-Go to the docs target directory and start an HTTP server:
+The built docs will be in the top level target directory:
 
 ```
-cd docs/target/docs
+cd target/site
 python -m SimpleHTTPServer 8000
 ```
 
 View them in your browser:
+
 ```
 http://localhost:8000
+```
 

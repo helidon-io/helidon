@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,8 +64,7 @@ public final class MediaTypes {
     public static Optional<String> detectType(URL url) {
         return DETECTORS.stream()
                 .map(mtd -> mtd.detectType(url))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .findFirst();
     }
 
@@ -79,8 +78,7 @@ public final class MediaTypes {
     public static Optional<String> detectType(URI uri) {
         return DETECTORS.stream()
                 .map(mtd -> mtd.detectType(uri))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .findFirst();
     }
 
@@ -94,8 +92,7 @@ public final class MediaTypes {
     public static Optional<String> detectType(Path file) {
         return DETECTORS.stream()
                 .map(mtd -> mtd.detectType(file))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .findFirst();
     }
 
@@ -113,8 +110,7 @@ public final class MediaTypes {
     public static Optional<String> detectType(String fileName) {
         return DETECTORS.stream()
                 .map(mtd -> mtd.detectType(fileName))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .findFirst();
     }
 
@@ -129,8 +125,7 @@ public final class MediaTypes {
         return CACHE.computeIfAbsent(fileSuffix, it ->
                 DETECTORS.stream()
                         .map(mtd -> mtd.detectExtensionType(fileSuffix))
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
+                        .flatMap(Optional::stream)
                         .findFirst());
     }
 }

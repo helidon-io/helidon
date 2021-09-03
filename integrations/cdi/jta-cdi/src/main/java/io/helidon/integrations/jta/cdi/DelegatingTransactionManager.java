@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import javax.transaction.HeuristicRollbackException;
 import javax.transaction.InvalidTransactionException;
 import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
-import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
@@ -36,7 +35,10 @@ import javax.transaction.TransactionManager;
  * other non-{@code public} internal classes.</p>
  *
  * @see TransactionManager
+ *
+ * @deprecated An equivalent class now exists in Narayana itself.
  */
+@Deprecated(forRemoval = true)
 public abstract class DelegatingTransactionManager implements TransactionManager {
 
     private final TransactionManager delegate;
@@ -112,14 +114,14 @@ public abstract class DelegatingTransactionManager implements TransactionManager
      * current thread.
      *
      * @return the transaction status expressed as the value of one of
-     * the {@code int} constants in the {@link Status} class; if no
+     * the {@code int} constants in the {@link javax.transaction.Status} class; if no
      * transaction is associated with the current thread, this method
-     * returns {@link Status#STATUS_NO_TRANSACTION}
+     * returns {@link javax.transaction.Status#STATUS_NO_TRANSACTION}
      *
      * @exception SystemException if this {@link TransactionManager}
      * encounters an unexpected error condition
      *
-     * @see Status
+     * @see javax.transaction.Status
      */
     @Override
     public int getStatus() throws SystemException {
@@ -147,6 +149,7 @@ public abstract class DelegatingTransactionManager implements TransactionManager
         if (this.delegate == null) {
             throw new SystemException("delegate == null");
         }
+
         return this.delegate.getTransaction();
     }
 

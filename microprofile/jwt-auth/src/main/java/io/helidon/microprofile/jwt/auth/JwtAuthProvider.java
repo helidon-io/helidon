@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -231,7 +231,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     }
 
     Subject buildSubject(Jwt jwt, SignedJwt signedJwt) {
-        JsonWebTokenImpl principal = buildPrincipal(jwt, signedJwt);
+        JsonWebTokenImpl principal = buildPrincipal(signedJwt);
 
         TokenCredential.Builder builder = TokenCredential.builder();
         jwt.issueTime().ifPresent(builder::issueTime);
@@ -259,7 +259,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         return subjectBuilder.build();
     }
 
-    JsonWebTokenImpl buildPrincipal(Jwt jwt, SignedJwt signedJwt) {
+    static JsonWebTokenImpl buildPrincipal(SignedJwt signedJwt) {
         return JsonWebTokenImpl.create(signedJwt);
     }
 
@@ -497,9 +497,9 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         private static final String CONFIG_PUBLIC_KEY_PATH = "mp.jwt.verify.publickey.location";
         private static final String JSON_START_MARK = "{";
         private static final Pattern PUBLIC_KEY_PATTERN = Pattern.compile(
-                "-+BEGIN\\s+.*PUBLIC\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" + // Header
-                        "([a-z0-9+/=\\r\\n\\s]+)" +                       // Base64 text
-                        "-+END\\s+.*PUBLIC\\s+KEY[^-]*-+",            // Footer
+                "-+BEGIN\\s+.*PUBLIC\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" // Header
+                        + "([a-z0-9+/=\\r\\n\\s]+)"                       // Base64 text
+                        + "-+END\\s+.*PUBLIC\\s+KEY[^-]*-+",              // Footer
                 Pattern.CASE_INSENSITIVE);
 
         private String expectedIssuer;
@@ -610,6 +610,13 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             InputStream is;
 
             URL url = Thread.currentThread().getContextClassLoader().getResource(uri);
+            if (url == null) {
+                // if uri starts with "/", remove it
+                if (uri.startsWith("/")) {
+                    url = Thread.currentThread().getContextClassLoader().getResource(uri.substring(1));
+                }
+            }
+
             if (url == null) {
                 is = JwtAuthProvider.class.getResourceAsStream(uri);
 
@@ -874,6 +881,18 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             mpConfig.getOptionalValue(CONFIG_PUBLIC_KEY_PATH, String.class).ifPresent(this::publicKeyPath);
             mpConfig.getOptionalValue(CONFIG_EXPECTED_ISSUER, String.class).ifPresent(this::expectedIssuer);
 
+            if (null == publicKey && null == publicKeyPath) {
+                // this is a fix for incomplete TCK tests
+                // we will configure this location in our tck configuration
+                String key = "helidon.mp.jwt.verify.publickey.location";
+                mpConfig.getOptionalValue(key, String.class).ifPresent(it -> {
+                    publicKeyPath(it);
+                    LOGGER.warning("You have configured public key for JWT-Auth provider using a property"
+                                           + " reserved for TCK tests (" + key + "). Please use "
+                                           + CONFIG_PUBLIC_KEY_PATH + " instead.");
+                });
+            }
+
             return this;
         }
 
@@ -900,14 +919,24 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         private void verifyKeys(Config config) {
+            config.get("jwk.resource").as(Resource::create).ifPresent(this::verifyJwk);
+
+            // backward compatibility
             Resource.create(config, "jwk")
-                    .map(this::verifyJwk);
+                    .ifPresent(this::verifyJwk);
         }
 
         private void outbound(Config config) {
-            // jwk is optional, we may be propagating existing token
-            Resource.create(config, "jwk").ifPresent(this::signJwk);
             config.get("jwt-issuer").asString().ifPresent(this::issuer);
+
+
+            // jwk is optional, we may be propagating existing token
+            config.get("jwk.resource").as(Resource::create).ifPresent(this::signJwk);
+
+            // backward compatibility
+            Resource.create(config, "jwk")
+                    .ifPresent(this::signJwk);
+
         }
     }
 

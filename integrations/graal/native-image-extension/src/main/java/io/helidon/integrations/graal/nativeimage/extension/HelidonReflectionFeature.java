@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,35 +15,32 @@
  */
 package io.helidon.integrations.graal.nativeimage.extension;
 
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.URL;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReaderFactory;
-import javax.json.stream.JsonParsingException;
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.LogConfig;
+import io.helidon.common.Reflected;
+import io.helidon.config.mp.MpConfigProviderResolver;
 
-import io.helidon.config.MpConfigProviderResolver;
-
-import com.oracle.svm.core.annotate.AutomaticFeature;
+import com.oracle.svm.core.jdk.Resources;
 import com.oracle.svm.core.jdk.proxy.DynamicProxyRegistry;
-import com.oracle.svm.hosted.FeatureImpl;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import org.graalvm.nativeimage.ImageSingletons;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
@@ -52,11 +49,15 @@ import org.graalvm.nativeimage.hosted.RuntimeReflection;
  * Feature to add reflection configuration to the image for Helidon, CDI and Jersey.
  * Override the one in dependencies (native-image-extension from Helidon)
  */
-@AutomaticFeature
 public class HelidonReflectionFeature implements Feature {
     private static final boolean ENABLED = NativeConfig.option("reflection.enable-feature", true);
-    private static final boolean TRACE_PARSING = NativeConfig.option("reflection.trace-parsing", false);
-    private static final boolean TRACE = NativeConfig.option("reflection.trace", false);
+
+    private static final String AT_ENTITY = "javax.persistence.Entity";
+    private static final String AT_MAPPED_SUPERCLASS = "javax.persistence.MappedSuperclass";
+    private static final String AT_REGISTER_REST_CLIENT = "org.eclipse.microprofile.rest.client.inject.RegisterRestClient";
+
+    private final NativeTrace tracer = new NativeTrace();
+    private NativeUtil util;
 
     @Override
     public boolean isInConfiguration(IsInConfigurationAccess access) {
@@ -65,24 +66,64 @@ public class HelidonReflectionFeature implements Feature {
 
     @Override
     public void beforeAnalysis(BeforeAnalysisAccess access) {
-        // to add a startup hook:
-        //RuntimeSupport.getRuntimeSupport().addStartupHook(() -> {});
+        // need the application classloader
+        Class<?> logConfigClass = access.findClassByName(LogConfig.class.getName());
+        ClassLoader classLoader = logConfigClass.getClassLoader();
+
+        // initialize logging (if on classpath)
+        try {
+            logConfigClass.getMethod("initClass")
+                    .invoke(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // make sure we print all the warnings for native image
+        HelidonFeatures.nativeBuildTime(classLoader);
 
         // load configuration
-        HelidonReflectionConfiguration config = loadConfiguration(access);
+        HelidonReflectionConfiguration config = HelidonReflectionConfiguration.load(access, classLoader, tracer);
+
+        // classpath scanning using the correct classloader
+        ScanResult scan = new ClassGraph()
+                .overrideClassLoaders(classLoader)
+                .enableAllInfo()
+                .scan();
+
+        util = new NativeUtil(tracer,
+                              scan,
+                              access::findClassByName,
+                              config.excluded()::contains);
+
         // create context (to know what was processed and what should be registered)
-        BeforeAnalysisContext context = new BeforeAnalysisContext(access, config.excluded);
+        BeforeAnalysisContext context = new BeforeAnalysisContext(access, scan, config.excluded());
 
         // process each configured annotation
         config.annotations().forEach(it -> processAnnotated(context, it));
         // process each configured interface or class
         config.hierarchy().forEach(it -> processClassHierarchy(context, it));
+        // process each configured interface or class including private fields and methods
+        config.fullHierarchy().forEach(it -> processFullClassHierarchy(context, it));
         // process each configured class
         config.classes().forEach(it -> addSingleClass(context, it));
 
         // rest client registration (proxy support)
         processRegisterRestClient(context);
 
+        // JPA Entity registration
+        processEntity(context);
+
+        // all classes, fields and methods annotated with @Reflected
+        addAnnotatedWithReflected(context);
+
+        // JAX-RS types required for headers, query params etc.
+        addJaxRsConversions(context);
+
+        /*
+         *
+         *  And finally register with native image
+         *
+         */
         registerForReflection(context);
     }
 
@@ -91,385 +132,573 @@ public class HelidonReflectionFeature implements Feature {
         MpConfigProviderResolver.buildTimeEnd();
     }
 
-    @SuppressWarnings("unchecked")
-    private void processRegisterRestClient(BeforeAnalysisContext context) {
-        String restClientAnnotationClassName = "org.eclipse.microprofile.rest.client.inject.RegisterRestClient";
-        Class<? extends Annotation> restClientAnnotation = (Class<? extends Annotation>) context.access()
-                .findClassByName(restClientAnnotationClassName);
+    private void processAnnotated(BeforeAnalysisContext context, Class<?> annotationClass) {
 
-        if (null == restClientAnnotation) {
-            return;
-        }
+        Class<Annotation> annotation = util.cast(annotationClass, Annotation.class);
+        tracer.parsing(() -> "Looking up annotated by " + annotation.getName());
 
-        traceParsing(() -> "Looking up annotated by " + restClientAnnotationClassName);
+        Set<Class<?>> annotated = util.findAnnotated(annotationClass.getName());
 
-        List<Class<?>> annotatedList = context.access().findAnnotatedClasses(restClientAnnotation);
-        DynamicProxyRegistry proxyRegistry = ImageSingletons.lookup(DynamicProxyRegistry.class);
-        Class<?> autoCloseable = context.access().findClassByName("java.lang.AutoCloseable");
-        Class<?> closeable = context.access().findClassByName("java.io.Closeable");
-
-        annotatedList.forEach(it -> {
-            if (context.isExcluded(it)) {
-                traceParsing(() -> "Class " + it.getName() + " annotated by " + restClientAnnotationClassName + " is excluded");
-            } else {
-                // we need to add it for reflection
-                processClassHierarchy(context, it);
-                // and we also need to create a proxy
-                traceParsing(() -> "Registering a proxy for class " + it.getName());
-                proxyRegistry.addProxyClass(it, autoCloseable, closeable);
-            }
-        });
+        annotated.forEach(it -> processClassHierarchy(context, it));
     }
 
-    @SuppressWarnings("unchecked")
-    private void registerForReflection(BeforeAnalysisContext context) {
-        Set<Class<?>> toRegister = context.toRegister();
+    private void processClassHierarchy(BeforeAnalysisContext context, Class<?> superclass) {
 
-        if (TRACE) {
-            System.out.println("***********************************");
-            System.out.println("** Registering " + toRegister.size() + " classes for reflection");
-            System.out.println("***********************************");
-        }
+        // this class is always registered (interface or class)
+        context.register(superclass).addDefaults();
 
-        // register for reflection
-        for (Class<?> aClass : toRegister) {
-            if (TRACE) {
-                System.out.println("Registering " + aClass.getName() + " for reflection");
-            }
-            RuntimeReflection.register(aClass);
+        tracer.parsing(() -> "Looking up implementors of " + superclass.getName());
 
-            registerMethods(aClass);
+        processSubClasses(context, superclass);
 
-            if (aClass.isInterface()) {
-                continue;
-            }
-
-            registerFields(aClass);
-
-            registerConstructors(aClass);
-        }
+        util.findInterfaces(superclass)
+                .forEach(it -> addSingleClass(context, it));
     }
 
-    private void registerConstructors(Class<?> aClass) {
-        try {
-            // find all public constructors
-            Set<Constructor<?>> constructors = new LinkedHashSet<>(Arrays.asList(aClass.getConstructors()));
-            // add all declared
-            constructors.addAll(Arrays.asList(aClass.getDeclaredConstructors()));
+    private void processSubClasses(BeforeAnalysisContext context, Class<?> aClass) {
+        Set<Class<?>> subclasses = util.findSubclasses(aClass.getName());
 
-            for (Constructor<?> constructor : constructors) {
-                RuntimeReflection.register(constructor);
-                if (TRACE) {
-                    System.out.println("    " + constructor);
-                }
-            }
-        } catch (NoClassDefFoundError e) {
-            if (TRACE) {
-                System.out.println("Constructors of "
-                                           + aClass.getName()
-                                           + " not added to reflection, as a type is not on classpath: "
-                                           + e.getMessage());
-            }
-        }
-    }
-
-    private void registerMethods(Class<?> aClass) {
-        try {
-            Method[] methods = aClass.getMethods();
-            for (Method method : methods) {
-                boolean register = true;
-
-                // we do not want wait, notify etc
-                register = (method.getDeclaringClass() != Object.class);
-
-                if (register) {
-                    // we do not want toString(), hashCode(), equals(java.lang.Object)
-                    switch (method.getName()) {
-                    case "hashCode":
-                    case "toString":
-                        register = !hasParams(method);
-                        break;
-                    case "equals":
-                        register = !hasParams(method, Object.class);
-                        break;
-                    default:
-                        // do nothing
-                    }
-                }
-
-                if (register) {
-                    if (TRACE) {
-                        System.out.println("  " + method.getName() + "(" + Arrays.toString(method.getParameterTypes()) + ")");
-                    }
-                    RuntimeReflection.register(method);
-                }
-            }
-        } catch (Throwable e) {
-            if (TRACE) {
-                System.out.println("   Cannot register methods of " + aClass.getName() + ": " + e.getClass().getName() + ": " + e
-                        .getMessage());
-            }
-        }
-    }
-
-    private boolean hasParams(Method method, Class<?>... params) {
-        Class<?>[] parameterTypes = method.getParameterTypes();
-        return Arrays.equals(params, parameterTypes);
-    }
-
-    private void registerFields(Class<?> aClass) {
-        try {
-            // public fields
-            RuntimeReflection.register(aClass.getFields());
-        } catch (NoClassDefFoundError e) {
-            if (TRACE) {
-                System.out.println("Public fields of "
-                                           + aClass.getName()
-                                           + " not added to reflection, as a type is not on classpath: "
-                                           + e.getMessage());
-            }
-        }
-        try {
-            for (Field declaredField : aClass.getDeclaredFields()) {
-                // there may be fields referencing classes not on the classpath
-                if (!Modifier.isPublic(declaredField.getModifiers())) {
-                    // public already registered
-                    Annotation[] annotations = declaredField.getAnnotations();
-                    if (annotations.length > 0) {
-                        RuntimeReflection.register(declaredField);
-                        if (TRACE) {
-                            System.out.println("    Annotated " + declaredField);
-                        }
-                    }
-                }
-            }
-        } catch (NoClassDefFoundError e) {
-            if (TRACE) {
-                System.out.println("Fields of "
-                                           + aClass.getName()
-                                           + " not added to reflection, as a type is not on classpath: "
-                                           + e.getMessage());
-            }
-        }
+        processClasses(context, subclasses);
     }
 
     private void addSingleClass(BeforeAnalysisContext context,
                                 Class<?> theClass) {
         if (context.process(theClass)) {
-            traceParsing(theClass::getName);
-            traceParsing(() -> "  Added for registration");
+            tracer.parsing(theClass::getName);
+            tracer.parsing(() -> "  Added for registration");
             superclasses(context, theClass);
-            context.register(theClass);
+            context.register(theClass).addDefaults();
         }
     }
 
-    private void processClassHierarchy(BeforeAnalysisContext context,
-                                       Class<?> superclass) {
+    private void addJaxRsConversions(BeforeAnalysisContext context) {
+        addJaxRsConversions(context, "javax.ws.rs.QueryParam");
+        addJaxRsConversions(context, "javax.ws.rs.PathParam");
+        addJaxRsConversions(context, "javax.ws.rs.HeaderParam");
+        addJaxRsConversions(context, "javax.ws.rs.MatrixParam");
+        addJaxRsConversions(context, "javax.ws.rs.BeanParam");
+    }
 
-        // this class is always registered (interface or class)
-        context.register(superclass);
+    private void addJaxRsConversions(BeforeAnalysisContext context, String annotation) {
+        tracer.parsing(() -> "Looking up annotated by " + annotation);
 
-        traceParsing(() -> "Looking up implementors of " + superclass.getName());
+        Set<Class<?>> allTypes = new HashSet<>();
 
-        findSubclasses(context, superclass);
-        for (Class<?> anInterface : superclass.getInterfaces()) {
-            // unless excluded
-            if (context.isExcluded(anInterface)) {
-                traceParsing(() -> "  Interface " + anInterface.getName() + " is explicitly excluded");
-            } else {
-                addSingleClass(context, anInterface);
+        // we need fields and method parameters
+        context.scan()
+                .getClassesWithFieldAnnotation(annotation)
+                .stream()
+                .flatMap(theClass -> theClass.getFieldInfo().stream())
+                .filter(field -> field.hasAnnotation(annotation))
+                .map(fieldInfo -> util.getSimpleType(context.access()::findClassByName, fieldInfo))
+                .filter(Objects::nonNull)
+                .forEach(allTypes::add);
+
+        // method annotations
+        context.scan()
+                .getClassesWithMethodParameterAnnotation(annotation)
+                .stream()
+                .flatMap(theClass -> theClass.getMethodInfo().stream())
+                .flatMap(theMethod -> Stream.of(theMethod.getParameterInfo()))
+                .filter(param -> param.hasAnnotation(annotation))
+                .map(param -> util.getSimpleType(context.access()::findClassByName, param))
+                .filter(Objects::nonNull)
+                .forEach(allTypes::add);
+
+        // now let's find all static methods `valueOf` and `fromString`
+        for (Class<?> type : allTypes) {
+            try {
+                Method valueOf = type.getDeclaredMethod("valueOf", String.class);
+                RuntimeReflection.register(valueOf);
+                tracer.parsing(() -> "Registering " + valueOf);
+            } catch (NoSuchMethodException ignored) {
+                try {
+                    Method fromString = type.getDeclaredMethod("fromString", String.class);
+                    RuntimeReflection.register(fromString);
+                    tracer.parsing(() -> "Registering " + fromString);
+                } catch (NoSuchMethodException ignored2) {
+                }
             }
         }
     }
 
+    private void addAnnotatedWithReflected(BeforeAnalysisContext context) {
+        // want to make sure we use the correct classloader
+        String annotation = Reflected.class.getName();
+
+        tracer.parsing(() -> "Looking up annotated by " + annotation);
+
+        // all annotated classes
+        util.findAnnotated(annotation)
+                .forEach(it -> {
+                    tracer.parsing(() -> " class " + it.getName());
+                    context.register(it).addAll();
+                });
+
+        // all annotated methods and constructors
+        util.processAnnotatedExecutables(annotation,
+                                         (clazz, constructor) -> context.register(clazz).add(constructor),
+                                         (clazz, method) -> context.register(clazz).add(method));
+
+        // fields
+        util.processAnnotatedFields(annotation, (clazz, field) -> context.register(clazz).add(field));
+    }
+
     @SuppressWarnings("unchecked")
-    private void processAnnotated(BeforeAnalysisContext context,
-                                  Class<?> annotationClass) {
-
-        Class<? extends Annotation> annotation;
-        try {
-            annotation = (Class<? extends Annotation>) annotationClass;
-        } catch (ClassCastException e) {
-            throw new IllegalStateException("Class configured as annotation is not an annotation: " + annotationClass.getName(),
-                                            e);
+    private void processEntity(BeforeAnalysisContext context) {
+        final Class<? extends Annotation> entityAnnotation = (Class<? extends Annotation>) context.access()
+                .findClassByName(AT_ENTITY);
+        final Class<? extends Annotation> superclassAnnotation = (Class<? extends Annotation>) context.access()
+                .findClassByName(AT_MAPPED_SUPERCLASS);
+        Set<Class<?>> annotatedSet = new HashSet<>();
+        tracer.parsing(() -> "Looking up annotated by " + AT_ENTITY);
+        if (entityAnnotation != null) {
+            annotatedSet.addAll(util.findAnnotated(AT_ENTITY));
         }
-
-        traceParsing(() -> "Looking up annotated by " + annotationClass.getName());
-
-        List<Class<?>> annotatedList = context.access().findAnnotatedClasses(annotation);
-
-        annotatedList.forEach(it -> {
-            if (context.isExcluded(it)) {
-                traceParsing(() -> "Class " + it.getName() + " annotated by " + annotationClass.getName() + " is excluded");
-            } else {
-                processClassHierarchy(context, it);
+        tracer.parsing(() -> "Looking up annotated by " + AT_MAPPED_SUPERCLASS);
+        if (superclassAnnotation != null) {
+            annotatedSet.addAll(util.findAnnotated(AT_MAPPED_SUPERCLASS));
+        }
+        if (annotatedSet.isEmpty()) {
+            return;
+        }
+        annotatedSet.forEach(aClass -> {
+            tracer.parsing(() -> "Processing annotated class " + aClass.getName());
+            String resourceName = aClass.getName().replace('.', '/') + ".class";
+            InputStream resourceStream = aClass.getClassLoader().getResourceAsStream(resourceName);
+            Resources.registerResource(resourceName, resourceStream);
+            for (Field declaredField : aClass.getDeclaredFields()) {
+                if (!Modifier.isPublic(declaredField.getModifiers()) && declaredField.getAnnotations().length == 0) {
+                    RuntimeReflection.register(declaredField);
+                    tracer.parsing(() -> "    added non annotated field " + declaredField);
+                }
             }
         });
     }
 
     @SuppressWarnings("unchecked")
-    private void findSubclasses(BeforeAnalysisContext context, Class<?> aClass) {
-        List<Class<?>> subclasses = context.access().findSubclasses((Class<Object>) aClass);
+    private void processRegisterRestClient(BeforeAnalysisContext context) {
 
-        processClasses(context, subclasses);
+        Class<? extends Annotation> restClientAnnotation = (Class<? extends Annotation>) context.access()
+                .findClassByName(AT_REGISTER_REST_CLIENT);
+
+        if (null == restClientAnnotation) {
+            return;
+        }
+
+        tracer.parsing(() -> "Looking up annotated by " + AT_REGISTER_REST_CLIENT);
+
+        Set<Class<?>> annotatedSet = util.findAnnotated(AT_REGISTER_REST_CLIENT);
+        DynamicProxyRegistry proxyRegistry = ImageSingletons.lookup(DynamicProxyRegistry.class);
+        Class<?> autoCloseable = context.access().findClassByName("java.lang.AutoCloseable");
+        Class<?> closeable = context.access().findClassByName("java.io.Closeable");
+
+        annotatedSet.forEach(it -> {
+            if (context.isExcluded(it)) {
+                tracer.parsing(() -> "Class " + it.getName() + " annotated by " + AT_REGISTER_REST_CLIENT + " is excluded");
+            } else {
+                // we need to add it for reflection
+                processClassHierarchy(context, it);
+                // and we also need to create a proxy
+                tracer.parsing(() -> "Registering a proxy for class " + it.getName());
+                proxyRegistry.addProxyClass(it, autoCloseable, closeable);
+            }
+        });
     }
 
-    private void processClasses(BeforeAnalysisContext context, List<Class<?>> classes) {
-        for (Class<?> aClass : classes) {
-            if (context.process(aClass)) {
-                if (context.isExcluded(aClass)) {
-                    traceParsing(() -> "    Excluding " + aClass.getName() + " from registration");
-                    continue;
+    private void registerForReflection(BeforeAnalysisContext context) {
+        Collection<Register> toRegister = context.toRegister();
+
+        tracer.section(() -> "Registering " + toRegister.size() + " classes for reflection");
+
+        // register for reflection
+        for (Register register : toRegister) {
+            // first validate if all fields are on classpath
+            if (!register.validated) {
+                register.validate();
+            }
+            // only register classes on the image classpath (not necessarily discovered by the scanning)
+            if (register.valid) {
+                register(register.clazz);
+
+                if (!register.clazz.isInterface()) {
+                    register.fields.forEach(this::register);
+                    register.constructors.forEach(this::register);
                 }
 
-                traceParsing(() -> "    " + aClass.getName());
+                register.methods.forEach(this::register);
+            } else {
+                tracer.trace(() -> register.clazz.getName() + " is not registered, as it had failed fields or superclass.");
+            }
+        }
+    }
 
-                int modifiers = aClass.getModifiers();
+    private void register(Constructor<?> constructor) {
+        tracer.trace(() -> "    " + constructor.getDeclaringClass().getSimpleName()
+                + "("
+                + params(constructor.getParameterTypes())
+                + ")");
 
-                traceParsing(() -> "        Added for registration");
+        RuntimeReflection.register(constructor);
+    }
+
+    private String typeToString(Type type) {
+        if (type instanceof Class) {
+            return ((Class<?>) type).getName();
+        } else {
+            return type.toString();
+        }
+    }
+
+    private String params(Type[] parameterTypes) {
+        if (parameterTypes.length == 0) {
+            return "";
+        }
+        return Arrays.stream(parameterTypes)
+                .map(this::typeToString)
+                .collect(Collectors.joining(", "));
+    }
+
+    private void register(Field field) {
+        tracer.trace(() -> "    "
+                + Modifier.toString(field.getModifiers())
+                + " " + typeToString(field.getGenericType())
+                + " " + field.getName());
+
+        RuntimeReflection.register(field);
+    }
+
+    private void register(Method method) {
+        tracer.trace(() -> "    "
+                + Modifier.toString(method.getModifiers())
+                + " " + typeToString(method.getGenericReturnType())
+                + " " + method.getName()
+                + "(" + params(method.getGenericParameterTypes()) + ")");
+
+        RuntimeReflection.register(method);
+    }
+
+    private void register(Class<?> clazz) {
+        tracer.trace(() -> "Registering " + clazz.getName() + " for reflection");
+
+        RuntimeReflection.register(clazz);
+    }
+
+    private void addFullSingleClass(BeforeAnalysisContext context,
+                                    Class<?> theClass) {
+        if (context.process(theClass)) {
+            tracer.parsing(theClass::getName);
+            tracer.parsing(() -> "  Added for full registration");
+            superclasses(context, theClass);
+            context.register(theClass).addAll();
+        }
+    }
+
+    private void processFullClassHierarchy(BeforeAnalysisContext context,
+                                           Class<?> superclass) {
+
+        // this class is always registered (interface or class)
+        context.register(superclass).addAll();
+
+        tracer.parsing(() -> "Looking up implementors of " + superclass.getName());
+
+        processFullClasses(context, util.findSubclasses(superclass.getName()));
+
+        for (Class<?> anInterface : superclass.getInterfaces()) {
+            // unless excluded
+            if (context.isExcluded(anInterface)) {
+                tracer.parsing(() -> "  Interface " + anInterface.getName() + " is explicitly excluded");
+            } else {
+                addFullSingleClass(context, anInterface);
+            }
+        }
+    }
+
+    private void processFullClasses(BeforeAnalysisContext context, Set<Class<?>> classes) {
+        for (Class<?> aClass : classes) {
+            if (context.process(aClass)) {
+                tracer.parsing(() -> "    " + aClass.getName());
+                tracer.parsing(() -> "        Added for registration");
 
                 superclasses(context, aClass);
-                context.register(aClass);
+                context.register(aClass).addAll();
 
+                int modifiers = aClass.getModifiers();
                 if (!Modifier.isFinal(modifiers)) {
-                    findSubclasses(context, aClass);
+                    processSubClasses(context, aClass);
+                }
+            } else {
+                context.register(aClass).addAll();
+            }
+        }
+    }
+
+    private void processClasses(BeforeAnalysisContext context, Set<Class<?>> classes) {
+        for (Class<?> aClass : classes) {
+            if (context.process(aClass)) {
+                tracer.parsing(() -> "    " + aClass.getName());
+                tracer.parsing(() -> "        Added for registration");
+
+                superclasses(context, aClass);
+                context.register(aClass).addDefaults();
+
+                int modifiers = aClass.getModifiers();
+                if (!Modifier.isFinal(modifiers)) {
+                    processSubClasses(context, aClass);
                 }
             }
         }
     }
 
     private void superclasses(BeforeAnalysisContext context, Class<?> aClass) {
-        Class<?> nextSuper = aClass.getSuperclass();
-        while (null != nextSuper) {
-            if (context.process(nextSuper)) {
-                if (context.isExcluded(nextSuper)) {
-                    Class<?> toLog = nextSuper;
-                    traceParsing(() -> "  Class " + toLog.getName() + " is explicitly excluded");
-                    nextSuper = null;
-                } else {
-                    traceParsing(nextSuper::getName);
-                    traceParsing(() -> "  Added for registration");
-
-                    context.register(nextSuper);
-                    nextSuper = nextSuper.getSuperclass();
-                }
-            } else {
-                nextSuper = nextSuper.getSuperclass();
+        Set<Class<?>> superclasses = util.findSuperclasses(aClass);
+        for (Class<?> superclass : superclasses) {
+            if (context.process(superclass)) {
+                tracer.parsing(superclass::getName);
+                tracer.parsing(() -> "  Added for registration");
+                context.register(superclass).addDefaults();
             }
         }
     }
 
-    private HelidonReflectionConfiguration loadConfiguration(BeforeAnalysisAccess access) {
-        // load a known class (config is required by all components)
-        Class<?> configClass = access.findClassByName("io.helidon.config.Config");
-        // to get the classloader to retrieve our configuration
-        ClassLoader cl = configClass.getClassLoader();
-        try {
-            Enumeration<URL> resources = cl.getResources("META-INF/helidon/native-image/reflection-config.json");
-            HelidonReflectionConfiguration config = new HelidonReflectionConfiguration();
-            JsonReaderFactory readerFactory = Json.createReaderFactory(Map.of());
-            while (resources.hasMoreElements()) {
-                URL url = resources.nextElement();
-                try {
-                    JsonObject configurationJson = readerFactory.createReader(url.openStream()).readObject();
-                    jsonArray(access, config.annotations, configurationJson.getJsonArray("annotated"), "Annotation");
-                    jsonArray(access, config.hierarchy, configurationJson.getJsonArray("class-hierarchy"), "Class hierarchy");
-                    jsonArray(access, config.classes, configurationJson.getJsonArray("classes"), "Single");
-                    jsonArray(access, config.excluded, configurationJson.getJsonArray("exclude"), "Exclude");
-                } catch (JsonParsingException e) {
-                    System.err.println("Failed to process configuration file: " + url);
-                    throw e;
-                }
-            }
-
-            return config;
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to process configuration from helidon-reflection-config.json files", e);
-        }
-    }
-
-    private void jsonArray(BeforeAnalysisAccess access, Collection<Class<?>> classList, JsonArray classNames, String desc) {
-        if (null == classNames) {
-            return;
-        }
-        for (int i = 0; i < classNames.size(); i++) {
-            String className = classNames.getString(i);
-            boolean isArray = false;
-            if (className.endsWith("[]")) {
-                // an array
-                isArray = true;
-                className = className.substring(0, className.length() - 2);
-            }
-            Class<?> clazz = access.findClassByName(className);
-            if (null == clazz) {
-                final String logName = className;
-                traceParsing(() -> desc + " class \"" + logName + "\" configured for reflection is not on classpath");
-                continue;
-            } else {
-                classList.add(clazz);
-            }
-
-            if (isArray) {
-                Object anArray = Array.newInstance(clazz, 0);
-                classList.add(anArray.getClass());
-            }
-        }
-    }
-
-    private void traceParsing(Supplier<String> message) {
-        if (TRACE_PARSING) {
-            System.out.println(message.get());
-        }
-    }
-
-    private static final class HelidonReflectionConfiguration {
-        private final List<Class<?>> annotations = new LinkedList<>();
-        private final List<Class<?>> hierarchy = new LinkedList<>();
-        private final List<Class<?>> classes = new LinkedList<>();
-        private final Set<Class<?>> excluded = new HashSet<>();
-
-        private List<Class<?>> annotations() {
-            return annotations;
-        }
-
-        private List<Class<?>> hierarchy() {
-            return hierarchy;
-        }
-
-        private List<Class<?>> classes() {
-            return classes;
-        }
-    }
-
-    private static final class BeforeAnalysisContext {
-        private final FeatureImpl.BeforeAnalysisAccessImpl access;
+    private final class BeforeAnalysisContext {
+        private final BeforeAnalysisAccess access;
         private final Set<Class<?>> processed = new HashSet<>();
-        private final Set<Class<?>> toRegister = new LinkedHashSet<>();
         private final Set<Class<?>> excluded = new HashSet<>();
+        private final Map<Class<?>, Register> registers = new HashMap<>();
+        private final ScanResult scan;
 
-        private BeforeAnalysisContext(BeforeAnalysisAccess access, Set<Class<?>> excluded) {
-            this.access = (FeatureImpl.BeforeAnalysisAccessImpl) access;
+        private BeforeAnalysisContext(BeforeAnalysisAccess access, ScanResult scan, Set<Class<?>> excluded) {
+            this.access = access;
+            this.scan = scan;
             this.excluded.addAll(excluded);
         }
 
-        public FeatureImpl.BeforeAnalysisAccessImpl access() {
+        BeforeAnalysisAccess access() {
             return access;
+        }
+
+        ScanResult scan() {
+            return scan;
         }
 
         public boolean process(Class<?> theClass) {
             return processed.add(theClass);
         }
 
-        public void register(Class<?> theClass) {
-            this.toRegister.add(theClass);
+        public Register register(Class<?> theClass) {
+            return registers.computeIfAbsent(theClass, Register::new);
         }
 
-        public Set<Class<?>> toRegister() {
-            return toRegister;
+        public Collection<Register> toRegister() {
+            return registers.values();
         }
 
         boolean isExcluded(Class<?> theClass) {
             return excluded.contains(theClass);
         }
     }
+
+    private class Register {
+        private final Set<Method> methods = new HashSet<>();
+        private final Set<Field> fields = new HashSet<>();
+        private final Set<Constructor<?>> constructors = new HashSet<>();
+
+        private final Class<?> clazz;
+
+        private boolean validated;
+        private boolean valid = true;
+
+        private Register(Class<?> clazz) {
+            this.clazz = clazz;
+        }
+
+        void validate() {
+            validated = true;
+            validateTypeParams();
+            if (!valid) {
+                return;
+            }
+            addFields(true, true);
+        }
+
+        boolean add(Method m) {
+            return methods.add(m);
+        }
+
+        boolean add(Field f) {
+            return fields.add(f);
+        }
+
+        boolean add(Constructor<?> c) {
+            return constructors.add(c);
+        }
+
+        void addAll() {
+            if (!validated) {
+                validated = true;
+                validateTypeParams();
+            }
+            if (!valid) {
+                return;
+            }
+            addFields(true, false);
+            if (!valid) {
+                return;
+            }
+            addMethods();
+            if (clazz.isInterface()) {
+                return;
+            }
+            addConstructors();
+        }
+
+        void addDefaults() {
+            validated = true;
+            validateTypeParams();
+            if (!valid) {
+                return;
+            }
+            addFields(false, false);
+            if (!valid) {
+                return;
+            }
+            addMethods();
+            if (clazz.isInterface()) {
+                return;
+            }
+            addConstructors();
+        }
+
+        @SuppressWarnings("ResultOfMethodCallIgnored")
+        private void validateTypeParams() {
+            try {
+                clazz.getGenericSuperclass();
+            } catch (Exception e) {
+                // this is now reported with each build, because ProtobufEncoder is part of netty codec
+                tracer.parsing(() -> "Type parameter of superclass is not on classpath of "
+                        + clazz.getName()
+                        + " error: "
+                        + e.getMessage());
+                valid = false;
+            }
+        }
+
+        private void addConstructors() {
+            try {
+                Constructor<?>[] constructors = clazz.getConstructors();
+                for (Constructor<?> constructor : constructors) {
+                    add(constructor);
+                }
+            } catch (NoClassDefFoundError e) {
+                tracer.trace(() -> "Public constructors of "
+                        + clazz.getName()
+                        + " not added to reflection, as a type is not on classpath: "
+                        + e.getMessage());
+            }
+            try {
+                // add all declared
+                Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+                for (Constructor<?> constructor : constructors) {
+                    add(constructor);
+                }
+            } catch (NoClassDefFoundError e) {
+                tracer.trace(() -> "Constructors of "
+                        + clazz.getName()
+                        + " not added to reflection, as a type is not on classpath: "
+                        + e.getMessage());
+            }
+        }
+
+        void addFields(boolean all, boolean validateOnly) {
+            try {
+                Field[] fields = clazz.getFields();
+                // add all public fields
+                for (Field field : fields) {
+                    if (!validateOnly) {
+                        add(field);
+                    }
+                }
+            } catch (NoClassDefFoundError e) {
+                this.valid = false;
+
+                if (validateOnly) {
+                    tracer.trace(() -> "Validation of fields of "
+                            + clazz.getName()
+                            + " failed, as a type is not on classpath: "
+                            + e.getMessage());
+                } else {
+                    tracer.trace(() -> "Public fields of "
+                            + clazz.getName()
+                            + " not added to reflection, as a type is not on classpath: "
+                            + e.getMessage());
+                }
+
+            }
+            try {
+                for (Field declaredField : clazz.getDeclaredFields()) {
+                    // there may be fields referencing classes not on the classpath
+                    if (!Modifier.isPublic(declaredField.getModifiers())) {
+                        // public already registered
+                        if (all || declaredField.getAnnotations().length > 0) {
+                            if (!validateOnly) {
+                                add(declaredField);
+                            }
+                        }
+                    }
+                }
+            } catch (NoClassDefFoundError e) {
+                this.valid = false;
+
+                if (validateOnly) {
+                    tracer.trace(() -> "Validation of fields of "
+                            + clazz.getName()
+                            + " failed, as a type is not on classpath: "
+                            + e.getMessage());
+                } else {
+                    tracer.trace(() -> "Fields of "
+                            + clazz.getName()
+                            + " not added to reflection, as a type is not on classpath: "
+                            + e.getMessage());
+                }
+            }
+        }
+
+        void addMethods() {
+            try {
+                Method[] methods = clazz.getMethods();
+                for (Method method : methods) {
+                    boolean register;
+
+                    // we do not want wait, notify etc
+                    register = (method.getDeclaringClass() != Object.class);
+
+                    if (register) {
+                        // we do not want toString(), hashCode(), equals(java.lang.Object)
+                        switch (method.getName()) {
+                        case "hashCode":
+                        case "toString":
+                            register = !util.hasParams(method);
+                            break;
+                        case "equals":
+                            register = !util.hasParams(method, Object.class);
+                            break;
+                        default:
+                            // do nothing
+                        }
+                    }
+
+                    if (register) {
+                        tracer.trace(() -> "  " + method.getName() + "(" + Arrays.toString(method.getParameterTypes()) + ")");
+
+                        add(method);
+                    }
+                }
+            } catch (Throwable e) {
+                tracer.trace(() -> "   Cannot register methods of " + clazz.getName() + ": "
+                        + e.getClass().getName() + ": " + e.getMessage());
+            }
+        }
+    }
 }
+

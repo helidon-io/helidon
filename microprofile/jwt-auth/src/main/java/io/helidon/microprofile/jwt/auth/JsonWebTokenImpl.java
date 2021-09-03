@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,66 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.microprofile.jwt.auth;
 
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
-import javax.json.Json;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-
 import io.helidon.security.Principal;
-import io.helidon.security.SecurityException;
-import io.helidon.security.jwt.Jwt;
-import io.helidon.security.jwt.JwtException;
-import io.helidon.security.jwt.JwtUtil;
 import io.helidon.security.jwt.SignedJwt;
-import io.helidon.security.util.AbacSupport;
 
-import org.eclipse.microprofile.jwt.ClaimValue;
-import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 /**
- * Implementation of {@link JsonWebToken} with additional support of {@link AbacSupport}.
+ * Implementation of {@link JsonWebToken} with additional support of {@link io.helidon.security.util.AbacSupport}.
+ *
+ * @deprecated this class will not be public in future versions of Helidon
  */
-public final class JsonWebTokenImpl implements JsonWebToken, Principal {
-    private final Jwt jwt;
-    private final SignedJwt signed;
-    private final String id;
+// do not remove this class, just make it package private
+@Deprecated(forRemoval = true, since = "2.4.0")
+public class JsonWebTokenImpl implements JsonWebToken, Principal {
+    protected JsonWebTokenImpl() {
+    }
 
-    private final AbacSupport properties;
-    private final String name;
-
-    private JsonWebTokenImpl(SignedJwt signed) {
-        this.jwt = signed.getJwt();
-        this.signed = signed;
-        BasicAttributes container = BasicAttributes.create();
-        jwt.payloadClaims()
-                .forEach((key, jsonValue) -> container.put(key, JwtUtil.toObject(jsonValue)));
-
-        jwt.email().ifPresent(value -> container.put("email", value));
-        jwt.emailVerified().ifPresent(value -> container.put("email_verified", value));
-        jwt.locale().ifPresent(value -> container.put("locale", value));
-        jwt.familyName().ifPresent(value -> container.put("family_name", value));
-        jwt.givenName().ifPresent(value -> container.put("given_name", value));
-        jwt.fullName().ifPresent(value -> container.put("full_name", value));
-
-        this.properties = container;
-
-        String subject = jwt.subject()
-                .orElseThrow(() -> new JwtException("JWT does not contain subject claim, cannot create principal."));
-
-        this.name = jwt.userPrincipal()
-                .or(jwt::preferredUsername)
-                .orElse(subject);
-
-        this.id = subject;
+    static JsonWebTokenImpl empty() {
+        return new JsonWebTokenImpl();
     }
 
     /**
@@ -82,28 +46,37 @@ public final class JsonWebTokenImpl implements JsonWebToken, Principal {
      * @return a json web token.
      */
     static JsonWebTokenImpl create(SignedJwt signed) {
-        return new JsonWebTokenImpl(signed);
+        return new BackedJsonWebToken(signed);
     }
 
     @Override
     public String getName() {
-        return name;
+        return null;
     }
 
     @Override
     public Set<String> getClaimNames() {
-        return jwt.payloadClaims().keySet();
+        return null;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> T getClaim(String claimName) {
-        try {
-            return (T) getClaim(Claims.valueOf(claimName));
-        } catch (IllegalArgumentException e) {
-            //If claimName is name of the custom claim
-            return (T) getJsonValue(claimName).orElse(null);
-        }
+        return null;
+    }
+
+    @Override
+    public String id() {
+        return "anonymous";
+    }
+
+    @Override
+    public Object abacAttributeRaw(String key) {
+        return null;
+    }
+
+    @Override
+    public Collection<String> abacAttributeNames() {
+        return Set.of();
     }
 
     /**
@@ -113,99 +86,11 @@ public final class JsonWebTokenImpl implements JsonWebToken, Principal {
      * @param clazz     expected type
      * @param <T>       type
      * @return claim value
+     * @deprecated This class will no longer be public in future versions
      */
-    @SuppressWarnings("unchecked")
+    @Deprecated(forRemoval = true, since = "2.4.0")
     public <T> T getClaim(String claimName, Class<T> clazz) {
-        try {
-            Claims claims = Claims.valueOf(claimName);
-            return JsonValue.class.isAssignableFrom(clazz)
-                    ? (T) getJsonValue(claimName).orElse(null)
-                    : (T) getClaim(claims);
-        } catch (IllegalArgumentException ignored) {
-            //If claimName is name of the custom claim
-            Object value = getJsonValue(claimName).orElse(null);
-            if ((value != null)
-                    && (clazz != ClaimValue.class)
-                    && (clazz != Optional.class)
-                    && !clazz.isAssignableFrom(value.getClass())) {
-                throw new SecurityException("Cannot set instance of " + value.getClass().getName()
-                                                    + " to the field of type " + clazz.getName());
-            }
-            return (T) value;
-        }
+        return null;
     }
 
-    private Object getClaim(Claims claims) {
-        switch (claims) {
-        case raw_token:
-            return signed.tokenContent();
-        case groups:
-            return jwt.userGroups().map(HashSet::new).orElse(null);
-        case aud:
-            return jwt.audience().map(HashSet::new).orElse(null);
-        case email_verified:
-            return jwt.emailVerified().orElse(null);
-        case phone_number_verified:
-            return jwt.phoneNumberVerified().orElse(null);
-        case upn:
-            return jwt.userPrincipal().orElse(null);
-        default:
-            //do nothing, just continue to processing based on type
-        }
-
-        String claimName = claims.name();
-        Optional<JsonValue> json = getJsonValue(claimName);
-
-        return json.map(value -> convert(claims, value)).orElse(null);
-    }
-
-    private Optional<JsonValue> getJsonValue(String claimName) {
-        if (Claims.raw_token.name().equals(claimName)) {
-            // special case, raw token is not really a claim
-            return Optional.of(Json.createValue(signed.tokenContent()));
-        }
-        return jwt.payloadClaim(claimName)
-                .or(() -> jwt.headerClaim(claimName));
-    }
-
-    private Object convert(Claims claims, JsonValue value) {
-        Class<?> claimClass = claims.getType();
-        if (claimClass.equals(String.class)) {
-            if (value instanceof JsonString) {
-                return ((JsonString) value).getString();
-            }
-        }
-        if (claimClass.equals(Long.class)) {
-            if (value instanceof JsonNumber) {
-                return ((JsonNumber) value).longValue();
-            } else if (value instanceof JsonString) {
-                return Long.parseLong(((JsonString) value).getString());
-            }
-            return Long.parseLong(value.toString());
-        }
-        if (claimClass.equals(JsonObject.class)) {
-            return value;
-        }
-
-        if (value instanceof JsonString) {
-            return ((JsonString) value).getString();
-        }
-
-        return value;
-    }
-
-    @Override
-    public Object abacAttributeRaw(String key) {
-        return properties.abacAttributeRaw(key);
-    }
-
-    @Override
-    public Collection<String> abacAttributeNames() {
-        return properties.abacAttributeNames();
-    }
-
-    @Override
-    public String id() {
-        return id;
-    }
 }

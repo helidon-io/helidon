@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webserver;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
@@ -218,6 +219,17 @@ public class StaticContentHandlerTest {
         assertThat(handler.counter.get(), is(1));
     }
 
+    @Test
+    public void classpathHandleSpaces() throws Exception {
+        ServerRequest request = mockRequestWithPath("foo/I have spaces.txt");
+        ServerResponse response = mock(ServerResponse.class);
+        TestClassPathContentHandler handler = new TestClassPathContentHandler("/root", true);
+        handler.handle(Http.Method.GET, request, response);
+        verify(request, never()).next();
+        assertThat(handler.counter.get(), is(1));
+    }
+
+
     static class TestContentHandler extends FileSystemContentHandler {
 
         final AtomicInteger counter = new AtomicInteger(0);
@@ -238,6 +250,30 @@ public class StaticContentHandlerTest {
                 throws IOException {
             this.counter.incrementAndGet();
             this.path = path;
+            return returnValue;
+        }
+
+    }
+
+    static class TestClassPathContentHandler extends ClassPathContentHandler {
+
+        final AtomicInteger counter = new AtomicInteger(0);
+        final boolean returnValue;
+
+        TestClassPathContentHandler(String welcomeFilename, ContentTypeSelector contentTypeSelector, Path root, boolean returnValue) {
+            super(welcomeFilename, contentTypeSelector, root.toString(), null, null);
+            this.returnValue = returnValue;
+        }
+
+        TestClassPathContentHandler(String path, boolean returnValue) {
+            this(null, mock(ContentTypeSelector.class), Paths.get(path), returnValue);
+        }
+
+        @Override
+        boolean doHandle(Http.RequestMethod method, String path, ServerRequest request, ServerResponse response)
+                throws IOException, URISyntaxException {
+            super.doHandle(method, path, request, response);
+            this.counter.incrementAndGet();
             return returnValue;
         }
 

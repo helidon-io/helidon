@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,12 @@ module io.helidon.microprofile.accesslog {
 
     requires io.helidon.microprofile.server;
     requires io.helidon.webserver.accesslog;
-    requires javax.interceptor.api;
+    requires jakarta.interceptor.api;
 
     exports io.helidon.microprofile.accesslog;
+
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.accesslog to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides Extension with io.helidon.microprofile.accesslog.AccessLogCdiExtension;
 }

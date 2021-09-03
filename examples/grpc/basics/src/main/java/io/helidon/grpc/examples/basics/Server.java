@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package io.helidon.grpc.examples.basics;
 
-import java.util.logging.LogManager;
-
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.grpc.examples.common.GreetService;
 import io.helidon.grpc.examples.common.GreetServiceJava;
@@ -28,7 +27,6 @@ import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -43,16 +41,13 @@ public class Server {
      * The main program entry point.
      *
      * @param args  the program arguments
-     *
-     * @throws Exception  if an error occurs
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Server.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // Get gRPC server config from the "grpc" section of application.yaml
         GrpcServerConfiguration serverConfig =
@@ -75,8 +70,8 @@ public class Server {
 
         // add support for standard and gRPC health checks
         HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())
-                .add(grpcServer.healthChecks())
+                .addLiveness(HealthChecks.healthChecks())
+                .addLiveness(grpcServer.healthChecks())
                 .build();
 
         // start web server with health endpoint
@@ -84,9 +79,7 @@ public class Server {
                 .register(health)
                 .build();
 
-        ServerConfiguration webServerConfig = ServerConfiguration.builder(config.get("webserver")).build();
-
-        WebServer.create(webServerConfig, routing)
+        WebServer.create(routing, config.get("webserver"))
                 .start()
                 .thenAccept(s -> {
                     System.out.println("HTTP server is UP! http://localhost:" + s.port());

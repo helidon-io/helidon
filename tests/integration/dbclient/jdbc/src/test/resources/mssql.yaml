@@ -1,0 +1,90 @@
+#
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+server:
+  port: 0
+  host: 0.0.0.0
+
+db:
+  source: jdbc
+  connection:
+    url: jdbc:sqlserver://${db.host}:${db.port};databaseName=${db.database}
+    username: ${db.user}
+    password: ${db.password}
+  health-check:
+    type: query
+    statement: "SELECT 0"
+  statements:
+    # custom query ping statement
+    ping-query: "SELECT 0"
+    # database schema initialization statements
+    create-types: "CREATE TABLE Types (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
+    create-pokemons: "CREATE TABLE Pokemons (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
+    create-poketypes: "CREATE TABLE PokemonTypes (id_pokemon INTEGER NOT NULL REFERENCES Pokemons(id), id_type INTEGER NOT NULL REFERENCES Types(id))"
+    # database schema cleanup statements
+    drop-types: "DROP TABLE Types"
+    drop-pokemons: "DROP TABLE Pokemons"
+    drop-poketypes: "DROP TABLE PokemonTypes"
+    # data initialization statements
+    insert-type: "INSERT INTO Types(id, name) VALUES(?, ?)"
+    insert-pokemon: "INSERT INTO Pokemons(id, name) VALUES(?, ?)"
+    insert-poketype: "INSERT INTO PokemonTypes(id_pokemon, id_type) VALUES(?, ?)"
+    # data initialization verification statements
+    select-types: "SELECT id, name FROM Types"
+    select-pokemons: "SELECT id, name FROM Pokemons"
+    select-poketypes: "SELECT id_pokemon, id_type FROM PokemonTypes p WHERE id_pokemon = ?"
+    # data cleanup verification statements
+    select-poketypes-all: "SELECT id_pokemon, id_type FROM PokemonTypes"
+    # retrieve max. Pokemon ID
+    select-max-id: "SELECT MAX(id) FROM Pokemons"
+    # test queries
+    select-pokemon-named-arg: "SELECT id, name FROM Pokemons WHERE name=:name"
+    select-pokemon-order-arg: "SELECT id, name FROM Pokemons WHERE name=?"
+    # test DML insert
+    insert-pokemon-named-arg: "INSERT INTO Pokemons(id, name) VALUES(:id, :name)"
+    insert-pokemon-order-arg: "INSERT INTO Pokemons(id, name) VALUES(?, ?)"
+    # Pokemon mapper uses reverse order of indexed arguments
+    insert-pokemon-order-arg-rev: "INSERT INTO Pokemons(name, id) VALUES(?, ?)"
+    # test DML update
+    select-pokemon-by-id: "SELECT id, name FROM Pokemons WHERE id=?"
+    update-pokemon-named-arg: "UPDATE Pokemons SET name=:name WHERE id=:id"
+    update-pokemon-order-arg: "UPDATE Pokemons SET name=? WHERE id=?"
+    # test DML delete
+    delete-pokemon-named-arg: "DELETE FROM Pokemons WHERE id=:id"
+    delete-pokemon-order-arg: "DELETE FROM Pokemons WHERE id=?"
+    # Pokemon mapper uses full list of attributes 
+    delete-pokemon-full-named-arg: "DELETE FROM Pokemons WHERE name=:name AND id=:id"
+    delete-pokemon-full-order-arg: "DELETE FROM Pokemons WHERE name=? AND id=?"
+    # test DbStatementQuery methods
+    select-pokemons-idrng-named-arg: "SELECT id, name FROM Pokemons WHERE id > :idmin AND id < :idmax"
+    select-pokemons-idrng-order-arg: "SELECT id, name FROM Pokemons WHERE id > ? AND id < ?"
+    # Test query with both named and ordered parameters (shall cause an exception)
+    select-pokemons-error-arg: "SELECT id, name FROM Pokemons WHERE id > :id AND name = ?"
+
+# Tests configuration
+test:
+    ## Microsoft SQL Server specific setup
+    # SQL database administrator's user name
+    sa-user: sa
+    # SQL database administrator's password
+    sa-password: ${db.sa.password}
+    # Sql database URL for administrator
+    sa-url: jdbc:sqlserver://${db.host}:${db.port}
+    # SQL database name (will be created and granted to regular test user)
+    db-database: ${db.database}
+
+    # Whether database supports ping statement as DML (default value is true)
+    ping-dml: false

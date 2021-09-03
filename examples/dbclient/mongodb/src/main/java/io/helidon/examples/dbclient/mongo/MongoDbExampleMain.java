@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,19 @@
 
 package io.helidon.examples.dbclient.mongo;
 
-import java.io.IOException;
-import java.util.logging.LogManager;
-
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.dbclient.metrics.DbCounter;
-import io.helidon.dbclient.metrics.DbTimer;
+import io.helidon.dbclient.metrics.DbClientMetrics;
 import io.helidon.dbclient.tracing.DbClientTracing;
-import io.helidon.dbclient.webserver.jsonp.DbResultSupport;
 import io.helidon.health.HealthSupport;
-import io.helidon.media.jsonb.server.JsonBindingSupport;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.jsonb.JsonbSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -51,9 +46,8 @@ public final class MongoDbExampleMain {
      * Application main entry point.
      *
      * @param args command line arguments.
-     * @throws java.io.IOException if there are problems reading logging properties
      */
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
         startServer();
     }
 
@@ -61,24 +55,21 @@ public final class MongoDbExampleMain {
      * Start the server.
      *
      * @return the created {@link io.helidon.webserver.WebServer} instance
-     * @throws java.io.IOException if there are problems reading logging properties
      */
-    static WebServer startServer() throws IOException {
+    static WebServer startServer() {
 
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                MongoDbExampleMain.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        // Get webserver config from the "server" section of application.yaml
-        ServerConfiguration serverConfig =
-                ServerConfiguration.builder(config.get("server"))
-                        .tracer(TracerBuilder.create("mongo-db").build())
-                        .build();
-
-        WebServer server = WebServer.create(serverConfig, createRouting(config));
+        WebServer server = WebServer.builder(createRouting(config))
+                .config(config.get("server"))
+                .tracer(TracerBuilder.create("mongo-db").build())
+                .addMediaSupport(JsonpSupport.create())
+                .addMediaSupport(JsonbSupport.create())
+                .build();
 
         // Start the server and print some info.
         server.start().thenAccept(ws -> {
@@ -103,21 +94,20 @@ public final class MongoDbExampleMain {
 
         DbClient dbClient = DbClient.builder(dbConfig)
                 // add an interceptor to named statement(s)
-                .addInterceptor(DbCounter.create(), "select-all", "select-one")
+                .addService(DbClientMetrics.counter().statementNames("select-all", "select-one"))
                 // add an interceptor to statement type(s)
-                .addInterceptor(DbTimer.create(), DbStatementType.DELETE, DbStatementType.UPDATE, DbStatementType.INSERT)
+                .addService(DbClientMetrics.timer()
+                                    .statementTypes(DbStatementType.DELETE, DbStatementType.UPDATE, DbStatementType.INSERT))
                 // add an interceptor to all statements
-                .addInterceptor(DbClientTracing.create())
+                .addService(DbClientTracing.create())
                 .build();
 
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(DbClientHealthCheck.create(dbClient))
+                .addLiveness(
+                        DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
                 .build();
 
         return Routing.builder()
-                .register("/db", JsonSupport.create())
-                .register("/db", JsonBindingSupport.create())
-                .register("/db", DbResultSupport.create())
                 .register(health)                   // Health at "/health"
                 .register(MetricsSupport.create())  // Metrics at "/metrics"
                 .register("/db", new PokemonService(dbClient))

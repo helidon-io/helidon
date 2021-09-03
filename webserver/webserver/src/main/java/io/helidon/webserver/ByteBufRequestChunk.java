@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,13 +36,12 @@ class ByteBufRequestChunk implements DataChunk {
     private static final AtomicLong ID_INCREMENTER = new AtomicLong(1);
 
     private final long id = ID_INCREMENTER.getAndIncrement();
-    private final ByteBuffer byteBuffer;
+    private final ByteBuffer[] byteBuffers;
     private final ReferenceHoldingQueue.ReleasableReference<DataChunk> ref;
 
     ByteBufRequestChunk(ByteBuf byteBuf, ReferenceHoldingQueue<DataChunk> referenceHoldingQueue) {
-
         Objects.requireNonNull(byteBuf, "The ByteBuf must not be null!");
-        byteBuffer = byteBuf.nioBuffer().asReadOnlyBuffer();
+        byteBuffers = new ByteBuffer[] {byteBuf.nioBuffer().asReadOnlyBuffer()};
         ref = new ReferenceHoldingQueue.ReleasableReference<>(this, referenceHoldingQueue, byteBuf::release);
         byteBuf.retain();
     }
@@ -53,11 +52,11 @@ class ByteBufRequestChunk implements DataChunk {
     }
 
     @Override
-    public ByteBuffer data() {
+    public ByteBuffer[] data() {
         if (isReleased()) {
             throw new IllegalStateException("The request chunk was already released!");
         }
-        return byteBuffer;
+        return byteBuffers;
     }
 
     @Override
@@ -86,7 +85,7 @@ class ByteBufRequestChunk implements DataChunk {
         }
     }
 
-    private static void logLeak() {
+    static void logLeak() {
         // TODO add a link to a website that explains the problem
         LOGGER.warning("LEAK: RequestChunk.release() was not called before it was garbage collected. "
                                + "While the Reactive WebServer is "
@@ -100,9 +99,9 @@ class ByteBufRequestChunk implements DataChunk {
 
     /**
      * An implementation of {@link ReferenceHoldingQueue} that logs a warning
-     * message once and only once.
+     * message once and only once when releasing a reference in the queue.
      */
-    static class RefHoldingQueue extends ReferenceHoldingQueue<DataChunk> {
+    static class DataChunkHoldingQueue extends ReferenceHoldingQueue<DataChunk> {
 
         @Override
         protected void hookOnAutoRelease() {

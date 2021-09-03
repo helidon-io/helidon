@@ -1,0 +1,142 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Routing
+:h1Prefix: SE
+:description: Helidon Reactive WebServer Routing
+:keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
+
+Routing lets you use request matching criteria to bind requests to a `handler` that implements 
+your custom business logic. Matching criteria include one or more *HTTP Method(s)* and, optionally,
+a request *path matcher*. Use the `RequestPredicate` class to specify more routing
+criteria.
+
+== Basics
+
+Routing also supports _Error Routing_ which binds Java `Throwable` to the
+ handling logic.
+
+Configure HTTP request routing using `Routing.Builder`.
+
+[source,java]
+.Using Routing.Builder to specify how HTTP requests are handled
+----
+Routing routing = Routing.builder()
+                         .get("/hello", (req, res) -> res.send("Hello World!")) // <1>
+                         .build();
+
+WebServer webServer = WebServer.create(routing); // <2>
+----
+<1> Handle all GETs to `/hello` path. Send the `Hello World!` string.
+<2> Add the `routing` to the WebServer.
+
+== HTTP Method Routing
+
+`Routing.Builder` lets you specify how to handle each HTTP method. For example:
+
+
+[cols="1,5"]
+|===
+|HTTP Method|Routing.Builder example
+
+|*GET*|`+.get((req, res) -> { /* handler */ })+`
+|*PUT*| `+.put((req, res) -> { /* handler */ })+`
+|*POST*| `+.post((req, res) -> { /* handler */ })+`
+|*HEAD*| `+.head((req, res) -> { /* handler */ })+`
+|*DELETE*| `+.delete((req, res) -> { /* handler */ })+`
+|*TRACE*| `+.trace((req, res) -> { /* handler */ })+`
+|*OPTIONS*| `+.options((req, res) -> { /* handler */ })+`
+|_any method_|`+.any((req, res) -> { /* handler */ })+`
+|_multiple methods_|`+.anyOf(List.of(Http.Method.GET, Http.Method.POST), (req, res) -> { /* handler */ })+`
+|_custom method_|`+.anyOf(Set.of(Http.RequestMethod.create("CUSTOM")), (req, res) -> { /* handler */ })+`
+|===
+
+== Path Matcher Routing
+You can combine HTTP method routing with request path matching.
+
+[source,java]
+----
+Routing.builder()
+       .post("/some/path", (req, res) -> { /* handler */ })
+----
+
+You can use *path pattern* instead of _path_ with the following syntax:
+
+* `/foo/bar/baz` - Exact path match against resolved path even with non-usual characters
+* `/foo/{}/baz` - `{}` Unnamed regular expression segment `([^/]+)`
+* `/foo/{var}/baz` - Named regular expression segment `([^/]+)`
+* `/foo/{var:\d+}` - Named regular expression segment with a specified expression
+* `/foo/{:\d+}` - Unnamed regular expression segment with a specified expression
+* `/foo/{+var}` - Convenience shortcut for {var:.+}. A matcher is not a true URI template (as defined by RFC) but this convenience is in sync with the Apiary templates
+* `/foo/{+}` - Convenience shortcut for unnamed segment with regular expression {:.+}
+* `/foo[/bar]` - An optional block, which translates to the `/foo(/bar)?` regular expression
+
+
+IMPORTANT: Path (matcher) routing is *exact*. For example, a `/foo/bar` request is *not* routed to `.post('/foo', ...)`.
+
+TIP: Always start _path_ and _path patterns_ with the `/` character.
+
+[[anchor-requestpredicate]]
+== Request Predicate
+
+Use the `RequestPredicate` utility class to identify more
+ criteria. You can construct (build) a predicate based on typical request criteria such as 
+content type, or the existence of a header
+or cookie. You can also construct a handler that only processes 
+requests accepted by the predicate. All other requests are _nexted_, meaning that they are routed to the next valid handler.
+
+[source,java]
+----
+.post("/foo",
+      RequestPredicate.create()
+                      .containsHeader("my-gr8-header")
+                      .accepts(MediaType.TEXT_PLAIN)
+                      .and(this::isUserAuthenticated)
+                      .thenApply((req, resp) -> {
+                           // Some logic
+                      })
+                      .otherwise((req, resp) -> { /* Otherwise logic */ }); // Optional. Default logic is req.next()
+----
+
+== Organizing Code into Services
+
+By implementing the `Service` interface you can organize your code into one
+or more services, each with its own path prefix and set of handlers.
+
+[source,java]
+.Use `Routing.Builder.register` to register your service
+----
+.register("/hello", new HelloService())
+----
+
+[source,java]
+.Service implementation
+----
+public class HelloService implements Service {
+    @Override
+    public void update(Routing.Rules rules) {
+        rules.get("/subpath", this::getHandler);
+    }
+
+    private void getHandler(ServerRequest request,
+                            ServerResponse response) {
+        // Some logic
+    }
+}
+----
+In this example, the `GET` handler matches requests to `/hello/subpath`.

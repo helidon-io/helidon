@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,21 +104,6 @@ abstract class CommonTracing {
 
         return closest.map(Span::context)
                 .or(() -> parentSpanContext);
-    }
-
-    /**
-     * Find closes parent span.
-     *
-     * @return span context if found
-     * @deprecated will be removed once security context works
-     *  with {@link io.opentracing.SpanContext}. Needed for
-     *  backward compatibility
-     */
-    @Deprecated
-    public Optional<Span> findParentSpan() {
-        Optional<Span> closest = closestSecuritySpan();
-
-        return closest.or(() -> parentSpan);
     }
 
     /**

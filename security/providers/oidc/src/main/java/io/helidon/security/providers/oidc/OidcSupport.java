@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,16 +26,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.json.JsonObject;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.Response;
 
+import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -120,9 +119,11 @@ public final class OidcSupport implements Service {
     private static final String DEFAULT_REDIRECT = "/index.html";
 
     private final OidcConfig oidcConfig;
+    private final boolean enabled;
 
-    private OidcSupport(OidcConfig oidcConfig) {
-        this.oidcConfig = oidcConfig;
+    private OidcSupport(Builder builder) {
+        this.oidcConfig = builder.oidcConfig;
+        this.enabled = builder.enabled;
     }
 
     /**
@@ -135,25 +136,67 @@ public final class OidcSupport implements Service {
      * @return OIDC webserver integration based on the config
      */
     public static OidcSupport create(Config config, String providerName) {
-        return create(OidcConfig.create(findMyKey(config, providerName)));
+        return builder()
+                .config(config, providerName)
+                .build();
+    }
+
+    /**
+     * Load OIDC support for webserver from config. This works from two places in config tree -
+     * either from root (expecting security.providers.{@value OidcProviderService#PROVIDER_CONFIG_KEY}
+     * under current key) or from the provider's configuration.
+     * (expecting OIDC keys directly under current key).
+     *
+     * @param config Config instance on expected node
+     * @return OIDC webserver integration based on the config
+     */
+    public static OidcSupport create(Config config) {
+        return builder()
+                .config(config, OidcProviderService.PROVIDER_CONFIG_KEY)
+                .build();
+    }
+
+    /**
+     * Load OIDC support for webserver from {@link OidcConfig} instance.
+     * When programmatically configuring your environment, this is the best approach, to share configuration
+     * between this class and {@link OidcProvider}.
+     *
+     * @param oidcConfig configuration of OIDC integration
+     * @return OIDC webserver integration based on the configuration
+     */
+    public static OidcSupport create(OidcConfig oidcConfig) {
+        return builder()
+                .config(oidcConfig)
+                .build();
+    }
+
+    /**
+     * A new builder instance to configure OIDC support.
+     *
+     * @return a new builder
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
     public void update(Routing.Rules rules) {
-        rules.get(oidcConfig.redirectUri(), this::processOidcRedirect)
-             .any(this::addRequestAsHeader);
+        if (enabled) {
+            rules.get(oidcConfig.redirectUri(), this::processOidcRedirect)
+                    .any(this::addRequestAsHeader);
+        }
     }
 
     private void addRequestAsHeader(ServerRequest req, ServerResponse res) {
         //noinspection unchecked
         Map<String, List<String>> newHeaders = req.context()
-                        .get(WebSecurity.CONTEXT_ADD_HEADERS, Map.class)
-                        .map(theMap -> (Map<String, List<String>>) theMap)
-                        .orElseGet(() -> {
-                            Map<String, List<String>> newMap = new HashMap<>();
-                            req.context().register(WebSecurity.CONTEXT_ADD_HEADERS, newMap);
-                            return newMap;
-                        });
+                .get(WebSecurity.CONTEXT_ADD_HEADERS, Map.class)
+                .map(theMap -> (Map<String, List<String>>) theMap)
+                .orElseGet(() -> {
+                    Map<String, List<String>> newMap = new HashMap<>();
+                    req.context().register(WebSecurity.CONTEXT_ADD_HEADERS, newMap);
+                    return newMap;
+                });
 
         String query = req.query();
         if ((null == query) || query.isEmpty()) {
@@ -168,52 +211,81 @@ public final class OidcSupport implements Service {
     }
 
     private void processOidcRedirect(ServerRequest req, ServerResponse res) {
-        // redirected from IDCS
+        // redirected from OIDC provider
         Optional<String> codeParam = req.queryParams().first(CODE_PARAM_NAME);
         // if code is not in the request, this is a problem
-        codeParam
-                .ifPresentOrElse(code -> processCode(code, req, res), () -> processError(req, res));
+        codeParam.ifPresentOrElse(code -> processCode(code, req, res),
+                                  () -> processError(req, res));
     }
 
     private void processCode(String code, ServerRequest req, ServerResponse res) {
-        MultivaluedHashMap<String, String> formValues = new MultivaluedHashMap<>();
-        formValues.putSingle("grant_type", "authorization_code");
-        formValues.putSingle("code", code);
-        formValues.putSingle("redirect_uri", oidcConfig.redirectUriWithHost());
+        WebClient webClient = oidcConfig.appWebClient();
 
-        Response response = oidcConfig.tokenEndpoint().request()
-                .accept(MediaType.APPLICATION_JSON_TYPE)
-                .post(Entity.form(formValues));
+        FormParams.Builder form = FormParams.builder()
+                .add("grant_type", "authorization_code")
+                .add("code", code)
+                .add("redirect_uri", oidcConfig.redirectUriWithHost());
 
-        if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-            JsonObject jsonResponse = response.readEntity(JsonObject.class);
-            String tokenValue = jsonResponse.getString("access_token");
-            //redirect to "state"
-            String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
-            res.status(Http.Status.TEMPORARY_REDIRECT_307);
-            if (oidcConfig.useParam()) {
-                if (state.contains("?")) {
-                    state = state + "&" + oidcConfig.paramName() + "=" + tokenValue;
-                } else {
-                    state = state + "?" + oidcConfig.paramName() + "=" + tokenValue;
-                }
-            }
+        WebClientRequestBuilder post = webClient.post()
+                .uri(oidcConfig.tokenEndpointUri())
+                .accept(io.helidon.common.http.MediaType.APPLICATION_JSON);
 
-            state = increaseRedirectCounter(state);
-            res.headers().add(Http.Header.LOCATION, state);
+        oidcConfig.updateRequest(OidcConfig.RequestType.CODE_TO_TOKEN,
+                                 post,
+                                 form);
 
-            if (oidcConfig.useCookie()) {
-                res.headers()
-                        .add("Set-Cookie", oidcConfig.cookieName() + "=" + tokenValue + oidcConfig.cookieOptions());
-            }
+        OidcConfig.postJsonResponse(post,
+                                    form.build(),
+                                    json -> processJsonResponse(req, res, json),
+                                    (status, errorEntity) -> processError(res, status, errorEntity),
+                                    (t, message) -> processError(res, t, message))
+                .ignoreElement();
 
-            res.send();
-        } else {
-            String entity = response.readEntity(String.class);
-            LOGGER.log(Level.FINE, "Invalid token or failed request when connecting to OIDC Token Endpoint. Response: " + entity);
-            res.status(Http.Status.UNAUTHORIZED_401);
-            res.send("Not a valid authorization code");
+    }
+
+    private String processJsonResponse(ServerRequest req, ServerResponse res, JsonObject json) {
+        String tokenValue = json.getString("access_token");
+        //redirect to "state"
+        String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
+        res.status(Http.Status.TEMPORARY_REDIRECT_307);
+        if (oidcConfig.useParam()) {
+            state = (state.contains("?") ? "&" : "?") + oidcConfig.paramName() + "=" + tokenValue;
         }
+
+        state = increaseRedirectCounter(state);
+        res.headers().add(Http.Header.LOCATION, state);
+
+        if (oidcConfig.useCookie()) {
+            res.headers()
+                    .add("Set-Cookie", oidcConfig.cookieName() + "=" + tokenValue + oidcConfig.cookieOptions());
+        }
+
+        res.send();
+
+        return "done";
+    }
+
+    private Optional<String> processError(ServerResponse serverResponse, Http.ResponseStatus status, String entity) {
+        LOGGER.log(Level.FINE,
+                   "Invalid token or failed request when connecting to OIDC Token Endpoint. Response: " + entity
+                           + ", response status: " + status);
+
+        sendErrorResponse(serverResponse);
+        return Optional.empty();
+    }
+
+    private Optional<String> processError(ServerResponse res, Throwable t, String message) {
+        LOGGER.log(Level.FINE, message, t);
+
+        sendErrorResponse(res);
+        return Optional.empty();
+    }
+
+    // this must always be the same, so clients cannot guess what kind of problem they are facing
+    // if they try to provide wrong data
+    private void sendErrorResponse(ServerResponse serverResponse) {
+        serverResponse.status(Http.Status.UNAUTHORIZED_401);
+        serverResponse.send("Not a valid authorization code");
     }
 
     String increaseRedirectCounter(String state) {
@@ -237,19 +309,6 @@ public final class OidcSupport implements Service {
         }
     }
 
-    /**
-     * Load OIDC support for webserver from config. This works from two places in config tree -
-     * either from root (expecting security.providers.{@value OidcProviderService#PROVIDER_CONFIG_KEY}
-     * under current key) or from the provider's configuration.
-     * (expecting OIDC keys directly under current key).
-     *
-     * @param config Config instance on expected node
-     * @return OIDC webserver integration based on the config
-     */
-    public static OidcSupport create(Config config) {
-        return create(config, OidcProviderService.PROVIDER_CONFIG_KEY);
-    }
-
     private void processError(ServerRequest req, ServerResponse res) {
         String error = req.queryParams().first("error").orElse("invalid_request");
         String errorDescription = req.queryParams().first("error_description")
@@ -266,30 +325,92 @@ public final class OidcSupport implements Service {
     }
 
     /**
-     * Load OIDC support for webserver from {@link OidcConfig} instance.
-     * When programmatically configuring your environment, this is the best approach, to share configuration
-     * between this class and {@link OidcProvider}.
-     *
-     * @param oidcConfig configuration of OIDC integration
-     * @return OIDC webserver integration based on the configuration
+     * A fluent API builder for {@link io.helidon.security.providers.oidc.OidcSupport}.
      */
-    public static OidcSupport create(OidcConfig oidcConfig) {
-        return new OidcSupport(oidcConfig);
-    }
+    public static class Builder implements io.helidon.common.Builder<OidcSupport> {
+        private boolean enabled = true;
+        private OidcConfig oidcConfig;
 
-    private static Config findMyKey(Config rootConfig, String providerName) {
-        if (rootConfig.key().name().equals(providerName)) {
-            return rootConfig;
+        private Builder() {
         }
 
-        return rootConfig.get("security.providers")
-                .asNodeList()
-                .get()
-                .stream()
-                .filter(it -> it.get(providerName).exists())
-                .findFirst()
-                .map(it -> it.get(providerName))
-                .orElseThrow(() -> new SecurityException("No configuration found for provider named: " + providerName));
-    }
+        private static Config findMyKey(Config rootConfig, String providerName) {
+            if (rootConfig.key().name().equals(providerName)) {
+                return rootConfig;
+            }
 
+            return rootConfig.get("security.providers")
+                    .asNodeList()
+                    .get()
+                    .stream()
+                    .filter(it -> it.get(providerName).exists())
+                    .findFirst()
+                    .map(it -> it.get(providerName))
+                    .orElseThrow(() -> new SecurityException("No configuration found for provider named: " + providerName));
+        }
+
+        @Override
+        public OidcSupport build() {
+            if (enabled && (oidcConfig == null)) {
+                throw new IllegalStateException("When OIDC and security is enabled, OIDC configuration must be provided");
+            }
+            return new OidcSupport(this);
+        }
+
+        /**
+         * Config located at the provider's key to read {@link io.helidon.security.providers.oidc.common.OidcConfig}.
+         *
+         * @param config configuration at the node of the provider
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            // also add support for `enabled` key in the `oidc` specific config
+            config.get("enabled").asBoolean().ifPresent(this::enabled);
+
+            if (enabled) {
+                this.oidcConfig = OidcConfig.create(config);
+            }
+            return this;
+        }
+
+        /**
+         * Use the provided {@link io.helidon.security.providers.oidc.common.OidcConfig} for this builder.
+         *
+         * @param config OIDC configuration to use
+         * @return updated builder instance
+         */
+        public Builder config(OidcConfig config) {
+            this.oidcConfig = config;
+            return this;
+        }
+
+        /**
+         * Config located either at the configuration root, or at the provider node.
+         *
+         * @param config configuration to use
+         * @param providerName name of the security provider used for the {@link io.helidon.security.providers.oidc.OidcSupport}
+         *                     configuration
+         * @return updated builder instance
+         */
+        public Builder config(Config config, String providerName) {
+            // if this is root config, we need to honor `security.enabled`
+            config.get("security.enabled").asBoolean().ifPresent(this::enabled);
+
+            config(findMyKey(config, providerName));
+            return this;
+        }
+
+        /**
+         * You can disable the OIDC support in case it should not be used.
+         * This can also be achieved through configuration, by setting {@code security.enabled} to {@code false}
+         * when using root configuration, or by setting {@code enabled} to {@code false} when using provider configuration node.
+         *
+         * @param enabled whether the support should be enabled or not
+         * @return updated builder instance
+         */
+        public Builder enabled(boolean enabled) {
+            this.enabled = enabled;
+            return this;
+        }
+    }
 }

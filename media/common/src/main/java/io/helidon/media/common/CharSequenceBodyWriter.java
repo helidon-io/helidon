@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,33 +27,37 @@ import io.helidon.common.reactive.Single;
 /**
  * Writer for {@code CharSequence}.
  */
-public final class CharSequenceBodyWriter implements MessageBodyWriter<CharSequence> {
+final class CharSequenceBodyWriter implements MessageBodyWriter<CharSequence> {
+
+    private static final CharSequenceBodyWriter DEFAULT = new CharSequenceBodyWriter();
 
     /**
-     * Enforce the use of {@link #get()}.
+     * Enforce the use of {@link #create()}.
      */
     private CharSequenceBodyWriter() {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return CharSequence.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        return PredicateResult.supports(CharSequence.class, type);
     }
 
     @Override
-    public Publisher<DataChunk> write(Single<CharSequence> content, GenericType<? extends CharSequence> type,
-            MessageBodyWriterContext context) {
+    public Publisher<DataChunk> write(Single<? extends CharSequence> content,
+                                      GenericType<? extends CharSequence> type,
+                                      MessageBodyWriterContext context) {
 
         context.contentType(MediaType.TEXT_PLAIN);
-        return content.mapMany(new CharSequenceToChunks(context.charset()));
+        return content.flatMap(new CharSequenceToChunks(context.charset()));
     }
 
     /**
-     * Create a new instance of {@link CharSequenceBodyWriter}.
+     * Return an instance of {@link CharSequenceBodyWriter}.
+     *
      * @return {@link CharSequence} message body writer.
      */
-    public static CharSequenceBodyWriter create() {
-        return new CharSequenceBodyWriter();
+    static CharSequenceBodyWriter create() {
+        return DEFAULT;
     }
 
     private static final class CharSequenceToChunks implements Mapper<CharSequence, Publisher<DataChunk>> {

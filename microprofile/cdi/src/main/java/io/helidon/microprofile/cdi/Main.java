@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,13 @@
  */
 package io.helidon.microprofile.cdi;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.spi.CDI;
+
 /**
  * This is the "master" main class of Helidon MP.
  * You can boot the Helidon MP instance using this class if you want do not need to modify
@@ -29,7 +36,7 @@ package io.helidon.microprofile.cdi;
  *      <li>If there are any MicroProfile config sources, these will be added</li>
  *      <li>If there are any {@code META-INF/microprofile-config.properties} files on the classpath, these will be added</li>
  * </ul>
- * <h2>Logging</h2>>
+ * <h2>Logging</h2>
  * Helidon uses Java Util Logging. You can configure logging using:
  * <ul>
  *     <li>A system property {@code java.util.logging.config.class}</li>
@@ -39,12 +46,16 @@ package io.helidon.microprofile.cdi;
  * </ul>
  */
 public final class Main {
+    private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+    private static final AtomicBoolean MAIN_CALLED = new AtomicBoolean();
     private static final HelidonContainer CONTAINER;
 
     static {
         // static initialization to support GraalVM native image
         CONTAINER = ContainerInstanceHolder.get();
     }
+
+    private static volatile HelidonContainer inUse;
 
     private Main() {
     }
@@ -58,13 +69,35 @@ public final class Main {
      * @param args command line arguments, currently ignored
      */
     public static void main(String[] args) {
-        CONTAINER.start();
+        if (ContainerInstanceHolder.isReset()) {
+            // in case somebody restarted the container, we need to get a new one
+            inUse = ContainerInstanceHolder.get();
+        } else {
+            // use the statically initialized one
+            inUse = CONTAINER;
+        }
+
+        inUse.start();
+        MAIN_CALLED.set(true);
     }
 
     /**
      * Shutdown CDI container.
      */
     public static void shutdown() {
-        CONTAINER.shutdown();
+        if (null != inUse && MAIN_CALLED.get()) {
+            LOGGER.finest("Shutting down container from cdi.Main");
+            // re-set the main called, so if somebody starts, shuts down and starts again, we correctly evaluate the
+            // shutdown method
+            MAIN_CALLED.set(false);
+            inUse.shutdown();
+        } else {
+            // now we need to cover cases where the main method was not invoked
+            try {
+                ((SeContainer) CDI.current()).close();
+            } catch (IllegalStateException e) {
+                LOGGER.log(Level.FINEST, "Failed to obtain a CDI instance to shut down, probably duplicate call", e);
+            }
+        }
     }
 }

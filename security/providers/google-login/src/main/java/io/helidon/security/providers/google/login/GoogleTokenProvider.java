@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -44,6 +43,7 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.Subject;
 import io.helidon.security.providers.common.EvictableCache;
+import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
@@ -77,11 +77,6 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
 
     static final long TIME_SKEW_SECONDS = TimeUnit.SECONDS.convert(5, TimeUnit.MINUTES);
 
-    static {
-        HelidonFeatures.register("Security", "Authentication", "Google-Login");
-        HelidonFeatures.register("Security", "Outbound", "Google-Login");
-    }
-
     private final EvictableCache<String, CachedRecord> subjectCache = EvictableCache.<String, CachedRecord>builder()
             .evictor((key, record) -> record.getValidSupplier().get())
             .build();
@@ -92,13 +87,14 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
     private final GoogleIdTokenVerifier verifier;
     private final JsonFactory jsonFactory;
     private final BiFunction<JsonFactory, String, GoogleIdToken> tokenParser;
-
+    private final OutboundConfig outboundConfig;
 
     private GoogleTokenProvider(Builder builder) {
         String clientId = builder.clientId;
         this.optional = builder.optional;
         this.realm = builder.realm;
         this.tokenHandler = builder.tokenHandler;
+        this.outboundConfig = (builder.outboundConfig == null) ? OutboundConfig.builder().build() : builder.outboundConfig;
         this.jsonFactory = JacksonFactory.getDefaultInstance();
 
         if (null == builder.verifier) {
@@ -256,12 +252,19 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
                                        SecurityEnvironment outboundEnv,
                                        EndpointConfig outboundConfig) {
 
-        return providerRequest.securityContext()
+        boolean canPropagate = providerRequest.securityContext()
                 .user()
                 .flatMap(subject -> subject.publicCredential(TokenCredential.class))
                 .flatMap(token -> token.getIssuer()
                         .map(issuer -> issuer.endsWith(".google.com")))
                 .orElse(false);
+
+        if (!canPropagate) {
+            return canPropagate;
+        }
+
+        // only propagate if an actual outbound target exists (no custom config per target)
+        return this.outboundConfig.findTarget(outboundEnv).isPresent();
     }
 
     @Override
@@ -417,6 +420,7 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
         private GoogleIdTokenVerifier verifier;
         private BiFunction<JsonFactory, String, GoogleIdToken> tokenParser;
         private boolean optional;
+        private OutboundConfig outboundConfig;
 
         private Builder() {
         }
@@ -526,7 +530,21 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
             config.get("proxy-port").asInt().ifPresent(this::proxyPort);
             config.get("realm").asString().ifPresent(this::realm);
             config.get("token").as(TokenHandler::create).ifPresent(this::tokenProvider);
+            // OutboundConfig.create() expects provider configuration, not outbound
+            config.get("outbound").ifExists(outbound -> outboundConfig(OutboundConfig.create(config)));
 
+            return this;
+        }
+
+        /**
+         * Outbound configuration - a set of outbound targets that
+         * will have the token propagated.
+         *
+         * @param outboundConfig configuration of outbound
+         * @return updated builder instance
+         */
+        public Builder outboundConfig(OutboundConfig outboundConfig) {
+            this.outboundConfig = outboundConfig;
             return this;
         }
     }

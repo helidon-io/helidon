@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package io.helidon.service.employee;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
+import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
@@ -30,51 +31,54 @@ import org.junit.jupiter.api.Test;
 public class MainTest {
 
     private static WebServer webServer;
+    private static WebClient webClient;
 
     @BeforeAll
-    public static void startTheServer() throws Exception {
-        webServer = Main.startServer();
+    public static void startTheServer() {
+        webServer = Main.startServer().await();
 
-        long timeout = 2000; // 2 seconds should be enough to start the server
-        long now = System.currentTimeMillis();
-
-        while (!webServer.isRunning()) {
-            Thread.sleep(100);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
-            }
-        }
+        webClient = WebClient.builder()
+                .baseUri("http://localhost:" + webServer.port())
+                .addHeader(Http.Header.ACCEPT, MediaType.APPLICATION_JSON.toString())
+                .build();
     }
 
     @AfterAll
-    public static void stopServer() throws Exception {
+    public static void stopServer() {
         if (webServer != null) {
             webServer.shutdown()
-                     .toCompletableFuture()
-                     .get(10, TimeUnit.SECONDS);
+                    .await(10, TimeUnit.SECONDS);
         }
     }
 
     @Test
-    public void testHelloWorld() throws Exception {
-        HttpURLConnection conn;
+    public void testHelloWorld() {
+        webClient.get()
+                .path("/employees")
+                .request()
+                .thenAccept(response -> {
+                    response.close();
+                    Assertions.assertEquals(Http.Status.OK_200, response.status(), "HTTP response2");
+                })
+                .await();
 
-        conn = getURLConnection("GET", "/employees");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
+        webClient.get()
+                .path("/health")
+                .request()
+                .thenAccept(response -> {
+                    response.close();
+                    Assertions.assertEquals(Http.Status.OK_200, response.status(), "HTTP response2");
+                })
+                .await();
 
-        conn = getURLConnection("GET", "/health");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
-
-        conn = getURLConnection("GET", "/metrics");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
+        webClient.get()
+                .path("/metrics")
+                .request()
+                .thenAccept(response -> {
+                    response.close();
+                    Assertions.assertEquals(Http.Status.OK_200, response.status(), "HTTP response2");
+                })
+                .await();
     }
 
-    private HttpURLConnection getURLConnection(String method, String path) throws Exception {
-        URL url = new URL("http://localhost:" + webServer.port() + path);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod(method);
-        conn.setRequestProperty("Accept", "application/json");
-        System.out.println("Connecting: " + method + " " + url);
-        return conn;
-    }
 }

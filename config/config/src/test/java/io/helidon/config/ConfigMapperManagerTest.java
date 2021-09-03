@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,11 +49,9 @@ import static org.mockito.Mockito.mock;
  * Tests {@link ConfigMapperManager}.
  */
 public class ConfigMapperManagerTest {
-    private static final ConfigMapperManager managerNoServices = BuilderImpl.buildMappers(false,
-                                                                                          MapperProviders.create());
+    private static final ConfigMapperManager managerNoServices = BuilderImpl.buildMappers(MapperProviders.create());
 
-    private static final ConfigMapperManager managerWithServices = BuilderImpl.buildMappers(true,
-                                                                                            MapperProviders.create());
+    private static final ConfigMapperManager managerWithServices = BuilderImpl.buildMappers(MapperProviders.create());
 
     @Test
     public void testUnknownMapper() {
@@ -115,7 +113,7 @@ public class ConfigMapperManagerTest {
     void testGenericTypeMapperMap() {
         MapperProviders providers = MapperProviders.create();
         providers.add(new ParametrizedConfigMapper());
-        ConfigMapperManager configMapperManager = BuilderImpl.buildMappers(true, providers);
+        ConfigMapperManager configMapperManager = BuilderImpl.buildMappers(providers);
 
         Config config = configMapperManager.simpleConfig("test", "1");
 
@@ -128,7 +126,7 @@ public class ConfigMapperManagerTest {
     void testGenericTypeMapperList() {
         MapperProviders providers = MapperProviders.create();
         providers.add(new ParametrizedConfigMapper());
-        ConfigMapperManager configMapperManager = BuilderImpl.buildMappers(true, providers);
+        ConfigMapperManager configMapperManager = BuilderImpl.buildMappers(providers);
 
         Config config = configMapperManager.simpleConfig("test", "1");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.metrics.HelidonMetricsMatcher.withinTolerance;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -53,11 +54,13 @@ class HelidonMeterTest {
 
     @BeforeAll
     static void initClass() throws InterruptedException {
-        Metadata meta = new HelidonMetadata("requests",
-                                     "Requests",
-                                     "Tracks the number of requests to the server",
-                                     MetricType.METERED,
-                                     MetricUnits.PER_SECOND);
+        Metadata meta = Metadata.builder()
+				.withName("requests")
+				.withDisplayName("Requests")
+				.withDescription("Tracks the number of requests to the server")
+				.withType(MetricType.METERED)
+				.withUnit(MetricUnits.PER_SECOND)
+				.build();
 
         LongAdder nanoTime = new LongAdder();
         LongAdder milliTime = new LongAdder();
@@ -95,22 +98,22 @@ class HelidonMeterTest {
 
     @Test
     void testMeanRate() {
-        withTolerance("mean rate", meter.getMeanRate(), 100);
+        assertThat("mean rate", meter.getMeanRate(),  is(withinTolerance(100)));
     }
 
     @Test
     void testOneMinuteRate() {
-        withTolerance("one minute rate", meter.getOneMinuteRate(), 100);
+        assertThat("one minute rate", meter.getOneMinuteRate(),  is(withinTolerance(100)));
     }
 
     @Test
     void testFiveMinuteRate() {
-        withTolerance("five minute rate", meter.getFiveMinuteRate(), 100);
+        assertThat("five minute rate", meter.getFiveMinuteRate(),  is(withinTolerance(100)));
     }
 
     @Test
     void testFifteenMinuteRate() {
-        withTolerance("fifteen minute rate", meter.getFifteenMinuteRate(), 100);
+        assertThat("fifteen minute rate", meter.getFifteenMinuteRate(),  is(withinTolerance(100)));
     }
 
     @Test
@@ -133,7 +136,7 @@ class HelidonMeterTest {
     @Test
     void testPrometheus() {
         final StringBuilder sb = new StringBuilder();
-        meter.prometheusData(sb, meterID);
+        meter.prometheusData(sb, meterID, true);
         String data = sb.toString();
 
         assertThat(data, startsWith(EXPECTED_PROMETHEUS_START));
@@ -146,14 +149,5 @@ class HelidonMeterTest {
         assertThat(data, containsString("# TYPE application_requests_fifteen_min_rate_per_second gauge\n"
                                                 + "application_requests_fifteen_min_rate_per_second "));
 
-    }
-
-    private void withTolerance(String field, double actual, double expectedValue) {
-        double min = expectedValue * 0.98;
-        double max = expectedValue * 1.02;
-
-        if ((actual < min) || (actual > max)) {
-            fail(field + ": expected: <" + expectedValue + ">, but actual value was: <" + actual + ">");
-        }
     }
 }

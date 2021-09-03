@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,20 +29,26 @@ spec:
 
 ---
 
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: helidon-examples-todo-cassandra
+  labels:
+    app: helidon-examples-todo-cassandra
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: helidon-examples-todo-cassandra
   template:
     metadata:
       labels:
         app: helidon-examples-todo-cassandra
     spec:
       containers:
-      - name: todo-cassandra-container
-        image: helidon-examples-todo-cassandra
-        imagePullPolicy: Never
-        ports:
-          - containerPort: 9042
+        - name: todo-cassandra-container
+          image: helidon-examples-todo-cassandra
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9042
+      restartPolicy: Always

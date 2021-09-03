@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.util.logging.Logger;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.configurable.ResourceException;
 import io.helidon.config.Config;
+import io.helidon.config.DeprecatedConfig;
 
 /**
  * Configuration of keystore, certificates and keys. This class is not RSA specific, though it is tested with RSA keys only.
@@ -45,7 +46,7 @@ import io.helidon.config.Config;
  * certification chain, and a list of certificates):
  * <pre>
  * # path to keystore (mandatory when loaded from config)
- * keystore-path = "src/test/resources/keystore.p12"
+ * keystore.resource.path = "src/test/resources/keystore.p12"
  * # Keystore type
  * # PKCS12 or JKS
  * # defaults to jdk default (PKCS12 for latest JDK)
@@ -398,6 +399,16 @@ public final class KeyConfig {
         }
 
         /**
+         * Pass-phrase of the keystore (supported with JKS and PKCS12 keystores).
+         *
+         * @param keystorePassword keystore password to use, calls {@link #keystorePassphrase(char[])}
+         * @return updated builder instance
+         */
+        public KeystoreBuilder keystorePassphrase(String keystorePassword) {
+            return keystorePassphrase(keystorePassword.toCharArray());
+        }
+
+        /**
          * Alias of the private key in the keystore.
          *
          * @param keyAlias alias of the key in the keystore
@@ -443,6 +454,18 @@ public final class KeyConfig {
             this.keyPassphrase = Arrays.copyOf(privateKeyPassphrase, privateKeyPassphrase.length);
 
             return this;
+        }
+
+        /**
+         * Pass-phrase of the key in the keystore (used for private keys).
+         * This is (by default) the same as keystore passphrase - only configure
+         * if it differs from keystore passphrase.
+         *
+         * @param privateKeyPassphrase pass-phrase of the key
+         * @return updated builder instance
+         */
+        public KeystoreBuilder keyPassphrase(String privateKeyPassphrase) {
+            return keyPassphrase(privateKeyPassphrase.toCharArray());
         }
 
         /**
@@ -539,32 +562,60 @@ public final class KeyConfig {
 
         /**
          * Update this builder from configuration.
-         * The following keys are expected:
+         * The following keys are expected under key {@code keystore}:
          * <ul>
-         * <li>keystore-path: path of keystore on file system</li>
-         * <li>keystore-resource-path: path of keystore in classpath</li>
-         * <li>keystore-content: actual base64 encoded content of the keystore</li>
-         * <li>keystore-type: type of keystore (defaults to PKCS12)</li>
-         * <li>keystore-passphrase: passphrase of keystore, if required</li>
-         * <li>key-alias: alias of private key, if wanted (defaults to "1")</li>
-         * <li>key-passphrase: passphrase of private key if differs from keystore passphrase</li>
-         * <li>cert-alias: alias of public certificate (to obtain public key)</li>
-         * <li>cert-chain: alias of certificate chain</li>
-         * <li>trust-store: true if this is a trust store (and we should load all certificates from it), defaults to false</li>
+         * <li>{@code resource}: resource configuration as understood by {@link io.helidon.common.configurable.Resource}</li>
+         * <li>{@code type}: type of keystore (defaults to PKCS12)</li>
+         * <li>{@code passphrase}: passphrase of keystore, if required</li>
+         * <li>{@code key.alias}: alias of private key, if wanted (defaults to "1")</li>
+         * <li>{@code key.passphrase}: passphrase of private key if differs from keystore passphrase</li>
+         * <li>{@code cert.alias}: alias of public certificate (to obtain public key)</li>
+         * <li>{@code cert-chain.alias}: alias of certificate chain</li>
+         * <li>{@code trust-store}: true if this is a trust store (and we should load all certificates from it), defaults to false</li>
          * </ul>
          *
          * @param config configuration instance
          * @return updated builder instance
          */
         public KeystoreBuilder config(Config config) {
+            Config keystoreConfig = config.get("keystore");
+
+            // the actual resource (file, classpath) with the bytes of the keystore
+            keystoreConfig.get("resource").as(Resource::create).ifPresent(this::keystore);
+            // this is the old, deprecated approach to have backward compatibility with configuration
+            // if configured this way, a warning is logged
             Resource.create(config, "keystore").ifPresent(this::keystore);
-            config.get("keystore-type").asString().ifPresent(this::keystoreType);
-            config.get("keystore-passphrase").asString().map(String::toCharArray).ifPresent(this::keystorePassphrase);
-            config.get("key-alias").asString().ifPresent(this::keyAlias);
-            config.get("key-passphrase").asString().map(String::toCharArray).ifPresent(this::keyPassphrase);
-            config.get("cert-alias").asString().ifPresent(this::certAlias);
-            config.get("cert-chain").asString().ifPresent(this::certChainAlias);
-            config.get("trust-store").asBoolean().ifPresent(this::trustStore);
+
+            // all these settings are moved to keystore key
+
+            // type of keystore
+            DeprecatedConfig.get(config, "keystore.type", "keystore-type")
+                    .asString()
+                    .ifPresent(this::keystoreType);
+            // password of the keystore
+            DeprecatedConfig.get(config, "keystore.passphrase", "keystore-passphrase")
+                    .asString()
+                    .map(String::toCharArray)
+                    .ifPresent(this::keystorePassphrase);
+            // private key alias
+            DeprecatedConfig.get(config, "keystore.key.alias", "key-alias")
+                    .asString()
+                    .ifPresent(this::keyAlias);
+            // private key password
+            DeprecatedConfig.get(config, "keystore.key.passphrase", "key-passphrase")
+                    .asString()
+                    .map(String::toCharArray)
+                    .ifPresent(this::keyPassphrase);
+            DeprecatedConfig.get(config, "keystore.cert.alias", "cert-alias")
+                    .asString()
+                    .ifPresent(this::certAlias);
+            DeprecatedConfig.get(config, "keystore.cert-chain.alias", "cert-chain")
+                    .asString()
+                    .ifPresent(this::certChainAlias);
+            // whether this is a keystore (with a private key) or a trust store (just trusted public keys/certificates)
+            DeprecatedConfig.get(config, "keystore.trust-store", "trust-store")
+                    .asBoolean()
+                    .ifPresent(this::trustStore);
 
             return this;
         }
@@ -623,6 +674,17 @@ public final class KeyConfig {
             this.pemKeyPassphrase = Arrays.copyOf(passphrase, passphrase.length);
 
             return this;
+        }
+
+        /**
+         * Passphrase for private key. If the key is encrypted (and in PEM PKCS#8 format), this passphrase will be used to
+         * decrypt it.
+         *
+         * @param passphrase passphrase used to encrypt the private key
+         * @return updated builder instance
+         */
+        public PemBuilder keyPassphrase(String passphrase) {
+            return keyPassphrase(passphrase.toCharArray());
         }
 
         /**
@@ -689,6 +751,13 @@ public final class KeyConfig {
          * @return updated builder instance
          */
         public PemBuilder config(Config config) {
+            Config pemConfig = config.get("pem");
+            // this is the new approach
+            pemConfig.get("key.resource").as(Resource::create).ifPresent(this::key);
+            pemConfig.get("key.passphrase").asString().map(String::toCharArray).ifPresent(this::keyPassphrase);
+            pemConfig.get("cert-chain.resource").as(Resource::create).ifPresent(this::certChain);
+
+            // and this is the old approach
             Resource.create(config, "pem-key").ifPresent(this::key);
             config.get("pem-key-passphrase").asString().map(String::toCharArray).ifPresent(this::keyPassphrase);
             Resource.create(config, "pem-cert-chain").ifPresent(this::certChain);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.tracing.TracerBuilder;
 
 import io.jaegertracing.Configuration;
+import io.jaegertracing.internal.JaegerTracer;
 import io.opentracing.Tracer;
 import io.opentracing.noop.NoopTracerFactory;
 import io.opentracing.util.GlobalTracer;
@@ -117,7 +117,7 @@ import io.opentracing.util.GlobalTracer;
  *     <tr>
  *         <td>{@code sampler-type}</td>
  *         <td>library default</td>
- *         <td>Sampler type ({@code probabilistic}, {@code ratelimiting}, or {@code remote}</td>
+ *         <td>Sampler type ({@code const}, {@code probabilistic}, {@code ratelimiting}, or {@code remote})</td>
  *     </tr>
  *     <tr>
  *         <td>{@code sampler-param}</td>
@@ -156,9 +156,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final int DEFAULT_HTTP_PORT = 14268;
     static final String DEFAULT_HTTP_PATH = "/api/traces";
 
-    static {
-        HelidonFeatures.register("Tracing", "Jaeger");
-    }
 
     private final Map<String, String> tags = new HashMap<>();
     private final List<Configuration.Propagation> propagations = new ArrayList<>();
@@ -359,19 +356,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      *
      * @param samplerManagerHostPort host and port of the sampler manager
      * @return updated builder instance
-     * @deprecated typo, please use {@link #samplerManager(String)}
-     */
-    @Deprecated
-    public JaegerTracerBuilder samplerMananger(String samplerManagerHostPort) {
-        this.samplerManager = samplerManagerHostPort;
-        return this;
-    }
-
-    /**
-     * The host name and port when using the remote controlled sampler.
-     *
-     * @param samplerManagerHostPort host and port of the sampler manager
-     * @return updated builder instance
      */
     public JaegerTracerBuilder samplerManager(String samplerManagerHostPort) {
         this.samplerManager = samplerManagerHostPort;
@@ -461,7 +445,9 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                         "Configuration must at least contain the 'service' key ('tracing.service` in MP) with service name");
             }
 
-            result = jaegerConfig().getTracer();
+            JaegerTracer.Builder builder = jaegerConfig().getTracerBuilder();
+            builder.withScopeManager(new JaegerScopeManager());     // use our scope manager
+            result = builder.build();
             LOGGER.info(() -> "Creating Jaeger tracer for '" + serviceName + "' configured with " + protocol + "://"
                     + host + ":" + port);
         } else {
@@ -472,18 +458,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         if (global) {
             GlobalTracer.registerIfAbsent(result);
         }
-
-        return result;
-    }
-
-    @Override
-    public Tracer buildAndRegister() {
-        if (global) {
-            return build();
-        }
-
-        Tracer result = build();
-        GlobalTracer.register(result);
 
         return result;
     }

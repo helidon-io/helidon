@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import javax.inject.Inject;
 import javax.transaction.TransactionManager;
 import javax.transaction.UserTransaction;
 
+import org.dom4j.DocumentFactory;
 import org.hibernate.engine.jndi.spi.JndiService;
 import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
 
@@ -36,6 +37,12 @@ import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatfor
  */
 @ApplicationScoped
 public class CDISEJtaPlatform extends AbstractJtaPlatform {
+  static {
+    // this is needed for native image, since 21.0.0
+    // as the document factory gets initialized lazily and that causes
+    // native image to fail. This way we force eager initialization
+    DocumentFactory.getInstance();
+  }
 
   private final TransactionManager transactionManager;
 

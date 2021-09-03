@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.NodeConfigSource;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 
 import org.junit.jupiter.api.Test;
@@ -40,10 +41,8 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Tests {@link ConfigSources}.
@@ -61,7 +60,10 @@ public class ConfigSourcesTest {
 
     @Test
     public void testEmptyLoad() {
-        assertThat(ConfigSources.empty().load(), is(Optional.empty()));
+        ConfigSource empty = ConfigSources.empty();
+        assertThat(empty, instanceOf(NodeConfigSource.class));
+        NodeConfigSource emptyNodeSource = (NodeConfigSource) empty;
+        assertThat(emptyNodeSource.load(), is(Optional.empty()));
     }
 
     @Test
@@ -103,21 +105,6 @@ public class ConfigSourcesTest {
         assertThat(prefixed("security", source).description(), is("prefixed[security]:" + source.description()));
     }
 
-    @Test
-    public void testCompositeBuilderSupplierGetOnce() {
-        ConfigSources.CompositeBuilder builder = ConfigSources.create();
-
-        ConfigSource configSource = builder.get();
-        assertThat(configSource, sameInstance(builder.get()));
-    }
-
-    @Test
-    public void testLoadNoSource() {
-        ConfigSource source = ConfigSources.empty();
-        source.init(mock(ConfigContext.class));
-
-        assertThat(source.load(), is(Optional.empty()));
-    }
 
     @Test
     public void testLoadSingleSource() {
@@ -137,7 +124,7 @@ public class ConfigSourcesTest {
 
         ConfigSource source = sources.get(0);
         source.init(mock(ConfigContext.class));
-        ObjectNode objectNode = source.load().get();
+        ObjectNode objectNode = ((NodeConfigSource) source).load().get().data();
         assertThat(objectNode.get(TEST_SYS_PROP_NAME), valueNode(TEST_SYS_PROP_VALUE));
     }
 
@@ -157,37 +144,13 @@ public class ConfigSourcesTest {
                                                    .build())
                                 .build())
                         .build());
-
-        //meta2's `sources` property is ignored
-        ConfigSource meta2 = ConfigSources.create(
-                ObjectNode.builder()
-                        .addList("sources", ListNode.builder()
-                                .addObject(ObjectNode.builder()
-                                                   .addValue("type", "system-properties")
-                                                   .build())
-                                .build())
-                        .build());
-
-        //meta1 has precedence over meta2
-        List<ConfigSource> sources = MetaConfig.configSources(Config.create(meta1));
-        assertThat(sources, hasSize(1));
-        ConfigSource source = sources.get(0);
-
-        ConfigContext context = mock(ConfigContext.class);
-        when(context.findParser("text/x-java-properties")).thenReturn(Optional.of(ConfigParsers.properties()));
-
-        source.init(context);
-
-        ObjectNode objectNode = source.load().get();
-        assertThat(objectNode.get(TEST_SYS_PROP_NAME), is(nullValue()));
-        assertThat(objectNode.get("key1"), valueNode("val1"));
     }
 
     @Test
     public void testSystemPropertiesSourceType() {
-        ConfigSource source = ConfigSources.systemProperties();
+        ConfigSource source = ConfigSources.systemProperties().build();
         assertThat(source, is(instanceOf(ConfigSources.SystemPropertiesConfigSource.class)));
-        assertThat(source.description(), is("SystemPropertiesConfig[]*"));
+        assertThat(source.description(), is("SystemPropertiesConfig[]"));
     }
 
     @Test

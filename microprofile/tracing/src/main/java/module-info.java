@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import javax.enterprise.inject.spi.Extension;
-
 /**
  * Eclipse Microprofile Tracing implementation for helidon microprofile.
  */
@@ -27,9 +25,9 @@ module io.helidon.microprofile.tracing {
     requires jersey.common;
     requires io.opentracing.api;
 
-    requires static cdi.api;
-    requires static javax.inject;
-    requires static javax.interceptor.api;
+    requires static jakarta.enterprise.cdi.api;
+    requires static jakarta.inject.api;
+    requires static jakarta.interceptor.api;
 
     requires io.helidon.microprofile.server;
     requires transitive io.helidon.microprofile.config;
@@ -38,12 +36,23 @@ module io.helidon.microprofile.tracing {
     requires io.helidon.jersey.common;
     requires transitive io.helidon.tracing;
     requires transitive io.helidon.tracing.jersey;
+    requires io.helidon.tracing.tracerresolver;
 
     requires transitive microprofile.opentracing.api;
     requires microprofile.rest.client.api;
 
+
     exports io.helidon.microprofile.tracing;
 
-    provides Extension with io.helidon.microprofile.tracing.TracingCdiExtension;
-    provides org.glassfish.jersey.internal.spi.AutoDiscoverable with io.helidon.microprofile.tracing.MpTracingAutoDiscoverable;
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.tracing to weld.core.impl,hk2.utils, io.helidon.microprofile.cdi;
+
+    provides javax.enterprise.inject.spi.Extension
+            with io.helidon.microprofile.tracing.TracingCdiExtension;
+    provides org.glassfish.jersey.internal.spi.AutoDiscoverable
+            with io.helidon.microprofile.tracing.MpTracingAutoDiscoverable;
+    provides org.eclipse.microprofile.opentracing.ClientTracingRegistrarProvider
+            with io.helidon.microprofile.tracing.MpTracingClientRegistrar;
+    provides org.eclipse.microprofile.rest.client.spi.RestClientListener
+            with io.helidon.microprofile.tracing.MpTracingRestClientListener;
 }

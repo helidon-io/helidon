@@ -1,0 +1,179 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+
+== Introduction
+
+https://www.graalvm.org/docs/reference-manual/aot-compilation/[Native images] are ahead-of-time compiled Java code that result in a self
+contained native executable. When used appropriately native images have dramatically faster
+startup and lower runtime memory overhead compared to a Java VM.
+
+In this guide you will learn how to build a native image locally on your machine, as well as using Docker.
+
+== What You Need
+
+For this 10 minute tutorial, you will need the following:
+
+include::{common-page-prefix-inc}[tag=common-prereqs-graal]
+
+== Install GraalVM and the Native Image Command
+
+After https://github.com/graalvm/graalvm-ce-builds/releases[downloading and installing] GraalVM,
+set the `GRAALVM_HOME` environment variable to point at your GraalVM installation.
+
+[source,bash]
+----
+# Your path might be different
+export GRAALVM_HOME=/usr/local/graalvm-ce-21.1.0/Contents/Home/
+----
+
+Then install the optional `native-image` command:
+
+[source,bash]
+----
+$GRAALVM_HOME/bin/gu install native-image
+----
+
+And verify:
+
+[source,bash]
+----
+$GRAALVM_HOME/bin/java -version
+$GRAALVM_HOME/bin/native-image --version
+----
+
+== Generate the Project
+
+Generate the project using the Helidon {helidon-uc-flavor} Quickstart Maven archetype.
+
+[source,bash,subs="attributes+"]
+----
+mvn -U archetype:generate -DinteractiveMode=false \
+    -DarchetypeGroupId=io.helidon.archetypes \
+    -DarchetypeArtifactId=helidon-quickstart-{helidon-lc-flavor} \
+    -DarchetypeVersion={helidon-version} \
+    -DgroupId=io.helidon.examples \
+    -DartifactId=helidon-quickstart-{helidon-lc-flavor} \
+    -Dpackage=io.helidon.examples.quickstart.{helidon-lc-flavor}
+
+----
+
+The archetype generates a Maven project in your current directory
+(for example, `helidon-quickstart-{helidon-lc-flavor}`). Change into this directory and build.
+
+[source,bash,subs="attributes+"]
+----
+cd helidon-quickstart-{helidon-lc-flavor}
+mvn package
+----
+
+At this point you can run the application using the JVM:
+
+[source,bash,subs="attributes+"]
+----
+java -jar target/helidon-quickstart-{helidon-lc-flavor}.jar
+----
+
+In another shell test an endpoint:
+
+[source,bash]
+----
+curl -X GET http://localhost:8080/greet
+----
+
+The application should respond with `{"message":"Hello World!"}`
+
+Now stop the running application (by pressing Ctrl+C).
+
+For more information about the Quickstart application and other enpoints it supports see the
+<<{helidon-lc-flavor}/guides/02_quickstart.adoc,Helidon {helidon-uc-flavor} Quickstart Guide>>.
+
+== Building a Native Image
+
+You can build a native executable in 2 different ways:
+
+* With a local installation of GraalVM
+* Using Docker
+
+=== Local build
+
+Make sure you have GraalVM locally installed:
+
+[source,bash]
+----
+$GRAALVM_HOME/bin/native-image --version
+----
+
+Build the native image using the native image profile:
+
+[source,bash]
+----
+mvn package -Pnative-image
+----
+
+[TIP]
+This uses the `helidon-maven-plugin` to perform the native compilation using your installed
+copy of GraalVM. It might take a while to complete.
+
+Once it completes start the application using the native executable (no JVM!):
+
+[source,bash,subs="attributes+"]
+----
+./target/helidon-quickstart-{helidon-lc-flavor}
+----
+
+Yep, it starts fast. You can exercise the application's endpoints as before.
+
+=== Multi-stage Docker build
+
+Build the "native" Docker image
+
+[source,bash,subs="attributes+"]
+----
+docker build -t helidon-quickstart-{helidon-lc-flavor}-native -f Dockerfile.native .
+----
+
+[TIP]
+This does a full build inside the Docker container. The first
+time you run it, it will take a while because it is downloading all
+of the Maven dependencies and caching them in a Docker layer.
+Subsequent builds will be much faster as long as you don't change
+the `pom.xml` file. If the pom is modified then the dependencies
+will be re-downloaded.
+
+Start the application:
+
+[source,bash,subs="attributes+"]
+----
+docker run --rm -p 8080:8080 helidon-quickstart-{helidon-lc-flavor}-native:latest
+----
+
+Again, it starts fast. You can exercise the application's endpoints as before.
+
+== When should I use Native Images?
+
+Native images are ideal for applications with high horizontal scalability requirements where
+the ability to rapidly scale out to numerous instances is important.
+
+That said, native images do have some https://github.com/oracle/graal/blob/master/substratevm/Limitations.md[limitations],
+and for long running applications where startup and footprint are less of a priority, the Java SE
+HotSpot VM might be more appropriate.
+
+For information about creating custom Java runtime images see
+<<{helidon-lc-flavor}/guides/37_jlink_image.adoc,Custom Runtime Images with `jlink`>>

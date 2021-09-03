@@ -4,8 +4,9 @@
     "build": "webpack --debug --config webpack.config.js"
   },
   "dependencies": {
-    "jquery": "3.3.1",
+    "jquery": "3.5.0",
     "knockout": "^3.2.0",
+    "npm": "^6.14.4",
     "todomvc-app-css": "^2.1.0",
     "todomvc-common": "^1.0.1"
   },

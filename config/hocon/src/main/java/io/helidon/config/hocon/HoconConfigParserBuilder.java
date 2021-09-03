@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.config.hocon;
 import java.util.Objects;
 
 import io.helidon.common.Builder;
-import io.helidon.config.hocon.internal.HoconConfigParser;
 import io.helidon.config.spi.ConfigParser;
 
 import com.typesafe.config.Config;
@@ -38,30 +37,9 @@ public final class HoconConfigParserBuilder implements Builder<ConfigParser> {
     private boolean resolvingEnabled;
     private ConfigResolveOptions resolveOptions;
 
-    private HoconConfigParserBuilder() {
+    HoconConfigParserBuilder() {
         resolvingEnabled = true;
         resolveOptions = ConfigResolveOptions.defaults();
-    }
-
-    /**
-     * Creates new instance of HOCON ConfigParser with default behaviour,
-     * i.e. with same behaviour as in case the parser is loaded automatically by {@link java.util.ServiceLoader}
-     * (see {@link io.helidon.config.spi package description}).
-     *
-     * @return new instance HOCON ConfigParser
-     * @see io.helidon.config.spi
-     */
-    public static ConfigParser buildDefault() {
-        return create().build();
-    }
-
-    /**
-     * Creates new instance of Builder.
-     *
-     * @return new instance of Builder.
-     */
-    public static HoconConfigParserBuilder create() {
-        return new HoconConfigParserBuilder();
     }
 
     /**
@@ -92,7 +70,8 @@ public final class HoconConfigParserBuilder implements Builder<ConfigParser> {
      *
      * @return new instance of HOCON ConfigParser.
      */
-    public ConfigParser build() {
+    @Override
+    public HoconConfigParser build() {
         return new HoconConfigParser(resolvingEnabled, resolveOptions);
     }
 

@@ -1,0 +1,292 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Health Checks
+:h1Prefix: SE
+:description: Helidon health checks
+:keywords: helidon, health-checks, health, check
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.health.checks/io/helidon/health/checks
+:feature-name: Health Checks
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+
+This document describes the health check API available with Helidon SE.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.health</groupId>
+    <artifactId>helidon-health</artifactId>
+</dependency>
+----
+
+Optional dependency to use built-in health checks:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.health</groupId>
+    <artifactId>helidon-health-checks</artifactId>
+</dependency>
+----
+
+== About health checks
+
+It’s a good practice to monitor your microservice’s health, to ensure that it is
+ available and performs correctly.
+
+Applications implement health checks to expose health status that is collected
+ at regular intervals by external tooling, such as orchestrators like
+ Kubernetes. The orchestrator may then take action, such as restarting your
+ application if the health check fails.
+
+A typical health check combines the statuses of all the dependencies that
+ affect availability and the ability to perform correctly:
+
+* network latency
+* storage
+* database
+* other services used by your application
+
+
+== API overview
+
+[cols="4,6"]
+.Health check API classes
+|=======
+| `org.eclipse.microprofile.health.HealthCheck`
+| Java functional interface representing the logic of a single health check
+
+| `org.eclipse.microprofile.health.HealthCheckResponse`
+| Result of a health check invocation that contains a state and a description.
+
+| `org.eclipse.microprofile.health.HealthCheckResponseBuilder`
+| Builder class to create `HealthCheckResponse` instances
+
+| `io.helidon.health.HealthSupport`
+| WebServer service that exposes `/health` and invokes the registered health
+ checks
+
+| `io.helidon.health.HealthSupport.Builder`
+| Builder class to create `HealthSupport` instances
+|=======
+
+A health check is a Java functional interface that returns a
+ `HealthCheckResponse` object. You can choose to implement a health check
+ inline with a lambda expression or you can reference a method with the double
+ colon operator `::`.
+
+[source,java]
+.Health check with a lambda expression:
+----
+HealthCheck hc = () -> HealthCheckResponse
+        .named("exampleHealthCheck")
+        .up()
+        .build();
+----
+
+[source,java]
+.Health check with method reference:
+----
+HealthCheckResponse exampleHealthCheck(){
+    return HealthCheckResponse
+        .named("exampleHealthCheck")
+        .up()
+        .build();
+}
+HealthCheck hc = this::exampleHealthCheck;
+----
+
+`HealthSupport` is a WebServer service that contains a collection of
+ registered `HealthCheck` instances. When queried, it invokes the registered
+ health check and returns a response with a status code representing the overall
+ state of the application.
+
+[cols="1,5",role="flex, sm7"]
+.Health status codes
+|=======
+| `200` | The application is healthy.
+| `503` | The application is not healthy.
+| `500` | An error occurred while reporting the health.
+|=======
+
+The HTTP response also contains a JSON payload that describes the statuses for
+ all health checks.
+
+[source,java]
+.Create the health support service:
+----
+HealthSupport health = HealthSupport.builder()
+    .addLiveness(hc)
+    .build();
+----
+
+[source,java]
+.Register a custom health check:
+----
+HealthSupport health = HealthSupport.builder()
+    .addLiveness(() -> HealthCheckResponse.named("exampleHealthCheck")
+                 .up()
+                 .withData("time", System.currentTimeMillis())
+                 .build()) // <.>
+    .build();
+
+Routing.builder()
+        .register(health) // <.>
+        .build();
+----
+<.> Add a custom health check. This example returns `UP` and current time.
+<.> Register health support with web server routing (adds the `/health`
+ endpoint).
+
+TIP: Balance collecting a lot of information with the need to avoid overloading
+ the application and overwhelming users.
+
+[source,json]
+.JSON response:
+----
+{
+    "outcome": "UP",
+    "status": "UP",
+    "checks": [
+        {
+            "name": "exampleHealthCheck",
+            "state": "UP",
+            "data": {
+                "time": 1546958376613
+            }
+        }
+    ]
+}
+----
+
+=== Built-in health-checks
+
+You can use Helidon-provided health checks to report various
+ common health check statuses:
+
+[[built-in-health-checks-table]]
+[cols="1,1,3,15,3"]
+|=======
+|Built-in health check |Health check name |JavaDoc |Config properties |Default config value
+
+|deadlock detection
+|`deadlock`
+| link:{javadoc-base-url-api}/DeadlockHealthCheck.html[`DeadlockHealthCheck`]
+| n/a
+| n/a
+
+|available disk space
+|`diskSpace`
+| link:{javadoc-base-url-api}/DiskSpaceHealthCheck.html[`DiskSpaceHealthCheck`]
+|`helidon.healthCheck.diskSpace.thresholdPercent` +
+ +
+`helidon.healthCheck.diskSpace.path`
+| `99.999` +
+ +
+`/`
+|available heap memory
+| `heapMemory`
+| link:{javadoc-base-url-api}/HeapMemoryHealthCheck.html[`HeapMemoryHealthCheck`]
+|`helidon.healthCheck.heapMemory.thresholdPercent`
+|`98`
+|=======
+
+The following code adds the default built-in health checks to your application:
+
+[source,java]
+----
+HealthSupport health = HealthSupport.builder()
+    .addLiveness(HealthChecks.healthChecks()) // <.>
+    .build();
+
+Routing.builder()
+        .register(health) // <.>
+        .build();
+----
+<.> Add built-in health checks using defaults (requires the `helidon-health-checks`
+ dependency).
+<.> Register the created health support with web server routing (adds the 
+`/health` endpoint).
+
+You can control the thresholds for built-in health checks in either of two ways:
+
+* Create the health checks individually
+using their builders instead of using the `HealthChecks` convenience class.
+Follow the JavaDoc links in the <<built-in-health-checks-table,table>> above.
+
+* Configure the behavior of the built-in health checks using the config property keys in the
+<<built-in-health-checks-table,table>>.
+
+Further, you can suppress one or more of the built-in health checks by setting the configuration item
+`helidon.health.exclude` to a comma-separated list of the health check names
+(from the <<built-in-health-checks-table,table>>) you want to exclude.
+
+== Health report
+Accessing the Helidon-provided `/health` endpoint reports the health of your application:
+[source,json]
+.JSON response.
+----
+{
+    "outcome": "UP",
+    "status": "UP",
+    "checks": [
+        {
+            "name": "deadlock",
+            "state": "UP"
+        },
+        {
+            "name": "diskSpace",
+            "state": "UP",
+            "data": {
+                "free": "211.00 GB",
+                "freeBytes": 226563444736,
+                "percentFree": "45.31%",
+                "total": "465.72 GB",
+                "totalBytes": 500068036608
+            }
+        },
+        {
+            "name": "heapMemory",
+            "state": "UP",
+            "data": {
+                "free": "215.15 MB",
+                "freeBytes": 225600496,
+                "max": "3.56 GB",
+                "maxBytes": 3817865216,
+                "percentFree": "99.17%",
+                "total": "245.50 MB",
+                "totalBytes": 257425408
+            }
+        }
+    ]
+}
+----
+
+
+
+
+=== Strict JSON Output
+
+The JSON responses shown above contain properties `"status"` and `"outcome"` with the same
+values. Helidon reports both of these to maintain backward compatibility with older
+versions of MicroProfile Health. This behavior can be disabled by setting
+the property `health.backward-compatible` to `false`, in which case only `"status"`
+is reported. Future versions of Helidon will drop support for older versions of Health,
+so it is recommended to rely on `"status"` instead of `"outcome"` in your applications.

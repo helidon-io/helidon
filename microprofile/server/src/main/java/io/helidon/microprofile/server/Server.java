@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -30,6 +29,8 @@ import javax.ws.rs.core.Application;
 
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.mp.MpConfig;
+import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.cdi.HelidonContainer;
 
 import org.eclipse.microprofile.config.Config;
@@ -127,12 +128,6 @@ public interface Server {
      * Builder to build {@link Server} instance.
      */
     final class Builder {
-        private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
-
-        // this constant is to ensure we initialize Helidon CDI at build time
-        private static final HelidonContainer CONTAINER = HelidonContainer.instance();
-
-        static final AtomicBoolean IN_PROGRESS_OR_RUNNING = new AtomicBoolean();
         private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.builder");
 
         private final List<Class<?>> resourceClasses = new LinkedList<>();
@@ -146,11 +141,27 @@ public interface Server {
         private boolean retainDiscovered = false;
 
         private Builder() {
-            if (!IN_PROGRESS_OR_RUNNING.compareAndSet(false, true)) {
-                throw new IllegalStateException("There is another builder in progress, or another Server running. "
-                                                        + "You cannot run more than one in parallel");
+            ServerCdiExtension server = null;
+            try {
+                server = CDI.current()
+                        .getBeanManager()
+                        .getExtension(ServerCdiExtension.class);
+            } catch (IllegalStateException ignored) {
+                // CDI is not started, so we should be fine
             }
-            LOGGER.finest(() -> "Container context id: " + CONTAINER.context().id());
+
+            if (null != server) {
+                if (server.started()) {
+                    throw new IllegalStateException("Server is already started. Maybe you have initialized CDI yourself? "
+                                                            + "If you do so, then you cannot use Server.builder() to set up "
+                                                            + "your server. "
+                                                            + "Config is initialized with defaults or using "
+                                                            + "meta-config.yaml; applications are discovered using CDI. "
+                                                            + "To use custom configuration, you can use "
+                                                            + "ConfigProviderResolver.instance().registerConfig(config, "
+                                                            + "classLoader);");
+                }
+            }
         }
 
         /**
@@ -160,37 +171,9 @@ public interface Server {
          * @throws MpException in case the server fails to be created
          */
         public Server build() {
-            // make sure server is not already running
-            try {
-                ServerCdiExtension server = CDI.current()
-                        .getBeanManager()
-                        .getExtension(ServerCdiExtension.class);
-
-                if (server.started()) {
-                    SeContainer container = (SeContainer) CDI.current();
-                    container.close();
-                    throw new MpException("Server is already started. Maybe you have initialized CDI yourself? "
-                                                  + "If you do so, then you cannot use Server.builder() to set up your server. "
-                                                  + "Config is initialized with defaults or using "
-                                                  + "meta-config.yaml; applications are discovered using CDI. "
-                                                  + "To use custom configuration, you can use "
-                                                  + "ConfigProviderResolver.instance().registerConfig(config, "
-                                                  + "classLoader);");
-                }
-            } catch (IllegalStateException ignored) {
-                // container is not running - server cannot be started in such a case
-                // ignore this
-            }
-
-            // we may have shutdown the original instance, this is to ensure we use the current CDI.
-            HelidonContainer instance = HelidonContainer.instance();
-            // now run the build within context already
-            return Contexts.runInContext(instance.context(), this::doBuild);
-        }
-
-        private Server doBuild() {
             STARTUP_LOGGER.entering(Builder.class.getName(), "build");
 
+            // configuration must be initialized before we start the container
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
             if (null == config) {
@@ -200,6 +183,24 @@ public interface Server {
             // make sure the config is available to application
             ConfigProviderResolver.instance().registerConfig(config, classLoader);
 
+            // we may have shutdown the original instance, this is to ensure we use the current CDI.
+            HelidonContainer instance = HelidonContainer.instance();
+
+            try {
+                // now run the build within context already
+                return Contexts.runInContext(instance.context(), this::doBuild);
+            } catch (Exception e) {
+                try {
+                    ((SeContainer) CDI.current()).close();
+                } catch (IllegalStateException ignored) {
+                    // no cdi registered
+                }
+
+                throw e;
+            }
+        }
+
+        private Server doBuild() {
             ServerCdiExtension server = CDI.current()
                     .getBeanManager()
                     .getExtension(ServerCdiExtension.class);
@@ -207,7 +208,7 @@ public interface Server {
             if (null == defaultExecutorService) {
                 defaultExecutorService = ServerThreadPoolSupplier.builder()
                         .name("server")
-                        .config(((io.helidon.config.Config) config)
+                        .config(MpConfig.toHelidonConfig(config)
                                         .get("server.executor-service"))
                         .build();
             }
@@ -317,7 +318,11 @@ public interface Server {
          * @return modified builder
          */
         public Builder config(io.helidon.config.Config config) {
-            this.config = (Config) config;
+            this.config = ConfigProviderResolver.instance()
+                    .getBuilder()
+                    .withSources(MpConfigSources.create(config))
+                    .build();
+
             return this;
         }
 

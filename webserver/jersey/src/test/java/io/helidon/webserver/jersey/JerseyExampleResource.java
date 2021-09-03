@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,8 @@ public class JerseyExampleResource {
     public Response webServerInjection() {
         return Response.ok("request=" + request.getClass().getName()
                                    + "\nresponse=" + response.getClass().getName()
-                                   + "\nspanContext=" + spanContext.getClass().getName()).build();
+                                   + "\nspanContext=" + (null == spanContext ? null : spanContext.getClass().getName()))
+                .build();
     }
 
     @GET

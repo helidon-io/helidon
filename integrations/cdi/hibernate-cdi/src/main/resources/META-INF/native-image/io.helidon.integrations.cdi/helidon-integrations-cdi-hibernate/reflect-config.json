@@ -1,0 +1,326 @@
+[
+    {
+        "name": "io.helidon.integrations.cdi.hibernate.CDISEJtaPlatform",
+        "allDeclaredFields": true,
+        "allDeclaredMethods": true,
+        "allPublicMethods": true,
+        "allDeclaredConstructors": true
+    },
+    {
+        "name": "org.hibernate.annotations.common.util.impl.Log_$logger",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.jboss.logging.Logger"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.boot.cfgxml.internal.CfgXmlAccessServiceImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": []
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.cache.internal.DisabledCaching",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.cache.internal.NoCachingRegionFactory",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.cfg.beanvalidation.TypeSafeActivator",
+        "methods": [
+            {
+                "name": "activate",
+                "parameterTypes": [
+                    "org.hibernate.cfg.beanvalidation.ActivationContext"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.engine.config.internal.ConfigurationServiceImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.engine.jdbc.dialect.internal.DialectFactoryImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.engine.jdbc.dialect.internal.DialectResolverSet",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.engine.jdbc.env.internal.JdbcEnvironmentImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.engine.jdbc.internal.JdbcServicesImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.engine.jndi.internal.JndiServiceImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.engine.query.internal.NativeQueryInterpreterStandardImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.engine.spi.Managed",
+        "allDeclaredMethods": true
+    },
+    {
+        "name": "org.hibernate.engine.spi.ManagedEntity",
+        "allDeclaredMethods": true
+    },
+    {
+        "name": "org.hibernate.engine.spi.PersistentAttributeInterceptable",
+        "allDeclaredMethods": true
+    },
+    {
+        "name": "org.hibernate.engine.spi.SelfDirtinessTracker",
+        "allDeclaredMethods": true
+    },
+    {
+        "name": "org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform",
+        "allDeclaredFields": true,
+        "allDeclaredMethods": true,
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true,
+        "methods": [
+            {
+                "name": "canRegisterSynchronization",
+                "parameterTypes": []
+            },
+            {
+                "name": "configure",
+                "parameterTypes": [
+                    "java.util.Map"
+                ]
+            },
+            {
+                "name": "getCurrentStatus",
+                "parameterTypes": []
+            },
+            {
+                "name": "getTransactionIdentifier",
+                "parameterTypes": [
+                    "javax.transaction.Transaction"
+                ]
+            },
+            {
+                "name": "getTransactionManager",
+                "parameterTypes": []
+            },
+            {
+                "name": "injectServices",
+                "parameterTypes": [
+                    "org.hibernate.service.spi.ServiceRegistryImplementor"
+                ]
+            },
+            {
+                "name": "registerSynchronization",
+                "parameterTypes": [
+                    "javax.transaction.Synchronization"
+                ]
+            },
+            {
+                "name": "retrieveTransactionManager",
+                "parameterTypes": []
+            },
+            {
+                "name": "retrieveUserTransaction",
+                "parameterTypes": []
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.engine.transaction.jta.platform.internal.StandardJtaPlatformResolver",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.engine.transaction.jta.platform.internal.TransactionManagerAccess",
+        "allDeclaredFields": true,
+        "allDeclaredMethods": true,
+        "allPublicMethods": true,
+        "allDeclaredConstructors": true
+    },
+    {
+        "name": "org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform",
+        "allDeclaredFields": true,
+        "allDeclaredMethods": true,
+        "allPublicMethods": true,
+        "allDeclaredConstructors": true
+    },
+    {
+        "name": "org.hibernate.event.service.internal.EventListenerRegistryImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.event.spi.EventType",
+        "allDeclaredFields": true
+    },
+    {
+        "name": "org.hibernate.id.Assigned",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": []
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.id.factory.internal.DefaultIdentifierGeneratorFactory",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.internal.CoreMessageLogger_$logger",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.jboss.logging.Logger"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.internal.EntityManagerMessageLogger_$logger",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.jboss.logging.Logger"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.jmx.internal.DisabledJmxServiceImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.jpa.HibernatePersistenceProvider",
+        "allDeclaredMethods": true,
+        "allDeclaredConstructors": true
+    },
+    {
+        "name": "org.hibernate.persister.entity.SingleTableEntityPersister",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.mapping.PersistentClass",
+                    "org.hibernate.cache.spi.access.EntityDataAccess",
+                    "org.hibernate.cache.spi.access.NaturalIdDataAccess",
+                    "org.hibernate.persister.spi.PersisterCreationContext"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.persister.internal.PersisterFactoryImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.persister.internal.StandardPersisterClassResolver",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.property.access.internal.PropertyAccessStrategyResolverStandardImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.resource.beans.container.internal.CdiBeanContainerImmediateAccessImpl",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "javax.enterprise.inject.spi.BeanManager"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.resource.beans.container.spi.ExtendedBeanManager"
+    },
+    {
+        "name": "org.hibernate.resource.beans.internal.ManagedBeanRegistryImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.resource.transaction.backend.jta.internal.JtaTransactionCoordinatorBuilderImpl",
+        "allPublicMethods": true,
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": []
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.service.Service",
+        "allDeclaredFields": true,
+        "allDeclaredMethods": true,
+        "allPublicMethods": true,
+        "allDeclaredConstructors": true
+    },
+    {
+        "name": "org.hibernate.service.internal.SessionFactoryServiceRegistryFactoryImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.service.spi.Configurable",
+        "allDeclaredFields": true,
+        "allDeclaredMethods": true,
+        "allPublicMethods": true,
+        "allDeclaredConstructors": true
+    },
+    {
+        "name": "org.hibernate.service.spi.ServiceRegistryAwareService",
+        "allDeclaredFields": true,
+        "allDeclaredMethods": true,
+        "allPublicMethods": true,
+        "allDeclaredConstructors": true
+    },
+    {
+        "name": "org.hibernate.stat.internal.StatisticsImpl",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.tool.hbm2ddl.SingleLineSqlCommandExtractor",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.tool.schema.internal.HibernateSchemaManagementTool",
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.hibernate.tuple.entity.PojoEntityTuplizer",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.tuple.entity.EntityMetamodel",
+                    "org.hibernate.mapping.PersistentClass"
+                ]
+            }
+        ]
+    }
+]

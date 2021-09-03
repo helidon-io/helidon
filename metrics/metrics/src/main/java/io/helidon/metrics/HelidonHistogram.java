@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.metrics;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.atomic.LongAdder;
 
 import javax.json.JsonObjectBuilder;
@@ -70,79 +69,15 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         return delegate.getSnapshot();
     }
 
+    DisplayableLabeledSnapshot snapshot() {
+        return (delegate instanceof HistogramImpl)
+                ? ((HistogramImpl) delegate).snapshot()
+                : WrappedSnapshot.create(delegate.getSnapshot());
+    }
+
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID) {
-        Units units = getUnits();
-        String tags = prometheusTags(metricID.getTags());
-        String name = metricID.getName();
-
-        String nameUnits;
-        Optional<String> unit = units.getPrometheusUnit();
-
-        Snapshot snap = getSnapshot();
-
-        // # TYPE application:file_sizes_mean_bytes gauge
-        // application:file_sizes_mean_bytes 4738.231
-        nameUnits = prometheusNameWithUnits(name + "_mean", unit);
-        prometheusType(sb, nameUnits, "gauge");
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(units.convert(snap.getMean()))
-                .append("\n");
-
-        // # TYPE application:file_sizes_max_bytes gauge
-        // application:file_sizes_max_bytes 31716
-        nameUnits = prometheusNameWithUnits(name + "_max", unit);
-        prometheusType(sb, nameUnits, "gauge");
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(units.convert(snap.getMax()))
-                .append("\n");
-
-        // # TYPE application:file_sizes_min_bytes gauge
-        // application:file_sizes_min_bytes 180
-        nameUnits = prometheusNameWithUnits(name + "_min", unit);
-        prometheusType(sb, nameUnits, "gauge");
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(units.convert(snap.getMin()))
-                .append("\n");
-
-        // # TYPE application:file_sizes_stddev_bytes gauge
-        // application:file_sizes_stddev_bytes 1054.7343037063602
-        nameUnits = prometheusNameWithUnits(name + "_stddev", unit);
-        prometheusType(sb, nameUnits, "gauge");
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(units.convert(snap.getStdDev()))
-                .append("\n");
-
-        // # TYPE application:file_sizes_bytes summary
-        // # HELP application:file_sizes_bytes Users file size
-        // application:file_sizes_bytes_count 2037
-        nameUnits = prometheusNameWithUnits(name, unit);
-        prometheusType(sb, nameUnits, "summary");
-        prometheusHelp(sb, nameUnits);
-        nameUnits = prometheusNameWithUnits(name, unit) + "_count";
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(getCount())
-                .append('\n');
-
-        // application:file_sizes_bytes{quantile="0.5"} 4201
-        nameUnits = prometheusNameWithUnits(name, unit);
-        // for each supported quantile
-        prometheusQuantile(sb, tags, units, nameUnits, "0.5", snap::getMedian);
-        prometheusQuantile(sb, tags, units, nameUnits, "0.75", snap::get75thPercentile);
-        prometheusQuantile(sb, tags, units, nameUnits, "0.95", snap::get95thPercentile);
-        prometheusQuantile(sb, tags, units, nameUnits, "0.98", snap::get98thPercentile);
-        prometheusQuantile(sb, tags, units, nameUnits, "0.99", snap::get99thPercentile);
-        prometheusQuantile(sb, tags, units, nameUnits, "0.999", snap::get999thPercentile);
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
+        appendPrometheusHistogramElements(sb, metricID, withHelpType, getCount(), snapshot());
     }
 
     @Override
@@ -195,12 +130,12 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         @Override
         public void update(long value) {
             counter.increment();
-            reservoir.update(value);
+            reservoir.update(value, ExemplarServiceManager.exemplarLabel());
         }
 
         public void update(long value, long timestamp) {
             counter.increment();
-            reservoir.update(value, timestamp);
+            reservoir.update(value, timestamp, ExemplarServiceManager.exemplarLabel());
         }
 
         @Override
@@ -210,6 +145,10 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
 
         @Override
         public Snapshot getSnapshot() {
+            return reservoir.getSnapshot();
+        }
+
+        WeightedSnapshot snapshot() {
             return reservoir.getSnapshot();
         }
 
@@ -246,5 +185,25 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), delegate);
+    }
+
+    @Override
+    protected String toStringDetails() {
+        Snapshot snapshot = getSnapshot();
+        StringBuilder sb = new StringBuilder();
+        sb.append(", count='").append(getCount()).append('\'');
+        if (null != snapshot) {
+            sb.append(", min='").append(snapshot.getMin()).append('\'');
+            sb.append(", max='").append(snapshot.getMax()).append('\'');
+            sb.append(", mean='").append(snapshot.getMean()).append('\'');
+            sb.append(", stddev='").append(snapshot.getStdDev()).append('\'');
+            sb.append(", p50='").append(snapshot.getMedian()).append('\'');
+            sb.append(", p75='").append(snapshot.get75thPercentile()).append('\'');
+            sb.append(", p95='").append(snapshot.get95thPercentile()).append('\'');
+            sb.append(", p98='").append(snapshot.get98thPercentile()).append('\'');
+            sb.append(", p99='").append(snapshot.get99thPercentile()).append('\'');
+            sb.append(", p999='").append(snapshot.get999thPercentile()).append('\'');
+        }
+        return sb.toString();
     }
 }

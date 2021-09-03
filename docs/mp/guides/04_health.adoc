@@ -1,0 +1,542 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon MP Health Check Guide
+:h1Prefix: MP
+:description: Helidon health-checks
+:keywords: helidon, health-checks, health, check
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+
+This guide describes how to create a sample MicroProfile (MP) project
+that can be used to run some basic examples using both built-in and custom health checks with Helidon MP.
+
+== What You Need
+
+For this 15 minute tutorial, you will need the following:
+
+include::{common-page-prefix-inc}[tag=common-prereqs]
+
+=== Create a Sample MP Project
+
+Generate the project sources using the Helidon MP Maven archetype.
+The result is a simple project that can be used for the examples in this guide.
+
+[source,bash,subs="attributes+"]
+.Run the Maven archetype:
+----
+mvn -U archetype:generate -DinteractiveMode=false \
+    -DarchetypeGroupId=io.helidon.archetypes \
+    -DarchetypeArtifactId=helidon-quickstart-mp \
+    -DarchetypeVersion={helidon-version} \
+    -DgroupId=io.helidon.examples \
+    -DartifactId=helidon-quickstart-mp \
+    -Dpackage=io.helidon.examples.quickstart.mp
+----
+
+=== Using the Built-In Health Checks
+
+Helidon has a set of built-in health checks that are automatically enabled to report various
+health check statuses that are commonly used:
+
+* deadlock detection
+* available disk space
+* available heap memory
+
+The following example will demonstrate how to use the built-in health checks.  These examples are all executed
+from the root directory of your project (helidon-quickstart-mp).
+
+[source,bash]
+.Build the application, skipping unit tests, then run it:
+----
+mvn package -DskipTests=true
+java -jar target/helidon-quickstart-mp.jar
+----
+
+[source,bash]
+.Verify the health endpoint in a new terminal window:
+----
+curl http://localhost:8080/health
+----
+
+[source,json]
+.JSON response:
+----
+{
+  "outcome": "UP",
+  "status": "UP",
+  "checks": [
+    {
+      "name": "deadlock",
+      "state": "UP",
+      "status": "UP"
+    },
+    {
+      "name": "diskSpace",
+      "state": "UP",
+      "status": "UP",
+      "data": {
+        "free": "325.54 GB",
+        "freeBytes": 349543358464,
+        "percentFree": "69.91%",
+        "total": "465.63 GB",
+        "totalBytes": 499963174912
+      }
+    },
+    {
+      "name": "heapMemory",
+      "state": "UP",
+      "status": "UP",
+      "data": {
+        "free": "230.87 MB",
+        "freeBytes": 242085696,
+        "max": "3.56 GB",
+        "maxBytes": 3817865216,
+        "percentFree": "98.90%",
+        "total": "271.00 MB",
+        "totalBytes": 284164096
+      }
+    }
+  ]
+}
+----
+
+NOTE: In MicroProfile Health 2.0 `outcome` and `state` were replaced by `status` in the JSON response wire format.
+Helidon currently provides both fields for backwards compatibility, but use of `outcome` and `state` is deprecated
+and will be removed in a future release. You should rely on `status` instead.
+
+=== Custom Liveness Health Checks
+
+You can create application-specific custom health checks and integrate them with Helidon
+using CDI.  The following example shows how to add a custom liveness health check.
+
+[source,java]
+.Create a new `GreetLivenessCheck` class with the following content:
+----
+package io.helidon.examples.quickstart.mp;
+
+import javax.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.health.HealthCheck;
+import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.Liveness;
+
+@Liveness // <1>
+@ApplicationScoped // <2>
+public class GreetLivenessCheck implements HealthCheck {
+  private GreetingProvider provider;
+
+  @Override
+  public HealthCheckResponse call() {
+    return HealthCheckResponse.named("LivenessCheck")  // <3>
+        .up()
+        .withData("time", System.currentTimeMillis())
+        .build();
+  }
+}
+----
+<1> Annotation indicating this is a liveness health check.
+<2> Annotation indicating there is a single liveness `HealthCheck` object during the lifetime of the application.
+<3> Build the HealthCheckResponse with status `UP` and the current time.
+
+[source,bash]
+.Build and run the application, then verify the custom liveness health endpoint:
+----
+curl http://localhost:8080/health/live
+----
+
+[source,json]
+.JSON response:
+----
+{
+  "outcome": "UP",
+  "status": "UP",
+  "checks": [
+    {
+      "name": "LivenessCheck",
+      "state": "UP",
+      "status": "UP",
+      "data": {
+        "time": 1566338255331
+      }
+    }
+  ]
+}
+----
+
+=== Custom Readiness Health Check
+
+You can add a readiness check to indicate that the application is ready to be used.  In this
+example, the server will wait five seconds before it becomes ready.
+
+[source,java]
+.Create a new `GreetReadinessCheck` class with the following content:
+----
+
+package io.helidon.examples.quickstart.mp;
+
+import java.time.Duration; // <1>
+import java.util.concurrent.atomic.AtomicLong;
+import javax.enterprise.context.ApplicationScoped;
+
+import javax.enterprise.context.Initialized;
+import javax.enterprise.event.Observes;
+import org.eclipse.microprofile.health.HealthCheck;
+import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.Readiness;
+
+@Readiness // <2>
+@ApplicationScoped
+public class GreetReadinessCheck implements HealthCheck {
+  private AtomicLong readyTime = new AtomicLong(0);
+
+
+  @Override
+  public HealthCheckResponse call() {
+    return HealthCheckResponse.named("ReadinessCheck")  // <3>
+        .state(isReady())
+        .withData("time", readyTime.get())
+        .build();
+  }
+
+  public void onStartUp(
+      @Observes @Initialized(ApplicationScoped.class) Object init) {
+    readyTime = new AtomicLong(System.currentTimeMillis()); // <4>
+  }
+
+  /**
+   * Become ready after 5 seconds
+   *
+   * @return true if application ready
+   */
+  private boolean isReady() {
+    return Duration.ofMillis(System.currentTimeMillis() - readyTime.get()).getSeconds() >= 5;
+  }
+}
+----
+<1> Include additional imports.
+<2> Annotation indicating that this is a readiness health-check.
+<3> Build the `HealthCheckResponse` with status `UP` after five seconds, else `DOWN`.
+<4> Initialize the time at startup.
+
+
+[source,bash]
+.Build and run the application.  Issue the curl command with -v within five seconds and you will see that the application is not ready:
+----
+curl -v  http://localhost:8080/health/ready
+----
+
+[source,json]
+.HTTP response:
+----
+...
+< HTTP/1.1 503 Service Unavailable // <1>
+...
+{
+  "outcome": "DOWN",
+  "status": "DOWN",
+  "checks": [
+    {
+      "name": "ReadinessCheck",
+      "state": "DOWN",
+      "status": "DOWN",
+      "data": {
+        "time": 1566399775700
+      }
+    }
+  ]
+}
+----
+<1> The HTTP status is `503` since the application is not ready.
+
+[source,bash]
+.After five seconds you will see the application is ready:
+----
+curl -v http://localhost:8080/health/ready
+----
+
+[source,json]
+.JSON response:
+----
+...
+< HTTP/1.1 200 OK // <1>
+...
+{
+  "outcome": "UP",
+  "status": "UP",
+  "checks": [
+    {
+      "name": "ReadinessCheck",
+      "state": "UP",
+      "status": "UP",
+      "data": {
+        "time": 1566399775700
+      }
+    }
+  ]
+}
+----
+<1> The HTTP status is `200` indicating that the application is ready.
+
+When using the health check URLs, you can get the following health check data:
+
+* custom liveness only - http://localhost:8080/health/live
+* custom readiness only -  http://localhost:8080/health/ready
+* all health check data -  http://localhost:8080/health
+
+[source,bash]
+.Get all the health check data, including custom data:
+----
+curl http://localhost:8080/health
+----
+
+[source,json]
+.JSON response:
+----
+{
+  "outcome": "UP",
+  "status": "UP",
+  "checks": [
+    {
+      "name": "LivenessCheck",
+      "state": "UP",
+      "status": "UP",
+      "data": {
+        "time": 1566403431536
+      }
+    },
+    {
+      "name": "ReadinessCheck",
+      "state": "UP",
+      "status": "UP",
+      "data": {
+        "time": 1566403280639
+      }
+    },
+    {
+      "name": "deadlock",
+      "state": "UP",
+      "status": "UP"
+    },
+    {
+      "name": "diskSpace",
+      "state": "UP",
+      "status": "UP",
+      "data": {
+        "free": "325.50 GB",
+        "freeBytes": 349500698624,
+        "percentFree": "69.91%",
+        "total": "465.63 GB",
+        "totalBytes": 499963174912
+      }
+    },
+    {
+      "name": "heapMemory",
+      "state": "UP",
+      "status": "UP",
+      "data": {
+        "free": "231.01 MB",
+        "freeBytes": 242235928,
+        "max": "3.56 GB",
+        "maxBytes": 3817865216,
+        "percentFree": "98.79%",
+        "total": "275.00 MB",
+        "totalBytes": 288358400
+      }
+    }
+  ]
+}
+----
+
+
+=== Custom Health Root Path and Port
+
+You can specify a custom port and root context for the root health endpoint path.
+However, you cannot use different ports, such as http://localhost:8080/myhealth and http://localhost:8081/myhealth/live.
+Likewise, you cannot use different paths, such as http://localhost:8080/health and http://localhost:8080/probe/live.
+
+The example below will change the root path.
+
+[source,yaml]
+.Create a file named `application.yaml` in the `resources` directory with the following contents:
+----
+health:
+  web-context: "myhealth"  // <1>
+----
+<1> The web-context specifies a new root path for the health endpoint.
+
+[source,bash]
+.Build and run the application, then verify that the health endpoint is using the new `/myhealth` root:
+----
+curl http://localhost:8080/myhealth
+curl http://localhost:8080/myhealth/live
+curl http://localhost:8080/myhealth/ready
+----
+
+The following example will change the root path and the health port.
+
+[source,yaml]
+.Update application.yaml to use a different port and root path for the health endpoint:
+----
+server:
+  port: 8080  // <1>
+  host: "localhost"
+  sockets:
+    health: // <2>
+      port: 8081 // <3>
+      bind-address: "localhost"
+health:
+  routing: "health" // <4>
+  web-context: "myhealth"
+----
+<1> The default port for the application.
+<2> The name of the new socket, it can be any name, this example uses `health`.
+<3> The port for the new health socket.
+<4> The health endpoint routing uses the new socket `health`.
+
+
+[source,bash]
+.Build and run the application, then verify the health endpoint using port `8081` and `/myhealth`:
+----
+curl http://localhost:8081/myhealth
+curl http://localhost:8081/myhealth/live
+curl http://localhost:8081/myhealth/ready
+----
+
+=== Using Liveness and Readiness Health Checks with Kubernetes
+
+The following example shows how to integrate the Helidon health check API with an application that implements
+health endpoints for the Kubernetes liveness and readiness probes.
+
+*Delete the contents of `application.yaml` so that the default health endpoint path and port are used.*
+
+[source,bash]
+.Rebuild and start the application, then verify the health endpoint:
+----
+curl http://localhost:8080/health
+----
+
+[source,bash]
+.Stop the application and build the docker image:
+----
+docker build -t helidon-quickstart-mp .
+----
+
+[source,yaml]
+.Create the Kubernetes YAML specification, named `health.yaml`, with the following content:
+----
+kind: Service
+apiVersion: v1
+metadata:
+  name: helidon-health // <1>
+  labels:
+    app: helidon-health
+spec:
+  type: NodePort
+  selector:
+    app: helidon-health
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: helidon-health // <2>
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: helidon-health
+        version: v1
+    spec:
+      containers:
+        - name: helidon-health
+          image: helidon-quickstart-mp
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /health/live // <3>
+              port: 8080
+            initialDelaySeconds: 5 // <4>
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready // <5>
+              port: 8080
+            initialDelaySeconds: 5 // <6>
+            periodSeconds: 2
+            timeoutSeconds: 3
+---
+----
+<1> A service of type `NodePort` that serves the default routes on port `8080`.
+<2> A deployment with one replica of a pod.
+<3> The HTTP endpoint for the liveness probe.
+<4> The liveness probe configuration.
+<5> The HTTP endpoint for the readiness probe.
+<6> The readiness probe configuration.
+
+
+[source,bash]
+.Create and deploy the application into Kubernetes:
+----
+kubectl apply -f ./health.yaml
+----
+
+[source,bash]
+.Get the service information:
+----
+kubectl get service/helidon-health
+----
+
+[source,bash]
+----
+NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+helidon-health   NodePort   10.107.226.62   <none>        8080:30116/TCP   4s // <1>
+----
+<1> A service of type `NodePort` that serves the default routes on port `30116`.
+
+[source,bash]
+.Verify the health endpoints using port '30116', your port may be different. The JSON response will be the same as your previous test:
+----
+curl http://localhost:30116/health
+----
+
+[source,bash]
+.Delete the application, cleaning up Kubernetes resources:
+----
+kubectl delete -f ./health.yaml
+----
+
+=== Summary
+This guide demonstrated how to use health checks in a Helidon MP application as follows:
+
+* Access the default health checks
+* Create and use custom readiness and liveness checks
+* Customize the health check root path and port
+* Integrate Helidon health check API with Kubernetes
+
+Refer to the following references for additional information:
+
+* MicroProfile health-check specification at https://github.com/eclipse/microprofile-health/releases/tag/2.0
+* MicroProfile health-check Javadoc at https://javadoc.io/doc/org.eclipse.microprofile.health/microprofile-health-api/2.0
+* Helidon Javadoc at https://helidon.io/docs/latest/apidocs/index.html?overview-summary.html

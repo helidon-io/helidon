@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MissingValueException;
-import io.helidon.config.hocon.HoconConfigParserBuilder;
+import io.helidon.config.hocon.HoconConfigParser;
 
 import org.junit.jupiter.api.Test;
 
@@ -54,7 +54,7 @@ public class DemoTest {
     public void testTypedAccessors() {
         Config config = Config.builder()
                 .sources(ConfigSources.classpath("application.conf"))
-                .addParser(HoconConfigParserBuilder.buildDefault())
+                .addParser(HoconConfigParser.create())
                 .build();
 
         // ACCESSORS:
@@ -88,7 +88,7 @@ public class DemoTest {
     public void testListOfConfigs() {
         Config config = Config.builder()
                 .sources(ConfigSources.classpath("application.conf"))
-                .addParser(HoconConfigParserBuilder.buildDefault())
+                .addParser(HoconConfigParser.create())
                 .build();
 
         // list of objects
@@ -109,7 +109,7 @@ public class DemoTest {
     public void testNodeChildrenAndTraverse() {
         Config config = Config.builder()
                 .sources(ConfigSources.classpath("application.conf"))
-                .addParser(HoconConfigParserBuilder.buildDefault())
+                .addParser(HoconConfigParser.create())
                 .build();
 
         System.out.println("Handlers:");
@@ -135,13 +135,12 @@ public class DemoTest {
     @Test
     public void testFallbackConfigSource() {
         Config config = Config.builder()
-                .sources(ConfigSources.create(
-                        // PROPERTIES first
+                .sources(// PROPERTIES first
                         ConfigSources.classpath("application.properties"),
                         // with fallback to HOCON
-                        ConfigSources.classpath("application.conf")))
+                        ConfigSources.classpath("application.conf"))
                 .addParser(ConfigParsers.properties())
-                .addParser(HoconConfigParserBuilder.buildDefault())
+                .addParser(HoconConfigParser.create())
                 .build();
 
         assertThat( // value from HOCON
@@ -230,7 +229,7 @@ public class DemoTest {
     public void testUseAppConfigMapper() {
         Config config = Config.builder()
                 .sources(ConfigSources.classpath("application.conf"))
-                .addParser(HoconConfigParserBuilder.buildDefault())
+                .addParser(HoconConfigParser.create())
                 .disableValueResolving()
                 .build();
 
@@ -250,7 +249,7 @@ public class DemoTest {
     public void testRegisterAppConfigMapper() {
         Config config = Config.builder()
                 .sources(ConfigSources.classpath("application.conf"))
-                .addParser(HoconConfigParserBuilder.buildDefault())
+                .addParser(HoconConfigParser.create())
                 .addMapper(AppConfig.class, new AppConfigMapper())
                 .disableValueResolving()
                 .build();
@@ -271,7 +270,7 @@ public class DemoTest {
     public void testSecurityFilter() {
         Config config = Config.builder()
                 .sources(ConfigSources.classpath("application.conf"))
-                .addParser(HoconConfigParserBuilder.buildDefault())
+                .addParser(HoconConfigParser.create())
                 .addFilter(new SecurityConfigFilter()) // custom config filter
                 .disableValueResolving()
                 .build();

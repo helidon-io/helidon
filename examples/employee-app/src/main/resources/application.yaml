@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,15 +15,15 @@
 #
 
 app:
+  # database user, such as "system"
   user: <user-db>
+  # database password
   password: <password-user-db>
+  # host url - remove to use the default of Oracle XE (localhost:1521/XE)
   hosturl: <hostname>:<port>/<database_unique_name>.<host_domain_name>
+  # switch to "Database" to use database. Uses in-memory structure otherwise
   drivertype: Array
 
 server:
   port: 8080
   host: 0.0.0.0
-#  experimental:
-#    http2:
-#      enable: true
-#      max-content-length: 16384

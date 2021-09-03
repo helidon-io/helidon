@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,13 @@
  * entry in etcd.
  * There is also a {@link io.helidon.config.etcd.EtcdConfigSourceBuilder} for a convenient way how to initialize Etcd ConfigSource.
  * The {@code EtcdConfigSourceBuilder} allows to specify following properties (besides the ones covered in
- * {@link io.helidon.config.spi.AbstractParsableConfigSource.Builder}) a {@code uri} where the instance of Etcd is running,
+ * {@link io.helidon.config.AbstractConfigSourceBuilder}) a {@code uri} where the instance of Etcd is running,
  * the {@code key} where the configuration is stored, {@code version} of the Etcd API which should be used.
  * <p>
  * Etcd integration is placed in {@code io.helidon.config.etcd} Java 9 module.
  * Maven coordinates are {@code io.helidon.config:helidon-config-etcd}.
+ *
+ * @see io.helidon.config.etcd.EtcdConfigSource#builder()
+ * @see io.helidon.config.etcd.EtcdWatcher
  */
 package io.helidon.config.etcd;

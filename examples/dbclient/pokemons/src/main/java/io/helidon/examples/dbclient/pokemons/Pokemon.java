@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,13 @@
  */
 package io.helidon.examples.dbclient.pokemons;
 
+import io.helidon.common.Reflected;
+
 /**
  * POJO representing Pokemon.
  */
+@Reflected
 public class Pokemon {
-
     private int id;
     private String name;
     private int idType;

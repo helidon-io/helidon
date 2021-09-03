@@ -1,0 +1,221 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Configuring the Server
+:h1Prefix: MP
+:description: Helidon MicroProfile server configuration
+:keywords: helidon, microprofile, micro-profile
+
+By default, the server uses the MicroProfile Config, but you may also want to use Helidon configuration.
+
+== Configuring the Server
+
+There are 3 default MicroProfile Config sources:
+
+* `System.getProperties()`
+* `System.getenv()`
+* all `META-INF/microprofile-config.properties` files on the class path
+* `application.yaml` on the classpath (read by default by Helidon Config)
+
+In this example, the configuration is in a file, and it includes Helidon configuration options.
+
+[source,properties]
+.META-INF/microprofile-config.properties - Server configuration
+----
+# default is localhost
+server.host=some.host
+# default is 7001
+server.port=7011
+
+# Helidon configuration (optional)
+
+# Length of queue for incoming connections. Default is 1024
+server.backlog=512
+# TCP receive window. Default is 0 to use implementation default
+server.receive-buffer=256
+# Socket timeout milliseconds - defaults to 0 (infinite)
+server.timeout=30000
+# Defaults to Runtime.availableProcessors()
+server.workers=4
+----
+
+== Configuring TLS
+
+Helidon MP also supports custom TLS configuration.
+
+User is able to set following properties:
+
+* Server truststore
+    - Keystore with trusted certificates
+* Private key and certificate
+    - Server certificate which will be used in TLS handshake
+
+[source,properties]
+.META-INF/microprofile-config.properties - Server configuration
+----
+#Truststore setup
+server.tls.trust.keystore.resource.resource-path=server.p12
+server.tls.trust.keystore.passphrase=password
+server.tls.trust.keystore.trust-store=true
+
+#Keystore with private key and server certificate
+server.tls.private-key.keystore.resource.resource-path=server.p12
+server.tls.private-key.keystore.passphrase=password
+----
+
+Or the same configuration done in application.yaml file.
+
+[source,yaml]
+.application.yaml - Server configuration
+----
+server:
+  tls:
+    #Truststore setup
+    trust:
+      keystore:
+        passphrase: "password"
+        trust-store: true
+        resource:
+          resource-path: "keystore.p12"
+    #Keystore with private key and server certificate
+    private-key:
+      keystore:
+        passphrase: "password"
+        resource:
+          resource-path: "keystore.p12"
+----
+
+== Configuring additional ports [[conf-additional-ports]]
+
+Helidon MP can expose multiple ports, with the following limitations:
+
+- The default port is the port that serves your application (JAX-RS applications and resources)
+- Other ports (in this example we configure one "admin" port) can be assigned endpoints that are exposed by Helidon components,
+    currently supported by MP Health and MP Metrics
+
+For this example, we will use a `yaml` file:
+
+- The port `7011` is the default port and will serve your application
+- The port `8011` is named "admin" (this is an arbitrary name)
+- MP Metrics are configured to use the "admin" port through the `routing` configuration (reference is by name)
+- MP Health is configured the same way to reference the "admin" port
+
+[source,yaml]
+.application.yaml - Server configuration
+----
+server:
+  port: 7011
+  host: "some.host"
+  sockets:
+    admin:
+      port: 8011
+      bind-address: "some.host"
+
+metrics:
+  routing: "admin"
+
+health:
+  routing: "admin"
+----
+
+== Assigning JAX-RS applications to ports
+
+Since 1.4
+
+Helidon has the concept of named routings. These correspond to the named ports
+we have described in the previous section.
+
+You can assign a JAX-RS application to a named routing (and as a result to a named port) using
+either an annotation or configuration (or both to override the value from annotation).
+
+=== Annotation `@RoutingName`
+You can annotate an application with this annotation to assign it to a specific named routing,
+that is (most likely) going to be bound to a specific port.
+
+The annotation has two attributes:
+- `value` that defines the routing name
+- `required` to mark that the routing name MUST be configured in Helidon server
+
+[source,yaml]
+.`@RoutingName` example
+----
+@ApplicationScoped
+@ApplicationPath("/admin")
+@RoutingName(value="admin", required="true")
+public class AdminApplication extends Application {
+//....
+}
+----
+
+The example above will be bound to `admin` routing (and port) and will fail if such a port
+is not configured.
+
+=== Configuration override of routing name
+
+For each application class you can define the routing name and its required flag by specifying a configuration
+option `class-name.routing-name.name` and `class-name.routing-name.required`.
+
+Example (YAML) configuration for a class `io.helidon.examples.AdminApplication` that changes the
+routing name to `management` and its required flag to `false`:
+
+[source,yaml]
+----
+io.helidon.examples.AdminApplication:
+  routing-name:
+    name: "management"
+    required: false
+----
+
+== Overriding JAX-RS application path
+
+Since Helidon 1.4
+In JAX-RS we can use `@ApplicationPath` to configure a path the JAX-RS application is available on.
+As this is compiled into the source code, Helidon provides a way to override this using configuration.
+
+For each application class you can define the routing path by specifying a configuration
+option `class-name.routing-path.path`.
+
+Example (YAML) configuration for a class `io.helidon.example.AdminApplication` that changes the
+routing path to `/management`:
+
+[source,yaml]
+----
+io.helidon.examples.AdminApplication:
+  routing-path:
+    path: "/management"
+----
+
+== Example configuration of JAX-RS application
+
+A full configuration example (YAML):
+
+[source,yaml]
+----
+server:
+  port: 8080
+  sockets:
+    management:
+      port: 8090
+
+io.helidon.examples.AdminApplication:
+  routing-name:
+    name: "management"
+    required: true
+  routing-path:
+    path: "/management"
+----

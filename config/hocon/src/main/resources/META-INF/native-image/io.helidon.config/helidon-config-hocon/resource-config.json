@@ -1,0 +1,16 @@
+{
+    "resources": [
+        {
+            "pattern": "application.conf"
+        },
+        {
+            "pattern": "application.json"
+        },
+        {
+            "pattern": "meta-config.conf"
+        },
+        {
+            "pattern": "meta-config.json"
+        }
+    ]
+}

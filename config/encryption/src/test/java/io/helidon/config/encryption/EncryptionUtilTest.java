@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.config.encryption;
 
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -26,6 +25,7 @@ import java.security.PublicKey;
 import java.util.Base64;
 
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.crypto.CryptoException;
 import io.helidon.common.pki.KeyConfig;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -77,7 +77,7 @@ public class EncryptionUtilTest {
             Throwable cause = e.getCause();
             //our message
             assertEquals("Failed to encrypt using RSA key", e.getMessage());
-            assertSame(InvalidKeyException.class, cause.getClass());
+            assertSame(CryptoException.class, cause.getClass());
         }
     }
 

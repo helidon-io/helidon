@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
+import io.helidon.microprofile.tests.junit5.AddBean;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.junit.jupiter.api.Test;
 
@@ -33,48 +34,56 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Class BulkheadTest.
+ * Test for beans whose methods are protected by bulkheads.
  */
-public class BulkheadTest extends FaultToleranceTest {
+@AddBean(BulkheadBean.class)
+class BulkheadTest extends FaultToleranceTest {
 
-    @Test
-    public void testBulkhead() {
-        BulkheadBean bean = newBean(BulkheadBean.class);
-        Future<String>[] calls = getAsyncConcurrentCalls(
-            () -> bean.execute(100), BulkheadBean.MAX_CONCURRENT_CALLS);
-        assertThat(getThreadNames(calls).size(), is(BulkheadBean.CONCURRENT_CALLS));
+    @Inject
+    private BulkheadBean bean;
+
+    @Override
+    void reset() {
+        bean.reset();
     }
 
     @Test
-    public void testBulkheadPlusOne() {
-        BulkheadBean bean = newBean(BulkheadBean.class);
-        Future<String>[] calls = getAsyncConcurrentCalls(
-            () -> bean.executePlusOne(100), BulkheadBean.MAX_CONCURRENT_CALLS + 2);
-        assertThat(getThreadNames(calls).size(), is(BulkheadBean.CONCURRENT_CALLS + 1));
+    void testBulkhead() {
+        CompletableFuture<String>[] calls = getAsyncConcurrentCalls(
+            () -> bean.execute(100), BulkheadBean.TOTAL_CALLS);
+        waitFor(calls);
+        assertThat(bean.getCounter().concurrentCalls(), is(BulkheadBean.CONCURRENT_CALLS));
+        assertThat(bean.getCounter().totalCalls(), is(BulkheadBean.TOTAL_CALLS));
     }
 
     @Test
-    public void testBulkheadNoQueue() {
-        BulkheadBean bean = newBean(BulkheadBean.class);
-        Future<String>[] calls = getAsyncConcurrentCalls(
+    void testBulkheadPlusOne() {
+        CompletableFuture<String>[] calls = getAsyncConcurrentCalls(
+            () -> bean.executePlusOne(100), BulkheadBean.TOTAL_CALLS + 2);
+        waitFor(calls);
+        assertThat(bean.getCounter().concurrentCalls(), is(BulkheadBean.CONCURRENT_CALLS + 1));
+        assertThat(bean.getCounter().totalCalls(), is(BulkheadBean.TOTAL_CALLS + 2));
+    }
+
+    @Test
+    void testBulkheadNoQueue() {
+        CompletableFuture<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.executeNoQueue(2000), 10);
-        RuntimeException e = assertThrows(RuntimeException.class, () -> getThreadNames(calls));
+        RuntimeException e = assertThrows(RuntimeException.class, () -> waitFor(calls));
         assertThat(e.getCause().getCause(), instanceOf(BulkheadException.class));
     }
 
     @Test
-    public void testBulkheadNoQueueWithFallback() {
-        BulkheadBean bean = newBean(BulkheadBean.class);
-        Future<String>[] calls = getAsyncConcurrentCalls(
+    void testBulkheadNoQueueWithFallback() {
+        CompletableFuture<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.executeNoQueueWithFallback(2000), 10);
-        getThreadNames(calls);
+        waitFor(calls);
     }
 
     @Test
-    public void testBulkheadExecuteCancelInQueue() throws Exception {
-        BulkheadBean bean = newBean(BulkheadBean.class);
-        Future<String> f1 = bean.executeCancelInQueue(1000);
-        Future<String> f2 = bean.executeCancelInQueue(2000);    // should never run
+    void testBulkheadExecuteCancelInQueue() throws Exception {
+        CompletableFuture<String> f1 = bean.executeCancelInQueue(1000);
+        CompletableFuture<String> f2 = bean.executeCancelInQueue(2000);    // should never run
         boolean b = f2.cancel(true);
         assertTrue(b);
         assertTrue(f2.isCancelled());
@@ -83,9 +92,7 @@ public class BulkheadTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testSynchronous() {
-        BulkheadBean bean = newBean(BulkheadBean.class);
-
+    void testSynchronous() {
         // Run 10 threads that attempt to enter bulkhead
         CompletableFuture<Integer>[] calls = FaultToleranceTest.getConcurrentCalls(
                 () -> {
@@ -110,8 +117,7 @@ public class BulkheadTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testSynchronousWithAsyncCaller() throws Exception {
-        BulkheadBean bean = newBean(BulkheadBean.class);
+    void testSynchronousWithAsyncCaller() throws Exception {
         AsynchronousCallerBean callerBean = newBean(AsynchronousCallerBean.class);
         Callable<Integer> callable = () -> {
             try {
@@ -121,8 +127,8 @@ public class BulkheadTest extends FaultToleranceTest {
                 return 0;
             }
         };
-        Future<Integer> f1 = callerBean.submit(callable);
-        Future<Integer> f2 = callerBean.submit(callable);
+        CompletableFuture<Integer> f1 = callerBean.submit(callable);
+        CompletableFuture<Integer> f2 = callerBean.submit(callable);
         assertThat(f1.get() + f2.get(), is(1));
     }
 }

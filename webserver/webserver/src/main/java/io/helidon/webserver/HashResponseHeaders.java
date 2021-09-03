@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
@@ -37,6 +36,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.HashParameters;
 import io.helidon.common.http.Http;
@@ -44,6 +44,7 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.SetCookie;
 import io.helidon.common.http.Utils;
+import io.helidon.common.reactive.Single;
 
 /**
  * A {@link ResponseHeaders} implementation on top of {@link HashParameters}.
@@ -52,7 +53,11 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
 
     private static final String COMPLETED_EXCEPTION_MESSAGE = "Response headers are already completed (sent to the client)!";
 
-    private volatile Http.ResponseStatus httpStatus = Http.Status.OK_200;
+    private static final LazyValue<ZonedDateTime> START_OF_YEAR_1970 = LazyValue.create(
+            () -> ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("GMT+0")));
+
+    // status is by default null, so we can check if it was explicitly set
+    private volatile Http.ResponseStatus httpStatus;
     private final CompletionSupport completable;
     private final CompletableFuture<ResponseHeaders> completionStage = new CompletableFuture<>();
 
@@ -203,6 +208,24 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
     }
 
     @Override
+    public void clearCookie(String name) {
+        SetCookie expiredCookie = SetCookie.builder(name, "deleted")
+                .path("/")
+                .expires(START_OF_YEAR_1970.get())
+                .build();
+
+        List<String> values = remove(Http.Header.SET_COOKIE);
+        if (values.size() == 0) {
+            addCookie(expiredCookie);
+        } else {
+            List<String> newValues = values.stream().map(v ->
+                SetCookie.parse(v).name().equals(name) ? expiredCookie.toString() : v)
+                    .collect(Collectors.toList());
+            put(Http.Header.SET_COOKIE, newValues);
+        }
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -214,6 +237,12 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
         HashResponseHeaders that = (HashResponseHeaders) o;
 
         if (super.equals(that)) {
+            if (httpStatus == null) {
+                return that.httpStatus == null;
+            }
+            if (that.httpStatus == null) {
+                return false;
+            }
             return this.httpStatus.equals(that.httpStatus);
         }
 
@@ -314,14 +343,14 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
     }
 
     @Override
-    public CompletionStage<ResponseHeaders> whenSend() {
-        return completionStage;
+    public Single<ResponseHeaders> whenSent() {
+        return Single.create(completionStage);
     }
 
     @Override
-    public CompletionStage<ResponseHeaders> send() {
+    public Single<ResponseHeaders> send() {
         completable.doComplete(this);
-        return whenSend();
+        return whenSent();
     }
 
     /**
@@ -449,8 +478,10 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
                 rwLock.writeLock().lock();
                 try {
                     state = State.COMPLETED;
-                    Map<String, List<String>> rawHeaders = filterSpecificHeaders(headers.toMap(), headers.httpStatus);
-                    bareResponse.writeStatusAndHeaders(headers.httpStatus, rawHeaders);
+                    Http.ResponseStatus status = (null == headers.httpStatus) ? Http.Status.OK_200 : headers.httpStatus;
+                    status = (null == status) ?  Http.Status.OK_200 : status;
+                    Map<String, List<String>> rawHeaders = filterSpecificHeaders(headers.toMap(), status);
+                    bareResponse.writeStatusAndHeaders(status, rawHeaders);
                 } finally {
                     rwLock.writeLock().unlock();
                 }

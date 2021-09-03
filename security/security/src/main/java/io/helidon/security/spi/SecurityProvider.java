@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,6 @@ public interface SecurityProvider {
      * class and resource methods will be collected.
      *
      * @return Collection of annotations this provider expects.
-     * @see EndpointConfig#annotations(EndpointConfig.AnnotationScope...)
-     * @see EndpointConfig#combineAnnotations(Class, EndpointConfig.AnnotationScope...)
      */
     default Collection<Class<? extends Annotation>> supportedAnnotations() {
         return Set.of();

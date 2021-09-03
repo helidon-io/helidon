@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,12 +46,7 @@ public enum DbStatementType {
     /**
      * Database command not related to a specific collection.
      */
-    COMMAND("c"),
-    /**
-     * The statement type is not yet knows (e.g. when invoking
-     * {@link DbExecute#createNamedStatement(String)})
-     */
-    UNKNOWN("x");
+    COMMAND("c");
 
     private final String prefix;
 

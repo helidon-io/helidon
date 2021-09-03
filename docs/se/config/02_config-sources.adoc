@@ -1,0 +1,105 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
+
+= Loading Configuration: Config Sources and Parsers
+:h1Prefix: SE
+:description: A summary of Helidon config sources and parsers
+:keywords: Helidon, config, sources, parsers
+
+
+Configuration can be loaded from different types of locations and expressed in different 
+formats. This section describes how your application can use _config sources_ and
+_config parsers_ together to load configuration data.
+
+== Overview
+Each config source reads data from a location of a specific type, without regard 
+to the format of the config data there. Each config parser  
+converts data expressed in a particular format into the in-memory config data 
+structure that the rest of the config system uses, without any concern for where 
+that data resides or how it is physically retrieved. These two work together to prepare
+data in a given format at a given location for the config system.
+When your application prepares a `Config.Builder` it sets what ``ConfigSource``s and
+``ConfigParser``s the builder should use in constructing the resulting `Config` object.
+
+== Config Sources
+If your application uses the default configuration, then the config system 
+automatically sets up the config sources for you, as described in the
+<<se/config/01_introduction.adoc#config-sources-default-config,config introduction>>.
+
+If instead your application uses a link:{javadoc-base-url-api}/Config.Builder.html[`Config.Builder`], then it can invoke one of the `sources` methods on that builder to set which config sources it should use.
+
+The config system includes support for several types of config sources, for example:
+
+* a resource on the runtime classpath,
+* environment variables,
+* a file,
+* Java system properties,
+* a URL,
+* a variety of in-memory data structures (`String`, `Map`, `Properties`)
+
+See the JavaDoc for the link:{javadoc-base-url-api}/ConfigSources.html[`ConfigSources`]
+class for a complete list of the built-in config source types and how to use them. 
+
+You can also extend the config system
+to handle other types of sources by implementing the 
+link:{javadoc-base-url-api}/spi/ConfigSource.html[`ConfigSource`] interface. See 
+the <<se/config/07_extensions.adoc,extensions>> documentation for complete information.
+
+See the <<se/config/06_advanced-configuration.adoc,advanced topics>> page for further
+information on some more involved aspects of config sources.
+
+== Config Parsers [[parsers]]
+When it reads configuration text from sources, the config system uses config parsers 
+to translate that text into the in-memory data structures representing that configuration. 
+The config system includes several built-in parsers, such as for the Java properties, YAML, JSON, and HOCON formats. See <<se/config/01_introduction.adoc#built-in-formats,this section in
+the introduction>> for
+how to change your `pom.xml` to make parsers for those formats available to your 
+application. Then your application can invoke the 
+link:{javadoc-base-url-api}/Config.Builder.html#addParser-io.helidon.config.spi.ConfigParser-[config builder's `addParser`] method
+so that builder will use the parsers you choose.
+
+You can extend the system with custom parsers of your own. Implement the link:{javadoc-base-url-api}/spi/ConfigParser.html[`ConfigParser`] interface, then construct a `Config.Builder` using the `addParser` method, passing an instance of your customer parser. Invoke one of the `sources` methods to include a source that uses the custom format and then build the `Config` object.
+
+== Detecting and Responding to Changes in Config Data
+Each `Config` object which the config system returns to your application is
+immutable; even if the information in one of the underlying config sources changes, an in-memory data structure built from the earlier
+content remains unchanged.
+
+Even so, the config system allows your application to learn when such underlying changes in the data occur and respond accordingly. The <<se/config/05_mutability-support.adoc,mutability>> section explains this in detail, and the link:{javadoc-base-url-api}/PollingStrategies.html[`PollingStrategies`] JavaDoc describes the built-in implementations. You can, of course, write your own by implementing the link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`] interface. On a config source builder invoke `pollingStrategy` with an instance of your custom strategy and then invoke `build` to create the `ConfigSource`.
+
+== Dealing with Loading Errors: Retry Policies [[retry]]
+Config sources, especially those that depend on fallible mechanisms such as the network or a shared file system, might fail to load during momentary outages. The config system allows you to build resiliency into your application's use of configuration that relies on such technologies. 
+
+When your application builds a `ConfigSource` it can specify a _retry policy_. When the config system needs to load data from that source it delegates the load operation to that retry policy. That policy is responsible not only for loading the data but also for detecting errors during loading and implementing the algorithm for deciding when and how many times to retry a failed load before reporting a failure back to your application.
+
+The config system includes two predefined retry policies:
+
+.Predefined Retry Policies
+|===
+|Policy | Summary
+
+|"just call" (default) |asks the config source to load the data with no retry
+|"repeat" |performs a settable number of time-based retries, reporting failure only after all available retries have failed
+|===
+
+See the link:{javadoc-base-url-api}/RetryPolicies.html[`RetryPolicies`] JavaDoc for complete details on these built-in retry policies.
+
+You can devise your own policy. Implement the link:{javadoc-base-url-api}/spi/RetryPolicy.html[`RetryPolicy`] interface. Then pass an instance of your policy implementation to the config source builder's `retryPolicy` method.
+

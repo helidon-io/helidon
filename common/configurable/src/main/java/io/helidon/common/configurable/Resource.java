@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,12 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 
 /**
  * A representation of a resource that can be
  * loaded from URL ({@link #create(URI)}), classpath ({@link #create(String)}), filesystem ({@link #create(Path)},
- * content in config ({@link #create(Config, String)}, input stream({@link #create(String, InputStream)},
+ * content in config ({@link #create(Config)}, input stream({@link #create(String, InputStream)},
  * or direct value ({@link #create(String, byte[])}, {@link #create(String, String)}.
  *
  * The resource bytes can then be accessed by various methods, depending on the type required - either you can access bytes
@@ -131,30 +132,77 @@ public interface Resource {
 
     /**
      * Loads the resource from appropriate location based
-     * on configuration and a key prefix.
+     * on configuration.
      *
      * Keys supported (in this order):
      * <ul>
-     * <li>prefix-path: File system path</li>
-     * <li>prefix-resource-path: Class-path resource</li>
-     * <li>prefix-url: URL to resource</li>
-     * <li>prefix-content: actual content (base64 encoded bytes)</li>
-     * <li>prefix-content-plain: actual content (string)</li>
-     * <li>prefix-use-proxy: set to false not to go through a proxy; will only use proxy if it is defined used
-     * "proxy-host" and optional "proxy-port" (defaults to 80); ignored unless URL is
-     * used</li>
+     * <li>path: File system path</li>
+     * <li>resource-path: Class-path resource</li>
+     * <li>url: URL to resource</li>
+     * <li>content: actual content (base64 encoded bytes)</li>
+     * <li>content-plain: actual content (string)</li>
+     * <li>use-proxy: set to false not to go through a proxy; will only use proxy if it is defined used
+     * "proxy-host" and optional "proxy-port" (defaults to 80); ignored unless URL is used</li>
      * </ul>
      *
-     * @param config    configuration
-     * @param keyPrefix prefix of keys that may contain the location of resource
-     * @return a resource ready to load from one of the locations or empty if neither is defined
+     * @param resourceConfig    configuration current node must be the node containing the location of the resource, by
+     *                          convention in helidon, this should be on key named {@code resource}
+     * @return a resource ready to load from one of the locations
+     * @throws io.helidon.config.ConfigException in case this config does not define a resource configuration
      */
-    static Optional<Resource> create(Config config, String keyPrefix) {
-        return ResourceUtil.fromConfigPath(config, keyPrefix)
-                .or(() -> ResourceUtil.fromConfigResourcePath(config, keyPrefix))
-                .or(() -> ResourceUtil.fromConfigUrl(config, keyPrefix))
-                .or(() -> ResourceUtil.fromConfigContent(config, keyPrefix))
-                .or(() -> ResourceUtil.fromConfigB64Content(config, keyPrefix));
+    static Resource create(Config resourceConfig) {
+        return ResourceUtil.fromConfigPath(resourceConfig.get("path"))
+                .or(() -> ResourceUtil.fromConfigResourcePath(resourceConfig.get("resource-path")))
+                .or(() -> ResourceUtil.fromConfigUrl(resourceConfig.get("url")))
+                .or(() -> ResourceUtil.fromConfigContent(resourceConfig.get("content-plain")))
+                .or(() -> ResourceUtil.fromConfigB64Content(resourceConfig.get("content")))
+                .orElseThrow(() -> new ConfigException("Config is not a resource configuration on key: " + resourceConfig.key()
+                                                               + ". The config must contain one of "
+                                                               + "(path,resource-path,url,content-plain,content)"));
+    }
+
+    /**
+     * Support for old API and configuration.
+     *
+     * @param config configuration
+     * @param prefix prefix of the resource
+     * @return resource if configured
+     * @deprecated since 2.0.0 use {@link #create(io.helidon.config.Config)} instead (and change the configuration to use
+     *  {@code .resource.type} instead of prefixes
+     */
+    @Deprecated
+    static Optional<Resource> create(Config config, String prefix) {
+        Optional<Resource> result = ResourceUtil.fromConfigPath(config.get(prefix + "-path"));
+        if (result.isPresent()) {
+            ResourceUtil.logPrefixed(config, prefix, "path");
+            return result;
+        }
+
+        result = ResourceUtil.fromConfigResourcePath(config.get(prefix + "-resource-path"));
+        if (result.isPresent()) {
+            ResourceUtil.logPrefixed(config, prefix, "resource-path");
+            return result;
+        }
+
+        result = ResourceUtil.fromConfigUrl(config.get(prefix + "-url"));
+        if (result.isPresent()) {
+            ResourceUtil.logPrefixed(config, prefix, "url");
+            return result;
+        }
+
+        result = ResourceUtil.fromConfigContent(config.get(prefix + "-content-plain"));
+        if (result.isPresent()) {
+            ResourceUtil.logPrefixed(config, prefix, "content-plain");
+            return result;
+        }
+
+        result = ResourceUtil.fromConfigB64Content(config.get(prefix + "-content"));
+        if (result.isPresent()) {
+            ResourceUtil.logPrefixed(config, prefix, "content");
+            return result;
+        }
+
+        return result;
     }
 
     /**

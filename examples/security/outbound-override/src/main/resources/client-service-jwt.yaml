@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ security:
         # we are not interested in inbound tokens
         verify-signature: false
       sign-token:
-        jwk-resource-path: "signing-jwk.json"
+        jwk.resource.resource-path: "signing-jwk.json"
         jwt-issuer: "example.helidon.io"
         outbound:
         - name: "propagate-identity"
@@ -49,6 +49,8 @@ security:
           outbound-token:
             header: "Authorization"
             format: "bearer %1$s"
+          outbound:
+            - name: "propagate-all"
   web-server:
     defaults:
       authenticate: true

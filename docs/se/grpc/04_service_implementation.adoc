@@ -1,0 +1,165 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= gRPC Service Implementation
+:h1Prefix: SE
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.grpc.server/io/helidon/grpc/server
+:pagename: grpc-server-service-implementation
+:description: Helidon gRPC Service Implementation
+:keywords: helidon, grpc, java
+
+== Service Implementation
+
+While Helidon gRPC Server allows you to deploy any standard gRPC service that
+implements `io.grpc.BindableService` interface, including services generated
+from the Protobuf IDL files (and even allows you to customize them to a certain
+extent), using Helidon gRPC framework to implement your services has a number of
+benefits:
+
+* It allows you to define both HTTP and gRPC services using similar programming
+  model, simplifying learning curve for developers.
+
+* It provides a number of helper methods that make service implementation
+  significantly simpler.
+
+* It allows you to configure some of the Helidon value-added features, such
+  as <<08_security.adoc, security>> and <<07_metrics.adoc, metrics collection>>
+  down to the method level.
+
+* It allows you to easily specify custom marshaller for requests and
+  responses if Protobuf does not satisfy your needs.
+
+* It provides built in support for <<06_health_checks.adoc, health checks>>.
+
+== Service Implementation Basics
+
+At the very basic level, all you need to do in order to implement a Helidon
+gRPC service is create a class that implements `io.helidon.grpc.server.GrpcService`
+interface and define one or more methods for the service:
+
+[source,java]
+----
+class EchoService implements GrpcService {
+
+    @Override
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.unary("Echo", this::echo); // <1>
+    }
+
+    /**
+     * Echo the message back to the caller.
+     *
+     * @param request   the echo request containing the message to echo
+     * @param observer  the response observer
+     */
+    public void echo(String request, StreamObserver<String> observer) {  // <2>
+        complete(observer, request);  // <3>
+    }
+}
+----
+
+<1> Define unary method `Echo` and map it to the `this::echo` handler.
+<2> Create a handler for the `Echo` method.
+<3> Send the request string back to the client by completing response observer.
+
+NOTE: The `complete` method shown in the example above is just one of many helper
+      methods available in the `GrpcService` class. See the full list
+      link:{javadoc-base-url-api}/GrpcService.html[here].
+
+The example above implements a service with a single unary method, which will be
+exposed at the `EchoService/Echo' endpoint. The service does not explicitly define
+a marshaller for requests and responses, so Java serialization will be used as a
+default.
+
+Unfortunately, this implies that you will have to implement clients by hand and
+configure them to use the same marshaller as the server. Obviously, one of the
+major selling points of gRPC is that it makes it easy to generate clients for a
+number of languages (as long as you use Protobuf for marshalling), so let's see
+how we would implement Protobuf enabled Helidon gRPC service.
+
+== Implementing Protobuf Services
+
+In order to implement Protobuf-based service, you would follow the official
+link:https://grpc.io/docs/quickstart/java.html[instructions] on the gRPC
+web site, which boil down to the following:
+
+=== Define the Service IDL
+
+For this example, we will re-implement the `EchoService` above as a Protobuf
+service in `echo.proto` file.
+
+[source, proto]
+----
+syntax = "proto3";
+option java_package = "org.example.services.echo";
+
+service EchoService {
+  rpc Echo (EchoRequest) returns (EchoResponse) {}
+}
+
+message EchoRequest {
+  string message = 1;
+}
+
+message EchoResponse {
+  string message = 1;
+}
+----
+
+Based on this IDL, the gRPC compiler will generate message classes (`EchoRequest`
+and `EchoResponse`), client stubs that can be used to make RPC calls to the server,
+as well as the base class for the server-side service implementation.
+
+We can ignore the last one, and implement the service using Helidon gRPC framework
+instead.
+
+=== Implement the Service
+
+The service implementation will be very similar to our original implementation:
+
+[source,java]
+----
+class EchoService implements GrpcService {
+
+    @Override
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.proto(Echo.getDescriptor())  // <1>
+             .unary("Echo", this::echo);   // <2>
+    }
+
+    /**
+     * Echo the message back to the caller.
+     *
+     * @param request   the echo request containing the message to echo
+     * @param observer  the response observer
+     */
+    public void echo(Echo.EchoRequest request, StreamObserver<Echo.EchoResponse> observer) {  // <3>
+        String message = request.getMessage();  // <4>
+        Echo.EchoResponse response = Echo.EchoResponse.newBuilder().setMessage(message).build();  // <5>
+        complete(observer, response);  // <6>
+    }
+}
+----
+
+<1> Specify proto descriptor in order to provide necessary type information and
+    enable Protobuf marshalling.
+<2> Define unary method `Echo` and map it to the `this::echo` handler.
+<3> Create a handler for the `Echo` method, using Protobuf message types for request and response.
+<4> Extract message string from the request.
+<5> Create the response containing extracted message.
+<6> Send the response back to the client by completing response observer.

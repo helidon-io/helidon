@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,174 +15,99 @@
  */
 package io.helidon.media.common;
 
+import java.util.Collection;
+import java.util.Collections;
+
 /**
- * Media support.
+ * Service used to register readers and writers to the respective context.
+ * <p>
+ * MediaSupport instances can be used with WebServer and WebClient to register readers and writer.
+ * Each of these have method addMediaSupport(), which will add corresponding support.
+ * </p><br>
+ * WebServer example usage:
+ * <pre><code>
+ * WebServer.builder()
+ *          .addMediaSupport(JsonbSupport.create())
+ *          .build();
+ * </code></pre>
+ * WebClient example usage:
+ * <pre><code>
+ * WebClient.builder()
+ *          .addMediaSupport(JacksonSupport.create())
+ *          .build();
+ * </code></pre>
+ * If you need to register MediaSupport on the request or response, you will need to register them to
+ * the corresponding context.
+ * <br>
+ * Example request reader registration:
+ * <pre><code>
+ * Routing.builder()
+ *        .get("/foo", (res, req) -&gt; {
+ *            MessageBodyReadableContent content = req.content();
+ *            content.registerReader(JsonbSupport.create())
+ *            content.as(String.class)
+ *                   .thenAccept(System.out::print);
+ *        })
+ * </code></pre>
+ * Example response writer registration:
+ * <pre><code>
+ * Routing.builder()
+ *        .get("/foo", (res, req) -&gt; {
+ *           MessageBodyWriterContext writerContext = res.writerContext();
+ *           writerContext.registerWriter(JsonbSupport.create())
+ *           res.send("Example entity");
+ *        })
+ * </code></pre>
  */
-public final class MediaSupport {
+public interface MediaSupport {
 
-    private final MessageBodyReaderContext readerContext;
-    private final MessageBodyWriterContext writerContext;
-
-    private MediaSupport(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
-        this.readerContext = readerContext;
-        this.writerContext = writerContext;
+    /**
+     * Method used to register readers and writers.
+     *
+     * @param readerContext reader context
+     * @param writerContext writer context
+     */
+    default void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
+        readers().forEach(readerContext::registerReader);
+        writers().forEach(writerContext::registerWriter);
+        streamReaders().forEach(readerContext::registerReader);
+        streamWriters().forEach(writerContext::registerWriter);
     }
 
     /**
-     * Get the configured reader context.
-     * @return MessageBodyReaderContext
+     * Returns the collection of the readers which should be registered.
+     *
+     * @return readers
      */
-    public MessageBodyReaderContext readerContext() {
-        return readerContext;
+    default Collection<MessageBodyReader<?>> readers() {
+        return Collections.emptyList();
     }
 
     /**
-     * Get the configured writer context.
-     * @return MessageBodyWriterContext
+     * Returns the collection of the writers which should be registered.
+     *
+     * @return writers
      */
-    public MessageBodyWriterContext writerContext() {
-        return writerContext;
+    default Collection<MessageBodyWriter<?>> writers() {
+        return Collections.emptyList();
     }
 
     /**
-     * Create a new instance with empty reader and writer contexts.
-     * @return MediaSupport
+     * Returns the collection of the stream readers which should be registered.
+     *
+     * @return stream readers
      */
-    public static MediaSupport create() {
-        return builder().build();
+    default Collection<MessageBodyStreamReader<?>> streamReaders() {
+        return Collections.emptyList();
     }
 
     /**
-     * Create a new instance with the default readers and writers registered on
-     * the contexts.
-     * @return MediaSupport
+     * Returns the collection of the stream writers which should be registered.
+     *
+     * @return stream writers
      */
-    public static MediaSupport createWithDefaults() {
-        return builder().registerDefaults().build();
+    default Collection<MessageBodyStreamWriter<?>> streamWriters() {
+        return Collections.emptyList();
     }
 
-    /**
-     * Create a new {@link Builder} instance.
-     * @return Builder
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * MediaSupport builder.
-     */
-    public static final class Builder implements io.helidon.common.Builder<MediaSupport> {
-
-        private final MessageBodyReaderContext readerContext;
-        private final MessageBodyWriterContext writerContext;
-
-        Builder() {
-            readerContext = MessageBodyReaderContext.create();
-            writerContext = MessageBodyWriterContext.create();
-        }
-
-        /**
-         * Register the default readers and writers.
-         * <h3>Default readers</h3>
-         * <ul>
-         * <li>{@link StringBodyReader} - converts payload into
-         * {@code String.class}</li>
-         * <li>{@link InputStreamBodyReader} - converts payload into
-         * {@code InputStream.class}</li>
-         * </ul>
-         * <h3>Default writers</h3>
-         * <ul>
-         * <li>{@link CharSequenceBodyWriter} - generates payload from
-         * {@code CharSequence.class}</li>
-         * <li>{@link ByteChannelBodyWriter} - generates payload from
-         * {@code ReadableByteChannel.class}</li>
-         * <li>{@link PathBodyWriter} - generates payload from
-         * {@code Path.class}</li>
-         * <li>{@link FileBodyWriter} - generates payload from
-         * {@code File.class}</li>
-         * </ul>
-         *
-         * @return this builder instance
-         */
-        public Builder registerDefaults() {
-            // default readers
-            readerContext
-                    .registerReader(StringBodyReader.create())
-                    .registerReader(InputStreamBodyReader.create());
-
-            // default writers
-            writerContext
-                    .registerWriter(CharSequenceBodyWriter.create())
-                    .registerWriter(ByteChannelBodyWriter.create())
-                    .registerWriter(PathBodyWriter.create())
-                    .registerWriter(FileBodyWriter.create());
-            return this;
-        }
-
-        /**
-         * Register a new reader.
-         * @param reader reader to register
-         * @return this builder instance
-         */
-        public Builder registerReader(MessageBodyReader<?> reader) {
-            readerContext.registerReader(reader);
-            return this;
-        }
-
-        /**
-         * Register a new stream reader.
-         * @param reader reader to register
-         * @return this builder instance
-         */
-        public Builder registerStreamReader(MessageBodyStreamReader<?> reader) {
-            readerContext.registerReader(reader);
-            return this;
-        }
-
-        /**
-         * Register a new filter on the reader context (inbound payload).
-         * @param filter filter to register
-         * @return this builder instance
-         */
-        public Builder registerInboundFilter(MessageBodyFilter filter) {
-            writerContext.registerFilter(filter);
-            return this;
-        }
-
-        /**
-         * Register a new writer.
-         * @param writer writer to register
-         * @return this builder instance
-         */
-        public Builder registerWriter(MessageBodyWriter<?> writer) {
-            writerContext.registerWriter(writer);
-            return this;
-        }
-
-        /**
-         * Register a new stream writer.
-         * @param writer writer to register
-         * @return this builder instance
-         */
-        public Builder registerStreamWriter(MessageBodyStreamWriter<?> writer) {
-            writerContext.registerWriter(writer);
-            return this;
-        }
-
-        /**
-         * Register a new filter on the writer context (outbound payload).
-         * @param filter filter to register
-         * @return this builder instance
-         */
-        public Builder registerOutboundFilter(MessageBodyFilter filter) {
-            writerContext.registerFilter(filter);
-            return this;
-        }
-
-        @Override
-        public MediaSupport build() {
-            return new MediaSupport(readerContext, writerContext);
-        }
-    }
 }

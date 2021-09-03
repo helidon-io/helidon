@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,12 +77,15 @@ final class HelidonMeter extends MetricImpl implements Meter {
     application:requests_fifteen_min_rate_per_second 12.126
     */
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
         String name = metricID.getName();
         String nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_total";
         String tags = prometheusTags(metricID.getTags());
-        prometheusType(sb, nameUnits, "counter");
-        prometheusHelp(sb, nameUnits);
+
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "counter");
+            prometheusHelp(sb, nameUnits);
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -90,7 +93,9 @@ final class HelidonMeter extends MetricImpl implements Meter {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -98,7 +103,9 @@ final class HelidonMeter extends MetricImpl implements Meter {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_one_min_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -106,7 +113,9 @@ final class HelidonMeter extends MetricImpl implements Meter {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_five_min_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -114,7 +123,9 @@ final class HelidonMeter extends MetricImpl implements Meter {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_fifteen_min_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -300,5 +311,15 @@ final class HelidonMeter extends MetricImpl implements Meter {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), delegate);
+    }
+
+    @Override
+    protected String toStringDetails() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(", count='").append(getCount()).append('\'');
+        sb.append(", fifteenMinuteRate='").append(getFifteenMinuteRate()).append('\'');
+        sb.append(", fiveMinuteRate='").append(getFiveMinuteRate()).append('\'');
+        sb.append(", meanRate='").append(getMeanRate()).append('\'');
+        return sb.toString();
     }
 }

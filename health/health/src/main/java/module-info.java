@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,10 @@ module io.helidon.health {
     requires io.helidon.common;
     requires transitive microprofile.health.api;
     requires io.helidon.webserver;
-    requires io.helidon.media.jsonp.server;
+    requires io.helidon.webserver.cors;
+    requires io.helidon.media.jsonp;
     requires java.json;
+    requires io.helidon.faulttolerance;
 
     exports io.helidon.health;
     provides org.eclipse.microprofile.health.spi.HealthCheckResponseProvider with io.helidon.health.HealthCheckResponseProviderImpl;

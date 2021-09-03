@@ -1,0 +1,120 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Rest Client
+:h1Prefix: MP
+:description: Helidon MP Rest Client
+:feature-name: MicroProfile Rest Client
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:microprofile-bundle: true
+= :keywords: helidon, rest, client, microprofile, micro-profile
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.rest-client</groupId>
+    <artifactId>helidon-microprofile-rest-client</artifactId>
+</dependency>
+----
+
+== Configuring Rest Client with Helidon MP
+MicroProfile Rest Client adds the capability to invoke remote microservices using a JAX-RS like interface to declare the
+operations.
+
+== Creating a new client using a builder
+
+MicroProfile Rest Client can be created using a builder obtained from `RestClientBuilder.newBuilder()`.
+The builder provides methods to configure details for the client and to define the desired rest client interface.
+
+Example:
+[source,java]
+----
+SomeResource someResource = RestClientBuilder.newBuilder()
+                                 .baseUri(URI.create("http://localhost:8080/baseUri"))
+                                 .build(SomeResource.class);
+
+someResource.someMethod(apiModel);
+----
+
+== Creating new client - CDI
+A rest client interface can be annotated with `@RegisterRestClient` to automatically register it with CDI.
+The `RegisterRestClient` annotation has a property `baseUri` that can be used to define the base endpoint of this client.
+This value can be overridden using configuration.
+
+Example:
+[source,java]
+----
+@RegisterRestClient(baseUri="http://localhost:8080/baseUri")
+public interface SomeResource {
+
+// ...
+
+}
+----
+
+Once a rest client interface is annotated, it can be injected into any CDI bean.
+
+Example:
+[source,java]
+----
+@Inject
+@RestClient
+SomeResource client;
+
+// ...
+
+client.sampleMethod();
+
+----
+
+== Rest client configuration
+Rest client implementation allows you to configure its parameters by builder,
+annotations, and configuration.
+
+You can configure new providers, base URI/URL and other options of the client.
+See specification for full details:
+https://download.eclipse.org/microprofile/microprofile-rest-client-1.2.1/microprofile-rest-client-1.2.1.html
+
+== Quickstart example
+To be able to run and test this example, please head to the Helidon examples/quickstarts
+and start the helidon-quickstart-mp. Then create project with
+the dependency on the Helidon rest client implementation and create the following rest client
+interface:
+
+Rest client interface
+[source,java]
+----
+@Path("/greet")
+interface GreetRestClient {
+
+     @GET
+     JsonObject getDefaultMessage();
+
+     @Path("/{name}")
+     @GET
+     JsonObject getMessage(@PathParam("name") String name);
+
+}
+----
+Then create runnable method the same way as it is described in
+`Creating new client - Interface`,but with baseUri `http://localhost:8080/greet`
+and the above interface.
+
+By calling `GreetRestClient.getDefaultMessage()` you reach the endpoint of Helidon quickstart.

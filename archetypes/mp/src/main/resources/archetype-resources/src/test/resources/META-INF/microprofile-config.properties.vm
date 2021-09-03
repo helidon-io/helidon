@@ -1,5 +1,0 @@
-# Override configuration to use a random port for the unit tests
-config_ordinal=1000
-# Microprofile server properties
-server.port=-1
-server.host=0.0.0.0

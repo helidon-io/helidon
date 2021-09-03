@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,55 +54,52 @@ public class GetStatementIT {
     /**
      * Verify {@code params(List<?>)} parameters setting method.
      *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testGetListParams() throws ExecutionException, InterruptedException {
+    public void testGetListParams() {
         List<Integer> params = new ArrayList<>(2);
         params.add(2);
         params.add(4);
         Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
                 .createNamedGet("select-pokemons-idrng-order-arg")
                 .params(params)
-                .execute()
-        ).toCompletableFuture().get();
+                .execute())
+                .await();
+
         verifyPokemonsIdRange(maybeRow, 2, 4);
     }
 
     /**
      * Verify {@code params(Map<?>)} parameters setting method.
      *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testGetMapParams() throws ExecutionException, InterruptedException {
+    public void testGetMapParams() {
         Map<String, Integer> params = new HashMap<>(2);
         params.put("idmin", 3);
         params.put("idmax", 5);
         Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
                 .createNamedGet("select-pokemons-idrng-named-arg")
                 .params(params)
-                .execute()
-        ).toCompletableFuture().get();
+                .execute())
+                .await();
+
         verifyPokemonsIdRange(maybeRow, 3, 5);
     }
 
     /**
      * Verify {@code addParam(Object parameter)} parameters setting method.
      *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testGetOrderParam() throws ExecutionException, InterruptedException {
+    public void testGetOrderParam() {
         Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
                 .createNamedGet("select-pokemons-idrng-order-arg")
                 .addParam(4)
                 .addParam(6)
-                .execute()
-        ).toCompletableFuture().get();
+                .execute())
+                .await();
+
         verifyPokemonsIdRange(maybeRow, 4, 6);
     }
 

@@ -1,0 +1,118 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= gRPC Service Health Checks
+:h1Prefix: SE
+:pagename: grpc-server-health-checks
+:description: Helidon gRPC Service Health Checks
+:keywords: helidon, grpc, java
+
+== Service Health Checks
+
+Helidon gRPC services provide a built-in support for Helidon Health Checks.
+
+Unless a custom health check is implemented by the service developer, each service
+deployed to the gRPC server will be provisioned with a default health check, which
+always returns status of `UP`.
+
+This allows all services, including the ones that don't have a meaningful health check,
+to show up in the health report (or to be queried for health) without service developer
+having to do anything.
+
+However, services that do need custom health checks can easily define one,
+directly within `GrpcService` implementation:
+
+[source,java]
+----
+public class MyService implements GrpcService {
+
+    @Override
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.unary("MyMethod", this::myMethod)
+                .healthCheck(this::healthCheck);  // <1>
+    }
+
+    private HealthCheckResponse healthCheck() {
+        boolean fUp = isMyServiceUp();            // <2>
+        return HealthCheckResponse
+                .named(name())                    // <3>
+                .state(fUp)                       // <4>
+                .withData("ts", System.currentTimeMillis())  // <5>
+                .build();
+    }
+
+    private <ReqT, ResT> void myMethod(ReqT request, StreamObserver<ResT> observer) {
+        // do something
+    }
+}
+----
+
+<1> Configure a custom health check for the service
+<2> Determine service status
+<3> Use service name as a health check name for consistency
+<4> Use determined service status
+<5> Optionally, provide additional metadata
+
+You can also define custom health check for an existing service, including plain
+`io.grpc.BindableService` implementations, using service configurer inside the
+`GrpcRouting` deefinition:
+
+[source,java]
+----
+private static GrpcRouting createRouting() {
+    return GrpcRouting.builder()
+            .register(new EchoService(), cfg -> cfg.healthCheck(MyCustomHealthChecks::echoHealthCheck))  // <1>
+            .build();
+}
+----
+
+<1> Configure custom health check for an existing or legacy service
+
+== Exposing Health Checks
+
+All gRPC service health checks are managed by the Helidon gRPC Server, and are
+automatically exposed to the gRPC clients using custom implementation of the
+standard gRPC `HealthService` API.
+
+However, they can also be exposed to REST clients via standard Helidon/Microprofile
+`/health` endpoint:
+
+[source,java]
+----
+        GrpcServer grpcServer = GrpcServer.create(grpcServerConfig(), createRouting(config));  // <1>
+        grpcServer.start();                                                                    // <2>
+
+        HealthSupport health = HealthSupport.builder()
+                .add(grpcServer.healthChecks())     // <3>
+                .build();
+
+        Routing routing = Routing.builder()
+                .register(health)                   // <4>
+                .build();
+
+        WebServer.create(webServerConfig(), routing).start();   // <5>
+----
+
+<1> Create `GrpcServer` instance
+<2> Start gRPC server, which will deploy all services and register default and custom health checks
+<3> Add gRPC server managed health checks to `HealthSupport` instance
+<4> Add `HealthSupport` to the web server routing definition
+<5> Create and start web server
+
+All gRPC health checks will now be available via `/health` REST endpoint, in
+addition to the standard gRPC `HealthService`

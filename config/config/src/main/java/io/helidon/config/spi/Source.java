@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,18 @@
 package io.helidon.config.spi;
 
 import java.util.Optional;
-import java.util.concurrent.Flow;
-
-import io.helidon.config.ConfigException;
+import java.util.function.Supplier;
 
 /**
- * Source of the specified type {@code <T>} of data.
+ * Source of data.
  *
- * @param <T> a type of source
+ * The actual loading of the data depends on the type of the source.
+ *
+ * @see io.helidon.config.spi.ParsableSource
+ * @see io.helidon.config.spi.NodeConfigSource
+ * @see LazyConfigSource
  */
-public interface Source<T> extends Changeable<T>, AutoCloseable {
-
+public interface Source {
     /**
      * Short, human-readable summary referring to the underlying source.
      * <p>
@@ -49,38 +50,66 @@ public interface Source<T> extends Changeable<T>, AutoCloseable {
     }
 
     /**
-     * Loads the underlying source data, converting it into an {@code Optional}
-     * around the parameterized type {@code T}.
-     * <p>
-     * Implementations should return {@link Optional#empty()} if the underlying
-     * origin does not exist.
-     * <p>
-     * The method can be invoked repeatedly, for example during retries.
+     * If the underlying data exist at this time.
+     * This is to prevent us loading such a source if we know it does not exist.
      *
-     * @return {@code Optional<T>} referring to an instance of {@code T} as read
-     * from the underlying origin of the data (if it exists) or
-     * {@link Optional#empty()} otherwise
-     * @throws ConfigException in case of errors loading from the underlying
-     * origin
+     * @return {@code true} if the source exists, {@code false} otherwise
      */
-    Optional<T> load() throws ConfigException;
-
-    //
-    // source changes
-    //
-
-    @Override
-    @Deprecated
-    default Flow.Publisher<Optional<T>> changes() { //TODO later remove, see Changeable interface
-        return Flow.Subscriber::onComplete;
+    default boolean exists() {
+        return true;
     }
 
     /**
-     * Closes the @{code Source}, releasing any resources it holds.
+     * Retry policy configured on this config source.
      *
-     * @throws Exception in case of errors encountered while closing the source
+     * @return configured retry policy
      */
-    @Override
-    default void close() throws Exception {
+    default Optional<RetryPolicy> retryPolicy() {
+        return Optional.empty();
+    }
+
+    /**
+     * Whether this source is optional.
+     *
+     * @return return {@code true} for optional source, returns {@code false} by default
+     */
+    default boolean optional() {
+        return false;
+    }
+
+    /**
+     * Configurable options of a {@link io.helidon.config.spi.Source}.
+     *
+     * @param <B> type implementation class of this interface
+     */
+    interface Builder<B extends Builder<B>> {
+        /**
+         * Configure a retry policy to be used with this source.
+         * If none is configured, the source is invoked directly with no retries.
+         *
+         * @param policy retry policy to use
+         * @return updated builder instance
+         */
+        B retryPolicy(Supplier<? extends RetryPolicy> policy);
+
+        /**
+         * Whether the source is optional or not.
+         * When configured to be optional, missing underlying data do not cause an exception to be raised.
+         *
+         * @param optional {@code true} when this source should be optional
+         * @return updated builder instance
+         */
+        B optional(boolean optional);
+
+        /**
+         * Configure this source to be optional.
+         * <p>
+         * Same as calling {@link #optional(boolean) optional(true)}.
+         *
+         * @return updated builder instance
+         */
+        default B optional() {
+            return optional(true);
+        }
     }
 }

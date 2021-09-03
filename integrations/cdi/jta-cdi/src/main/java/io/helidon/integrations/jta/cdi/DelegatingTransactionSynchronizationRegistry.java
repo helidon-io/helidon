@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,10 @@ import javax.transaction.TransactionSynchronizationRegistry;
  * other non-{@code public} internal classes.</p>
  *
  * @see TransactionSynchronizationRegistry
+ *
+ * @deprecated An equivalent class now exists in Narayana itself.
  */
+@Deprecated(forRemoval = true)
 public abstract class DelegatingTransactionSynchronizationRegistry implements TransactionSynchronizationRegistry {
 
     private final TransactionSynchronizationRegistry delegate;

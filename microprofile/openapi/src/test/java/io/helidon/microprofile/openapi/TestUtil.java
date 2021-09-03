@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.microprofile.openapi;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -27,11 +28,13 @@ import java.util.Map;
 import javax.ws.rs.core.Application;
 
 import io.helidon.common.http.MediaType;
+import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
 
 import org.yaml.snakeyaml.Yaml;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Useful utility methods during testing.
@@ -43,24 +46,35 @@ public class TestUtil {
      * <p>
      * The server will use the default MP config.
      *
-     * @param appClass application class to serve
+     * @param helidonConfig the Helidon configuration to use in preparing the server
+     * @param appClasses application classes to serve
      * @return the started MP {@code Server} instance
      */
-    public static Server startServer(Class<? extends Application> appClass) {
-        return Server.builder()
+    public static Server startServer(Config helidonConfig, Class<? extends Application>... appClasses) {
+        Server.Builder builder = Server.builder()
                 .port(0)
-                .addApplication(appClass)
+                .config(helidonConfig);
+        for (Class<? extends Application> appClass : appClasses) {
+            builder.addApplication(appClass);
+        }
+        return builder
                 .build()
                 .start();
     }
 
     /**
-     * Stops the previously-started MP server.
+     * Cleans up, stopping the server and disconnecting the connection.
      *
      * @param server the {@code Server} to stop
+     * @param cnx the connection to disconnect
      */
-    public static void stopServer(Server server) {
-        server.stop();
+    public static void cleanup(Server server, HttpURLConnection cnx) {
+        if (cnx != null) {
+            cnx.disconnect();
+        }
+        if (server != null) {
+            server.stop();
+        }
     }
 
     /**
@@ -163,7 +177,9 @@ public class TestUtil {
         if (returnedMediaType.charset().isPresent()) {
             cs = Charset.forName(returnedMediaType.charset().get());
         }
-        return (Map<String, Object>) yaml.load(new InputStreamReader(cnx.getInputStream(), cs));
+        try (InputStream is = cnx.getInputStream(); InputStreamReader isr =  new InputStreamReader(is, cs)) {
+            return (Map<String, Object>) yaml.load(isr);
+        }
     }
 
     /**
@@ -183,9 +199,14 @@ public class TestUtil {
      */
     @SuppressWarnings(value = "unchecked")
     public static <T> T fromYaml(Map<String, Object> map, String dottedPath, Class<T> cl) {
+        Map<String, Object> originalMap = map;
         String[] segments = dottedPath.split("\\.");
         for (int i = 0; i < segments.length - 1; i++) {
             map = (Map<String, Object>) map.get(segments[i]);
+            if (map == null) {
+                fail("Traversing dotted path " + dottedPath + " segment " + segments[i] + " not found in parsed map "
+                        + originalMap);
+            }
         }
         return cl.cast(map.get(segments[segments.length - 1]));
     }

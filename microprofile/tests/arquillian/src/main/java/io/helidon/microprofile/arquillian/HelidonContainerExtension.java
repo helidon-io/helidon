@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.microprofile.arquillian;
 
 import javax.enterprise.context.control.RequestContextController;
 import javax.enterprise.context.spi.CreationalContext;
+import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
 
@@ -47,9 +48,12 @@ class HelidonContainerExtension implements LoadableExtension {
         @Override
         public BeanManager getBeanManager() {
             if (beanManager == null) {
-                CDI<Object> cdi = CDI.current();
+                CDI<Object> cdi = cdi();
                 if (cdi != null) {
-                    beanManager = cdi.getBeanManager();
+                    SeContainer container = (SeContainer) cdi;
+                    if (container.isRunning()) {
+                        beanManager = container.getBeanManager();
+                    }
                 }
             }
             return beanManager;
@@ -62,12 +66,20 @@ class HelidonContainerExtension implements LoadableExtension {
 
         public RequestContextController getRequestContextController() {
             if (requestContextController == null) {
-                CDI<Object> cdi = CDI.current();
+                CDI<Object> cdi = cdi();
                 if (cdi != null) {
                     requestContextController = cdi.select(RequestContextController.class).get();
                 }
             }
             return requestContextController;
+        }
+
+        private static CDI<Object> cdi() {
+            try {
+                return CDI.current();
+            } catch (IllegalStateException ignored) {
+                return null;
+            }
         }
     }
 

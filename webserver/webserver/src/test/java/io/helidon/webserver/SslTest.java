@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,14 @@
 
 package io.helidon.webserver;
 
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import io.helidon.common.Builder;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
+import io.helidon.webclient.WebClientTls;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientRequestBuilder;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -50,7 +40,7 @@ public class SslTest {
     private static final Logger LOGGER = Logger.getLogger(SslTest.class.getName());
 
     private static WebServer webServer;
-    private static Client client;
+    private static WebClient client;
 
     /**
      * Start the secured Web Server
@@ -60,53 +50,62 @@ public class SslTest {
      * @throws Exception in case of an error
      */
     private static void startServer(int port) throws Exception {
-        Builder<SSLContext> nettyContext = SSLContextBuilder.create(KeyConfig.pemBuilder()
-                                                                             .key(Resource.create("ssl/key.pkcs8.pem"))
-                                                                             .certChain(Resource.create("ssl/certificate.pem"))
-                                                                             .build());
-
-        webServer = WebServer.create(
-                ServerConfiguration.builder()
-                                   .ssl(nettyContext)
-                                   .port(port),
+        webServer = WebServer.builder(
                 Routing.builder()
-                       .any((req, res) -> res.send("It works!")))
-                             .start()
-                             .toCompletableFuture()
-                             .get(10, TimeUnit.SECONDS);
+                        .any((req, res) -> res.send("It works!")))
+
+                .port(port)
+                .tls(WebServerTls.builder()
+                             .privateKey(KeyConfig.pemBuilder()
+                                                 .key(Resource.create("ssl/key.pkcs8.pem"))
+                                                 .certChain(Resource.create("ssl/certificate.pem"))
+                                                 .build()))
+                .build()
+                .start()
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
 
         LOGGER.info("Started secured server at: https://localhost:" + webServer.port());
     }
 
     @Test
-    public void testSecuredServerWithJerseyClient() throws Exception {
-
-        Response response = client.target("https://localhost:" + webServer.port())
-                                  .request()
-                                  .get();
-
-        doAssert(response);
+    public void testSecuredServerWithWebClient() throws Exception {
+        client.get()
+                .uri("https://localhost:" + webServer.port())
+                .request(String.class)
+                .thenAccept(it -> assertThat(it, is("It works!")))
+                .toCompletableFuture()
+                .get();
     }
 
     @Test
     public void multipleSslRequestsKeepAlive() throws Exception {
-        WebTarget target = client.target("https://localhost:" + webServer.port());
-        doAssert(target.request().get());
-        doAssert(target.request().get());
+        WebClientRequestBuilder requestBuilder = client.get()
+                .uri("https://localhost:" + webServer.port());
+
+        // send an entity that won't be consumed, as such a new connection will be created by the server
+        requestBuilder
+                .request(String.class)
+                .thenAccept(it -> assertThat(it, is("It works!")))
+                .thenCompose(it -> requestBuilder.request(String.class))
+                .thenAccept(it -> assertThat(it, is("It works!")))
+                .toCompletableFuture()
+                .get();
     }
 
     @Test
     public void multipleSslRequestsNonKeepAlive() throws Exception {
-        WebTarget target = client.target("https://localhost:" + webServer.port());
-        // send an entity that won't be consumed, as such a new connection will be created by the server
-        doAssert(target.request().post(Entity.entity("", MediaType.TEXT_PLAIN_TYPE)));
-        doAssert(target.request().post(Entity.entity("", MediaType.TEXT_PLAIN_TYPE)));
-    }
+        WebClientRequestBuilder requestBuilder = client.post()
+                .uri("https://localhost:" + webServer.port());
 
-    private void doAssert(Response response) {
-        assertThat("Unexpected content; returned status code: " + response.getStatus(),
-                   response.readEntity(String.class),
-                   is("It works!"));
+        // send an entity that won't be consumed, as such a new connection will be created by the server
+        requestBuilder
+                .submit("", String.class)
+                .thenAccept(it -> assertThat(it, is("It works!")))
+                .thenCompose(it -> requestBuilder.submit("", String.class))
+                .thenAccept(it -> assertThat(it, is("It works!")))
+                .toCompletableFuture()
+                .get();
     }
 
     @BeforeAll
@@ -116,51 +115,20 @@ public class SslTest {
     }
 
     @BeforeAll
-    public static void createClientAcceptingAllCertificates() throws Exception {
-        SSLContext sc = clientSslContextTrustAll();
-
-        client = ClientBuilder.newBuilder()
-                              .sslContext(sc)
-                              .hostnameVerifier((s, sslSession) -> true)
-                              .build();
-    }
-
-    public static SSLContext clientSslContextTrustAll() throws NoSuchAlgorithmException, KeyManagementException {
-        // Create a trust manager that does not validate certificate chains
-        TrustManager[] trustAllCerts = {
-                new X509TrustManager() {
-                    @Override
-                    public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                        return null;
-                    }
-
-                    @Override
-                    public void checkClientTrusted(
-                            java.security.cert.X509Certificate[] certs, String authType) {
-                    }
-
-                    @Override
-                    public void checkServerTrusted(
-                            java.security.cert.X509Certificate[] certs, String authType) {
-                    }
-                }
-        };
-
-        // Install the all-trusting trust manager
-        SSLContext sc = SSLContext.getInstance("SSL");
-        sc.init(null, trustAllCerts, new java.security.SecureRandom());
-        return sc;
+    public static void createClientAcceptingAllCertificates() {
+        client = WebClient.builder()
+                .tls(WebClientTls.builder()
+                             .trustAll(true)
+                             .build())
+                .build();
     }
 
     @AfterAll
     public static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                     .toCompletableFuture()
-                     .get(10, TimeUnit.SECONDS);
-        }
-        if (client != null) {
-            client.close();
+                    .toCompletableFuture()
+                    .get(10, TimeUnit.SECONDS);
         }
     }
 }

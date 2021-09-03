@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.opentracing.Span;
 import io.opentracing.SpanContext;
 
 /**
@@ -37,17 +36,6 @@ public interface SecurityRequest {
     default boolean isOptional() {
         return false;
     }
-
-    /**
-     * Get the span to trace subsequent requests.
-     *
-     * @return Open tracing Span instance (started) of the parent of the current request, never null.
-     * @see io.opentracing.util.GlobalTracer#get()
-     * @see io.opentracing.Tracer#buildSpan(String)
-     * @deprecated use {@link #tracingSpanContext()} instead
-     */
-    @Deprecated
-    Span tracingSpan();
 
     /**
      * Parent span for tracing. There may be no parent defined (such as when tracing is disabled).

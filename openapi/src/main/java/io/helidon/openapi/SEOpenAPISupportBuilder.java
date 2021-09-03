@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import io.helidon.config.Config;
 import io.helidon.openapi.internal.OpenAPIConfigImpl;
 
 import io.smallrye.openapi.api.OpenApiConfig;
-import org.jboss.jandex.IndexView;
 
 /**
  * Builds {@link OpenAPISupport} in a Helidon SE environment.
@@ -32,37 +31,45 @@ import org.jboss.jandex.IndexView;
  * {@link OpenApiConfig} which is what the smallrye implementation uses to
  * control its behavior.
  */
-public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder {
+public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder<SEOpenAPISupportBuilder> {
 
-    private static final String CONFIG_PREFIX = "openapi";
     private final OpenAPIConfigImpl.Builder apiConfigBuilder = OpenAPIConfigImpl.builder();
 
+    protected SEOpenAPISupportBuilder() {
+        super(SEOpenAPISupportBuilder.class);
+    }
+
     /**
-     * Set various builder attributes from the specified {@code Config} object.
+     * Set various builder attributes from the specified openapi {@code Config} object.
      * <p>
-     * The {@code Config} object can specify {@value #CONFIG_PREFIX}.web-context
-     * and {@value #CONFIG_PREFIX}.static-file in addition to settings
+     * The {@code Config} object can specify web-context and static-file in addition to settings
      * supported by {@link OpenAPIConfigImpl.Builder}.
      *
-     * @param config the {@code Config} object possibly containing settings
+     * @param config the OpenAPI {@code Config} object possibly containing settings
      * @exception NullPointerException if the provided {@code Config} is null
      * @return updated builder instance
      */
-    public SEOpenAPISupportBuilder helidonConfig(Config config) {
-        config.get(CONFIG_PREFIX + ".web-context").asString().ifPresent(this::webContext);
-        config.get(CONFIG_PREFIX + ".static-file").asString().ifPresent(this::staticFile);
+    public SEOpenAPISupportBuilder config(Config config) {
+        super.config(config);
         apiConfigBuilder.config(config);
         return this;
     }
 
     @Override
-    public OpenApiConfig openAPIConfig() {
-        return apiConfigBuilder.build();
+    public SEOpenAPISupport build() {
+        SEOpenAPISupport result = new SEOpenAPISupport(this);
+        /*
+         * In the SE case we can prepare the model immediately. In MP, we must defer this until the server has created the
+         * Application instances.
+         */
+        validate();
+        result.prepareModel();
+        return result;
     }
 
     @Override
-    public IndexView indexView() {
-        return null;
+    public OpenApiConfig openAPIConfig() {
+        return apiConfigBuilder.build();
     }
 
     /**

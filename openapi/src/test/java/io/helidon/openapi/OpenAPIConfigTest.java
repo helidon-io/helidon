@@ -1,7 +1,5 @@
-package io.helidon.openapi;
-
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +14,7 @@ package io.helidon.openapi;
  * limitations under the License.
  *
  */
+package io.helidon.openapi;
 
 import java.nio.file.Paths;
 
@@ -48,7 +47,7 @@ public class OpenAPIConfigTest {
                 .sources(ConfigSources.file(Paths.get(TEST_CONFIG_DIR, "simple.properties").toString()))
                 .build();
         OpenApiConfig openAPIConfig = OpenAPIConfigImpl.builder()
-                .config(config)
+                .config(config.get(OpenAPISupport.Builder.CONFIG_KEY))
                 .build();
 
         assertThat("reader mismatch", openAPIConfig.modelReader(), is("io.helidon.openapi.test.MyModelReader"));
@@ -66,7 +65,7 @@ public class OpenAPIConfigTest {
                 .sources(ConfigSources.file(Paths.get(TEST_CONFIG_DIR, "simple.properties").toString()))
                 .build();
         OpenApiConfig openAPIConfig = OpenAPIConfigImpl.builder()
-                .config(config)
+                .config(config.get(OpenAPISupport.Builder.CONFIG_KEY))
                 .build();
 
         assertThat("scan disable mismatch", openAPIConfig.scanDisable(), is(true));

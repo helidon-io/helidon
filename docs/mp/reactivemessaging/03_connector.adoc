@@ -1,0 +1,128 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Connector
+:toc:
+:toc-placement: preamble
+:description: Reactive Messaging Connector in Helidon MP
+:keywords: helidon, mp, messaging, connector
+:h1Prefix: MP
+
+== Messaging Connector Bean
+
+Messaging connector is just an application scoped bean which implements
+`IncomingConnectorFactory`, `OutgoingConnectorFactory` or both.
+
+[source,java]
+.Example connector `example-connector`:
+----
+@ApplicationScoped
+@Connector("example-connector")
+public class ExampleConnector implements IncomingConnectorFactory, OutgoingConnectorFactory {
+
+   @Override
+   public PublisherBuilder<? extends Message<?>> getPublisherBuilder(Config config) {
+       return ReactiveStreams.of("foo", "bar")
+               .map(Message::of);
+   }
+
+   @Override
+   public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(Config config) {
+       return ReactiveStreams.<Message<?>>builder()
+               .map(Message::getPayload)
+               .forEach(o -> System.out.println("Connector says: " + o));
+   }
+}
+----
+
+[source,yaml]
+.Example of channel to connector mapping config:
+----
+mp.messaging.outgoing.to-connector-channel.connector: example-connector
+mp.messaging.incoming.from-connector-channel.connector: example-connector
+----
+
+[source,java]
+.Example producing to connector:
+----
+@Outgoing("to-connector-channel")
+public Publisher<String> produce() {
+   return Flowable.just("fee", "fie");
+}
+
+> Connector says: fee
+> Connector says: fie
+----
+
+
+[source,java]
+.Example consuming from connector:
+----
+@Incoming("from-connector-channel")
+public void consume(String value) {
+   System.out.println("Consuming: " + value);
+}
+
+> Consuming: foo
+> Consuming: bar
+----
+
+=== Configuration
+
+[source,java]
+.Example connector accessing configuration:
+----
+@ApplicationScoped
+@Connector("example-connector")
+public class ExampleConnector implements IncomingConnectorFactory {
+
+    @Override
+    public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
+
+        String firstPropValue = config.getValue("first-test-prop", String.class);<1>
+        String secondPropValue = config.getValue("second-test-prop", String.class);
+
+        return ReactiveStreams.of(firstPropValue, secondPropValue)
+                .map(Message::of);
+    }
+}
+----
+<1> Config context is merged from channel and connector contexts
+
+[source,yaml]
+.Example of channel to connector mapping config with custom properties:
+----
+mp.messaging.incoming.from-connector-channel.connector: example-connector<1>
+mp.messaging.incoming.from-connector-channel.first-test-prop: foo<2>
+mp.messaging.connector.example-connector.second-test-prop: bar<3>
+----
+<1> Channel -> Connector mapping
+<2> Channel configuration properties
+<3> Connector configuration properties
+
+[source,java]
+.Example consuming from connector:
+----
+@Incoming("from-connector-channel")
+public void consume(String value) {
+   System.out.println("Consuming: " + value);
+}
+
+> Consuming: foo
+> Consuming: bar
+----

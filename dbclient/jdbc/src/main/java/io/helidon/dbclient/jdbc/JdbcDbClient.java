@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.dbclient.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
@@ -24,30 +25,28 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
+import io.helidon.common.reactive.Subscribable;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientException;
+import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbExecute;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatementDml;
-import io.helidon.dbclient.DbStatementGeneric;
 import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementQuery;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.DbStatements;
 import io.helidon.dbclient.DbTransaction;
 import io.helidon.dbclient.common.AbstractDbExecute;
-import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.common.DbStatementContext;
 
 /**
  * Helidon DB implementation for JDBC drivers.
  */
 class JdbcDbClient implements DbClient {
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "DbClient", "JDBC");
-    }
 
     /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(DbClient.class.getName());
@@ -57,7 +56,7 @@ class JdbcDbClient implements DbClient {
     private final DbStatements statements;
     private final DbMapperManager dbMapperManager;
     private final MapperManager mapperManager;
-    private final InterceptorSupport interceptors;
+    private final List<DbClientService> clientServices;
 
     JdbcDbClient(JdbcDbClientProviderBuilder builder) {
         this.executorService = builder.executorService();
@@ -65,33 +64,62 @@ class JdbcDbClient implements DbClient {
         this.statements = builder.statements();
         this.dbMapperManager = builder.dbMapperManager();
         this.mapperManager = builder.mapperManager();
-        this.interceptors = builder.interceptors();
+        this.clientServices = builder.clientServices();
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> CompletionStage<T> inTransaction(Function<DbTransaction, CompletionStage<T>> executor) {
+    public <U, T extends Subscribable<U>> T inTransaction(Function<DbTransaction, T> executor) {
 
         JdbcTxExecute execute = new JdbcTxExecute(
                 statements,
                 executorService,
-                interceptors,
+                clientServices,
                 connectionPool,
                 dbMapperManager,
                 mapperManager);
-        CompletionStage<T> stage = executor.apply(execute)
-                .thenApply(it -> {
-                    execute.context().whenComplete()
-                            .thenAccept(nothing -> {
-                                LOGGER.finest(() -> "Transaction commit");
-                                execute.doCommit().exceptionally(RollbackHandler.create(execute, Level.WARNING));
-                            }).exceptionally(RollbackHandler.create(execute, Level.WARNING));
-                    return it;
-                });
 
-        stage.exceptionally(RollbackHandler.create(execute, Level.FINEST));
+        T result = executor.apply(execute);
 
-        return stage;
+        if (result instanceof Multi) {
+            Multi<U> multi = (Multi<U>) result;
+
+            CompletableFuture<Multi<U>> commitFuture = new CompletableFuture<>();
+            multi = multi.onComplete(() -> {
+                // if result completes without an exception, we attempt a commit
+                execute.doCommit()
+                        .thenAccept(it -> commitFuture.complete(Multi.empty()))
+                        .exceptionally(it -> {
+                            commitFuture.complete(Multi.error(it));
+                            return null;
+                        });
+            });
+
+            /*
+                This does the following:
+                - when the db statement finishes, we get a result from the commitFuture
+                - we then want to amend the multi with the result of commit (only interested in error)
+                - so here we resume with the commit future that provides us with either empty multi, or error multi
+                - the flatMap just returns the multi result of the completion stage
+            */
+            multi = multi.onCompleteResumeWith(Single.create(commitFuture).flatMap(Function.identity()));
+
+            // if result completes with an exception, or commit failed, we attempt a rollback
+            multi = multi.onError(throwable -> {
+                RollbackHandler.create(execute, Level.WARNING).apply(throwable);
+            });
+
+            return (T) multi;
+        } else if (result instanceof Single) {
+            Single<U> single = (Single<U>) result;
+            return (T) single
+                    .flatMapSingle(it -> Single.create(execute.doCommit().thenApply(unused -> it)))
+                    .onError(RollbackHandler.create(execute, Level.WARNING)::apply);
+        } else {
+            execute.doRollback();
+            throw new IllegalStateException("You must return a Single or Multi instance to inTransaction, yet "
+                                                    + "you provided: " + result.getClass().getName());
+        }
     }
 
     /**
@@ -104,8 +132,8 @@ class JdbcDbClient implements DbClient {
         private final JdbcTxExecute execute;
         private final Level level;
 
-        private static RollbackHandler create(final JdbcTxExecute execute, final Level level) {
-            return new RollbackHandler(execute, level);
+        private static <T> RollbackHandler<T> create(final JdbcTxExecute execute, final Level level) {
+            return new RollbackHandler<>(execute, level);
         }
 
         private RollbackHandler(final JdbcTxExecute execute, final Level level) {
@@ -116,12 +144,12 @@ class JdbcDbClient implements DbClient {
         @Override
         public T apply(Throwable t) {
             LOGGER.log(level,
-                    String.format("Transaction rollback: %s", t.getMessage()),
-                    t);
+                    t,
+                    () -> String.format("Transaction rollback: %s", t.getMessage()));
             execute.doRollback().exceptionally(t2 -> {
                 LOGGER.log(level,
-                        String.format("Transaction rollback failed: %s", t2.getMessage()),
-                        t2);
+                        t2,
+                        () -> String.format("Transaction rollback failed: %s", t2.getMessage()));
                 return null;
             });
             return null;
@@ -129,54 +157,66 @@ class JdbcDbClient implements DbClient {
 
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <T extends CompletionStage<?>> T execute(Function<DbExecute, T> executor) {
+    public <U, T extends Subscribable<U>> T execute(Function<DbExecute, T> executor) {
+
         JdbcExecute execute = new JdbcExecute(statements,
-                                              executorService,
-                                              interceptors,
-                                              connectionPool,
-                                              dbMapperManager,
-                                              mapperManager);
+                                              JdbcExecute.createContext(statements,
+                                                                        executorService,
+                                                                        clientServices,
+                                                                        connectionPool,
+                                                                        dbMapperManager,
+                                                                        mapperManager));
 
-        T resultFuture = executor.apply(execute);
+        Subscribable<U> result;
 
-        resultFuture.thenApply(it -> {
+        try {
+            result = executor.apply(execute);
+        } catch (RuntimeException e) {
+            execute.close();
+            throw e;
+        }
+
+        result = result.onComplete(() -> {
             execute.context().whenComplete()
                     .thenAccept(nothing -> {
                         LOGGER.finest(() -> "Execution finished, closing connection");
                         execute.close();
                     }).exceptionally(throwable -> {
                 LOGGER.log(Level.WARNING,
-                        String.format("Execution failed: %s", throwable.getMessage()),
-                        throwable);
+                        throwable,
+                        () -> String.format("Execution failed: %s", throwable.getMessage()));
                 execute.close();
                 return null;
             });
-            return it;
         });
 
-        resultFuture.exceptionally(throwable -> {
+        result = result.onError(throwable -> {
             LOGGER.log(Level.FINEST,
-                        String.format("Execution failed: %s", throwable.getMessage()),
-                        throwable);
+                    throwable,
+                    () -> String.format("Execution failed: %s", throwable.getMessage()));
             execute.close();
-            return null;
         });
 
-        return resultFuture;
-    }
-
-    @Override
-    public CompletionStage<Void> ping() {
-        return execute(exec -> exec.namedUpdate("ping"))
-                // need to get from Long to Void
-                .thenRun(() -> {
-                });
+        return (T) result;
     }
 
     @Override
     public String dbType() {
         return connectionPool.dbType();
+    }
+
+    @Override
+    public <C> Single<C> unwrap(Class<C> cls) {
+        if (Connection.class.isAssignableFrom(cls)) {
+            return Single.create(
+                    CompletableFuture.supplyAsync(
+                            connectionPool::connection, executorService))
+                    .map(cls::cast);
+        } else {
+            throw new UnsupportedOperationException(String.format("Class %s is not supported for unwrap", cls.getName()));
+        }
     }
 
     private static final class JdbcTxExecute extends JdbcExecute implements DbTransaction {
@@ -185,19 +225,24 @@ class JdbcDbClient implements DbClient {
 
         private JdbcTxExecute(DbStatements statements,
                               ExecutorService executorService,
-                              InterceptorSupport interceptors,
+                              List<DbClientService> clientServices,
                               ConnectionPool connectionPool,
                               DbMapperManager dbMapperManager,
                               MapperManager mapperManager) {
-            super(statements, createTxContext(executorService, interceptors, connectionPool, dbMapperManager, mapperManager));
+            super(statements, JdbcExecuteContext.jdbcBuilder()
+                    .statements(statements)
+                    .clientServices(clientServices)
+                    .dbType(connectionPool.dbType())
+                    .connection(createConnection(executorService, connectionPool))
+                    .dbMapperManager(dbMapperManager)
+                    .mapperManager(mapperManager)
+                    .executorService(executorService)
+                    .build());
         }
 
-        private static JdbcExecuteContext createTxContext(ExecutorService executorService,
-                                                          InterceptorSupport interceptors,
-                                                          ConnectionPool connectionPool,
-                                                          DbMapperManager dbMapperManager,
-                                                          MapperManager mapperManager) {
-            CompletionStage<Connection> connection = CompletableFuture.supplyAsync(connectionPool::connection, executorService)
+        private static CompletionStage<Connection> createConnection(ExecutorService executorService,
+                                                                    ConnectionPool connectionPool) {
+            return CompletableFuture.supplyAsync(connectionPool::connection, executorService)
                     .thenApply(conn -> {
                         try {
                             conn.setAutoCommit(false);
@@ -206,13 +251,6 @@ class JdbcDbClient implements DbClient {
                         }
                         return conn;
                     });
-
-            return JdbcExecuteContext.create(executorService,
-                                             interceptors,
-                                             connectionPool.dbType(),
-                                             connection,
-                                             dbMapperManager,
-                                             mapperManager);
         }
 
         @Override
@@ -220,7 +258,7 @@ class JdbcDbClient implements DbClient {
             setRollbackOnly = true;
         }
 
-        private CompletionStage<Connection> doRollback() {
+        private CompletionStage<Void> doRollback() {
             return context().connection()
                     .thenApply(conn -> {
                         try {
@@ -230,11 +268,11 @@ class JdbcDbClient implements DbClient {
                             throw new DbClientException("Failed to rollback a transaction, or close a connection", e);
                         }
 
-                        return conn;
+                        return null;
                     });
         }
 
-        private CompletionStage<Connection> doCommit() {
+        private CompletionStage<Void> doCommit() {
             if (setRollbackOnly) {
                 return doRollback();
             }
@@ -246,7 +284,7 @@ class JdbcDbClient implements DbClient {
                         } catch (SQLException e) {
                             throw new DbClientException("Failed to commit a transaction, or close a connection", e);
                         }
-                        return conn;
+                        return null;
                     });
         }
     }
@@ -261,17 +299,9 @@ class JdbcDbClient implements DbClient {
             this.context = context;
         }
 
-        private JdbcExecute(DbStatements statements,
-                            ExecutorService executorService,
-                            InterceptorSupport interceptors,
-                            ConnectionPool connectionPool,
-                            DbMapperManager dbMapperManager,
-                            MapperManager mapperManager) {
-            this(statements, createContext(executorService, interceptors, connectionPool, dbMapperManager, mapperManager));
-        }
-
-        private static JdbcExecuteContext createContext(ExecutorService executorService,
-                                                        InterceptorSupport interceptors,
+        private static JdbcExecuteContext createContext(DbStatements statements,
+                                                        ExecutorService executorService,
+                                                        List<DbClientService> clientServices,
                                                         ConnectionPool connectionPool,
                                                         DbMapperManager dbMapperManager,
                                                         MapperManager mapperManager) {
@@ -285,55 +315,52 @@ class JdbcDbClient implements DbClient {
                         return conn;
                     });
 
-            return JdbcExecuteContext.create(executorService,
-                                             interceptors,
-                                             connectionPool.dbType(),
-                                             connection,
-                                             dbMapperManager,
-                                             mapperManager);
+            return JdbcExecuteContext.jdbcBuilder()
+                    .statements(statements)
+                    .executorService(executorService)
+                    .connection(connection)
+                    .clientServices(clientServices)
+                    .dbMapperManager(dbMapperManager)
+                    .mapperManager(mapperManager)
+                    .dbType(connectionPool.dbType())
+                    .build();
         }
 
         @Override
         public DbStatementQuery createNamedQuery(String statementName, String statement) {
             return new JdbcStatementQuery(context,
-                                          JdbcStatementContext.create(DbStatementType.QUERY, statementName, statement));
+                                          DbStatementContext.create(context, DbStatementType.QUERY, statementName, statement));
 
         }
 
         @Override
         public DbStatementGet createNamedGet(String statementName, String statement) {
             return new JdbcStatementGet(context,
-                                        JdbcStatementContext.create(DbStatementType.GET, statementName, statement));
+                                        DbStatementContext.create(context, DbStatementType.GET, statementName, statement));
         }
 
         @Override
         public DbStatementDml createNamedDmlStatement(String statementName, String statement) {
             return new JdbcStatementDml(context,
-                                        JdbcStatementContext.create(DbStatementType.DML, statementName, statement));
+                                        DbStatementContext.create(context, DbStatementType.DML, statementName, statement));
         }
 
         @Override
         public DbStatementDml createNamedInsert(String statementName, String statement) {
             return new JdbcStatementDml(context,
-                                        JdbcStatementContext.create(DbStatementType.INSERT, statementName, statement));
+                                        DbStatementContext.create(context, DbStatementType.INSERT, statementName, statement));
         }
 
         @Override
         public DbStatementDml createNamedUpdate(String statementName, String statement) {
             return new JdbcStatementDml(context,
-                                        JdbcStatementContext.create(DbStatementType.UPDATE, statementName, statement));
+                                        DbStatementContext.create(context, DbStatementType.UPDATE, statementName, statement));
         }
 
         @Override
         public DbStatementDml createNamedDelete(String statementName, String statement) {
             return new JdbcStatementDml(context,
-                                        JdbcStatementContext.create(DbStatementType.DELETE, statementName, statement));
-        }
-
-        @Override
-        public DbStatementGeneric createNamedStatement(String statementName, String statement) {
-            return new JdbcStatementGeneric(context,
-                                            JdbcStatementContext.create(DbStatementType.UNKNOWN, statementName, statement));
+                                        DbStatementContext.create(context, DbStatementType.DELETE, statementName, statement));
         }
 
         JdbcExecuteContext context() {
@@ -346,10 +373,20 @@ class JdbcDbClient implements DbClient {
                         try {
                             conn.close();
                         } catch (SQLException e) {
-                            LOGGER.log(Level.WARNING, String.format("Could not close connection: %s", e.getMessage()), e);
+                            LOGGER.log(Level.WARNING, e, () -> String.format("Could not close connection: %s", e.getMessage()));
                         }
                     });
         }
+
+        @Override
+        public <C> Single<C> unwrap(Class<C> cls) {
+            if (Connection.class.isAssignableFrom(cls)) {
+                return Single.create(context.connection()).map(cls::cast);
+            } else {
+                throw new UnsupportedOperationException(String.format("Class %s is not supported for unwrap", cls.getName()));
+            }
+        }
+
     }
 
 }

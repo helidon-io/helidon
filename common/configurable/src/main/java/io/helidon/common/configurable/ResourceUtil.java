@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 
@@ -36,6 +39,8 @@ import io.helidon.config.Config;
  */
 final class ResourceUtil {
     private static final int DEFAULT_PROXY_PORT = 80;
+    private static final Set<String> LOGGED_RESOURCES = new HashSet<>();
+    private static final Logger LOGGER = Logger.getLogger(ResourceUtil.class.getName());
 
     private ResourceUtil() {
     }
@@ -109,32 +114,28 @@ final class ResourceUtil {
         }
     }
 
-    static Optional<Resource> fromConfigPath(Config config, String keyPrefix) {
-        return config.get(keyPrefix + "-path")
-                .asString()
+    static Optional<Resource> fromConfigPath(Config config) {
+        return config.asString()
                 .map(Paths::get)
                 .map(Resource::create);
     }
 
-    static Optional<Resource> fromConfigB64Content(Config config, String keyPrefix) {
-        return config.get(keyPrefix + "-content")
-                .asString()
+    static Optional<Resource> fromConfigB64Content(Config config) {
+        return config.asString()
                 .map(Base64.getDecoder()::decode)
-                .map(content -> Resource.create("config:" + keyPrefix + "-content-b64", content));
+                .map(content -> Resource.create(config.key() + ".content", content));
     }
 
-    static Optional<Resource> fromConfigContent(Config config, String keyPrefix) {
-        return config.get(keyPrefix + "-content-plain")
-                .asString()
-                .map(content -> Resource.create("config:" + keyPrefix + "-content", content));
+    static Optional<Resource> fromConfigContent(Config config) {
+        return config.asString()
+                .map(content -> Resource.create(config.key() + ".content-plain", content));
     }
 
-    static Optional<Resource> fromConfigUrl(Config config, String keyPrefix) {
-        return config.get(keyPrefix + "-url")
-                .as(URI.class)
+    static Optional<Resource> fromConfigUrl(Config config) {
+        return config.as(URI.class)
                 .map(uri -> config.get("proxy-host").asString()
                         .map(proxyHost -> {
-                            if (config.get(keyPrefix + "-use-proxy").asBoolean().orElse(true)) {
+                            if (config.get("use-proxy").asBoolean().orElse(true)) {
                                 Proxy proxy = new Proxy(Proxy.Type.HTTP,
                                                         new InetSocketAddress(proxyHost,
                                                                               config.get("proxy-port").asInt().orElse(
@@ -147,9 +148,18 @@ final class ResourceUtil {
                         .orElseGet(() -> Resource.create(uri)));
     }
 
-    static Optional<Resource> fromConfigResourcePath(Config config, String keyPrefix) {
-        return config.get(keyPrefix + "-resource-path")
-                .asString()
+    static Optional<Resource> fromConfigResourcePath(Config config) {
+        return config.asString()
                 .map(Resource::create);
+    }
+
+    static void logPrefixed(Config config, String prefix, String type) {
+        String key = config.key().toString();
+        if (LOGGED_RESOURCES.add(key + "." + prefix)) {
+            LOGGER.warning("Configuration for resource on key '"
+                                   + key + "." + prefix + "-" + type
+                                   + "' uses old prefixed approach. Please remove the prefix and use '"
+                                   + key + "." + prefix + ".resource." + type + "'");
+        }
     }
 }

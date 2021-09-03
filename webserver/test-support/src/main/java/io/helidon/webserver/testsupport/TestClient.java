@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,20 +25,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.ReadOnlyParameters;
 import io.helidon.common.reactive.Single;
+import io.helidon.media.common.MediaContext;
+import io.helidon.media.common.MediaSupport;
 import io.helidon.webserver.BareRequest;
 import io.helidon.webserver.BareResponse;
-import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 
 /**
@@ -50,21 +52,19 @@ public class TestClient {
     private static final Duration TIMEOUT = Duration.ofMinutes(10);
 
     private final Routing routing;
-    private final Handler mockingHandler;
+    private final MediaContext mediaContext;
 
     /**
      * Create new instance.
      *
      * @param routing a routing to create client
-     * @param mockingHandler a handler representing mocking
      * @throws NullPointerException if routing parameter is null
      */
-    private TestClient(Routing routing, Handler mockingHandler) {
+    private TestClient(Routing routing, MediaContext mediaContext) {
         Objects.requireNonNull(routing, "Parameter 'routing' is null!");
         this.routing = routing;
-        this.mockingHandler = mockingHandler;
+        this.mediaContext = mediaContext;
     }
-
 
     /**
      * Creates new {@link TestClient} instance with specified routing.
@@ -77,6 +77,33 @@ public class TestClient {
     public static TestClient create(Supplier<Routing> routingBuilder) {
         Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
         return create(routingBuilder.get());
+    }
+
+    /**
+     * Creates new {@link TestClient} instance with specified routing.
+     *
+     * @param routing a routing to test
+     * @param mediaContext media context
+     * @return new instance
+     * @throws NullPointerException if routing parameter is null
+     */
+    public static TestClient create(Routing routing, MediaContext mediaContext) {
+        return new TestClient(routing, mediaContext);
+    }
+
+    /**
+     * Creates new {@link TestClient} instance with specified routing.
+     *
+     * @param routing a routing to test
+     * @param mediaSupport media support
+     * @return new instance
+     * @throws NullPointerException if routing parameter is null
+     */
+    public static TestClient create(Routing routing, MediaSupport mediaSupport) {
+        MediaContext mediaContext = MediaContext.builder()
+                .addMediaSupport(mediaSupport)
+                .build();
+        return create(routing, mediaContext);
     }
 
     /**
@@ -118,9 +145,10 @@ public class TestClient {
                       URI path,
                       Map<String, List<String>> headers,
                       Flow.Publisher<DataChunk> publisher) throws InterruptedException, TimeoutException {
-        TestBareRequest req = new TestBareRequest(method, version, path, headers, publisher);
-        TestBareResponse res = new TestBareResponse(req.webServer);
-        routing.route(req, res);
+        TestWebServer webServer = new TestWebServer(mediaContext);
+        TestBareRequest req = new TestBareRequest(method, version, path, headers, publisher, webServer);
+        TestBareResponse res = new TestBareResponse(webServer);
+        Contexts.runInContext(Context.create(webServer.context()), () -> routing.route(req, res));
         try {
             return res.responseFuture.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (ExecutionException ee) {
@@ -139,23 +167,22 @@ public class TestClient {
         private final URI path;
         private final Map<String, List<String>> headers;
         private final Flow.Publisher<DataChunk> publisher;
-        private final TestWebServer webServer = new TestWebServer();
+        private final TestWebServer webServer;
 
         TestBareRequest(Http.RequestMethod method,
                         Http.Version version,
                         URI path,
                         Map<String, List<String>> headers,
-                        Flow.Publisher<DataChunk> publisher) {
-            Objects.requireNonNull(method, "Parameter 'method' is null!");
-            Objects.requireNonNull(version, "Parameter 'version' is null!");
-            Objects.requireNonNull(path, "Parameter 'path' is null!");
-            webServer.start();
-            this.method = method;
-            this.version = version;
-            this.path = path;
+                        Flow.Publisher<DataChunk> publisher,
+                        TestWebServer webServer) {
+
+            this.webServer = Objects.requireNonNull(webServer, "webServer 'webServer' is null!");
+            this.method = Objects.requireNonNull(method, "Parameter 'method' is null!");
+            this.version = Objects.requireNonNull(version, "Parameter 'version' is null!");
+            this.path = Objects.requireNonNull(path, "Parameter 'path' is null!");
             this.headers = new ReadOnlyParameters(headers).toMap();
             if (publisher == null) {
-                this.publisher = Single.<DataChunk>empty();
+                this.publisher = Single.empty();
             } else {
                 this.publisher = publisher;
             }
@@ -253,13 +280,13 @@ public class TestClient {
         }
 
         @Override
-        public CompletionStage<BareResponse> whenHeadersCompleted() {
-            return headersCompletionStage;
+        public Single<BareResponse> whenHeadersCompleted() {
+            return Single.create(headersCompletionStage);
         }
 
         @Override
-        public CompletionStage<BareResponse> whenCompleted() {
-            return completionStage;
+        public Single<BareResponse> whenCompleted() {
+            return Single.create(completionStage);
         }
 
         @Override
@@ -273,12 +300,13 @@ public class TestClient {
             if (data == null) {
                 return;
             }
-            ByteBuffer bb = data.data();
             try {
                 synchronized (baos) {
-                    byte[] buff = new byte[bb.remaining()];
-                    bb.get(buff);
-                    baos.write(buff);
+                    for (ByteBuffer byteBuffer : data.data()) {
+                        byte[] buff = new byte[byteBuffer.remaining()];
+                        byteBuffer.get(buff);
+                        baos.write(buff);
+                    }
                 }
             } catch (IOException e) {
                 onError(new IllegalStateException("Cannot write data into the ByteArrayOutputStream!", e));

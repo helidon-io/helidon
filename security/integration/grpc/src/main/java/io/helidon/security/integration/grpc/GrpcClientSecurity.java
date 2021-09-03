@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
 import io.helidon.security.OutboundSecurityResponse;
@@ -53,10 +52,6 @@ public final class GrpcClientSecurity
      */
     public static final String PROPERTY_PROVIDER = "io.helidon.security.integration.grpc.GrpcClientSecurity.explicitProvider";
 
-    static {
-        HelidonFeatures.register("Security", "Integration", "gRPC Client");
-    }
-
     private final SecurityContext context;
 
     private final Map<String, Object> properties;
@@ -75,7 +70,9 @@ public final class GrpcClientSecurity
         try {
             MethodDescriptor<?, ?> methodDescriptor = requestInfo.getMethodDescriptor();
             String methodName = methodDescriptor.getFullMethodName();
-            SecurityEnvironment.Builder outboundEnv = context.env().derive();
+            SecurityEnvironment.Builder outboundEnv = context.env()
+                    .derive()
+                    .clearHeaders();
 
             outboundEnv.path(methodName)
                     .method(methodName)
@@ -90,7 +87,6 @@ public final class GrpcClientSecurity
             OutboundSecurityClientBuilder clientBuilder = context.outboundClientBuilder()
                     .outboundEnvironment(outboundEnv)
                     .tracingSpan(tracing.findParent().orElse(null))
-                    .tracingSpan(tracing.findParentSpan().orElse(null))
                     .outboundEndpointConfig(outboundEp)
                     .explicitProvider(explicitProvider);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import javax.el.ValueExpression;
 import javax.el.VariableMapper;
 
 import io.helidon.common.Errors;
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityContext;
@@ -47,10 +46,6 @@ import io.helidon.security.abac.policy.spi.PolicyExecutor;
 public final class JavaxElPolicyExecutor implements PolicyExecutor {
     private static final Logger LOGGER = Logger.getLogger(JavaxElPolicyExecutor.class.getName());
     private static final AttributeResolver ATTRIBUTE_RESOLVER = new AttributeResolver();
-
-    static {
-        HelidonFeatures.register("Security", "Authorization", "ABAC", "Policy", "EL");
-    }
 
     private final ExpressionFactory ef;
     private final List<CustomFunction> customMethods = new LinkedList<>();
@@ -116,11 +111,8 @@ public final class JavaxElPolicyExecutor implements PolicyExecutor {
                 collector.fatal(this, "Policy statement \"" + policyStatement + "\" evaluated to false");
             }
         } catch (Exception e) {
-            collector.fatal(this,
-                            "Policy statement \"" + policyStatement + "\" evaluated to an exception " + e.getClass()
-                                    .getName() + " with message: " + e.getMessage());
-
             LOGGER.log(Level.FINEST, e, () -> "Statement " + policyStatement + " evaluation failed");
+            throw new SecurityException("Policy statement \"" + policyStatement + "\" evaluated to an exception", e);
         }
     }
 
@@ -164,9 +156,8 @@ public final class JavaxElPolicyExecutor implements PolicyExecutor {
                 try {
                     expressionFactory = ExpressionFactory.newInstance();
                 } catch (ELException e) {
-                    LOGGER.fine(
-                            "Expression language factory not available. To support policy expressions, you need to add some "
-                                    + "implementation to class/module path");
+                    throw new SecurityException("Failed to configure ABAC Policy support for Jakarta Expression Language,"
+                                                        + " no implementation found through service loader.", e);
                 }
             }
             return new JavaxElPolicyExecutor(this);

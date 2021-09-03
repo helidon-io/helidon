@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,96 +15,46 @@
  */
 package io.helidon.webserver;
 
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Logger;
-
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.OriginThreadPublisher;
+import io.helidon.common.reactive.BufferedEmittingPublisher;
+import io.helidon.common.reactive.Multi;
+import io.helidon.webserver.ByteBufRequestChunk.DataChunkHoldingQueue;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
 
 /**
- * This publisher is always associated with a single http request. Additionally,
- * it is associated with the connection context handler and it maintains a fine
- * control of the associated context handler to perform Netty push-backing.
+ * This publisher is always associated with a single http request. All data
+ * chunks emitted by this publisher are linked to a reference queue for
+ * proper cleanup.
  */
-class HttpRequestScopedPublisher extends OriginThreadPublisher<DataChunk, ByteBuf> {
+class HttpRequestScopedPublisher extends BufferedEmittingPublisher<DataChunk> {
 
-    private static final Logger LOGGER = Logger.getLogger(HttpRequestScopedPublisher.class.getName());
+    private final DataChunkHoldingQueue holdingQueue;
 
-    private volatile boolean suspended = false;
-    private final ChannelHandlerContext ctx;
-    private final ReentrantReadWriteLock.WriteLock lock = new ReentrantReadWriteLock().writeLock();
-    private final ReferenceHoldingQueue<DataChunk> referenceQueue;
-
-    HttpRequestScopedPublisher(ChannelHandlerContext ctx, ReferenceHoldingQueue<DataChunk> referenceQueue) {
+    HttpRequestScopedPublisher(DataChunkHoldingQueue holdingQueue) {
         super();
-        this.referenceQueue = referenceQueue;
-        this.ctx = ctx;
+        this.holdingQueue = holdingQueue;
+    }
+
+    public void emit(ByteBuf data) {
+        try {
+            super.emit(new ByteBufRequestChunk(data, holdingQueue));
+        } finally {
+            holdingQueue.release();
+        }
     }
 
     /**
-     * This method is called whenever
-     * {@link java.util.concurrent.Flow.Subscription#request(long)} is
-     * called on the very one associated subscription with this publisher in
-     * order to trigger next channel read on the associated
-     * {@link ChannelHandlerContext}.
-     * <p>
-     * This method can be called by any thread.
-     *
-     * @param n the requested count
-     * @param result the current total cumulative requested count; ranges
-     * between [0, {@link Long#MAX_VALUE}] where the max indicates that this
-     * publisher is unbounded
+     * Clear and release any {@link io.helidon.common.http.DataChunk DataChunk} hanging in
+     * the buffer. Try self subscribe in case no one subscribed and unreleased {@link io.netty.buffer.ByteBuf ByteBufs}
+     * are hanging in the netty pool.
      */
-    @Override
-    protected void hookOnRequested(long n, long result) {
-        if (result == Long.MAX_VALUE) {
-            LOGGER.finest("Netty autoread: true");
-            ctx.channel().config().setAutoRead(true);
-        } else {
-            LOGGER.finest("Netty autoread: false");
-            ctx.channel().config().setAutoRead(false);
-        }
-
-        try {
-            lock.lock();
-
-            if (suspended && super.tryAcquire() > 0) {
-                suspended = false;
-
-                LOGGER.finest("Requesting next chunks from Netty.");
-                ctx.channel().read();
-            } else {
-                LOGGER.finest("No hook action required.");
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
-    public long tryAcquire() {
-        try {
-            lock.lock();
-            long l = super.tryAcquire();
-            if (l <= 0) {
-                suspended = true;
-            }
-            return l;
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
-    public void submit(ByteBuf data) {
-        try {
-            super.submit(data);
-        } finally {
-            referenceQueue.release();
-        }
+    public void clearAndRelease() {
+        Multi.create(this)
+                // release any chunks coming if subscription succeed
+                .forEach(DataChunk::release)
+                // in any case clear the buffer and release its content
+                .onTerminate(() -> super.clearBuffer(DataChunk::release));
     }
 
     @Override
@@ -112,26 +62,16 @@ class HttpRequestScopedPublisher extends OriginThreadPublisher<DataChunk, ByteBu
         try {
             super.complete();
         } finally {
-            referenceQueue.release();
+            holdingQueue.release();
         }
     }
 
     @Override
-    public void error(Throwable throwable) {
+    public void fail(Throwable throwable) {
         try {
-            super.error(throwable);
+            super.fail(throwable);
         } finally {
-            referenceQueue.release();
+            holdingQueue.release();
         }
-    }
-
-    @Override
-    protected DataChunk wrap(ByteBuf data) {
-        return new ByteBufRequestChunk(data, referenceQueue);
-    }
-
-    @Override
-    protected void drain(DataChunk item) {
-        item.release();
     }
 }

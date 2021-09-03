@@ -1,0 +1,242 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon MP Introduction
+:description: about Helidon MP
+:keywords: helidon, java, microservices, microprofile
+:h1Prefix: MP
+
+Helidon MP is an Eclipse MicroProfile runtime that allows the Jakarta EE community to run microservices in a portable way.
+
+
+== About Helidon MP Components
+
+Helidon MP {helidon-version} is an implementation of the
+https://microprofile.io[MicroProfile]
+https://github.com/eclipse/microprofile/releases[specification] and supports MicroProfile {mp-version}. Since
+MicroProfile has its roots in Java EE, the MicroProfile
+APIs follow a familiar, declarative approach with heavy use of annotations.
+This makes it a good choice for Java EE developers. 
+
+Helidon has added additional APIs to the core set of Microprofile APIs giving you all the capabilities you need for writing modern cloud native applications.
+
+== Components
+
+[PILLARS]
+====
+//aot
+[CARD]
+.Ahead-of-Time Compilation (AOT)
+[icon=save,link=mp/aot/01_introduction.adoc]
+--
+Use GraalVM native image to compile Helidon applications into a native executable. 
+--
+//config
+[CARD]
+.Config
+[icon=settings,link=mp/config/01_introduction.adoc]
+--
+A flexible configuration framework with support for multiple sources and
+ formats.
+--
+
+
+//CDI Extensions
+[CARD]
+.CDI Extensions
+[icon=extension,link=mp/extensions/01_overview.adoc]
+--
+In addition to MicroProfile support, Helidon MP provides additional CDI extensions to address areas not covered by MicroProfile.
+--
+
+
+//CORS
+[CARD]
+.CORS
+[icon=share,link=mp/cors/01_introduction.adoc]
+--
+Add support for CORS to your application using a Helidon module.
+--
+
+
+
+
+
+//Fault Tolerance
+[CARD]
+.Fault Tolerance
+[icon=warning,link=mp/faulttolerance/01_overview.adoc]
+--
+Defines annotations that improve applications by providing support to handle error conditions (faults). 
+--
+
+//GraphQL
+[CARD]
+.GraphQL
+[icon=graphic_eq,link=mp/graphql/01_mp_graphql.adoc]
+--
+Expose GraphQL API using Microprofile GraphQL.
+--
+
+//gRPC
+[CARD]
+.gRPC
+[icon=swap_horiz,link=mp/grpc/01_mp_server_side_services.adoc]
+--
+Build gRPC servers and clients.
+--
+
+//Health Checks
+[CARD]
+.Health Checks
+[icon=favorite_outline,link=mp/health/01_introduction.adoc]
+--
+Expose health statuses of your applications.
+--
+
+
+
+//JAXRS
+[CARD]
+.JAX-RS/Jersey
+[icon=settings_ethernet,link=mp/jaxrs/02_server-configuration.adoc]
+--
+Helidon MP supports building RESTful services using JAX-RS/Jersey. 
+--
+
+//JPA
+[CARD]
+.JPA
+[icon=dns,link=mp/jpa/01_introduction.adoc]
+--
+Work with JPA in Helidon MP in all the ways that you’re familiar with.
+--
+
+
+//JWAuth
+[CARD]
+.JWT Authentication
+[icon=verified_user,link=mp/jwtauth/01_introduction.adoc]
+--
+Defines a compact and self-contained way for securely transmitting information between parties as a JSON object.
+--
+
+
+//LRA
+[CARD]
+.Long Running Actions
+[icon=pending_actions,link=mp/lra/01_introduction.adoc]
+--
+Distributed transactions for microservices following SAGA pattern.
+--
+
+
+//Metrics
+[CARD]
+.Metrics
+[icon=av_timer,link=mp/metrics/01_introduction.adoc]
+--
+Instrumentation to expose metrics of your applications.
+--
+//Openapi
+[CARD]
+.OpenAPI
+[icon=donut_large,link=mp/openapi/01_openapi.adoc]
+--
+Support OpenAPI from your application.
+--
+
+//Reactive Messaging
+[CARD]
+.Reactive Messaging
+[icon=message,link=mp/reactivemessaging/01_introduction.adoc]
+--
+Use prepared tools for repetitive use case scenarios.
+--
+
+//Reactive Streams
+[CARD]
+.Reactive Streams
+[icon=waves,link=mp/reactivestreams/01_overview.adoc]
+--
+APIs to work with reactive streams in Helidon.
+--
+
+//Rest Client
+[CARD]
+.Rest Client
+[icon=airplay,link=mp/restclient/09_rest-client.adoc]
+--
+Adds the capability to invoke remote microservices using a JAX-RS like interface to declare the operations.
+--
+
+//Security
+[CARD]
+.Security
+[icon=security,link=mp/security/01_security.adoc]
+--
+A tool-chain to handle authentication, authorization and context propagation.
+--
+//Tracing
+[CARD]
+.Tracing
+[icon=timeline,link=mp/tracing/01_tracing.adoc]
+--
+Profile and monitor your applications across multiple services.
+--
+
+
+//WebSocket
+[CARD]
+.WebSocket
+[icon=sync_alt,link=mp/websocket/01_overview.adoc]
+--
+Enables Java applications to participate in WebSocket interactions as both servers and clients. 
+--
+
+
+
+
+
+
+====
+
+
+== Next Steps
+
+Try the Helidon MP quickstart guides to get your
+first Helidon MP application up and running in minutes.
+
+[PILLARS]
+====
+[CARD]
+.Guides
+[icon=explore,link=mp/guides/01_overview.adoc]
+--
+Follow step-by-step guides to build your applications using Helidon MP.
+
+--
+
+[CARD]
+.Javadocs
+[icon=library_books,link=apidocs/index.html?overview-summary.html,link-type=url]
+--
+Browse the Helidon Javadocs.
+--
+====
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,6 @@ public class Main {
      * @throws IOException          in case of IO error
      */
     public static void main(String... args) throws IOException, InterruptedException {
-        // subscribe on config changes using custom Flow.Subscriber
-        new ChangesSubscriberExample().run();
         // subscribe using simple onChange function
         new OnChangeExample().run();
         // use same Supplier instances to get up-to-date value

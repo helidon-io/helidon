@@ -58,77 +58,92 @@ public class HelidonContainerInitializer extends SeContainerInitializer {
 
     @Override
     public SeContainerInitializer addBeanClasses(Class<?>... classes) {
-        return container.addBeanClasses(classes);
+        container.addBeanClasses(classes);
+        return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(Class<?>... packageClasses) {
-        return container.addPackages(packageClasses);
+        container.addPackages(packageClasses);
+        return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(boolean scanRecursively, Class<?>... packageClasses) {
-        return container.addPackages(scanRecursively, packageClasses);
+        container.addPackages(scanRecursively, packageClasses);
+        return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(Package... packages) {
-        return container.addPackages(packages);
+        container.addPackages(packages);
+        return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(boolean scanRecursively, Package... packages) {
-        return container.addPackages(scanRecursively, packages);
+        container.addPackages(scanRecursively, packages);
+        return this;
     }
 
     @Override
     public SeContainerInitializer addExtensions(Extension... extensions) {
-        return container.addExtensions(extensions);
+        container.addExtensions(extensions);
+        return this;
     }
 
     @Override
     public SeContainerInitializer addExtensions(Class<? extends Extension>... extensions) {
-        return container.addExtensions(extensions);
+        container.addExtensions(extensions);
+        return this;
     }
 
     @Override
     public SeContainerInitializer enableInterceptors(Class<?>... interceptorClasses) {
-        return container.enableDecorators(interceptorClasses);
+        container.enableDecorators(interceptorClasses);
+        return this;
     }
 
     @Override
     public SeContainerInitializer enableDecorators(Class<?>... decoratorClasses) {
-        return container.enableDecorators(decoratorClasses);
+        container.enableDecorators(decoratorClasses);
+        return this;
     }
 
     @Override
     public SeContainerInitializer selectAlternatives(Class<?>... alternativeClasses) {
-        return container.selectAlternatives(alternativeClasses);
+        container.selectAlternatives(alternativeClasses);
+        return this;
     }
 
     @Override
     public SeContainerInitializer selectAlternativeStereotypes(Class<? extends Annotation>... alternativeStereotypeClasses) {
-        return container.selectAlternativeStereotypes(alternativeStereotypeClasses);
+        container.selectAlternativeStereotypes(alternativeStereotypeClasses);
+        return this;
     }
 
     @Override
     public SeContainerInitializer addProperty(String key, Object value) {
-        return container.addProperty(key, value);
+        container.addProperty(key, value);
+        return this;
     }
 
     @Override
     public SeContainerInitializer setProperties(Map<String, Object> properties) {
-        return container.setProperties(properties);
+        container.setProperties(properties);
+        return this;
     }
 
     @Override
     public SeContainerInitializer disableDiscovery() {
-        return container.disableDiscovery();
+        container.disableDiscovery();
+        return this;
     }
 
     @Override
     public SeContainerInitializer setClassLoader(ClassLoader classLoader) {
-        return container.setClassLoader(classLoader);
+        container.setClassLoader(classLoader);
+        return this;
     }
 
     @Override

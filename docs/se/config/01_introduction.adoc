@@ -1,0 +1,268 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
+
+= The Configuration Component
+:h1Prefix: SE
+:description: Helidon config introduction
+:keywords: helidon, config
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: Config
+
+The config component provides a Java API to load and process
+configuration properties from various sources into a `Config` object which the
+application can use to retrieve config data.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.config</groupId>
+        <artifactId>helidon-config</artifactId>
+    </dependency>
+</dependencies>
+----
+
+== Getting Started
+
+=== Introducing the Config System
+A brief overview of the config system helps clarify its different parts
+and how they work together. Most applications will typically deal with more
+than one of these parts.
+
+image::config/overview.png["Configuration Overview",align="center"]
+
+These are the main parts of the configuration system:
+
+- `Config` system - allows you to read configuration data in an application
+- A config source - a location containing configuration data (File, Map, Properties etc.)
+- A config parser - a component capable of transforming bytes into configuration data (such as JSON content, YAML etc.)
+
+The `Config` system handles configuration data in an in-memory tree that represents the configuration structure and values.
+
+This approach allows us to take any source data, be it a flat properties file or an object structure such as JSON, and
+transform it into a single tree that allows for overriding of values using heterogeneous config sources.
+
+We are using the `.` as a separator of tree structure.
+
+Example of two config sources that can be used by `Config` with the same data tree in different formats:
+
+A Properties source:
+[source,properties]
+----
+web.page-size=25
+----
+
+A YAML source:
+[source,yaml]
+----
+web:
+  page-size: 25
+----
+
+The configuration has the same internal representation in `Config` and can be accessed using
+the `Config` API as follows:
+[source,java]
+----
+int pageSize = config.get("web.page-size")
+        .asInt()
+        .orElse(20);
+----
+
+Or using the tree node approach:
+[source,java]
+----
+int pageSize = config
+                .get("web")
+                .get("page-size")
+                .asInt()
+                .orElse(20);
+----
+
+For this first example we can see the basic features of `Config`:
+
+- Configuration is a tree of `Config` nodes
+- You can use `.` as a tree separator when requesting node values
+- Each config value can be retrieved as a typed object, with shortcut methods for the most
+    commonly used types, such as `int`, `String`, `long` and other
+- You can immediately provide a default value for the cases the configuration option is not defined
+    in any source
+
+=== Overriding Values
+
+The `Config` system treats config sources as a hierarchy, where the first source that
+has a specific configuration key "wins" and its value is used, other sources are not even queried for it.
+
+For example the default configuration when you use `Config.create()` uses the following config sources:
+
+1. System properties config source
+2. Environment variables config source
+3. A classpath config source called `application.?` where the `?` depends on supported media types
+    currently on the classpath. By default it is `properties`, if you have YAML support on classpath,
+    it would be `application.yaml` (a `ConfigParser` may add additional supported suffixes for default file)
+
+Let's consider the following keys:
+
+1. System property `answer=42`
+2. Environment variable `ANSWER=38`
+3. A key in a configuration file `answer=36`
+
+When you request `config.get(`answer`).asInt().orElse(25)`, you would get `42`
+
+This allows you to configure environment specific configuration values through
+system properties, environment variables, or through files available on each environment (be it
+a physical machine, a Kubernetes pod, or a docker image) without changing your source code.
+
+=== Built-in Support for Config Formats [[built-in-formats]]
+If you add additional Helidon config maven artifacts to your dependencies, then the
+config system can read formats other than Java properties format and the default
+configuration will search for other `application` file types
+in the following order. Note that the default configuration _stops_ once it finds
+one of the files below; it _does not_ merge all such files it can find.
+
+.Default Config Files (most to least important)
+|===
+|Source |Helidon maven artifact ID (group ID: `io.helidon.config`) |Notes
+
+|`application.yaml` |`helidon-config-yaml` |YAML format http://yaml.org
+|`application.conf` |`helidon-config-hocon` |HOCON format https://github.com/lightbend/config#using-hocon-the-json-superset
+|`application.json` |`helidon-config-hocon` |JSON format https://json.org/
+|`application.properties` |`helidon-config` |Java properties format
+|===
+
+
+=== Config Filters
+
+Config system applies configured _config filters_ on each value when it is requested
+for the first time.
+
+There is a built-in filter called `ValueResolvingFilter` (enabled by default, can be disabled through API)
+ that resolves references to other keys in values in configuration.
+
+Example:
+Let's consider the following example properties file
+[source,properties]
+----
+host=localhost
+first-service.host=${host}/firstservice
+second-service.host=${host}/secondservice
+----
+
+The filter resolves the `${host}` reference to the `localhost` value.
+
+This makes it easier to override values in testing and production, as you can just
+override the `host` key and leave the URIs same.
+
+=== Change Support
+
+Config is an immutable in-memory tree. Nevertheless we know that configuration sometimes changes,
+ and we may want to react to such changes.
+
+In `Config` system, you can do this through change support provided by these components:
+
+1. `Config.onChange()` API - you can use to add your listener, to be notified of configuration changes
+2. `PollingStrategy` - a component providing regular events to check if a source has changed. This
+        requires support in config sources themselves (see `PollableSource`)
+3. `ChangeWatcher` - a component watching the underlying source for changes. This requires support
+        in config sources themselves (see `WatchableSource`)
+4. `EventConfigSource` - an event source that is capable of notifying about changes iteslf
+
+
+If you want to receive `onChange` events, you must configure your Config with at least one source that is capable of providing changes (having a `PollingStrategy` or `ChangeWatcher` configured, or implementing `EventConfigSource`)
+
+=== Typed config values
+
+The `Config` object lets your application retrieve config data as a typed ConfigValue.
+
+You can retrieve a `ConfigValue<T>` using the following `as` methods in `Config`:
+* `asString()` - to get a string config value
+* `asBoolean()` and other accessors for primitive types
+* `as(Class)` - to get a value for a type that has a mapper configured
+* `as(Generic)` - to get a value for a type supporting generics (such as `Set<String>`)
+* `asMap()` - to get a map of key to value pairs
+* `asList(Class)` - to get a list of typed values
+* `as(Function<Config,T>)` - to get a typed value providing a mapper function
+
+ConfigValue<T> can be used to obtain:
+* an `Optional<T>` value _from a single node_,
+* the `T` value _from a single node_ interpreted as a basic Java type (primitive or simple object) already known to the config system (such as a `boolean` or a `Double`), or
+* a complex Java type _from a subtree_ of the config tree.
++
+The config system automatically knows how to return `List` and `Map` complex types, and you can provide _config mappers_ to convert a config subtree to whatever
+Java types your application needs.
+
+== Next Steps
+Although the default configuration is very simple to use, your
+application can take as much control as it needs over
+
+* loading configuration data,
+* accessing the data once loaded, and
+* extending and modifying the behavior of the config system.
+
+You do this by:
+
+* creating and invoking methods on a `Config.Builder` object to construct a `Config` instance
++
+Using a builder, the application can control everything about how the config
+system creates the resulting `Config` instance: config sources, parsers, polling strategy,
+filters, overrides, mappers, whether or not environment variables and Java
+system properties serve as config sources. The JavaDoc explains how to use the 
+link:{javadoc-base-url-api}/Config.Builder.html[`Config.Builder`].
++
+* using a <<se/config/09_config-profiles.adoc,config profile>> to choose the sources to be used
+* creating a <<se/config/06_advanced-configuration.adoc#Config-Advanced-metaconfig, meta-configuration>>
+file on the runtime classpath or file system to control how the config system prepares the
+default configuration.
+
+Once created, the `Config` object provides many methods the application can use to 
+retrieve config data as various Java types. See the link:{javadoc-base-url-api}/Config.html[`Config`]
+JavaDoc for complete details.
+
+The links in the following tables lead you to more information about various 
+other config topics.
+
+.Controlling How Config is Loaded
+|===
+| Topic |Documentation
+
+| Where config comes from |<<se/config/02_config-sources.adoc,Config sources>>,<<se/config/09_config-profiles.adoc,Config Profiles>>,
+<<se/config/06_advanced-configuration.adoc#Config-Advanced-metaconfig,meta-configuration>>
+| What format config data is expressed in |<<se/config/02_config-sources.adoc#parsers,Config parsers>>,
+<<se/config/08_supported-formats.adoc,supported formats>>
+| How to filter, override, and dereference values |<<se/config/06_advanced-configuration.adoc#filters-and-overrides,Filters and overrides>>
+| What happens when config data changes |<<se/config/05_mutability-support.adoc#polling,Config polling>>
+| How to deal with loading errors |<<se/config/02_config-sources.adoc#retry,Config retry policies>>
+|===
+
+.Accessing Configuration Data
+|===
+| Topic |Documentation
+
+| How config data is translated into Java types |<<se/config/04_property-mapping.adoc,Config mappers>>
+| How to navigate config trees |<<se/config/03_hierarchical-features.adoc,Navigation>>
+|===
+
+.Extending and Fine-tuning the Config System
+|===
+| Topic |Documentation 
+
+| Writing extensions |<<se/config/07_extensions.adoc,Extensions>>
+|===

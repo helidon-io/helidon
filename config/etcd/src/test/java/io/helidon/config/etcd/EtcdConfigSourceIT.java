@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,12 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.Config;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi;
 import io.helidon.config.etcd.internal.client.EtcdClient;
-import io.helidon.config.hocon.internal.HoconConfigParser;
+import io.helidon.config.hocon.HoconConfigParser;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -55,7 +54,7 @@ public class EtcdConfigSourceIT {
                                  .api(version)
                                  .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                                  .build())
-                .addParser(new HoconConfigParser())
+                .addParser(HoconConfigParser.create())
                 .build();
 
         assertThat(config.get("security").asNodeList().get(), hasSize(1));
@@ -71,9 +70,9 @@ public class EtcdConfigSourceIT {
                                  .key("configuration")
                                  .api(version)
                                  .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
-                                 .pollingStrategy(EtcdWatchPollingStrategy::create)
+                                 .changeWatcher(EtcdWatcher.create())
                                  .build())
-                .addParser(new HoconConfigParser())
+                .addParser(HoconConfigParser.create())
                 .build();
 
         assertThat(config.get("security").asNodeList().get(), hasSize(1));
@@ -81,26 +80,8 @@ public class EtcdConfigSourceIT {
         CountDownLatch initLatch = new CountDownLatch(1);
         CountDownLatch nextLatch = new CountDownLatch(3);
 
-        config.changes().subscribe(new Flow.Subscriber<Config>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscription.request(Long.MAX_VALUE);
-                initLatch.countDown();
-            }
+        config.onChange(it -> initLatch.countDown());
 
-            @Override
-            public void onNext(Config item) {
-                nextLatch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-            }
-
-            @Override
-            public void onComplete() {
-            }
-        });
         assertThat(initLatch.await(1, TimeUnit.SECONDS), is(true));
 
         putConfiguration(version, "/application2.conf");

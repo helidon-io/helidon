@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,13 @@
  */
 package io.helidon.common.http;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 /**
  * Provides access to any form parameters present in the request entity.
  */
@@ -29,8 +36,48 @@ public interface FormParams extends Parameters {
      *                         URL-encoded, NL for text/plain)
      * @param mediaType MediaType for which the parameter conversion is occurring
      * @return the new {@code FormParams} instance
+     * @deprecated use {@link FormParams#builder()} instead or register {@code io.helidon.media.common.FormParamsBodyReader}
      */
+    @Deprecated(since = "2.0.2")
     static FormParams create(String paramAssignments, MediaType mediaType) {
         return FormParamsImpl.create(paramAssignments, mediaType);
     }
+
+    /**
+     * Creates a new {@link Builder} of {@code FormParams} instance.
+     *
+     * @return builder instance
+     */
+    static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Builder of a new {@link FormParams} instance.
+     */
+    class Builder implements FormBuilder<Builder, FormParams> {
+
+        private final Map<String, List<String>> params = new LinkedHashMap<>();
+
+        private Builder() {
+        }
+
+        @Override
+        public FormParams build() {
+            return new FormParamsImpl(this);
+        }
+
+        @Override
+        public Builder add(String name, String... values) {
+            Objects.requireNonNull(name);
+            params.computeIfAbsent(name, k -> new ArrayList<>()).addAll(Arrays.asList(values));
+            return this;
+        }
+
+        Map<String, List<String>> params() {
+            return params;
+        }
+
+    }
+
 }

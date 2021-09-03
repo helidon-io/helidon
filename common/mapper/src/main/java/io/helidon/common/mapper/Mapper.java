@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.common.mapper;
 
+import java.util.function.Function;
+
 /**
  * A generic and general approach to mapping two types.
  * A mapper is unidirectional - from {@code SOURCE} to {@code TARGET}.
@@ -23,7 +25,7 @@ package io.helidon.common.mapper;
  * @param <TARGET> type of the supported target
  */
 @FunctionalInterface
-public interface Mapper<SOURCE, TARGET> {
+public interface Mapper<SOURCE, TARGET> extends Function<SOURCE, TARGET> {
     /**
      * Map an instance of source type to an instance of target type.
      *
@@ -31,4 +33,9 @@ public interface Mapper<SOURCE, TARGET> {
      * @return result of the mapping
      */
     TARGET map(SOURCE source);
+
+    @Override
+    default TARGET apply(SOURCE source){
+        return map(source);
+    }
 }

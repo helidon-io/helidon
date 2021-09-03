@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,10 @@ import java.util.regex.Pattern;
 /**
  * A {@link StreamHandler} that writes to {@link System#out standard out} and uses a {@link ThreadFormatter} for formatting.
  * Sets the level to {@link Level#ALL} so that level filtering is performed solely by the loggers.
+ *
+ * @deprecated use io.helidon.logging.jul.HelidonConsoleHandler from helidon-logging-jul module instead
  */
+@Deprecated(since = "2.1.1")
 public class HelidonConsoleHandler extends StreamHandler {
 
     /**
@@ -40,6 +43,12 @@ public class HelidonConsoleHandler extends StreamHandler {
         setOutputStream(System.out);
         setLevel(Level.ALL); // Handlers should not filter, loggers should
         setFormatter(new ThreadFormatter());
+        // we need to decide how to handle all of our examples and templates, before warning users
+        /*
+        System.out.println("You are using deprecated logging handler -> io.helidon.common.HelidonConsoleHandler "
+        + "Please use helidon-logging-jul module and change your handler to "
+        + "io.helidon.logging.jul.HelidonConsoleHandler");
+        */
     }
 
     @Override

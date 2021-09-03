@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,15 +30,15 @@ import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.media.common.ContentReaders;
-import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MessageBodyFilter;
 import io.helidon.webserver.utils.TestUtils;
 
@@ -67,7 +67,9 @@ public class RequestContentTest {
         doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).uri();
         doReturn(flux).when(bareRequestMock).bodyPublisher();
         WebServer webServer = mock(WebServer.class);
-        doReturn(MediaSupport.createWithDefaults()).when(webServer).mediaSupport();
+        MediaContext mediaContext = MediaContext.create();
+        doReturn(mediaContext.readerContext()).when(webServer).readerContext();
+        doReturn(mediaContext.writerContext()).when(webServer).writerContext();
         return new RequestTestStub(bareRequestMock, webServer);
     }
 
@@ -75,7 +77,7 @@ public class RequestContentTest {
     public void directSubscriptionTest() throws Exception {
         Request request = requestTestStub(Multi.just("first", "second", "third").map(s -> DataChunk.create(s.getBytes())));
         StringBuilder sb = new StringBuilder();
-        Multi.from(request.content()).subscribe(chunk -> sb.append(requestChunkAsString(chunk)).append("-"));
+        Multi.create(request.content()).subscribe(chunk -> sb.append(requestChunkAsString(chunk)).append("-"));
         assertThat(sb.toString(), is("first-second-third-"));
     }
 
@@ -85,7 +87,7 @@ public class RequestContentTest {
         StringBuilder sb = new StringBuilder();
         request.content().registerFilter((Publisher<DataChunk> publisher) -> {
             sb.append("apply_filter-");
-            return Multi.from(publisher)
+            return Multi.create(publisher)
                     .map(TestUtils::requestChunkAsString)
                     .map(String::toUpperCase)
                     .map(s -> DataChunk.create(s.getBytes()));
@@ -93,7 +95,7 @@ public class RequestContentTest {
 
         assertThat("Apply filter is expected to be called after a subscription!", sb.toString(), is(""));
 
-        Multi.from(request.content()).subscribe(chunk -> sb.append(requestChunkAsString(chunk)).append("-"));
+        Multi.create(request.content()).subscribe(chunk -> sb.append(requestChunkAsString(chunk)).append("-"));
         assertThat(sb.toString(), is("apply_filter-FIRST-SECOND-THIRD-"));
     }
 
@@ -117,7 +119,7 @@ public class RequestContentTest {
             publisher.close();
         });
 
-        Request request = requestTestStub(Multi.from(publisher));
+        Request request = requestTestStub(Multi.create(publisher));
 
         request.content().registerFilter(originalPublisher -> subscriberDelegate
                 -> originalPublisher.subscribe(new Subscriber<DataChunk>() {
@@ -266,7 +268,7 @@ public class RequestContentTest {
 
     @Test
     public void failingSubscribe() throws Exception {
-        Request request = requestTestStub(Multi.just(DataChunk.create("data".getBytes())));
+        Request request = requestTestStub(Multi.singleton(DataChunk.create("data".getBytes())));
 
         request.content().registerFilter((Publisher<DataChunk> publisher) -> {
             throw new IllegalStateException("failed-publisher-transformation");
@@ -274,7 +276,7 @@ public class RequestContentTest {
 
         AtomicReference<Throwable> receivedThrowable = new AtomicReference<>();
 
-        Multi.from(request.content())
+        Multi.create(request.content())
                 .subscribe(byteBuffer -> {
                     fail("Should not have been called!");
                 }, receivedThrowable::set);
@@ -287,7 +289,7 @@ public class RequestContentTest {
 
     @Test
     public void readerTest() throws Exception {
-        Request request = requestTestStub(Multi.just(DataChunk.create("2010-01-02".getBytes())));
+        Request request = requestTestStub(Multi.singleton(DataChunk.create("2010-01-02".getBytes())));
 
         request.content().registerReader(LocalDate.class,
                 (publisher, clazz) -> ContentReaders
@@ -304,28 +306,28 @@ public class RequestContentTest {
 
     @Test
     public void implicitByteArrayContentReader() throws Exception {
-        Request request = requestTestStub(Multi.just(DataChunk.create("test-string".getBytes())));
+        Request request = requestTestStub(Multi.singleton(DataChunk.create("test-string".getBytes())));
         CompletionStage<String> complete = request.content().as(byte[].class).thenApply(String::new);
         assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS),  is("test-string"));
     }
 
     @Test
     public void implicitStringContentReader() throws Exception {
-        Request request = requestTestStub(Multi.just(DataChunk.create("test-string".getBytes())));
+        Request request = requestTestStub(Multi.singleton(DataChunk.create("test-string".getBytes())));
         CompletionStage<? extends String> complete = request.content().as(String.class);
         assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS), is("test-string"));
     }
 
     @Test
     public void overridingStringContentReader() throws Exception {
-        Request request = requestTestStub(Multi.just(DataChunk.create("test-string".getBytes())));
+        Request request = requestTestStub(Multi.singleton(DataChunk.create("test-string".getBytes())));
 
         request.content().registerReader(String.class, (publisher, clazz) -> {
             fail("Should not be called");
             throw new IllegalStateException("unreachable code");
         });
         request.content().registerReader(String.class, (publisher, clazz) -> {
-            return Multi.from(publisher)
+            return Multi.create(publisher)
                     .map(TestUtils::requestChunkAsString)
                     .map(String::toUpperCase)
                     .collectList()

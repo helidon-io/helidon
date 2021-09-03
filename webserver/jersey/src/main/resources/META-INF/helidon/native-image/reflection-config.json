@@ -6,7 +6,8 @@
         "org.glassfish.jersey.process.internal.RequestScoped",
         "org.glassfish.jersey.spi.Contract",
         "org.glassfish.jersey.internal.inject.PerLookup",
-        "javax.ws.rs.Path"
+        "javax.ws.rs.Path",
+        "javax.ws.rs.ext.Provider"
     ],
     "class-hierarchy": [
         "javax.ws.rs.container.ContainerRequestFilter",
@@ -23,6 +24,7 @@
         "javax.ws.rs.ext.WriterInterceptor",
         "javax.ws.rs.ext.ParamConverterProvider",
         "javax.ws.rs.container.DynamicFeature",
+        "javax.ws.rs.sse.Sse",
         "org.glassfish.jersey.internal.inject.Providers",
         "org.glassfish.jersey.process.Inflector",
         "org.glassfish.jersey.process.internal.Inflecting",
@@ -30,14 +32,17 @@
         "org.glassfish.jersey.server.ResourceConfig",
         "org.glassfish.jersey.server.ServerConfig",
         "org.glassfish.jersey.internal.inject.InjectionResolver",
-        "org.glassfish.jersey.internal.inject.ReferencingFactory"
+        "org.glassfish.jersey.internal.inject.ReferencingFactory",
+        "org.glassfish.hk2.api.ErrorService"
     ],
     "classes": [
         "org.glassfish.jersey.server.internal.process.RequestProcessingConfigurator$AsyncContextFactory",
         "org.glassfish.jersey.server.internal.process.RequestProcessingConfigurator$CloseableServiceFactory",
         "org.glassfish.jersey.server.internal.process.RequestProcessingConfigurator$ContainerRequestFactory",
         "org.glassfish.jersey.server.internal.process.RequestProcessingConfigurator$UriRoutingContextFactory",
-        "javassist.util.proxy.MethodHandler"
+        "javassist.util.proxy.MethodHandler",
+        "java.lang.Boolean",
+        "java.net.URI"
     ],
     "exclude": [
     ]

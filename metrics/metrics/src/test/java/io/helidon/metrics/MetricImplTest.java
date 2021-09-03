@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,11 +69,13 @@ class MetricImplTest {
 
     @BeforeAll
     public static void initClass() {
-        Metadata meta = new HelidonMetadata("theName",
-                                     "theDisplayName",
-                                     "theDescription",
-                                     MetricType.COUNTER,
-                                     MetricUnits.NONE);
+        Metadata meta = Metadata.builder()
+				.withName("theName")
+				.withDisplayName("theDisplayName")
+				.withDescription("theDescription")
+				.withType(MetricType.COUNTER)
+				.withUnit(MetricUnits.NONE)
+				.build();
 
         impl = new MetricImpl("base", meta) {
             @Override
@@ -88,7 +90,10 @@ class MetricImplTest {
         };
         implID = new MetricID(meta.getName());
 
-        meta = new HelidonMetadata("counterWithoutDescription", MetricType.COUNTER);
+        meta = Metadata.builder()
+                .withName("counterWithoutDescription")
+                .withType(MetricType.COUNTER)
+                .build();
 
         implWithoutDescription = new MetricImpl("base", meta) {
             @Override
@@ -130,7 +135,7 @@ class MetricImplTest {
                 + "# HELP base_theName theDescription\n"
                 + "base_theName 45\n";
         final StringBuilder sb = new StringBuilder();
-        impl.prometheusData(sb, implID);
+        impl.prometheusData(sb, implID, true);
         assertThat(sb.toString(), is(expected));
     }
 
@@ -140,7 +145,15 @@ class MetricImplTest {
                 + "# HELP base_counterWithoutDescription \n"
                 + "base_counterWithoutDescription 45\n";
         final StringBuilder sb = new StringBuilder();
-        implWithoutDescription.prometheusData(sb, implWithoutDescriptionID);
+        implWithoutDescription.prometheusData(sb, implWithoutDescriptionID, true);
+        assertThat(sb.toString(), is(expected));
+    }
+
+    @Test
+    void testPrometheusWithoutTypeAndHelp() {
+        String expected = "base_counterWithoutDescription 45\n";
+        final StringBuilder sb = new StringBuilder();
+        implWithoutDescription.prometheusData(sb, implWithoutDescriptionID, false);
         assertThat(sb.toString(), is(expected));
     }
 

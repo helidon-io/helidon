@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,6 @@ package io.helidon.microprofile.faulttolerance;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-
-import javax.enterprise.context.Dependent;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
@@ -29,10 +26,9 @@ import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 
 /**
- * Class CircuitBreakerBean.
+ * A bean whose methods are guarded by circuit breakers.
  */
-@Dependent
-public class CircuitBreakerBean {
+class CircuitBreakerBean {
 
     static final int REQUEST_VOLUME_THRESHOLD = 4;
     static final int SUCCESS_THRESHOLD = 2;
@@ -41,8 +37,8 @@ public class CircuitBreakerBean {
 
     private int counter = 0;
 
-    public int getCounter() {
-        return counter;
+    void reset() {
+        counter = 0;
     }
 
     @CircuitBreaker(
@@ -50,7 +46,7 @@ public class CircuitBreakerBean {
         requestVolumeThreshold = REQUEST_VOLUME_THRESHOLD,
         failureRatio = FAILURE_RATIO,
         delay = DELAY)
-    public void exerciseBreaker(boolean success) {
+    void exerciseBreaker(boolean success) {
         counter++;
         if (success) {
             FaultToleranceTest.printStatus("CircuitBreakerBean::exerciseBreaker", "success");
@@ -66,7 +62,7 @@ public class CircuitBreakerBean {
         requestVolumeThreshold = REQUEST_VOLUME_THRESHOLD,
         failureRatio = FAILURE_RATIO,
         delay = DELAY)
-    public void exerciseBreaker(boolean success, RuntimeException e) {
+    void exerciseBreaker(boolean success, RuntimeException e) {
         counter++;
         if (success) {
             FaultToleranceTest.printStatus("CircuitBreakerBean::exerciseBreaker", "success");
@@ -82,7 +78,7 @@ public class CircuitBreakerBean {
         requestVolumeThreshold = REQUEST_VOLUME_THRESHOLD,
         failureRatio = FAILURE_RATIO,
         delay = DELAY)
-    public void openOnTimeouts() throws InterruptedException {
+    void openOnTimeouts() throws InterruptedException {
         counter++;
         FaultToleranceTest.printStatus("CircuitBreakerBean::openOnTimeouts", "failure");
         Thread.sleep(1000);     // forces timeout
@@ -95,7 +91,7 @@ public class CircuitBreakerBean {
             failureRatio = 1.0,
             delay = 50000,
             failOn = UnitTestException.class)
-    public Future<?> withBulkhead(CountDownLatch started) throws InterruptedException {
+    CompletableFuture<?> withBulkhead(CountDownLatch started) throws InterruptedException {
         started.countDown();
         FaultToleranceTest.printStatus("CircuitBreakerBean::withBulkhead", "success");
         Thread.sleep(3 * DELAY);
@@ -109,7 +105,7 @@ public class CircuitBreakerBean {
             failureRatio = 1.0,
             delay = 50000,
             failOn = UnitTestException.class)
-    public CompletionStage<?> withBulkheadStage(CountDownLatch started) throws InterruptedException {
+    CompletionStage<?> withBulkheadStage(CountDownLatch started) throws InterruptedException {
         started.countDown();
         FaultToleranceTest.printStatus("CircuitBreakerBean::withBulkheadStage", "success");
         Thread.sleep(3 * DELAY);

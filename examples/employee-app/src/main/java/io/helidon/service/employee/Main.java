@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,16 @@
 
 package io.helidon.service.employee;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.logging.LogManager;
-
+import io.helidon.common.LogConfig;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.media.jsonb.server.JsonBindingSupport;
+import io.helidon.media.jsonb.JsonbSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
-import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 /**
  * Simple Employee rest application.
@@ -44,38 +41,34 @@ public final class Main {
     /**
      * Application main entry point.
      * @param args command line arguments.
-     * @throws IOException if there are problems reading logging properties
      */
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
         startServer();
     }
 
     /**
      * Start the server.
      * @return the created {@link WebServer} instance
-     * @throws IOException if there are problems reading logging properties
      */
-    static WebServer startServer() throws IOException {
+    static Single<WebServer> startServer() {
 
         // load logging configuration
-        try (InputStream logFile = Main.class.getResourceAsStream("/logging.properties")) {
-            LogManager.getLogManager().readConfiguration(logFile);
-        }
+        LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        // Get webserver config from the "server" section of application.yaml
-        ServerConfiguration serverConfig = ServerConfiguration.create(config.get("server"));
+        // Get webserver config from the "server" section of application.yaml and JSON support registration
+        Single<WebServer> server = WebServer.builder(createRouting(config))
+                .config(config.get("server"))
+                .addMediaSupport(JsonbSupport.create())
+                .build()
+                .start();
 
-        WebServer server = WebServer.create(serverConfig, createRouting(config));
-
-        // Try to start the server. If successful, print some info and arrange to
-        // print a message at shutdown. If unsuccessful, print the exception.
-        server.start().thenAccept(ws -> {
+        server.thenAccept(ws -> {
             System.out.println("WEB server is up!");
             System.out.println("Web client at: http://localhost:" + ws.port()
-                + "/public/index.html");
+                                       + "/public/index.html");
             ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
         }).exceptionally(t -> {
             System.err.println("Startup failed: " + t.getMessage());
@@ -90,21 +83,24 @@ public final class Main {
 
     /**
      * Creates new {@link Routing}.
-     * @return routing configured with JSON support, a health check, and a service
+     *
      * @param config configuration of this server
+     * @return routing configured with a health check, and a service
      */
     private static Routing createRouting(Config config) {
 
         MetricsSupport metrics = MetricsSupport.create();
         EmployeeService employeeService = new EmployeeService(config);
-        HealthSupport health = HealthSupport.builder().add(HealthChecks.healthChecks())
+        HealthSupport health = HealthSupport.builder().addLiveness(HealthChecks.healthChecks())
                 .build(); // Adds a convenient set of checks
 
-        return Routing.builder().register(JsonBindingSupport.create())
+        return Routing.builder()
+                .register("/public", StaticContentSupport.builder("public")
+                        .welcomeFileName("index.html"))
                 .register(health) // Health at "/health"
                 .register(metrics) // Metrics at "/metrics"
                 .register("/employees", employeeService)
-                .register("/public", StaticContentSupport.builder("public").welcomeFileName("index.html")).build();
+                .build();
     }
 
 }

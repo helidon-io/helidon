@@ -17,7 +17,6 @@
 package io.helidon.webserver.examples.streaming;
 
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -47,10 +46,9 @@ public class Main {
      * @param args command line arguments.
      */
     public static void main(String[] args) {
-        ServerConfiguration config = ServerConfiguration.builder()
-                                                        .port(8080)
-                                                        .build();
-        WebServer server = WebServer.create(config, createRouting());
+        WebServer server = WebServer.builder(createRouting())
+                .port(8080)
+                .build();
 
         server.start().thenAccept(ws ->
             System.out.println("Steaming service is up at http://localhost:" + ws.port())

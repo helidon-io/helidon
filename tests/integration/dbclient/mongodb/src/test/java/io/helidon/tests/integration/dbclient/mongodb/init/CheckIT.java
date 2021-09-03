@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,21 @@ package io.helidon.tests.integration.dbclient.mongodb.init;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.CONFIG;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -66,10 +64,10 @@ public class CheckIT extends AbstractIT {
         boolean retry = true;
         while (retry) {
             try {
-                dbClient.execute(exec -> exec.namedStatement("ping"))
-                        .toCompletableFuture().get().rsFuture().toCompletableFuture().get();
+                dbClient.execute(exec -> exec.namedGet("ping"))
+                        .await(1, TimeUnit.SECONDS);
                 retry = false;
-            } catch (ExecutionException | InterruptedException ex) {
+            } catch (Exception ex) {
                 if (System.currentTimeMillis() > endTm) {
                     fail("Database startup failed!", ex);
                 } else {
@@ -88,10 +86,10 @@ public class CheckIT extends AbstractIT {
     private static void initUser(DbClient dbClient) {
         try {
             dbClient.execute(exec -> exec
-                    .namedStatement("use")
-                    .thenCompose(result -> exec.namedStatement("create-user"))
-            ).toCompletableFuture().get().rsFuture().toCompletableFuture().get();
-        } catch (ExecutionException | InterruptedException ex) {
+                    .namedGet("use")
+                    .flatMapSingle(result -> exec.namedGet("create-user"))
+            ).await();
+        } catch (Exception ex) {
                 LOGGER.warning(() -> String.format("Exception: %s", ex.getMessage()));
                 fail("Database user setup failed!", ex);
         }
@@ -106,7 +104,6 @@ public class CheckIT extends AbstractIT {
      */
     @BeforeAll
     public static void setup() throws ExecutionException, InterruptedException {
-        LOGGER.info(() -> String.format("Initializing Integration Tests"));
         waitForStart(DB_ADMIN);
         //initUser(DB_ADMIN);
     }
@@ -120,9 +117,8 @@ public class CheckIT extends AbstractIT {
      */
     @Test
     public void testDmlStatementExecution() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> result = DB_CLIENT.execute(exec -> exec.namedStatement("ping"))
-                .toCompletableFuture().get().rsFuture().toCompletableFuture().get();
-        List<DbRow> rowsList = result.collect().toCompletableFuture().get();
+        Multi<DbRow> result = DB_CLIENT.execute(exec -> exec.namedQuery("ping-query"));
+        List<DbRow> rowsList = result.collectList().await(5, TimeUnit.SECONDS);
         DbRow row = rowsList.get(0);
         Double ok = row.column("ok").as(Double.class);
         assertThat(ok, equalTo(1.0));

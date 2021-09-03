@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -620,8 +620,8 @@ class ThreadPoolTest {
         final long startTime = System.nanoTime();
         final float growthPercent = sampleGrowthRateFunction(growthRate, sampleSize, function);
         final long elapsedTime = System.nanoTime() - startTime;
-        System.out.println(String.format("%8s: requested %d, actual %.2f in %d ns", algorithm, growthRate, growthPercent,
-                                         elapsedTime));
+//        System.out.println(String.format("%8s: requested %d, actual %.2f in %d ns", algorithm, growthRate, growthPercent,
+//                                         elapsedTime));
     }
 
     private static Function<Integer, Boolean> LOCAL_RANDOM_INT = rate -> ThreadLocalRandom.current().nextInt(100) < rate;

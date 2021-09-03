@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,10 @@
 
 package io.helidon.webserver.examples.jersey;
 
-import java.io.IOException;
 import java.util.concurrent.CompletionStage;
-import java.util.logging.LogManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
 
@@ -31,7 +29,7 @@ import org.glassfish.jersey.server.ResourceConfig;
  * The WebServer Jersey Main example class.
  *
  * @see #main(String[])
- * @see #startServer(ServerConfiguration)
+ * @see #startServer(int)
  */
 public final class Main {
 
@@ -42,16 +40,13 @@ public final class Main {
      * Run the Jersey WebServer Example.
      *
      * @param args arguments are not used
-     * @throws IOException in case of an IO error
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         // configure logging in order to not have the standard JVM defaults
-        LogManager.getLogManager().readConfiguration(Main.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // start the server on port 8080
-        startServer(ServerConfiguration.builder()
-                                       .port(8080)
-                                       .build());
+        startServer(8080);
     }
 
     /**
@@ -59,18 +54,19 @@ public final class Main {
      * a test, pass {@link null} to have a dynamically allocated port
      * the server listens on.
      *
-     * @param serverConfiguration the configuration to use for the Web Server
+     * @param port port to start server on
      * @return a completion stage indicating that the server has started and is ready to
      * accept http requests
      */
-    static CompletionStage<WebServer> startServer(ServerConfiguration serverConfiguration) {
-        WebServer webServer = WebServer.create(
-                serverConfiguration,
+    static CompletionStage<WebServer> startServer(int port) {
+        WebServer webServer = WebServer.builder(
                 Routing.builder()
                        // register a Jersey Application at the '/jersey' context path
                        .register("/jersey",
                                  JerseySupport.create(new ResourceConfig(HelloWorld.class)))
-                       .build());
+                       .build())
+                .port(port)
+                .build();
 
         return webServer.start()
                         .whenComplete((server, t) -> {

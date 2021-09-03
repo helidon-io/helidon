@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ security:
     # Http basic and digest authentication
     # https://tools.ietf.org/html/rfc2617
     - http-basic-auth:
+        # If set to true, provider will abstain rather than fail if authentication fails
+        # defaults to false
+        optional: true
         realm: "helidon"
         # Can be USER or SERVICE
         # defaults to USER
@@ -32,6 +35,9 @@ security:
             password: "${AES=3XQ8A1RszE9JbXl+lUnnsX0gakuqjnTyp8YJWIAU1D3SiM2TaSnxd6U0/LjrdJYv}"
             roles: ["user"]
     - http-digest-auth:
+        # If set to true, provider will abstain rather than fail if authentication fails
+        # defaults to false
+        optional: true
         realm: "helidon"
         # Can be USER or SERVICE
         # defaults to USER

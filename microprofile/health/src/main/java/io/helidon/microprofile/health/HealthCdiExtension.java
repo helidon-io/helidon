@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,18 +23,17 @@ import java.util.ServiceLoader;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.Extension;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.common.BuiltInHealthCheck;
 import io.helidon.microprofile.server.RoutingBuilders;
@@ -45,28 +44,18 @@ import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.Liveness;
 import org.eclipse.microprofile.health.Readiness;
 
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+
 /**
  * Health extension.
  */
 public class HealthCdiExtension implements Extension {
+    // must be used until removed from MP specification
+    @SuppressWarnings("deprecation")
     private static final Health HEALTH_LITERAL = new Health() {
         @Override
         public Class<? extends Annotation> annotationType() {
             return Health.class;
-        }
-    };
-
-    private static final Readiness READINESS_LITERAL = new Readiness() {
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return Readiness.class;
-        }
-    };
-
-    private static final Liveness LIVENESS_LITERAL = new Liveness() {
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return Liveness.class;
         }
     };
 
@@ -79,32 +68,28 @@ public class HealthCdiExtension implements Extension {
 
     private static final Logger LOGGER = Logger.getLogger(HealthCdiExtension.class.getName());
 
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "Health");
-    }
-
     void registerProducers(@Observes BeforeBeanDiscovery bbd) {
         bbd.addAnnotatedType(JvmRuntimeProducers.class, "health.JvmRuntimeProducers")
                 .add(ApplicationScoped.Literal.INSTANCE);
     }
 
-    void registerHealth(@Observes @Initialized(ApplicationScoped.class) Object adv, BeanManager bm) {
-        Config config = ((Config) ConfigProvider.getConfig()).get("health");
+    void registerHealth(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv) {
+        org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
+        Config helidonConfig = MpConfig.toHelidonConfig(config).get("health");
 
-        if (!config.get("enabled").asBoolean().orElse(true)) {
+        if (!config.getOptionalValue("health.enabled", Boolean.class).orElse(true)) {
             LOGGER.finest("Health support is disabled in configuration");
             return;
         }
 
         HealthSupport.Builder builder = HealthSupport.builder()
-                .config(config);
+                .config(helidonConfig);
 
         CDI<Object> cdi = CDI.current();
 
         // Collect built-in checks if disabled, otherwise set list to empty for filtering
-        Optional<Boolean> disableDefaults = config.get("mp.health.disable-default-procedures")
-                .asBoolean()
-                .asOptional();
+        Optional<Boolean> disableDefaults = config.getOptionalValue("mp.health.disable-default-procedures",
+                                                                    Boolean.class);
 
         List<HealthCheck> builtInHealthChecks = disableDefaults.map(
                 b -> b ? cdi.select(HealthCheck.class, BUILT_IN_HEALTH_CHECK_LITERAL)
@@ -112,29 +97,30 @@ public class HealthCdiExtension implements Extension {
                         .collect(Collectors.toList()) : Collections.<HealthCheck>emptyList())
                 .orElse(Collections.emptyList());
 
+        // we must use builder.add(HealthCheck) as long as HEALTH_LITERAL can be used
+        //noinspection deprecation
         cdi.select(HealthCheck.class, HEALTH_LITERAL)
                 .stream()
                 .filter(hc -> !builtInHealthChecks.contains(hc))
                 .forEach(builder::add);
 
-        cdi.select(HealthCheck.class, LIVENESS_LITERAL)
+        cdi.select(HealthCheck.class, Liveness.Literal.INSTANCE)
                 .stream()
                 .filter(hc -> !builtInHealthChecks.contains(hc))
                 .forEach(builder::addLiveness);
 
-        cdi.select(HealthCheck.class, READINESS_LITERAL)
+        cdi.select(HealthCheck.class, Readiness.Literal.INSTANCE)
                 .stream()
                 .filter(hc -> !builtInHealthChecks.contains(hc))
                 .forEach(builder::addReadiness);
 
         HelidonServiceLoader.create(ServiceLoader.load(HealthCheckProvider.class))
                 .forEach(healthCheckProvider -> {
-                    builder.add(healthCheckProvider.healthChecks());
                     healthCheckProvider.livenessChecks().forEach(builder::addLiveness);
                     healthCheckProvider.readinessChecks().forEach(builder::addReadiness);
                 });
 
-        RoutingBuilders.create(config)
+        RoutingBuilders.create(helidonConfig)
                 .routingBuilder()
                 .register(builder.build());
     }

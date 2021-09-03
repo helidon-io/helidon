@@ -1,5 +1,6 @@
+
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +15,11 @@
  * limitations under the License.
  */
 
+
 package io.helidon.security.examples.signatures;
 
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +38,7 @@ import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
-import io.helidon.security.providers.httpauth.UserStore;
+import io.helidon.security.providers.httpauth.SecureUserStore;
 import io.helidon.security.providers.httpsign.HttpSignProvider;
 import io.helidon.security.providers.httpsign.InboundClientDefinition;
 import io.helidon.security.providers.httpsign.OutboundTargetDefinition;
@@ -46,7 +49,7 @@ import io.helidon.webserver.WebServer;
  * Example of authentication of service with http signatures, using configuration file as much as possible.
  */
 public class SignatureExampleBuilderMain {
-    private static final Map<String, UserStore.User> USERS = new HashMap<>();
+    private static final Map<String, SecureUserStore.User> USERS = new HashMap<>();
     // used from unit tests
     private static WebServer service1Server;
     private static WebServer service2Server;
@@ -69,15 +72,19 @@ public class SignatureExampleBuilderMain {
     }
 
     private static void addUser(String user, String password, List<String> roles) {
-        USERS.put(user, new UserStore.User() {
+        USERS.put(user, new SecureUserStore.User() {
             @Override
             public String login() {
                 return user;
             }
 
-            @Override
-            public char[] password() {
+            char[] password() {
                 return password.toCharArray();
+            }
+
+            @Override
+            public boolean isPasswordValid(char[] password) {
+                return Arrays.equals(password(), password);
             }
 
             @Override
@@ -189,7 +196,8 @@ public class SignatureExampleBuilderMain {
                                                  .build())
                 .addProvider(HttpBasicAuthProvider.builder()
                                      .realm("mic")
-                                     .userStore(users()),
+                                     .userStore(users())
+                                     .addOutboundTarget(OutboundTarget.builder("propagate-all").build()),
                              "basic-auth")
                 .addProvider(HttpSignProvider.builder()
                                      .outbound(OutboundConfig.builder()
@@ -228,7 +236,7 @@ public class SignatureExampleBuilderMain {
                 .build();
     }
 
-    private static UserStore users() {
+    private static SecureUserStore users() {
         return login -> Optional.ofNullable(USERS.get(login));
     }
 }

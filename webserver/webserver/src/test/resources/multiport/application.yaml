@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,3 +22,37 @@ webserver:
         private-key:
           keystore-resource-path: ssl/certificate.p12
           keystore-passphrase: "helidon"
+
+sockets:
+  deprecated:
+    server:
+      port: 8000
+      sockets:
+        admin:
+          port: 8001
+        static:
+          enabled: false
+          port: 8002
+  current:
+    server:
+      port: 8000
+      sockets:
+        - name: "admin"
+          port: 8001
+        - name: "static"
+          port: 8002
+          enabled: false
+  runnable:
+    server:
+      port: 0
+      sockets:
+        - name: "admin"
+          port: 0
+        - name: "static"
+          port: 0
+          enabled: false
+  noname:
+    server:
+      port: 0
+      sockets:
+        - port: 4474

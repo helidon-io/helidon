@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.openapi;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.CharBuffer;
@@ -39,9 +40,8 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.yaml.internal.YamlConfigParser;
+import io.helidon.config.yaml.YamlConfigParser;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import org.yaml.snakeyaml.Yaml;
@@ -218,6 +218,14 @@ public class TestUtil {
     public static JsonStructure jsonFromResponse(HttpURLConnection cnx) throws IOException {
         JsonReader reader = JSON_READER_FACTORY.createReader(cnx.getInputStream());
         JsonStructure result = reader.read();
+        reader.close();
+        return result;
+    }
+
+    static JsonStructure jsonFromReader(Reader reader) {
+        JsonReader jsonReader = JSON_READER_FACTORY.createReader(reader);
+        JsonStructure result = jsonReader.read();
+        jsonReader.close();
         return result;
     }
 
@@ -318,12 +326,11 @@ public class TestUtil {
             int port,
             OpenAPISupport.Builder... openAPIBuilders) throws
             InterruptedException, ExecutionException, TimeoutException {
-        WebServer result = WebServer.create(ServerConfiguration.builder()
-                        .port(port)
-                        .build(),
-                Routing.builder()
+        WebServer result = WebServer.builder(Routing.builder()
                         .register(openAPIBuilders)
                         .build())
+                .port(port)
+                .build()
                 .start()
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);

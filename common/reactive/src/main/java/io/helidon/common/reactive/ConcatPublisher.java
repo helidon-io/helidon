@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,23 @@
 
 package io.helidon.common.reactive;
 
-import java.util.Objects;
-import java.util.Optional;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Concat streams to one.
  *
  * @param <T> item type
  */
-public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
-    private FirstProcessor firstProcessor;
-    private SecondProcessor secondProcessor;
-    private Flow.Subscriber<T> subscriber;
-    private Flow.Publisher<T> firstPublisher;
-    private Flow.Publisher<T> secondPublisher;
-    private AtomicLong requested = new AtomicLong();
+public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
+    private final Flow.Publisher<T> firstPublisher;
+    private final Flow.Publisher<T> secondPublisher;
 
     private ConcatPublisher(Flow.Publisher<T> firstPublisher, Flow.Publisher<T> secondPublisher) {
         this.firstPublisher = firstPublisher;
@@ -41,118 +41,173 @@ public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
     }
 
     /**
-     * Create new {@link ConcatPublisher}.
+     * Create new {@code ConcatPublisher}.
      *
      * @param firstPublisher  first stream
      * @param secondPublisher second stream
      * @param <T>             item type
-     * @return {@link ConcatPublisher}
+     * @return {@code ConcatPublisher}
      */
     public static <T> ConcatPublisher<T> create(Flow.Publisher<T> firstPublisher, Flow.Publisher<T> secondPublisher) {
         return new ConcatPublisher<>(firstPublisher, secondPublisher);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void subscribe(Flow.Subscriber<? super T> subscriber) {
-        this.subscriber = (Flow.Subscriber<T>) subscriber;
+        ConcatCancelingSubscription<T> parent = new ConcatCancelingSubscription<>(subscriber, firstPublisher, secondPublisher);
+        subscriber.onSubscribe(parent);
+        parent.drain();
+    }
 
-        this.firstProcessor = new FirstProcessor();
-        this.secondProcessor = new SecondProcessor();
+    static final class ConcatCancelingSubscription<T>
+            extends AtomicInteger implements Flow.Subscription {
 
-        firstPublisher.subscribe(firstProcessor);
+        private static final long serialVersionUID = -1593224722447706944L;
 
-        subscriber.onSubscribe(new Flow.Subscription() {
-            @Override
-            public void request(long n) {
-                if (!StreamValidationUtils.checkRequestParam(n, subscriber::onError)) {
-                    return;
+        private final InnerSubscriber<T> inner1;
+
+        private final InnerSubscriber<T> inner2;
+
+        private final AtomicBoolean canceled;
+
+        private Flow.Publisher<T> source1;
+
+        private Flow.Publisher<T> source2;
+
+        private int index;
+
+        ConcatCancelingSubscription(Flow.Subscriber<? super T> subscriber,
+                                    Flow.Publisher<T> source1, Flow.Publisher<T> source2) {
+            this.inner1 = new InnerSubscriber<>(subscriber, this);
+            this.inner2 = new InnerSubscriber<>(subscriber, this);
+            this.canceled = new AtomicBoolean();
+            this.source1 = source1;
+            this.source2 = source2;
+        }
+
+        @Override
+        public void request(long n) {
+            SubscriptionHelper.deferredRequest(inner2, inner2.requested, n);
+            SubscriptionHelper.deferredRequest(inner1, inner1.requested, n);
+        }
+
+        @Override
+        public void cancel() {
+            if (canceled.compareAndSet(false, true)) {
+                SubscriptionHelper.cancel(inner1);
+                SubscriptionHelper.cancel(inner2);
+                drain();
+            }
+        }
+
+        void drain() {
+            if (getAndIncrement() != 0) {
+                return;
+            }
+
+            int missed = 1;
+            for (;;) {
+
+                if (index == 0) {
+                    index = 1;
+                    Flow.Publisher<T> source = source1;
+                    source1 = null;
+                    source.subscribe(inner1);
+                } else if (index == 1) {
+                    index = 2;
+                    Flow.Publisher<T> source = source2;
+                    source2 = null;
+                    if (inner1.produced != 0L) {
+                        SubscriptionHelper.produced(inner2.requested, inner1.produced);
+                    }
+                    source.subscribe(inner2);
+                } else if (index == 2) {
+                    index = 3;
+                    if (!canceled.get()) {
+                        inner1.downstream.onComplete();
+                    }
                 }
-                requested.set(n);
-                if (!firstProcessor.complete) {
-                    firstProcessor.subscription.request(n);
+
+                missed = addAndGet(-missed);
+                if (missed == 0) {
+                    break;
+                }
+            }
+        }
+
+        private void writeObject(ObjectOutputStream stream)
+                throws IOException {
+            stream.defaultWriteObject();
+        }
+
+        private void readObject(ObjectInputStream stream)
+                throws IOException, ClassNotFoundException {
+            stream.defaultReadObject();
+        }
+
+        static final class InnerSubscriber<T> extends AtomicReference<Flow.Subscription>
+                implements Flow.Subscriber<T> {
+
+            private static final long serialVersionUID = 3029954591185720794L;
+
+            private final Flow.Subscriber<? super T> downstream;
+
+            private final ConcatCancelingSubscription<T> parent;
+
+            private final AtomicLong requested;
+
+            private long produced;
+
+            InnerSubscriber(Flow.Subscriber<? super T> downstream, ConcatCancelingSubscription<T> parent) {
+                this.downstream = downstream;
+                this.parent = parent;
+                this.requested = new AtomicLong();
+            }
+
+            @Override
+            public void onSubscribe(Flow.Subscription s) {
+                SubscriptionHelper.deferredSetOnce(this, requested, s);
+            }
+
+            @Override
+            public void onNext(T t) {
+                if (get() != SubscriptionHelper.CANCELED) {
+                    produced++;
+                    downstream.onNext(t);
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                if (get() != SubscriptionHelper.CANCELED) {
+                    lazySet(SubscriptionHelper.CANCELED);
+                    downstream.onError(t);
+
+                    parent.cancel();
                 } else {
-                    secondProcessor.subscription.request(n);
+                    // FIXME
+                    //  HelidonReactivePlugins.onError(t);
                 }
             }
 
             @Override
-            public void cancel() {
-                firstProcessor.subscription.cancel();
-                secondProcessor.subscription.cancel();
+            public void onComplete() {
+                if (get() != SubscriptionHelper.CANCELED) {
+                    lazySet(SubscriptionHelper.CANCELED);
+                    parent.drain();
+                }
             }
-        });
-    }
 
-    private class FirstProcessor implements Flow.Processor<Object, Object> {
+            private void writeObject(ObjectOutputStream stream)
+                    throws IOException {
+                stream.defaultWriteObject();
+            }
 
-        private Flow.Subscription subscription;
-        private boolean complete = false;
+            private void readObject(ObjectInputStream stream)
+                    throws IOException, ClassNotFoundException {
+                stream.defaultReadObject();
+            }
 
-        @Override
-        public void subscribe(Flow.Subscriber<? super Object> s) {
-        }
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            Objects.requireNonNull(subscription);
-            this.subscription = subscription;
-            secondPublisher.subscribe(secondProcessor);
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public void onNext(Object o) {
-            requested.decrementAndGet();
-            ConcatPublisher.this.subscriber.onNext((T) o);
-        }
-
-        @Override
-        public void onError(Throwable t) {
-            complete = true;
-            Optional.ofNullable(secondProcessor.subscription).ifPresent(Flow.Subscription::cancel);
-            subscription.cancel();
-            ConcatPublisher.this.subscriber.onError(t);
-        }
-
-        @Override
-        public void onComplete() {
-            complete = true;
-            Optional.ofNullable(secondProcessor.subscription).ifPresent(s -> s.request(requested.get()));
-        }
-    }
-
-
-    private class SecondProcessor implements Flow.Processor<Object, Object> {
-
-        private Flow.Subscription subscription;
-
-        @Override
-        public void subscribe(Flow.Subscriber<? super Object> s) {
-        }
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            Objects.requireNonNull(subscription);
-            this.subscription = subscription;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public void onNext(Object o) {
-            ConcatPublisher.this.subscriber.onNext((T) o);
-        }
-
-        @Override
-        public void onError(Throwable t) {
-            firstProcessor.subscription.cancel();
-            subscription.cancel();
-            ConcatPublisher.this.subscriber.onError(t);
-        }
-
-        @Override
-        public void onComplete() {
-            ConcatPublisher.this.subscriber.onComplete();
         }
     }
 }

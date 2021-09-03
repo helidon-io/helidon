@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import javax.json.JsonObject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
@@ -34,6 +35,10 @@ public interface RestClientIface {
     String message();
 
     @GET
+    @Path("/beantype")
+    String beanType();
+
+    @GET
     @Path("/jsonp")
     JsonObject jsonProcessing();
 
@@ -41,4 +46,16 @@ public interface RestClientIface {
     @Path("/jsonb")
     @Produces(MediaType.APPLICATION_JSON)
     TestDto jsonBinding();
+
+    @GET
+    @Path("/queryparam")
+    String queryParam(@QueryParam("long") Long longParam);
+
+    @GET
+    @Path("/queryparam2")
+    String queryParam(@QueryParam("boolean") Boolean booleanParam);
+
+    @GET
+    @Path("/queryparam3")
+    String queryParam(@QueryParam("int") int intParam);
 }

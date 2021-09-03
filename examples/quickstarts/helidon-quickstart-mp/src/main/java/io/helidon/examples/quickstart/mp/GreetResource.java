@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,13 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 
 /**
  * A simple JAX-RS resource to greet you. Examples:
@@ -69,11 +76,10 @@ public class GreetResource {
     }
 
     /**
-     * Return a wordly greeting message.
+     * Return a worldly greeting message.
      *
      * @return {@link JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getDefaultMessage() {
@@ -86,7 +92,6 @@ public class GreetResource {
      * @param name the name to greet
      * @return {@link JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @Path("/{name}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -100,11 +105,18 @@ public class GreetResource {
      * @param jsonObject JSON containing the new greeting
      * @return {@link Response}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @Path("/greeting")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @RequestBody(name = "greeting",
+            required = true,
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(type = SchemaType.STRING, example = "{\"greeting\" : \"Hola\"}")))
+    @APIResponses({
+            @APIResponse(name = "normal", responseCode = "204", description = "Greeting updated"),
+            @APIResponse(name = "missing 'greeting'", responseCode = "400",
+                    description = "JSON did not contain setting for 'greeting'")})
     public Response updateGreeting(JsonObject jsonObject) {
 
         if (!jsonObject.containsKey("greeting")) {

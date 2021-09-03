@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -30,9 +30,8 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyDel
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyInsertPokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyPokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpdatePokemon;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
 
 /**
  * Verify mapping interface.
@@ -49,7 +48,7 @@ public class MapperIT extends AbstractIT  {
         POKEMONS.put(pokemon.getId(), pokemon);
         Long result = DB_CLIENT.execute(exec -> exec
                 .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName())
-        ).toCompletableFuture().get();
+        ).await();
         verifyInsertPokemon(result, pokemon);
     }
 
@@ -87,7 +86,7 @@ public class MapperIT extends AbstractIT  {
                 .createNamedInsert("insert-pokemon-order-arg-rev")
                 .indexedParam(pokemon)
                 .execute()
-                ).toCompletableFuture().get();
+                ).await();
         verifyInsertPokemon(result, pokemon);
     }
 
@@ -104,7 +103,7 @@ public class MapperIT extends AbstractIT  {
                 .createNamedInsert("insert-pokemon-named-arg")
                 .namedParam(pokemon)
                 .execute()
-                ).toCompletableFuture().get();
+                ).await();
         verifyInsertPokemon(result, pokemon);
     }
 
@@ -121,7 +120,7 @@ public class MapperIT extends AbstractIT  {
                 .createNamedUpdate("update-pokemon-order-arg")
                 .indexedParam(pokemon)
                 .execute()
-                ).toCompletableFuture().get();
+                ).await();
         verifyUpdatePokemon(result, pokemon);
     }
 
@@ -133,12 +132,12 @@ public class MapperIT extends AbstractIT  {
      */
     @Test
     public void testUpdateWithNamedMapping() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(BASE_ID+4 , "ZapdMoltresos", TYPES.get(3), TYPES.get(13));
+        Pokemon pokemon = new Pokemon(BASE_ID+4 , "Moltres", TYPES.get(3), TYPES.get(13));
         Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedUpdate("update-pokemon-named-arg")
                 .namedParam(pokemon)
                 .execute()
-                ).toCompletableFuture().get();
+                ).await();
         verifyUpdatePokemon(result, pokemon);
     }
 
@@ -155,7 +154,7 @@ public class MapperIT extends AbstractIT  {
                 .createNamedDelete("delete-pokemon-full-order-arg")
                 .indexedParam(pokemon)
                 .execute()
-                ).toCompletableFuture().get();
+                ).await();
         verifyDeletePokemon(result, pokemon);
     }
 
@@ -172,39 +171,36 @@ public class MapperIT extends AbstractIT  {
                 .createNamedDelete("delete-pokemon-full-named-arg")
                 .namedParam(pokemon)
                 .execute()
-                ).toCompletableFuture().get();
+                ).await();
         verifyDeletePokemon(result, pokemon);
     }
 
     /**
      * Verify query of PoJo instance as a result using mapping.
      *
-     * @throws InterruptedException if the current thread was interrupted
-     * @throws ExecutionException when database query failed
      */
     @Test
-    public void testQueryWithMapping() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
+    public void testQueryWithMapping() {
+        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .createNamedQuery("select-pokemon-named-arg")
-                .addParam("name", POKEMONS.get(2).getName()).execute()
-        ).toCompletableFuture().get();
-        DbRows<Pokemon> pokemonRows = rows.map(Pokemon.class);
-        Pokemon pokemon = pokemonRows.collect().toCompletableFuture().get().get(0);
+                .addParam("name", POKEMONS.get(2).getName()).execute());
+
+        Multi<Pokemon> pokemonRows = rows.map(it -> it.as(Pokemon.class));
+        Pokemon pokemon = pokemonRows.collectList().await().get(0);
         verifyPokemon(pokemon, POKEMONS.get(2));
     }
 
     /**
      * Verify get of PoJo instance as a result using mapping.
      *
-     * @throws InterruptedException if the current thread was interrupted
-     * @throws ExecutionException when database query failed
      */
     @Test
-    public void testGetWithMapping() throws ExecutionException, InterruptedException {
+    public void testGetWithMapping() {
         Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
                 .createNamedGet("select-pokemon-named-arg")
-                .addParam("name", POKEMONS.get(3).getName()).execute()
-        ).toCompletableFuture().get();
+                .addParam("name", POKEMONS.get(3).getName()).execute())
+                .await();
+
         assertThat(maybeRow.isPresent(), equalTo(true));
         Pokemon pokemon = maybeRow.get().as(Pokemon.class);
         verifyPokemon(pokemon, POKEMONS.get(3));

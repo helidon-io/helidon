@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Class CircuitBreakerAntn.
  */
-public class CircuitBreakerAntn extends MethodAntn implements CircuitBreaker {
+class CircuitBreakerAntn extends MethodAntn implements CircuitBreaker {
 
     /**
      * Constructor.
@@ -33,7 +33,7 @@ public class CircuitBreakerAntn extends MethodAntn implements CircuitBreaker {
      * @param beanClass The bean class.
      * @param method The method.
      */
-    public CircuitBreakerAntn(Class<?> beanClass, Method method) {
+    CircuitBreakerAntn(Class<?> beanClass, Method method) {
         super(beanClass, method);
     }
 
@@ -56,13 +56,6 @@ public class CircuitBreakerAntn extends MethodAntn implements CircuitBreaker {
             throw new FaultToleranceDefinitionException("Invalid @CircuitBreaker annotation, "
                                                         + "successThreshold must be >= 1");
         }
-    }
-
-    @Override
-    public Class<? extends Throwable>[] failOn() {
-        LookupResult<CircuitBreaker> lookupResult = lookupAnnotation(CircuitBreaker.class);
-        final String override = getParamOverride("failOn", lookupResult.getType());
-        return override != null ? parseThrowableArray(override) : lookupResult.getAnnotation().failOn();
     }
 
     @Override
@@ -98,5 +91,19 @@ public class CircuitBreakerAntn extends MethodAntn implements CircuitBreaker {
         LookupResult<CircuitBreaker> lookupResult = lookupAnnotation(CircuitBreaker.class);
         final String override = getParamOverride("successThreshold", lookupResult.getType());
         return override != null ? Integer.parseInt(override) : lookupResult.getAnnotation().successThreshold();
+    }
+
+    @Override
+    public Class<? extends Throwable>[] failOn() {
+        LookupResult<CircuitBreaker> lookupResult = lookupAnnotation(CircuitBreaker.class);
+        final String override = getParamOverride("failOn", lookupResult.getType());
+        return override != null ? parseThrowableArray(override) : lookupResult.getAnnotation().failOn();
+    }
+
+    @Override
+    public Class<? extends Throwable>[] skipOn() {
+        LookupResult<CircuitBreaker> lookupResult = lookupAnnotation(CircuitBreaker.class);
+        final String override = getParamOverride("skipOn", lookupResult.getType());
+        return override != null ? parseThrowableArray(override) : lookupResult.getAnnotation().skipOn();
     }
 }

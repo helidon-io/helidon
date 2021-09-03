@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,9 +125,14 @@ public class GrpcChannelsProvider {
     // --------------- private methods of GrpcChannelsProvider ---------------
 
     /**
-     * Returns a {@link io.grpc.ManagedChannel} for the specified channel configuration name.
+     * Returns a {@link io.grpc.ManagedChannel} for the specified channel or host name.
+     * <p>
+     * If the specified channel name does not exist in the configuration, we will assume
+     * that it represents the name of the gRPC host to connect to and will create a plain text
+     * channel to the host with the specified {@code name}, on a default port (1408).
      *
-     * @param name the name of the channel configuration as specified in the configuration file
+     * @param name the name of the channel configuration as specified in the configuration file,
+     *             or the name of the host to connect to
      * @return a new instance of {@link io.grpc.ManagedChannel}
      * @throws NullPointerException if name is null
      * @throws IllegalArgumentException if name is empty
@@ -139,10 +144,9 @@ public class GrpcChannelsProvider {
         if (name.trim().length() == 0) {
             throw new IllegalArgumentException("name cannot be empty or blank.");
         }
-        GrpcChannelDescriptor chCfg = channelConfigs.get(name);
-        if (chCfg == null) {
-            throw new IllegalArgumentException("No channel configuration named " + name + " has been configured.");
-        }
+
+        GrpcChannelDescriptor chCfg = channelConfigs.computeIfAbsent(name, hostName ->
+                GrpcChannelDescriptor.builder().host(name).build());
 
         return createChannel(chCfg);
     }
@@ -152,7 +156,7 @@ public class GrpcChannelsProvider {
     }
 
     private ManagedChannel createChannel(GrpcChannelDescriptor descriptor) {
-        ManagedChannelBuilder<?> builder =  descriptor.tlsDescriptor()
+        ManagedChannelBuilder<?> builder = descriptor.tlsDescriptor()
                 .map(tlsDescriptor -> createNettyChannelBuilder(descriptor, tlsDescriptor))
                 .orElse(createManagedChannelBuilder(descriptor));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,8 +58,8 @@ public final class OutboundOverrideJwtExample {
      * @param args ignored
      */
     public static void main(String[] args) {
-        CompletionStage<Void> first = startClientService();
-        CompletionStage<Void> second = startServingService();
+        CompletionStage<Void> first = startClientService(8080);
+        CompletionStage<Void> second = startServingService(9080);
 
         first.toCompletableFuture().join();
         second.toCompletableFuture().join();
@@ -72,7 +72,7 @@ public final class OutboundOverrideJwtExample {
         System.out.println("http://localhost:" + servingPort + "/hello");
     }
 
-    private static CompletionStage<Void> startServingService() {
+    static CompletionStage<Void> startServingService(int port) {
         Config config = createConfig("serving-service-jwt");
 
         Routing routing = Routing.builder()
@@ -84,10 +84,10 @@ public final class OutboundOverrideJwtExample {
                             res.send(req.context().get(SecurityContext.class).flatMap(SecurityContext::user).map(
                                     Subject::principal).map(Principal::getName).orElse("Anonymous"));
                         }).build();
-        return startServer(routing, 9080, server -> servingPort = server.port());
+        return startServer(routing, port, server -> servingPort = server.port());
     }
 
-    private static CompletionStage<Void> startClientService() {
+    static CompletionStage<Void> startClientService(int port) {
         Config config = createConfig("client-service-jwt");
 
         Routing routing = Routing.builder()
@@ -95,17 +95,15 @@ public final class OutboundOverrideJwtExample {
                 .get("/override", OutboundOverrideJwtExample::override)
                 .get("/propagate", OutboundOverrideJwtExample::propagate)
                 .build();
-        return startServer(routing, 8080, server -> clientPort = server.port());
+        return startServer(routing, port, server -> clientPort = server.port());
     }
 
     private static void override(ServerRequest req, ServerResponse res) {
         SecurityContext context = getSecurityContext(req);
 
         webTarget(servingPort)
-                .request()
                 .property(JwtProvider.EP_PROPERTY_OUTBOUND_USER, "jill")
-                .rx()
-                .get(String.class)
+                .request(String.class)
                 .thenAccept(result -> res.send("You are: " + context.userName() + ", backend service returned: " + result))
                 .exceptionally(throwable -> sendError(throwable, res));
     }
@@ -114,10 +112,12 @@ public final class OutboundOverrideJwtExample {
         SecurityContext context = getSecurityContext(req);
 
         webTarget(servingPort)
-                .request()
-                .rx()
-                .get(String.class)
+                .request(String.class)
                 .thenAccept(result -> res.send("You are: " + context.userName() + ", backend service returned: " + result))
                 .exceptionally(throwable -> sendError(throwable, res));
+    }
+
+    static int clientPort() {
+        return clientPort;
     }
 }

@@ -1,0 +1,14 @@
+[
+    {
+        "bean-class": "io.helidon.integrations.oci.cdi.OciCdiExtension",
+        "ifaces": [
+            "io.helidon.integrations.oci.telemetry.OciMetrics"
+        ]
+    },
+    {
+        "bean-class": "io.helidon.integrations.oci.cdi.OciCdiExtension",
+        "ifaces": [
+            "io.helidon.integrations.oci.telemetry.OciMetricsRx"
+        ]
+    }
+]

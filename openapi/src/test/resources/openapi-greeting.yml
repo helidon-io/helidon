@@ -1,4 +1,5 @@
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+#
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +15,32 @@
 # 
 ---
 openapi: 3.0.0
+x-my-personal-map:
+  owner:
+    first: Me
+    last: Myself
+  value-1: 2.3
+x-other-item: 10
+x-boolean: true
+x-int: 117
+x-string-array:
+  - one
+  - two
+x-object-array:
+  - name: item-1
+    value: 16
+  - name: item-2
+    value: 18
 info:
   title: Helidon SE OpenAPI test 
   description: OpenAPI document for testing
 
   version: 1.0.0
+  x-my-personal-seq:
+    - who: Prof. Plum
+      why: felt like it
+    - when: yesterday
+      how: with the lead pipe
 
 servers:
   - url: http://localhost:8000

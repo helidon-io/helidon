@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -211,11 +211,6 @@ class TestCascadePersist {
         em.persist(blog);
         assertTrue(em.contains(blog));
         assertTrue(em.contains(author));
-
-        // No trip to the database has happened yet, so neither the
-        // blog's nor the author's identifiers are set yet.
-        assertNull(blog.getId());
-        assertNull(author.getId());
 
         // Commit the transaction.  Because we're relying on the
         // default flush mode, this will cause a flush to the

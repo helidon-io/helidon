@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 import io.helidon.tests.integration.dbclient.common.AbstractIT.Pokemon;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.POKEMONS;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Test utilities.
@@ -46,18 +46,14 @@ public class Utils {
     }
 
     /**
-     * Verify that {@code DbRows<DbRow> rows} argument contains pokemons matching specified IDs range. 
+     * Verify that {@code Multi<DbRow> rows} argument contains pokemons matching specified IDs range.
      * @param rows database query result to verify
      * @param idMin beginning of ID range
      * @param idMax end of ID range
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
-    public static void verifyPokemonsIdRange(
-            DbRows<DbRow> rows, int idMin, int idMax
-    ) throws ExecutionException, InterruptedException {
+    public static void verifyPokemonsIdRange(Multi<DbRow> rows, int idMin, int idMax) {
         assertThat(rows, notNullValue());
-        List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
+        List<DbRow> rowsList = rows.collectList().await();
         // Build Map of valid pokemons
         Map<Integer, Pokemon> valid = new HashMap<>(POKEMONS.size());
         for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
@@ -74,21 +70,17 @@ public class Utils {
             String name = row.column(2).as(String.class);
             LOGGER.info(() -> String.format("Pokemon id=%d, name=%s", id, name));
             assertThat(valid.containsKey(id), equalTo(true));
-            assertThat(name, equalTo( valid.get(id).getName()));
+            assertThat(name, equalTo(valid.get(id).getName()));
         }
     }
 
     /**
-     * Verify that {@code DbRows<DbRow> rows} argument contains single pokemon matching specified IDs range. 
+     * Verify that {@code Multi<DbRow> rows} argument contains single pokemon matching specified IDs range.
      * @param maybeRow database query result to verify
      * @param idMin beginning of ID range
      * @param idMax end of ID range
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
-    public static void verifyPokemonsIdRange(
-            Optional<DbRow> maybeRow, int idMin, int idMax
-    ) throws ExecutionException, InterruptedException {
+    public static void verifyPokemonsIdRange(Optional<DbRow> maybeRow, int idMin, int idMax) {
         assertThat(maybeRow.isPresent(), equalTo(true));
         DbRow row = maybeRow.get();
         // Build Map of valid pokemons
@@ -107,16 +99,14 @@ public class Utils {
     }
 
     /**
-     * Verify that {@code DbRows<DbRow> rows} argument contains single record with provided pokemon.
+     * Verify that {@code Multi<DbRow> rows} argument contains single record with provided pokemon.
      *
      * @param rows database query result to verify
      * @param pokemon pokemon to compare with
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
-    public static void verifyPokemon(DbRows<DbRow> rows, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
+    public static void verifyPokemon(Multi<DbRow> rows, AbstractIT.Pokemon pokemon) {
         assertThat(rows, notNullValue());
-        List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
+        List<DbRow> rowsList = rows.collectList().await();
         assertThat(rowsList, hasSize(1));
         DbRow row = rowsList.get(0);
         Integer id = row.column(1).as(Integer.class);
@@ -126,14 +116,12 @@ public class Utils {
     }
 
     /**
-     * Verify that {@code DbRows<DbRow> rows} argument contains single record with provided pokemon.
+     * Verify that {@code Multi<DbRow> rows} argument contains single record with provided pokemon.
      *
      * @param maybeRow database query result to verify
      * @param pokemon pokemon to compare with
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
-    public static void verifyPokemon(Optional<DbRow> maybeRow, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
+    public static void verifyPokemon(Optional<DbRow> maybeRow, AbstractIT.Pokemon pokemon) {
         assertThat(maybeRow.isPresent(), equalTo(true));
         DbRow row = maybeRow.get();
         Integer id = row.column(1).as(Integer.class);
@@ -147,10 +135,8 @@ public class Utils {
      *
      * @param result database query result mapped to Pokemon PoJo to verify
      * @param pokemon pokemon to compare with
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
-    public static void verifyPokemon(AbstractIT.Pokemon result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
+    public static void verifyPokemon(AbstractIT.Pokemon result, AbstractIT.Pokemon pokemon) {
         assertThat(result.getId(), equalTo(pokemon.getId()));
         assertThat(result.getName(), equalTo(pokemon.getName()));
     }
@@ -160,14 +146,13 @@ public class Utils {
      *
      * @param result DML statement result
      * @param pokemon pokemon to compare with
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
-    public static void verifyInsertPokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
+    public static void verifyInsertPokemon(Long result, AbstractIT.Pokemon pokemon) {
         assertThat(result, equalTo(1L));
         Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
-                .namedGet("select-pokemon-by-id", pokemon.getId())
-        ).toCompletableFuture().get();
+                .namedGet("select-pokemon-by-id", pokemon.getId()))
+                .await();
+
         assertThat(maybeRow.isPresent(), equalTo(true));
         DbRow row = maybeRow.get();
         Integer id = row.column("id").as(Integer.class);
@@ -176,19 +161,18 @@ public class Utils {
         assertThat(name, pokemon.getName().equals(name));
     }
 
-   /**
+    /**
      * Verify that provided pokemon was successfully updated in the database.
      *
      * @param result DML statement result
      * @param pokemon pokemon to compare with
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
-    public static void verifyUpdatePokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
+    public static void verifyUpdatePokemon(Long result, AbstractIT.Pokemon pokemon) {
         assertThat(result, equalTo(1L));
         Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
-                .namedGet("select-pokemon-by-id", pokemon.getId())
-        ).toCompletableFuture().get();
+                .namedGet("select-pokemon-by-id", pokemon.getId()))
+                .await();
+
         assertThat(maybeRow.isPresent(), equalTo(true));
         DbRow row = maybeRow.get();
         Integer id = row.column(1).as(Integer.class);
@@ -197,20 +181,18 @@ public class Utils {
         assertThat(name, pokemon.getName().equals(name));
     }
 
-   /**
+    /**
      * Verify that provided pokemon was successfully deleted from the database.
      *
      * @param result DML statement result
      * @param pokemon pokemon to compare with
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
-    public static void verifyDeletePokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
+    public static void verifyDeletePokemon(Long result, AbstractIT.Pokemon pokemon) {
         assertThat(result, equalTo(1L));
         Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
-                .namedGet("select-pokemon-by-id", pokemon.getId())
-        ).toCompletableFuture().get();
+                .namedGet("select-pokemon-by-id", pokemon.getId()))
+                .await();
+
         assertThat(maybeRow.isPresent(), equalTo(false));
     }
-
 }

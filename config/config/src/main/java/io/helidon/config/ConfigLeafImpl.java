@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode.ValueNode;
 
@@ -60,7 +59,7 @@ class ConfigLeafImpl extends ConfigExistingImpl<ValueNode> {
         }
 
         Optional<String> value = value();
-        if (!value.isPresent()) {
+        if (value.isEmpty()) {
             return ConfigValues.create(this, Optional::empty, aConfig -> aConfig.asList(type));
         }
 
@@ -90,7 +89,7 @@ class ConfigLeafImpl extends ConfigExistingImpl<ValueNode> {
     @Override
     public <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException {
         Optional<String> value = value();
-        if (!value.isPresent()) {
+        if (value.isEmpty()) {
             return ConfigValues.create(this, Optional::empty, aConfig -> aConfig.asList(mapper));
         }
 

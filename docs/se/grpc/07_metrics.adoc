@@ -1,0 +1,199 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= gRPC Service Metrics
+:h1Prefix: SE
+:pagename: grpc-server-metrics
+:description: Helidon gRPC Service Metrics
+:keywords: helidon, grpc, java
+
+Helidon gRPC Server has built-in support for metrics capture, which allows
+service developers to easily enable application-level metrics for their services.
+
+== Enabling Metrics Capture
+
+By default, gRPC Server only captures two vendor-level metrics: `grpc.request.count`
+and `grpc.request.meter`. These metrics provide aggregate view of requests across
+all services, and serve as an indication of the overall server load.
+
+However, users can enable more fine grained metrics by simply configuring a built-in
+`GrpcMetrics` interceptor within the routing:
+
+[source,java]
+----
+    private static GrpcRouting createRouting(Config config) {
+        return GrpcRouting.builder()
+                .intercept(GrpcMetrics.timed())       // <1>
+                .register(new GreetService(config))
+                .register(new EchoService())
+                .build();
+    }
+----
+
+<1> Capture metrics for all methods of all services as a `timer`
+
+In the example above we have chosen to create and keep a `timer` metric type for
+each method of each service. Alternatively, we could've chosen to use a
+`counter`, `meter` or a `histogram` instead.
+
+== Overriding Metrics Capture
+
+While global metrics capture is certainly useful, it is not always sufficient.
+Keeping a separate `timer` for each gRPC method may be an overkill, so the user
+could decide to use a lighter-weight metric type, such as `counter` or a `meter`.
+
+However, she may still want to enable `histogram` or a `timer` for some services,
+or even only some methods of some services.
+
+This can be easily accomplished by overriding the type of the captured metric at
+either service or the method level:
+
+[source,java]
+----
+    private static GrpcRouting createRouting(Config config) {
+        return GrpcRouting.builder()
+                .intercept(GrpcMetrics.counted())   // <1>
+                .register(new MyService())
+                .build();
+    }
+
+    public static class MyService implements GrpcService {
+
+        @Override
+        public void update(ServiceDescriptor.Rules rules) {
+            rules
+                .intercept(GrpcMetrics.metered())                     // <2>
+                .unary("MyMethod", this::myMethod,
+                           cfg -> cfg.intercept(GrpcMetrics.timer())) // <3>
+        }
+
+        private <ReqT, ResT> void myMethod(ReqT request, StreamObserver<ResT> observer) {
+            // do something
+        }
+    }
+----
+
+<1> Use `counter` for all methods of all services, unless overridden
+<2> Use `meter` for all methods of `MyService`
+<3> Use `timer` for `MyService::MyMethod`
+
+== Exposing Metrics Externally
+
+Collected metrics are stored in the standard Helidon Metric Registries, such as vendor and
+application registry, and can be exposed via standard `/metrics` REST API.
+
+[source,java]
+----
+        Routing routing = Routing.builder()
+                .register(MetricsSupport.create())    // <1>
+                .build();
+
+        WebServer.create(webServerConfig(), routing)  // <2>
+                 .start()
+----
+
+<1> Add `MetricsSupport` instance to web server routing
+<2> Create and start Helidon web server
+
+See <<metrics/01_metrics.adoc, Helidon Metrics>> documentation for more details.
+
+== Specifying Metric Meta-data
+
+Helidon metrics contain meta-data such as tags, a description, units etc. It is possible to
+add this additional meta-data when specifying the metrics.
+
+=== Adding Tags
+
+To add tags to a metric a `Map` of key/value tags can be supplied.
+For example:
+[source,java]
+----
+Map<String, String> tagMap = new HashMap<>();
+tagMap.put("keyOne", "valueOne");
+tagMap.put("keyTwo", "valueTwo");
+
+GrpcRouting routing = GrpcRouting.builder()
+        .intercept(GrpcMetrics.counted().tags(tagMap))   // <1>
+        .register(new MyService())
+        .build();
+----
+
+<1> the `tags()` method is used to add the `Map` of tags to the metric.
+
+=== Adding a Description
+
+A meaningful description can be added to a metric:
+For example:
+[source,java]
+----
+GrpcRouting routing = GrpcRouting.builder()
+        .intercept(GrpcMetrics.counted().description("Something useful")) // <1>
+        .register(new MyService())
+        .build();
+----
+
+<1> the `description()` method is used to add the description to the metric.
+
+=== Adding Metric Units
+
+A units value can be added to the Metric:
+For example:
+[source,java]
+----
+GrpcRouting routing = GrpcRouting.builder()
+        .intercept(GrpcMetrics.timed().units(MetricUnits.SECONDS)) // <1>
+        .register(new MyService())
+        .build();
+----
+
+<1> the `units()` method is used to add the metric units to the metric.
+Typically the units value is one of the constants from `org.eclipse.microprofile.metrics.MetricUnits` class.
+
+== Overriding the Metric Name
+
+By default the metric name is the gRPC service name followed by a dot ('.') followed by the method name.
+It is possible to supply a function that can be used to override the default behaviour.
+
+The function should implement the `io.helidon.grpc.metrics.GrpcMetrics.NamingFunction` interface
+[source,java]
+----
+    @FunctionalInterface
+    public interface NamingFunction {
+        /**
+         * Create a metric name.
+         *
+         * @param service    the service descriptor
+         * @param methodName the method name
+         * @param metricType the metric type
+         * @return the metric name
+         */
+        String createName(ServiceDescriptor service, String methodName, MetricType metricType);
+    }
+----
+This is a functional interface so lambda can be used too.
+
+For example:
+[source,java]
+----
+GrpcRouting routing = GrpcRouting.builder()
+        .intercept(GrpcMetrics.counted()
+                .nameFunction((svc, method, metric) -> "grpc." + service.name() + '.' + method) // <1>
+----
+<1> the `NamingFunction` is just a lambda that returns the concatenated service name and method name
+with the prefix `grpc.` So for a service "Foo", method "bar" the above example would produce a name
+"grpc.Foo.bar".

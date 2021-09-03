@@ -1,0 +1,672 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon SE Metrics Guide
+:h1Prefix: SE
+:description: Helidon metrics
+:keywords: helidon, metrics, microprofile, guide
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+:common-guides: ../../common/guides
+:metrics-common: {common-guides}/metrics.adoc
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.metrics/io/helidon/metrics
+:metrics-support-builder-javadoc: {javadoc-base-url-api}/MetricsSupport.Builder.html
+:lower-case-flavor: se
+:intro-project-name: {h1Prefix}
+
+include::{metrics-common}[tag=intro]
+include::{metrics-common}[tag=create-sample-project]
+include::{metrics-common}[tag=using-built-in-metrics-intro]
+
+The generated source code is already configured for both metrics and health checks, but the following example removes health checks.
+
+
+[source,xml]
+.Notice that the metrics dependency is already in the project's pom.xml file:
+----
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics</artifactId>
+</dependency>
+----
+
+
+[source,java]
+.Replace the `Main.createRouting` method with the following code:
+----
+    private static Routing createRouting(Config config) {
+
+      GreetService greetService = new GreetService(config);
+
+      return Routing.builder()
+          .register(MetricsSupport.create()) // <1>
+          .register("/greet", greetService)
+          .build();
+    }
+----
+<1> Register the built-in base and vendor metrics.
+
+include::{metrics-common}[tag=build-and-run-intro]
+
+[source,text]
+.Text response:
+----
+include::{metrics-common}[tag=metrics-prometheus-output]
+----
+
+You can get the same data in JSON format.
+
+[source,bash]
+.Verify the metrics endpoint with an HTTP accept header:
+----
+curl -H "Accept: application/json"  http://localhost:8080/metrics
+----
+
+[source,json]
+.JSON response:
+----
+{
+  "base": {
+include::{metrics-common}[tag=base-metrics-json-output]
+  },
+include::{metrics-common}[tag=vendor-metrics-json-output]
+}
+----
+
+include::{metrics-common}[tag=get-single-metric]
+
+include::{metrics-common}[tag=KPI]
+
+Your Helidon SE application can also enable or disable the extended KPI metrics and control the long-running request threshold using methods on the link:{metrics-support-builder-javadoc}[MetricsSupport.Builder] class.
+
+include::{metrics-common}[tag=metrics-metadata]
+
+=== Application-Specific Metrics Data
+
+This section demonstrates how to use application-specific metrics and integrate them with Helidon.
+It is the application's responsibility to create and update the metrics at runtime.  The application has
+complete control over when and how each metric is used. For example, an application may use the
+same counter for multiple methods, or one counter per method.  Helidon maintains an application
+`MetricRegistry` which is used to manage all of the application metrics.
+Helidon returns these metrics in response to a `/metrics/application` REST request.
+
+In all of these examples, the scope and lifetime of the metric is at the application-level.
+Each metric, except `Gauge`, is updated in response to a REST request and the contents of the
+metric is cumulative.
+
+==== Counter Metric
+
+The `Counter` metric is a monotonically increasing or decreasing number. The following example
+will demonstrate how to use a `Counter` to track the number of times the `/cards` endpoint is called.
+
+[source,java]
+.Create a new class named `GreetingCards` with the following code:
+----
+package io.helidon.examples.quickstart.se;
+
+import io.helidon.metrics.RegistryFactory;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
+import java.util.Collections;
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import org.eclipse.microprofile.metrics.Counter;  // <1>
+import org.eclipse.microprofile.metrics.MetricRegistry;
+
+public class GreetingCards implements Service {
+
+  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+  private final Counter cardCounter;   // <2>
+
+  GreetingCards() {
+    RegistryFactory metricsRegistry = RegistryFactory.getInstance();
+    MetricRegistry appRegistry = metricsRegistry.getRegistry(MetricRegistry.Type.APPLICATION);
+    cardCounter = appRegistry.counter("cardCount");  // <3>
+  }
+
+  @Override
+  public void update(Routing.Rules rules) {
+    rules.get("/", this::getDefaultMessageHandler);
+  }
+
+  private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
+    cardCounter.inc();   // <4>
+    sendResponse(response, "Here are some cards ...");
+  }
+
+  private void sendResponse(ServerResponse response, String msg) {
+    JsonObject returnObject = JSON.createObjectBuilder().add("message", msg).build();
+    response.send(returnObject);
+  }
+}
+----
+<1> Import metrics classes.
+<2> Declare a `Counter` member variable.
+<3> Create and register the `Counter` metric in the `MetricRegistry`.  This `Counter` will exist for the lifetime of
+the application.
+<4> Increment the count.
+
+[source,java]
+.Update the `Main.createRouting` method as follows:
+----
+    private static Routing createRouting(Config config) {
+
+        MetricsSupport metrics = MetricsSupport.create();
+        GreetService greetService = new GreetService(config);
+
+        return Routing.builder()
+                .register(JsonSupport.create())
+                .register(metrics)
+                .register("/greet", greetService)
+                .register("/cards", new GreetingCards()) //<1>
+            .build();
+    }
+----
+<1> Add the `GreetingCards` service to the `Routing.builder`.  Helidon will route any REST requests with
+the `/cards` root path to the `GreetingCards` service.
+
+[source,bash]
+.Build and run the application, then invoke the endpoints below:
+----
+curl http://localhost:8080/cards
+curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+----
+
+[source,json]
+.JSON response:
+----
+{
+  "cardCount": 1 // <1>
+}
+----
+<1> The count value is one since the method was called once.
+
+
+==== Meter Metric
+
+The `Meter` metric is used to measure throughput, the number of times an event occurs within a certain time period.
+When a `Meter` object is created, its internal clock starts running.  That clock is used to calculate the various rates
+stored this metric.  The `Meter` also includes the `count` field from the `Counter` metric.  When you mark an event,
+the count is incremented.
+
+The following example marks an event each time the `/cards` endpoint is called.
+
+[source,java]
+.Update the `GreetingCards` class with the following code:
+----
+package io.helidon.examples.quickstart.se;
+
+import io.helidon.metrics.RegistryFactory;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
+import java.util.Collections;
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import org.eclipse.microprofile.metrics.Meter; // <1>
+import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
+
+public class GreetingCards implements Service {
+
+  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+  private final Meter cardMeter; // <2>
+
+  GreetingCards() {
+    RegistryFactory metricsRegistry = RegistryFactory.getInstance();
+    MetricRegistry appRegistry = metricsRegistry.getRegistry(MetricRegistry.Type.APPLICATION);
+    cardMeter = appRegistry.meter("cardMeter"); // <3>
+  }
+
+  @Override
+  public void update(Routing.Rules rules) {
+    rules.get("/", this::getDefaultMessageHandler);
+  }
+
+  private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
+    cardMeter.mark(); // <4>
+    sendResponse(response, "Here are some cards ...");
+  }
+
+  private void sendResponse(ServerResponse response, String msg) {
+    JsonObject returnObject = JSON.createObjectBuilder().add("message", msg).build();
+    response.send(returnObject);
+  }
+}
+----
+<1> Import metrics classes.
+<2> Declare a `Meter` member variable.
+<3> Create and register the `Meter` metric in the `MetricRegistry`.
+<4> Mark the occurrence of an event.
+
+TIP:  Note: you can specify a count parameter such as `mark(100)` to mark multiple events.
+
+[source,bash]
+.Build and run the application, then invoke the endpoints below:
+----
+curl http://localhost:8080/cards
+curl http://localhost:8080/cards
+curl http://localhost:8080/cards
+curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+----
+
+[source,json]
+.JSON response:
+----
+{
+  "cardMeter": { // <1>
+    "count": 3, // <2>
+    "meanRate": 0.17566568722974535,
+    "oneMinRate": 0.04413761384322548,
+    "fiveMinRate": 0.009753212003766951,
+    "fifteenMinRate": 0.0033056752265846544
+  }
+}
+----
+<1> The `Meter` metric has a set of fields to show various rates, along with the count.
+<2> The `/cards` endpoint was called three times.
+
+
+==== Timer Metric
+
+(See also <<#simple_timer_metric,Simple timer metric>>.)
+
+The `Timer` metric aggregates durations, provides timing statistics, and includes throughput statistics
+using an internal `Meter` metric. The `Timer` measures duration in nanoseconds. In the following example,
+a `Timer` metric is used to measure the duration of a method's execution.  Whenever the REST `/cards`
+endpoint is called, the `Timer` will be updated with additional timing information.
+
+[source,java]
+.Update the `GreetingCards` class with the following code:
+----
+package io.helidon.examples.quickstart.se;
+
+import io.helidon.metrics.RegistryFactory;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
+import java.util.Collections;
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
+import org.eclipse.microprofile.metrics.Timer;
+
+public class GreetingCards implements Service {
+
+  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+  private final Timer cardTimer; // <2>
+
+  GreetingCards() {
+    RegistryFactory metricsRegistry = RegistryFactory.getInstance();
+    MetricRegistry appRegistry = metricsRegistry.getRegistry(MetricRegistry.Type.APPLICATION);
+    cardTimer = appRegistry.timer("cardTimer"); // <3>
+  }
+
+  @Override
+  public void update(Routing.Rules rules) {
+    rules.get("/", this::getDefaultMessageHandler);
+  }
+
+  private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
+    Timer.Context timerContext = cardTimer.time(); // <4>
+    sendResponse(response, "Here are some cards ...");
+    response.whenSent().thenAccept(res -> timerContext.stop()); // <5>
+  }
+
+  private void sendResponse(ServerResponse response, String msg) {
+    JsonObject returnObject = JSON.createObjectBuilder().add("message", msg).build();
+    response.send(returnObject);
+  }
+}
+----
+<1> Import metrics classes.
+<2> Declare a `Timer` member variable.
+<3> Create and register the `Timer` metric in the `MetricRegistry`.
+<4> Start the timer.
+<5> Stop the timer.
+
+
+[source,bash]
+.Build and run the application, then invoke the endpoints below:
+----
+curl http://localhost:8080/cards
+curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+----
+
+
+[source,json]
+.JSON response:
+----
+{
+  "cardTimer": {
+    "count": 1,
+    "meanRate": 0.03843465264149663, // <1>
+    "oneMinRate": 0.014712537947741825,
+    "fiveMinRate": 0.0032510706679223173,
+    "fifteenMinRate": 0.0011018917421948848,
+    "min": 40876527,  // <2>
+    "max": 40876527,
+    "mean": 40876527,
+    "stddev": 0.0,
+    "p50": 40876527,
+    "p75": 40876527,
+    "p95": 40876527,
+    "p98": 40876527,
+    "p99": 40876527,
+    "p999": 40876527
+  }
+}
+----
+<1> These are the same fields used by `Meter`.
+<2> These are the `Timer` fields that measure the duration of the `getDefaultMessageHandler` method. Some of these values
+will change each time you invoke the `/cards` endpoint.
+
+
+==== Histogram Metric
+
+The `Histogram` metric calculates the distribution of a set of values within ranges.  This metric does
+not relate to time at all.  The following example will record a set of random numbers in a `Histogram` metric when
+the `/cards` endpoint is invoked.
+
+[source,java]
+.Update the `GreetingCards` class with the following code:
+----
+package io.helidon.examples.quickstart.se;
+
+import io.helidon.metrics.RegistryFactory;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
+import java.util.Collections;
+import java.util.Random;
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import org.eclipse.microprofile.metrics.Histogram; // <1>
+import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
+
+public class GreetingCards implements Service {
+
+  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+  private final Histogram cardHistogram; // <2>
+
+  GreetingCards() {
+    RegistryFactory metricsRegistry = RegistryFactory.getInstance();
+    MetricRegistry appRegistry = metricsRegistry.getRegistry(MetricRegistry.Type.APPLICATION);
+    cardHistogram = appRegistry.histogram("cardHistogram"); // <3>
+  }
+
+  @Override
+  public void update(Routing.Rules rules) {
+    rules.get("/", this::getDefaultMessageHandler);
+  }
+
+  private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
+
+    Random r = new Random();
+    for (int i = 0; i < 1000; i++) {  // <4>
+      cardHistogram.update(1 + r.nextInt(25)); // <5>
+    }
+    sendResponse(response, "Here are some cards ...");
+  }
+
+  private void sendResponse(ServerResponse response, String msg) {
+    JsonObject returnObject = JSON.createObjectBuilder().add("message", msg).build();
+    response.send(returnObject);
+  }
+}
+
+----
+<1> Import metrics classes.
+<2> Declare a `Histogram` member variable.
+<3> Create and register the `Histogram` metric in the `MetricRegistry`.
+<4> Update the `Histogram` metric with a random number.
+<5> Loop, loading the histogram with numbers.
+
+
+[source,bash]
+.Build and run the application, then invoke the endpoints below:
+----
+curl http://localhost:8080/cards
+curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+----
+
+
+[source,json]
+.JSON response:
+----
+{
+  "cardHistogram": { //<1>
+    "count": 1000,
+    "min": 1,
+    "max": 25,
+    "mean": 12.743999999999915,
+    "stddev": 7.308793607702962,
+    "p50": 13.0,
+    "p75": 19.0,
+    "p95": 24.0,
+    "p98": 25.0,
+    "p99": 25.0,
+    "p999": 25.0
+  }
+}
+----
+<1> This is the histogram data.  Some of these values will change each time you invoke the `/cards` endpoint.
+
+
+==== Gauge Metric
+
+The `Gauge` metric measures a discreet value at a point in time, such as a temperature.  The metric is not normally
+tied to a REST endpoint, rather it should be registered during application startup.  When the `/metrics/application` endpoint
+is invoked, Helidon will call the `getValue` method of each registered `Gauge`.  The following example demonstrates
+how a `Gauge` is used to get the current temperature.
+
+[source,java]
+.Add new imports to `Main.java` and replace the `Main.createRouting` method with the following code:
+----
+
+import io.helidon.metrics.RegistryFactory;
+import java.util.Random;
+import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+
+...
+
+    private static Routing createRouting(Config config) {
+
+      MetricsSupport metrics = MetricsSupport.create();
+
+      RegistryFactory metricsRegistry = RegistryFactory.getInstance();
+      MetricRegistry appRegistry = metricsRegistry.getRegistry(MetricRegistry.Type.APPLICATION);
+      appRegistry.register("temperature", (Gauge<Integer>)() ->  new Random().nextInt(100)); //<1>
+
+      GreetService greetService = new GreetService(config);
+      return Routing.builder()
+          .register(JsonSupport.create())
+          .register(metrics)                  // Metrics at "/metrics"
+          .register("/greet", greetService)
+          .register("/cards", new GreetingCards())
+          .build();
+    }
+----
+<1> Register the `Gauge`, providing a lambda function that will return a random temperature.
+
+[source,java]
+.Update the `GreetingCards` class with the following code to use the `Counter` metric which will simplify the JSON output:
+----
+package io.helidon.examples.quickstart.se;
+
+import io.helidon.metrics.RegistryFactory;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
+import java.util.Collections;
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+
+public class GreetingCards implements Service {
+
+  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+  private final Counter cardCounter;
+
+  GreetingCards() {
+    RegistryFactory metricsRegistry = RegistryFactory.getInstance();
+    MetricRegistry appRegistry = metricsRegistry.getRegistry(MetricRegistry.Type.APPLICATION);
+    cardCounter = appRegistry.counter("cardCount");
+  }
+
+  @Override
+  public void update(Routing.Rules rules) {
+    rules.get("/", this::getDefaultMessageHandler);
+  }
+
+  private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
+    cardCounter.inc();   // <4>
+    sendResponse(response, "Here are some cards ...");
+  }
+
+  private void sendResponse(ServerResponse response, String msg) {
+    JsonObject returnObject = JSON.createObjectBuilder().add("message", msg).build();
+    response.send(returnObject);
+  }
+}
+----
+
+[source,bash]
+.Build and run the application, then invoke the endpoints below:
+----
+curl http://localhost:8080/cards
+curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+----
+
+[source,json]
+.JSON response from `/metrics/application`:
+----
+{
+  "cardCount": 1,
+  "temperature": 11 // <1>
+}
+----
+<1> The current temperature is returned.  Invoke the `/metrics/application` endpoint again and you should get a different value.
+
+[[simple_timer_metric]]
+==== Simple Timer Metric
+
+The `SimpleTimer` metric counts invocations and accumulates duration (in seconds). In the following example,
+a `SimpleTimer` metric is used to count and measure the duration of a method's execution. Whenever the REST `/cards`
+endpoint is called, the `SimpleTimer` updates its count and total elapsed time.
+
+[source,java]
+.Update the `GreetingCards` class with the following code:
+----
+package io.helidon.examples.quickstart.se;
+
+import io.helidon.metrics.RegistryFactory;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
+import java.util.Collections;
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
+import org.eclipse.microprofile.metrics.SimpleTimer;
+
+public class GreetingCards implements Service {
+
+  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+  private final SimpleTimer cardTimer; // <2>
+
+  GreetingCards() {
+    RegistryFactory metricsRegistry = RegistryFactory.getInstance();
+    MetricRegistry appRegistry = metricsRegistry.getRegistry(MetricRegistry.Type.APPLICATION);
+    cardTimer = appRegistry.simpleTimer("cardSimpleTimer"); // <3>
+  }
+
+  @Override
+  public void update(Routing.Rules rules) {
+    rules.get("/", this::getDefaultMessageHandler);
+  }
+
+  private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
+    cardTimer.time(() -> sendResponse(response, "Here are some cards ...")); // <4>
+  }
+
+  private void sendResponse(ServerResponse response, String msg) {
+    JsonObject returnObject = JSON.createObjectBuilder().add("message", msg).build();
+    response.send(returnObject);
+  }
+}
+----
+<1> Import metrics classes, particularly the `SimpleTimer` interface for this example.
+<2> Declare a `SimpleTimer` member variable.
+<3> Create and register the `SimpleTimer` metric in the `MetricRegistry`.
+<4> Wrap the business logic in the simple timer's `time` method which updates the count and the total elapsed time.
+
+
+[source,bash]
+.Build and run the application, then invoke the endpoints below:
+----
+curl http://localhost:8080/cards
+curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+----
+
+
+[source,json]
+.JSON response:
+----
+{
+  "cardSimpleTimer":
+    {
+      "count":1, <1>
+      "elapsedTime":0.034274025 <2>
+    }
+}
+----
+<1> How many times the `getDefaultMessageHandler` method ran.
+<2> Cumulative time spent in the `getDefaultMessageHandler` method during its executions.
+
+include::{metrics-common}[tag=k8s-and-prometheus-integration]
+
+=== Summary
+
+This guide demonstrated how to use metrics in a Helidon SE application using various combinations of
+metrics and scopes.
+
+* Access metrics for all three scopes: base, vendor, and application
+* Configure metrics that are updated by the application when an application REST endpoint is invoked
+* Configure a `Gauge` metric
+* Integrate Helidon metrics with Kubernetes and Prometheus
+
+Refer to the following references for additional information:
+
+* MicroProfile Metrics specification at https://github.com/eclipse/microprofile-metrics/releases/tag/1.1
+* MicroProfile Metrics Javadoc at https://javadoc.io/doc/org.eclipse.microprofile.metrics/microprofile-metrics-api/1.1.1
+* Helidon Javadoc at https://helidon.io/docs/latest/apidocs/index.html?overview-summary.html
+

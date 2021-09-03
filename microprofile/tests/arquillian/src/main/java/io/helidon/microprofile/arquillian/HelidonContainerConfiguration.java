@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,11 @@
 
 package io.helidon.microprofile.arquillian;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
+import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
 
@@ -35,12 +40,21 @@ import org.jboss.arquillian.container.spi.client.container.ContainerConfiguratio
  */
 public class HelidonContainerConfiguration implements ContainerConfiguration {
     private String appClassName = null;
-    private String resourceClassName = null;
+    private String excludeArchivePattern = null;
     private int port = 8080;
     private boolean deleteTmp = true;
-    private boolean addResourcesToApps = false;
-    private boolean replaceConfigSourcesWithMp = false;
     private boolean useRelativePath = false;
+    private boolean useParentClassloader = true;
+    private final List<Consumer<ConfigBuilder>> builderConsumers = new ArrayList<>();
+
+    /**
+     * Access container's config builder.
+     *
+     * @param addedBuilderConsumer container's config builder
+     */
+    public void addConfigBuilderConsumer(Consumer<ConfigBuilder> addedBuilderConsumer) {
+        this.builderConsumers.add(addedBuilderConsumer);
+    }
 
     public String getApp() {
         return appClassName;
@@ -48,14 +62,6 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
 
     public void setApp(String app) {
         this.appClassName = app;
-    }
-
-    public String getResource() {
-        return resourceClassName;
-    }
-
-    public void setResource(String resource) {
-        this.resourceClassName = resource;
     }
 
     public int getPort() {
@@ -82,20 +88,20 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
         this.useRelativePath = b;
     }
 
-    public boolean getAddResourcesToApps() {
-        return addResourcesToApps;
+    public String getExcludeArchivePattern() {
+        return excludeArchivePattern;
     }
 
-    public void setAddResourcesToApps(boolean addResourcesToApps) {
-        this.addResourcesToApps = addResourcesToApps;
+    public void setExcludeArchivePattern(String excludeArchivePattern) {
+        this.excludeArchivePattern = excludeArchivePattern;
     }
 
-    public void setReplaceConfigSourcesWithMp(boolean replaceConfigSourcesWithMp) {
-        this.replaceConfigSourcesWithMp = replaceConfigSourcesWithMp;
+    public boolean getUserParentClassloader() {
+        return useParentClassloader;
     }
 
-    public boolean getReplaceConfigSourcesWithMp() {
-        return replaceConfigSourcesWithMp;
+    public void setUseParentClassloader(boolean useParentClassloader) {
+        this.useParentClassloader = useParentClassloader;
     }
 
     @Override
@@ -103,5 +109,10 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
         if ((port <= 0) || (port > Short.MAX_VALUE)) {
             throw new ConfigurationException("port value of " + port + " is out of range");
         }
+    }
+
+    ConfigBuilder useBuilder(ConfigBuilder configBuilder) {
+        this.builderConsumers.forEach(builderConsumer -> builderConsumer.accept(configBuilder));
+        return configBuilder;
     }
 }

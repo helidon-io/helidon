@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,17 +30,18 @@ import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Flow;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.IoMulti;
 
 /**
  * Handles static content from the classpath.
  */
+@Deprecated
 class ClassPathContentHandler extends StaticContentHandler {
     private static final Logger LOGGER = Logger.getLogger(ClassPathContentHandler.class.getName());
 
@@ -50,14 +50,17 @@ class ClassPathContentHandler extends StaticContentHandler {
     private final Map<String, ExtractedJarEntry> extracted = new ConcurrentHashMap<>();
     private final String root;
     private final String rootWithTrailingSlash;
+    private final Path tempDir;
 
     ClassPathContentHandler(String welcomeFilename,
                             ContentTypeSelector contentTypeSelector,
                             String root,
+                            Path tempDir,
                             ClassLoader classLoader) {
         super(welcomeFilename, contentTypeSelector);
 
         this.classLoader = (classLoader == null) ? this.getClass().getClassLoader() : classLoader;
+        this.tempDir = tempDir;
         this.root = root;
         this.rootWithTrailingSlash = root + '/';
     }
@@ -65,6 +68,7 @@ class ClassPathContentHandler extends StaticContentHandler {
     public static StaticContentHandler create(String welcomeFileName,
                                               ContentTypeSelector selector,
                                               String clRoot,
+                                              Path tempDir,
                                               ClassLoader classLoader) {
         ClassLoader contentClassloader = (classLoader == null)
                 ? ClassPathContentHandler.class.getClassLoader()
@@ -80,7 +84,7 @@ class ClassPathContentHandler extends StaticContentHandler {
             throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
         }
 
-        return new ClassPathContentHandler(welcomeFileName, selector, clRoot, contentClassloader);
+        return new ClassPathContentHandler(welcomeFileName, selector, clRoot, tempDir, contentClassloader);
     }
 
     @SuppressWarnings("checkstyle:RegexpSinglelineJava")
@@ -93,7 +97,9 @@ class ClassPathContentHandler extends StaticContentHandler {
         LOGGER.finest(() -> "Requested class path resource: " + resource);
 
         // this MUST be done, so we do not escape the bounds of configured directory
-        String requestedResource = URI.create(resource).normalize().toString();
+        // We use multi-arg constructor so it performs url encoding
+        URI myuri = new URI(null, null, resource, null);
+        String requestedResource = myuri.normalize().getPath();
 
         if (!requestedResource.equals(root) && !requestedResource.startsWith(rootWithTrailingSlash)) {
             return false;
@@ -102,9 +108,6 @@ class ClassPathContentHandler extends StaticContentHandler {
         // try to find the resource on classpath (cannot use root URL and then resolve, as root and sub-resource
         // may be from different jar files/directories
         URL url = classLoader.getResource(resource);
-        if (url == null) {
-            return false;
-        }
 
         String welcomeFileName = welcomePageName();
         if (null != welcomeFileName) {
@@ -124,6 +127,14 @@ class ClassPathContentHandler extends StaticContentHandler {
             }
         }
 
+        if (url == null) {
+            LOGGER.fine(() -> "Requested resource " + resource + " does not exist");
+            return false;
+        }
+
+        URL logUrl = url; // need to be effectively final to use in lambda
+        LOGGER.finest(()  -> "Located resource url. Resource: " + resource + ", URL: " + logUrl);
+
         // now read the URL - we have direct support for files and jar files, others are handled by stream only
         switch (url.getProtocol()) {
         case "file":
@@ -140,13 +151,16 @@ class ClassPathContentHandler extends StaticContentHandler {
         return true;
     }
 
-    private boolean sendJar(Http.RequestMethod method,
-                            String requestedResource,
-                            URL url,
-                            ServerRequest request,
-                            ServerResponse response) throws URISyntaxException {
+    boolean sendJar(Http.RequestMethod method,
+                    String requestedResource,
+                    URL url,
+                    ServerRequest request,
+                    ServerResponse response) {
 
-        ExtractedJarEntry extrEntry = extracted.computeIfAbsent(requestedResource, thePath -> extractJarEntry(url));
+        LOGGER.fine(() -> "Sending static content from classpath: " + url);
+
+        ExtractedJarEntry extrEntry = extracted
+                .compute(requestedResource, (key, entry) -> existOrCreate(url, entry));
         if (extrEntry.tempFile == null) {
             return false;
         }
@@ -165,14 +179,23 @@ class ClassPathContentHandler extends StaticContentHandler {
         if (method == Http.Method.HEAD) {
             response.send();
         } else {
-            response.send(extrEntry.tempFile);
+            FileSystemContentHandler.send(response, extrEntry.tempFile);
         }
 
         return true;
     }
 
+    private ExtractedJarEntry existOrCreate(URL url, ExtractedJarEntry entry) {
+        if (entry == null) return extractJarEntry(url);
+        if (entry.tempFile == null) return entry;
+        if (Files.notExists(entry.tempFile)) return extractJarEntry(url);
+        return entry;
+    }
+
     private void sendUrlStream(Http.RequestMethod method, URL url, ServerRequest request, ServerResponse response)
             throws IOException {
+
+        LOGGER.finest(() -> "Sending static content using stream from classpath: " + url);
 
         URLConnection urlConnection = url.openConnection();
         long lastModified = urlConnection.getLastModified();
@@ -190,34 +213,10 @@ class ClassPathContentHandler extends StaticContentHandler {
         }
 
         InputStream in = url.openStream();
-        InputStreamPublisher byteBufPublisher = new InputStreamPublisher(in, 2048);
-        Flow.Publisher<DataChunk> dataChunkPublisher = new Flow.Publisher<DataChunk>() {
-            @Override
-            public void subscribe(Flow.Subscriber<? super DataChunk> s) {
-                byteBufPublisher.subscribe(new Flow.Subscriber<ByteBuffer>() {
-                    @Override
-                    public void onSubscribe(Flow.Subscription subscription) {
-                        s.onSubscribe(subscription);
-                    }
-
-                    @Override
-                    public void onNext(ByteBuffer item) {
-                        s.onNext(DataChunk.create(item));
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                        s.onError(throwable);
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        s.onComplete();
-                    }
-                });
-            }
-        };
-        response.send(dataChunkPublisher);
+        response.send(IoMulti.multiFromStreamBuilder(in)
+                .byteBufferSize(2048)
+                .build()
+                .map(DataChunk::create));
     }
 
     static String fileName(URL url) {
@@ -242,7 +241,7 @@ class ClassPathContentHandler extends StaticContentHandler {
 
             // Extract JAR entry to file
             try (InputStream is = jarFile.getInputStream(jarEntry)) {
-                Path tempFile = Files.createTempFile("ws", ".je");
+                Path tempFile = createTempFile("ws", ".je");
                 Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
                 return new ExtractedJarEntry(tempFile, lastModified, jarEntry.getName());
             } finally {
@@ -252,6 +251,22 @@ class ClassPathContentHandler extends StaticContentHandler {
             }
         } catch (IOException ioe) {
             throw new HttpException("Cannot load JAR file!", Http.Status.INTERNAL_SERVER_ERROR_500, ioe);
+        }
+    }
+
+    /**
+     * Create temp file in provided temp folder, or default one.
+     *
+     * @param prefix string to be used in generating the file's name.
+     * @param suffix string to be used in generating the file's name.
+     * @return the path to the newly created file
+     * @throws IOException
+     */
+    private Path createTempFile(String prefix, String suffix) throws IOException {
+        if (tempDir != null) {
+            return Files.createTempFile(tempDir, prefix, suffix);
+        } else {
+            return Files.createTempFile(prefix, suffix);
         }
     }
 

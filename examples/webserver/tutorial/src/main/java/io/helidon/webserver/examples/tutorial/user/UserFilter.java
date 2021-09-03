@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.examples.tutorial.user;
 
-import io.helidon.common.http.ContextualRegistry;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -24,7 +23,7 @@ import io.helidon.webserver.ServerResponse;
 
 /**
  * If used as a {@link Routing Routing} {@link Handler} then assign valid {@link User} instance on the request
- * {@link ContextualRegistry context}.
+ * {@link io.helidon.common.context.Context context}.
  */
 public class UserFilter implements Handler {
 

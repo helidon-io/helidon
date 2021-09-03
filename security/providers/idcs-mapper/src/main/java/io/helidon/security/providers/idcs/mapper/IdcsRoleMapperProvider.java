@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
@@ -45,13 +44,12 @@ import io.helidon.security.spi.SubjectMappingProvider;
 /**
  * {@link SubjectMappingProvider} to obtain roles from IDCS server for a user.
  * Supports multi tenancy in IDCS.
+ *
+ * @deprecated use {@link io.helidon.security.providers.idcs.mapper.IdcsRoleMapperRxProvider} instead
  */
+@Deprecated(forRemoval = true, since = "2.4.0")
 public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implements SubjectMappingProvider {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-    static {
-        HelidonFeatures.register("Security", "Role-Mapper", "IDCS");
-    }
 
     private final EvictableCache<String, List<Grant>> roleCache;
     private final WebTarget assertEndpoint;

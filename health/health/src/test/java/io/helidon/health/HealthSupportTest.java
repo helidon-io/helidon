@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ class HealthSupportTest {
     }
 
     @BeforeEach
-    private void disableJDKLogging() {
+    void disableJDKLogging() {
         // Disable this logger so that we don't get a bunch of "SEVERE" logs in our test output, which are
         // a normal thing to happen according to some tests we run. Since this is a global setting in the JVM,
         // and we are good citizens, we restore it to the WARNING level after the test is done even though
@@ -116,7 +116,7 @@ class HealthSupportTest {
                                    List<HealthCheck> allChecks,
                                    List<String> finalCheckNames) {
         HealthSupport support = HealthSupport.builder()
-                .add(allChecks)
+                .addLiveness(allChecks)
                 .addExcluded(excludedHealthChecks)
                 .addIncluded(includedHealthChecks)
                 .build();
@@ -154,7 +154,7 @@ class HealthSupportTest {
                                                             new GoodHealthCheck("a"),
                                                             new GoodHealthCheck("v"));
         HealthSupport support = HealthSupport.builder()
-                .add(checks)
+                .addLiveness(checks)
                 .build();
 
         HealthSupport.HealthResponse response = support.callHealthChecks(checks);
@@ -170,7 +170,7 @@ class HealthSupportTest {
     @MethodSource(value = {"goodChecks"})
     void passingHealthChecksResultInSuccess(List<HealthCheck> goodChecks) {
         HealthSupport support = HealthSupport.builder()
-                .add(goodChecks)
+                .addLiveness(goodChecks)
                 .build();
 
         HealthSupport.HealthResponse response = support.callHealthChecks(goodChecks);
@@ -188,7 +188,7 @@ class HealthSupportTest {
     @MethodSource(value = {"badChecks"})
     void failingHealthChecksResultInFailure(List<HealthCheck> badChecks) {
         HealthSupport support = HealthSupport.builder()
-                .add(badChecks)
+                .addLiveness(badChecks)
                 .build();
 
         HealthSupport.HealthResponse response = support.callHealthChecks(badChecks);
@@ -206,7 +206,7 @@ class HealthSupportTest {
     @MethodSource(value = {"brokenChecks"})
     void brokenHealthChecksResultInFailure(List<HealthCheck> brokenChecks) {
         HealthSupport support = HealthSupport.builder()
-                .add(brokenChecks)
+                .addLiveness(brokenChecks)
                 .build();
 
         HealthSupport.HealthResponse response = support.callHealthChecks(brokenChecks);
@@ -221,7 +221,7 @@ class HealthSupportTest {
     }
 
     private static final class GoodHealthCheck implements HealthCheck {
-        private String name;
+        private final String name;
 
         private GoodHealthCheck(String name) {
             this.name = name;
@@ -239,7 +239,7 @@ class HealthSupportTest {
     }
 
     private static final class BadHealthCheck implements HealthCheck {
-        private String name;
+        private final String name;
 
         private BadHealthCheck(String name) {
             this.name = name;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.security.providers.httpauth;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -38,12 +38,16 @@ import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
+import io.helidon.security.providers.common.OutboundConfig;
+import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.httpauth.spi.UserStoreService;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
+import io.helidon.security.util.TokenHandler;
 
 /**
  * Http authentication security provider.
@@ -65,22 +69,22 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     static final String BASIC_PREFIX = "basic ";
 
     private static final Logger LOGGER = Logger.getLogger(HttpBasicAuthProvider.class.getName());
-    private static final Pattern CREDENTIAL_PATTERN = Pattern.compile("(.*):(.*)");
-    private static final char[] EMPTY_PASSWORD = new char[0];
-
-    static {
-        HelidonFeatures.register("Security", "Authentication", "Basic-Auth");
-        HelidonFeatures.register("Security", "Outbound", "Basic-Auth");
-    }
+    static final Pattern CREDENTIAL_PATTERN = Pattern.compile("(.*?):(.*)");
 
     private final List<SecureUserStore> userStores;
+    private final boolean optional;
     private final String realm;
     private final SubjectType subjectType;
+    private final OutboundConfig outboundConfig;
+    private final boolean outboundTargetsExist;
 
     HttpBasicAuthProvider(Builder builder) {
         this.userStores = new LinkedList<>(builder.userStores);
+        this.optional = builder.optional;
         this.realm = builder.realm;
         this.subjectType = builder.subjectType;
+        this.outboundConfig = builder.outboundBuilder.build();
+        this.outboundTargetsExist = outboundConfig.targets().size() > 0;
     }
 
     /**
@@ -104,12 +108,17 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         return builder().config(config).build();
     }
 
-    private static OutboundSecurityResponse toBasicAuthOutbound(String username, char[] password) {
+    private static OutboundSecurityResponse toBasicAuthOutbound(SecurityEnvironment outboundEnv,
+                                                                TokenHandler tokenHandler,
+                                                                String username,
+                                                                char[] password) {
         String b64 = Base64.getEncoder()
                 .encodeToString((username + ":" + new String(password)).getBytes(StandardCharsets.UTF_8));
-        String basicAuthB64 = "basic " + b64;
+
+        Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
+        tokenHandler.addHeader(headers, b64);
         return OutboundSecurityResponse
-                .withHeaders(Map.of("Authorization", List.of(basicAuthB64)));
+                .withHeaders(headers);
     }
 
     @Override
@@ -122,17 +131,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
             return true;
         }
 
-        SecurityContext secContext = providerRequest.securityContext();
-
-        boolean userSupported = secContext.user()
-                .flatMap(user -> user.privateCredential(BasicPrivateCredentials.class))
-                .isPresent();
-
-        boolean serviceSupported = secContext.service()
-                .map(user -> user.privateCredential(BasicPrivateCredentials.class))
-                .isPresent();
-
-        return userSupported || serviceSupported;
+        return outboundTargetsExist;
     }
 
     @Override
@@ -140,36 +139,59 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                                                     SecurityEnvironment outboundEnv,
                                                     EndpointConfig outboundEp) {
 
-        // first resolve user to use
+        // explicit username in request properties
         Optional<Object> maybeUsername = outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
         if (maybeUsername.isPresent()) {
             String username = maybeUsername.get().toString();
             char[] password = passwordFromEndpoint(outboundEp);
 
-            return toBasicAuthOutbound(username, password);
+            return toBasicAuthOutbound(outboundEnv,
+                                       HttpBasicOutboundConfig.DEFAULT_TOKEN_HANDLER,
+                                       username,
+                                       password);
         }
 
-        // and if not present, use the one from request
-        SecurityContext secContext = providerRequest.securityContext();
+        var target = outboundConfig.findTargetCustomObject(outboundEnv,
+                                                           HttpBasicOutboundConfig.class,
+                                                           HttpBasicOutboundConfig::create,
+                                                           HttpBasicOutboundConfig::create);
 
-        // first try user
-        Optional<BasicPrivateCredentials> creds = secContext.user()
-                .flatMap(this::credentialsFromSubject);
+        if (target.isEmpty()) {
+            return OutboundSecurityResponse.abstain();
+        }
 
-        if (!creds.isPresent()) {
-            // if not present, try service
-            creds = secContext.service()
+        HttpBasicOutboundConfig outboundConfig = target.get();
+
+        if (outboundConfig.hasExplicitUser()) {
+            // use configured user
+            return toBasicAuthOutbound(outboundEnv,
+                                       outboundConfig.tokenHandler(),
+                                       outboundConfig.explicitUser(),
+                                       outboundConfig.explicitPassword());
+        } else {
+            // propagate current user (if possible)
+            SecurityContext secContext = providerRequest.securityContext();
+            // first try user
+            Optional<BasicPrivateCredentials> creds = secContext.user()
                     .flatMap(this::credentialsFromSubject);
+            if (creds.isEmpty()) {
+                // if not present, try service
+                creds = secContext.service()
+                        .flatMap(this::credentialsFromSubject);
+            }
+
+            Optional<char[]> overridePassword = outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
+                    .map(String::valueOf)
+                    .map(String::toCharArray);
+
+            return creds.map(credentials -> {
+                char[] password = overridePassword.orElse(credentials.password);
+                return toBasicAuthOutbound(outboundEnv,
+                                           outboundConfig.tokenHandler(),
+                                           credentials.username,
+                                           password);
+            }).orElseGet(OutboundSecurityResponse::abstain);
         }
-
-        Optional<char[]> overridePassword = outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
-                .map(String::valueOf)
-                .map(String::toCharArray);
-
-        return creds.map(credentials -> {
-            char[] password = overridePassword.orElse(credentials.password);
-            return toBasicAuthOutbound(credentials.username, password);
-        }).orElseGet(OutboundSecurityResponse::abstain);
     }
 
     private Optional<BasicPrivateCredentials> credentialsFromSubject(Subject subject) {
@@ -180,7 +202,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         return outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
                 .map(String::valueOf)
                 .map(String::toCharArray)
-                .orElse(EMPTY_PASSWORD);
+                .orElse(HttpBasicOutboundConfig.EMPTY_PASSWORD);
     }
 
     @Override
@@ -189,14 +211,15 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         List<String> authorizationHeader = headers.get(HEADER_AUTHENTICATION);
 
         if (null == authorizationHeader) {
-            return fail("No " + HEADER_AUTHENTICATION + " header");
+            return failOrAbstain("No " + HEADER_AUTHENTICATION + " header");
         }
 
         return authorizationHeader.stream()
                 .filter(header -> header.toLowerCase().startsWith(BASIC_PREFIX))
                 .findFirst()
                 .map(this::validateBasicAuth)
-                .orElseGet(() -> fail("Authorization header does not contain basic authentication: " + authorizationHeader));
+                .orElseGet(() ->
+                        failOrAbstain("Authorization header does not contain basic authentication: " + authorizationHeader));
     }
 
     private AuthenticationResponse validateBasicAuth(String basicAuthHeader) {
@@ -207,13 +230,13 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
             usernameAndPassword = new String(Base64.getDecoder().decode(b64), StandardCharsets.UTF_8);
         } catch (IllegalArgumentException e) {
             // not a base64 encoded string
-            return fail("Basic authentication header with invalid content - not base64 encoded");
+            return failOrAbstain("Basic authentication header with invalid content - not base64 encoded");
         }
 
         Matcher matcher = CREDENTIAL_PATTERN.matcher(usernameAndPassword);
         if (!matcher.matches()) {
             LOGGER.finest(() -> "Basic authentication header with invalid content: " + usernameAndPassword);
-            return fail("Basic authentication header with invalid content");
+            return failOrAbstain("Basic authentication header with invalid content");
         }
 
         final String username = matcher.group(1);
@@ -244,16 +267,23 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         // extracted to method to make sure we return the same message for invalid user and password
         // DO NOT change this - it is a security problem if the message differs, as it gives too much information
         // to potential attacker
-        return fail("Invalid username or password");
+        return failOrAbstain("Invalid username or password");
     }
 
-    private AuthenticationResponse fail(String message) {
-        return AuthenticationResponse.builder()
-                .statusCode(401)
-                .responseHeader(HEADER_AUTHENTICATION_REQUIRED, buildChallenge())
-                .status(AuthenticationResponse.SecurityStatus.FAILURE)
-                .description(message)
-                .build();
+    private AuthenticationResponse failOrAbstain(String message) {
+        if (optional) {
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description(message)
+                    .build();
+        } else {
+            return AuthenticationResponse.builder()
+                    .statusCode(401)
+                    .responseHeader(HEADER_AUTHENTICATION_REQUIRED, buildChallenge())
+                    .status(AuthenticationResponse.SecurityStatus.FAILURE)
+                    .description(message)
+                    .build();
+        }
     }
 
     private String buildChallenge() {
@@ -277,8 +307,10 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
      * {@link HttpBasicAuthProvider} fluent API builder.
      */
     public static final class Builder implements io.helidon.common.Builder<HttpBasicAuthProvider> {
-        private List<SecureUserStore> userStores = new LinkedList<>();
+        private final List<SecureUserStore> userStores = new LinkedList<>();
+        private final OutboundConfig.Builder outboundBuilder = OutboundConfig.builder();
 
+        private boolean optional = false;
         private String realm = "helidon";
         private SubjectType subjectType = SubjectType.USER;
 
@@ -291,6 +323,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
          * @return updated builder instance
          */
         public Builder config(Config config) {
+            config.get("optional").asBoolean().ifPresent(this::optional);
             config.get("realm").asString().ifPresent(this::realm);
             config.get("principal-type").asString().as(SubjectType::valueOf).ifPresent(this::subjectType);
 
@@ -323,6 +356,9 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                     .forEach(userStoreService -> {
                         addUserStore(userStoreService.create(config.get(userStoreService.configKey())));
                     });
+
+            config.get("outbound").asList(OutboundTarget::create)
+                    .ifPresent(it -> it.forEach(outboundBuilder::addTarget));
 
             return this;
         }
@@ -385,6 +421,31 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
             this.realm = realm;
             return this;
         }
+
+        /**
+         * Whether authentication is required.
+         * By default, request will fail if the authentication cannot be verified.
+         * If set to false, request will process and this provider will abstain.
+         *
+         * @param optional whether authentication is optional (true) or required (false)
+         * @return updated builder instance
+         */
+        public Builder optional(boolean optional) {
+            this.optional = optional;
+            return this;
+        }
+
+        /**
+         * Add a new outbound target to configure identity propagation or explicit username/password.
+         *
+         * @param target outbound target
+         * @return updated builder instance
+         */
+        public Builder addOutboundTarget(OutboundTarget target) {
+            this.outboundBuilder.addTarget(target);
+            return this;
+        }
+
     }
 
     // need to store this information to be able to propagate to outbound
@@ -397,4 +458,5 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
             this.password = password;
         }
     }
+
 }

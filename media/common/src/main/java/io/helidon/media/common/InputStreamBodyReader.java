@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,32 +25,42 @@ import io.helidon.common.reactive.Single;
 /**
  * Message body reader for {@link InputStream}.
  */
-public class InputStreamBodyReader implements MessageBodyReader<InputStream> {
+class InputStreamBodyReader implements MessageBodyReader<InputStream> {
+
+    private static final InputStreamBodyReader DEFAULT = new InputStreamBodyReader();
+
+    private static final GenericType<InputStream> INPUT_STREAM_TYPE = GenericType.create(InputStream.class);
+    private static final GenericType<DataChunkInputStream> OLD_STREAM_TYPE = GenericType.create(DataChunkInputStream.class);
 
     /**
-     * Enforce the use of {@link #get() }.
+     * Enforce the use of {@link #create()}.
      */
     private InputStreamBodyReader() {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyReaderContext context) {
-        return InputStream.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
+        if (INPUT_STREAM_TYPE.equals(type) || OLD_STREAM_TYPE.equals(type)) {
+            return PredicateResult.SUPPORTED;
+        }
+        return PredicateResult.NOT_SUPPORTED;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <U extends InputStream> Single<U> read(Publisher<DataChunk> publisher, GenericType<U> type,
-            MessageBodyReaderContext context) {
+    public <U extends InputStream> Single<U> read(Publisher<DataChunk> publisher,
+                                                  GenericType<U> type,
+                                                  MessageBodyReaderContext context) {
 
-        return (Single<U>) Single.just(new PublisherInputStream(publisher));
+        return (Single<U>) Single.just(new DataChunkInputStream(publisher, true));
     }
 
     /**
-     * Create a new instance of {@link InputStreamBodyReader}.
+     * Return an instance of {@link InputStreamBodyReader}.
+     *
      * @return {@link InputStream} message body reader.
      */
-    public static InputStreamBodyReader create() {
-        return new InputStreamBodyReader();
+    static InputStreamBodyReader create() {
+        return DEFAULT;
     }
 }

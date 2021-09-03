@@ -1,0 +1,91 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+:h1Prefix: SE
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
+:description: Helidon Reactive Webserver Configuration
+:keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
+
+= WebServer Configuration
+
+Configure the WebServer either programmatically, or by the Helidon configuration framework.
+
+== Configuring the WebServer in your code
+
+The easiest way to configure the WebServer is in your
+application code.
+
+[source,java]
+----
+WebServer webServer = WebServer.builder()
+      .bindAddress(InetAddress.getLocalHost())
+      .port(8080)
+      .build();
+----
+
+== Configuring the WebServer in a configuration file
+
+You can also define the configuration in a file.
+
+[source,yaml]
+.WebServer configuration file `application.yaml`
+----
+server:
+  port: 8080
+  bind-address: "0.0.0.0"
+----
+
+Then, in your application code, load the configuration from that file.
+
+[source,java]
+.WebServer initialization using the `application.yaml` file located on the classpath
+----
+Config config = Config.create(); // <1>
+WebServer webServer = WebServer.create(routing, config.get("server")); // <2>
+----
+
+<1> `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can
+just use `Config.create()`
+<2> Server expects the configuration tree located on the node of `server`
+
+== Configuration options
+
+See all configuration options 
+ link:{javadoc-base-url-api}/WebServer.html[here].
+
+Available socket configuration options:
+
+[cols="^2s,<2,<2,<6"]
+|===
+|Configuration key |Default value ^|Java type  ^|Description
+
+|`port` |{nbsp} |int |Port to open server socket on, defaults to an available ephemeral port
+|`bind-address` |all local addresses |String |Address to listen on (may be an IPV6 address as well)
+|`backlog` |`1024` |int |Maximum length of the queue of incoming connections on the server socket.
+|`max-header-size` |`8192` |int |Maximal number of bytes of all header values combined. Returns `400` if headers are bigger
+|`max-initial-line-length` |`4096` |int |Maximal number of characters in the initial HTTP line. Returns `400` if line is longer
+|`timeout-millis` |no timeout| long |Server socket timeout.
+|`receive-buffer-size` |implementation default |int |Proposed value of the TCP receive window that is advertised to the remote peer on the server socket.
+|`name` |`@default` for default socket |String |Name used for named sockets, to support additional server sockets (and their named routing)
+|`enabled` |`true` |boolean |A socket can be disabled through configuration, in which case it is never opened
+|`max-chunk-size` | `8192` |int |Maximal size of a chunk to read from incoming requests
+|`max-payload-size` | `-1` |long |Maximal size of a request payload in bytes. If exceeded a 413 error is returned. Negative value means no limit.
+|`validate-headers` |`true` |boolean |Whether to validate header names, if they contain illegal characters.
+|`initial-buffer-size` |`128` |int |Initial size of buffer used to parse HTTP line and headers
+|`tls` |{nbsp} |Object |Configuration of TLS, please see our TLS example in repository
+|===

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,35 +15,23 @@
 # limitations under the License.
 #
 
-set -o pipefail || true  # trace ERR through pipes
-set -o errtrace || true # trace ERR through commands and functions
-set -o errexit || true  # exit the script if any statement returns a non-true return value
+# Path to this script
+[ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
 
-on_error(){
-    CODE="${?}" && \
-    set +x && \
-    printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-        "${CODE}" "${BASH_SOURCE}" "${LINENO}" "${BASH_COMMAND}"
-}
-trap on_error ERR
+# Load pipeline environment setup and define WS_DIR
+. $(dirname -- "${SCRIPT_PATH}")/includes/pipeline-env.sh "${SCRIPT_PATH}" '../..'
+
+# Setup error handling using default settings (defined in includes/error_handlers.sh)
+error_trap_setup
 
 usage(){
-  cat <<EOF
+    cat <<EOF
 
 DESCRIPTION: Helidon Release Script
 
 USAGE:
 
-$(basename ${0}) [ --promoted ] [ --build-number=N ] CMD
-
-  --promoted
-        Perform a promoted release.
-        The version will include a build number qualifier in the of '-b.N'
-        See also --build-number=N
-
-  --build-number=N
-        Set the build number for promoted release.
-        Works only with --promoted
+$(basename ${0}) [ --build-number=N ] CMD
 
   --version=V
         Override the version to use.
@@ -68,65 +56,43 @@ EOF
 ARGS=( "${@}" )
 for ((i=0;i<${#ARGS[@]};i++))
 {
-  ARG=${ARGS[${i}]}
-  case ${ARG} in
-  "--promoted")
-    readonly PROMOTED=true
-    ;;
-  "--build-number="*)
-    readonly BUILD_NUMBER=${ARG#*=}
-    ;;
-  "--version="*)
-    VERSION=${ARG#*=}
-    ;;
-  "--help")
-    usage
-    exit 0
-    ;;
-  *)
-    if [ "${ARG}" = "update_version" ] || [ "${ARG}" = "release_build" ] ; then
-      readonly COMMAND="${ARG}"
-    else
-      echo "ERROR: unknown argument: ${ARG}"
-      exit 1
-    fi
-    ;;
-  esac
+    ARG=${ARGS[${i}]}
+    case ${ARG} in
+    "--version="*)
+        VERSION=${ARG#*=}
+        ;;
+    "--help")
+        usage
+        exit 0
+        ;;
+    *)
+        if [ "${ARG}" = "update_version" ] || [ "${ARG}" = "release_build" ] ; then
+            readonly COMMAND="${ARG}"
+        else
+            echo "ERROR: unknown argument: ${ARG}"
+            exit 1
+        fi
+        ;;
+    esac
 }
 
 if [ -z "${COMMAND}" ] ; then
-  echo "ERROR: no command provided"
-  usage
-  exit 1
+    echo "ERROR: no command provided"
+    usage
+    exit 1
 fi
-
-# Path to this script
-if [ -h "${0}" ] ; then
-  readonly SCRIPT_PATH="$(readlink "${0}")"
-else
-  readonly SCRIPT_PATH="${0}"
-fi
-
-# Path to the root of the workspace
-readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 # Hooks for version substitution work
 readonly PREPARE_HOOKS=( )
 
 # Hooks for deployment work
-readonly PERFORM_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/deploy-archetypes.sh )
-
-source ${WS_DIR}/etc/scripts/pipeline-env.sh
-
-if [ "${WERCKER}" = "true" -o "${GITLAB}" = "true" ] ; then
-  apt-get update && apt-get -y install graphviz
-fi
+readonly PERFORM_HOOKS=( )
 
 # Resolve FULL_VERSION
-if [ -z ${VERSION+x} ]; then
+if [ -z "${VERSION+x}" ]; then
 
     # get maven version
-    MVN_VERSION=$(mvn \
+    MVN_VERSION=$(mvn ${MAVEN_ARGS} \
         -q \
         -f ${WS_DIR}/pom.xml \
         -Dexec.executable="echo" \
@@ -135,74 +101,79 @@ if [ -z ${VERSION+x} ]; then
         org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
 
     # strip qualifier
-    readonly VERSION=${MVN_VERSION%-*}
-
-    # resolve promoted qualifier
-    if [ -n "${PROMOTED}" ] ; then
-
-      # resolve build number
-      if [ -z "${BUILD_NUMBER}" ] ; then
-
-        # x.y.z-b.<number> pattern
-        LAST_BUILD_NUMBER=$(git tag -l | \
-                            (grep ${VERSION}-b || echo "${VERSION}-b.0";) | \
-                            cut -f2- -db | \
-                            cut -f2- -d '.' | \
-                            sort -g | \
-                            tail -n1)
-        # next build number
-        BUILD_NUMBER=$(( ${LAST_BUILD_NUMBER} + 1 ))
-      fi
-
-      readonly FULL_VERSION=${VERSION}-b.${BUILD_NUMBER}
-    else
-      readonly FULL_VERSION=${VERSION}
-    fi
-  else
-    readonly FULL_VERSION=${VERSION}
+    readonly VERSION="${MVN_VERSION%-*}"
+    readonly FULL_VERSION="${VERSION}"
+else
+    readonly FULL_VERSION="${VERSION}"
 fi
 
 export FULL_VERSION
 printf "\n%s: FULL_VERSION=%s\n\n" "$(basename ${0})" "${FULL_VERSION}"
 
 update_version(){
-  # Update version
-  mvn -f ${WS_DIR}/parent/pom.xml versions:set versions:set-property \
-    -DgenerateBackupPoms=false \
-    -DnewVersion="${FULL_VERSION}" \
-    -Dproperty=helidon.version \
-    -DprocessAllModules=true
+    # Update version
+    mvn ${MAVEN_ARGS} -f ${WS_DIR}/parent/pom.xml versions:set versions:set-property \
+        -DgenerateBackupPoms=false \
+        -DnewVersion="${FULL_VERSION}" \
+        -Dproperty=helidon.version \
+        -DprocessAllModules=true
 
-  # Hack to update helidon.version
-  for pom in `egrep "<helidon.version>.*</helidon.version>" -r . --include pom.xml | cut -d ':' -f 1 | sort | uniq `
-  do
-      cat ${pom} | \
-          sed -e s@'<helidon.version>.*</helidon.version>'@"<helidon.version>${FULL_VERSION}</helidon.version>"@g \
-          > ${pom}.tmp
-      mv ${pom}.tmp ${pom}
-  done
-
-  # Hack to update helidon.version in build.gradle files
-  for bfile in `egrep "helidonversion = .*" -r . --include build.gradle | cut -d ':' -f 1 | sort | uniq `
-  do
-      cat ${bfile} | \
-          sed -e s@'helidonversion = .*'@"helidonversion = \'${FULL_VERSION}\'"@g \
-          > ${bfile}.tmp
-      mv ${bfile}.tmp ${bfile}
-  done
-
-  # Invoke prepare hook
-  if [ -n "${PREPARE_HOOKS}" ]; then
-    for prepare_hook in ${PREPARE_HOOKS} ; do
-      bash "${prepare_hook}"
+    # Hack to update helidon.version
+    for pom in `egrep "<helidon.version>.*</helidon.version>" -r . --include pom.xml | cut -d ':' -f 1 | sort | uniq `
+    do
+        cat ${pom} | \
+            sed -e s@'<helidon.version>.*</helidon.version>'@"<helidon.version>${FULL_VERSION}</helidon.version>"@g \
+            > ${pom}.tmp
+        mv ${pom}.tmp ${pom}
     done
-  fi
+
+    # Hack to update helidon.version in build.gradle files
+    for bfile in `egrep "helidonversion = .*" -r . --include build.gradle | cut -d ':' -f 1 | sort | uniq `
+    do
+        cat ${bfile} | \
+            sed -e s@'helidonversion = .*'@"helidonversion = \'${FULL_VERSION}\'"@g \
+            > ${bfile}.tmp
+        mv ${bfile}.tmp ${bfile}
+    done
+
+    # Invoke prepare hook
+    if [ -n "${PREPARE_HOOKS}" ]; then
+        for prepare_hook in ${PREPARE_HOOKS} ; do
+            bash "${prepare_hook}"
+        done
+    fi
+}
+
+release_site(){
+    if [ -n "${STAGING_REPO_ID}" ] ; then
+        readonly MAVEN_REPO_URL="https://oss.sonatype.org/service/local/staging/deployByRepositoryId/${STAGING_REPO_ID}/"
+    else
+        readonly MAVEN_REPO_URL="https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+    fi
+
+    # Generate site
+    mvn ${MAVEN_ARGS} site
+
+    # Sign site jar
+    gpg -ab ${WS_DIR}/target/helidon-project-${FULL_VERSION}-site.jar
+
+    # Deploy site.jar and signature file explicitly using deploy-file
+    mvn ${MAVEN_ARGS} deploy:deploy-file \
+        -Dfile="${WS_DIR}/target/helidon-project-${FULL_VERSION}-site.jar" \
+        -Dfiles="${WS_DIR}/target/helidon-project-${FULL_VERSION}-site.jar.asc" \
+        -Dclassifier="site" \
+        -Dclassifiers="site" \
+        -Dtypes="jar.asc" \
+        -DgeneratePom="false" \
+        -DgroupId="io.helidon" \
+        -DartifactId="helidon-project" \
+        -Dversion="${FULL_VERSION}" \
+        -Durl="${MAVEN_REPO_URL}" \
+        -DrepositoryId="ossrh" \
+        -DretryFailedDeploymentCount="10"
 }
 
 release_build(){
-    # Inject credentials in CI env
-    inject_credentials
-
     # Do the release work in a branch
     local GIT_BRANCH="release/${FULL_VERSION}"
     git branch -D "${GIT_BRANCH}" > /dev/null 2>&1 || true
@@ -226,20 +197,23 @@ release_build(){
 
     # Create the nexus staging repository
     local STAGING_DESC="Helidon v${FULL_VERSION}"
-    mvn nexus-staging:rc-open \
-      -DstagingProfileId=6026dab46eed94 \
-      -DstagingDescription="${STAGING_DESC}"
+    mvn ${MAVEN_ARGS} nexus-staging:rc-open \
+        -DstagingProfileId="6026dab46eed94" \
+        -DstagingDescription="${STAGING_DESC}"
 
-    export STAGING_REPO_ID=$(mvn nexus-staging:rc-list | \
-      egrep "\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
-      sed -E s@'.*(iohelidon-[0-9]*).*'@'\1'@g | head -1)
+    export STAGING_REPO_ID=$(mvn ${MAVEN_ARGS} nexus-staging:rc-list | \
+        egrep "^[0-9:,]*[ ]?\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
+        awk '{print $2" "$3}' | \
+        sed -e s@'\[INFO\] '@@g -e s@'OPEN'@@g | \
+        head -1)
     echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
 
     # Perform deployment
-    mvn -B clean deploy -Prelease,archetypes -DskipTests \
-      -Dgpg.passphrase="${GPG_PASSPHRASE}" \
-      -DstagingRepositoryId=${STAGING_REPO_ID} \
-      -DretryFailedDeploymentCount=10
+    mvn ${MAVEN_ARGS} clean deploy \
+       -Prelease,archetypes \
+      -DskipTests \
+      -DstagingRepositoryId="${STAGING_REPO_ID}" \
+      -DretryFailedDeploymentCount="10"
 
     # Invoke perform hooks
     if [ -n "${PERFORM_HOOKS}" ]; then
@@ -248,21 +222,23 @@ release_build(){
       done
     fi
 
+    # Release site (documentation, javadocs)
+    release_site
+
     # Close the nexus staging repository
-    mvn nexus-staging:rc-close \
-      -DstagingRepositoryId=${STAGING_REPO_ID} \
+    mvn ${MAVEN_ARGS} nexus-staging:rc-close \
+      -DstagingRepositoryId="${STAGING_REPO_ID}" \
       -DstagingDescription="${STAGING_DESC}"
 
     # Create and push a git tag
-    # Note this may not be required for Github
     local GIT_REMOTE=$(git config --get remote.origin.url | \
-                       sed "s,https://[^@]*@\([^/]*\)/,git@\1:,")
+        sed "s,https://\([^/]*\)/,git@\1:,")
 
     git remote add release "${GIT_REMOTE}" > /dev/null 2>&1 || \
     git remote set-url release "${GIT_REMOTE}"
 
     git tag -f "${FULL_VERSION}"
-    git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+    git push --force release refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
 }
 
 # Invoke command

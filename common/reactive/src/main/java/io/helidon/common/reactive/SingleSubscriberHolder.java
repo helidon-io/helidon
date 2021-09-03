@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,15 +24,17 @@ import java.util.function.Consumer;
 
 /**
  * A subscriber container that accepts only a single, one-time subscriber registration.
+ *
  * @param <T> the type of the {@code Subscriber}
  */
 public class SingleSubscriberHolder<T> {
     private static final IllegalStateException ALREADY_CLOSED = new IllegalStateException("Publisher already closed.");
     private static final IllegalStateException CANCELLED = new IllegalStateException("Canceled before any subscriber is "
-                                                                                     + "registered!");
+            + "registered!");
 
     private final CompletableFuture<Flow.Subscriber<? super T>> subscriber = new CompletableFuture<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final AtomicBoolean onSubscribeCalled = new AtomicBoolean(false);
 
     /**
      * Register a new subscriber.
@@ -59,8 +61,8 @@ public class SingleSubscriberHolder<T> {
             }
 
             subscriber.onError(error != null
-                                       ? error
-                                       : new IllegalStateException("This publisher only supports a single subscriber!"));
+                    ? error
+                    : new IllegalStateException("This publisher only supports a single subscriber!"));
             return false;
         }
     }
@@ -76,7 +78,7 @@ public class SingleSubscriberHolder<T> {
      * {@code completionHandler} is invoked using the value of the registered subscriber as an input parameter.
      * This means that the supplied completion handler is guaranteed to be invoked at most once.
      *
-     * @param completionHandler completion handler to be invoked to tryProcess any completion logic on a registered subscriber,
+     * @param completionHandler completion handler to be invoked to process any completion logic on a registered subscriber,
      *                          provided there is a registered subscriber and it has not been previously passed to a completion
      *                          handler (e.g. in a previous invocation of this method).
      */
@@ -124,5 +126,21 @@ public class SingleSubscriberHolder<T> {
      */
     public boolean isClosed() {
         return closed.get();
+    }
+
+    boolean isReady() {
+        return this.subscriber.isDone() && !isClosed();
+    }
+
+    boolean onSubscribedCalled() {
+        return this.onSubscribeCalled.get();
+    }
+
+    boolean tryOnSubscribe(Flow.Subscription subscription) {
+        if (isReady() && !onSubscribeCalled.getAndSet(true)) {
+            this.subscriber.whenComplete((s, t) -> s.onSubscribe(subscription));
+            return true;
+        }
+        return false;
     }
 }

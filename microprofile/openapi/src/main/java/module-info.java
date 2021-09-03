@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,18 @@ import io.helidon.microprofile.openapi.OpenApiCdiExtension;
 module io.helidon.microprofile.openapi {
     requires java.logging;
     
-    requires smallrye.open.api;
+    requires smallrye.open.api.core;
 
     requires microprofile.config.api;
     requires io.helidon.microprofile.server;
     requires io.helidon.openapi;
 
-    requires jandex;
+    requires org.jboss.jandex;
 
     exports io.helidon.microprofile.openapi;
+
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.openapi to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides Extension with OpenApiCdiExtension;
 }

@@ -1,0 +1,163 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= JMS Connector
+:toc:
+:toc-placement: preamble
+:description: Reactive Messaging support for JMS in Helidon SE
+:keywords: helidon, se, messaging, jms
+:h1Prefix: SE
+:feature-name: JMS Connector
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.messaging.jms</groupId>
+    <artifactId>helidon-messaging-jms</artifactId>
+</dependency>
+----
+
+== Reactive JMS Connector
+Connecting streams to JMS with Reactive Messaging couldn't be easier.
+
+=== Explicit config with config builder
+
+[source,java]
+.Example of consuming from JMS:
+----
+Channel<String> fromJms = Channel.<String>builder()<1><2>
+        .name("from-jms")
+        .publisherConfig(JmsConnector.configBuilder()
+                .jndiInitialFactory(ActiveMQInitialContextFactory.class)
+                .jndiProviderUrl("tcp://127.0.0.1:61616")
+                .type(JmsConfigBuilder.Type.QUEUE)
+                .destination("se-example-queue-1")
+                .build()
+        )
+        .build();
+
+JmsConnector jmsConnector = JmsConnector.create();<3>
+
+Messaging messaging = Messaging.builder()
+        .connector(jmsConnector)
+        .listener(fromJms, payload -> {
+            System.out.println("Jms says: " + payload);
+        })
+        .build()
+        .start();
+----
+<1> Prepare a channel for connecting jms connector with specific publisher configuration -> listener
+<2> Channel -> connector mapping is automatic when using JmsConnector.configBuilder()
+<3> Prepare JMS connector, can be used by any channel
+
+[source,java]
+.Example of producing to JMS:
+----
+Channel<String> toJms = Channel.<String>builder()<1><2>
+        .subscriberConfig(JmsConnector.configBuilder()
+                .jndiInitialFactory(ActiveMQInitialContextFactory.class)
+                .jndiProviderUrl("tcp://127.0.0.1:61616")
+                .type(JmsConfigBuilder.Type.QUEUE)
+                .destination("se-example-queue-1")
+                .build()
+        ).build();
+
+JmsConnector jmsConnector = JmsConnector.create();<3>
+
+messaging = Messaging.builder()
+        .publisher(toJms, Multi.just("test1", "test2").map(Message::of))
+        .connector(jmsConnector)
+        .build()
+        .start();
+----
+<1> Prepare a channel for connecting jms connector with specific publisher configuration -> listener
+<2> Channel -> connector mapping is automatic when using JmsConnector.configBuilder()
+<3> Prepare JMS connector, can be used by any channel
+
+=== Implicit Helidon Config
+
+[source,yaml]
+.Example of connector config:
+----
+mp.messaging:
+
+  incoming.from-jms:
+    connector: helidon-jms
+    destination: se-example-queue-1
+    session-group-id: session-group-1
+    type: queue
+
+  outgoing.to-jms:
+    connector: helidon-jms
+      destination: se-example-queue-1
+      type: queue
+
+  connector:
+    helidon-jms:
+      jndi:
+        jms-factory: ConnectionFactory
+        env-properties:
+          java.naming.factory.initial: org.apache.activemq.jndi.ActiveMQInitialContextFactory
+          java.naming.provider.url: tcp://127.0.0.1:61616
+
+----
+
+[source,java]
+.Example of consuming from JMS:
+----
+Config config = Config.create();
+
+Channel<String> fromJms = Channel.create("from-jms");
+
+JmsConnector jmsConnector = JmsConnector.create();<1>
+
+Messaging messaging = Messaging.builder()
+        .config(config)
+        .connector(jmsConnector)
+        .listener(fromJms, payload -> {
+            System.out.println("Jms says: " + payload);
+        })
+        .build()
+        .start();
+----
+<1> Prepare JMS connector, can be used by any channel
+
+[source,java]
+.Example of producing to JMS:
+----
+Config config = Config.create();
+
+Channel<String> toJms = Channel.create("to-jms");
+
+JmsConnector jmsConnector = JmsConnector.create();<1>
+
+messaging = Messaging.builder()
+        .config(config)
+        .publisher(toJms, Multi.just("test1", "test2").map(Message::of))
+        .connector(jmsConnector)
+        .build()
+        .start();
+----
+<1> Prepare JMS connector, can be used by any channel
+
+Don't forget to check out the examples with pre-configured ActiveMQ docker image, for easy testing:
+
+* https://github.com/oracle/helidon/tree/master/examples/messaging

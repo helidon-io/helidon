@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,10 @@ import io.helidon.security.spi.SubjectMappingProvider;
 
 /**
  * Common functionality for IDCS role mapping.
+ *
+ * @deprecated use {@link io.helidon.security.providers.idcs.mapper.IdcsRoleMapperRxProviderBase} instead
  */
+@Deprecated(forRemoval = true, since = "2.4.0")
 public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvider {
     /**
      * User subject type used when requesting roles from IDCS.
@@ -302,7 +305,17 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
          * @return updated builder instance
          */
         public B config(Config config) {
-            config.get("oidc-config").as(OidcConfig::create).ifPresent(this::oidcConfig);
+            config.get("oidc-config").ifExists(it -> {
+                OidcConfig.Builder builder = OidcConfig.builder();
+                // we do not need JWT validation at all
+                builder.validateJwtWithJwk(false);
+                // this is an IDCS specific extension
+                builder.serverType("idcs");
+                builder.config(it);
+
+                oidcConfig(builder.build());
+            });
+
             config.get("subject-types").asList(cfg -> cfg.asString().map(SubjectType::valueOf).get())
                     .ifPresent(list -> list.forEach(this::addSubjectType));
             config.get("default-idcs-subject-type").asString().ifPresent(this::defaultIdcsSubjectType);
@@ -348,7 +361,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
          * Defaults to {@link #IDCS_SUBJECT_TYPE_USER}.
          *
          * @param subjectType type of subject to use when requesting roles from IDCS
-         * @return udpated builder instance
+         * @return updated builder instance
          */
         public B defaultIdcsSubjectType(String subjectType) {
             this.defaultIdcsSubjectType = subjectType;

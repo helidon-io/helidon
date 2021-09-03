@@ -1,0 +1,45 @@
+
+server:
+  port: 8080
+  host: 0.0.0.0
+
+db:
+  source: jdbc
+  connection:
+    url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1
+    # url: jdbc:h2:tcp://localhost:1521/test
+    username: sa
+    password:
+    poolName: h2
+    initializationFailTimeout: -1
+    connectionTimeout: 2000
+    helidon:
+      pool-metrics:
+        enabled: true
+        # name prefix defaults to "db.pool." - if you have more than one client within a JVM, you may want to distinguish between them
+        name-prefix: "hikari."
+  services:
+    metrics:
+      - type: METER
+  health-check:
+    type: "dml"
+    statementName: "ping"
+  statements:
+    # Ping statement
+    ping: "SET @HELIDON_PING=0"
+    # Create database schema
+    create-types: "CREATE TABLE POKEMONTYPE (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
+    create-pokemons: "CREATE TABLE POKEMON (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL, id_type INTEGER NOT NULL REFERENCES POKEMONTYPE(id))"
+    # Select all types
+    select-all-types: "SELECT id, name FROM POKEMONTYPE"
+    # Select all pokemons
+    select-all-pokemons: "SELECT id, name, id_type FROM POKEMON"
+    # Select pokemon by id
+    select-pokemon-by-id: "SELECT id, name, id_type FROM POKEMON WHERE id = :id"
+    # Select pokemon by name
+    select-pokemon-by-name: "SELECT id, name, id_type FROM POKEMON WHERE name = ?"
+    # Insert records into database
+    insert-type: "INSERT INTO POKEMONTYPE(id, name) VALUES(?, ?)"
+    insert-pokemon: "INSERT INTO POKEMON(id, name, id_type) VALUES(?, ?, ?)"
+    # Delete pokemon by id
+    delete-pokemon-by-id: "DELETE FROM POKEMON WHERE id = :id"

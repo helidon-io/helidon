@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package io.helidon.config.tests.yaml;
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.tests.AbstractComplexConfigTest;
-import io.helidon.config.yaml.YamlConfigParserBuilder;
+import io.helidon.config.yaml.YamlConfigParser;
 
 /**
- * Tests {@link YamlConfigParserBuilder} in context of whole {@link Config} instance.
+ * Tests {@link YamlConfigParser} in context of whole {@link Config} instance.
  */
 public class YamlComplexConfigTest extends AbstractComplexConfigTest {
     @Override
@@ -32,6 +32,6 @@ public class YamlComplexConfigTest extends AbstractComplexConfigTest {
 
     @Override
     protected ConfigParser createConfigParser() {
-        return YamlConfigParserBuilder.buildDefault();
+        return YamlConfigParser.create();
     }
 }

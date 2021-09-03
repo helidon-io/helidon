@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.StringTokenizer;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
@@ -57,7 +60,7 @@ abstract class Request implements ServerRequest {
 
     private final BareRequest bareRequest;
     private final WebServer webServer;
-    private final io.helidon.common.http.ContextualRegistry context;
+    private final Context context;
     private final Parameters queryParams;
     private final HashRequestHeaders headers;
     private final MessageBodyReadableContent content;
@@ -73,11 +76,11 @@ abstract class Request implements ServerRequest {
         this.bareRequest = req;
         this.webServer = webServer;
         this.headers = headers;
-        this.context = io.helidon.common.http.ContextualRegistry.create(webServer.context());
+        this.context = Contexts.context().orElseGet(() -> Context.create(webServer.context()));
         this.queryParams = UriComponent.decodeQuery(req.uri().getRawQuery(), true);
         this.eventListener = new MessageBodyEventListener();
         MessageBodyReaderContext readerContext = MessageBodyReaderContext
-                .create(webServer.mediaSupport(), eventListener, headers, headers.contentType());
+                .create(webServer.readerContext(), eventListener, headers, headers.contentType());
         this.content = MessageBodyReadableContent.create(req.bodyPublisher(), readerContext);
     }
 
@@ -104,10 +107,10 @@ abstract class Request implements ServerRequest {
      */
     static Charset contentCharset(ServerRequest request) {
         return request.headers()
-                      .contentType()
-                      .flatMap(MediaType::charset)
-                      .map(Charset::forName)
-                      .orElse(DEFAULT_CHARSET);
+                .contentType()
+                .flatMap(MediaType::charset)
+                .map(Charset::forName)
+                .orElse(DEFAULT_CHARSET);
     }
 
     @Override
@@ -116,8 +119,7 @@ abstract class Request implements ServerRequest {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    public io.helidon.common.http.ContextualRegistry context() {
+    public Context context() {
         return context;
     }
 
@@ -195,10 +197,10 @@ abstract class Request implements ServerRequest {
 
         private Span readSpan;
 
-        private <T> Span createReadSpan(GenericType<?> type) {
+        private Span createReadSpan(GenericType<?> type) {
             // only create this span if we have a parent span
-            SpanContext parentSpan = spanContext();
-            if (null == parentSpan) {
+            Optional<SpanContext> parentSpan = spanContext();
+            if (parentSpan.isEmpty()) {
                 return null;
             }
 
@@ -212,7 +214,7 @@ abstract class Request implements ServerRequest {
             if (spanConfig.enabled()) {
                 // only create a real span if enabled
                 Tracer.SpanBuilder spanBuilder = tracer().buildSpan(spanName);
-                spanBuilder.asChildOf(parentSpan);
+                spanBuilder.asChildOf(parentSpan.get());
 
                 if (type != null) {
                     spanBuilder.withTag("requested.type", type.getTypeName());
@@ -226,29 +228,29 @@ abstract class Request implements ServerRequest {
         @Override
         public void onEvent(MessageBodyContext.Event event) {
             switch (event.eventType()) {
-                case BEFORE_ONSUBSCRIBE:
-                    GenericType<?> type = event.entityType().orElse(null);
-                    readSpan = createReadSpan(type);
-                    break;
+            case BEFORE_ONSUBSCRIBE:
+                GenericType<?> type = event.entityType().orElse(null);
+                readSpan = createReadSpan(type);
+                break;
 
-                case AFTER_ONERROR:
-                    if (readSpan != null) {
-                        Tags.ERROR.set(readSpan, Boolean.TRUE);
-                        Throwable ex = event.asErrorEvent().error();
-                        readSpan.log(Map.of("event", "error",
-                                "error.kind", "Exception",
-                                "error.object", ex,
-                                "message", ex.toString()));
-                        readSpan.finish();
-                    }
-                    break;
-                case AFTER_ONCOMPLETE:
-                    if (readSpan != null) {
-                        readSpan.finish();
-                    }
-                    break;
-                default:
-                    // do nothing
+            case AFTER_ONERROR:
+                if (readSpan != null) {
+                    Tags.ERROR.set(readSpan, Boolean.TRUE);
+                    Throwable ex = event.asErrorEvent().error();
+                    readSpan.log(Map.of("event", "error",
+                                        "error.kind", "Exception",
+                                        "error.object", ex,
+                                        "message", ex.toString()));
+                    readSpan.finish();
+                }
+                break;
+            case AFTER_ONCOMPLETE:
+                if (readSpan != null) {
+                    readSpan.finish();
+                }
+                break;
+            default:
+                // do nothing
             }
         }
     }
@@ -313,7 +315,7 @@ abstract class Request implements ServerRequest {
             return absolutePath == null ? this : absolutePath;
         }
 
-        static Path create(Path contextual, String path,  Map<String, String> params) {
+        static Path create(Path contextual, String path, Map<String, String> params) {
             return create(contextual, path, path, params);
         }
 

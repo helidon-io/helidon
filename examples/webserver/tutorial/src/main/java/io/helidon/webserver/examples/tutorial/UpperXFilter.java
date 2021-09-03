@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,22 +39,25 @@ public final class UpperXFilter implements Function<Publisher<DataChunk>, Publis
 
     @Override
     public Publisher<DataChunk> apply(Publisher<DataChunk> publisher) {
-        return Multi.from(publisher).map(responseChunk -> {
+        return Multi.create(publisher).map(responseChunk -> {
             if (responseChunk == null) {
                 return null;
             }
             try {
-                ByteBuffer bb = responseChunk.data();
-                // Naive but works for demo
-                byte[] buff = new byte[bb.remaining()];
-                bb.get(buff);
-                for (int i = 0; i < buff.length; i++) {
-                    if (buff[i] == LOWER_X) {
-                        buff[i] = UPPER_X;
+                ByteBuffer[] originalData = responseChunk.data();
+                ByteBuffer[] processedData = new ByteBuffer[originalData.length];
+                for (int i = 0; i < originalData.length; i++) {
+                    // Naive but works for demo
+                    byte[] buff = new byte[originalData[i].remaining()];
+                    originalData[i].get(buff);
+                    for (int j = 0; j < buff.length; j++) {
+                        if (buff[j] == LOWER_X) {
+                            buff[j] = UPPER_X;
+                        }
                     }
+                    processedData[i] = ByteBuffer.wrap(buff);
                 }
-                return DataChunk.create(responseChunk.flush(),
-                        ByteBuffer.wrap(buff));
+                return DataChunk.create(responseChunk.flush(), processedData);
             } finally {
                 responseChunk.release();
             }

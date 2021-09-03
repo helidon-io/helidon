@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.config.examples.changes;
 
-import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
@@ -26,7 +25,7 @@ import io.helidon.config.PollingStrategies;
 import static java.time.Duration.ofSeconds;
 
 /**
- * Example shows how to listen on Config node changes using simplified API, {@link Config#onChange(Function)}.
+ * Example shows how to listen on Config node changes using simplified API, {@link Config#onChange(java.util.function.Consumer)}.
  * The Function is invoked with new instance of Config.
  * <p>
  * The feature is based on using {@link io.helidon.config.spi.PollingStrategy} with

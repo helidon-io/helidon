@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -77,7 +76,7 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
         AFTER_ONNEXT,
 
         /**
-         * Emitted after {@link Subscriber#onError(Throwable)}.
+         * Emitted before {@link Subscriber#onError(Throwable)}.
          */
         BEFORE_ONERROR,
 
@@ -192,11 +191,19 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
     protected MessageBodyContext(MessageBodyContext parent, EventListener eventListener) {
         if (parent != null) {
             this.filters = new MessageBodyOperators<>(parent.filters);
-            this.eventListener = eventListener;
         } else {
             this.filters = new MessageBodyOperators<>();
-            this.eventListener = eventListener;
         }
+        this.eventListener = eventListener;
+    }
+
+    /**
+     * Create a new parented content support instance.
+     *
+     * @param parent content filters parent
+     */
+    protected MessageBodyContext(MessageBodyContext parent) {
+        this(parent, parent.eventListener);
     }
 
     /**
@@ -217,19 +224,8 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
     }
 
     /**
-     * Register a function filter.
-     *
-     * @param function filter function
-     * @deprecated use {@link #registerFilter(MessageBodyFilter)} instead
-     */
-    @Deprecated
-    public void registerFilter(Function<Publisher<DataChunk>, Publisher<DataChunk>> function) {
-        Objects.requireNonNull(function, "filter function is null!");
-        filters.registerLast(new FilterOperator(new FunctionFilter(function)));
-    }
-
-    /**
      * Apply the filters on the given input publisher to form a publisher chain.
+     *
      * @param publisher input publisher
      * @return tail of the publisher chain
      */
@@ -239,8 +235,9 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
 
     /**
      * Apply the filters on the given input publisher to form a publisher chain.
+     *
      * @param publisher input publisher
-     * @param type type information associated with the input publisher
+     * @param type      type information associated with the input publisher
      * @return tail of the publisher chain
      */
     protected Publisher<DataChunk> applyFilters(Publisher<DataChunk> publisher, GenericType<?> type) {
@@ -248,14 +245,15 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
         if (eventListener != null) {
             return doApplyFilters(publisher, new TypedEventListener(eventListener, type));
         } else {
-            return doApplyFilters(publisher, eventListener);
+            return doApplyFilters(publisher, null);
         }
     }
 
     /**
      * Perform the filter chaining.
+     *
      * @param publisher input publisher
-     * @param listener subscription listener
+     * @param listener  subscription listener
      * @return tail of the publisher chain
      */
     private Publisher<DataChunk> doApplyFilters(Publisher<DataChunk> publisher, EventListener listener) {
@@ -265,8 +263,10 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
         try {
             Publisher<DataChunk> last = publisher;
             for (MessageBodyFilter filter : filters) {
-                last.subscribe(filter);
-                last = filter;
+                Publisher<DataChunk> p = filter.apply(last);
+                if (p != null) {
+                    last = p;
+                }
             }
             return new EventingPublisher(last, listener);
         } finally {
@@ -359,89 +359,7 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
     }
 
     /**
-     * A filter adapter to support the old deprecated filter as function.
-     */
-    private static final class FunctionFilter implements MessageBodyFilter {
-
-        private final Function<Publisher<DataChunk>, Publisher<DataChunk>> function;
-        private Subscriber<? super DataChunk> subscriber;
-        private Subscription subscription;
-        private Throwable error;
-        private boolean completed;
-        private Publisher<DataChunk> downstream;
-
-        FunctionFilter(Function<Publisher<DataChunk>, Publisher<DataChunk>> function) {
-            this.function = function;
-        }
-
-        @Override
-        public void onSubscribe(Subscription s) {
-            this.subscription = s;
-            downstream = function.apply(new Publisher<DataChunk>() {
-                @Override
-                public void subscribe(Subscriber<? super DataChunk> subscriber) {
-                    if (FunctionFilter.this.subscriber != null) {
-                        subscriber.onError(new IllegalStateException("Already subscribed to!"));
-                    } else {
-                        FunctionFilter.this.subscriber = subscriber;
-                        if (error != null) {
-                            subscriber.onError(error);
-                        } else if (completed) {
-                            subscriber.onComplete();
-                        } else {
-                            subscriber.onSubscribe(subscription);
-                        }
-                    }
-                }
-            });
-        }
-
-        @Override
-        public void onNext(DataChunk item) {
-            this.subscriber.onNext(item);
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            if (subscriber != null) {
-                subscriber.onError(throwable);
-            } else {
-                error = throwable;
-            }
-        }
-
-        @Override
-        public void onComplete() {
-            if (this.subscriber != null) {
-                this.subscriber.onComplete();
-            } else {
-                completed = true;
-            }
-        }
-
-        @Override
-        public void subscribe(Subscriber<? super DataChunk> s) {
-            if (downstream != null) {
-                downstream.subscribe(s);
-            } else {
-                if (subscriber == null) {
-                    subscriber = s;
-                }
-                if (error != null) {
-                    subscriber.onError(error);
-                } else if (completed) {
-                    subscriber.onComplete();
-                } else if (subscription != null) {
-                    subscriber.onSubscribe(subscription);
-                } else {
-                    subscriber.onError(new IllegalStateException("Not ready!"));
-                }
-            }
-        }
-    }
-
-    /**
-     * {@link Operator} adapter for {@link Filter}.
+     * {@link MessageBodyOperator} adapter for {@link MessageBodyFilter}.
      */
     private static final class FilterOperator implements MessageBodyOperator<MessageBodyContext>, MessageBodyFilter {
 
@@ -452,33 +370,13 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
         }
 
         @Override
-        public boolean accept(GenericType<?> type, MessageBodyContext context) {
-            return this.getClass().equals(type.rawType());
+        public PredicateResult accept(GenericType<?> type, MessageBodyContext context) {
+            return PredicateResult.SUPPORTED;
         }
 
         @Override
-        public void onSubscribe(Subscription subscription) {
-            filter.onSubscribe(subscription);
-        }
-
-        @Override
-        public void onNext(DataChunk item) {
-            filter.onNext(item);
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            filter.onError(throwable);
-        }
-
-        @Override
-        public void onComplete() {
-            filter.onComplete();
-        }
-
-        @Override
-        public void subscribe(Subscriber<? super DataChunk> subscriber) {
-            filter.subscribe(subscriber);
+        public Publisher<DataChunk> apply(Publisher<DataChunk> publisher) {
+            return filter.apply(publisher);
         }
     }
 

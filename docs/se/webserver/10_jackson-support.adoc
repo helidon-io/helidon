@@ -1,0 +1,117 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Jackson Support
+:h1Prefix: SE
+:description: Helidon Reactive WebServer Jackson support
+:keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
+:feature-name: Jackson Support
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.media</groupId>
+    <artifactId>helidon-media-jackson</artifactId>
+</dependency>
+----
+
+== Jackson Support
+The WebServer supports
+https://github.com/FasterXML/jackson#jackson-project-home-github[Jackson].
+When this support is enabled, Java objects will be serialized to and
+deserialized from JSON automatically using Jackson.
+
+=== Usage
+To enable Jackson support, first create and register a
+https://helidon.io/docs/latest/apidocs/io/helidon/media/jackson/JacksonSupport.html[`JacksonSupport`]
+instance with a
+https://helidon.io/docs/latest/apidocs/io/helidon/webserver/WebServer.Builder.html[`WebServer.Builder`].
+
+[source,java]
+.Registration of the `JacksonSupport` via `WebServer`
+----
+JacksonSupport jacksonSupport = JacksonSupport.create(); // <1>
+WebServer webServer = WebServer.builder()
+    .addMediaSupport(jacksonSupport) // <2>
+    .build();
+----
+<1> Create a `JacksonSupport` instance.  This instance may be
+reused freely.
+<2> Register that `JacksonSupport` instance to enable automatic
+deserialization of Java objects from and serialization of Java objects
+to JSON.
+
+Now that automatic JSON serialization and deserialization facilities
+have been set up, you can register a `Handler` that works with Java
+objects instead of raw JSON.  Deserialization from and serialization
+to JSON will be handled by
+https://github.com/FasterXML/jackson#jackson-project-home-github[Jackson].
+
+Suppose you have a `Person` class that looks like this:
+
+[source,java]
+.Hypothetical `Person` class
+----
+public class Person {
+
+    private String name;
+
+    public Person() {
+        super();
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void setName(final String name) {
+        this.name = name;
+    }
+}
+----
+
+Then you can set up a `Handler` like this:
+
+[source,java]
+.A `Handler` that works with Java objects instead of raw JSON
+----
+final Routing routing =
+    routingBuilder.post("/echo", // <1>
+                        Handler.create(Person.class, // <2>
+                                       (req, res, person) -> res.send(person)))) // <3>
+    .build();
+----
+<1> Set up a route for `POST` requests using the
+https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Routing.Builder.html#post-java.lang.String-io.helidon.webserver.Handler...-[`Routing.Builder#post(String, Handler...)` method]
+<2> Use the
+https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Handler.html#create-java.lang.Class-io.helidon.webserver.Handler.EntityHandler-[`Handler#create(Class, Handler.EntityHandler)` method]
+to install a `Handler.EntityHandler` that works with `Person` instances.
+<3> This `Handler.EntityHandler` consumes a `Person` instance
+(`person`) and simply echoes it back.  Note that there is no working
+with raw JSON here.
+
+[source,bash]
+.Example of posting JSON to the `/echo` endpoint
+----
+curl --noproxy '*' -X POST -H "Content-Type: application/json" \
+    http://localhost:8080/echo -d '{"name":"Joe"}'
+{"name":"Joe"}
+----

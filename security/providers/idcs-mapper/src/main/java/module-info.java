@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ module io.helidon.security.providers.idcs.mapper {
 
     requires io.helidon.security.integration.common;
     requires io.helidon.security.util;
+    requires io.helidon.webclient;
     requires java.logging;
 
     requires jersey.client;

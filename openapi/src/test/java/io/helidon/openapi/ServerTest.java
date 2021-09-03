@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,12 @@ package io.helidon.openapi;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.function.Consumer;
 
+import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
@@ -44,15 +47,23 @@ public class ServerTest {
     private static final String GREETING_PATH = "/openapi-greeting";
     private static final String TIME_PATH = "/openapi-time";
 
-    private static final OpenAPISupport.Builder GREETING_OPENAPI_SUPPORT_BUILDER
+    private static final Config OPENAPI_CONFIG_DISABLED_CORS = Config.create(
+            ConfigSources.classpath("serverNoCORS.properties").build()).get(OpenAPISupport.Builder.CONFIG_KEY);
+
+    private static final Config OPENAPI_CONFIG_RESTRICTED_CORS = Config.create(
+            ConfigSources.classpath("serverCORSRestricted.yaml").build()).get(OpenAPISupport.Builder.CONFIG_KEY);
+
+    static final OpenAPISupport.Builder<?> GREETING_OPENAPI_SUPPORT_BUILDER
             = OpenAPISupport.builder()
                     .staticFile("src/test/resources/openapi-greeting.yml")
-                    .webContext(GREETING_PATH);
+                    .webContext(GREETING_PATH)
+                    .config(OPENAPI_CONFIG_DISABLED_CORS);
 
-    private static final OpenAPISupport.Builder TIME_OPENAPI_SUPPORT_BUILDER
+    static final OpenAPISupport.Builder<?> TIME_OPENAPI_SUPPORT_BUILDER
             = OpenAPISupport.builder()
                     .staticFile("src/test/resources/openapi-time-server.yml")
-                    .webContext(TIME_PATH);
+                    .webContext(TIME_PATH)
+                    .config(OPENAPI_CONFIG_RESTRICTED_CORS);
 
     public ServerTest() {
     }
@@ -62,7 +73,6 @@ public class ServerTest {
         greetingWebServer = TestUtil.startServer(GREETING_OPENAPI_SUPPORT_BUILDER);
         timeWebServer = TestUtil.startServer(TIME_OPENAPI_SUPPORT_BUILDER);
     }
-
 
     @AfterAll
     public static void shutdown() {
@@ -159,18 +169,35 @@ public class ServerTest {
 
     @Test
     public void testTimeAsConfig() throws Exception {
+        commonTestTimeAsConfig(null);
+    }
+
+    @Test
+    public void testTimeUnrestrictedCors() throws Exception {
+        commonTestTimeAsConfig(cnx -> {
+
+            cnx.setRequestProperty("Origin", "http://foo.bar");
+            cnx.setRequestProperty("Host", "localhost");
+        });
+
+    }
+
+    private void commonTestTimeAsConfig(Consumer<HttpURLConnection> headerSetter) throws Exception {
         HttpURLConnection cnx = TestUtil.getURLConnection(
                 timeWebServer.port(),
                 "GET",
                 TIME_PATH,
                 MediaType.APPLICATION_OPENAPI_YAML);
+        if (headerSetter != null) {
+            headerSetter.accept(cnx);
+        }
         Config c = TestUtil.configFromResponse(cnx);
         assertEquals("Returns the current time",
                 TestUtil.fromConfig(c, "paths./timecheck.get.summary"));
         assertEquals("string",
                 TestUtil.fromConfig(c,
                         "paths./timecheck.get.responses.200.content."
-                            + "application/json.schema.properties.message.type"));
+                                + "application/json.schema.properties.message.type"));
     }
 
     @Test

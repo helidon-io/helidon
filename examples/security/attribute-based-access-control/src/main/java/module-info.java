@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@
  */
 module io.helidon.security.examples.abac {
     // CDI API
-    requires cdi.api;
+    requires jakarta.enterprise.cdi.api;
     // implementation of expression language to use (used by the abac provider: policy expression language
-    requires javax.el;
+    requires jakarta.el.api;
     requires io.helidon.microprofile.bundle;
     // needed for security components and restrictions of this module
     requires io.helidon.security;
@@ -30,9 +30,6 @@ module io.helidon.security.examples.abac {
     requires io.helidon.security.abac.role;
     requires io.helidon.security.abac.policy;
     requires io.helidon.security.abac.scope;
-
-    // needed for jersey to start without a lot of errors (hk2 actually)
-    requires java.xml.bind;
 
     // java util logging
     requires java.logging;

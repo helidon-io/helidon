@@ -1,0 +1,96 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Tracing
+:h1Prefix: MP
+:description: Helidon MP Tracing Support
+:feature-name: MicroProfile Tracing
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:microprofile-bundle: true
+= :keywords: helidon, tracing, microprofile, micro-profile
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.tracing</groupId>
+    <artifactId>helidon-microprofile-tracing</artifactId>
+</dependency>
+----
+
+== Configuring Tracing with Helidon MP
+Tracing support is implemented for both for Helidon MP Server and for Jersey client.
+In addition you need to add one of the tracer implementations:
+
+- <<tracing/02_zipkin.adoc,Zipkin>>
+- <<tracing/03_jaeger.adoc,Jaeger>>
+
+You can configure a custom service name using the `tracing.service` configuration property. If this
+property is undefined, name is created from JAX-RS Application name, or `Helidon MP` is used if no application
+is defined.
+
+All tracer specific configuration is expected in configuration under key `tracing`.
+
+[source,properties]
+.Example `microprofile-config.properties` with customized service name.
+----
+tracing.service=event-service
+----
+
+include::../../shared/tracing/common-config.adoc[]
+
+== Creating custom spans
+
+Helidon MP fully supports MicroProfile OpenTracing.
+You can add custom spans using `@Traced` annotation on methods of CDI beans.
+
+*Note for invoking methods on same class:*
+_If you invoke a method on the same class, `@Traced` annotation would be ignored, as it is not
+invoked through a CDI proxy and as such cannot be intercepted.
+To make sure `@Traced` is honored, use it on JAX-RS resource methods and on CDI bean methods used from other beans._
+
+== Trace propagation across services
+Automated trace propagation is supported currently only with Jersey client.
+
+Tracing propagation works automatically as long as you run within the scope of
+Helidon MP and use Helidon components to invoke external services.
+
+=== Manual handling of traces in Jersey Client
+
+There is an option to provide `SpanContext` programmatically (such as when writing a command line
+application that starts the span manually).
+
+You can either configure the span context as the active span, or explicitly define it as client property.
+
+[source,java]
+.Tracing propagation with Jersey client
+----
+import static io.helidon.tracing.jersey.client.ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME;
+import static io.helidon.tracing.jersey.client.ClientTracingFilter.TRACER_PROPERTY_NAME;
+
+// ...
+
+Response response = client.target(serviceEndpoint)
+    .request()
+    // tracer should be provided unless available as GlobalTracer
+    .property(TRACER_PROPERTY_NAME, tracer)
+    .property(CURRENT_SPAN_CONTEXT_PROPERTY_NAME, spanContext)
+    .get();
+----
+

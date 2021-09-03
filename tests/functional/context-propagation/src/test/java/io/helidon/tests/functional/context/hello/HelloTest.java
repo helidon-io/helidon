@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package io.helidon.tests.functional.context.hello;
 
-import java.io.IOException;
-import java.util.logging.LogManager;
-
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
+import io.helidon.common.LogConfig;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterAll;
@@ -41,8 +39,8 @@ class HelloTest {
     private static WebTarget baseTarget;
 
     @BeforeAll
-    static void initClass() throws IOException {
-        LogManager.getLogManager().readConfiguration(HelloTest.class.getResourceAsStream("/logging.properties"));
+    static void initClass() {
+        LogConfig.configureRuntime();
         Main.main(new String[0]);
         server = Main.server();
         Client client = ClientBuilder.newClient();
@@ -55,21 +53,27 @@ class HelloTest {
     }
 
     @Test
-    void TestHello() {
+    void testHello() {
         WebTarget target = baseTarget.path("/hello");
         assertOk(target.request().get(), "Hello World");
     }
 
     @Test
-    void TestHelloTimeout() {
+    void testHelloTimeout() {
         WebTarget target = baseTarget.path("/helloTimeout");
         assertOk(target.request().get(), "Hello World");
     }
 
     @Test
-    void TestHelloAsync() {
+    void testHelloAsync() {
         WebTarget target = baseTarget.path("/helloAsync");
         assertOk(target.request().get(), "Hello World");
+    }
+
+    @Test
+    void testRemoteAddress() {
+        WebTarget target = baseTarget.path("/remoteAddress");
+        assertThat(target.request().get().getStatus(), is(200));
     }
 
     private void assertOk(Response response, String expectedMessage) {

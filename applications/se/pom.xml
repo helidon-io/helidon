@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-applications-project</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>2.4.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-se</artifactId>
     <packaging>pom</packaging>
@@ -40,6 +40,7 @@
                         <artifactId>helidon-maven-plugin</artifactId>
                         <executions>
                             <execution>
+                                <id>native-image</id>
                                 <goals>
                                     <goal>native-image</goal>
                                 </goals>
@@ -54,6 +55,25 @@
                     <artifactId>helidon-graal-native-image-extension</artifactId>
                 </dependency>
             </dependencies>
+        </profile>
+        <profile>
+            <id>jlink-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>jlink-image</id>
+                                <goals>
+                                    <goal>jlink-image</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

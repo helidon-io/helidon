@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,99 +16,95 @@
 
 package io.helidon.examples.quickstart.se;
 
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
 
+import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MainTest {
 
     private static WebServer webServer;
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
+    private static WebClient webClient;
+    private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
+    private static final JsonObject TEST_JSON_OBJECT;
+
+    static {
+        TEST_JSON_OBJECT = JSON_BUILDER.createObjectBuilder()
+                .add("greeting", "Hola")
+                .build();
+    }
 
     @BeforeAll
-    public static void startTheServer() throws Exception {
-        webServer = Main.startServer();
+    public static void startTheServer() {
+        webServer = Main.startServer().await();
 
-        long timeout = 2000; // 2 seconds should be enough to start the server
-        long now = System.currentTimeMillis();
-
-        while (!webServer.isRunning()) {
-            Thread.sleep(100);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
-            }
-        }
+        webClient = WebClient.builder()
+                .baseUri("http://localhost:" + webServer.port())
+                .addMediaSupport(JsonpSupport.create())
+                .build();
     }
 
     @AfterAll
-    public static void stopServer() throws Exception {
+    public static void stopServer() {
         if (webServer != null) {
             webServer.shutdown()
-                     .toCompletableFuture()
-                     .get(10, TimeUnit.SECONDS);
+                    .await(10, TimeUnit.SECONDS);
         }
     }
 
     @Test
-    public void testHelloWorld() throws Exception {
-        HttpURLConnection conn;
+    public void testHelloWorld() {
+        JsonObject jsonObject;
+        WebClientResponse response;
 
-        conn = getURLConnection("GET","/greet");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response1");
-        JsonReader jsonReader = JSON.createReader(conn.getInputStream());
-        JsonObject jsonObject = jsonReader.readObject();
-        Assertions.assertEquals("Hello World!", jsonObject.getString("message"),
-                "default message");
+        jsonObject = webClient.get()
+                .path("/greet")
+                .request(JsonObject.class)
+                .await();
+        assertEquals("Hello World!", jsonObject.getString("message"));
 
-        conn = getURLConnection("GET", "/greet/Joe");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
-        jsonReader = JSON.createReader(conn.getInputStream());
-        jsonObject = jsonReader.readObject();
-        Assertions.assertEquals("Hello Joe!", jsonObject.getString("message"),
-                "hello Joe message");
+        jsonObject = webClient.get()
+                .path("/greet/Joe")
+                .request(JsonObject.class)
+                .await();
+        assertEquals("Hello Joe!", jsonObject.getString("message"));
 
-        conn = getURLConnection("PUT", "/greet/greeting");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setDoOutput(true);
-        OutputStream os = conn.getOutputStream();
-        os.write("{\"greeting\" : \"Hola\"}".getBytes());
-        os.close();
-        Assertions.assertEquals(204, conn.getResponseCode(), "HTTP response3");
+        response = webClient.put()
+                .path("/greet/greeting")
+                .submit(TEST_JSON_OBJECT)
+                .await();
+        assertEquals(204, response.status().code());
 
-        conn = getURLConnection("GET", "/greet/Jose");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response4");
-        jsonReader = JSON.createReader(conn.getInputStream());
-        jsonObject = jsonReader.readObject();
-        Assertions.assertEquals("Hola Jose!", jsonObject.getString("message"),
-                "hola Jose message");
+        jsonObject = webClient.get()
+                .path("/greet/Joe")
+                .request(JsonObject.class)
+                .await();
+        assertEquals("Hola Joe!", jsonObject.getString("message"));
 
-        conn = getURLConnection("GET", "/health");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
+        response = webClient.get()
+                .path("/health")
+                .request()
+                .await();
+        assertEquals(200, response.status().code());
 
-        conn = getURLConnection("GET", "/metrics");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
+        response = webClient.get()
+                .path("/metrics")
+                .request()
+                .await();
+        assertEquals(200, response.status().code());
     }
 
-    private HttpURLConnection getURLConnection(String method, String path) throws Exception {
-        URL url = new URL("http://localhost:" + webServer.port() + path);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod(method);
-        conn.setRequestProperty("Accept", "application/json");
-        System.out.println("Connecting: " + method + " " + url);
-        return conn;
-    }
 }

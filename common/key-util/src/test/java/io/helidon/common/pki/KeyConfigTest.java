@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ class KeyConfigTest {
 
     @Test
     void testConfigPublicKey() {
-        KeyConfig publicKey = KeyConfig.create(config.get("public-key"));
+        KeyConfig publicKey = KeyConfig.create(config.get("unit-1"));
 
         assertThat(publicKey.certChain().size(), is(0));
         assertThat(publicKey.privateKey().isPresent(), is(false));
@@ -56,8 +56,18 @@ class KeyConfigTest {
     }
 
     @Test
+    void testOldPublicKey() {
+        KeyConfig publicKey = KeyConfig.create(config.get("unit-2"));
+
+        assertThat("Certificate chain should be empty", publicKey.certChain().size(), is(0));
+        assertThat("Private key should be empty", publicKey.privateKey().isPresent(), is(false));
+        assertThat("Public certificate should be present", publicKey.publicCert().isPresent(), is(true));
+        assertThat("Public key should be present", publicKey.publicKey().isPresent(), is(true));
+    }
+
+    @Test
     void testConfigPrivateKey() {
-        KeyConfig keyConfig = KeyConfig.create(config.get("private-key"));
+        KeyConfig keyConfig = KeyConfig.create(config.get("unit-3"));
 
         assertThat(keyConfig.certChain().size(), is(0));
         assertThat(keyConfig.privateKey().isPresent(), is(true));
@@ -67,7 +77,7 @@ class KeyConfigTest {
 
     @Test
     void testConfigCertChain() {
-        KeyConfig publicKey = KeyConfig.create(config.get("cert-chain"));
+        KeyConfig publicKey = KeyConfig.create(config.get("unit-6"));
 
         assertThat(publicKey.certChain().size(), is(1));
         // private key is loaded by default, as it uses the alias "1"
@@ -79,12 +89,12 @@ class KeyConfigTest {
 
     @Test
     void testConfigWrongPath() {
-        assertThrows(PkiException.class, () -> KeyConfig.create(config.get("wrong-path")));
+        assertThrows(PkiException.class, () -> KeyConfig.create(config.get("unit-7")));
     }
 
     @Test
     void testConfigPartInvalid() {
-        KeyConfig invalid = KeyConfig.create(config.get("partially-invalid"));
+        KeyConfig invalid = KeyConfig.create(config.get("unit-8"));
         assertThat(invalid.privateKey().isPresent(), is(false));
         assertThat(invalid.publicCert().isPresent(), is(false));
         assertThat(invalid.publicKey().isPresent(), is(false));
@@ -93,7 +103,7 @@ class KeyConfigTest {
 
     @Test
     void testConfigInvalid() {
-        KeyConfig invalid = KeyConfig.create(config.get("invalid"));
+        KeyConfig invalid = KeyConfig.create(config.get("unit-9"));
         assertThat(invalid.privateKey().isPresent(), is(false));
         assertThat(invalid.publicCert().isPresent(), is(false));
         assertThat(invalid.publicKey().isPresent(), is(false));
@@ -102,7 +112,7 @@ class KeyConfigTest {
 
     @Test
     void testResourcePath() {
-        KeyConfig keyConfig = KeyConfig.create(config.get("resource-path"));
+        KeyConfig keyConfig = KeyConfig.create(config.get("unit-4"));
 
         assertThat(keyConfig.certChain().size(), is(0));
         assertThat(keyConfig.privateKey().isPresent(), is(true));
@@ -112,7 +122,7 @@ class KeyConfigTest {
 
     @Test
     void testContent() {
-        KeyConfig keyConfig = KeyConfig.create(config.get("content"));
+        KeyConfig keyConfig = KeyConfig.create(config.get("unit-10"));
 
         assertThat(keyConfig.certChain().size(), is(0));
         assertThat(keyConfig.privateKey().isPresent(), is(true));
@@ -122,7 +132,7 @@ class KeyConfigTest {
 
     @Test
     void testDoublePath() {
-        KeyConfig keyConfig = KeyConfig.create(config.get("double-path"));
+        KeyConfig keyConfig = KeyConfig.create(config.get("unit-5"));
 
         assertThat(keyConfig.certChain().size(), is(0));
         assertThat(keyConfig.privateKey().isPresent(), is(true));
@@ -152,7 +162,7 @@ class KeyConfigTest {
 
     @Test
     void testPemConfig() {
-        KeyConfig conf = KeyConfig.create(config.get("pem"));
+        KeyConfig conf = KeyConfig.create(config.get("unit-11"));
 
         assertThat("Private key should not be empty", conf.privateKey(), not(Optional.empty()));
         assertThat("Public key should not be empty", conf.publicKey(), not(Optional.empty()));
@@ -168,7 +178,7 @@ class KeyConfigTest {
 
     @Test
     void testPemConfigNoPasswordNoChain() {
-        KeyConfig conf = KeyConfig.create(config.get("pem-not-encrypted"));
+        KeyConfig conf = KeyConfig.create(config.get("unit-12"));
 
         assertThat("Private key should not be empty", conf.privateKey(), not(Optional.empty()));
         conf.privateKey().ifPresent(it -> assertThat(it, instanceOf(RSAPrivateKey.class)));

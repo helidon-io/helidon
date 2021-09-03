@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,26 @@
 package io.helidon.common.reactive;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import io.helidon.common.mapper.Mapper;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -123,7 +126,7 @@ public class MultiTest {
     @Test
     public void testFromPublisher() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
-        Multi.from(new TestPublisher<>("foo", "bar")).subscribe(subscriber);
+        Multi.create(new TestPublisher<>("foo", "bar")).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
         assertThat(subscriber.getItems(), hasItems("foo", "bar"));
@@ -132,7 +135,7 @@ public class MultiTest {
     @Test
     public void testFromMulti() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
-        Multi.from(Multi.<String>just("foo", "bar")).subscribe(subscriber);
+        Multi.create(Multi.<String>just("foo", "bar")).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
         assertThat(subscriber.getItems(), hasItems("foo", "bar"));
@@ -142,9 +145,7 @@ public class MultiTest {
     public void testFirst() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
         Multi.just("foo", "bar").first().subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(true)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems().get(0), is(equalTo("foo")));
+        subscriber.assertResult("foo");
     }
 
     @Test
@@ -207,8 +208,18 @@ public class MultiTest {
             }
         }).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        assertThat(subscriber.getLastError(), is(instanceOf(NullPointerException.class)));
         assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    void collectEmptyList() throws ExecutionException, InterruptedException, TimeoutException {
+        List<Object> result = Multi.empty()
+                .collectList()
+                .toStage()
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
+        assertThat(result, is(equalTo(List.of())));
     }
 
     @Test
@@ -229,11 +240,8 @@ public class MultiTest {
     @Test
     public void testMapBadMapper() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
-        Multi.<String>just("foo", "bar").map(new Mapper<String, String>() {
-            @Override
-            public String map(String item) {
-                throw new IllegalStateException("foo!");
-            }
+        Multi.<String>just("foo", "bar").map((Function<String, String>) item -> {
+            throw new IllegalStateException("foo!");
         }).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
@@ -243,7 +251,7 @@ public class MultiTest {
     @Test
     public void testMapBadMapperNullValue() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
-        Multi.just("foo", "bar").map((Mapper<String, String>) item -> null).subscribe(subscriber);
+        Multi.just("foo", "bar").map((Function<String, String>) item -> null).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(NullPointerException.class)));
         assertThat(subscriber.getItems(), is(empty()));
@@ -362,14 +370,62 @@ public class MultiTest {
     }
 
     @Test
+    void testOnErrorResumeWithFirst() throws ExecutionException, InterruptedException, TimeoutException {
+        Integer result = Multi.<Integer>error(new RuntimeException())
+                .onErrorResumeWith(throwable -> Multi.just(1, 2, 3))
+                .first()
+                .get(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(1)));
+    }
+
+    @Test
+    void testOnCompleteResume() {
+        List<Integer> result = Multi.just(1, 2, 3)
+                .onCompleteResume(4)
+                .collectList()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(List.of(1, 2, 3, 4))));
+    }
+
+    @Test
+    void testOnCompleteResumeWith() {
+        List<Integer> result = Multi.just(1, 2, 3)
+                .onCompleteResumeWith(Multi.just(4, 5, 6))
+                .collectList()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(List.of(1, 2, 3, 4, 5, 6))));
+    }
+
+    @Test
+    void testOnCompleteResumeWithFirst() {
+        Integer result = Multi.<Integer>empty()
+                .onCompleteResume(1)
+                .first()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(1)));
+    }
+
+    @Test
     void testFlatMap() throws ExecutionException, InterruptedException {
         final List<String> TEST_DATA = Arrays.asList("abc", "xyz");
         final List<String> EXPECTED = Arrays.asList("a", "b", "c", "x", "y", "z");
         List<String> result = Multi.just(TEST_DATA)
-                .flatMap(s -> Multi.just(s.chars().mapToObj(Character::toString).collect(Collectors.toList())))
+                .flatMap(s -> Multi.just(s.chars().mapToObj(c -> Character.toString((char) c)).collect(Collectors.toList())))
                 .collectList()
                 .get();
         assertThat(result, is(equalTo(EXPECTED)));
+    }
+
+    @Test
+    void testFlatMapWithEmptyInnerStream() throws ExecutionException, InterruptedException, TimeoutException {
+        List<Integer> result = Multi.<Flow.Publisher<Integer>>just(Multi.empty(), Multi.just(1, 2))
+                .flatMap(i -> i)
+                .collectList().get(1, TimeUnit.SECONDS);
+        assertThat(result, is(equalTo(List.of(1, 2))));
     }
 
     @Test
@@ -377,7 +433,7 @@ public class MultiTest {
         final List<String> TEST_DATA = Arrays.asList("abc", "xyz");
         final List<String> EXPECTED = Arrays.asList("a", "b", "c", "x", "y", "z");
         List<String> result = Multi.just(TEST_DATA)
-                .flatMapIterable(s -> s.chars().mapToObj(Character::toString).collect(Collectors.toList()))
+                .flatMapIterable(s -> s.chars().mapToObj(c -> Character.toString((char) c)).collect(Collectors.toList()))
                 .collectList()
                 .get();
         assertThat(result, is(equalTo(EXPECTED)));
@@ -398,7 +454,8 @@ public class MultiTest {
         CompletableFuture<Throwable> beenError = new CompletableFuture<>();
         Multi.<Integer>error(new RuntimeException())
                 .onError(beenError::complete)
-                .collectList();
+                .collectList()
+                .subscribe(e -> { });
 
         beenError.get(1, TimeUnit.SECONDS);
     }
@@ -426,7 +483,8 @@ public class MultiTest {
 
         Multi.<Integer>error(new RuntimeException())
                 .onTerminate(() -> beenError.complete(null))
-                .first();
+                .first()
+                .subscribe(e -> { });
 
         beenError.get(1, TimeUnit.SECONDS);
         completed.get(1, TimeUnit.SECONDS);
@@ -440,11 +498,100 @@ public class MultiTest {
                 .collect(Collectors.toList());
 
         List<Integer> result = Multi
-                .concat(Multi.from(TEST_DATA_1), Multi.just(TEST_DATA_2))
+                .concat(Multi.create(TEST_DATA_1), Multi.just(TEST_DATA_2))
                 .collectList()
                 .get();
 
         assertThat(result, is(equalTo(EXPECTED)));
+    }
+
+    @Test
+    void testConcatVarargs() {
+        final List<Integer> TEST_DATA_1 = Arrays.asList(1, 2, 3);
+        final List<Integer> TEST_DATA_2 = Arrays.asList(11, 12, 13);
+        final List<Integer> TEST_DATA_3 = Arrays.asList(21, 22, 23);
+        final List<Integer> TEST_DATA_4 = Arrays.asList(31, 32, 33);
+        final List<Integer> TEST_DATA_5 = Arrays.asList(41, 42, 43);
+        final List<Integer> TEST_DATA_6 = Arrays.asList(51, 52, 53);
+
+        final Function<List<List<Integer>>, List<Integer>> flatMap = lists -> lists.stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+
+        assertThat(Multi
+                .concat(Multi.create(TEST_DATA_1),
+                        Multi.just(TEST_DATA_2)
+                )
+                .collectList()
+                .await(), is(equalTo(flatMap.apply(List.of(
+                TEST_DATA_1,
+                TEST_DATA_2
+        )))));
+
+
+        assertThat(Multi
+                .concat(Multi.create(TEST_DATA_1),
+                        Multi.just(TEST_DATA_2),
+                        Multi.just(TEST_DATA_3)
+                )
+                .collectList()
+                .await(), is(equalTo(flatMap.apply(List.of(
+                TEST_DATA_1,
+                TEST_DATA_2,
+                TEST_DATA_3
+        )))));
+
+        assertThat(Multi
+                .concat(Multi.create(TEST_DATA_1),
+                        Multi.just(TEST_DATA_2),
+                        Multi.just(TEST_DATA_3),
+                        Multi.just(TEST_DATA_4)
+                )
+                .collectList()
+                .await(), is(equalTo(flatMap.apply(List.of(
+                TEST_DATA_1,
+                TEST_DATA_2,
+                TEST_DATA_3,
+                TEST_DATA_4
+        )))));
+
+
+        assertThat(Multi
+                        .concat(Multi.create(TEST_DATA_1),
+                                Multi.just(TEST_DATA_2),
+                                Multi.just(TEST_DATA_3),
+                                Multi.just(TEST_DATA_4),
+                                Multi.just(TEST_DATA_5)
+                        )
+                        .collectList()
+                        .await(),
+                is(equalTo(flatMap.apply(List.of(
+                        TEST_DATA_1,
+                        TEST_DATA_2,
+                        TEST_DATA_3,
+                        TEST_DATA_4,
+                        TEST_DATA_5
+                )))));
+
+
+        assertThat(Multi
+                        .concat(Multi.create(TEST_DATA_1),
+                                Multi.just(TEST_DATA_2),
+                                Multi.just(TEST_DATA_3),
+                                Multi.just(TEST_DATA_4),
+                                Multi.just(TEST_DATA_5),
+                                Multi.just(TEST_DATA_6)
+                        )
+                        .collectList()
+                        .await(),
+                is(equalTo(flatMap.apply(List.of(
+                        TEST_DATA_1,
+                        TEST_DATA_2,
+                        TEST_DATA_3,
+                        TEST_DATA_4,
+                        TEST_DATA_5,
+                        TEST_DATA_6
+                )))));
     }
 
     @Test
@@ -467,6 +614,61 @@ public class MultiTest {
                 .collectList().get();
 
         assertThat(result, is(equalTo(EXPECTED)));
+    }
+
+    @Test
+    void requestOneOfOneExpectComplete() {
+        TestSubscriber<String> subscriber = new TestSubscriber<>();
+        Multi.singleton("foo").subscribe(subscriber);
+        subscriber.request1();
+        assertThat(subscriber.isComplete(), is(equalTo(true)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), is(List.of("foo")));
+    }
+
+    @Test
+    void requestTwiceOneOfTwoExpectComplete() {
+        TestSubscriber<String> subscriber = new TestSubscriber<>();
+        Multi.just("foo", "bar").subscribe(subscriber);
+        subscriber.request1();
+        subscriber.request1();
+        assertThat(subscriber.isComplete(), is(equalTo(true)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), is(List.of("foo", "bar")));
+    }
+
+    @Test
+    void requestAllByMultipleExpectComplete() {
+        List<Integer> DATA = IntStream.range(0, 100).boxed().collect(Collectors.toList());
+        TestSubscriber<Integer> subscriber = new TestSubscriber<>();
+        Multi.just(DATA).subscribe(subscriber);
+        subscriber.request(1);
+        assertThat(subscriber.getItems().size(), is(1));
+        subscriber.request(48);
+        subscriber.request(1);
+        assertThat(subscriber.getItems().size(), is(50));
+        subscriber.request(50);
+        assertThat(subscriber.getItems().size(), is(100));
+        assertThat(subscriber.isComplete(), is(equalTo(true)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), is(DATA));
+    }
+
+    @Test
+    public void testDoubleSubscribe() {
+        TestSubscriber<Integer> subscriber1 = new TestSubscriber<>();
+        TestSubscriber<Integer> subscriber2 = new TestSubscriber<>();
+        Multi<Integer> multi = Multi.singleton(1);
+        multi.subscribe(subscriber1);
+        multi.subscribe(subscriber2);
+
+        assertThat(subscriber1.getSubcription(), is(not(nullValue())));
+        assertThat(subscriber1.getSubcription(), is(not(EmptySubscription.INSTANCE)));
+        assertThat(subscriber1.getLastError(), is(nullValue()));
+
+        assertThat(subscriber2.getSubcription(), is(not(nullValue())));
+        assertThat(subscriber2.getSubcription(), is(not(EmptySubscription.INSTANCE)));
+        assertThat(subscriber2.getLastError(), is(nullValue()));
     }
 
     private static class MultiTestSubscriber<T> extends TestSubscriber<T> {

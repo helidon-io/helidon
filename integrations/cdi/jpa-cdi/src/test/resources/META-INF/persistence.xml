@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
                                  http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd">
 
     <persistence-unit name="test" transaction-type="JTA">
-        <description>A persistence unit for use by unit tests.</description>                             
+        <description>A persistence unit for use by unit tests.</description>
         <jta-data-source>test</jta-data-source>
         <properties>
             <property name="eclipselink.deploy-on-startup" value="true"/>
@@ -33,11 +33,27 @@
             <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
             <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
             <property name="eclipselink.weaving" value="false"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+        </properties>
+    </persistence-unit>
+
+    <persistence-unit name="test2" transaction-type="JTA">
+        <description>A persistence unit for use by unit tests that is notable only for being distinguished from the test persistence unit above.</description>
+        <jta-data-source>test2</jta-data-source>
+        <properties>
+            <property name="eclipselink.deploy-on-startup" value="true"/>
+            <property name="eclipselink.jdbc.native-sql" value="true"/>
+            <property name="eclipselink.logging.logger" value="JavaLogger"/>
+            <property name="eclipselink.logging.parameters" value="true"/>
+            <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
+            <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
+            <property name="eclipselink.weaving" value="false"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
         </properties>
     </persistence-unit>
 
     <persistence-unit name="test-resource-local" transaction-type="RESOURCE_LOCAL">
-        <description>A resource local persistence unit for use by unit tests.</description>                             
+        <description>A resource local persistence unit for use by unit tests.</description>
         <properties>
             <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test;INIT=SET TRACE_LEVEL_FILE=4"/>
             <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
@@ -50,9 +66,10 @@
             <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
             <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
             <property name="eclipselink.weaving" value="false"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
         </properties>
     </persistence-unit>
-  
+
     <persistence-unit name="chirp" transaction-type="JTA">
         <description>A persistence unit to support the Chirp series of unit tests.</description>
         <jta-data-source>chirp</jta-data-source>
@@ -67,6 +84,11 @@
             <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
             <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
             <property name="eclipselink.weaving" value="false"/>
+
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+            <property name="hibernate.hbm2ddl.auto" value="none"/>
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.temp.use_jdbc_metadata_defaults" value="false"/>
         </properties>
     </persistence-unit>
 

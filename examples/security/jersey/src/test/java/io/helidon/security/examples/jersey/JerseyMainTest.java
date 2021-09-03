@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,12 +77,12 @@ public abstract class JerseyMainTest {
 
     @Test
     public void testUnprotected() {
-        Response response = client.target(baseUri())
+        try (Response response = client.target(baseUri())
                 .request()
-                .get();
-
-        assertThat(response.getStatus(), is(200));
-        assertThat(response.readEntity(String.class), containsString("<ANONYMOUS>"));
+                .get()) {
+            assertThat(response.getStatus(), is(200));
+            assertThat(response.readEntity(String.class), containsString("<ANONYMOUS>"));
+        }
     }
 
     @Test
@@ -102,9 +102,9 @@ public abstract class JerseyMainTest {
     @Test
     public void testWrongPwd() {
         // here we call the endpoint
-        Response response = callProtected(baseUri() + "/protected", "jack", "somePassword");
-
-        assertThat(response.getStatus(), is(401));
+        try (Response response = callProtected(baseUri() + "/protected", "jack", "somePassword")) {
+            assertThat(response.getStatus(), is(401));
+        }
     }
 
     @Test
@@ -140,8 +140,9 @@ public abstract class JerseyMainTest {
                                      String username,
                                      String password) {
 
-        Response response = callProtected(uri, username, password);
-        assertThat(response.getStatus(), is(403));
+        try (Response response = callProtected(uri, username, password)) {
+            assertThat(response.getStatus(), is(403));
+        }
     }
 
     private void testProtected(String uri,
@@ -150,16 +151,14 @@ public abstract class JerseyMainTest {
                                Set<String> expectedRoles,
                                Set<String> invalidRoles) {
 
-        Response response = callProtected(uri, username, password);
-
-        String entity = response.readEntity(String.class);
-
-        assertThat(response.getStatus(), is(200));
-
-        // check login
-        assertThat(entity, containsString("id='" + username + "'"));
-        // check roles
-        expectedRoles.forEach(role -> assertThat(entity, containsString(":" + role)));
-        invalidRoles.forEach(role -> assertThat(entity, not(containsString(":" + role))));
+        try (Response response = callProtected(uri, username, password)) {
+            String entity = response.readEntity(String.class);
+            assertThat(response.getStatus(), is(200));
+            // check login
+            assertThat(entity, containsString("id='" + username + "'"));
+            // check roles
+            expectedRoles.forEach(role -> assertThat(entity, containsString(":" + role)));
+            invalidRoles.forEach(role -> assertThat(entity, not(containsString(":" + role))));
+        }
     }
 }

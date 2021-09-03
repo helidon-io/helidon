@@ -16,8 +16,10 @@
 package io.helidon.microprofile.cdi;
 
 import java.lang.annotation.Annotation;
+import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.UUID;
@@ -39,11 +41,15 @@ import javax.enterprise.inject.spi.Extension;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.common.LogConfig;
+import io.helidon.common.SerializationConfig;
+import io.helidon.common.Version;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
-import io.helidon.config.MpConfigProviderResolver;
+import io.helidon.config.mp.MpConfig;
+import io.helidon.config.mp.MpConfigProviderResolver;
 
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.weld.AbstractCDI;
 import org.jboss.weld.bean.builtin.BeanManagerProxy;
@@ -64,6 +70,7 @@ import org.jboss.weld.environment.se.events.ContainerShutdown;
 import org.jboss.weld.environment.se.logging.WeldSELogger;
 import org.jboss.weld.manager.BeanManagerImpl;
 import org.jboss.weld.resources.spi.ResourceLoader;
+import org.jboss.weld.serialization.spi.ProxyServices;
 
 import static org.jboss.weld.config.ConfigurationKey.EXECUTOR_THREAD_POOL_TYPE;
 import static org.jboss.weld.executor.ExecutorServicesFactory.ThreadPoolType.COMMON;
@@ -89,7 +96,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
     static {
         HelidonFeatures.flavor(HelidonFlavor.MP);
-        HelidonFeatures.register(HelidonFlavor.MP, "CDI");
 
         Context.Builder contextBuilder = Context.builder()
                 .id("helidon-cdi");
@@ -98,6 +104,8 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
                 .ifPresent(contextBuilder::parent);
 
         ROOT_CONTEXT = contextBuilder.build();
+
+        CDI.setCDIProvider(new HelidonCdiProvider());
     }
 
     private final WeldBootstrap bootstrap;
@@ -136,12 +144,26 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     private HelidonContainerImpl init() {
         LOGGER.fine(() -> "Initializing CDI container " + id);
 
-        addHelidonBeanDefiningAnnotations();
+        addHelidonBeanDefiningAnnotations("javax.ws.rs.Path",
+                                          "javax.ws.rs.ext.Provider",
+                                          "javax.websocket.server.ServerEndpoint",
+                                          "org.eclipse.microprofile.graphql.GraphQLApi",
+                                          "org.eclipse.microprofile.graphql.Input",
+                                          "org.eclipse.microprofile.graphql.Interface",
+                                          "org.eclipse.microprofile.graphql.Type");
 
-        ResourceLoader resourceLoader = new WeldResourceLoader();
+        ResourceLoader resourceLoader = new WeldResourceLoader() {
+            @Override
+            public Collection<URL> getResources(String name) {
+                Collection<URL> resources = super.getResources(name);
+                return new HashSet<>(resources);    // drops duplicates when using patch-module
+            }
+        };
         setResourceLoader(resourceLoader);
 
-        Config config = (Config) ConfigProvider.getConfig();
+        Config mpConfig = ConfigProvider.getConfig();
+        io.helidon.config.Config config = MpConfig.toHelidonConfig(mpConfig);
+
         Map<String, String> properties = config.get("cdi")
                 .detach()
                 .asMap()
@@ -156,6 +178,9 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         });
 
         Deployment deployment = createDeployment(resourceLoader, bootstrap);
+        // we need to configure custom proxy services to
+        // load classes in module friendly way
+        deployment.getServices().add(ProxyServices.class, new HelidonProxyServices());
 
         ExternalConfigurationBuilder configurationBuilder = new ExternalConfigurationBuilder()
                 // weld-se uses CommonForkJoinPoolExecutorServices by default
@@ -190,7 +215,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         bootstrap.deployBeans();
 
         cdi = new HelidonCdi(id, bootstrap, deployment);
-        CDI.setCDIProvider(() -> cdi);
+        HelidonCdiProvider.setCdi(cdi);
 
         beanManager.getEvent().select(BuildTimeEnd.Literal.INSTANCE).fire(id);
 
@@ -198,14 +223,15 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     }
 
     @SuppressWarnings("unchecked")
-    private void addHelidonBeanDefiningAnnotations() {
-        // I have to do this using reflection, as JAX-RS may not be on the classpath
-        String pathClassName = "javax.ws.rs.Path";
-        try {
-            Class<? extends Annotation> clazz = (Class<? extends Annotation>) Class.forName(pathClassName);
-            addBeanDefiningAnnotations(clazz);
-        } catch (Throwable e) {
-            LOGGER.log(Level.FINEST, e, () -> pathClassName + " is not on the classpath, it will be ignored by CDI");
+    private void addHelidonBeanDefiningAnnotations(String... classNames) {
+        // I have to do this using reflection since annotation may not be in classpath
+        for (String className : classNames) {
+            try {
+                Class<? extends Annotation> clazz = (Class<? extends Annotation>) Class.forName(className);
+                addBeanDefiningAnnotations(clazz);
+            } catch (Throwable e) {
+                LOGGER.log(Level.FINEST, e, () -> className + " is not in the classpath, it will be ignored by CDI");
+            }
         }
     }
 
@@ -219,8 +245,20 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
             // already started
             return cdi;
         }
+        SerializationConfig.configureRuntime();
         LogConfig.configureRuntime();
-        Contexts.runInContext(ROOT_CONTEXT, this::doStart);
+        try {
+            Contexts.runInContext(ROOT_CONTEXT, this::doStart);
+        } catch (Exception e) {
+            try {
+                // we must clean up
+                shutdown();
+            } catch (Exception exception) {
+                e.addSuppressed(exception);
+            }
+            throw e;
+        }
+
         if (EXIT_ON_STARTED) {
             exitOnStarted();
         }
@@ -242,9 +280,17 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         IN_RUNTIME.set(true);
 
-        BeanManager bm = CDI.current().getBeanManager();
+        BeanManager bm = null;
+        try {
+            bm = CDI.current().getBeanManager();
+        } catch (IllegalStateException e) {
+            LOGGER.log(Level.FINEST, "Cannot get current CDI, probably restarted", e);
+            // cannot access CDI - CDI is not yet initialized (probably shut down and started again)
+            initInContext();
+            bm = CDI.current().getBeanManager();
+        }
 
-        Config config = (Config) ConfigProvider.getConfig();
+        org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
 
         MpConfigProviderResolver.runtimeStart(config);
 
@@ -297,7 +343,9 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         now = System.currentTimeMillis() - now;
         LOGGER.fine("Container started in " + now + " millis (this excludes the initialization time)");
 
-        HelidonFeatures.print(HelidonFlavor.MP, config.get("features.print-details").asBoolean().orElse(false));
+        HelidonFeatures.print(HelidonFlavor.MP,
+                              Version.VERSION,
+                              config.getOptionalValue("features.print-details", Boolean.class).orElse(false));
 
         // shutdown hook should be added after all initialization is done, otherwise a race condition may happen
         Runtime.getRuntime().addShutdownHook(shutdownHook);
@@ -357,10 +405,18 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         @Override
         public BeanManager getBeanManager() {
-            if (isRunning.get()) {
-                return new BeanManagerProxy(beanManager());
+            if (!isRunning.get()) {
+                LOGGER.warning("BeanManager requested during container shutdown. This may be caused by observer methods "
+                                       + "that use CDI.current(). Switch to finest logging to see stack trace.");
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    // this should not be common, but guarding, so we do not fill stack trace unless necessary
+                    LOGGER.log(Level.FINEST,
+                               "Invocation of container method during shutdown",
+                               new IllegalStateException("Container not running"));
+                }
             }
-            throw new IllegalStateException("Container not running");
+
+            return new BeanManagerProxy(beanManager());
         }
 
         private BeanManagerImpl beanManager() {

@@ -1,0 +1,47 @@
+
+package {{package}};
+
+/**
+ * POJO representing a Pokemon type.
+ *
+ * Pokémon, and Pokémon character names are trademarks of Nintendo.
+ */
+public class PokemonType {
+
+    private int id;
+    private String name;
+
+    /**
+     * Default constructor.
+     */
+    public PokemonType() {
+        // JSON-B
+    }
+
+    /**
+     * Create a pokemon type.
+     *
+     * @param id id of the type
+     * @param name name of the type
+     */
+    public PokemonType(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}

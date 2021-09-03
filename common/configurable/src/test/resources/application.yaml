@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,17 +26,19 @@ unit:
     thread-name-prefix: "scheduled-thread-pool-config-unit-test-"
     should-prestart: false
 
-test-1:
-  resource-path: "src/test/resources/sample.txt"
+# old (deprecated approach) - kept so existing applications may work
+resources-prefix:
+  test-1.resource-path: "src/test/resources/sample.txt"
+  test-2.resource-resource-path: "sample.txt"
+  test-3.resource-url: "file:./src/test/resources/sample.txt"
+  test-4.resource-content-plain: "content"
+  test-5.resource-content: "YWJjZGVmZ8SNxZnFvsO6xa8="
 
-test-2:
-  resource-resource-path: "sample.txt"
-
-test-3:
-  resource-url: "file:./src/test/resources/sample.txt"
-
-test-4:
-  resource-content-plain: "content"
-
-test-5:
-  resource-content: "YWJjZGVmZ8SNxZnFvsO6xa8="
+# new approach that does not use a prefix
+resources:
+  test-1.resource.path: "src/test/resources/sample.txt"
+  test-2.resource.resource-path: "sample.txt"
+  test-3.resource.url: "file:./src/test/resources/sample.txt"
+  test-4.resource.content-plain: "content"
+  test-5.resource.content: "YWJjZGVmZ8SNxZnFvsO6xa8="
+  test-6.reprosuce: "nothing"

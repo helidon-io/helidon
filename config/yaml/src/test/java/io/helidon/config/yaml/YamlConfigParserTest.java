@@ -16,14 +16,13 @@
 
 package io.helidon.config.yaml;
 
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Optional;
 
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
-import io.helidon.config.yaml.internal.YamlConfigParser;
+import io.helidon.config.spi.ConfigParser.Content;
 
 import org.junit.jupiter.api.Test;
 
@@ -61,24 +60,24 @@ public class YamlConfigParserTest {
     @Test
     public void testLoad() {
 
-        ConfigParser parser = YamlConfigParserBuilder.buildDefault();
-        ConfigNode.ObjectNode node = parser.parse((StringContent) () -> COMPLEX_YAML);
+        ConfigParser parser = YamlConfigParser.create();
+        ConfigNode.ObjectNode node = parser.parse(toContent(COMPLEX_YAML));
 
         assertThat(node.entrySet(), hasSize(5));
     }
 
     @Test
     public void testEmpty() {
-        ConfigParser parser = YamlConfigParserBuilder.buildDefault();
-        ConfigNode.ObjectNode node = parser.parse((StringContent) () -> "");
+        ConfigParser parser = YamlConfigParser.create();
+        ConfigNode.ObjectNode node = parser.parse(toContent(""));
 
         assertThat(node.entrySet(), hasSize(0));
     }
 
     @Test
     public void testSingleValue() {
-        ConfigParser parser = YamlConfigParserBuilder.buildDefault();
-        ConfigNode.ObjectNode node = parser.parse((StringContent) () -> "aaa: bbb");
+        ConfigParser parser = YamlConfigParser.create();
+        ConfigNode.ObjectNode node = parser.parse(toContent("aaa: bbb"));
 
         assertThat(node.entrySet(), hasSize(1));
         assertThat(node.get("aaa"), valueNode("bbb"));
@@ -86,11 +85,11 @@ public class YamlConfigParserTest {
 
     @Test
     public void testStringListValue() {
-        ConfigParser parser = YamlConfigParserBuilder.buildDefault();
-        ConfigNode.ObjectNode node = parser.parse((StringContent) () -> "aaa:\n"
+        ConfigParser parser = YamlConfigParser.create();
+        ConfigNode.ObjectNode node = parser.parse(toContent("aaa:\n"
                 + "  - bbb\n"
                 + "  - ccc\n"
-                + "  - ddd\n");
+                + "  - ddd\n"));
 
         assertThat(node.entrySet(), hasSize(1));
 
@@ -101,23 +100,10 @@ public class YamlConfigParserTest {
         assertThat(aaa.get(2), valueNode("ddd"));
     }
 
-    //
-    // helper
-    //
-
-    @FunctionalInterface
-    private interface StringContent extends ConfigParser.Content {
-        @Override
-        default Optional<String> mediaType() {
-            return Optional.of(YamlConfigParser.MEDIA_TYPE_APPLICATION_YAML);
-        }
-
-        @Override
-        default Reader asReadable() {
-            return new StringReader(content());
-        }
-
-        String content();
+    private Content toContent(String yaml) {
+        return Content.builder()
+                .data(new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)))
+                .mediaType(YamlConfigParser.MEDIA_TYPE_APPLICATION_YAML)
+                .build();
     }
-
 }

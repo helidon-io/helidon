@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,18 +37,18 @@ import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
-
-import static io.helidon.media.common.MessageBodyContext.EventType.AFTER_ONCOMPLETE;
-import static io.helidon.media.common.MessageBodyContext.EventType.AFTER_ONERROR;
-import static io.helidon.media.common.MessageBodyContext.EventType.BEFORE_ONSUBSCRIBE;
 
 /**
  * The basic implementation of {@link ServerResponse}.
  */
 abstract class Response implements ServerResponse {
+
+    static final String STREAM_STATUS = "stream-status";
+    static final String STREAM_RESULT = "stream-result";
 
     private static final String TRACING_CONTENT_WRITE = "content-write";
 
@@ -76,7 +76,7 @@ abstract class Response implements ServerResponse {
         this.completionStage = bareResponse.whenCompleted().thenApply(a -> this);
         this.sendLockSupport = new SendLockSupport();
         this.eventListener = new MessageBodyEventListener();
-        this.writerContext = MessageBodyWriterContext.create(webServer.mediaSupport(), eventListener, headers, acceptedTypes);
+        this.writerContext = MessageBodyWriterContext.create(webServer.writerContext(), eventListener, headers, acceptedTypes);
     }
 
     /**
@@ -112,7 +112,8 @@ abstract class Response implements ServerResponse {
 
     @Override
     public Http.ResponseStatus status() {
-        return headers.httpStatus();
+        Http.ResponseStatus status = headers.httpStatus();
+        return (null == status) ? Http.Status.OK_200 : status;
     }
 
     @Override
@@ -158,11 +159,24 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
-    public <T> CompletionStage<ServerResponse> send(T content) {
+    public Void send(Throwable content) {
+        if (headers.httpStatus() == null) {
+            if (content instanceof HttpException) {
+                status(((HttpException) content).status());
+            } else {
+                status(Http.Status.INTERNAL_SERVER_ERROR_500);
+            }
+        }
+        send((Object) content);
+        return null;
+    }
+
+    @Override
+    public <T> Single<ServerResponse> send(T content) {
         try {
             sendLockSupport.execute(() -> {
                 Publisher<DataChunk> sendPublisher = writerContext.marshall(
-                        Single.just(content), GenericType.create(content), null);
+                        Single.just(content), GenericType.create(content));
                 sendLockSupport.contentSend = true;
                 sendPublisher.subscribe(bareResponse);
             }, content == null);
@@ -174,9 +188,19 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
-    public CompletionStage<ServerResponse> send(Publisher<DataChunk> content) {
+    public Single<ServerResponse> send(Publisher<DataChunk> content) {
+        return send(content, true);
+    }
+
+    @Override
+    public Single<ServerResponse> send(Publisher<DataChunk> content, boolean applyFilters) {
         try {
-            Publisher<DataChunk> sendPublisher = writerContext.applyFilters(content);
+            final Publisher<DataChunk> sendPublisher;
+            if (applyFilters) {
+                sendPublisher = writerContext.applyFilters(content);
+            } else {
+                sendPublisher = content;
+            }
             sendLockSupport.execute(() -> {
                 sendLockSupport.contentSend = true;
                 sendPublisher.subscribe(bareResponse);
@@ -189,16 +213,16 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
-    public CompletionStage<ServerResponse> send() {
+    public Single<ServerResponse> send() {
         return send((Publisher<DataChunk>) null);
     }
 
     @Override
-    public <T> CompletionStage<ServerResponse> send(Publisher<T> content, Class<T> itemClass) {
+    public <T> Single<ServerResponse> send(Publisher<T> content, Class<T> itemClass) {
         try {
             sendLockSupport.execute(() -> {
                 GenericType<T> type = GenericType.create(itemClass);
-                Publisher<DataChunk> sendPublisher = writerContext.marshallStream(content, type, null);
+                Publisher<DataChunk> sendPublisher = writerContext.marshallStream(content, type);
                 sendLockSupport.contentSend = true;
                 sendPublisher.subscribe(bareResponse);
             }, content == null);
@@ -207,6 +231,11 @@ abstract class Response implements ServerResponse {
             eventListener.finish();
             throw e;
         }
+    }
+
+    @Override
+    public Single<ServerResponse> send(Function<MessageBodyWriterContext, Publisher<DataChunk>> function) {
+        return send(function.apply(writerContext), false);
     }
 
     @Override
@@ -229,7 +258,7 @@ abstract class Response implements ServerResponse {
 
     @Override
     public Response registerFilter(Function<Publisher<DataChunk>, Publisher<DataChunk>> function) {
-        writerContext.registerFilter(function);
+        writerContext.registerFilter(function::apply);
         return this;
     }
 
@@ -262,8 +291,8 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
-    public CompletionStage<ServerResponse> whenSent() {
-        return completionStage;
+    public Single<ServerResponse> whenSent() {
+        return Single.create(completionStage);
     }
 
     @Override
@@ -275,6 +304,17 @@ abstract class Response implements ServerResponse {
 
         private Span span;
         private volatile boolean sent;
+
+        private synchronized void sendErrorHeadersIfNeeded() {
+            if (headers != null && !sent) {
+                status(500);
+                //We are not using CombinedHttpHeaders
+                headers()
+                        .add(HttpHeaderNames.TRAILER.toString(), STREAM_STATUS + "," + STREAM_RESULT);
+                sent = true;
+                headers.send();
+            }
+        }
 
         private synchronized void sendHeadersIfNeeded() {
             if (headers != null && !sent) {
@@ -298,6 +338,9 @@ abstract class Response implements ServerResponse {
                     break;
                 case BEFORE_ONNEXT:
                     sendHeadersIfNeeded();
+                    break;
+                case BEFORE_ONERROR:
+                    sendErrorHeadersIfNeeded();
                     break;
                 case AFTER_ONERROR:
                     if (span != null) {

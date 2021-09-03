@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,8 @@ class FaultToleranceParameter {
      */
     private static String getProperty(String name) {
         try {
-            String value = ConfigProvider.getConfig().getValue(name, String.class);
+            ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+            String value = ConfigProvider.getConfig(ccl).getValue(name, String.class);
             LOGGER.fine(() -> "Found config property '" + name + "' value '" + value + "'");
             return value;
         } catch (NoSuchElementException e) {

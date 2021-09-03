@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,12 +63,15 @@ public class Main {
         // in this example we just set envvar in maven plugin 'exec', but can be set in k8s pod via ConfigMap
         Config env = Config.create(ConfigSources.environmentVariables());
 
-        System.out.println("Loading from branch " + env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("null"));
+        String branch = env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("master");
+
+        System.out.println("Loading from branch " + branch);
 
         Config config = Config.create(
-                GitConfigSource.builder("application.conf")
+                GitConfigSource.builder()
+                        .path("application.conf")
                         .uri(URI.create("https://github.com/helidonrobot/test-config.git"))
-                        .branch(env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("master"))
+                        .branch(branch)
                         .build());
 
         System.out.println("Greeting is " + config.get("greeting").asString().get());

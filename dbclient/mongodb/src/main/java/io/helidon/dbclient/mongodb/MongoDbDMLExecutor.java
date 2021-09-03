@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.logging.Logger;
 
-import io.helidon.dbclient.DbInterceptorContext;
+import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbStatementType;
 
 import com.mongodb.client.result.DeleteResult;
@@ -48,7 +48,7 @@ final class MongoDbDMLExecutor {
             MongoDbStatement dbStatement,
             DbStatementType dbStatementType,
             MongoDbStatement.MongoStatement mongoStatement,
-            CompletionStage<DbInterceptorContext> dbContextFuture,
+            CompletionStage<DbClientServiceContext> dbContextFuture,
             CompletableFuture<Void> statementFuture,
             CompletableFuture<Long> queryFuture
     ) {

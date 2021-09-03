@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow.Publisher;
@@ -51,9 +52,10 @@ public final class ContentReaders {
      *
      * @param chunks source publisher
      * @return Single
+     * @since 2.0.0
      */
     public static Single<byte[]> readBytes(Publisher<DataChunk> chunks) {
-        return Multi.from(chunks).collect(new BytesCollector());
+        return Multi.create(chunks).collect(new BytesCollector());
     }
 
     /**
@@ -72,6 +74,7 @@ public final class ContentReaders {
      * @param chunks source publisher
      * @param charset charset to use for decoding the input
      * @return Single
+     * @since 2.0.0
      */
     public static Single<String> readURLEncodedString(Publisher<DataChunk> chunks,
             Charset charset) {
@@ -84,7 +87,10 @@ public final class ContentReaders {
      *
      * @param charset the charset to use with the returned string content reader
      * @return a string content reader
+     * @deprecated since 2.0.0, use {@link #readString(Publisher, Charset)}}
+     *  or {@link DefaultMediaSupport#stringReader()} instead
      */
+    @Deprecated(since = "2.0.0")
     public static Reader<String> stringReader(Charset charset) {
         return (chunks, type) -> readString(chunks, charset).toStage();
     }
@@ -95,7 +101,9 @@ public final class ContentReaders {
      *
      * @param charset the charset to use with the returned string content reader
      * @return the URL-decoded string content reader
+     * @deprecated since 2.0.0, use {@link #readURLEncodedString(Publisher, Charset)} instead
      */
+    @Deprecated(since = "2.0.0")
     public static Reader<String> urlEncodedStringReader(Charset charset) {
         return (chunks, type) -> readURLEncodedString(chunks, charset).toStage();
     }
@@ -106,7 +114,9 @@ public final class ContentReaders {
      *
      * @return reader that transforms a publisher of byte buffers to a
      * completion stage that might end exceptionally with
+     * @deprecated since 2.0.0, use {@link #readBytes(Publisher)} instead
      */
+    @Deprecated(since = "2.0.0")
     public static Reader<byte[]> byteArrayReader() {
         return (publisher, clazz) -> readBytes(publisher).toStage();
     }
@@ -120,9 +130,11 @@ public final class ContentReaders {
      * {@link InputStream#read()}) block.
      *
      * @return a input stream content reader
+     * @deprecated since 2.0.0, use {@link DefaultMediaSupport#inputStreamReader()}
      */
+    @Deprecated(since = "2.0.0")
     public static Reader<InputStream> inputStreamReader() {
-        return (publisher, clazz) -> CompletableFuture.completedFuture(new PublisherInputStream(publisher));
+        return (publisher, clazz) -> CompletableFuture.completedFuture(new DataChunkInputStream(publisher));
     }
 
     /**
@@ -182,7 +194,9 @@ public final class ContentReaders {
         @Override
         public void collect(DataChunk chunk) {
             try {
-                Utils.write(chunk.data(), baos);
+                for (ByteBuffer byteBuffer : chunk.data()) {
+                    Utils.write(byteBuffer, baos);
+                }
             } catch (IOException e) {
                 throw new IllegalArgumentException("Cannot convert byte buffer to a byte array!", e);
             } finally {

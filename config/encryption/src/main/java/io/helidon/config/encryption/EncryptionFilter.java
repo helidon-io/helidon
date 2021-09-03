@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.config.MissingValueException;
@@ -37,11 +36,11 @@ import io.helidon.config.spi.ConfigFilter;
  * <p>
  * Password in properties must be stored as follows:
  * <ul>
- * <li>${AES=base64} - encrypted password using a master password (must be provided to Prime through configuration, system
+ * <li>${AES=base64} - encrypted password using a master password (must be provided to prime through configuration, system
  * property or environment variable)</li>
  * <li>${RSA=base64} - encrypted password using a public key (private key must be available to Prime instance,
  * its location must be provided to prime through configuration, system property or environment variable)</li>
- * <li>${ALIAS=alias_name} - reference to another property, that is encrypted</li>
+ * <li>${ALIAS=alias_name} - no longer needed, please use {@code ${alias_name}}</li>
  * <li>${CLEAR=text} - clear-text password. Intentionally denoting this value as a protectable one, so we can enforce encryption
  * (e.g. in prod)</li>
  * </ul>
@@ -49,7 +48,7 @@ import io.helidon.config.spi.ConfigFilter;
  * <pre>
  * google_client_secret=${AES=mYRkg+4Q4hua1kvpCCI2hg==}
  * service_password=${RSA=mYRkg+4Q4hua1kvpCCI2hg==}
- * another_password=${ALIAS=service_password}
+ * another_password=${service_password}
  * cleartext_password=${CLEAR=known_password}
  * </pre>
  *
@@ -66,10 +65,6 @@ public final class EncryptionFilter implements ConfigFilter {
     private static final Logger LOGGER = Logger.getLogger(EncryptionFilter.class.getName());
     private static final String PREFIX_ALIAS = "${ALIAS=";
     private static final String PREFIX_CLEAR = "${CLEAR=";
-
-    static {
-        HelidonFeatures.register("Config", "Encryption");
-    }
 
     private final PrivateKey privateKey;
     private final char[] masterPassword;

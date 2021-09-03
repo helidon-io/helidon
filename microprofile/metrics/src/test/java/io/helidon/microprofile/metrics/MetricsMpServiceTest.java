@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,67 +16,68 @@
 
 package io.helidon.microprofile.metrics;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-
-import io.helidon.metrics.HelidonMetadata;
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.microprofile.server.Server;
-
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+
+import javax.inject.Inject;
 
 /**
  * Class MetricsMpServiceTest.
  */
+@HelidonTest
+@AddBean(HelloWorldResource.class)
 public class MetricsMpServiceTest {
-    protected static Server server;
-    protected static MetricRegistry registry;
-    protected static Client client = ClientBuilder.newClient();
-
-    private static int port;
-    private static String baseUri;
-
-    @BeforeAll
-    public static void initializeServer() throws Exception {
-        server = Server.builder()
-                .addResourceClass(HelloWorldResource.class)
-                .host("localhost")
-                // choose a random available port
-                .port(-1)
-                .build();
-        server.start();
-
-        registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
-
-        port = server.port();
-        baseUri = "http://localhost:" + port;
-    }
 
     @AfterAll
-    public static void terminateServer() {
-        server.stop();
+    public static void wrapupTest() {
+        cleanUpSyntheticSimpleTimerRegistry();
     }
 
-    protected String baseUri() {
-        return baseUri;
+    static MetricRegistry cleanUpSyntheticSimpleTimerRegistry() {
+        MetricRegistry result = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.BASE);
+        result.remove(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME);
+        return result;
     }
 
-    protected static void registerCounter(String name) {
-        Metadata meta = new HelidonMetadata(name,
-                                     name,
-                                     name,
-                                     MetricType.COUNTER,
-                                     MetricUnits.NONE);
+    @Inject
+    private MetricRegistry registry;
+
+    @Inject
+    @RegistryType(type = MetricRegistry.Type.BASE)
+    private MetricRegistry baseRegistry;
+
+    MetricRegistry syntheticSimpleTimerRegistry() {
+        return baseRegistry;
+    }
+
+    MetricRegistry registry() {
+        return registry;
+    }
+
+    protected static void registerCounter(MetricRegistry registry, String name) {
+        Metadata meta = Metadata.builder()
+                        .withName(name)
+                        .withDisplayName(name)
+                        .withDescription(name)
+                        .withType(MetricType.COUNTER)
+                        .withUnit(MetricUnits.NONE)
+                        .build();
         registry.counter(meta);
     }
 
-    protected static Counter getCounter(String name) {
+    protected void registerCounter(String name) {
+        registerCounter(registry, name);
+    }
+
+    protected Counter getCounter(String name) {
         return registry.counter(name);
     }
 }

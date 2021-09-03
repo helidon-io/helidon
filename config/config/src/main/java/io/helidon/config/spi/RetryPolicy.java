@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,18 @@ package io.helidon.config.spi;
 import java.util.function.Supplier;
 
 /**
- * Mechanism for controlling retry of attempts to load data by an
- * {@link AbstractSource}.
+ * Mechanism for controlling retry of attempts to load data by a {@link io.helidon.config.spi.ConfigSource}.
  * <p>
- * When an {@code AbstractSource} attempts to load the underlying data it uses a
- * {@code RetryPolicy} to govern if and how it retries the load operation in
- * case of errors.
+ * When a {@link io.helidon.config.Config} attempts to load the underlying data
+ * of a {@link io.helidon.config.spi.ConfigSource} it uses a {@code RetryPolicy} to govern if and how it
+ * retries the load operation in case of errors.
  * <p>
  * The {@link #execute(java.util.function.Supplier) } method of each policy
  * implementation must perform at least one attempt to load the data, even if it
  * chooses not to retry in case of errors.
  */
 @FunctionalInterface
-public interface RetryPolicy {
+public interface RetryPolicy extends Supplier<RetryPolicy> {
     /**
      * Invokes the provided {@code Supplier} to read the source data and returns
      * that data.
@@ -65,5 +64,10 @@ public interface RetryPolicy {
      */
     default boolean cancel(boolean mayInterruptIfRunning) {
         return false;
+    }
+
+    @Override
+    default RetryPolicy get() {
+        return this;
     }
 }

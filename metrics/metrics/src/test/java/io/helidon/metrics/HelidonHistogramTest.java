@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
+import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -43,6 +44,8 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.metrics.HelidonMetricsMatcher.withinTolerance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -124,11 +127,13 @@ class HelidonHistogramTest {
 
     @BeforeAll
     static void initClass() {
-        meta = new HelidonMetadata("file_sizes",
-                            "theDisplayName",
-                            "Users file size",
-                            MetricType.HISTOGRAM,
-                            MetricUnits.KILOBYTES);
+        meta = Metadata.builder()
+				.withName("file_sizes")
+				.withDisplayName("theDisplayName")
+				.withDescription("Users file size")
+				.withType(MetricType.HISTOGRAM)
+				.withUnit(MetricUnits.KILOBYTES)
+				.build();
 
         histoInt = HelidonHistogram.create("application", meta);
         histoIntID = new MetricID("file_sizes");
@@ -197,20 +202,20 @@ class HelidonHistogramTest {
         assertThat(metricData.getJsonNumber("count").longValue(), is(200L));
         assertThat(metricData.getJsonNumber("min").longValue(), is(0L));
         assertThat(metricData.getJsonNumber("max").longValue(), is(99L));
-        withTolerance("mean", metricData.getJsonNumber("mean").doubleValue(), 50.6349);
-        withTolerance("stddev", metricData.getJsonNumber("stddev").doubleValue(), 29.4389);
-        assertThat(metricData.getJsonNumber("p50").intValue(), is(48));
-        assertThat(metricData.getJsonNumber("p75").intValue(), is(75));
-        assertThat(metricData.getJsonNumber("p95").intValue(), is(96));
-        assertThat(metricData.getJsonNumber("p98").intValue(), is(98));
-        assertThat(metricData.getJsonNumber("p99").intValue(), is(98));
-        assertThat(metricData.getJsonNumber("p999").intValue(), is(99));
+        assertThat("mean", metricData.getJsonNumber("mean").doubleValue(), is(withinTolerance(50.6349)));
+        assertThat("stddev", metricData.getJsonNumber("stddev").doubleValue(),  is(withinTolerance(29.4389)));
+        assertThat("p50", metricData.getJsonNumber("p50").intValue(), is(withinTolerance(48)));
+        assertThat("p75", metricData.getJsonNumber("p75").intValue(), is(withinTolerance(75)));
+        assertThat("p95", metricData.getJsonNumber("p95").intValue(), is(withinTolerance(96)));
+        assertThat("p98", metricData.getJsonNumber("p98").intValue(), is(withinTolerance(98)));
+        assertThat("p99", metricData.getJsonNumber("p99").intValue(), is(withinTolerance(98)));
+        assertThat("p999", metricData.getJsonNumber("p999").intValue(), is(withinTolerance(99)));
     }
 
     @Test
     void testPrometheus() throws IOException, ParseException {
         final StringBuilder sb = new StringBuilder();
-        histoInt.prometheusData(sb, histoIntID);
+        histoInt.prometheusData(sb, histoIntID, true);
         parsePrometheusText(new LineNumberReader(new StringReader(sb.toString())).lines())
                 .forEach(entry -> assertThat("Unexpected value checking " + entry.getKey(),
                                     EXPECTED_PROMETHEUS_RESULTS.get(entry.getKey()),
@@ -225,23 +230,40 @@ class HelidonHistogramTest {
         testSnapshot(10, "delegating longs", delegatingHistoLong.getSnapshot(), 506.3, 294.389);
     }
 
+    @Test
+    void testNaNAvoidance() {
+        Metadata metadata = Metadata.builder()
+                .withName("long_idle_test")
+                .withDisplayName("theDisplayName")
+                .withDescription("Simulates a long idle period")
+                .withType(MetricType.HISTOGRAM)
+                .withUnit(MetricUnits.SECONDS)
+                .build();
+        TestClock testClock = TestClock.create();
+        Histogram idleHistogram = HelidonHistogram.create("application", metadata, testClock);
+
+        idleHistogram.update(100);
+
+        for (int i = 1; i < 48; i++) {
+            testClock.add(1, TimeUnit.HOURS);
+            assertThat("Idle histogram failed after simulating " + i + " hours", idleHistogram.getSnapshot().getMean(),
+                    not(equalTo(Double.NaN)));
+        }
+    }
+
     private void testSnapshot(int factor, String description, Snapshot snapshot, double mean, double stddev) {
         assertAll("Testing statistical values for " + description,
-                  () -> withTolerance("median", snapshot.getMedian(), factor * 48),
-                  () -> withTolerance("75th percentile", snapshot.get75thPercentile(), factor * 75),
-                  () -> withTolerance("95th percentile", snapshot.get95thPercentile(), factor * 96),
-                  () -> withTolerance("78th percentile", snapshot.get98thPercentile(), factor * 98),
-                  () -> withTolerance("99th percentile", snapshot.get99thPercentile(), factor * 98),
-                  () -> withTolerance("999th percentile", snapshot.get999thPercentile(), factor * 99),
-                  () -> withTolerance("mean", snapshot.getMean(), mean),
-                  () -> withTolerance("stddev", snapshot.getStdDev(), stddev),
+                  () -> assertThat("median", snapshot.getMedian(), is(withinTolerance(factor * 48))),
+                  () -> assertThat("75th percentile", snapshot.get75thPercentile(), is(withinTolerance(factor * 75))),
+                  () -> assertThat("95th percentile", snapshot.get95thPercentile(), is(withinTolerance(factor * 96))),
+                  () -> assertThat("78th percentile", snapshot.get98thPercentile(), is(withinTolerance(factor * 98))),
+                  () -> assertThat("99th percentile", snapshot.get99thPercentile(), is(withinTolerance(factor * 98))),
+                  () -> assertThat("999th percentile", snapshot.get999thPercentile(), is(withinTolerance(factor * 99))),
+                  () -> assertThat("mean", snapshot.getMean(), is(withinTolerance(mean))),
+                  () -> assertThat("stddev", snapshot.getStdDev(), is(withinTolerance(stddev))),
                   () -> assertThat("min", snapshot.getMin(), is(0L)),
                   () -> assertThat("max", snapshot.getMax(), is(factor * 99L)),
                   () -> assertThat("size", snapshot.size(), is(200))
         );
-    }
-
-    private void withTolerance(String field, double actual, double expectedValue) {
-        assertThat(field, expectedValue, is(withinTolerance(actual)));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ class MainTest {
 
     @BeforeAll
     public static void startTheServer() throws Exception {
-        server = Main.startServer();
+        server = Server.create().start();
     }
 
     @Test
@@ -59,11 +59,12 @@ class MainTest {
         Assertions.assertEquals("Hello Joe!", jsonObject.getString("message"),
                 "hello Joe message");
 
-        Response r = client
+        try (Response r = client
                 .target(getConnectionString("/greet/greeting"))
                 .request()
-                .put(Entity.entity("{\"greeting\" : \"Hola\"}", MediaType.APPLICATION_JSON));
-        Assertions.assertEquals(204, r.getStatus(), "PUT status code");
+                .put(Entity.entity("{\"greeting\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
+            Assertions.assertEquals(204, r.getStatus(), "PUT status code");
+        }
 
         jsonObject = client
                 .target(getConnectionString("/greet/Jose"))
@@ -72,17 +73,19 @@ class MainTest {
         Assertions.assertEquals("Hola Jose!", jsonObject.getString("message"),
                 "hola Jose message");
 
-        r = client
+        try (Response r = client
                 .target(getConnectionString("/metrics"))
                 .request()
-                .get();
-        Assertions.assertEquals(200, r.getStatus(), "GET metrics status code");
+                .get()) {
+            Assertions.assertEquals(200, r.getStatus(), "GET metrics status code");
+        }
 
-        r = client
+        try (Response r = client
                 .target(getConnectionString("/health"))
                 .request()
-                .get();
-        Assertions.assertEquals(200, r.getStatus(), "GET health status code");
+                .get()) {
+            Assertions.assertEquals(200, r.getStatus(), "GET health status code");
+        }
     }
 
     @AfterAll

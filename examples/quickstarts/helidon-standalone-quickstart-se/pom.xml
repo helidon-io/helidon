@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,33 +22,31 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon.examples.quickstarts</groupId>
     <artifactId>helidon-standalone-quickstart-se</artifactId>
-    <version>2.0.0-SNAPSHOT</version>
+    <version>2.4.0-SNAPSHOT</version>
     <name>Helidon Standalone Quickstart SE Example</name>
 
     <properties>
-        <helidon.version>2.0.0-SNAPSHOT</helidon.version>
+        <helidon.version>2.4.0-SNAPSHOT</helidon.version>
         <mainClass>io.helidon.examples.quickstart.se.Main</mainClass>
 
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
+        <maven.site.skip>true</maven.site.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-        <!-- plugin dependencies versions -->
-        <version.lib.junit>5.1.0</version.lib.junit>
 
         <!-- plugin versions -->
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.0.0</version.plugin.dependency>
         <version.plugin.exec>1.6.0</version.plugin.exec>
-        <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
-        <version.plugin.helidon>1.0.10</version.plugin.helidon>
+        <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
+        <version.plugin.helidon>2.2.0</version.plugin.helidon>
+        <version.plugin.helidon-cli>2.2.0</version.plugin.helidon-cli>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
         <version.plugin.resources>2.7</version.plugin.resources>
-        <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
-        <version.plugin.surefire>2.19.1</version.plugin.surefire>
+        <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
     </properties>
 
     <dependencyManagement>
@@ -89,6 +87,11 @@
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -104,19 +107,8 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${version.plugin.surefire}</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.junit.platform</groupId>
-                            <artifactId>junit-platform-surefire-provider</artifactId>
-                            <version>${version.plugin.surefire.provider.junit}</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
-                            <version>${version.lib.junit}</version>
-                        </dependency>
-                    </dependencies>
                     <configuration>
+                        <useModulePath>false</useModulePath>
                         <systemPropertyVariables>
                             <java.util.logging.config.file>${project.build.outputDirectory}/logging.properties</java.util.logging.config.file>
                         </systemPropertyVariables>
@@ -127,20 +119,9 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${version.plugin.failsafe}</version>
                     <configuration>
+                        <useModulePath>false</useModulePath>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.junit.platform</groupId>
-                            <artifactId>junit-platform-surefire-provider</artifactId>
-                            <version>${version.plugin.surefire.provider.junit}</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
-                            <version>${version.lib.junit}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -162,6 +143,7 @@
                                 <addClasspath>true</addClasspath>
                                 <classpathPrefix>libs</classpathPrefix>
                                 <mainClass>${mainClass}</mainClass>
+                                <useUniqueVersions>false</useUniqueVersions>
                             </manifest>
                         </archive>
                     </configuration>
@@ -178,6 +160,11 @@
                     <groupId>io.helidon.build-tools</groupId>
                     <artifactId>helidon-maven-plugin</artifactId>
                     <version>${version.plugin.helidon}</version>
+                </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-cli-maven-plugin</artifactId>
+                    <version>${version.plugin.helidon-cli}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -231,6 +218,24 @@
                     <artifactId>helidon-graal-native-image-extension</artifactId>
                 </dependency>
             </dependencies>
+        </profile>
+        <profile>
+            <id>jlink-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>jlink-image</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

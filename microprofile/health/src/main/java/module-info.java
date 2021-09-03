@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,18 @@ module io.helidon.microprofile.health {
     requires io.helidon.health.common;
     requires io.helidon.microprofile.server;
 
-    requires cdi.api;
-    requires javax.inject;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject.api;
     requires java.ws.rs;
-    requires org.glassfish.java.json;
+    requires java.json;
     requires microprofile.config.api;
     requires microprofile.health.api;
+    requires io.helidon.config.mp;
 
     exports io.helidon.microprofile.health;
+
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.health to weld.core.impl, io.helidon.microprofile.cdi;
 
     uses io.helidon.microprofile.health.HealthCheckProvider;
 

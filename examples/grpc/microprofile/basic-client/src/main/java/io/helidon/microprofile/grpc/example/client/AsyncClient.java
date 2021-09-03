@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.inject.Inject;
 
 import io.helidon.microprofile.grpc.client.GrpcChannel;
-import io.helidon.microprofile.grpc.client.GrpcServiceProxy;
+import io.helidon.microprofile.grpc.client.GrpcProxy;
 
 /**
  * A client to the {@link io.helidon.microprofile.grpc.example.client.AsyncStringService}.
@@ -42,7 +42,7 @@ public class AsyncClient {
      * This proxy will connect to the service using the default {@link io.grpc.Channel}.
      */
     @Inject
-    @GrpcServiceProxy
+    @GrpcProxy
     @GrpcChannel(name = "test-server")
     private AsyncStringService stringService;
 

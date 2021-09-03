@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,6 +39,9 @@ security:
   providers:
     - google-login:
         client-id: "1048216952820-6a6ke9vrbjlhngbc0al0dkj9qs9tqbk2.apps.googleusercontent.com"
+        outbound:
+          - name: "backend"
+            hosts: [ "localhost", "helidon-examples-todo-backend" ]
     - abac:
     - http-signatures:
         outbound:
@@ -49,5 +52,5 @@ security:
             hmac.secret: "${CLEAR=frontend2backend}"
   web-server:
     paths:
-      - path: "/api/[{*}]"
+      - path: "/api/{+}"
         authenticate: true

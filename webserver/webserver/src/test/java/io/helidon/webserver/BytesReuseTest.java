@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,69 +76,70 @@ public class BytesReuseTest {
      * @throws Exception in case of an error
      */
     private static void startServer(int port) throws Exception {
-        webServer = WebServer.create(
-                ServerConfiguration.builder().port(port).build(),
-                Routing.builder()
-                        .any((req, res) -> {
-                            req.content().registerFilter(
-                                    (Publisher<DataChunk> publisher) -> Multi.from(publisher).map(chunk -> {
-                                        if (req.queryParams().first("keep_chunks").map(Boolean::valueOf).orElse(true)) {
-                                            chunkReference.add(chunk);
-                                        }
-                                        return chunk;
-                                    }));
-                            res.headers().add("Transfer-Encoding", "chunked");
-                            req.next();
-                        })
-                        .post("/subscriber", (req, res) -> {
-                            Multi.from(req.content()).subscribe((DataChunk chunk) -> {
-                                if (req.queryParams().first("release").map(Boolean::valueOf).orElse(true)) {
-                                    chunk.release();
-                                }
-                            }, (Throwable ex) -> {
-                                LOGGER.log(Level.WARNING,
-                                        "Encountered an exception!", ex);
-                                res.status(500)
-                                        .send("Error: " + ex.getMessage());
-                            }, () -> {
-                                res.send("Finished");
-                            }, (Subscription subscription) -> {
-                                subscription.request(Long.MAX_VALUE);
-                            });
-                        })
-                        .post("/string", Handler.create(String.class, (req, res, s) -> {
-                            assertAgainstPrefixQueryParam(req, s);
-                            res.send("Finished");
-                        }))
-                        .post("/bytes", Handler.create(byte[].class, (req, res, b) -> {
-                            assertAgainstPrefixQueryParam(req, new String(b));
-                            res.send("Finished");
-                        }))
-                        .post("/bytes_deferred", (req, res) -> {
-                            Executors.newSingleThreadExecutor().submit(() -> {
-                                req.content().as(byte[].class).thenAccept(bytes -> {
-                                    assertAgainstPrefixQueryParam(req, new String(bytes));
-                                    res.send("Finished");
-                                }).exceptionally(t -> {
-                                    req.next(t);
-                                    return null;
-                                });
-                            });
-                        })
-                        .post("/input_stream", Handler.create(InputStream.class, (req, res, stream) -> {
-                            Executors.newSingleThreadExecutor().submit(() -> {
-                                try {
-                                    LOGGER.info("Consuming data from input stream!");
-                                    assertAgainstPrefixQueryParam(req,
-                                            new String(stream.readAllBytes()));
-                                    res.send("Finished");
-                                } catch (IOException e) {
-                                    req.next(new IllegalStateException("Got an IO error.", e));
-                                }
-                            });
-                        }))
-                        .any("/unconsumed", (req, res) -> res.send("Nothing consumed!"))
-                        .build())
+        webServer = WebServer.builder()
+                .port(port)
+                .routing(Routing.builder()
+                                 .any((req, res) -> {
+                                     req.content().registerFilter(
+                                             (Publisher<DataChunk> publisher) -> Multi.create(publisher).map(chunk -> {
+                                                 if (req.queryParams().first("keep_chunks").map(Boolean::valueOf).orElse(true)) {
+                                                     chunkReference.add(chunk);
+                                                 }
+                                                 return chunk;
+                                             }));
+                                     res.headers().add("Transfer-Encoding", "chunked");
+                                     req.next();
+                                 })
+                                 .post("/subscriber", (req, res) -> {
+                                     Multi.create(req.content()).subscribe((DataChunk chunk) -> {
+                                         if (req.queryParams().first("release").map(Boolean::valueOf).orElse(true)) {
+                                             chunk.release();
+                                         }
+                                     }, (Throwable ex) -> {
+                                         LOGGER.log(Level.WARNING,
+                                                    "Encountered an exception!", ex);
+                                         res.status(500)
+                                                 .send("Error: " + ex.getMessage());
+                                     }, () -> {
+                                         res.send("Finished");
+                                     }, (Subscription subscription) -> {
+                                         subscription.request(Long.MAX_VALUE);
+                                     });
+                                 })
+                                 .post("/string", Handler.create(String.class, (req, res, s) -> {
+                                     assertAgainstPrefixQueryParam(req, s);
+                                     res.send("Finished");
+                                 }))
+                                 .post("/bytes", Handler.create(byte[].class, (req, res, b) -> {
+                                     assertAgainstPrefixQueryParam(req, new String(b));
+                                     res.send("Finished");
+                                 }))
+                                 .post("/bytes_deferred", (req, res) -> {
+                                     Executors.newSingleThreadExecutor().submit(() -> {
+                                         req.content().as(byte[].class).thenAccept(bytes -> {
+                                             assertAgainstPrefixQueryParam(req, new String(bytes));
+                                             res.send("Finished");
+                                         }).exceptionally(t -> {
+                                             req.next(t);
+                                             return null;
+                                         });
+                                     });
+                                 })
+                                 .post("/input_stream", Handler.create(InputStream.class, (req, res, stream) -> {
+                                     Executors.newSingleThreadExecutor().submit(() -> {
+                                         try {
+                                             LOGGER.info("Consuming data from input stream!");
+                                             assertAgainstPrefixQueryParam(req,
+                                                                           new String(stream.readAllBytes()));
+                                             res.send("Finished");
+                                         } catch (IOException e) {
+                                             req.next(new IllegalStateException("Got an IO error.", e));
+                                         }
+                                     });
+                                 }))
+                                 .any("/unconsumed", (req, res) -> res.send("Nothing consumed!"))
+                                 .build())
+                .build()
                 .start()
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);

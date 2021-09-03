@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
@@ -33,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * The Jersey Client based example that tests the {@link HelloWorld} resource
- * that gets served by running {@link Main#startServer(ServerConfiguration)}
+ * that gets served by running {@link Main#startServer(int)}
  *
  * @see HelloWorld
  * @see Main
@@ -44,7 +43,7 @@ public class HelloWorldTest {
 
     @BeforeAll
     public static void startTheServer() throws Exception {
-        webServer = Main.startServer(null)
+        webServer = Main.startServer(0)
                                        .toCompletableFuture()
                                        .get(10, TimeUnit.SECONDS);
     }
@@ -61,12 +60,10 @@ public class HelloWorldTest {
     @Test
     public void testHelloWorld() throws Exception {
         Client client = ClientBuilder.newClient();
-        try {
-            Response response = client.target("http://localhost:" + webServer.port())
+        try (Response response = client.target("http://localhost:" + webServer.port())
                                       .path("jersey/hello")
                                       .request()
-                                      .get();
-
+                                      .get()) {
             assertEquals("Hello World!", response.readEntity(String.class),
                     "Unexpected response; status: " + response.getStatus());
         } finally {

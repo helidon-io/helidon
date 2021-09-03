@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,18 +39,20 @@ import javax.enterprise.inject.spi.Extension;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.grpc.server.GrpcService;
+import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.InProcessGrpcChannel;
-import io.helidon.microprofile.grpc.core.RpcService;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpContext;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
 
 import io.grpc.BindableService;
 import io.grpc.Channel;
 import io.grpc.inprocess.InProcessChannelBuilder;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
  * A CDI extension that will start the {@link GrpcServer gRPC server}.
@@ -73,7 +75,7 @@ public class GrpcServerCdiExtension
     private void startServer(@Observes @Initialized(ApplicationScoped.class) Object event, BeanManager beanManager) {
         GrpcRouting.Builder routingBuilder = discoverGrpcRouting(beanManager);
 
-        Config config = resolveConfig(beanManager);
+        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
         GrpcServerConfiguration.Builder serverConfiguration = GrpcServerConfiguration.builder(config.get("grpc"));
         CompletableFuture<GrpcServer> startedFuture = new CompletableFuture<>();
         CompletableFuture<GrpcServer> shutdownFuture = new CompletableFuture<>();
@@ -130,26 +132,6 @@ public class GrpcServerCdiExtension
     }
 
     /**
-     * Resolve the Helidon configuration to use.
-     * <p>
-     * The a bean of type {@link Config} is resolvable then that
-     * bean will be used for the configuration otherwise a new
-     * configuration will be created using {@link Config#create()}.
-     *
-     * @param beanManager  the {@link BeanManager} to use to resolve the config bean
-     *
-     * @return  the {@link Config} to use
-     */
-    private Config resolveConfig(BeanManager beanManager) {
-        Instance<Config> instance = beanManager.createInstance().select(Config.class);
-        if (instance.isResolvable()) {
-            return instance.get();
-        } else {
-            return Config.create();
-        }
-    }
-
-    /**
      * Discover the services and interceptors to use to configure the
      * {@link GrpcRouting}.
      *
@@ -161,11 +143,11 @@ public class GrpcServerCdiExtension
         Instance<Object> instance = beanManager.createInstance();
         GrpcRouting.Builder builder = GrpcRouting.builder();
 
-        // discover @RpcService annotated beans
+        // discover @Grpc annotated beans
         // we use the bean manager to do this as we need the actual bean class
         beanManager.getBeans(Object.class, Any.Literal.INSTANCE)
                 .stream()
-                .filter(this::hasRpcServiceQualifier)
+                .filter(this::hasGrpcQualifier)
                 .forEach(bean -> {
                     Class<?> beanClass = bean.getBeanClass();
                     Annotation[] qualifiers = bean.getQualifiers().toArray(new Annotation[0]);
@@ -194,10 +176,10 @@ public class GrpcServerCdiExtension
         return builder;
     }
 
-    private boolean hasRpcServiceQualifier(Bean<?> bean) {
+    private boolean hasGrpcQualifier(Bean<?> bean) {
         return bean.getQualifiers()
                 .stream()
-                .anyMatch(q -> RpcService.class.isAssignableFrom(q.annotationType()));
+                .anyMatch(q -> Grpc.class.isAssignableFrom(q.annotationType()));
     }
 
     /**

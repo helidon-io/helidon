@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,8 +56,6 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.security.SecurityCdiExtension;
@@ -80,10 +78,6 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  * JWT Authentication CDI extension class.
  */
 public class JwtAuthCdiExtension implements Extension {
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "Security", "MP", "JWT-Auth");
-    }
-
     private final List<ClaimIP> qualifiers = new LinkedList<>();
     private Config config;
 
@@ -177,8 +171,7 @@ public class JwtAuthCdiExtension implements Extension {
         boolean notNeeded = jaxrs.applicationsToRun()
                 .stream()
                 .map(JaxRsApplication::applicationClass)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .map(clazz -> clazz.getAnnotation(LoginConfig.class))
                 .filter(Objects::nonNull)
                 .map(LoginConfig::authMethod)

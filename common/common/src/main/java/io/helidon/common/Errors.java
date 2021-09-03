@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Errors utility used to file processing messages (e.g. validation, provider, resource building errors, hint).
@@ -154,6 +155,13 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
             return !hasFatal;
         }
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return this.stream()
+                .map(ErrorMessage::toString)
+                .collect(Collectors.joining("\n"));
     }
 
     /**

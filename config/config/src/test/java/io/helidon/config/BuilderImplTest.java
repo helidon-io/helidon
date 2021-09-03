@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,17 @@ package io.helidon.config;
 
 import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Flow;
+import java.util.function.Supplier;
 
+import io.helidon.config.spi.ConfigNode;
+import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_NAME;
-import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_VALUE;
+import static io.helidon.config.ConfigSourceTest.TEST_ENV_VAR_NAME;
+import static io.helidon.config.ConfigSourceTest.TEST_ENV_VAR_VALUE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.eq;
@@ -55,15 +57,15 @@ public class BuilderImplTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableFilterServices()
+                .disableValueResolving()
                 .build();
 
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
-                                          eq(BuilderImpl.ConfigSourceConfiguration.empty()), //ConfigSource
-                                          eq(OverrideSources.empty()), //OverrideSource
+                                          eq(ConfigSourcesRuntime.empty()), //ConfigSource
+                                          eq(OverrideSourceRuntime.empty()), //OverrideSource
                                           eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
-                                          eq(BuilderImpl.DEFAULT_CHANGES_EXECUTOR), //changesExecutor
-                                          eq(Flow.defaultBufferSize()), //changesMaxBuffer
+                                          notNull(), //changesExecutor
                                           eq(true), //keyResolving
                                           isNull() //aliasGenerator
         );
@@ -74,21 +76,20 @@ public class BuilderImplTest {
         Executor myExecutor = Runnable::run;
         Config.Builder builder = Config.builder()
                 .sources(ConfigSources.empty())
+                .disableValueResolving()
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableFilterServices()
-                .changesExecutor(myExecutor)
-                .changesMaxBuffer(1);
+                .changesExecutor(myExecutor);
         BuilderImpl spyBuilder = spy((BuilderImpl) builder);
         spyBuilder.build();
 
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
-                                          eq(BuilderImpl.ConfigSourceConfiguration.empty()), //ConfigSource
-                                          eq(OverrideSources.empty()), //OverrideSource
+                                          eq(ConfigSourcesRuntime.empty()), //ConfigSource
+                                          eq(OverrideSourceRuntime.empty()), //OverrideSource
                                           eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
-                                          eq(1), //changesMaxBuffer
                                           eq(true), //keyResolving
                                           isNull() //aliasGenerator
         );
@@ -104,18 +105,16 @@ public class BuilderImplTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableFilterServices()
-                .changesExecutor(myExecutor)
-                .changesMaxBuffer(1);
+                .changesExecutor(myExecutor);
         BuilderImpl spyBuilder = spy((BuilderImpl) builder);
         spyBuilder.build();
 
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
-                                          eq(BuilderImpl.ConfigSourceConfiguration.empty()), //ConfigSource
-                                          eq(OverrideSources.empty()), //OverrideSource
+                                          eq(ConfigSourcesRuntime.empty()), //ConfigSource
+                                          eq(OverrideSourceRuntime.empty()), //OverrideSource
                                           eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
-                                          eq(1), //changesMaxBuffer
                                           eq(false), //keyResolving
                                           isNull() //aliasGenerator
         );
@@ -129,7 +128,7 @@ public class BuilderImplTest {
         System.setProperty(TEST_ENV_VAR_NAME, expected);
 
         Config config = Config.builder()
-                .sources(CompositeConfigSourceTest.initBuilder().build())
+                .sources(sources())
                 .build();
 
         assertThat(config.get("prop1").asString().get(), is("source-1"));
@@ -148,7 +147,7 @@ public class BuilderImplTest {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
         Config config = Config.builder()
-                .sources(CompositeConfigSourceTest.initBuilder().build())
+                .sources(sources())
                 .disableEnvironmentVariablesSource()
                 .build();
 
@@ -164,7 +163,7 @@ public class BuilderImplTest {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
         Config config = Config.builder()
-                .sources(CompositeConfigSourceTest.initBuilder().build())
+                .sources(sources())
                 .disableSystemPropertiesSource()
                 .build();
 
@@ -180,7 +179,7 @@ public class BuilderImplTest {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
         Config config = Config.builder()
-                .sources(CompositeConfigSourceTest.initBuilder().build())
+                .sources(sources())
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
                 .build();
@@ -192,4 +191,18 @@ public class BuilderImplTest {
         assertThat(config.get(TEST_ENV_VAR_NAME).type(), is(Config.Type.MISSING));
     }
 
+    static List<Supplier<? extends ConfigSource>> sources() {
+        return List.of(
+                ConfigSources.create(ConfigNode.ObjectNode.builder()
+                                             .addValue("prop1", "source-1")
+                                             .build()),
+                ConfigSources.create(ConfigNode.ObjectNode.builder()
+                                             .addValue("prop1", "source-2")
+                                             .addValue("prop2", "source-2")
+                                             .build()),
+                ConfigSources.create(ConfigNode.ObjectNode.builder()
+                                             .addValue("prop1", "source-3")
+                                             .addValue("prop3", "source-3")
+                                             .build()));
+    }
 }

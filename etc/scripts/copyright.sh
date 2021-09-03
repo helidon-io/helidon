@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/bash -e
 #
-# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,58 +15,29 @@
 # limitations under the License.
 #
 
-set -o pipefail || true  # trace ERR through pipes
-set -o errtrace || true # trace ERR through commands and functions
-set -o errexit || true  # exit the script if any statement returns a non-true return value
-
-on_error(){
-    CODE="${?}" && \
-    set +x && \
-    printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-        "${CODE}" "${BASH_SOURCE}" "${LINENO}" "${BASH_COMMAND}"
-}
-trap on_error ERR
-
 # Path to this script
-if [ -h "${0}" ] ; then
-  readonly SCRIPT_PATH="$(readlink "${0}")"
-else
-  readonly SCRIPT_PATH="${0}"
-fi
+[ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
 
-# Path to the root of the workspace
-readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+# Load pipeline environment setup and define WS_DIR
+. $(dirname -- "${SCRIPT_PATH}")/includes/pipeline-env.sh "${SCRIPT_PATH}" '../..'
+
+# Setup error handling using default settings (defined in includes/error_handlers.sh)
+error_trap_setup
+
+readonly LOG_FILE=$(mktemp -t XXXcopyright-log)
 
 readonly RESULT_FILE=$(mktemp -t XXXcopyright-result)
 
-source ${WS_DIR}/etc/scripts/pipeline-env.sh
+die() { echo "${1}" ; exit 1 ;}
 
-die(){ echo "${1}" ; exit 1 ;}
-
-if [ "${WERCKER}" = "true" ] ; then
-    # Workaround!!
-    # Wercker clones the workspace like:
-    # git clone --depth=50 --quiet --progress --no-single-branch
-    # The --depth option screws up git history, causing the
-    # copyright plugin to incorrectly detect when files have been
-    # modified.
-    # This fetch restores the history. Since we don't have ssh keys
-    # when in wercker we need to convert the repo URL to http first
-    readonly GIT_REMOTE=$(git config --get remote.origin.url | \
-                          sed s,'git@github.com:','https://github.com/',g)
-
-    git remote add origin-https "${GIT_REMOTE}" > /dev/null 2>&1 || \
-    git remote set-url origin-https "${GIT_REMOTE}"
-
-    git fetch --unshallow origin-https
-fi
-
-mvn -q org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
+mvn ${MAVEN_ARGS} \
         -f ${WS_DIR}/pom.xml \
-        -Dcopyright.exclude=${WS_DIR}/etc/copyright-exclude.txt \
-        -Dcopyright.template=${WS_DIR}/etc/copyright.txt \
-        -Dcopyright.scm=git \
-        -Pexamples,docs,ossrh-releases,tests > ${RESULT_FILE} || die "Error running the Maven command"
+        -Dhelidon.enforcer.output.file="${RESULT_FILE}" \
+        -Dhelidon.enforcer.rules=copyright \
+        -Dhelidon.enforcer.failOnError=false \
+        -Pcopyright \
+        -N \
+        validate > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
 
-grep -i "copyright" ${RESULT_FILE} \
+grep "^\[ERROR\]" ${RESULT_FILE} \
     && die "COPYRIGHT ERROR" || echo "COPYRIGHT OK"

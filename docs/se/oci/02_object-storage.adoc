@@ -1,0 +1,258 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/oci
+
+= OCI Object Storage
+:h1Prefix: SE
+:description: Helidon OCI Object Storage integration
+:keywords: oci, objectstorage
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: OCI Object Storage
+
+The Helidon SE OCI Object Storage integration provides a reactive API to files stored in Oracle cloud.
+
+== Experimental
+
+WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+        <dependency>
+            <groupId>io.helidon.integrations.oci</groupId>
+            <artifactId>helidon-integrations-oci-objectstorage</artifactId>
+        </dependency>
+----
+
+
+== Setting up the Object Storage
+
+
+In order to use the OCI Object Storage integration, the following setup should be made:
+
+[source,java]
+----
+Config ociConfig = config.get("oci");
+
+OciObjectStorageRx ociObjectStorage = OciObjectStorageRx.create(ociConfig);
+----
+
+Current configuration requires `~/.oci/config` to be available in the home folder. This configuration file can be downloaded from OCI.
+
+`Routing` should be added to the `WebServer`, in our case pointing to `/file`:
+
+[source,java]
+----
+String bucketName = ociConfig.get("objectstorage").get("bucket").asString().get();
+
+        WebServer.builder()
+                .config(config.get("server"))
+                .routing(Routing.builder()
+                                 .register("/files", new ObjectStorageService(ociObjectStorage, bucketName)))
+                .build()
+                .start()
+                .await()
+----
+
+Additionally, in `application.yaml` OCI properties should be specified:
+
+[source,yaml]
+----
+oci:
+    properties:
+      compartment-ocid: "ocid<1>tenancy.oc<1>.<..>"
+      objectstorage-namespace: "<...>"
+      objectstorage-bucket: "<...>"
+
+----
+
+The exact values are available in OCI object storage and bucket properties.
+
+image::oci/ocibucket.png[OCI Bucket, align="center"]
+
+== Using the Object Storage
+
+In the Service we must specify the mapping for CRUD operations with the files and their handlers:
+
+[source,java]
+----
+@Override
+public void update(Routing.Rules rules) {
+    rules.get("/file/{file-name}", this::download)
+            .post("/file/{file-name}", this::upload)
+            .delete("/file/{file-name}", this::delete)
+            .get("/rename/{old-name}/{new-name}", this::rename);
+}
+----
+
+===  Upload file
+
+To upload a file to OCI Object Storage using the `PUT` method:
+
+[source,java]
+----
+private void upload(ServerRequest req, ServerResponse res) {
+    OptionalLong contentLength = req.headers().contentLength();
+    if (contentLength.isEmpty()) {
+        req.content().forEach(DataChunk::release);
+        res.status(Http.Status.BAD_REQUEST_400).send("Content length must be defined");
+        return;
+    }
+
+    String objectName = req.path().param("file-name");
+
+    PutObject.Request request = PutObject.Request.builder() <1>
+            .objectName(objectName)
+            .bucket(bucketName)
+            .contentLength(contentLength.getAsLong());
+
+    req.headers().contentType().ifPresent(request::requestMediaType); <2>
+
+    objectStorage.putObject(request,
+                            req.content())
+            .forSingle(response -> res.send(response.requestId())) <3>
+            .exceptionally(res::send);
+}
+----
+
+<1> Create the `Request` using `PutObject.Request.builder()`
+<2> Define `MediaType`
+<3> Execute the request to OCI in asynchronous way and put the result in `response` object
+
+=== Download file
+
+To download a file from OCI Object Storage using the `GET` method:
+
+[source,java]
+----
+private void download(ServerRequest req, ServerResponse res) {
+    String objectName = req.path().param("file-name");
+
+    objectStorage.getObject(GetObject.Request.builder()
+                                    .bucket(bucketName)
+                                    .objectName(objectName)) <1>
+            .forSingle(apiResponse -> {
+                Optional<GetObjectRx.Response> entity = apiResponse.entity(); <2>
+                if (entity.isEmpty()) {
+                    res.status(Http.Status.NOT_FOUND_404).send(); <3>
+                } else {
+                    GetObjectRx.Response response = entity.get();
+                    // copy the content length header to response
+                    apiResponse.headers()
+                            .first(Http.Header.CONTENT_LENGTH)
+                            .ifPresent(res.headers()::add);
+                    res.send(response.publisher()); <4>
+                }
+            })
+            .exceptionally(res::send);
+}
+----
+
+<1> Use `getObject` function to make asynchronous request to OCI Object Storage
+<2> The result is of type `Optional`
+<3> Whenever the result is empty, return status `404`
+<4> Get the response, set headers and return the result as a `Publisher`
+
+=== Rename file
+
+To rename an existing file in the OCI bucket, submit a `GET` method with two parameters:
+
+[source,java]
+----
+private void rename(ServerRequest req, ServerResponse res) {
+    String oldName = req.path().param("old-name");
+    String newName = req.path().param("new-name");
+
+    objectStorage.renameObject(RenameObject.Request.builder()
+                                       .bucket(bucketName)
+                                       .objectName(oldName)
+                                       .newObjectName(newName)) <1>
+            .forSingle(it -> res.send("Renamed to " + newName)) <2>
+            .exceptionally(res::send);
+}
+----
+
+<1> Use `renameObject` function and configure a `RenameObject.Request.builder()` to submit the rename request
+<2> The request is made in asynchronous way; a `Single` is returned
+
+
+=== Delete file
+
+Finally, to delete a file, `DELETE` request should be used:
+
+[source,java]
+----
+private void delete(ServerRequest req, ServerResponse res) {
+    String objectName = req.path().param("file-name");
+
+    objectStorage.deleteObject(DeleteObject.Request.builder()
+                                       .bucket(bucketName)
+                                       .objectName(objectName)) <1>
+            .forSingle(response -> res.status(response.status()).send())
+            .exceptionally(res::send);
+}
+----
+
+<1> Use `deleteObject` function and configure a `DeleteObject.Request.builder()` to submit the delete request
+<2> The request is made in asynchronous way; a `Single` is returned
+
+== Object Storage Health Check
+
+If your Helidon application depends on Object Storage accessibility, you may consider setting
+up a health check to verify connectivity with an OCI bucket. To do so, first add the following
+dependency in your pom file:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.oci</groupId>
+    <artifactId>helidon-integrations-oci-objectstorage-health</artifactId>
+</dependency>
+----
+
+In order to register the new health check in Helidon SE, create an instance of `HealthSupport`
+and configure it as shown next:
+
+[source,java]
+----
+HealthSupport health = HealthSupport.builder()
+    .addLiveness(OciObjectStorageHealthCheck.builder()
+                                            .ociObjectStorage(ociObjectStorage)
+                                            .bucket(bucketName)
+                                            .namespace(namespace)
+                                            .build())
+    .build();
+----
+
+where `ociObjectStorage`, `bucketName` and `namespace` are as required for any other
+Object Storage access. Finally, include your newly created `HealthSupport` object
+as part of your application's routing:
+
+[source,java]
+----
+Routing routing = Routing.builder()
+                         .register(health)
+                         // other routes here
+                         .build();
+----
+
+When executed, this health check will _ping_ the bucket to make sure it is accessible in your
+environment. For more information about health checks see <<se/health/01_health.adoc,
+Health Checks>>.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,17 @@ import java.util.function.Supplier;
 import io.helidon.config.Config;
 
 /**
- * Generic cache with eviction and max size.
+ * Generic cache with eviction support.
+ * Default implementation is backed by {@link java.util.concurrent.ConcurrentHashMap} and provides
+ * configuration to set this map up, as can be done through {@link #builder()}, and {@link #create(io.helidon.config.Config)}.
+ *
+ * Cache timeouts:
+ * <ul>
+ *     <li>{@link io.helidon.security.providers.common.EvictableCache.Builder#overallTimeout(long, java.util.concurrent.TimeUnit)}
+ *      defines the timeout of record since its creation</li>
+ *     <li>{@link io.helidon.security.providers.common.EvictableCache.Builder#timeout(long, java.util.concurrent.TimeUnit)}
+ *      defines the timeout of record since last use (a sliding timeout)</li>
+ * </ul>
  *
  * @param <K> type of keys in this cache
  * @param <V> type of values in this cache
@@ -34,28 +44,38 @@ import io.helidon.config.Config;
 public interface EvictableCache<K, V> {
     /**
      * Default timeout of records in minutes (inactivity timeout).
+     * Default values are valid for default implementation, custom implementations
+     * may not support such features.
      */
     long CACHE_TIMEOUT_MINUTES = 60;
     /**
      * Default eviction period in minutes (how often to evict records).
+     * Default values are valid for default implementation, custom implementations
+     * may not support such features.
      */
     long CACHE_EVICT_PERIOD_MINUTES = 5;
     /**
      * Default eviction delay in minutes (how long to wait after the cache is started).
+     * Default values are valid for default implementation, custom implementations
+     * may not support such features.
      */
     long CACHE_EVICT_DELAY_MINUTES = 1;
     /**
      * Maximal number of records in the cache.
      * If the cache is full, no caching is done and the supplier of value is called for every uncached value.
+     * Default values are valid for default implementation, custom implementations
+     * may not support such features.
      */
     long CACHE_MAX_SIZE = 100_000;
     /**
      * Parameter to {@link ConcurrentHashMap#forEachKey(long, Consumer)} used for eviction.
+     * Default values are valid for default implementation, custom implementations
+     * may not support such features.
      */
     long EVICT_PARALLELISM_THRESHOLD = 10000;
 
     /**
-     * Create a new builder for a cache.
+     * Create a new builder for a cache that uses the default implementation.
      *
      * @param <K> type of keys in the cache
      * @param <V> type of values in the cache
@@ -66,7 +86,7 @@ public interface EvictableCache<K, V> {
     }
 
     /**
-     * Create a new cache with default values.
+     * Create a new cache with default values using the default implementation.
      *
      * @param <K> type of keys in the cache
      * @param <V> type of values in the cache
@@ -80,6 +100,7 @@ public interface EvictableCache<K, V> {
     /**
      * Create a new cache and configure it from the provided configuration.
      * See {@link Builder#config(Config)} for the list of configuration keys.
+     * This will use the default implementation.
      *
      * @param config config to read configuration of this cache from
      * @param <K>    type of keys in the cache
@@ -129,8 +150,9 @@ public interface EvictableCache<K, V> {
 
     /**
      * Current size of the cache.
-     * As this cache is using {@link ConcurrentHashMap} as backing store, be aware that this value is not
-     * guaranteed to be consistent, as puts and removed may be happening in parallel.
+     *
+     * This value may not represent exact current size, as the implementation is expected to be thread safe and
+     * accessed from multiple threads, that may change the size in parallel.
      *
      * @return current size of the cache (including valid and invalid - not yet evicted - values)
      */
@@ -157,7 +179,8 @@ public interface EvictableCache<K, V> {
     }
 
     /**
-     * Builder to create instances of {@link EvictableCache}.
+     * Builder to create instances of {@link EvictableCache} using the default implementation backed by
+     * a {@link java.util.concurrent.ConcurrentHashMap}.
      *
      * @param <K> types of keys used in the cache
      * @param <V> types of values used in the cache
@@ -165,8 +188,10 @@ public interface EvictableCache<K, V> {
     class Builder<K, V> implements io.helidon.common.Builder<EvictableCache<K, V>> {
         private boolean cacheEnabled = true;
         private long cacheTimeout = CACHE_TIMEOUT_MINUTES;
-        private long cacheMaxSize = CACHE_MAX_SIZE;
         private TimeUnit cacheTimeoutUnit = TimeUnit.MINUTES;
+        private long overallTimeout = CACHE_TIMEOUT_MINUTES;
+        private TimeUnit overallTimeoutUnit = TimeUnit.MINUTES;
+        private long cacheMaxSize = CACHE_MAX_SIZE;
         private long cacheEvictDelay = CACHE_EVICT_DELAY_MINUTES;
         private long cacheEvictPeriod = CACHE_EVICT_PERIOD_MINUTES;
         private TimeUnit cacheEvictTimeUnit = TimeUnit.MINUTES;
@@ -188,7 +213,7 @@ public interface EvictableCache<K, V> {
         }
 
         /**
-         * Configure record timeout since last modification.
+         * Configure record timeout since last access.
          *
          * @param timeout     timeout value
          * @param timeoutUnit timeout unit
@@ -197,6 +222,19 @@ public interface EvictableCache<K, V> {
         public Builder<K, V> timeout(long timeout, TimeUnit timeoutUnit) {
             this.cacheTimeout = timeout;
             this.cacheTimeoutUnit = timeoutUnit;
+            return this;
+        }
+
+        /**
+         * Configure record timeout since its creation.
+         *
+         * @param timeout timeout value
+         * @param timeoutUnit timeout unit
+         * @return updated builder instance
+         */
+        public Builder<K, V> overallTimeout(long timeout, TimeUnit timeoutUnit) {
+            this.overallTimeout = timeout;
+            this.overallTimeoutUnit = timeoutUnit;
             return this;
         }
 
@@ -289,7 +327,10 @@ public interface EvictableCache<K, V> {
         public Builder<K, V> config(Config config) {
             config.get("cache-enabled").asBoolean().ifPresent(this::cacheEnabled);
             if (cacheEnabled) {
+                config.get("max-size").asInt().ifPresent(this::maxSize);
                 config.get("cache-timeout-millis").asLong().ifPresent(timeout -> timeout(timeout, TimeUnit.MILLISECONDS));
+                config.get("cache-overall-timeout-millis").asLong()
+                        .ifPresent(timeout -> overallTimeout(timeout, TimeUnit.MILLISECONDS));
                 long evictDelay = config.get("cache-evict-delay-millis").asLong()
                         .orElse(cacheEvictTimeUnit.toMillis(cacheEvictDelay));
                 long evictPeriod = config.get("cache-evict-period-millis").asLong()
@@ -319,12 +360,20 @@ public interface EvictableCache<K, V> {
             return cacheTimeout;
         }
 
-        long cacheMaxSize() {
-            return cacheMaxSize;
-        }
-
         TimeUnit cacheTimeoutUnit() {
             return cacheTimeoutUnit;
+        }
+
+        long overallTimeout() {
+            return overallTimeout;
+        }
+
+        TimeUnit overallTimeoutUnit() {
+            return overallTimeoutUnit;
+        }
+
+        long cacheMaxSize() {
+            return cacheMaxSize;
         }
 
         long cacheEvictDelay() {

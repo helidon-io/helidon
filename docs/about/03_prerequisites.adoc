@@ -1,0 +1,74 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Get Started
+:description: Helidon pre-requisites and getting started
+:keywords: helidon
+
+Everything you need to get started with Helidon is listed here.
+
+== Prerequisites
+
+Helidon requires Java 11 (or newer) and Maven. You need Docker if you
+want to build and deploy Docker containers. If you want to
+deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can
+<<about/05_kubernetes.adoc,install one on your desktop>>).
+
+[role="flex, sm7"]
+|=======
+|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}11] (http://jdk.java.net[Open{nbsp}JDK{nbsp}11]) or newer
+|https://maven.apache.org/download.cgi[Maven 3.6.1+]
+|https://docs.docker.com/install/[Docker 18.09+]
+|https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.16.5+]
+|=======
+
+
+[source,bash]
+.Verify Prerequisites
+----
+java -version
+mvn --version
+docker --version
+kubectl version --short
+----
+
+== Setting JAVA_HOME
+
+[source,bash]
+.Setting JAVA_HOME
+----
+# On Mac
+export JAVA_HOME=`/usr/libexec/java_home -v 11`
+
+# On Linux
+# Use the appropriate path to your JDK
+export JAVA_HOME=/usr/lib/jvm/jdk-11
+----
+
+== Try the Quickstart Examples
+
+Now you are ready to try the Quickstart Examples:
+
+1. <<mp/guides/02_quickstart.adoc,Helidon MP Quickstart Example>>
+2. <<se/guides/02_quickstart.adoc,Helidon SE Quickstart Example>>
+
+TIP: See <<about/02_introduction.adoc,About Helidon>>
+for more information on the differences between Helidon MP and SE.
+
+TIP: See <<about/04_windows.adoc,Helidon on Windows>>
+for some tips on using Helidon on Windows.

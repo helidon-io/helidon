@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,59 +19,37 @@ package io.helidon.microprofile.health;
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.json.Json;
 import javax.json.JsonObject;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 
-import io.helidon.microprofile.server.Server;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import org.eclipse.microprofile.health.Health;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.glassfish.jersey.client.ClientProperties;
-import org.glassfish.jersey.logging.LoggingFeature;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.eclipse.microprofile.health.Liveness;
+import org.eclipse.microprofile.health.Readiness;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-
+@HelidonTest
+@AddBean(HealthMpServiceIT.HealthCheckOne.class)
+@AddBean(HealthMpServiceIT.HealthCheckTwo.class)
+@AddBean(HealthMpServiceIT.HealthCheckBad.class)
 public class HealthMpServiceIT {
 
-    private static final Logger LOGGER = Logger.getLogger(HealthMpServiceIT.class.getName());
-
-    private static Server server;
-
-    private static Client client;
-
-    @BeforeAll
-    public static void startServer() throws Exception {
-        LogManager.getLogManager().readConfiguration(HealthMpServiceIT.class.getResourceAsStream("/logging.properties"));
-
-        server = Server.create().start();
-
-        client = ClientBuilder.newBuilder()
-                .register(new LoggingFeature(LOGGER, Level.WARNING, LoggingFeature.Verbosity.PAYLOAD_ANY, 500))
-                .property(ClientProperties.FOLLOW_REDIRECTS, true)
-                .build();
-    }
-
-    @AfterAll
-    public static void stopServer() {
-        if (server != null) {
-            server.stop();
-        }
-    }
+    @Inject
+    private WebTarget webTarget;
 
     /**
      * Verify that the {@link HealthCheck} CDI beans (inner classes below)
@@ -104,12 +82,14 @@ public class HealthMpServiceIT {
     @Test
     public void shouldAddProvidedHealthChecks() {
         JsonObject json = getHealthJson();
-        assertThat(healthCheckExists(json, "Three"), is(true));
-        assertThat(healthCheckExists(json, "Four"), is(true));
-        assertThat(healthCheckExists(json, "Five"), is(true));
-        assertThat(healthCheckExists(json, "Six"), is(true));
-    }
+        Assertions.assertAll(
+                () -> assertThat("Three exists", healthCheckExists(json, "Three"), is(true)),
+                () -> assertThat("Four exists", healthCheckExists(json, "Four"), is(true)),
+                () -> assertThat("Five exists", healthCheckExists(json, "Five"), is(true)),
+                () -> assertThat("Six exists", healthCheckExists(json, "Six"), is(true))
+        );
 
+    }
 
     private boolean healthCheckExists(JsonObject json, String name) {
         return json.getJsonArray("checks")
@@ -120,7 +100,7 @@ public class HealthMpServiceIT {
 
     private JsonObject getHealthJson() {
         // request the application metrics in json format from the web server
-        String health = client.target("http://localhost:" + server.port())
+        String health = webTarget
                 .path("health")
                 .request()
                 .accept(MediaType.APPLICATION_JSON)
@@ -136,8 +116,7 @@ public class HealthMpServiceIT {
      * A test {@link HealthCheck} bean that should be discovered
      * by CDI and added to the health check endpoint.
      */
-    @Health
-    @ApplicationScoped
+    @Readiness
     public static class HealthCheckOne
             implements HealthCheck {
 
@@ -151,8 +130,7 @@ public class HealthMpServiceIT {
      * A test {@link HealthCheck} bean that should be discovered
      * by CDI and added to the health check endpoint.
      */
-    @Health
-    @ApplicationScoped
+    @Liveness
     public static class HealthCheckTwo
             implements HealthCheck {
 
@@ -184,7 +162,7 @@ public class HealthMpServiceIT {
     public static class HealthCheckProviderOne
             implements HealthCheckProvider {
         @Override
-        public List<HealthCheck> healthChecks() {
+        public List<HealthCheck> livenessChecks() {
             return Arrays.asList(
                     new HealthCheckStub("Three"),
                     new HealthCheckStub("Four"));
@@ -199,7 +177,7 @@ public class HealthMpServiceIT {
     public static class HealthCheckProviderTwo
             implements HealthCheckProvider {
         @Override
-        public List<HealthCheck> healthChecks() {
+        public List<HealthCheck> livenessChecks() {
             return Arrays.asList(
                     new HealthCheckStub("Five"),
                     new HealthCheckStub("Six"));

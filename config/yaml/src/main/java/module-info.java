@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import io.helidon.config.yaml.YamlConfigParser;
 
 /**
  * YAML Parser implementation.
@@ -28,6 +30,5 @@ module io.helidon.config.yaml {
 
     exports io.helidon.config.yaml;
 
-    provides io.helidon.config.spi.ConfigParser with io.helidon.config.yaml.internal.YamlConfigParser;
-
+    provides io.helidon.config.spi.ConfigParser with YamlConfigParser;
 }

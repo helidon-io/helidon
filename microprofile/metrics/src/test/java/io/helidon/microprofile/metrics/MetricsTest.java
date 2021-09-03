@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,17 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.nio.file.Watchable;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -24,22 +35,35 @@ import io.helidon.metrics.MetricsSupport;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Timer;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.number.OrderingComparison.greaterThan;
+import static org.hamcrest.number.OrderingComparison.lessThan;
 
 /**
  * Class MetricsTest.
  */
 public class MetricsTest extends MetricsBaseTest {
+
+    private static final String PERF_TEST_PROP_PREFIX = "helidon.microprofile.metrics.perfTest.";
+    private static final int PERF_TEST_COUNT = Integer.getInteger(PERF_TEST_PROP_PREFIX + "count", 10000);
+    private static final long PERF_TEST_FAILURE_THRESHOLD_NS = Integer.getInteger(
+            PERF_TEST_PROP_PREFIX + ".failureThresholdNS", 200 * 1000 * 1000); // roughly double informal expc
 
     @Test
     public void testCounted1() {
@@ -50,47 +74,86 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testCounted2() {
+    public void testCounted3() {
         CountedBean bean = newBean(CountedBean.class);
-        IntStream.range(0, 10).forEach(i -> bean.method2());
-        Counter counter = getMetric(bean, "method1");
-        assertThat(counter.getCount(), is(10L));
+        IntStream.range(0, 8).forEach(i -> bean.method3());
+        Counter counter = getMetric(bean, "method3");
+        assertThat(counter.getCount(), is(8L));
+    }
+
+
+
+    @Test
+    @DisabledIfSystemProperty(named = PERF_TEST_PROP_PREFIX + "enabled", matches = "false")
+    public void testCounted2Perf() {
+        /*
+         * Informal experience shows that, without the performance fix in MetricsInterceptorBase, this test measures more than 1 s
+         *  to perform 10000 intercepted calls to the bean. With the fix, the time is around .06-.08 seconds.
+         */
+        CountedBean bean = newBean(CountedBean.class);
+        long start = System.nanoTime();
+        IntStream.range(0, PERF_TEST_COUNT).forEach(i -> bean.method2());
+        long end = System.nanoTime();
+        Counter counter = getMetric(bean, "method2");
+        System.err.printf("Elapsed time for test (ms): %f%n", (end - start) / 1000.0 / 1000.0);
+        assertThat(counter.getCount(), is((long) PERF_TEST_COUNT));
+        assertThat(String.format("Elapsed time of %d tests (ms)", PERF_TEST_COUNT),
+                (end - start) / 1000.0 / 1000.0,
+                is(lessThan(PERF_TEST_FAILURE_THRESHOLD_NS / 1000.0 / 1000.0)));
     }
 
     @Test
     public void testMetered1() {
         MeteredBean bean = newBean(MeteredBean.class);
-        IntStream.range(0, 10).forEach(i -> bean.method1());
+        IntStream.range(0, 9).forEach(i -> bean.method1());
         Meter meter = getMetric(bean, "method1");
-        assertThat(meter.getCount(), is(10L));
+        assertThat(meter.getCount(), is(9L));
         assertThat(meter.getMeanRate(), is(greaterThan(0.0)));
     }
 
     @Test
     public void testMetered2() {
         MeteredBean bean = newBean(MeteredBean.class);
-        IntStream.range(0, 10).forEach(i -> bean.method2());
+        IntStream.range(0, 12).forEach(i -> bean.method2());
         Meter meter = getMetric(bean, "method2");
-        assertThat(meter.getCount(), is(10L));
+        assertThat(meter.getCount(), is(12L));
         assertThat(meter.getMeanRate(), is(greaterThan(0.0)));
     }
 
     @Test
     public void testTimed1() {
         TimedBean bean = newBean(TimedBean.class);
-        IntStream.range(0, 10).forEach(i -> bean.method1());
+        IntStream.range(0, 11).forEach(i -> bean.method1());
         Timer timer = getMetric(bean, "method1");
-        assertThat(timer.getCount(), is(10L));
+        assertThat(timer.getCount(), is(11L));
         assertThat(timer.getMeanRate(), is(greaterThan(0.0)));
     }
 
     @Test
     public void testTimed2() {
         TimedBean bean = newBean(TimedBean.class);
-        IntStream.range(0, 10).forEach(i -> bean.method2());
+        IntStream.range(0, 14).forEach(i -> bean.method2());
         Timer timer = getMetric(bean, "method2");
-        assertThat(timer.getCount(), is(10L));
+        assertThat(timer.getCount(), is(14L));
         assertThat(timer.getMeanRate(), is(greaterThan(0.0)));
+    }
+
+    @Test
+    public void testSimplyTimed1() {
+        SimplyTimedBean bean = newBean(SimplyTimedBean.class);
+        IntStream.range(0, 7).forEach(i -> bean.method1());
+        SimpleTimer simpleTimer = getMetric(bean, "method1");
+        assertThat(simpleTimer.getCount(), is(7L));
+        assertThat(simpleTimer.getElapsedTime().toNanos(), is(greaterThan(0L)));
+    }
+
+    @Test
+    public void testSimplyTimed2() {
+        SimplyTimedBean bean = newBean(SimplyTimedBean.class);
+        IntStream.range(0, 15).forEach(i -> bean.method2());
+        SimpleTimer simpleTimer = getMetric(bean, "method2");
+        assertThat(simpleTimer.getCount(), is(15L));
+        assertThat(simpleTimer.getElapsedTime().toNanos(), is(greaterThan(0L)));
     }
 
     @Test
@@ -129,7 +192,7 @@ public class MetricsTest extends MetricsBaseTest {
 
         Gauge<Integer> gauge = getMetric(bean, GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME);
         String promData = MetricsSupport.toPrometheusData(
-                new MetricID(GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME), gauge).trim();
+                new MetricID(GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME), gauge, true).trim();
 
         assertThat(promData, containsString("# TYPE application_gaugeForInjectionTest_seconds gauge"));
         assertThat(promData, containsString("\n# HELP application_gaugeForInjectionTest_seconds"));
@@ -142,5 +205,25 @@ public class MetricsTest extends MetricsBaseTest {
         Set<String> gauges =  getMetricRegistry().getGauges()
                 .keySet().stream().map(MetricID::getName).collect(Collectors.toSet());
         assertThat(gauges, CoreMatchers.hasItem("secondsSinceBeginningOfTime"));
+    }
+
+    @Test
+    void testOmittedDisplayName() {
+        MeteredBean bean = newBean(MeteredBean.class);
+        String metricName = MeteredBean.class.getName() + ".method1";
+        Metadata metadata = getMetricRegistry().getMetadata().get(metricName);
+        assertThat("Metadata for meter of annotated method", metadata, is(notNullValue()));
+
+        // The displayName value stored in the retrieved metadata should be null, but Metadata.getDisplayName() returns the name
+        // in those cases. So an easy way to check is to attempt to re-register/look up the meter using a new Metadata instance
+        // for which we know the displayName is null.
+        Metadata newMetadata = Metadata.builder()
+                .withName(metadata.getName())
+                .withType(MetricType.METERED)
+                .reusable(false)
+                .withUnit(MetricUnits.PER_SECOND)
+                .build();
+        // Should return the existing meter. Throws exception if metadata is mismatched.
+        Meter meter = getMetricRegistry().meter(newMetadata);
     }
 }

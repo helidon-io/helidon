@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,25 @@
 
 package io.helidon.tests.functional.jaxrs.subresource;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.logging.LogManager;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
+import io.helidon.common.LogConfig;
+import io.helidon.jersey.connector.HelidonConnectorProvider;
 import io.helidon.microprofile.server.Server;
 
+import org.glassfish.jersey.client.JerseyClient;
+import org.glassfish.jersey.client.spi.ConnectorProvider;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -39,15 +42,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Unit test for {@link MpSubResource}.
  */
 class MpSubResourceTest {
+    private static Client client;
     private static Server server;
     private static WebTarget baseTarget;
 
     @BeforeAll
-    static void initClass() throws IOException {
-        LogManager.getLogManager().readConfiguration(MpSubResourceTest.class.getResourceAsStream("/logging.properties"));
+    static void initClass() {
+        LogConfig.configureRuntime();
+
         Main.main(new String[0]);
         server = Main.server();
-        Client client = ClientBuilder.newClient();
+        client = ClientBuilder.newClient();
         baseTarget = client.target("http://localhost:" + server.port());
     }
 
@@ -153,6 +158,17 @@ class MpSubResourceTest {
 
         assertOk(secureRequest(target, "jack"), okMessage);
         assertOk(secureRequest(target, "jill"), okMessage);
+    }
+
+    /**
+     * Verifies that the {@code HelidonConnectorProvider} is being used
+     * by Jersey.
+     */
+    @Test
+    public void testConnectorLoaded() {
+        JerseyClient jerseyClient = (JerseyClient) client;
+        ConnectorProvider provider = jerseyClient.getConfiguration().getConnectorProvider();
+        assertThat(provider, instanceOf(HelidonConnectorProvider.class));
     }
 
     private void assertOk(Response response, String expectedMessage) {

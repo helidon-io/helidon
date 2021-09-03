@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.examples</groupId>
         <artifactId>helidon-examples-project</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>2.4.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <groupId>io.helidon.examples.microprofile</groupId>
@@ -32,12 +32,19 @@
     <name>Helidon Microprofile Examples</name>
 
     <modules>
+        <module>graphql</module>
         <module>hello-world-implicit</module>
         <module>hello-world-explicit</module>
-        <module>mp1_1-static-content</module>
-        <module>mp1_1-security</module>
+        <module>static-content</module>
+        <module>security</module>
         <module>idcs</module>
+        <module>multipart</module>
         <module>oidc</module>
         <module>openapi-basic</module>
+        <module>websocket</module>
+        <module>messaging-sse</module>
+        <module>cors</module>
+        <module>tls</module>
+        <module>multiport</module>
     </modules>
 </project>

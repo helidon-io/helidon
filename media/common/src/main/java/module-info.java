@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.media.common.spi.MediaSupportProvider;
+
 /**
  * Media type support common classes.
  *
@@ -25,6 +27,10 @@ module io.helidon.media.common {
     requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;
     requires io.helidon.common.http;
+    requires io.helidon.config;
 
     exports io.helidon.media.common;
+    exports io.helidon.media.common.spi;
+
+    uses MediaSupportProvider;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     private final int growthRate;
     private final ThreadPool.RejectionHandler rejectionHandler;
     private final LazyValue<ExecutorService> lazyValue = LazyValue.create(() -> Contexts.wrap(getThreadPool()));
+    private final boolean useVirtualThreads;
 
     private ThreadPoolSupplier(Builder builder) {
         this.corePoolSize = builder.corePoolSize;
@@ -71,6 +72,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         this.growthThreshold = builder.growthThreshold;
         this.growthRate = builder.growthRate;
         this.rejectionHandler = builder.rejectionHandler == null ? DEFAULT_REJECTION_POLICY : builder.rejectionHandler;
+        this.useVirtualThreads = builder.useVirtualThreads || builder.virtualThreadsEnforced;
     }
 
     /**
@@ -102,7 +104,14 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         return builder().build();
     }
 
-    ThreadPool getThreadPool() {
+    ExecutorService getThreadPool() {
+        if (useVirtualThreads) {
+            if (VirtualExecutorUtil.isVirtualSupported()) {
+                LOGGER.fine("Using unbounded virtual executor service for pool " + name);
+                return VirtualExecutorUtil.executorService();
+            }
+        }
+
         ThreadPool result = ThreadPool.create(name,
                                               corePoolSize,
                                               maxPoolSize,
@@ -126,6 +135,15 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     }
 
     /**
+     * Returns size of core pool.
+     *
+     * @return size of core pool.
+     */
+    public int corePoolSize() {
+        return corePoolSize;
+    }
+
+    /**
      * A fluent API builder for {@link ThreadPoolSupplier}.
      */
     public static final class Builder implements io.helidon.common.Builder<ThreadPoolSupplier> {
@@ -140,6 +158,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         private int growthRate = DEFAULT_GROWTH_RATE;
         private ThreadPool.RejectionHandler rejectionHandler = DEFAULT_REJECTION_POLICY;
         private String name;
+        private boolean useVirtualThreads;
+        private boolean virtualThreadsEnforced;
 
         private Builder() {
         }
@@ -151,6 +171,13 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
             }
             if (rejectionHandler == null) {
                 rejectionHandler = DEFAULT_REJECTION_POLICY;
+            }
+
+            if (virtualThreadsEnforced) {
+                if (!VirtualExecutorUtil.isVirtualSupported()) {
+                    throw new IllegalStateException("Virtual threads are required, yet not available on this JVM. "
+                                                            + "Please use a Loom build.");
+                }
             }
 
             return new ThreadPoolSupplier(this);
@@ -286,8 +313,9 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         }
 
         /**
-         * Load all properties for this thread pool from configuration.
          * <p>
+         * Load all properties for this thread pool from configuration.
+         * </p>
          * <table class="config">
          * <caption>Optional Configuration Parameters</caption>
          * <tr>
@@ -332,7 +360,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          *     <td>Whether or not all core threads should be started when the pool is created.</td>
          * </tr>
          * </table>
-         * <p>
+         * <br>
          * <table class="config">
          * <caption>Experimental Configuration Parameters (<em>subject to change</em>)</caption>
          * <tr>
@@ -381,13 +409,48 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
             config.get("growth-rate").asInt().ifPresent(value -> {
                 warnExperimental("growth-rate");
                 growthRate(value);
-
+           });
+            config.get("virtual-threads").asBoolean().ifPresent(value -> {
+                warnExperimental("virtual-threads");
+                virtualIfAvailable(value);
+            });
+            config.get("virtual-enforced").asBoolean().ifPresent(value -> {
+                warnExperimental("virtual-enforced");
+                virtualEnforced(value);
             });
             return this;
         }
 
         private void warnExperimental(String key) {
             LOGGER.warning(String.format("Config key \"executor-service.%s\" is EXPERIMENTAL and subject to change.", key));
+        }
+
+        /**
+         * When configured to {@code true}, virtual thread executor service must be available, otherwise the built
+         * executor would fail to start.
+         *
+         * @param enforceVirtualThreads whether to enforce virtual threads, defaults to {@code false}
+         * @return updated builder instance
+         * @see #virtualIfAvailable(boolean)
+         */
+        public Builder virtualEnforced(boolean enforceVirtualThreads) {
+            this.virtualThreadsEnforced = enforceVirtualThreads;
+            return this;
+        }
+
+        /**
+         * When configured to {@code true}, an unbounded virtual executor service (project Loom) will be used
+         * if available.
+         * This is an experimental feature.
+         * <p>
+         * If enabled and available, all other configuration options of this executor service are ignored!
+         *
+         * @param useVirtualThreads whether to use virtual threads or not, defaults to {@code false}
+         * @return updated builder instance
+         */
+        public Builder virtualIfAvailable(boolean useVirtualThreads) {
+            this.useVirtualThreads = useVirtualThreads;
+            return this;
         }
     }
 }

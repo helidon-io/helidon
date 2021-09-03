@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,25 @@
 
 package io.helidon.demo.todos.frontend;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 
+import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
-import io.helidon.config.PollingStrategies;
+import io.helidon.config.FileSystemWatcher;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
-import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.accesslog.AccessLogSupport;
+import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 import io.opentracing.Tracer;
 import org.glassfish.jersey.logging.LoggingFeature;
@@ -66,14 +65,11 @@ public final class Main {
      * Application main entry point.
      *
      * @param args command line arguments
-     * @throws IOException if an error occurred while reading logging
-     * configuration
      */
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
 
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // needed for default connection of Jersey client
         // to allow our headers to be set
@@ -89,30 +85,18 @@ public final class Main {
         BackendServiceClient bsc = new BackendServiceClient(client, config);
 
         // create a web server
-        WebServer server = createRouting(
-                Security.create(config.get("security")),
-                config,
-                bsc)
-                .createServer(createConfiguration(config));
+        WebServer server = WebServer.builder(createRouting(
+                    Security.create(config.get("security")),
+                    config,
+                    bsc))
+                .config(config.get("webserver"))
+                .addMediaSupport(JsonpSupport.create())
+                .tracer(registerTracer(config))
+                .build();
 
         // start the web server
         server.start()
                 .whenComplete(Main::started);
-    }
-
-    /**
-     * Create a {@code ServerConfiguration} instance using the given
-     * {@code Config}.
-     * @param config the configuration root
-     * @return the created {@code ServerConfiguration}
-     */
-    private static ServerConfiguration createConfiguration(
-            final Config config) {
-
-        return ServerConfiguration.builder()
-                .config(config.get("webserver"))
-                .tracer(registerTracer(config))
-                .build();
     }
 
     /**
@@ -140,7 +124,7 @@ public final class Main {
                 // register metrics features (on "/metrics")
                 .register(MetricsSupport.create())
                 // register security features
-                .register(WebSecurity.create(security, config))
+                .register(WebSecurity.create(security, config.get("security")))
                 // register static content support (on "/")
                 .register(StaticContentSupport.builder("/WEB").welcomeFileName("index.html"))
                 // register API handler (on "/api") - this path is secured (see application.yaml)
@@ -179,7 +163,7 @@ public final class Main {
                         // expected on development machine
                         // to override props for dev
                         file("dev.yaml")
-                                .pollingStrategy(PollingStrategies::watch)
+                                .changeWatcher(FileSystemWatcher.create())
                                 .optional(),
                         // expected in k8s runtime
                         // to configure testing/production values

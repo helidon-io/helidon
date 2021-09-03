@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,17 +30,18 @@ module io.helidon.security.integration.jersey {
 
     requires io.helidon.common.context;
     requires io.helidon.jersey.common;
+    requires io.helidon.jersey.server;
+    requires io.helidon.jersey.client;
     requires io.helidon.security.integration.common;
     requires io.helidon.webclient.jaxrs;
-    requires jersey.common;
-    requires jersey.server;
-    requires jersey.client;
-    requires javax.inject;
+    requires io.helidon.webserver;
+
+    requires jakarta.inject.api;
 
     exports io.helidon.security.integration.jersey;
 
     // needed for jersey injection
-    opens io.helidon.security.integration.jersey to hk2.locator,hk2.utils;
+    opens io.helidon.security.integration.jersey to hk2.locator,hk2.utils,weld.core.impl, io.helidon.microprofile.cdi;
 
     uses io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 }

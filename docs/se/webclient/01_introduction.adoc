@@ -1,0 +1,238 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= WebClient Introduction
+:h1Prefix: SE
+:pagename: WebClient-Introduction
+:description: Helidon WebClient
+:keywords: helidon, se, rest, httpclient, webclient, reactive
+:feature-name: WebClient
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient</artifactId>
+</dependency>
+----
+
+== Overview
+
+WebClient is an HTTP client for Helidon SE 2.0. It handles the responses to the HTTP requests in a reactive way.
+
+Helidon WebClient provides the following features:
+
+* *Reactive approach* +
+Allows you to execute HTTP requests and handle the responses without having to wait for the server response. When the response is received, the client requests only the amount of data that it can handle at that time. So, there is no overflow of memory.
+
+* *Builder-like setup and execution* +
+Creates every client and request as a builder pattern. This improves readability and code maintenance.
+
+* *Redirect chain* +
+Follows the redirect chain and perform requests on the correct endpoint by itself.
+
+* *Tracing, metrics and security propagation* +
+Automatically propagates the configured tracing, metrics and security settings of the Helidon WebServer to the WebClient and uses them during request and response.
+
+== Configuring the WebClient
+
+The WebClient default configuration may be suitable in most use cases. However, you can configure it to suit your specific requirements.
+
+=== Example of a WebClient Configuration
+
+[source,java]
+----
+Config config = Config.create();
+WebClient client = WebClient.builder()
+        .baseUri("http://localhost")
+        .config(config.get("client"))
+        .build();
+----
+
+=== Example of Yaml WebClient Configuration
+
+[source, java]
+----
+client:
+  connect-timeout-millis: 2000
+  read-timeout-millis: 2000
+  follow-redirects: true <1>
+  max-redirects: 5
+  cookies:
+    automatic-store-enabled: true
+    default-cookies:
+      - name: "env"
+        value: "dev"
+  headers:
+    - name: "Accept"
+      value: ["application/json","text/plain"] <2>
+  services: <3>
+    config:
+      metrics: 
+        - methods: ["PUT", "POST", "DELETE"]
+        - type: METER
+          name-format: "client.meter.overall"
+        - type: TIMER
+          # meter per method
+          name-format: "client.meter.%1$s"
+        - methods: ["GET"]
+          type: COUNTER
+          errors: false
+          name-format: "client.counter.%1$s.success"
+          description: "Counter of successful GET requests"
+        - methods: ["PUT", "POST", "DELETE"]
+          type: COUNTER
+          success: false
+          name-format: "wc.counter.%1$s.error"
+          description: "Counter of failed PUT, POST and DELETE requests"
+        - methods: ["GET"]
+          type: GAUGE_IN_PROGRESS
+          name-format: "client.inprogress.%2$s"
+          description: "In progress requests to host"
+      tracing:
+  proxy: <4>
+    use-system-selector: false
+    host: "hostName"
+    port: 80
+    no-proxy: ["localhost:8080", ".helidon.io", "192.168.1.1"]
+  tls: <5>
+    server:
+      trust-all: true
+      disable-hostname-verification: true
+      keystore:
+        passphrase: "password"
+        trust-store: true
+        resource:
+          resource-path: "client.p12"
+    client:
+      keystore:
+        passphrase: "password"
+        resource:
+          resource-path: "client.p12"
+----
+
+<1> Client functional settings
+<2> Default client headers and cookies
+<3> Client service configuration
+<4> Proxy configuration
+<5> TLS configuration
+
+== Creating the WebClient
+
+You can create WebClient by executing `WebClient.create()` method. This will create an instance of client with default settings and without a base uri set.
+
+To change the default settings and register
+additional services, you can use simple builder that allows you to customize the client behavior.
+
+=== Example
+.Create a WebClient with simple builder:
+[source,java]
+----
+WebClient client = WebClient.builder()
+        .baseUri("http://localhost")
+        .build();
+----
+
+== Creating and Executing the WebClient Request
+
+WebClient executes requests to the target endpoints and returns specific response type.
+
+It offers variety of methods to specify the type of request you want to execute:
+
+* `put()`
+* `get()`
+* `method(String methodName)`
+
+These methods set specific request type based on their name or parameter to the new instance of `WebClientRequesBuilder` and return this instance based on configurations for specific request type.
+
+You can set configuration for every request type before it is sent as described in <<Request Configuration>>.
+
+For the final execution, use the following methods with variations and different parameters:
+
+* `Single<T> submit(Object entity, Class<T> responseType)`
+* `Single<T> request(Class<T> responseType)`
+
+=== Example
+.Execute a simple GET request to endpoint:
+[source,java]
+----
+Single<String> response = client.get()
+        .path("/endpoint")
+        .request(String.class);
+----
+
+=== Request Configuration
+
+The request settings are based on the following optional parameters, and change when a specific request is executed.
+
+|===
+|Parameter |Description
+
+|`uri("http://example.com")`   |Overrides baseUri from WebClient
+|`path("/path")`   |Adds path to the uri
+|`queryParam("query", "parameter")`   |Adds query parameter to the request
+|`fragment("someFragment")`   |Adds fragment to the request
+|`headers(headers -> headers.addAccept(MediaType.APPLICATION_JSON))`   |Adds header to the request
+|===
+
+`WebClientRequestBuilder` class also provides specific header methods that help the user to set a particular header. The methods are:
+
+* `contentType` (MediaType contentType)
+* `accept` (MediaType... mediaTypes)
+
+For more details, see the https://helidon.io/docs/latest/apidocs/io/helidon/webserver/RequestHeaders.html[Request Headers] API.
+
+
+== Adding JSON Processing Media Support to the WebClient
+
+JSON Processing (JSON-P) media support is not present in the WebClient by default. So, in this case, you must first register it before making a request.
+This example shows how to register `JsonpSupport` using the following two methods.
+
+=== Example
+
+[source,java]
+.Register JSON-P support to the WebClient.
+----
+WebClient.builder()
+        .baseUri("http://localhost")
+        .addReader(JsonpSupport.reader()) <1>
+        .addWriter(JsonpSupport.writer()) <2>
+        .addMediaService(JsonpSupport.create()) <3>
+        .build();
+----
+<1> Adds JSON-P reader to all client requests.
+<2> Adds JSON-P writer to all client requests.
+<3> Adds JSON-P writer and reader to all client requests.
+
+[source,java]
+.Register JSON-P support only to the specific request.
+
+----
+WebClient webClient = WebClient.create();
+
+WebClientRequestBuilder requestBuilder = webClient.get();
+requestBuilder.writerContext().registerWriter(JsonSupport.writer()); <1>
+requestBuilder.readerContext().registerReader(JsonSupport.reader()); <2>
+
+requestBuilder.request(JsonObject.class)
+----
+<1> Adds JSON-P writer only to this request.
+<2> Adds JSON-P reader only to this request.

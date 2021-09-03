@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,7 +165,6 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
             this.beanManager.getBeans(EntityManager.class,
                                       selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
         assert beans != null;
-        assert beans.size() == 1 : "beans.size() != 1: " + beans;
         this.oppositeSynchronizationBean = Objects.requireNonNull(this.beanManager.resolve(beans));
 
         // This is a proxy whose scope will be
@@ -189,7 +188,6 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         beans = this.beanManager.getBeans(NonTransactionalEntityManager.class,
                                           selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
         assert beans != null;
-        assert beans.size() == 1 : "beans.size() != 1: " + beans;
         @SuppressWarnings("unchecked")
         final Bean<NonTransactionalEntityManager> nonTransactionalEntityManagerBean =
             (Bean<NonTransactionalEntityManager>) this.beanManager.resolve(beans);

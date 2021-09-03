@@ -16,40 +16,26 @@
 
 package io.helidon.config;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Flow;
-import java.util.concurrent.TimeUnit;
 
-import io.helidon.config.FileConfigSource.FileBuilder;
-import io.helidon.config.spi.ConfigContext;
-import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
-import io.helidon.config.spi.ConfigParserException;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.test.infra.TemporaryFolderExt;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.typeCompatibleWith;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.mock;
 
 /**
  * Tests {@link io.helidon.config.FileConfigSource}.
@@ -79,33 +65,18 @@ public class FileConfigSourceTest {
 
     @Test
     public void testGetMediaTypeSet() {
-        FileConfigSource configSource = (FileConfigSource) ConfigSources.file("application.conf")
+        FileConfigSource configSource = ConfigSources.file("application.conf")
                 .optional()
                 .mediaType(TEST_MEDIA_TYPE)
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
                 .build();
 
         assertThat(configSource.mediaType(), is(Optional.of(TEST_MEDIA_TYPE)));
     }
 
     @Test
-    public void testGetMediaTypeGuessed() {
-        FileConfigSource configSource = (FileConfigSource) ConfigSources.file("application.properties")
-                .optional()
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
-                .build();
-
-        assertThat(configSource.mediaType(), is(Optional.of("text/x-java-properties")));
-    }
-
-    @Test
     public void testGetMediaTypeUnknown() {
-        FileConfigSource configSource = (FileConfigSource) ConfigSources.file("application.unknown")
+        FileConfigSource configSource = ConfigSources.file("application.unknown")
                 .optional()
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
                 .build();
 
         assertThat(configSource.mediaType(), is(Optional.empty()));
@@ -113,49 +84,42 @@ public class FileConfigSourceTest {
 
     @Test
     public void testLoadNotExists() {
-        FileConfigSource configSource = (FileConfigSource) ConfigSources.file("application.unknown")
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
+        FileConfigSource configSource = ConfigSources.file("application.unknown")
                 .build();
 
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            configSource.init(mock(ConfigContext.class));
-            configSource.load();
-        });
-        assertThat(ex.getCause(), instanceOf(ConfigException.class));
-        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
+        assertThat(configSource.load(), is(Optional.empty()));
     }
 
     @Test
-    public void testLoadExists() {
-        ConfigSource configSource = ConfigSources.file(getDir() + "io/helidon/config/application.conf")
+    public void testLoadExists() throws IOException {
+        Path path = Paths.get(getDir() + "io/helidon/config/application.conf");
+        FileConfigSource configSource = ConfigSources.file(path)
                 .mediaType("application/hocon")
                 .build();
 
-        configSource.init(content -> Optional.of(new ConfigParser() {
-            @Override
-            public Set<String> supportedMediaTypes() {
-                return new HashSet<String>() {{
-                    add("application/hocon");
-                }};
-            }
+        assertThat(configSource.mediaType(), is(Optional.of("application/hocon")));
+        assertThat(configSource.target(), is(path));
+        assertThat(configSource.targetType(), is(typeCompatibleWith(Path.class)));
+        assertThat(configSource.exists(), is(true));
 
-            @Override
-            public ObjectNode parse(Content content) throws ConfigParserException {
-                assertThat(content, notNullValue());
-                assertThat(content.mediaType(), is(Optional.of("application/hocon")));
-                try {
-                    assertThat((char) ConfigHelper.createReader(content.asReadable()).read(), is('#'));
-                } catch (IOException e) {
-                    fail("Cannot read from source's reader");
-                }
-                return ObjectNode.empty();
-            }
-        }));
-        Optional<ObjectNode> configNode = configSource.load();
+        Optional<ConfigParser.Content> maybeContent = configSource.load();
+        assertThat(maybeContent, not(Optional.empty()));
+        ConfigParser.Content content = maybeContent.get();
 
-        assertThat(configNode, notNullValue());
-        assertThat(configNode.isPresent(), is(true));
+        try {
+            InputStream data = content.data();
+            char first = (char) new InputStreamReader(data).read();
+            assertThat(first, is('#'));
+        } catch (IOException e) {
+            fail("Cannot read from source's reader");
+        } finally {
+            content.data().close();
+        }
+
+        Optional<Object> maybeStamp = content.stamp();
+        assertThat(maybeStamp, not(Optional.empty()));
+        Object stamp = maybeStamp.get();
+        assertThat(configSource.isModified((byte[]) stamp), is(false));
     }
 
     @Test
@@ -175,82 +139,6 @@ public class FileConfigSourceTest {
     }
 
     private static String getDir() {
-        return Paths.get("").toAbsolutePath().toString() + RELATIVE_PATH_TO_RESOURCE;
+        return Paths.get("").toAbsolutePath() + RELATIVE_PATH_TO_RESOURCE;
     }
-
-    @Disabled("It is been running too long, but could be add into integration tests.")
-    @Test
-    public void testChangesLong() throws InterruptedException {
-        Config config = Config.builder()
-                .sources(ConfigSources.classpath("io/helidon/config/application.properties")
-                                 .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(5)))
-                                 .build())
-                .build();
-
-        CountDownLatch latch = new CountDownLatch(1);
-        config.changes().subscribe(new Flow.Subscriber<Config>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-            }
-
-            @Override
-            public void onNext(Config item) {
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                latch.countDown();
-            }
-
-            @Override
-            public void onComplete() {
-                latch.countDown();
-            }
-        });
-
-        config.onChange((event) -> true);
-
-        assertThat(latch.await(120, TimeUnit.SECONDS), is(false));
-
-    }
-
-    @Test
-    public void testDataTimestamp() throws IOException {
-        final String filename = "new-file";
-        File file = folder.newFile(filename);
-        FileConfigSource fcs = FileConfigSource.builder().path(file.toPath()).build();
-        assertThat(fcs.dataStamp().isPresent(), is(true));
-        assertThat(fcs.dataStamp().get().length, is(greaterThan(0)));
-    }
-
-    @Test
-    public void testBuilderPollingStrategy() {
-        FileBuilder builder = (FileBuilder) ConfigSources.file("application.conf")
-                .pollingStrategy(TestingPathPollingStrategy::new);
-
-        assertThat(builder.pollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));
-        assertThat(((TestingPathPollingStrategy) builder.pollingStrategyInternal()).getPath(),
-                   is(Paths.get("application.conf")));
-    }
-
-    private static class TestingPathPollingStrategy implements PollingStrategy {
-
-        private final Path path;
-
-        public TestingPathPollingStrategy(Path path) {
-            this.path = path;
-
-            assertThat(path, notNullValue());
-        }
-
-        @Override
-        public Flow.Publisher<PollingEvent> ticks() {
-            return Flow.Subscriber::onComplete;
-        }
-
-        public Path getPath() {
-            return path;
-        }
-    }
-
 }

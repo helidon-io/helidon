@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,6 @@ public final class BackendServiceClient {
      * @return future with all records
      */
     public CompletionStage<JsonArray> getAll(final SpanContext spanContext) {
-
         Span span = tracer.buildSpan("todos.get-all")
                 .asChildOf(spanContext)
                 .start();
@@ -183,10 +182,12 @@ public final class BackendServiceClient {
                 .submit(new InvocationCallback<Response>() {
                     @Override
                     public void completed(final Response response) {
-                        if (response.getStatusInfo().getFamily() == Status.Family.SUCCESSFUL) {
-                            res.send(response.readEntity(JsonObject.class));
-                        } else {
-                            res.status(response.getStatus());
+                        try (response) {
+                            if (response.getStatusInfo().getFamily() == Status.Family.SUCCESSFUL) {
+                                res.send(response.readEntity(JsonObject.class));
+                            } else {
+                                res.status(response.getStatus());
+                            }
                         }
                     }
 
@@ -206,10 +207,11 @@ public final class BackendServiceClient {
      * the response entity otherwise
      */
     private Optional<JsonObject> processSingleEntityResponse(final Response response) {
-
-        if (response.getStatusInfo().toEnum() == Status.NOT_FOUND) {
-            return Optional.empty();
+        try (response) {
+            if (response.getStatusInfo().toEnum() == Status.NOT_FOUND) {
+                return Optional.empty();
+            }
+            return Optional.of(response.readEntity(JsonObject.class));
         }
-        return Optional.of(response.readEntity(JsonObject.class));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,7 +129,6 @@ public class ReferenceCountedExtension implements Extension {
                                                                  qualifiers.toArray(new Annotation[qualifiers.size()]));
                                 }
                                 assert beans != null;
-                                assert beans.size() == 1;
                                 final Bean<?> bean = beanManager.resolve(beans);
                                 assert bean != null;
                                 if (referenceCountedBeans.contains(bean)) {
@@ -151,7 +150,6 @@ public class ReferenceCountedExtension implements Extension {
                                                          qualifiers.toArray(new Annotation[qualifiers.size()]));
                         }
                         assert beans != null;
-                        assert beans.size() == 1;
                         final Bean<?> bean = beanManager.resolve(beans);
                         assert bean != null;
                         assert ReferenceCounted.class.equals(bean.getScope())

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,25 @@
  *
  */
 
+/**
+ * Helidon SE OpenAPI Support.
+ */
 module io.helidon.openapi {
     requires java.logging;
 
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.media.common;
-    requires io.helidon.media.jsonp.server;
+    requires io.helidon.media.jsonp;
     requires io.helidon.webserver;
+    requires io.helidon.webserver.cors;
 
-    requires jandex;
+    requires org.jboss.jandex;
 
-    requires smallrye.open.api;
+    requires smallrye.open.api.core;
+    requires java.json;
+    requires java.desktop; // for java.beans package
+    requires org.yaml.snakeyaml;
 
     requires microprofile.openapi.api;
 

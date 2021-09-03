@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,11 +27,11 @@ security:
         # Also update the client id configured in header of index.html
         # Detailed how-to for login button (including links how to create an application):
         # https://developers.google.com/identity/sign-in/web/sign-in
-        client-id: "${ALIAS=security.properties.google-client-id}"
+        client-id: "${security.properties.google-client-id}"
         # Defaults for Helidon
         # realm: "helidon"
         # Configure proxy host if needed
-        proxy-host: "${ALIAS=security.properties.proxy-host}"
+        proxy-host: "${security.properties.proxy-host}"
         # proxy-port: 80
 
         # This is the default for GoogleTokenProvider

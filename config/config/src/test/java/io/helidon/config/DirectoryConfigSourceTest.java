@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Optional;
 
-import io.helidon.config.spi.ConfigContext;
+import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.test.infra.TemporaryFolderExt;
@@ -31,16 +31,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static io.helidon.config.ValueNodeMatcher.valueNode;
-import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 
 /**
  * Tests {@link io.helidon.config.DirectoryConfigSource}.
@@ -66,68 +63,53 @@ public class DirectoryConfigSourceTest {
 
     @Test
     public void testLoadNoDirectory() {
-        DirectoryConfigSource configSource = (DirectoryConfigSource) ConfigSources.directory("unknown")
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
+        DirectoryConfigSource configSource = ConfigSources.directory("unknown")
                 .build();
 
-        configSource.init(mock(ConfigContext.class));
-        assertThat(configSource.dataStamp().get(), is(Instant.MAX));
-
-        ConfigException ex = assertThrows(ConfigException.class, configSource::load);
-        assertThat(ex.getCause(), instanceOf(ConfigException.class));
-        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
-    }
-
-    @Test
-    public void testLoadNoDirectoryOptional() {
-        DirectoryConfigSource configSource = (DirectoryConfigSource) ConfigSources.directory("unknown")
-                .optional()
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
-                .build();
-
-        configSource.init(mock(ConfigContext.class));
-        assertThat(configSource.dataStamp().get(), is(Instant.MAX));
-
-        Optional<ObjectNode> loaded = configSource.load();
-        assertThat(loaded, is(Optional.empty()));
+        assertThat(configSource.load(), is(Optional.empty()));
     }
 
     @Test
     public void testLoadEmptyDirectory() throws IOException {
-        DirectoryConfigSource configSource = (DirectoryConfigSource) ConfigSources.directory(folder.newFolder().getAbsolutePath())
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
+        DirectoryConfigSource configSource = ConfigSources.directory(folder.newFolder().getAbsolutePath())
                 .build();
 
-        configSource.init(mock(ConfigContext.class));
-        assertThat(configSource.dataStamp().get(),
+        Optional<ConfigContent.NodeContent> maybeContent = configSource.load();
+
+        assertThat(maybeContent, not(Optional.empty()));
+
+        ConfigContent.NodeContent nodeContent = maybeContent.get();
+        Optional<Object> maybeStamp = nodeContent.stamp();
+        assertThat(maybeStamp, not(Optional.empty()));
+        Instant stamp = (Instant) maybeStamp.get();
+        assertThat(stamp,
                    both(greaterThan(Instant.now().minusSeconds(3)))
                            .and(lessThan(Instant.now().plusSeconds(3))));
 
-        ObjectNode objectNode = configSource.load().get();
+        ObjectNode objectNode = nodeContent.data();
 
         assertThat(objectNode.entrySet(), hasSize(0));
     }
 
     @Test
     public void testLoadDirectory() throws IOException {
-        File folder = this.folder.newFolder();
+        File folder = DirectoryConfigSourceTest.folder.newFolder();
         Files.write(Files.createFile(new File(folder, "username").toPath()), "libor".getBytes());
         Files.write(Files.createFile(new File(folder, "password").toPath()), "^ery$ecretP&ssword".getBytes());
 
-        DirectoryConfigSource configSource = (DirectoryConfigSource) ConfigSources.directory(folder.getAbsolutePath())
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
+        DirectoryConfigSource configSource = ConfigSources.directory(folder.getAbsolutePath())
                 .build();
 
-        configSource.init(mock(ConfigContext.class));
-        assertThat(configSource.dataStamp().get(),
+        Optional<ConfigContent.NodeContent> maybeContent = configSource.load();
+        ConfigContent.NodeContent nodeContent = maybeContent.get();
+        Optional<Object> maybeStamp = nodeContent.stamp();
+        assertThat(maybeStamp, not(Optional.empty()));
+        Instant stamp = (Instant) maybeStamp.get();
+        assertThat(stamp,
                    both(greaterThan(Instant.now().minusSeconds(3)))
                            .and(lessThan(Instant.now().plusSeconds(3))));
 
-        ObjectNode objectNode = configSource.load().get();
+        ObjectNode objectNode = nodeContent.data();
 
         assertThat(objectNode.entrySet(), hasSize(2));
         assertThat(objectNode.get("username"), valueNode("libor"));

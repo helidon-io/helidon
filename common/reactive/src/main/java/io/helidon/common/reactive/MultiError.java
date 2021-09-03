@@ -16,7 +16,6 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
-import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 
@@ -40,17 +39,15 @@ final class MultiError<T> implements Multi<T> {
 
     @Override
     public void subscribe(Subscriber<? super T> subscriber) {
-        subscriber.onSubscribe(new Flow.Subscription() {
-            @Override
-            public void request(long n) {
-                subscriber.onError(error);
-            }
-
-            @Override
-            public void cancel() {
-
-            }
-        });
+        subscriber.onSubscribe(EmptySubscription.INSTANCE);
         subscriber.onError(error);
+    }
+
+    /**
+     * Returns the hosted {@code Throwable} instance.
+     * @return the hosted {@code Throwable} instance
+     */
+    Throwable getError() {
+        return error;
     }
 }

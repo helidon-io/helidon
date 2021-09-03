@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import io.helidon.dbclient.DbRow;
+import io.helidon.dbclient.common.DbClientContext;
 
 import org.bson.Document;
 import org.reactivestreams.Subscription;
@@ -38,14 +39,16 @@ final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Docu
     private final CompletableFuture<Long> queryFuture;
     private final MongoDbStatement dbStatement;
     private final CompletableFuture<Void> statementFuture;
+    private final DbClientContext clientContext;
+
     private Flow.Subscriber<? super DbRow> subscriber;
     private Subscription subscription;
 
-    MongoDbQueryProcessor(
-            MongoDbStatement dbStatement,
-            CompletableFuture<Void> statementFuture,
-            CompletableFuture<Long> queryFuture
-    ) {
+    MongoDbQueryProcessor(DbClientContext clientContext,
+                          MongoDbStatement dbStatement,
+                          CompletableFuture<Void> statementFuture,
+                          CompletableFuture<Long> queryFuture) {
+        this.clientContext = clientContext;
         this.statementFuture = statementFuture;
         this.queryFuture = queryFuture;
         this.dbStatement = dbStatement;
@@ -58,11 +61,11 @@ final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Docu
 
     @Override
     public void onNext(Document doc) {
-        MongoDbRow dbRow = new MongoDbRow(dbStatement.dbMapperManager(), dbStatement.mapperManager(), doc.size());
+        MongoDbRow dbRow = new MongoDbRow(clientContext.dbMapperManager(), clientContext.mapperManager(), doc.size());
         doc.forEach((name, value) -> {
             LOGGER.finest(() -> String.format(
                     "Column name = %s, value = %s", name, (value != null ? value.toString() : "N/A")));
-            dbRow.add(name, new MongoDbColumn(dbStatement.dbMapperManager(), dbStatement.mapperManager(), name, value));
+            dbRow.add(name, new MongoDbColumn(clientContext.dbMapperManager(), clientContext.mapperManager(), name, value));
         });
         count.incrementAndGet();
         subscriber.onNext(dbRow);

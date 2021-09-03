@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.utils.SocketHttpClient;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -53,9 +52,9 @@ public class TransferEncodingTest {
      * @throws Exception in case of an error
      */
     private static void startServer(int port) throws Exception {
-        webServer = WebServer.create(
-                ServerConfiguration.builder().port(port).build(),
-                Routing.builder()
+        webServer = WebServer.builder()
+                .port(port)
+                .routing(Routing.builder()
                         .get("/length", (req, res) -> {
                             String payload = "It works!";
                             res.headers().add("content-length", String.valueOf(payload.length()));
@@ -70,7 +69,15 @@ public class TransferEncodingTest {
                             String payload = "It works!";
                             res.send(payload);
                         })
+                        .get("/empty", (req, res) -> {
+                            res.send();
+                        })
+                        .get("/emptychunked", (req, res) -> {
+                            res.headers().add("transfer-encoding", "chunked");
+                            res.send();
+                        })
                         .build())
+                .build()
                 .start()
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);
@@ -79,7 +86,31 @@ public class TransferEncodingTest {
     }
 
     /**
-     * Test content length.
+     * Test content length when no payload in response.
+     *
+     * @throws Exception If an error occurs.
+     */
+    @Test
+    public void testEmptyContentLength() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/empty", Http.Method.GET, null, webServer);
+        Map<String, String> headers = cutHeaders(s);
+        assertThat(headers, hasEntry("content-length", "0"));
+    }
+
+    /**
+     * Test when no payload in response but response was forced to chunked.
+     *
+     * @throws Exception If an error occurs.
+     */
+    @Test
+    public void testEmptyChunked() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/emptychunked", Http.Method.GET, null, webServer);
+        Map<String, String> headers = cutHeaders(s);
+        assertThat(headers, hasEntry("transfer-encoding", "chunked"));
+    }
+
+    /**
+     * Test content length
      *
      * @throws Exception If an error occurs.
      */
@@ -117,7 +148,7 @@ public class TransferEncodingTest {
         assertThat(headers, hasEntry("content-length", "9"));
     }
 
-    private Map<String, String> cutHeaders(String response) {
+    static Map<String, String> cutHeaders(String response) {
         assertThat(response, notNullValue());
         int index = response.indexOf("\n\n");
         if (index < 0) {

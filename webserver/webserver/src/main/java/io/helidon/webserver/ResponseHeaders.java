@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
 import io.helidon.common.http.AlreadyCompletedException;
@@ -31,6 +30,7 @@ import io.helidon.common.http.Headers;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.SetCookie;
+import io.helidon.common.reactive.Single;
 
 /**
  * Extends {@link Parameters} interface by adding HTTP response headers oriented constants and convenient methods.
@@ -201,6 +201,13 @@ public interface ResponseHeaders extends Headers {
     void addCookie(SetCookie cookie) throws NullPointerException;
 
     /**
+     * Clears a cookie by adding a {@code Set-Cookie} header with an expiration date in the past.
+     *
+     * @param name name of the cookie.
+     */
+    void clearCookie(String name);
+
+    /**
      * Register a {@link Consumer} which is executed just before headers are send. {@code Consumer} can made 'last minute
      * changes' in headers.
      * <p>
@@ -216,17 +223,28 @@ public interface ResponseHeaders extends Headers {
      * Returns a completion stage which is completed when all headers are send to the client.
      *
      * @return a completion stage of the headers.
+     * @deprecated since 2.0.0, please use {@link #whenSent()}
      */
-    CompletionStage<ResponseHeaders> whenSend();
+    @Deprecated
+    default Single<ResponseHeaders> whenSend() {
+        return whenSent();
+    }
+
+    /**
+     * Returns a {@link io.helidon.common.reactive.Single} which is completed when all headers are sent to the client.
+     *
+     * @return a single of the headers
+     */
+    Single<ResponseHeaders> whenSent();
 
     /**
      * Send headers and status code to the client. This instance become immutable after that
      * (all muting methods throws {@link IllegalStateException}).
      * <p>
-     * It is non-blocking method returning a {@link CompletionStage}.
+     * It is non-blocking method returning a {@link io.helidon.common.reactive.Single}.
      *
-     * @return a completion stage of sending tryProcess.
+     * @return a completion stage of sending process.
      */
-    CompletionStage<ResponseHeaders> send();
+    Single<ResponseHeaders> send();
 
 }

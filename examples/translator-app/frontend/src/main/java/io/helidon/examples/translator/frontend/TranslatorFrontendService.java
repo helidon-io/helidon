@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,20 +55,21 @@ public final class TranslatorFrontendService implements Service {
             String language = request.queryParams().first("lang")
                     .orElseThrow(() -> new BadRequestException("missing query parameter 'lang'"));
 
-            Response backendResponse = backendTarget
+            try (Response backendResponse = backendTarget
                     .property(ClientTracingFilter.TRACER_PROPERTY_NAME, request.tracer())
-                    .property(ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, request.spanContext())
+                    .property(ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, request.spanContext().orElse(null))
                     .queryParam("q", query)
                     .queryParam("lang", language)
-                    .request().get();
-
-            final String result;
-            if (backendResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-                result = backendResponse.readEntity(String.class);
-            } else {
-                result = "Error: " + backendResponse.readEntity(String.class);
+                    .request()
+                    .get()) {
+                final String result;
+                if (backendResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
+                    result = backendResponse.readEntity(String.class);
+                } else {
+                    result = "Error: " + backendResponse.readEntity(String.class);
+                }
+                response.send(result + "\n");
             }
-            response.send(result + "\n");
         } catch (ProcessingException pe) {
             LOGGER.log(Level.WARNING, "Problem to call translator frontend.", pe);
             response.status(503).send("Translator backend service isn't available.");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import io.helidon.config.ConfigException;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -46,12 +45,6 @@ public class ParserServicesDisabledTest extends AbstractParserServicesTest {
         });
 
         assertThat(ce.getMessage(), stringContainsInOrder(List.of(
-                "Cannot load data from mandatory source",
-                "InMemoryConfig[String]",
-                "Cannot find suitable parser for 'text/x-java-properties' media type.")));
-
-        //Cannot find suitable parser for 'text/x-java-properties' media type.
-        assertThat(ce.getCause(), instanceOf(ConfigException.class));
+                "Cannot find suitable parser for 'text/x-java-properties' media type for config source ParsableInMemory[String]")));
     }
-
 }

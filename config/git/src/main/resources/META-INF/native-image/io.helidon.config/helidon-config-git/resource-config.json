@@ -1,0 +1,7 @@
+{
+    "bundles": [
+        {
+            "name": "org.eclipse.jgit.internal.JGitText"
+        }
+    ]
+}

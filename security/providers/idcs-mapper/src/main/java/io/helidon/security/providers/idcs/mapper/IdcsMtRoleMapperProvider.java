@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
@@ -50,7 +49,10 @@ import io.helidon.security.util.TokenHandler;
 /**
  * {@link io.helidon.security.spi.SubjectMappingProvider} to obtain roles from IDCS server for a user.
  * Supports multi tenancy in IDCS.
+ *
+ * @deprecated use {@link io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperRxProvider} instead
  */
+@Deprecated(forRemoval = true, since = "2.4.0")
 public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
     /**
      * Name of the header containing the IDCS tenant. This is the default used, can be overriden
@@ -66,10 +68,6 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
     private static final Logger LOGGER = Logger
             .getLogger(IdcsMtRoleMapperProvider.class.getName());
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-    static {
-        HelidonFeatures.register("Security", "Role-Mapper", "IDCS-Multitenant");
-    }
 
     private final TokenHandler idcsTenantTokenHandler;
     private final TokenHandler idcsAppNameTokenHandler;
@@ -396,7 +394,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
 
         /**
          * Creates endpoints from provided OIDC configuration using default URIs.
-         * <p>
+         * <br>
          * <ul>
          * <li>For Asserter endpoint: {@code /admin/v1/Asserter}</li>
          * <li>For Token endpoint: {@code /oauth2/v1/token?IDCS_CLIENT_TENANT=}</li>
@@ -495,7 +493,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          *
          * @return tenant id of the cache record
          */
-        protected String idcsTenantId() {
+        public String idcsTenantId() {
             return idcsMtContext.tenantId();
         }
 
@@ -504,7 +502,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          *
          * @return username of the cache record
          */
-        protected String username() {
+        public String username() {
             return username;
         }
 
@@ -513,7 +511,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          *
          * @return application id of the cache record
          */
-        protected String idcsAppName() {
+        public String idcsAppName() {
             return idcsMtContext.appId();
         }
 
@@ -522,7 +520,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          *
          * @return IDCS multitenancy context of the cache record
          */
-        protected IdcsMtContext idcsMtContext() {
+        public IdcsMtContext idcsMtContext() {
             return idcsMtContext;
         }
 

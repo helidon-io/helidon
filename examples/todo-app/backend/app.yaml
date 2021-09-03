@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,10 +30,12 @@ data:
 
 ---
 
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: helidon-examples-todo-backend
+  labels:
+    app: helidon-examples-todo-backend
 spec:
   replicas: 1
   template:
@@ -42,18 +44,18 @@ spec:
         app: helidon-examples-todo-backend
     spec:
       containers:
-      - name: helidon-examples-todo-backend
-        image: helidon-examples-todo-backend
-        imagePullPolicy: Never
-        ports:
-        - containerPort: 8854
-        volumeMounts:
-        - name: config-volume
-          mountPath: /conf
+        - name: helidon-examples-todo-backend
+          image: helidon-examples-todo-backend
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8854
+          volumeMounts:
+            - mountPath: /conf
+              name: config-volume
       volumes:
-      - name: config-volume
-        configMap:
-          name: helidon-examples-todo-backend
+        - name: config-volume
+          configMap:
+            name: helidon-examples-todo-backend
 
 ---
 

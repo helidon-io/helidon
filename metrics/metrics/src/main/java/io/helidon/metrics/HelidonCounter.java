@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,29 @@ final class HelidonCounter extends MetricImpl implements Counter {
     }
 
     @Override
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
+        prometheusData(sb, metricID, withHelpType, prometheusNameWithUnits(metricID));
+    }
+
+    void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType, String prometheusName) {
+        if (withHelpType) {
+            prometheusType(sb, prometheusName, metadata().getType());
+            prometheusHelp(sb, prometheusName);
+        }
+        sb.append(prometheusName)
+                .append(prometheusTags(metricID.getTags()))
+                .append(" ")
+                .append(prometheusValue());
+        if (delegate instanceof CounterImpl) {
+            Sample.Labeled sample = ((CounterImpl) delegate).sample;
+            if (sample != null) {
+                sb.append(prometheusExemplar(sample));
+            }
+        }
+        sb.append('\n');
+    }
+
+    @Override
     public String prometheusValue() {
         return Long.toString(getCount());
     }
@@ -79,14 +102,17 @@ final class HelidonCounter extends MetricImpl implements Counter {
     private static class CounterImpl implements Counter {
         private final LongAdder adder = new LongAdder();
 
+        private Sample.Labeled sample = null;
+
         @Override
         public void inc() {
-            adder.increment();
+            inc(1);
         }
 
         @Override
         public void inc(long n) {
             adder.add(n);
+            sample = Sample.labeled(n);
         }
 
         @Override
@@ -130,10 +156,7 @@ final class HelidonCounter extends MetricImpl implements Counter {
     }
 
     @Override
-    public String toString() {
-        return "HelidonCounter{"
-                + "delegate=" + delegate + ","
-                + "metadata=" + metadata()
-                + '}';
+    protected String toStringDetails() {
+        return ", counter='" + getCount() + '\'';
     }
 }

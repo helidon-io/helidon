@@ -110,15 +110,22 @@ public final class Utils {
         }
     }
 
-    static byte[] toByteArray(ByteBuffer byteBuffer) {
+    /**
+     * Convert the given byte buffer to a byte array.
+     * @param byteBuffer byte buffer
+     * @return byte array
+     */
+    public static byte[] toByteArray(ByteBuffer byteBuffer) {
         byte[] buff = new byte[byteBuffer.remaining()];
+        return toByteArray(byteBuffer, buff, 0);
+    }
 
+    static byte[] toByteArray(ByteBuffer byteBuffer, byte[] buff, int destPos) {
         if (byteBuffer.hasArray()) {
-            System.arraycopy(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), buff, 0, buff.length);
+            System.arraycopy(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), buff, destPos, buff.length);
         } else {
-            byteBuffer.get(buff);
+            byteBuffer.get(buff, destPos, byteBuffer.remaining());
         }
-
         return buff;
     }
 }

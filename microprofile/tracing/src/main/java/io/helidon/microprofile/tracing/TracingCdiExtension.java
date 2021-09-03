@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.JaxRsApplication;
@@ -45,10 +43,6 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  * CDI extension for Microprofile Tracing implementation.
  */
 public class TracingCdiExtension implements Extension {
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "Tracing");
-    }
-
     /**
      * Add our beans to CDI, so we do not need to use {@code beans.xml}.
      *
@@ -76,7 +70,10 @@ public class TracingCdiExtension implements Extension {
                 .config(config)
                 .build();
 
-        server.serverConfigBuilder()
+        // tracer is available in global
+        Contexts.globalContext().register(tracer);
+
+        server.serverBuilder()
                 .tracer(tracer);
 
         Contexts.context()

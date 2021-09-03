@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -32,6 +35,7 @@ import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.ws.rs.ServiceUnavailableException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -69,6 +73,13 @@ public final class Mp1Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
+        String property = System.getProperty("java.class.path");
+        if (null == property || property.trim().isEmpty()) {
+            System.out.println("** Running on module path");
+        } else {
+            System.out.println("** Running on class path");
+        }
+
         // cleanup before tests
         cleanup();
 
@@ -77,18 +88,42 @@ public final class Mp1Main {
         // start CDI
         //Main.main(args);
 
-        Server.builder()
-                .port(8087)
+        Server server = Server.builder()
+                .port(7001)
                 .applications(new JaxRsApplicationNoCdi())
                 .retainDiscoveredApplications(true)
                 .basePath("/cdi")
                 .build()
                 .start();
 
+        boolean failed = false;
         long now = System.currentTimeMillis();
-        testBean(jwtToken);
+        try {
+            testBean(server.port(), jwtToken);
+        } catch (Exception e) {
+            e.printStackTrace();
+            failed = true;
+        }
         long time = System.currentTimeMillis() - now;
         System.out.println("Tests finished in " + time + " millis");
+
+        //        Config config = ConfigProvider.getConfig();
+        //        List<String> names = new ArrayList<>();
+        //        config.getPropertyNames()
+        //                .forEach(names::add);
+        //        names.sort(String::compareTo);
+
+        //        System.out.println("All configuration options:");
+        //        names.forEach(it -> {
+        //            config.getOptionalValue(it, String.class)
+        //                    .ifPresent(value -> System.out.println(it + "=" + value));
+        //        });
+
+        server.stop();
+
+        if (failed) {
+            System.exit(-1);
+        }
     }
 
     private static String generateJwtToken() {
@@ -128,9 +163,9 @@ public final class Mp1Main {
         }
     }
 
-    private static void testBean(String jwtToken) {
+    private static void testBean(int port, String jwtToken) {
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target("http://localhost:8087");
+        WebTarget target = client.target("http://localhost:" + port);
 
         // select a bean
         Instance<TestBean> select = CDI.current().select(TestBean.class);
@@ -142,15 +177,26 @@ public final class Mp1Main {
         // CDI - (tested indirectly by other tests)
         // Server - capability to start JAX-RS (tested indirectly by other tests)
 
+        // produce a bean with package local method
+        invoke(collector, "Produced bean", BeanProducer.VALUE, aBean::produced);
+
         // Configuration
         invoke(collector, "Config injection", "Properties message", aBean::config);
 
         // Rest Client
         invoke(collector, "Rest client", "Properties message", aBean::restClientMessage);
+
         // + JSON-P
         invoke(collector, "Rest client JSON-P", "json-p", aBean::restClientJsonP);
         // + JSON-B
         invoke(collector, "Rest client JSON-B", "json-b", aBean::restClientJsonB);
+        // + query params
+        invoke(collector, "Rest client Query param Long", "1020", () -> aBean.restClientQuery(1020L));
+        invoke(collector, "Rest client Query param Boolean", "true", () -> aBean.restClientQuery(true));
+        invoke(collector, "Rest client Query param int", "123", () -> aBean.restClientQuery(123));
+
+        // Message from rest client, originating in BeanClass.BeanType
+        invoke(collector, "Rest client bean type", "Properties message", aBean::restClientBeanType);
 
         // Fault Tolerance
         invoke(collector, "FT Fallback", "Fallback success", aBean::fallback);
@@ -169,6 +215,9 @@ public final class Mp1Main {
                 return "timeout";
             }
         });
+
+        invoke(collector, "Application metric registry", "SimpleTimers.size(): 0", aBean::appRegistry);
+        invoke(collector, "Application metric registry", "SimpleTimers.size(): 0", aBean::baseRegistry);
 
         // JWT-Auth
         validateJwtProtectedResource(collector, target, jwtToken);
@@ -191,8 +240,92 @@ public final class Mp1Main {
         // Health Checks
         validateHealth(collector, target);
 
+        // OpenAPI
+        validateOpenAPI(collector, target);
+
+        // Overall JAX-RS injection
+        validateInjection(collector, target);
+
+        // Static content
+        validateStaticContent(collector, target);
+
+        // Make sure resource and provider classes are discovered
+        validateNoClassApp(collector, target);
+
         collector.collect()
                 .checkValid();
+    }
+
+    private static void validateNoClassApp(Errors.Collector collector, WebTarget target) {
+        String path = "/noclass";
+        String expected = "Hello World ";
+
+        Response response = target.path(path)
+                .request()
+                .get();
+
+        if (response.getStatus() == OK_200.code()) {
+            String entity = response.readEntity(String.class);
+            if (!expected.equals(entity)) {
+                collector.fatal("Endpoint " + path + "should return \"" + expected + "\", but returned \"" + entity + "\"");
+            }
+        } else {
+            collector.fatal("Endpoint " + path + " should be handled by JaxRsResource.java. Status received: "
+                                    + response.getStatus());
+        }
+
+        int count = AutoFilter.count();
+
+        if (count == 0) {
+            collector.fatal("Filter should have been added to JaxRsApplicationNoClass automatically");
+        }
+    }
+
+    private static void validateStaticContent(Errors.Collector collector, WebTarget target) {
+        String path = "/static/resource.txt";
+        String expected = "classpath-resource-text";
+
+        Response response = target.path(path)
+                .request()
+                .get();
+
+        if (response.getStatus() == OK_200.code()) {
+            String entity = response.readEntity(String.class);
+            if (!expected.equals(entity)) {
+                collector.fatal("Endpoint " + path + "should return \"" + expected + "\", but returned \"" + entity + "\"");
+            }
+        } else {
+            collector.fatal("Endpoint " + path + " should contain static content from /web/resource.txt. Status received: "
+                                    + response.getStatus());
+        }
+
+        path = "/static";
+        expected = "welcome!";
+        response = target.path(path)
+                .request()
+                .get();
+
+        if (response.getStatus() == OK_200.code()) {
+            String entity = response.readEntity(String.class);
+            if (!expected.equals(entity)) {
+                collector.fatal("Endpoint " + path + "should return welcome file's content \"" + expected
+                                        + "\", but returned \"" + entity + "\"");
+            }
+        } else {
+            collector.fatal("Endpoint " + path + " should contain static content from /web/welcome.txt. Status received: "
+                                    + response.getStatus());
+        }
+    }
+
+    private static void validateInjection(Errors.Collector collector, WebTarget target) {
+        String path = "/cdi/fields";
+        WebTarget fieldsTarget = target.path(path);
+
+        try {
+            fieldsTarget.request().get(String.class);
+        } catch (Exception e) {
+            collector.fatal(e, "JAX-RS field injection failed. Check the server log.");
+        }
     }
 
     private static void validateBasicAuthProtectedResource(Errors.Collector collector, WebTarget target) {
@@ -223,7 +356,6 @@ public final class Mp1Main {
         testScopeNoAuth(collector, jwtTarget, path);
         testScopeAuth(collector, jwtTarget, path, authorizationHeader, true);
 
-
         // role
         testRoleNoAuth(collector, jwtTarget, path);
         testRoleAuth(collector, jwtTarget, path, authorizationHeader, true);
@@ -245,24 +377,166 @@ public final class Mp1Main {
         }
     }
 
+    private static void validateOpenAPI(Errors.Collector collector, WebTarget target) {
+        JsonObject openApi = target.path("/openapi")
+                .request(MediaType.APPLICATION_JSON)
+                .get(JsonObject.class);
+
+        // make sure we have all our applications, and for one method check annots are processed
+        JsonObject info = openApi.getJsonObject("info");
+        String expected = "Generated API";
+        if (null == info) {
+            collector.fatal("OpenAPI", "info from OpenAPI response is null");
+            return;
+        }
+        String actual = info.getString("title");
+        if (!expected.equals(actual)) {
+            collector.fatal("OpenAPI", "info.title should be \"" + expected + "\", but is \"" + actual + "\"");
+        }
+        JsonObject paths = openApi.getJsonObject("paths");
+        // each subkey is one path
+        Set<String> actualPaths = paths.keySet();
+
+        // for each application
+        checkPlainApp(collector, actualPaths, "/cdi");
+        checkPlainApp(collector, actualPaths, "/noncdi");
+        checkProtectedApp(collector, actualPaths, "/basic");
+        checkProtectedApp(collector, actualPaths, "/jwt");
+        checkProtectedApp(collector, actualPaths, "/oidc");
+
+        checkJsonContentType(collector, openApi, "/cdi/jsonb");
+        checkJsonContentType(collector, openApi, "/noncdi/jsonb");
+
+        checkDescription(collector, openApi, "/noncdi", "Hello world message");
+        checkDescription(collector, openApi, "/noncdi/property", "Value of property 'app.message' from config.");
+        checkDescription(collector, openApi, "/cdi", "Hello world message");
+        checkDescription(collector, openApi, "/cdi/property", "Value of property 'app.message' from config.");
+    }
+
+    private static void checkDescription(Errors.Collector collector, JsonObject openApi, String path, String expected) {
+        String actual = openApi.getJsonObject("paths")
+                .getJsonObject(path)
+                .getJsonObject("get")
+                .getJsonObject("responses")
+                .getJsonObject("200")
+                .getString("description");
+
+        if (expected.equals(actual)) {
+            return;
+        }
+
+        collector.fatal("OpenAPI", "Description on path " + path + " should be \""
+                + expected + "\", but is \"" + actual + "\"");
+    }
+
+    private static void checkJsonContentType(Errors.Collector collector, JsonObject openApi, String path) {
+        JsonObject jsonObject = openApi.getJsonObject("paths")
+                .getJsonObject(path)
+                .getJsonObject("get")
+                .getJsonObject("responses")
+                .getJsonObject("200")
+                .getJsonObject("content");
+
+        if (!jsonObject.containsKey("application/json")) {
+            collector.fatal("OpenAPI", "Path " + path + " should have type application/json");
+        }
+    }
+
+    private static void checkProtectedApp(Errors.Collector collector, Set<String> actualPaths, String path) {
+        // publicHello()
+        checkPathExists(collector, actualPaths, path + "/public");
+        // scope()
+        checkPathExists(collector, actualPaths, path + "/scope");
+        // role()
+        checkPathExists(collector, actualPaths, path + "/role");
+    }
+
+    private static void checkPlainApp(Errors.Collector collector, Set<String> actualPaths, String path) {
+        // hello()
+        checkPathExists(collector, actualPaths, path);
+        // message()
+        checkPathExists(collector, actualPaths, path + "/property");
+        // jaxRsMessage()
+        checkPathExists(collector, actualPaths, path + "/jaxrsproperty");
+        // number()
+        checkPathExists(collector, actualPaths, path + "/number");
+        // jsonObject()
+        checkPathExists(collector, actualPaths, path + "/jsonp");
+        // jsonBinding()
+        checkPathExists(collector, actualPaths, path + "/jsonb");
+    }
+
+    private static void checkPathExists(Errors.Collector collector, Set<String> actualPaths, String expectedPath) {
+        if (actualPaths.contains(expectedPath)) {
+            return;
+        }
+
+        collector.fatal("openAPI", "OpenAPI document does not contain documentation of endpoint " + expectedPath);
+    }
+
     private static void validateHealth(Errors.Collector collector, WebTarget target) {
         JsonObject health = target.path("/health/ready")
                 .request(MediaType.APPLICATION_JSON)
                 .get(JsonObject.class);
 
         JsonArray checks = health.getJsonArray("checks");
-        if (checks.size() < 1) {
-            collector.fatal("There should be at least one readiness healtcheck provided by this app");
+        if (checks.size() != 1) {
+            collector.fatal("There should be a readiness health check provided by this app");
+        } else {
+            JsonObject check = checks.getJsonObject(0);
+            if (!"mp1-ready".equals(check.getString("name"))) {
+                collector.fatal("The readiness health check should be named \"mp1-ready\", but is " + check.getString("name"));
+            }
         }
 
-        health = target.path("/health/live")
-                .request(MediaType.APPLICATION_JSON)
-                .get(JsonObject.class);
+        try {
+            health = target.path("/health/live")
+                    .request(MediaType.APPLICATION_JSON)
+                    .get(JsonObject.class);
 
-        checks = health.getJsonArray("checks");
-        if (checks.size() < 1) {
-            collector.fatal("There should be at least one liveness healtcheck provided by this app");
+            checks = health.getJsonArray("checks");
+            if (checks.size() < 1) {
+                collector.fatal("There should be at least one liveness healtcheck provided by this app");
+            } else {
+                Map<String, JsonObject> checkMap = new HashMap<>();
+                checks.forEach(it -> {
+                    JsonObject healthCheck = (JsonObject) it;
+                    checkMap.put(healthCheck.getString("name"), healthCheck);
+                });
+                // now the check map contains all healthchecks we have
+                // validate our own
+                JsonObject healthCheck = healthExistsAndUp(collector, checkMap, "mp1-live");
+                if (null != healthCheck) {
+                    String message = healthCheck.getJsonObject("data").getString("app.message");
+                    if (!"Properties message".equals(message)) {
+                        collector.fatal("Message health check should return injected app.message from properties, but got "
+                                                + message);
+                    }
+                }
+
+                healthExistsAndUp(collector, checkMap, "deadlock");
+                healthExistsAndUp(collector, checkMap, "diskSpace");
+                healthExistsAndUp(collector, checkMap, "heapMemory");
+            }
+        } catch (ServiceUnavailableException e) {
+            collector.fatal(e, "Failed to invoke health endpoint. Exception: " + e.getClass().getName()
+                    + ", message: " + e.getMessage() + ", " + e.getResponse().readEntity(String.class));
         }
+    }
+
+    private static JsonObject healthExistsAndUp(Errors.Collector collector,
+                                                Map<String, JsonObject> checkMap,
+                                                String name) {
+        JsonObject healthCheck = checkMap.get(name);
+        if (null == healthCheck) {
+            collector.fatal("\"" + name + "\" health check is not available");
+        } else {
+            String status = healthCheck.getString("state");
+            if (!"UP".equals(status)) {
+                collector.fatal("Health check \"" + name + "\" should be up, but is " + status);
+            }
+        }
+        return healthCheck;
     }
 
     private static void validateMetrics(Errors.Collector collector, WebTarget target) {
@@ -365,7 +639,6 @@ public final class Mp1Main {
             collector.fatal(assertionName + ", expected \"" + expected + "\", actual: \"" + actual + "\"");
         }
     }
-
 
     private static void testPublic(Errors.Collector collector, WebTarget target, String path) {
         // public

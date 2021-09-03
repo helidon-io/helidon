@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,23 @@
 
 package io.helidon.security.examples.webserver.digest;
 
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.LogManager;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.http.MediaType;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.security.providers.httpauth.HttpDigest;
 import io.helidon.security.providers.httpauth.HttpDigestAuthProvider;
-import io.helidon.security.providers.httpauth.UserStore;
+import io.helidon.security.providers.httpauth.SecureUserStore;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -40,6 +44,8 @@ public final class DigestExampleBuilderMain {
     private static WebServer server;
     // simple approach to user storage - for real world, use data store...
     private static Map<String, MyUser> users = new HashMap<>();
+
+    private static final char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
 
     static {
         users.put("jack", new MyUser("jack", "password".toCharArray(), Set.of("user", "admin")));
@@ -54,11 +60,10 @@ public final class DigestExampleBuilderMain {
      * Starts this example. Programmatical configuration. See standard output for instructions.
      *
      * @param args ignored
-     * @throws IOException in case of logging configuration failure
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(DigestExampleConfigMain.class.getResourceAsStream("/logging.properties"));
+        LogConfig.configureRuntime();
 
         // build routing (same as done in application.conf)
         Routing routing = Routing.builder()
@@ -97,7 +102,7 @@ public final class DigestExampleBuilderMain {
         return WebSecurity.create(security);
     }
 
-    private static UserStore buildUserStore() {
+    private static SecureUserStore buildUserStore() {
         return login -> Optional.ofNullable(users.get(login));
     }
 
@@ -105,7 +110,7 @@ public final class DigestExampleBuilderMain {
         return server;
     }
 
-    private static class MyUser implements UserStore.User {
+    private static class MyUser implements SecureUserStore.User {
         private String login;
         private char[] password;
         private Set<String> roles;
@@ -116,9 +121,39 @@ public final class DigestExampleBuilderMain {
             this.roles = roles;
         }
 
-        @Override
-        public char[] password() {
+        private char[] password() {
             return password;
+        }
+
+        private static String bytesToHex(byte[] bytes) {
+            char[] hexChars = new char[bytes.length * 2];
+            for (int j = 0; j < bytes.length; j++) {
+                int v = bytes[j] & 0xFF;
+                hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+                hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+            }
+            return new String(hexChars);
+        }
+
+        @Override
+        public boolean isPasswordValid(char[] password) {
+            return Arrays.equals(password(), password);
+        }
+
+        @Override
+        public Optional<String> digestHa1(String realm, HttpDigest.Algorithm algorithm) {
+            if (algorithm != HttpDigest.Algorithm.MD5) {
+                throw new IllegalArgumentException("Unsupported algorithm " + algorithm);
+            }
+            String a1 = login + ":" + realm + ":" + new String(password());
+            byte[] bytes = a1.getBytes(StandardCharsets.UTF_8);
+            MessageDigest digest;
+            try {
+                digest = MessageDigest.getInstance("MD5");
+            } catch (NoSuchAlgorithmException e) {
+                throw new IllegalStateException("MD5 algorithm should be supported", e);
+            }
+            return Optional.of(bytesToHex(digest.digest(bytes)));
         }
 
         @Override

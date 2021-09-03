@@ -1,0 +1,208 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= JMS Connector
+:toc:
+:toc-placement: preamble
+:description: Reactive Messaging support for JMS in Helidon MP
+:keywords: helidon, mp, messaging, jms
+:h1Prefix: MP
+:feature-name: JMS Connector
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:microprofile-bundle: false
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.messaging.jms</groupId>
+    <artifactId>helidon-messaging-jms</artifactId>
+</dependency>
+----
+
+== Reactive JMS Connector
+
+Connecting streams to JMS with Reactive Messaging couldn't be easier.
+
+=== Config
+
+Connector name: `helidon-jms`
+
+.Attributes
+|===
+|`username` | User name used to connect JMS session
+|`password` | Password to connect JMS session
+|`type` | Possible values are: `queue`, `topic`
+|`destination` | Queue or topic name
+|`acknowledge-mode` |Possible values are: `AUTO_ACKNOWLEDGE`- session automatically acknowledges a client's receipt of a message,
+`CLIENT_ACKNOWLEDGE` - receipt of a message is acknowledged only when `Message.ack()` is called manually,
+`DUPS_OK_ACKNOWLEDGE` - session lazily acknowledges the delivery of messages. Default value: `AUTO_ACKNOWLEDGE`
+|`transacted` | Indicates whether the session will use a local transaction. Default value: `false`
+|`message-selector` | JMS API message selector expression based on a subset of the SQL92.
+Expression can only access headers and properties, not the payload.
+|`client-id` | Client identifier for JMS connection.
+|`durable` | True for creating durable consumer (only for topic). Default value: `false`
+|`subscriber-name` | Subscriber name for durable consumer used to identify subscription.
+|`non-local` | If true then any messages published to the topic using this session's connection,
+ or any other connection with the same client identifier,
+ will not be added to the durable subscription. Default value: `false`
+|`named-factory` | Select in case factory is injected as a named bean or configured with name.
+|`poll-timeout` | Timeout for polling for next message in every poll cycle in millis. Default value: `50`
+|`period-executions` | Period for executing poll cycles in millis. Default value: `100`
+|`session-group-id` | When multiple channels share same `session-group-id`,
+they share same JMS session and same JDBC connection as well.
+|`jndi.jms-factory` | JNDI name of JMS factory.
+|`jndi.env-properties` | Environment properties used for creating initial context `java.naming.factory.initial`, `java.naming.provider.url` ...
+|===
+
+=== Configured JMS factory
+
+The simplest possible usage is looking up JMS ConnectionFactory in the naming context.
+
+[source,yaml]
+.Example of connector config:
+----
+mp.messaging:
+
+  incoming.from-jms:
+    connector: helidon-jms
+    destination: messaging-test-queue-1
+    type: queue
+
+  outgoing.to-jms:
+    connector: helidon-jms
+    destination: messaging-test-queue-1
+    type: queue
+
+  connector:
+    helidon-jms:
+      user: Gandalf
+      password: mellon
+      jndi:
+        jms-factory: ConnectionFactory
+        env-properties:
+          java.naming:
+            factory.initial: org.apache.activemq.jndi.ActiveMQInitialContextFactory
+            provider.url: tcp://localhost:61616
+----
+
+=== Injected JMS factory
+
+In case you need more advanced setup, connector can work with injected factory instance.
+
+[source,java]
+.Inject:
+----
+    @Produces
+    @ApplicationScoped
+    @Named("active-mq-factory")
+    public ConnectionFactory connectionFactory() {
+        return new ActiveMQConnectionFactory(config.get("jms.url").asString().get());
+    }
+----
+
+[source,yaml]
+.Config:
+----
+jms:
+  url: tcp://127.0.0.1:61616
+
+mp:
+  messaging:
+    connector:
+      helidon-jms:
+        named-factory: active-mq-factory
+
+    outgoing.to-jms:
+      connector: helidon-jms
+      session-group-id: order-connection-1
+      destination: TESTQUEUE
+      type: queue
+
+    incoming.from-jms:
+      connector: helidon-jms
+      session-group-id: order-connection-1
+      destination: TESTQUEUE
+      type: queue
+----
+
+=== Consuming
+
+[source,java]
+.Consuming one by one unwrapped value:
+----
+@Incoming("from-jms")
+public void consumeJms(String msg) {
+    System.out.println("JMS says: " + msg);
+}
+----
+
+[source,java]
+.Consuming one by one, manual ack:
+----
+@Incoming("from-jms")
+@Acknowledgment(Acknowledgment.Strategy.MANUAL)
+public CompletionStage<?> consumeJms(JmsMessage<String> msg) {
+    System.out.println("JMS says: " + msg.getPayload());
+    return msg.ack();
+}
+----
+
+=== Producing
+
+[source,java]
+.Example of producing to JMS:
+----
+@Outgoing("to-jms")
+public PublisherBuilder<String> produceToJms() {
+    return ReactiveStreams.of("test1", "test2");
+}
+----
+
+[source,java]
+.Example of more advanced producing to JMS:
+----
+@Outgoing("to-jms")
+public PublisherBuilder<String> produceToJms() {
+    return ReactiveStreams.of("test1", "test2")
+                .map(s -> JmsMessage.builder(s)
+                              .correlationId(UUID.randomUUID().toString())
+                              .property("stringProp", "cool property")
+                              .property("byteProp", 4)
+                              .property("intProp", 5)
+                              .onAck(() -> System.out.println("Acked!"))
+                              .build());
+}
+----
+[source,java]
+.Example of even more advanced producing to JMS with custom mapper:
+----
+@Outgoing("to-jms")
+public PublisherBuilder<String> produceToJms() {
+    return ReactiveStreams.of("test1", "test2")
+                .map(s -> JmsMessage.builder(s)
+                            .customMapper((p, session) -> {
+                                TextMessage textMessage = session.createTextMessage(p);
+                                textMessage.setStringProperty("custom-mapped-property", "XXX" + p);
+                                return textMessage;
+                            })
+                            .build()
+                    );
+}
+----

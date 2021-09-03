@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -167,7 +167,7 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
         RANDOM.nextBytes(passwordBytes);
         char[] password = Base64.getEncoder().encodeToString(passwordBytes).toCharArray();
 
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         ks.load(null, null);
         ks.setKeyEntry("key",
                        privateKeyConfig.privateKey().orElseThrow(() -> new RuntimeException("Private key not available")),
@@ -190,7 +190,7 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
             certs = trustConfig.certs();
         }
 
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         ks.load(null, null);
 
         int i = 1;

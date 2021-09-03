@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,24 +20,31 @@
 module io.helidon.microprofile.faulttolerance {
     requires java.logging;
     requires java.annotation;
-    requires javax.inject;
-    requires javax.interceptor.api;
+    requires jakarta.inject.api;
+    requires jakarta.interceptor.api;
 
     requires io.helidon.common.context;
     requires io.helidon.common.configurable;
-    requires io.helidon.common.metrics;
+    requires io.helidon.faulttolerance;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
+    requires io.helidon.microprofile.metrics;
+    requires io.helidon.config.mp;
 
-    requires cdi.api;
-    requires hystrix.core;
-    requires archaius.core;
-    requires commons.configuration;
-    requires failsafe;
+    requires jakarta.enterprise.cdi.api;
 
     requires microprofile.config.api;
     requires microprofile.metrics.api;
     requires microprofile.fault.tolerance.api;
+
+    requires jersey.weld2.se;
+    requires weld.api;
+    requires weld.spi;
+
+    exports io.helidon.microprofile.faulttolerance;
+
+    // needed when running with modules - to make private methods accessible
+    opens io.helidon.microprofile.faulttolerance to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.faulttolerance.FaultToleranceExtension;
 }

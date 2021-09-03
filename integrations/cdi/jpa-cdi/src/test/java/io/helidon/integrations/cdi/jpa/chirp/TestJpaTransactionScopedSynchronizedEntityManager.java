@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,10 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceContextType;
+import javax.persistence.PersistenceException;
 import javax.persistence.SynchronizationType;
 import javax.persistence.TransactionRequiredException;
 import javax.sql.DataSource;
@@ -209,19 +209,23 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         // Create a JPA entity and try to insert it.  This should fail
         // because according to JPA a TransactionRequiredException
         // will be thrown.
-        Author author = new Author("Abraham Lincoln");
+        Author author1 = new Author("Abraham Lincoln");
         try {
-            em.persist(author);
+            em.persist(author1);
             fail("A TransactionRequiredException should have been thrown");
         } catch (final TransactionRequiredException expected) {
 
         }
+        assertFalse(em.contains(author1));
+        assertNull(author1.getId());
 
         // Get the TransactionManager that normally is behind the
         // scenes and use it to start a Transaction.
         final TransactionManager tm = self.getTransactionManager();
         assertNotNull(tm);
         tm.setTransactionTimeout(60 * 20); // TODO: set to 20 minutes for debugging purposes only
+
+        // New transaction.
         tm.begin();
 
         // Grab the TransactionScoped context while the transaction is
@@ -239,107 +243,193 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         tm.rollback();
         assertFalse(em.isJoinedToTransaction());
         assertFalse(transactionScopedContext.isActive());
+        assertFalse(em.contains(author1));
+        assertNull(author1.getId());
 
         // Start another transaction.
         tm.begin();
         assertTrue(transactionScopedContext.isActive());
 
         // Persist our Author.
-        assertNull(author.getId());
-        em.persist(author);
-        assertTrue(em.contains(author));
+        assertNull(author1.getId());
+        em.persist(author1);
+        assertTrue(em.contains(author1));
+
+        // A persist() doesn't flush(), so no ID should have been
+        // generated yet.
+        // assertNull(author1.getId());
+
+        // Commit the transaction and flush changes to the database.
         tm.commit();
 
         // After the transaction commits, a flush should happen, and
-        // the author is managed, so we should see his ID.
-        assertEquals(Integer.valueOf(1), author.getId());
+        // the Author is managed, so we should see his ID.
+        assertEquals(Integer.valueOf(1), author1.getId());
+
+        // Make sure the database contains the changes.
+        try (final Connection connection = dataSource.getConnection();
+             final Statement statement = connection.createStatement();
+             final ResultSet resultSet = statement.executeQuery("SELECT ID, NAME FROM AUTHOR WHERE ID = 1");) {
+            assertNotNull(resultSet);
+            assertTrue(resultSet.next());
+            assertEquals(1, resultSet.getInt(1));
+            assertEquals("Abraham Lincoln", resultSet.getString(2));
+            assertFalse(resultSet.next());
+        }
+        
+        // The Author, however, is detached, because the transaction
+        // is over, and because our PersistenceContextType is
+        // TRANSACTION, not EXTENDED, the underlying persistence
+        // context dies with the transaction.
+        assertFalse(em.contains(author1));
 
         // The transaction is over, so our EntityManager is not joined
         // to one anymore.
         assertFalse(em.isJoinedToTransaction());
         assertFalse(transactionScopedContext.isActive());
 
-        // Our PersistenceContextType is TRANSACTION, not EXTENDED, so
-        // the underlying persistence context dies with the
-        // transaction so the EntityManager's persistence context
-        // should be empty, so the contains() operation should return
-        // false.
-        assertFalse(em.contains(author));
-
-        // Start a transaction.
+        // Start a new transaction.
         tm.begin();
         assertTrue(transactionScopedContext.isActive());
 
         // Remove the Author we successfully committed before.  We
-        // have to merge because the author became detached a few
-        // lines above.
-        author = em.merge(author);
-        em.remove(author);
-        assertFalse(em.contains(author));
+        // have to merge because author1 became detached a few lines
+        // above.
+        author1 = em.merge(author1);
+        assertNotNull(author1);
+        assertTrue(em.contains(author1));
+        em.remove(author1);
+        assertFalse(em.contains(author1));
+
+        // Commit and flush the removal.
         tm.commit();
 
         assertFalse(em.isJoinedToTransaction());
         assertFalse(transactionScopedContext.isActive());
 
         // Note that its ID is still 1.
-        assertEquals(Integer.valueOf(1), author.getId());
+        assertEquals(Integer.valueOf(1), author1.getId());
 
-        assertDatabaseIsEmpty(dataSource);
+        // After all this activity we should have no rows in any
+        // tables.
+        assertTableRowCount(dataSource, "AUTHOR", 0);
 
+        // Start a new transaction, merge our detached author1, and
+        // commit.  This will bump the author's ID and put a row in
+        // the database.
         tm.begin();
+        assertTrue(em.isJoinedToTransaction());
+        assertTrue(transactionScopedContext.isActive());
+        author1 = em.merge(author1);
+        tm.commit();
+        assertFalse(em.isJoinedToTransaction());
+        assertFalse(em.contains(author1));
+        assertFalse(transactionScopedContext.isActive());
 
-        try {
-            assertTrue(em.isJoinedToTransaction());
-            assertTrue(transactionScopedContext.isActive());
+        // Now that the commit and accompanying flush have
+        // happened, our author's ID has changed.
+        assertEquals(Integer.valueOf(2), author1.getId());
 
-            // This is interesting. author is now detached, but it
-            // still has a persistent identifier set to 1.
-            em.persist(author);
-
-            // The act of persisting doesn't flush anything, so our id
-            // is still 1.
-            assertEquals(Integer.valueOf(1), author.getId());
-
-            assertTrue(transactionScopedContext.isActive());
-            assertTrue(em.contains(author));
-            assertTrue(em.isJoinedToTransaction());
-
-            // Persisting the same thing again is a no-op.
-            em.persist(author);
-
-            // The act of persisting doesn't flush anything, so our id
-            // is still 1.
-            assertEquals(Integer.valueOf(1), author.getId());
-
-            // Make sure the TransactionContext is active.
-            assertTrue(transactionScopedContext.isActive());
-            assertTrue(em.contains(author));
-            assertTrue(em.isJoinedToTransaction());
-
-            tm.commit();
-
-            // Make sure the TransactionContext is NOT active.
-            assertFalse(em.isJoinedToTransaction());
-            assertFalse(em.contains(author));
-            assertFalse(transactionScopedContext.isActive());
-
-            // Now that the commit and accompanying flush have
-            // happened, our author's ID has changed.
-            assertEquals(Integer.valueOf(2), author.getId());
-        } catch (final EntityExistsException expected) {
-
-        } catch (final Exception somethingUnexpected) {
-            fail(somethingUnexpected);
-        }
-    }
-
-    private static final void assertDatabaseIsEmpty(final DataSource dataSource) throws SQLException {
+        // Make sure the database contains the changes.
         try (final Connection connection = dataSource.getConnection();
              final Statement statement = connection.createStatement();
-             final ResultSet resultSet = statement.executeQuery("SELECT COUNT(a.id) FROM AUTHOR a");) {
+             final ResultSet resultSet = statement.executeQuery("SELECT ID, NAME FROM AUTHOR");) {
             assertNotNull(resultSet);
             assertTrue(resultSet.next());
-            assertEquals(0, resultSet.getInt(1));
+            assertEquals(2, resultSet.getInt(1));
+            assertEquals("Abraham Lincoln", resultSet.getString(2));
+            assertFalse(resultSet.next());
+        }
+
+        // Discard author1 in this unit test so we'll get a
+        // NullPointerException if we try to use him again.  (After
+        // all it's confusing now that author1 has 2 for an ID!)
+        author1 = null;
+
+        // Let's find the new author that got merged in.  We'll use a
+        // transaction just for kicks.
+        tm.begin();
+        assertTrue(em.isJoinedToTransaction());
+        assertTrue(transactionScopedContext.isActive());
+
+        Author author2 = em.find(Author.class, Integer.valueOf(2));
+        assertNotNull(author2);
+        assertTrue(em.contains(author2));
+        assertEquals(Integer.valueOf(2), author2.getId());
+        assertEquals("Abraham Lincoln", author2.getName());
+
+        // No need, really, but it's what a @Transactional method
+        // would do.
+        tm.commit();
+        assertFalse(em.isJoinedToTransaction());
+        assertFalse(em.contains(author2));
+        assertFalse(transactionScopedContext.isActive());
+
+        // New transaction.  Let's change the name.
+        tm.begin();
+        assertTrue(em.isJoinedToTransaction());
+        assertTrue(transactionScopedContext.isActive());
+
+        author2 = em.find(Author.class, Integer.valueOf(2));
+        assertNotNull(author2);
+
+        // Remember that finding an entity causes it to become
+        // managed.
+        assertTrue(em.contains(author2));
+
+        assertEquals(Integer.valueOf(2), author2.getId());
+        assertEquals("Abraham Lincoln", author2.getName());
+
+        author2.setName("Abe Lincoln");
+        assertEquals(Integer.valueOf(2), author2.getId());
+        assertEquals("Abe Lincoln", author2.getName());
+
+        tm.commit();
+        assertFalse(em.isJoinedToTransaction());
+        assertFalse(em.contains(author2));
+        assertFalse(transactionScopedContext.isActive());
+
+        // Make sure the database contains the changes.
+        try (final Connection connection = dataSource.getConnection();
+             final Statement statement = connection.createStatement();
+             final ResultSet resultSet = statement.executeQuery("SELECT ID, NAME FROM AUTHOR");) {
+            assertNotNull(resultSet);
+            assertTrue(resultSet.next());
+            assertEquals(2, resultSet.getInt(1));
+            assertEquals("Abe Lincoln", resultSet.getString(2));
+            assertFalse(resultSet.next());
+        }
+
+        // Let's go find him again.
+        tm.begin();
+        assertTrue(em.isJoinedToTransaction());
+        assertTrue(transactionScopedContext.isActive());
+
+        author2 = em.find(Author.class, Integer.valueOf(2));
+        assertNotNull(author2);
+        assertTrue(em.contains(author2));
+        assertEquals(Integer.valueOf(2), author2.getId());
+        assertEquals("Abe Lincoln", author2.getName());
+
+        // No need, really, but it's what a @Transactional method
+        // would do.
+        tm.commit();
+        assertFalse(em.isJoinedToTransaction());
+        assertFalse(em.contains(author2));
+        assertFalse(transactionScopedContext.isActive());
+
+    }
+
+    private static final void assertTableRowCount(final DataSource dataSource,
+                                                  final String upperCaseTableName,
+                                                  final int expectedCount)
+        throws SQLException {
+        try (final Connection connection = dataSource.getConnection();
+             final Statement statement = connection.createStatement();
+             final ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM " + upperCaseTableName);) {
+            assertNotNull(resultSet);
+            assertTrue(resultSet.next());
+            assertEquals(expectedCount, resultSet.getInt(1));
         }
     }
 

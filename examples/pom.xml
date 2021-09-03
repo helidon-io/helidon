@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2017, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>2.4.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.examples</groupId>
     <artifactId>helidon-examples-project</artifactId>
@@ -35,14 +35,18 @@
         <maven.sources.skip>true</maven.sources.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <spotbugs.skip>true</spotbugs.skip>
+        <dependency-check.skip>true</dependency-check.skip>
+        <helidon.services.skip>true</helidon.services.skip>
     </properties>
 
     <modules>
         <module>config</module>
+        <module>graphql</module>
         <module>grpc</module>
         <module>health</module>
         <module>quickstarts</module>
         <module>microprofile</module>
+        <module>media</module>
         <module>openapi</module>
         <module>security</module>
         <module>todo-app</module>
@@ -51,6 +55,11 @@
         <module>integrations</module>
         <module>employee-app</module>
         <module>dbclient</module>
+        <module>webclient</module>
+        <module>cors</module>
+        <module>messaging</module>
+        <module>logging</module>
+        <module>metrics</module>
     </modules>
 
     <build>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.config.spi;
 
-import java.util.Optional;
+import io.helidon.config.ConfigSourceRuntime;
 
 /**
  * Context created by a {@link io.helidon.config.Config.Builder} as it constructs a
@@ -26,25 +26,11 @@ import java.util.Optional;
  * interfaces to share common information.
  */
 public interface ConfigContext {
-
     /**
-     * Returns the first appropriate {@link ConfigParser} instance that supports
-     * the specified
-     * {@link ConfigParser.Content#mediaType() content media type}.
-     * <p>
-     * Note that the application can explicitly register parsers with a builder
-     * by invoking the
-     * {@link io.helidon.config.Config.Builder#addParser(ConfigParser)} method. The
-     * config system also loads parsers using the Java
-     * {@link java.util.ServiceLoader} mechanism and automatically registers
-     * such loaded parsers with each {@code Builder} unless the application has
-     * invoked the {@link io.helidon.config.Config.Builder#disableParserServices()}
-     * method.
+     * Create or find a runtime for a config source.
      *
-     * @param mediaType a media type for which a parser is needed
-     * @return {@code Optional<ConfigParser>} ({@link Optional#empty()} if no
-     * appropriate parser exists)
+     * @param source source to create runtime for
+     * @return a source runtime
      */
-    Optional<ConfigParser> findParser(String mediaType);
-
+    ConfigSourceRuntime sourceRuntime(ConfigSource source);
 }

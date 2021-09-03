@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 package io.helidon.dbclient;
 
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 
-import io.helidon.common.reactive.OptionalCompletionStage;
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 
 /**
  * Database executor.
@@ -79,7 +79,7 @@ public interface DbExecute {
      * @param parameters    query parameters to set
      * @return database query execution result which can contain multiple rows
      */
-    default CompletionStage<DbRows<DbRow>> namedQuery(String statementName, Object... parameters) {
+    default Multi<DbRow> namedQuery(String statementName, Object... parameters) {
         return createNamedQuery(statementName).params(parameters).execute();
     }
 
@@ -90,7 +90,7 @@ public interface DbExecute {
      * @param parameters query parameters to set
      * @return database query execution result which can contain multiple rows
      */
-    default CompletionStage<DbRows<DbRow>> query(String statement, Object... parameters) {
+    default Multi<DbRow> query(String statement, Object... parameters) {
         return createQuery(statement).params(parameters).execute();
     }
 
@@ -130,8 +130,8 @@ public interface DbExecute {
      * @param parameters    query parameters to set
      * @return database query execution result which can contain single row
      */
-    default OptionalCompletionStage<DbRow> namedGet(String statementName, Object... parameters) {
-        return OptionalCompletionStage.create(createNamedGet(statementName).params(parameters).execute());
+    default Single<Optional<DbRow>> namedGet(String statementName, Object... parameters) {
+        return createNamedGet(statementName).params(parameters).execute();
     }
 
     /**
@@ -141,7 +141,7 @@ public interface DbExecute {
      * @param parameters query parameters to set
      * @return database query execution result which can contain single row
      */
-    default CompletionStage<Optional<DbRow>> get(String statement, Object... parameters) {
+    default Single<Optional<DbRow>> get(String statement, Object... parameters) {
         return createGet(statement).params(parameters).execute();
     }
 
@@ -183,7 +183,7 @@ public interface DbExecute {
      * @param parameters    query parameters to set
      * @return number of rows inserted into the database
      */
-    default CompletionStage<Long> namedInsert(String statementName, Object... parameters) {
+    default Single<Long> namedInsert(String statementName, Object... parameters) {
         return createNamedInsert(statementName).params(parameters).execute();
     }
 
@@ -194,7 +194,7 @@ public interface DbExecute {
      * @param parameters query parameters to set
      * @return number of rows inserted into the database
      */
-    default CompletionStage<Long> insert(String statement, Object... parameters) {
+    default Single<Long> insert(String statement, Object... parameters) {
         return createInsert(statement).params(parameters).execute();
     }
 
@@ -236,7 +236,7 @@ public interface DbExecute {
      * @param parameters    query parameters to set
      * @return number of rows updateed into the database
      */
-    default CompletionStage<Long> namedUpdate(String statementName, Object... parameters) {
+    default Single<Long> namedUpdate(String statementName, Object... parameters) {
         return createNamedUpdate(statementName).params(parameters).execute();
     }
 
@@ -247,7 +247,7 @@ public interface DbExecute {
      * @param parameters query parameters to set
      * @return number of rows updateed into the database
      */
-    default CompletionStage<Long> update(String statement, Object... parameters) {
+    default Single<Long> update(String statement, Object... parameters) {
         return createUpdate(statement).params(parameters).execute();
     }
 
@@ -289,7 +289,7 @@ public interface DbExecute {
      * @param parameters    query parameters to set
      * @return number of rows deleted from the database
      */
-    default CompletionStage<Long> namedDelete(String statementName, Object... parameters) {
+    default Single<Long> namedDelete(String statementName, Object... parameters) {
         return createNamedDelete(statementName).params(parameters).execute();
     }
 
@@ -300,7 +300,7 @@ public interface DbExecute {
      * @param parameters query parameters to set
      * @return number of rows deleted from the database
      */
-    default CompletionStage<Long> delete(String statement, Object... parameters) {
+    default Single<Long> delete(String statement, Object... parameters) {
         return createDelete(statement).params(parameters).execute();
     }
 
@@ -340,7 +340,7 @@ public interface DbExecute {
      * @param parameters    query parameters to set
      * @return number of rows modified
      */
-    default CompletionStage<Long> namedDml(String statementName, Object... parameters) {
+    default Single<Long> namedDml(String statementName, Object... parameters) {
         return createNamedDmlStatement(statementName).params(parameters).execute();
     }
 
@@ -351,59 +351,25 @@ public interface DbExecute {
      * @param parameters query parameters to set
      * @return number of rows modified
      */
-    default CompletionStage<Long> dml(String statement, Object... parameters) {
+    default Single<Long> dml(String statement, Object... parameters) {
         return createDmlStatement(statement).params(parameters).execute();
     }
 
     /*
-     * UNKNOWN
+     * Unwrap support
      */
 
     /**
-     * Create a generic database statement using a named statement passed as an argument.
+     * Unwrap database executor internals.
+     * Only database connection is supported. Any operations based on this connection are <b>blocking</b>.
+     * Reactive support must be implemented in user code. This connection instance is being used to execute
+     * all statements in current database executor context.
      *
-     * @param statementName the name of the statement
-     * @param statement the statement text
-     * @return generic database statement that can return any result
+     * @param <C> target class to be unwrapped
+     * @param cls target class to be unwrapped
+     * @return database executor internals future matching provided class
+     * @throws UnsupportedOperationException when provided class is not supported
      */
-    DbStatementGeneric createNamedStatement(String statementName, String statement);
-
-    /**
-     * Create a generic database statement using a statement defined in the configuration file.
-     *
-     * @param statementName the name of the configuration node with statement
-     * @return generic database statement that can return any result
-     */
-    DbStatementGeneric createNamedStatement(String statementName);
-
-    /**
-     * Create a generic database statement using a statement passed as an argument.
-     *
-     * @param statement the statement to be executed
-     * @return generic database statement that can return any result
-     */
-    DbStatementGeneric createStatement(String statement);
-
-    /**
-     * Create and execute common statement using a statement defined in the configuration file.
-     *
-     * @param statementName the name of the configuration node with statement
-     * @param parameters    query parameters to set
-     * @return generic statement execution result
-     */
-    default CompletionStage<DbResult> namedStatement(String statementName, Object... parameters) {
-        return createNamedStatement(statementName).params(parameters).execute();
-    }
-
-    /**
-     * Create and execute common statement using a statement passed as an argument.
-     *
-     * @param statement  the statement to be executed
-     * @param parameters query parameters to set
-     * @return generic statement execution result
-     */
-    default CompletionStage<DbResult> statement(String statement, Object... parameters) {
-        return createStatement(statement).params(parameters).execute();
-    }
+    <C> Single<C> unwrap(Class<C> cls);
 
 }

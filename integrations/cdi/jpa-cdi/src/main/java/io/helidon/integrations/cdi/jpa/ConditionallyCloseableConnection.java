@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,7 +130,8 @@ class ConditionallyCloseableConnection extends DelegatingConnection {
      */
     @Override
     public void close() throws SQLException {
-        if (!this.isClosed() && this.isCloseable()) {
+        if (this.isCloseable()) {
+            assert !this.isClosed();
             this.reset();
             super.close();
             this.closed();
@@ -193,8 +194,9 @@ class ConditionallyCloseableConnection extends DelegatingConnection {
      * operation is actually going to take place.
      *
      * <p>The default implementation of this method calls {@link
-     * #setCloseable(boolean)} with {@code true} as a parameter
-     * value.</p>
+     * #setCloseable(boolean)} with {@code true} as a parameter value
+     * ensuring that the actual {@link Connection#close()} operation
+     * will not be blocked or reimplemented in any way.</p>
      *
      * <p>Overrides must not call the {@link #close()} method or
      * undefined behavior will result.</p>

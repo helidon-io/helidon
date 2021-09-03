@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.config.hocon.HoconConfigParser;
+
 /**
  * Typesafe (Lightbend) Config (HOCON) Parser implementation.
  */
@@ -29,6 +31,6 @@ module io.helidon.config.hocon {
 
     exports io.helidon.config.hocon;
 
-    provides io.helidon.config.spi.ConfigParser with io.helidon.config.hocon.internal.HoconConfigParser;
+    provides io.helidon.config.spi.ConfigParser with HoconConfigParser;
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import java.util.function.Supplier;
 import io.helidon.common.http.Http;
 
 /**
- * Routing represents composition of HTTP request-response handlers with routing rules. It is together with
- * {@link ServerConfiguration.Builder} a cornerstone of the {@link WebServer}.
+ * Routing represents composition of HTTP request-response handlers with routing rules.
+ * It is a cornerstone of the {@link WebServer}.
  *
  * @see WebServer
  */
@@ -34,8 +34,8 @@ public interface Routing {
     /**
      * Process bare minimal request and response using this routing.
      *
-     * @param bareRequest HTTP request to tryProcess
-     * @param bareResponse HTTP response to tryProcess
+     * @param bareRequest HTTP request to process
+     * @param bareResponse HTTP response to process
      */
     void route(BareRequest bareRequest, BareResponse bareResponse);
 
@@ -54,7 +54,10 @@ public interface Routing {
      * @param configuration a web server configuration
      * @return new {@link WebServer} instance
      * @throws IllegalStateException if none SPI implementation found
+     *
+     * @deprecated since 2.0.0 please use {@link WebServer#builder(Routing)} instead
      */
+    @Deprecated
     default WebServer createServer(ServerConfiguration configuration) {
         return WebServer.create(configuration, this);
     }
@@ -64,7 +67,10 @@ public interface Routing {
      *
      * @return new {@link WebServer} instance
      * @throws IllegalStateException if none SPI implementation found
+     *
+     * @deprecated since 2.0.0 please use {@link WebServer#builder(Routing)} instead
      */
+    @Deprecated
     default WebServer createServer() {
         return WebServer.create(this);
     }
@@ -125,7 +131,7 @@ public interface Routing {
          * Routes all GET requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
          * to continue processing on the next registered handler.
          *
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules get(Handler... requestHandlers);
@@ -135,7 +141,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathPattern     a URI path pattern. See {@link PathMatcher} for pattern syntax reference.
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules get(String pathPattern, Handler... requestHandlers);
@@ -145,7 +151,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathMatcher     a URI path pattern. See {@link PathMatcher} for pattern syntax reference.
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules get(PathMatcher pathMatcher, Handler... requestHandlers);
@@ -154,7 +160,7 @@ public interface Routing {
          * Routes all PUT requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
          * to continue processing on the next registered handler.
          *
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules put(Handler... requestHandlers);
@@ -164,7 +170,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathPattern     a URI path pattern. See {@link PathMatcher} for pattern syntax reference.
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules put(String pathPattern, Handler... requestHandlers);
@@ -174,7 +180,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathMatcher     define path for a registered router
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules put(PathMatcher pathMatcher, Handler... requestHandlers);
@@ -183,7 +189,7 @@ public interface Routing {
          * Routes all POST requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
          * to continue processing on the next registered handler.
          *
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules post(Handler... requestHandlers);
@@ -193,7 +199,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathPattern     a URI path pattern. See {@link PathMatcher} for pattern syntax reference.
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules post(String pathPattern, Handler... requestHandlers);
@@ -203,16 +209,45 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathMatcher     define path for registered router
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules post(PathMatcher pathMatcher, Handler... requestHandlers);
 
         /**
+         * Routes all RFC 5789 PATCH requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
+         * to continue processing on the next registered handler.
+         *
+         * @param requestHandlers handlers to process HTTP request
+         * @return an updated routing configuration
+         */
+        Rules patch(Handler... requestHandlers);
+
+        /**
+         * Routes RFC 5789 PATCH requests with corresponding path to provided handler(s). Request handler can call
+         * {@link ServerRequest#next()} to continue processing on the next registered handler.
+         *
+         * @param pathPattern     a URI path pattern. See {@link PathMatcher} for pattern syntax reference.
+         * @param requestHandlers handlers to process HTTP request
+         * @return an updated routing configuration
+         */
+        Rules patch(String pathPattern, Handler... requestHandlers);
+
+        /**
+         * Routes RFC 5789 PATCH requests with corresponding path to provided handler(s). Request handler can call
+         * {@link ServerRequest#next()} to continue processing on the next registered handler.
+         *
+         * @param pathMatcher     define path for registered router
+         * @param requestHandlers handlers to process HTTP request
+         * @return an updated routing configuration
+         */
+        Rules patch(PathMatcher pathMatcher, Handler... requestHandlers);
+
+        /**
          * Routes all DELETE requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
          * to continue processing on the next registered handler.
          *
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules delete(Handler... requestHandlers);
@@ -222,7 +257,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathPattern     a URI path pattern. See {@link PathMatcher} for pattern syntax reference.
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules delete(String pathPattern, Handler... requestHandlers);
@@ -232,7 +267,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathMatcher     define path for registered router
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules delete(PathMatcher pathMatcher, Handler... requestHandlers);
@@ -241,7 +276,7 @@ public interface Routing {
          * Routes all OPTIONS requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
          * to continue processing on the next registered handler.
          *
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules options(Handler... requestHandlers);
@@ -251,7 +286,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathPattern     a URI path pattern. See {@link PathMatcher} for pattern syntax reference.
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules options(String pathPattern, Handler... requestHandlers);
@@ -261,7 +296,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathMatcher     define path for registered router
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules options(PathMatcher pathMatcher, Handler... requestHandlers);
@@ -270,7 +305,7 @@ public interface Routing {
          * Routes all HEAD requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
          * to continue processing on the next registered handler.
          *
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules head(Handler... requestHandlers);
@@ -280,7 +315,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathPattern     a URI path pattern. See {@link PathMatcher} for pattern syntax reference.
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules head(String pathPattern, Handler... requestHandlers);
@@ -290,7 +325,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathMatcher     define path for registered router
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules head(PathMatcher pathMatcher, Handler... requestHandlers);
@@ -299,7 +334,7 @@ public interface Routing {
          * Routes all TRACE requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
          * to continue processing on the next registered handler.
          *
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules trace(Handler... requestHandlers);
@@ -309,7 +344,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathPattern     a URI path pattern. See {@link PathMatcher} for pattern syntax reference.
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules trace(String pathPattern, Handler... requestHandlers);
@@ -319,7 +354,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathMatcher     define path for registered router
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules trace(PathMatcher pathMatcher, Handler... requestHandlers);
@@ -328,7 +363,7 @@ public interface Routing {
          * Routes all requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
          * to continue processing on the next registered handler.
          *
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules any(Handler... requestHandlers);
@@ -338,7 +373,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathPattern     a URI path pattern. See {@link PathMatcher} for pattern syntax reference.
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules any(String pathPattern, Handler... requestHandlers);
@@ -348,7 +383,7 @@ public interface Routing {
          * {@link ServerRequest#next()} to continue processing on the next registered handler.
          *
          * @param pathMatcher     define path for registered router
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules any(PathMatcher pathMatcher, Handler... requestHandlers);
@@ -358,7 +393,7 @@ public interface Routing {
          * to continue processing on the next registered handler.
          *
          * @param methods         HTTP methods
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules anyOf(Iterable<Http.RequestMethod> methods, Handler... requestHandlers);
@@ -369,7 +404,7 @@ public interface Routing {
          *
          * @param methods         HTTP methods
          * @param pathPattern     a URI path pattern. See {@link PathMatcher} for pattern syntax reference.
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules anyOf(Iterable<Http.RequestMethod> methods, String pathPattern, Handler... requestHandlers);
@@ -380,7 +415,7 @@ public interface Routing {
          *
          * @param methods         HTTP methods
          * @param pathMatcher     define path for registered router
-         * @param requestHandlers handlers to tryProcess HTTP request
+         * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
         Rules anyOf(Iterable<Http.RequestMethod> methods, PathMatcher pathMatcher, Handler... requestHandlers);
@@ -493,6 +528,24 @@ public interface Routing {
         @Override
         public Builder post(PathMatcher pathMatcher, Handler... requestHandlers) {
             delegate.post(pathMatcher, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder patch(Handler... requestHandlers) {
+            delegate.patch(requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder patch(String pathPattern, Handler... requestHandlers) {
+            delegate.patch(pathPattern, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder patch(PathMatcher pathMatcher, Handler... requestHandlers) {
+            delegate.patch(pathMatcher, requestHandlers);
             return this;
         }
 
@@ -653,7 +706,11 @@ public interface Routing {
          * @param configuration a web server configuration
          * @return new {@link WebServer} instance
          * @throws IllegalStateException if none SPI implementation found
+         *
+         * @deprecated since 2.0.0, please use {@link io.helidon.webserver.WebServer.Builder#build()} to create
+         * a new server, configuring routing using {@link io.helidon.webserver.WebServer.Builder#routing(Routing)}.
          */
+        @Deprecated
         public WebServer createServer(ServerConfiguration configuration) {
             return WebServer.create(configuration, this.build());
         }
@@ -664,7 +721,11 @@ public interface Routing {
          * @param configurationBuilder a web server configuration builder
          * @return new {@link WebServer} instance
          * @throws IllegalStateException if none SPI implementation found
+         *
+         * @deprecated since 2.0.0, please use {@link io.helidon.webserver.WebServer.Builder#build()} to create
+         * a new server, configuring routing using {@link io.helidon.webserver.WebServer.Builder#routing(Routing)}.
          */
+        @Deprecated
         public WebServer createServer(ServerConfiguration.Builder configurationBuilder) {
             return WebServer.create(configurationBuilder.build(), this.build());
         }
@@ -674,10 +735,12 @@ public interface Routing {
          *
          * @return new {@link WebServer} instance
          * @throws IllegalStateException if none SPI implementation found
+         *
+         * @deprecated since 2.0.0, please use {@link io.helidon.webserver.WebServer#create(Routing)}.
          */
+        @Deprecated
         public WebServer createServer() {
             return WebServer.create(this.build());
         }
-
     }
 }

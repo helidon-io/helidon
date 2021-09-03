@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,10 @@ import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 
+import io.helidon.webserver.ServerRequest;
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
+import org.eclipse.microprofile.faulttolerance.Retry;
+
 /**
  * HelloResource class.
  */
@@ -27,6 +31,9 @@ import javax.ws.rs.Path;
 public class HelloResource {
 
     private HelloBean helloBean;
+
+    @Inject
+    private ServerRequestSupplier supplier;
 
     /**
      * Constructor.
@@ -45,6 +52,8 @@ public class HelloResource {
      */
     @GET
     @Path("/hello")
+    @Retry
+    @CircuitBreaker
     public String getHello() {
         return helloBean.getHello();
     }
@@ -56,6 +65,8 @@ public class HelloResource {
      */
     @GET
     @Path("/helloTimeout")
+    @Retry
+    @CircuitBreaker
     public String getHelloTimeout() {
         return helloBean.getHelloTimeout();
     }
@@ -68,7 +79,18 @@ public class HelloResource {
      */
     @GET
     @Path("/helloAsync")
+    @Retry
+    @CircuitBreaker
     public String getHelloAsync() throws Exception {
         return helloBean.getHelloAsync().toCompletableFuture().get();
+    }
+
+    @GET
+    @Path("/remoteAddress")
+    @Retry
+    @CircuitBreaker
+    public String getRemoteAddress() {
+        ServerRequest serverRequest = supplier.get();
+        return serverRequest.remoteAddress();
     }
 }

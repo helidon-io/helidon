@@ -29,7 +29,7 @@ docker run --rm -d -p 8080:8080 \
     helidon-examples-integrations-cdi-oci-objectstorage:latest
 ```
 
-With Java 8+:
+With Java:
 ```bash
 mvn package
 java -Doci.auth.fingerprint="${OCI_AUTH_FINGERPRINT}" \
@@ -53,7 +53,9 @@ curl http://localhost:8080/logo/{namespaceName}/{bucketName}/{objectName}
 ```bash
 docker build -t helidon-examples-integrations-cdi-oci-objectstorage .
 ./oci-setup.sh -k8s
-kubectl apply -f ../../../k8s/ingress.yaml -f app.yaml
+kubectl apply \
+  -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/ingress-nginx-3.15.2/deploy/static/provider/cloud/deploy.yaml \
+  -f app.yaml
 ```
 
 Try the endpoint:
@@ -69,5 +71,5 @@ docker stop helidon-examples-integrations-cdi-oci-objectstorage
 
 Delete the Kubernetes resources:
 ```bash
-kubectl delete -f ../../../k8s/ingress.yaml -f app.yaml
+kubectl -f app.yaml
 ```
