@@ -162,7 +162,7 @@ abstract class MetricImpl implements HelidonMetric {
         return getClass().getSimpleName() + "{"
                 + "registryType='" + registryType + '\''
                 + ", metadata=" + metadata
-                + ", name='" + getName() + '\''
+                + toStringDetails()
                 + '}';
     }
 
@@ -211,6 +211,11 @@ abstract class MetricImpl implements HelidonMetric {
 
     static String jsonFullKey(MetricID metricID) {
         return jsonFullKey(metricID.getName(), metricID);
+    }
+
+
+    protected String toStringDetails() {
+        return "";
     }
 
     private static String tagForJsonKey(Tag t) {
