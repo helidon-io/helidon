@@ -82,15 +82,25 @@ public final class GenerateAutonomousDatabaseWallet {
     }
 
     /**
-     * Object to store wallet returned for ATP as bytes[]
+     * Object to store wallet returned for ATP as bytes[].
      */
     public static class WalletArchive {
         private byte[] content;
 
+        /**
+         * Set wallet data.
+         *
+         * @param content
+         */
         public WalletArchive(final byte[] content) {
             this.content = content;
         }
 
+        /**
+         * Returns wallet data.
+         *
+         * @return bytes[]
+         */
         public byte[] getContent() {
             return content;
         }
