@@ -16,11 +16,7 @@
 
 package io.helidon.integrations.oci.atp;
 
-import java.nio.ByteBuffer;
-import java.nio.channels.WritableByteChannel;
-
-import io.helidon.common.reactive.IoMulti;
-import io.helidon.common.reactive.Multi;
+import io.helidon.integrations.oci.connect.OciRequestBase;
 import io.helidon.integrations.oci.connect.OciResponseParser;
 
 /**
@@ -31,28 +27,72 @@ public final class GenerateAutonomousDatabaseWallet {
     }
 
     /**
-     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     * Request object. Can be configured with additional headers, query parameters etc.
      */
-    public static class Response extends OciResponseParser {
-        private final Multi<ByteBuffer> publisher;
-
-        private Response(Multi<ByteBuffer> publisher) {
-            this.publisher = publisher;
-        }
-
-        static Response create(Multi<ByteBuffer> publisher) {
-            return new Response(publisher);
+    public static class Request extends OciRequestBase<Request> {
+        private Request() {
         }
 
         /**
-         * Write the response to the provided byte channel.
+         * Fluent API builder for configuring a request.
+         * The request builder is passed as is, without a build method.
+         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * used by the {@link io.helidon.integrations.common.rest.RestApi}.
          *
-         * @param channel channel to write to
-         * @see java.nio.channels.Channels#newChannel(java.io.OutputStream)
+         * @return new request builder
          */
-        public void writeTo(WritableByteChannel channel) {
-            publisher.to(IoMulti.multiToByteChannel(channel))
-                    .await();
+        public static Request builder() {
+            return new Request();
+        }
+
+        /**
+         * Set explicit password to encrypt the keys inside the wallet.
+         *
+         * @param walletPassword walletPassword
+         * @return updated request
+         */
+        public Request password(String walletPassword) {
+            return add("password", walletPassword);
+        }
+    }
+
+    /**
+     * Response object parsed from JSON returned by the {@link io.helidon.integrations.common.rest.RestApi}.
+     */
+    public static class Response extends OciResponseParser {
+        private final WalletArchive walletArchive;
+
+        private Response(WalletArchive walletArchive) {
+            this.walletArchive = walletArchive;
+        }
+
+        static Response create(byte[] bytes) {
+            return new Response(new WalletArchive(bytes));
+        }
+
+        /**
+         * Returns the wallet retrieved.
+         *
+         * @return WalletArchive - wallet data
+         */
+        public WalletArchive walletArchive() {
+            return walletArchive;
+        }
+
+    }
+
+    /**
+     * Object to store wallet returned for ATP as bytes[]
+     */
+    public static class WalletArchive {
+        private byte[] content;
+
+        public WalletArchive(final byte[] content) {
+            this.content = content;
+        }
+
+        public byte[] getContent() {
+            return content;
         }
     }
 }
