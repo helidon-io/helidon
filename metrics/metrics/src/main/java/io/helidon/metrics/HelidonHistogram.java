@@ -186,4 +186,24 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
     public int hashCode() {
         return Objects.hash(super.hashCode(), delegate);
     }
+
+    @Override
+    protected String toStringDetails() {
+        Snapshot snapshot = getSnapshot();
+        StringBuilder sb = new StringBuilder();
+        sb.append(", count='").append(getCount()).append('\'');
+        if (null != snapshot) {
+            sb.append(", min='").append(snapshot.getMin()).append('\'');
+            sb.append(", max='").append(snapshot.getMax()).append('\'');
+            sb.append(", mean='").append(snapshot.getMean()).append('\'');
+            sb.append(", stddev='").append(snapshot.getStdDev()).append('\'');
+            sb.append(", p50='").append(snapshot.getMedian()).append('\'');
+            sb.append(", p75='").append(snapshot.get75thPercentile()).append('\'');
+            sb.append(", p95='").append(snapshot.get95thPercentile()).append('\'');
+            sb.append(", p98='").append(snapshot.get98thPercentile()).append('\'');
+            sb.append(", p99='").append(snapshot.get99thPercentile()).append('\'');
+            sb.append(", p999='").append(snapshot.get999thPercentile()).append('\'');
+        }
+        return sb.toString();
+    }
 }

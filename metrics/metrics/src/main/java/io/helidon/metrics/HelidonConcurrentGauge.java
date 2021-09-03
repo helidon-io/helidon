@@ -36,12 +36,15 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
 
     private HelidonConcurrentGauge(String registryType, Metadata metadata, ConcurrentGauge delegate) {
         super(registryType, metadata);
-
         this.delegate = delegate;
     }
 
     static HelidonConcurrentGauge create(String registryType, Metadata metadata) {
-        return create(registryType, metadata, new ConcurrentGaugeImpl());
+        return create(registryType, metadata, Clock.system());
+    }
+
+    static HelidonConcurrentGauge create(String registryType, Metadata metadata, Clock clock) {
+        return create(registryType, metadata, new ConcurrentGaugeImpl(clock));
     }
 
     static HelidonConcurrentGauge create(String registryType, Metadata metadata, ConcurrentGauge metric) {
@@ -128,8 +131,10 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
         private final AtomicLong currentMax;
         private final AtomicLong currentMin;
         private final AtomicLong lastMinute;
+        private final Clock clock;
 
-        ConcurrentGaugeImpl() {
+        ConcurrentGaugeImpl(Clock clock) {
+            this.clock = clock;
             count = new AtomicLong(0L);
             lastMax = new AtomicLong(Long.MIN_VALUE);
             lastMin = new AtomicLong(Long.MAX_VALUE);
@@ -187,8 +192,8 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
             }
         }
 
-        private static long currentTimeMinute() {
-            return System.currentTimeMillis() / 1000 / 60;
+        private long currentTimeMinute() {
+            return clock.milliTime() / 1000 / 60;
         }
 
         @Override
@@ -224,5 +229,14 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), delegate);
+    }
+
+    @Override
+    protected String toStringDetails() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(", count='").append(getCount()).append('\'');
+        sb.append(", min='").append(getMin()).append('\'');
+        sb.append(", max='").append(getMax()).append('\'');
+        return sb.toString();
     }
 }
