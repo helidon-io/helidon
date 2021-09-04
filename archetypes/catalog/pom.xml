@@ -150,7 +150,7 @@
                         <message> |  If you also want to test with a local Helidon CLI build, specify the version when building</message>
                         <message> |  this project, e.g.:</message>
                         <message> |</message>
-                        <message> |     mvn clean install -Dcli.build.tools.version=2.2.2-SNAPSHOT</message>
+                        <message> |     mvn clean install -Dcli.build.tools.version=2.2.3-SNAPSHOT</message>
                         <message> |</message>
                     </messages>
                 </configuration>
