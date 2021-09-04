@@ -40,7 +40,7 @@
         <version.plugin.dependency>3.0.0</version.plugin.dependency>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
-        <version.plugin.helidon>2.2.2</version.plugin.helidon>
+        <version.plugin.helidon>2.2.3</version.plugin.helidon>
         <version.plugin.helidon-cli>2.2.2</version.plugin.helidon-cli>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
