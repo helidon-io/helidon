@@ -31,7 +31,7 @@ This is a bug fix release of Helidon. It contains bug and performance fixes. We 
 - Fault Tolerance: Explicitly destroy bean instance obtained from CDI object [3274](https://github.com/oracle/helidon/pull/3274)
 - Docs: Helidon config documentation updates (#3187) [3284](https://github.com/oracle/helidon/pull/3284)
 - Dependencies: Upgrade org.glassfish:jakarta.el to 3.0.4 [3331](https://github.com/oracle/helidon/pull/3331)
-- Dependencies: Upgrade helidon-build-tools to 2.2.2. Fixes issue with Maven 3.8 [3362](https://github.com/oracle/helidon/pull/3362)
+- Dependencies: Upgrade helidon-build-tools to 2.2.3. to fix issues with Maven 3.8 and JDK 11.0.11+ [3362](https://github.com/oracle/helidon/pull/3362) [3370](https://github.com/oracle/helidon/pull/3370) 
 
 ## [2.3.2]
 
