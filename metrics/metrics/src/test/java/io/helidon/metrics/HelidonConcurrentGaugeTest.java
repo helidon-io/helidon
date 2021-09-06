@@ -56,6 +56,7 @@ public class HelidonConcurrentGaugeTest {
     private static final boolean SHOULD_WAIT = Boolean.valueOf(System.getProperty("helidon.concurrentGauge.shouldWait", "true"));
 
     private static Metadata meta;
+    private static TestClock testClock = TestClock.create();
 
     private Date preStart;
     private Date start;
@@ -97,7 +98,7 @@ public class HelidonConcurrentGaugeTest {
         ensureSecondsInMinute();
 
         start = new Date();
-        HelidonConcurrentGauge gauge = HelidonConcurrentGauge.create("base", meta);
+        HelidonConcurrentGauge gauge = HelidonConcurrentGauge.create("base", meta, testClock);
         System.out.println("Calling inc() and dec() a few times concurrently ...");
 
         // Increment gauge 5 times
@@ -136,7 +137,7 @@ public class HelidonConcurrentGaugeTest {
         assertThat(formatErrorOutput("checking min"), gauge.getMin(), is(-5L));
     }
 
-    private static void ensureSecondsInMinute() throws InterruptedException {
+    private void ensureSecondsInMinute() throws InterruptedException {
         long currentSeconds = currentTimeSeconds();
         System.out.println("Seconds in minute are " + currentSeconds);
         if (currentSeconds > SECONDS_THRESHOLD) {
@@ -151,23 +152,15 @@ public class HelidonConcurrentGaugeTest {
             System.out.println("Not waiting");
             return;
         }
-        boolean displayMessage = true;
-        long currentMinute = currentTimeMinute();
-        while (currentMinute == currentTimeMinute()) {
-            if (displayMessage) {
-                System.out.println("Waiting for next minute to start ...");
-                displayMessage = false;
-            }
-            Thread.sleep(10 * 1000);
-        }
-    }
-
-    private static long currentTimeMinute() {
-        return System.currentTimeMillis() / 1000 / 60;
+        Calendar c = Calendar.getInstance();
+        c.setTimeInMillis(testClock.milliTime());
+        c.set(Calendar.SECOND, 0);
+        c.add(Calendar.MINUTE, 1);
+        testClock.setMillis(c.getTimeInMillis());
     }
 
     private static long currentTimeSeconds() {
-        return System.currentTimeMillis() / 1000 % 60;
+        return testClock.milliTime() / 1000 % 60;
     }
 
     private String formatErrorOutput(String note) {
