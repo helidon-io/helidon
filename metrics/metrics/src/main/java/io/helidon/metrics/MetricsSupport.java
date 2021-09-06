@@ -427,6 +427,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      */
     @Override
     public void update(Routing.Rules rules) {
+        ExponentiallyDecayingReservoir.init();
+
         configureEndpoint(rules, rules);
     }
 

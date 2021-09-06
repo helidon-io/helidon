@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -61,42 +62,9 @@ class ExponentiallyDecayingReservoir {
 
     private static final List<Runnable> CURRENT_TIME_IN_SECONDS_UPDATERS = new ArrayList<>();
 
-    private static final ScheduledExecutorService CURRENT_TIME_UPDATER_EXECUTOR_SERVICE = initCurrentTimeUpdater();
-
+    private static final AtomicBoolean EXECUTOR_UPDATER_CONFIGURED = new AtomicBoolean();
     private static final Logger LOGGER = Logger.getLogger(ExponentiallyDecayingReservoir.class.getName());
-
-    private volatile long currentTimeInSeconds;
-
-    private static ScheduledExecutorService initCurrentTimeUpdater() {
-        ScheduledExecutorService result = Executors.newSingleThreadScheduledExecutor();
-        result.scheduleAtFixedRate(ExponentiallyDecayingReservoir::updateCurrentTimeInSecondsForAllReservoirs,
-                CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS,
-                CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS);
-        return result;
-    }
-
-    static void onServerShutdown() {
-        CURRENT_TIME_UPDATER_EXECUTOR_SERVICE.shutdown();
-        try {
-            boolean stoppedNormally =
-                    CURRENT_TIME_UPDATER_EXECUTOR_SERVICE.awaitTermination(CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS * 10,
-                            TimeUnit.MILLISECONDS);
-            if (!stoppedNormally) {
-                LOGGER.log(Level.WARNING, "Shutdown of current time updater timed out; continuing");
-            }
-        } catch (InterruptedException e) {
-            LOGGER.log(Level.WARNING, "InterruptedException caught while stopping the current time updater; continuing");
-        }
-    }
-
-    private static void updateCurrentTimeInSecondsForAllReservoirs() {
-        CURRENT_TIME_IN_SECONDS_UPDATERS.forEach(Runnable::run);
-    }
-
-    private long computeCurrentTimeInSeconds() {
-        return TimeUnit.MILLISECONDS.toSeconds(clock.milliTime());
-    }
-
+    private static volatile ScheduledExecutorService currentTimeUpdaterExecutorService;
     private final ConcurrentSkipListMap<Double, WeightedSnapshot.WeightedSample> values;
     private final ReentrantReadWriteLock lock;
     private final double alpha;
@@ -104,8 +72,8 @@ class ExponentiallyDecayingReservoir {
     private final AtomicLong count;
     private final Clock clock;
     private final AtomicLong nextScaleTime;
+    private volatile long currentTimeInSeconds;
     private volatile long startTime;
-
     /**
      * Creates a new {@link ExponentiallyDecayingReservoir} of 1028 elements, which offers a 99.9%
      * confidence level with a 5% margin of error assuming a normal distribution, and an alpha
@@ -114,7 +82,6 @@ class ExponentiallyDecayingReservoir {
     ExponentiallyDecayingReservoir(Clock clock) {
         this(DEFAULT_SIZE, DEFAULT_ALPHA, clock);
     }
-
     /**
      * Creates a new {@link ExponentiallyDecayingReservoir}.
      *
@@ -133,6 +100,42 @@ class ExponentiallyDecayingReservoir {
         currentTimeInSeconds = computeCurrentTimeInSeconds();
         this.startTime = currentTimeInSeconds;
         this.nextScaleTime = new AtomicLong(clock.nanoTick() + RESCALE_THRESHOLD);
+    }
+
+    static void init() {
+        if (EXECUTOR_UPDATER_CONFIGURED.compareAndSet(false, true)) {
+            ScheduledExecutorService result = Executors.newSingleThreadScheduledExecutor();
+            result.scheduleAtFixedRate(ExponentiallyDecayingReservoir::updateCurrentTimeInSecondsForAllReservoirs,
+                                       CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS,
+                                       CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS);
+            currentTimeUpdaterExecutorService = result;
+        }
+    }
+
+    // we only expect a single instance of MetricSupport registered
+    // with webserver, so we can stop the executor when the associated webserver stops
+    static void onServerShutdown() {
+        ScheduledExecutorService service = currentTimeUpdaterExecutorService;
+        if (EXECUTOR_UPDATER_CONFIGURED.compareAndSet(true, false)) {
+            try {
+                boolean stoppedNormally =
+                        service.awaitTermination(CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS * 10,
+                                                 TimeUnit.MILLISECONDS);
+                if (!stoppedNormally) {
+                    LOGGER.log(Level.WARNING, "Shutdown of current time updater timed out; continuing");
+                }
+            } catch (InterruptedException e) {
+                LOGGER.log(Level.WARNING, "InterruptedException caught while stopping the current time updater; continuing");
+            }
+        }
+    }
+
+    private static void updateCurrentTimeInSecondsForAllReservoirs() {
+        CURRENT_TIME_IN_SECONDS_UPDATERS.forEach(Runnable::run);
+    }
+
+    private long computeCurrentTimeInSeconds() {
+        return TimeUnit.MILLISECONDS.toSeconds(clock.milliTime());
     }
 
     public int size() {
