@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.archetypes</groupId>
         <artifactId>helidon-archetypes-project</artifactId>
-        <version>2.3.3-SNAPSHOT</version>
+        <version>2.3.3</version>
     </parent>
     <packaging>helidon-archetype</packaging>
     <artifactId>helidon-bare-mp</artifactId>
