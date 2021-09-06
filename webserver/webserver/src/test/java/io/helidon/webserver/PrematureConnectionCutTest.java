@@ -71,7 +71,7 @@ public class PrematureConnectionCutTest {
                     )
                     .build()
                     .start()
-                    .await(TIMEOUT.getSeconds(), TimeUnit.SECONDS);
+                    .await(TIMEOUT);
 
             for (int i = 0; i < 5; i++) {
                 //Sending request with fake content length, but not continuing after 100 code
