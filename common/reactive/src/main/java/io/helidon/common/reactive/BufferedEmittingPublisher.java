@@ -92,8 +92,9 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
                     curr = requested.get();
                 } while (curr != Long.MAX_VALUE
                         && !requested.compareAndSet(curr, Long.MAX_VALUE - curr > n ? curr + n : Long.MAX_VALUE));
-                if (requestCallback != null) {
-                    requestCallback.accept(n, curr);
+                BiConsumer<Long, Long> callback = requestCallback;
+                if (callback != null) {
+                    callback.accept(n, curr);
                 }
                 maybeDrain();
             }
