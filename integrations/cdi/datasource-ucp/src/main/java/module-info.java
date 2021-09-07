@@ -29,7 +29,7 @@ module io.helidon.integrations.datasource.ucp.cdi {
     requires jakarta.inject.api;
     requires jakarta.enterprise.cdi.api;
     requires microprofile.config.api;
-    requires ucp;
+    requires com.oracle.database.ucp;
     requires io.helidon.integrations.datasource.cdi;
 
     exports io.helidon.integrations.datasource.ucp.cdi;
