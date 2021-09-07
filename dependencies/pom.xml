@@ -120,7 +120,7 @@
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
         <version.lib.netty>4.1.63.Final</version.lib.netty>
         <version.lib.oci-java-sdk-objectstorage>2.3.0</version.lib.oci-java-sdk-objectstorage>
-        <version.lib.ojdbc8>19.8.0.0</version.lib.ojdbc8>
+        <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.okhttp3>3.14.9</version.lib.okhttp3>
         <version.lib.okio>1.17.5</version.lib.okio>
