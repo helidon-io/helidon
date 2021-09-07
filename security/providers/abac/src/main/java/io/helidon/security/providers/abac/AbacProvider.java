@@ -158,24 +158,24 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
                 // or it has a supported annotation
                 abacConfig.flatMap(it -> it.get(configKey).asNode().asOptional())
                         .ifPresentOrElse(attribConfig -> {
-                                             attributes.add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig)));
-                                         },
-                                         () -> {
-                                             List<Annotation> annotationConfig = new ArrayList<>();
-                                             for (SecurityLevel securityLevel : epConfig.securityLevels()) {
-                                                 for (Class<? extends Annotation> annotation : annotations) {
-                                                     List<? extends Annotation> list = securityLevel
-                                                             .combineAnnotations(annotation,
-                                                                                 EndpointConfig.AnnotationScope.values());
-                                                     annotationConfig.addAll(list);
-                                                 }
-                                             }
+                            attributes.add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig)));
+                        },
+                        () -> {
+                            List<Annotation> annotationConfig = new ArrayList<>();
+                            for (SecurityLevel securityLevel : epConfig.securityLevels()) {
+                                for (Class<? extends Annotation> annotation : annotations) {
+                                    List<? extends Annotation> list = securityLevel
+                                            .combineAnnotations(annotation,
+                                                                EndpointConfig.AnnotationScope.values());
+                                    annotationConfig.addAll(list);
+                                }
+                            }
 
-                                             if (!annotationConfig.isEmpty()) {
-                                                 attributes.add(new RuntimeAttribute(validator,
-                                                                                     validator.fromAnnotations(epConfig)));
-                                             }
-                                         });
+                            if (!annotationConfig.isEmpty()) {
+                                attributes.add(new RuntimeAttribute(validator,
+                                                                    validator.fromAnnotations(epConfig)));
+                            }
+                        });
             }
         }
 
