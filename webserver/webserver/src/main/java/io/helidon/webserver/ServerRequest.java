@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.Optional;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
+import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReadableContent;
 
 import io.opentracing.SpanContext;
@@ -141,6 +142,13 @@ public interface ServerRequest extends HttpRequest {
      * @return the tracer associated, or {@link io.opentracing.util.GlobalTracer#get()}
      */
     Tracer tracer();
+
+    /**
+     * Closes the connection.
+     *
+     * @return Single completed when channel is closed.
+     */
+    Single<Void> close();
 
     /**
      * Absolute URI of the incoming request, including query parameters and fragment.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 
 import javax.net.ssl.SSLEngine;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpRequest;
@@ -133,5 +135,20 @@ class BareRequestImpl implements BareRequest {
     @Override
     public long requestId() {
         return requestId;
+    }
+
+    @Override
+    public Single<Void> close() {
+        CompletableFuture<Void> cf = new CompletableFuture<>();
+        ctx.close().addListener(f -> {
+            if (f.isSuccess()) {
+                cf.complete(null);
+            } else if (f.isCancelled()) {
+                cf.cancel(true);
+            } else {
+                cf.completeExceptionally(f.cause());
+            }
+        });
+        return Single.create(cf, true);
     }
 }
