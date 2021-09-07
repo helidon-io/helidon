@@ -16,10 +16,10 @@
 
 package io.helidon.integrations.oci.atp;
 
+import java.util.Arrays;
+
 import io.helidon.integrations.oci.connect.OciRequestBase;
 import io.helidon.integrations.oci.connect.OciResponseParser;
-
-import java.util.Arrays;
 
 /**
  * GenerateAutonomousDatabaseWallet request and response.
@@ -95,7 +95,7 @@ public final class GenerateAutonomousDatabaseWallet {
          * @param content
          */
         public WalletArchive(byte[] content) {
-            this.content = Arrays.copyOf(content,content.length);
+            this.content = Arrays.copyOf(content, content.length);
         }
 
         /**
@@ -104,7 +104,7 @@ public final class GenerateAutonomousDatabaseWallet {
          * @return bytes[]
          */
         public byte[] getContent() {
-            return Arrays.copyOf(content,content.length);
+            return Arrays.copyOf(content, content.length);
         }
     }
 }
