@@ -18,7 +18,7 @@
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon</groupId>
@@ -761,6 +761,28 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- Long Running Actions -->
+            <dependency>
+                <groupId>io.helidon.microprofile.lra</groupId>
+                <artifactId>helidon-microprofile-lra</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.lra</groupId>
+                <artifactId>helidon-lra-coordinator-client-spi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.lra</groupId>
+                <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.lra</groupId>
+                <artifactId>helidon-lra-coordinator-server</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
             <!-- integrations -->
             <dependency>
                 <groupId>io.helidon.integrations.db</groupId>
@@ -883,11 +905,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.integrations.cdi</groupId>
-                <artifactId>helidon-integrations-cdi-oci-objectstorage-health</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.integrations.graal</groupId>
                 <artifactId>helidon-graal-native-image-extension</artifactId>
                 <version>${helidon.version}</version>
@@ -914,12 +931,17 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-connect</artifactId>
+                <artifactId>helidon-integrations-oci-atp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-telemetry</artifactId>
+                <artifactId>helidon-integrations-oci-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-connect</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -934,12 +956,17 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-telemetry</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
                 <artifactId>helidon-integrations-oci-vault</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-cdi</artifactId>
+                <artifactId>helidon-integrations-oci-vault-health</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

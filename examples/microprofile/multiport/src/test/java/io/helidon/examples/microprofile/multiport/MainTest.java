@@ -109,37 +109,37 @@ class MainTest {
             webTarget = client.target(BASE_URL + serverCdiExtension.port(params.portName));
         }
 
-        Response response = webTarget.path(params.path)
+        try (Response response = webTarget.path(params.path)
                 .request()
-                .get();
-
-        assertThat(webTarget.getUri() + " returned incorrect HTTP status",
-                response.getStatusInfo().toEnum(), is(params.httpStatus));
+                .get()) {
+            assertThat(webTarget.getUri() + " returned incorrect HTTP status",
+                    response.getStatusInfo().toEnum(), is(params.httpStatus));
+        }
     }
 
     @Test
     void testEndpoints() {
-        Response response;
-
         // Probe PUBLIC port
-        response = publicWebTarget.path("/hello")
+        try (Response response = publicWebTarget.path("/hello")
                 .request()
-                .get();
-        assertThat("default port should be serving public resource",
-                response.getStatusInfo().toEnum(), is(Response.Status.OK));
-        assertThat("default port should return public data",
-                response.readEntity(String.class), is("Public Hello World!!"));
+                .get()) {
+            assertThat("default port should be serving public resource",
+                    response.getStatusInfo().toEnum(), is(Response.Status.OK));
+            assertThat("default port should return public data",
+                    response.readEntity(String.class), is("Public Hello World!!"));
+        }
 
         // Probe PRIVATE port
         int privatePort = serverCdiExtension.port(PRIVATE_PORT);
         WebTarget baseTarget = client.target(BASE_URL + privatePort);
-        response = baseTarget.path("/private/hello")
+        try (Response response = baseTarget.path("/private/hello")
                 .request()
-                .get();
-        assertThat("port " + privatePort  + " should be serving private resource",
-                response.getStatusInfo().toEnum(), is(Response.Status.OK));
-        assertThat("port " + privatePort  + " should return private data",
-                response.readEntity(String.class), is("Private Hello World!!"));
+                .get()) {
+            assertThat("port " + privatePort + " should be serving private resource",
+                    response.getStatusInfo().toEnum(), is(Response.Status.OK));
+            assertThat("port " + privatePort + " should return private data",
+                    response.readEntity(String.class), is("Private Hello World!!"));
+        }
     }
 
     private static class Params {

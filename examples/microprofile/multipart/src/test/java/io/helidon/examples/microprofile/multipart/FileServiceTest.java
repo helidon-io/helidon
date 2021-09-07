@@ -74,40 +74,43 @@ public class FileServiceTest {
         File file = Files.write(tempDirectory.resolve("foo.txt"), "bar\n".getBytes(StandardCharsets.UTF_8)).toFile();
         MultiPart multipart = new MultiPart()
                 .bodyPart(new FileDataBodyPart("file[]", file, MediaType.APPLICATION_OCTET_STREAM_TYPE));
-        Response response = target
+        try (Response response = target
                 .property(ClientProperties.FOLLOW_REDIRECTS, Boolean.FALSE)
                 .register(MultiPartFeature.class)
                 .path("/api")
                 .request()
-                .post(Entity.entity(multipart, MediaType.MULTIPART_FORM_DATA_TYPE));
-        assertThat(response.getStatus(), is(303));
+                .post(Entity.entity(multipart, MediaType.MULTIPART_FORM_DATA_TYPE))) {
+            assertThat(response.getStatus(), is(303));
+        }
     }
 
     @Test
     @Order(2)
     public void testList(WebTarget target) {
-        Response response = target
+        try (Response response = target
                 .path("/api")
                 .request(MediaType.APPLICATION_JSON_TYPE)
-                .get();
-        assertThat(response.getStatus(), is(200));
-        JsonObject json = response.readEntity(JsonObject.class);
-        assertThat(json, is(notNullValue()));
-        List<String> files = json.getJsonArray("files").getValuesAs(v -> ((JsonString) v).getString());
-        assertThat(files, hasItem("foo.txt"));
+                .get()) {
+            assertThat(response.getStatus(), is(200));
+            JsonObject json = response.readEntity(JsonObject.class);
+            assertThat(json, is(notNullValue()));
+            List<String> files = json.getJsonArray("files").getValuesAs(v -> ((JsonString) v).getString());
+            assertThat(files, hasItem("foo.txt"));
+        }
     }
 
     @Test
     @Order(3)
     public void testDownload(WebTarget target) throws IOException {
-        Response response = target
+        try (Response response = target
                 .register(MultiPartFeature.class)
                 .path("/api/foo.txt")
                 .request(MediaType.APPLICATION_OCTET_STREAM_TYPE)
-                .get();
-        assertThat(response.getStatus(), is(200));
-        assertThat(response.getHeaderString("Content-Disposition"), containsString("filename=\"foo.txt\""));
-        InputStream inputStream = response.readEntity(InputStream.class);
-        assertThat(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8), is("bar\n"));
+                .get()) {
+            assertThat(response.getStatus(), is(200));
+            assertThat(response.getHeaderString("Content-Disposition"), containsString("filename=\"foo.txt\""));
+            InputStream inputStream = response.readEntity(InputStream.class);
+            assertThat(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8), is("bar\n"));
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,16 @@ class Aggregator {
      * @return if this aggregator will contribute to CORS processing
      */
     public boolean isActive() {
-        return isEnabled && !crossOriginConfigMatchables.isEmpty();
+        return isEnabled() && !crossOriginConfigMatchables.isEmpty();
+    }
+
+    /**
+     * Reports whether the aggregator (and, by implication, the config for CORS) is enabled or not.
+     *
+     * @return if CORS is enabled
+     */
+    public boolean isEnabled() {
+        return isEnabled;
     }
 
     static class Builder implements io.helidon.common.Builder<Aggregator>, CorsSetter<Builder> {

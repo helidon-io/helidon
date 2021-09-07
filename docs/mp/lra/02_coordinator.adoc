@@ -1,0 +1,82 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Coordinator
+:toc:
+:toc-placement: preamble
+:description: Long Running Actions
+:keywords: helidon, mp, lra
+:h1Prefix: MP
+:feature-name: Long Running Actions
+
+== Coordinator
+Coordinator is a service that tracks all LRA transactions and calls the compensate REST endpoints of 
+the participants when the LRA transaction gets cancelled or completes (in case it gets closed).
+In addition, participant also keeps track of timeouts, retries participant calls, and assigns LRA ids.
+
+.Helidon LRA supports following coordinators
+* Helidon LRA coordinator
+* https://narayana.io/lra[Narayana coordinator].
+
+=== Helidon LRA coordinator
+
+CAUTION: Experimental tool, usage in production is not advised.
+
+[source,bash]
+.Build and run Helidon LRA coordinator
+----
+docker build -t helidon/lra-coordinator https://github.com/oracle/helidon.git:lra/coordinator/server
+docker run -dp 8070:8070 --name lra-coordinator --network="host" helidon/lra-coordinator
+----
+
+Helidon LRA coordinator is compatible with Narayana clients, you need to add an additional dependency for Narayana client:
+[source,xml]
+.Dependency needed for using Helidon LRA with Narayana compatible coordinator
+----
+<dependency>
+    <groupId>io.helidon.lra</groupId>
+    <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
+</dependency>
+----
+
+=== Narayana
+https://narayana.io[Narayana] is a transaction manager supporting LRA.
+To use Narayana LRA coordinator with Helidon LRA client you need to add an additional dependency for Narayana client:
+
+[source,xml]
+.Dependency needed for using Helidon LRA with Narayana coordinator
+----
+<dependency>
+    <groupId>io.helidon.lra</groupId>
+    <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
+</dependency>
+----
+
+The simplest way to run Narayana LRA coordinator locally: 
+
+[source,bash]
+.Downloading and running Narayana LRA coordinator
+----
+wget https://search.maven.org/remotecontent?filepath=org/jboss/narayana/rts/lra-coordinator-quarkus/5.11.1.Final/lra-coordinator-quarkus-5.11.1.Final-runner.jar \
+-O narayana-coordinator.jar \
+&& java -Dquarkus.http.port=8070 -jar narayana-coordinator.jar
+----
+
+Narayana LRA coordinator is running by default under `lra-coordinator` context, 
+with port `8070` defined in the snippet above you need to configure your Helidon LRA app as follows: 
+`mp.lra.coordinator.url=http://localhost:8070/lra-coordinator`

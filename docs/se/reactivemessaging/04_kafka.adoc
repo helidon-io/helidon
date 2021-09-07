@@ -131,11 +131,14 @@ mp.messaging:
 [source,java]
 .Example of consuming from Kafka:
 ----
+Config config = Config.create();
+
 Channel<String> fromKafka = Channel.create("from-kafka");
 
 KafkaConnector kafkaConnector = KafkaConnector.create();<1>
 
 Messaging messaging = Messaging.builder()
+        .config(config)
         .connector(kafkaConnector)
         .listener(fromKafka, payload -> {
             System.out.println("Kafka says: " + payload);
@@ -148,11 +151,14 @@ Messaging messaging = Messaging.builder()
 [source,java]
 .Example of producing to Kafka:
 ----
+Config config = Config.create();
+
 Channel<String> toKafka = Channel.create("to-kafka");
 
 KafkaConnector kafkaConnector = KafkaConnector.create();<1>
 
 messaging = Messaging.builder()
+        .config(config)
         .publisher(toKafka, Multi.just("test1", "test2").map(Message::of))
         .connector(kafkaConnector)
         .build()

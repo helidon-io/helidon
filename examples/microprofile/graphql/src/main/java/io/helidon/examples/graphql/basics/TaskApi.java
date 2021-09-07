@@ -31,12 +31,14 @@ import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 
 /**
  * A CDI Bean that exposes a GraphQL API to query and mutate {@link Task}s.
  */
 @GraphQLApi
 @ApplicationScoped
+@SimplyTimed
 public class TaskApi {
 
     private static final String MESSAGE = "Unable to find task with id ";

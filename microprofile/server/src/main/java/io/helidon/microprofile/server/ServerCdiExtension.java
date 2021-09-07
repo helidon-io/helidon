@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -103,6 +104,8 @@ public class ServerCdiExtension implements Extension {
     private final Map<Bean<?>, RoutingConfiguration> serviceBeans
             = Collections.synchronizedMap(new IdentityHashMap<>());
 
+    private final Set<Routing.Builder> routingsWithKPIMetrics = new HashSet<>();
+
     private void buildTime(@Observes @BuildTimeStart Object event) {
         // update the status of server, as we may have been started without a builder being used
         // such as when cdi.Main or SeContainerInitializer are used
@@ -146,19 +149,16 @@ public class ServerCdiExtension implements Extension {
 
     private void registerKpiMetricsDeferrableRequestContextSetterHandler(JaxRsCdiExtension jaxRs,
             JaxRsApplication applicationMeta) {
-        Optional<String> contextRoot = jaxRs.findContextRoot(config, applicationMeta);
         Optional<String> namedRouting = jaxRs.findNamedRouting(config, applicationMeta);
         boolean routingNameRequired = jaxRs.isNamedRoutingRequired(config, applicationMeta);
 
         Routing.Builder routing = routingBuilder(namedRouting, routingNameRequired, applicationMeta.appName());
 
-        if (contextRoot.isPresent()) {
-            String contextRootString = contextRoot.get();
-            routing.any(contextRootString, KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
-        } else {
-            LOGGER.finer(() ->
-                    "JAX-RS application " + applicationMeta.appName() + " adding deferrable request KPI metrics context on '/'");
+        if (!routingsWithKPIMetrics.contains(routing)) {
+            routingsWithKPIMetrics.add(routing);
             routing.any(KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
+            LOGGER.finer(() -> String.format("Adding deferrable request KPI metrics context for routing with name '%s'",
+                            namedRouting.orElse("<unnamed>")));
         }
     }
 
@@ -205,14 +205,13 @@ public class ServerCdiExtension implements Extension {
 
         long initializationElapsedTime = ManagementFactory.getRuntimeMXBean().getUptime();
 
-        if ("0.0.0.0".equals(listenHost)) {
-            // listening on all addresses
-            LOGGER.info(() -> "Server started on http://localhost:" + port + " (and all other host addresses)"
-                    + " in " + initializationElapsedTime + " milliseconds (since JVM startup).");
-        } else {
-            LOGGER.info(() -> "Server started on http://" + listenHost + ":" + port
-                    + " in " + initializationElapsedTime + " milliseconds (since JVM startup).");
-        }
+        String protocol = "http" + (webserver.hasTls() ? "s" : "");
+        String host = "0.0.0.0".equals(listenHost) ? "localhost" : listenHost;
+        String note = "0.0.0.0".equals(listenHost) ? " (and all other host addresses)" : "";
+
+        LOGGER.info(() -> "Server started on "
+                + protocol + "://" + host + ":" + port
+                + note + " in " + initializationElapsedTime + " milliseconds (since JVM startup).");
 
         // this is not needed at runtime, collect garbage
         serverBuilder = null;
@@ -227,8 +226,11 @@ public class ServerCdiExtension implements Extension {
         if (jaxRsApplications.isEmpty()) {
             LOGGER.warning("There are no JAX-RS applications or resources. Maybe you forgot META-INF/beans.xml file?");
         } else {
-            InjectionManager injectionManager = Injections.createInjectionManager();
-            jaxRsApplications.forEach(it -> addApplication(jaxRs, it, injectionManager));
+            // Creates shared injection manager if multiple apps and "internal" property false
+            boolean singleManager = config.get("server.single-injection-manager").asBoolean().asOptional().orElse(false);
+            InjectionManager shared = jaxRsApplications.size() == 1 || singleManager ? null
+                    : Injections.createInjectionManager();
+            jaxRsApplications.forEach(it -> addApplication(jaxRs, it, shared));
         }
     }
 

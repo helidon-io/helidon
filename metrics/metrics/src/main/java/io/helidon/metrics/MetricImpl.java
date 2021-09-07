@@ -125,6 +125,9 @@ abstract class MetricImpl implements HelidonMetric {
     private final String registryType;
     private final Metadata metadata;
 
+    // Efficient check from interceptors to see if the metric is still valid
+    private boolean isDeleted;
+
     MetricImpl(String registryType, Metadata metadata) {
         this.metadata = metadata;
         this.registryType = registryType;
@@ -159,7 +162,7 @@ abstract class MetricImpl implements HelidonMetric {
         return getClass().getSimpleName() + "{"
                 + "registryType='" + registryType + '\''
                 + ", metadata=" + metadata
-                + ", name='" + getName() + '\''
+                + toStringDetails()
                 + '}';
     }
 
@@ -188,6 +191,16 @@ abstract class MetricImpl implements HelidonMetric {
         builder.add(getName(), metaBuilder);
     }
 
+    @Override
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    @Override
+    public void markAsDeleted() {
+        isDeleted = true;
+    }
+
     static String jsonFullKey(String baseName, MetricID metricID) {
         return metricID.getTags().isEmpty() ? baseName
                 : String.format("%s;%s", baseName,
@@ -198,6 +211,11 @@ abstract class MetricImpl implements HelidonMetric {
 
     static String jsonFullKey(MetricID metricID) {
         return jsonFullKey(metricID.getName(), metricID);
+    }
+
+
+    protected String toStringDetails() {
+        return "";
     }
 
     private static String tagForJsonKey(Tag t) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 
-import brave.internal.HexCodec;
+import brave.internal.codec.HexCodec;
 import brave.opentracing.BraveSpanContext;
 import brave.propagation.TraceContext;
 import io.opentracing.Span;

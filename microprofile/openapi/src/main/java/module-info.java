@@ -22,13 +22,13 @@ import io.helidon.microprofile.openapi.OpenApiCdiExtension;
 module io.helidon.microprofile.openapi {
     requires java.logging;
     
-    requires smallrye.open.api;
+    requires smallrye.open.api.core;
 
     requires microprofile.config.api;
     requires io.helidon.microprofile.server;
     requires io.helidon.openapi;
 
-    requires jandex;
+    requires org.jboss.jandex;
 
     exports io.helidon.microprofile.openapi;
 

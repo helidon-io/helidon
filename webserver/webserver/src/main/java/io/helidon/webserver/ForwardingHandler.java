@@ -37,6 +37,7 @@ import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -87,8 +88,10 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private long actualPayloadSize;
     private boolean ignorePayload;
 
+    private CompletableFuture<ChannelFutureListener> requestEntityAnalyzed;
     private CompletableFuture<?> prevRequestFuture;
     private boolean lastContent;
+    private boolean hadContentAlready;
     private final Runnable clearQueues;
 
     ForwardingHandler(Routing routing,
@@ -109,6 +112,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
     private void reset() {
         lastContent = false;
+        hadContentAlready = false;
         isWebSocketUpgrade = false;
         actualPayloadSize = 0L;
         ignorePayload = false;
@@ -144,6 +148,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     @SuppressWarnings("checkstyle:methodlength")
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof HttpRequest) {
+            hadContentAlready = false;
             LOGGER.fine(() -> log("Received HttpRequest: %s", ctx, System.identityHashCode(msg)));
 
             // On new request, use chance to cleanup queues in HttpInitializer
@@ -238,9 +243,16 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 prevRequestFuture = null;
             }
 
+            requestEntityAnalyzed = new CompletableFuture<>();
+
+            //If the keep alive is not set, we know we will be closing the connection
+            if (!HttpUtil.isKeepAlive(requestContext.request())) {
+                this.requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
+            }
             // Create response and handler for its completion
             BareResponseImpl bareResponse =
-                    new BareResponseImpl(ctx, request, publisher::isCompleted, prevRequestFuture, requestId);
+                    new BareResponseImpl(ctx, request, requestContext, publisher::isCompleted, publisher::hasRequests,
+                                         prevRequestFuture, requestEntityAnalyzed, requestId);
             prevRequestFuture = new CompletableFuture<>();
             CompletableFuture<?> thisResp = prevRequestFuture;
             bareResponse.whenCompleted()
@@ -305,6 +317,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 if (HttpMethod.TRACE.equals(method)) {
                     // regarding the TRACE method, we're failing when payload is present only when the payload is actually
                     // consumed; if not, the request might proceed when payload is small enough
+                    requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
                     LOGGER.finer(() -> log("Closing connection illegal payload; method: ", ctx, method));
                     throw new BadRequestException("It is illegal to send a payload with http method: " + method);
                 }
@@ -340,10 +353,24 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     requestContext.complete();
                     requestContext = null; // just to be sure that current http req/res session doesn't interfere with other ones
                 }
+                requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE_ON_FAILURE);
             } else if (!content.isReadable()) {
                 // this is here to handle the case when the content is not readable but we didn't
                 // exceptionally complete the publisher and close the connection
                 throw new IllegalStateException("It is not expected to not have readable content.");
+            } else if (!requestContext.hasRequests()
+                    && HttpUtil.isKeepAlive(requestContext.request())
+                    && !requestEntityAnalyzed.isDone()) {
+                if (hadContentAlready) {
+                    LOGGER.finest(() -> "More then one unhandled content present. Closing the connection.");
+                    requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
+                } else {
+                    //We are checking the unhandled entity, but we cannot be sure if connection should be closed or not.
+                    //Next content has to be checked if it is last chunk. If not close connection.
+                    hadContentAlready = true;
+                    LOGGER.finest(() -> "Requesting the next chunk to determine if the connection should be closed.");
+                    ctx.channel().read();
+                }
             }
         }
 
@@ -436,9 +463,8 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         response.headers().add(HttpHeaderNames.CONTENT_TYPE, "text/plain");
         response.headers().add(HttpHeaderNames.CONTENT_LENGTH, entity.length);
         response.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
-        ctx.write(response)
+        ctx.writeAndFlush(response)
                 .addListener(future -> {
-                    ctx.flush();
                     ctx.close();
                 });
         failPublisher(new Error("400: Bad request"));
@@ -451,9 +477,8 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
      */
     private void send413PayloadTooLarge(ChannelHandlerContext ctx) {
         FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, REQUEST_ENTITY_TOO_LARGE);
-        ctx.write(response)
+        ctx.writeAndFlush(response)
                 .addListener(future -> {
-                    ctx.flush();
                     ctx.close();
                 });
         failPublisher(new Error("413: Payload is too large"));

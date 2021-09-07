@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,19 +20,18 @@
 :h1Prefix: MP
 :description: Helidon MP Quickstart guide
 :keywords: helidon
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide describes a basic example of an Helidon MP application using Docker
  and Kubernetes.
 
-== What you need
+== What You Need
 
-[width=50%,role="flex, sm7"]
-|===
-|About 5 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|===
+For this 5 minute tutorial, you will need the following:
 
-== Generate The Project
+include::{common-page-prefix-inc}[tag=common-prereqs]
+
+== Generate the Project
 
 Generate the project sources using one (or both) of the Helidon Maven
  archetypes. The result is a simple project that shows the basics of configuring
@@ -140,7 +139,7 @@ docker run --rm -p 8080:8080 helidon-quickstart-mp:latest
 
 Then you can try the application as you did before.
 
-== Deploy the application to Kubernetes
+== Deploy the Application to Kubernetes
 
 If you don't have access to a Kubernetes cluster, you can
 <<about/05_kubernetes.adoc,install one on your desktop>>.

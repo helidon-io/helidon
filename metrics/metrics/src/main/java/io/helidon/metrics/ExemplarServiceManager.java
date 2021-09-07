@@ -18,11 +18,11 @@ package io.helidon.metrics;
 
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.StringJoiner;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 
@@ -35,15 +35,22 @@ class ExemplarServiceManager {
 
     private static final List<ExemplarService> EXEMPLAR_SERVICES = collectExemplarServices();
 
+    private static final boolean IS_ACTIVE = !EXEMPLAR_SERVICES.isEmpty();
 
-    private static final Supplier<String> EXEMPLAR_SUPPLIER = EXEMPLAR_SERVICES.isEmpty()
-            ? () -> ""
-            : () -> EXEMPLAR_SERVICES.stream()
+    static final String INACTIVE_LABEL = "";
+
+    private static final Supplier<String> EXEMPLAR_SUPPLIER = () -> EXEMPLAR_SERVICES.stream()
                         .map(ExemplarService::label)
                         .filter(Predicate.not(String::isBlank))
-                        .collect(Collectors.joining(",", "{", "}"));
+                        .collect(ExemplarServiceManager::labelsStringJoiner, StringJoiner::add, StringJoiner::merge)
+                        .toString();
 
     private ExemplarServiceManager() {
+    }
+
+    private static StringJoiner labelsStringJoiner() {
+        // A StringJoiner that suppresses the prefix and suffix if no strings were added
+        return new StringJoiner(",", "{", "}").setEmptyValue("");
     }
 
     /**
@@ -52,7 +59,15 @@ class ExemplarServiceManager {
      * @return exemplar string provided by the highest-priority service instance
      */
     static String exemplarLabel() {
-        return EXEMPLAR_SUPPLIER.get();
+        return IS_ACTIVE ? EXEMPLAR_SUPPLIER.get() : INACTIVE_LABEL;
+    }
+
+    /**
+     *
+     * @return whether exemplar handling is active or not
+     */
+    static boolean isActive() {
+        return IS_ACTIVE;
     }
 
     private static List<ExemplarService> collectExemplarServices() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,4 +74,17 @@ interface HelidonMetric extends Metric {
      * @return the metric's {@link Metadata}
      */
     Metadata metadata();
+
+    /**
+     * Returns whether the metric has been deleted.
+     *
+     * @return true if the metrics was removed from the registry; false otherwise
+     */
+    boolean isDeleted();
+
+    /**
+     * Mark this metric as deleted.
+     */
+    void markAsDeleted();
+
 }

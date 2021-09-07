@@ -379,22 +379,26 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      * {@link #update(io.helidon.webserver.Routing.Rules)} (e.g. you should not
      * use both, as otherwise you would register the endpoint twice)
      *
-     * @param rules routing rules (also accepts
-     * {@link io.helidon.webserver.Routing.Builder}
+     * @param defaultRules routing rules for default routing (also accepts {@link io.helidon.webserver.Routing.Builder})
+     * @param serviceEndpointRoutingRules possibly different rules for the metrics endpoint routing
      */
     @Override
-    protected void postConfigureEndpoint(Routing.Rules rules) {
+    protected void postConfigureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules) {
         Registry base = rf.getARegistry(MetricRegistry.Type.BASE);
         Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
         Registry app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
 
         // register the metric registry and factory to be available to all
-        rules.any(new MetricsContextHandler(app, rf));
+        MetricsContextHandler metricsContextHandler = new MetricsContextHandler(app, rf);
+        defaultRules.any(metricsContextHandler);
+        if (defaultRules != serviceEndpointRoutingRules) {
+            serviceEndpointRoutingRules.any(metricsContextHandler);
+        }
 
-        configureVendorMetrics(null, rules);
+        configureVendorMetrics(null, defaultRules);
 
         // routing to root of metrics
-        rules.get(context(), (req, res) -> getMultiple(req, res, base, app, vendor))
+        serviceEndpointRoutingRules.get(context(), (req, res) -> getMultiple(req, res, base, app, vendor))
                 .options(context(), (req, res) -> optionsMultiple(req, res, base, app, vendor));
 
         // routing to each scope
@@ -402,7 +406,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
                 .forEach(registry -> {
                     String type = registry.type();
 
-                    rules.get(context() + "/" + type, (req, res) -> getAll(req, res, registry))
+                    serviceEndpointRoutingRules.get(context() + "/" + type, (req, res) -> getAll(req, res, registry))
                             .get(context() + "/" + type + "/{metric}", (req, res) -> getByName(req, res, registry))
                             .options(context() + "/" + type, (req, res) -> optionsAll(req, res, registry))
                             .options(context() + "/" + type + "/{metric}", (req, res) -> optionsOne(req, res, registry));
@@ -415,7 +419,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      * {@link io.helidon.webserver.Routing.Builder#register(io.helidon.webserver.Service...)}
      * rather than calling this method directly. If multiple sockets (and
      * routings) should be supported, you can use the
-     * {@link #configureEndpoint(io.helidon.webserver.Routing.Rules)}, and
+     * {@link #configureEndpoint(io.helidon.webserver.Routing.Rules, io.helidon.webserver.Routing.Rules)}, and
      * {@link #configureVendorMetrics(String, io.helidon.webserver.Routing.Rules)}
      * methods.
      *
@@ -423,7 +427,12 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      */
     @Override
     public void update(Routing.Rules rules) {
-        configureEndpoint(rules);
+        configureEndpoint(rules, rules);
+    }
+
+    @Override
+    protected void onShutdown() {
+        ExponentiallyDecayingReservoir.onServerShutdown();
     }
 
     private static KeyPerformanceIndicatorSupport.Context kpiContext(ServerRequest request) {

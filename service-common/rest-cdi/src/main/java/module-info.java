@@ -28,6 +28,7 @@ module io.helidon.servicecommon.restcdi {
     requires microprofile.config.api;
     requires jakarta.interceptor.api;
     requires jakarta.inject.api;
+    requires io.helidon.config.mp;
     requires io.helidon.microprofile.server;
 
     // this is needed for CDI extensions that use non-public observer methods

@@ -20,6 +20,7 @@
 :h1Prefix: MP
 :description: Helidon metrics
 :keywords: helidon, metrics, microprofile, guide
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 :common-guides: ../../common/guides
 :metrics-common: {common-guides}/metrics.adoc
 :lower-case-flavor: mp
@@ -28,7 +29,6 @@
 include::{metrics-common}[tag=intro]
 include::{metrics-common}[tag=create-sample-project]
 include::{metrics-common}[tag=using-built-in-metrics-intro]
-
 include::{metrics-common}[tag=build-and-run-intro]
 
 
@@ -70,7 +70,7 @@ include::{metrics-common}[tag=vendor-metrics-json-output]
 ----
 include::{metrics-common}[tag=get-single-metric]
 
-==== Controlling `REST.request` metrics
+==== Controlling `REST.request` Metrics
 Helidon implements the optional family of metrics, all with the name `REST.request`, as described in the
 link:https://download.eclipse.org/microprofile/microprofile-metrics-2.3/microprofile-metrics-spec-2.3.html#_optional_rest[MicroProfile Metrics specification].
 Each instance is a `SimpleTimer` with tags `class` and `method` identifying exactly which REST endpoint Java
@@ -87,7 +87,7 @@ include::{metrics-common}[tag=KPI]
 
 include::{metrics-common}[tag=metrics-metadata]
 
-=== Application-specific metrics data
+=== Application-Specific Metrics Data
 
 You can create application-specific metrics and integrate them with Helidon using CDI.
 To add a new metric, simply annotate the JAX-RS resource with one of the metric annotations. Metrics can
@@ -97,7 +97,7 @@ Helidon will automatically create and register annotated application metrics and
 also contains the metric metadata. The metrics will exist for the lifetime of the application.
 Each metric annotation has mandatory and optional fields. The name field, for example, is optional.
 
-==== Method level metrics
+==== Method Level Metrics
 
 There are four metrics that you can use by annotating a method:
 
@@ -177,7 +177,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 NOTE: Notice the counter is fully qualified.  You can remove the package prefix by using the `absolute=true` field in the `@Counted` annotation.
 You must use  `absolute=false` for class-level annotations.
 
-==== Additional method-level metrics
+==== Additional Method Level Metrics
 
 The `@Timed`, `@Metered`, and `@SimplyTimed` annotations can also be used with a method.  For the following example.
 you can just annotate the same method with `@Metered` and `@Timed`. These metrics collect significant
@@ -275,7 +275,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 <2> The `Timer` metric includes the `Meter` fields (it is a superset of `Meter`).
 
 
-==== Reusing metrics
+==== Reusing Metrics
 
 You can share a metric across multiple endpoints by specifying the reusable field in the metric annotation as
 demonstrated below.
@@ -353,7 +353,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 ----
 <1> Notice that `specialEventCard` count is two, since you accessed `/cards/wedding` and `/cards/birthday`.
 
-==== Class-level metrics
+==== Class Level Metrics
 
 You can collect metrics at the class-level to aggregate data from all methods in that class using the same metric.
 The following example introduces a metric to count all card queries.  In the following example, the method-level metrics are not
@@ -427,7 +427,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 fully qualified.
 
 
-==== Field-level metrics
+==== Field Level Metrics
 
 Field level metrics can be injected into managed objects, but they need to be updated by the application code.
 This annotation can be used on fields of type `Meter`, `Timer`, `Counter`, and `Histogram`.
@@ -521,7 +521,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 ----
 <1> The cache was hit two times out of five queries.
 
-==== Gauge metric
+==== Gauge Metric
 
 The metrics you have tested so far are updated in response to an application REST request, i.e GET `/cards`.  These
 metrics can be declared in a request scoped class and Helidon will store the metric in the `MetricRegistry`, so the value persists

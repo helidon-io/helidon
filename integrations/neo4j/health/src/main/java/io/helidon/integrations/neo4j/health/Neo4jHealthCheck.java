@@ -20,6 +20,8 @@ package io.helidon.integrations.neo4j.health;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import io.helidon.health.common.BuiltInHealthCheck;
+
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
@@ -33,6 +35,7 @@ import org.neo4j.driver.Session;
  */
 @Readiness
 @ApplicationScoped
+@BuiltInHealthCheck
 public class Neo4jHealthCheck implements HealthCheck {
 
     /**

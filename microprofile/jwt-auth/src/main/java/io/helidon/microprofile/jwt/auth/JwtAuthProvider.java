@@ -231,7 +231,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     }
 
     Subject buildSubject(Jwt jwt, SignedJwt signedJwt) {
-        JsonWebTokenImpl principal = buildPrincipal(jwt, signedJwt);
+        JsonWebTokenImpl principal = buildPrincipal(signedJwt);
 
         TokenCredential.Builder builder = TokenCredential.builder();
         jwt.issueTime().ifPresent(builder::issueTime);
@@ -259,7 +259,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         return subjectBuilder.build();
     }
 
-    JsonWebTokenImpl buildPrincipal(Jwt jwt, SignedJwt signedJwt) {
+    static JsonWebTokenImpl buildPrincipal(SignedJwt signedJwt) {
         return JsonWebTokenImpl.create(signedJwt);
     }
 

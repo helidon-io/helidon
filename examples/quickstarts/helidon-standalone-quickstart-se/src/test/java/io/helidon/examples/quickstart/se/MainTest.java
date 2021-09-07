@@ -58,11 +58,10 @@ public class MainTest {
     }
 
     @AfterAll
-    public static void stopServer() throws Exception {
+    public static void stopServer() {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(10, TimeUnit.SECONDS);
         }
     }
 

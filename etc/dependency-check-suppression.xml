@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
 <!-- For information see https://jeremylong.github.io/DependencyCheck/general/suppression.html -->
-<!-- Applies to Oracle HTTP Server -->
-<suppress>
-   <notes><![CDATA[
-   file name: helidon-microprofile-server-2.1.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.helidon\.microprofile\.server/helidon\-microprofile\-server@.*$</packageUrl>
-   <cpe>cpe:/a:oracle:http_server</cpe>
-</suppress>
 
 <!-- Applies to Processing:Processing -->
 <suppress>
@@ -54,28 +46,33 @@
 </suppress>
 
 <!-- GraalVM -->
-<!-- This suppresses multiple CVEs related to old versions of the JDK -->
+<!-- This suppresses multiple CVEs related to running untrusted Java code.
+     The descriptions of these CVEs have the statement:
+       This vulnerability does not apply to Java deployments, typically in servers, that load and run only trusted code"
+     Therefore these do not apply to Helidon's use of GraalVM
+-->
 <suppress>
    <notes><![CDATA[
-   file name: truffle-nfi-21.1.0.jar
+   file name: graal-sdk-21.1.0.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\.truffle/truffle\-nfi@.*$</packageUrl>
-   <cpe>cpe:/a:oracle:graalvm</cpe>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
+   <cve>CVE-2021-2341</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: truffle-nfi-21.1.0.jar
+   file name: graal-sdk-21.1.0.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\.truffle/truffle\-nfi@.*$</packageUrl>
-   <cpe>cpe:/a:oracle:openjdk</cpe>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
+   <cve>CVE-2021-2369</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: truffle-nfi-21.1.0.jar
+   file name: graal-sdk-21.1.0.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\.truffle/truffle\-nfi@.*$</packageUrl>
-   <cpe>cpe:/a:sun:openjdk</cpe>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
+   <cve>CVE-2021-2388</cve>
 </suppress>
+
 
 <!-- junit 4 -->
 <!-- This CVE is fixed in junit 4.13.1 and only applies when using Java 1.6
@@ -113,17 +110,16 @@
    <cpe>cpe:/a:apache:httpclient</cpe>
 </suppress>
 
-
-<!-- Thrift is a transitive dependency of jaeger-client. This CVE is for the RPC server support
-     in thrift, and according to the jaeger-client project does not apply to the libthrift client
-     usage in jaeger-client. 
+<!-- This CVE is against Neo4j through 3.4.18. We use Neo4j 4.2.4
+     Helidon's Neo4j integration triggered a false positive due to it's 
+     version being < 3.4.18
 -->
 <suppress>
    <notes><![CDATA[
-   file name: libthrift-0.13.0.jar
+   file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j:2.4.0-SNAPSHOT
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.apache\.thrift/libthrift@.*$</packageUrl>
-   <cve>CVE-2020-13949</cve>
+   <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon\-integrations\-neo4j@.*$</packageUrl>
+   <cve>CVE-2021-34371</cve>
 </suppress>
 
 <!-- The Neo4j java driver contains a shaded copy of a couple of Netty artifacts.
@@ -137,16 +133,14 @@
    <cve>CVE-2021-21409</cve>
 </suppress>
 
-<!-- This CVE is against old versions of git and jgit, but the CPE spec for jgit
-     was changed and now appears to wildcard the version even though the CVE only
-     applies to versions "Up to (excluding) 08-12-2014". Ours is newer than that.
--->
+<!-- This CVE was fixed in the EL implementations com.sun.el:el-ri:3.0.4 and org.glassfish:jakarta.el:3.0.4
+     which we have upgraded to. But the scan triggers a false positive on the API: jakarta.el:jakarta.el-api:3.0.3 -->
 <suppress>
    <notes><![CDATA[
-   file name: org.eclipse.jgit-4.9.9.201903122025-r.jar
+   file name: jakarta.el-api-3.0.3.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.eclipse\.jgit/org\.eclipse\.jgit@.*$</packageUrl>
-   <cve>CVE-2014-9390</cve>
+   <packageUrl regex="true">^pkg:maven/jakarta\.el/jakarta\.el\-api@.*$</packageUrl>
+   <cve>CVE-2021-28170</cve>
 </suppress>
 
 </suppressions>
