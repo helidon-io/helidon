@@ -65,6 +65,11 @@ pipeline {
                 junit testResults: '**/target/surefire-reports/*.xml'
               }
             }
+            stage('test-native-image'){
+              steps {
+                sh 'etc/scripts/test-native-image.sh'
+              }
+            }
           }
         }
       }
