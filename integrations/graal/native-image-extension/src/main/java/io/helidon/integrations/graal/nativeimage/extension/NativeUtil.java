@@ -277,6 +277,14 @@ final class NativeUtil {
         }
     }
 
+    Predicate<Class<?>> inclusionFilter(String description) {
+        return new InclusionFilter(tracer, exclusion, description);
+    }
+
+    Function<String, Class<?>> classMapper(String description) {
+        return new StringClassResolverMapper(tracer, classResolver, description);
+    }
+
     private static class InclusionFilter implements Predicate<Class<?>> {
         private final NativeTrace tracer;
         private final Function<Class<?>, Boolean> exclusion;
@@ -298,6 +306,27 @@ final class NativeUtil {
                 return false;
             }
             return true;
+        }
+    }
+
+    private static class StringClassResolverMapper implements Function<String, Class<?>> {
+        private final NativeTrace tracer;
+        private final Function<String, Class<?>> classResolver;
+        private final String message;
+
+        StringClassResolverMapper(NativeTrace tracer, Function<String, Class<?>> classResolver, String message) {
+            this.tracer = tracer;
+            this.classResolver = classResolver;
+            this.message = message;
+        }
+
+        @Override
+        public Class<?> apply(String className) {
+            Class<?> clazz = classResolver.apply(className);
+            if (clazz == null) {
+                tracer.parsing(() -> " class " + className + " " + message + " is not on classpath.");
+            }
+            return clazz;
         }
     }
 

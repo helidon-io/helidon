@@ -17,6 +17,8 @@
 
 package io.helidon.common.reactive;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -233,6 +235,16 @@ public class AwaitTest {
     @Test
     void singleAwaitTimeoutNegative() {
         assertThrows(CompletionException.class, () -> testSingle().await(10, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    void testAwaitWithDurationNegative() {
+        assertThrows(CompletionException.class, () -> testSingle().await(Duration.of(10, ChronoUnit.MILLIS)));
+    }
+
+    @Test
+    void testAwaitWithDurationPositive() {
+        assertThat(testSingle().await(Duration.of(2, ChronoUnit.SECONDS)), is(0 + 1 + 2 + 3 + 4L));
     }
 
     /**

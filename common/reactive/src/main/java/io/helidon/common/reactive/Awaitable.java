@@ -85,7 +85,7 @@ public interface Awaitable<T> {
      */
     default T await(Duration duration) {
         try {
-            return this.toCompletableFuture().get(duration.getNano(), TimeUnit.NANOSECONDS);
+            return this.toCompletableFuture().get(duration.toNanos(), TimeUnit.NANOSECONDS);
         } catch (ExecutionException e) {
             throw new CompletionException(e.getCause());
         } catch (InterruptedException | TimeoutException e) {
