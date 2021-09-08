@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,9 +59,13 @@ public class EtcdV3Client implements EtcdClient {
     /**
      * Init client with specified target Etcd uri.
      *
-     * @param uri target Etcd uri
+     * @param uris target Etcd uris
      */
-    public EtcdV3Client(URI uri) {
+    public EtcdV3Client(URI... uris) {
+        if (uris.length != 1) {
+            throw new IllegalArgumentException("EtcdV3Client only supports a single URI");
+        }
+        URI uri = uris[0];
         ManagedChannelBuilder mcb = ManagedChannelBuilder.forAddress(uri.getHost(), uri.getPort());
         this.channel = mcb.usePlaintext().build();
 
