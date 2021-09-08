@@ -16,8 +16,6 @@
 
 package io.helidon.integrations.oci.atp;
 
-import java.util.Arrays;
-
 import io.helidon.integrations.oci.connect.OciRequestBase;
 import io.helidon.integrations.oci.connect.OciResponseParser;
 
@@ -95,7 +93,7 @@ public final class GenerateAutonomousDatabaseWallet {
          * @param content
          */
         public WalletArchive(byte[] content) {
-            this.content = Arrays.copyOf(content, content.length);
+            this.content = content.clone();
         }
 
         /**
@@ -104,7 +102,7 @@ public final class GenerateAutonomousDatabaseWallet {
          * @return bytes[]
          */
         public byte[] getContent() {
-            return Arrays.copyOf(content, content.length);
+            return content.clone();
         }
     }
 }
