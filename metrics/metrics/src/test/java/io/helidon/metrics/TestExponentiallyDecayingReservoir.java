@@ -36,12 +36,11 @@ class TestExponentiallyDecayingReservoir {
     }
 
     @Test
-    void checkCurrentTimeInSeconds() throws InterruptedException, NoSuchFieldException, IllegalAccessException {
+    void checkCurrentTimeInSeconds() throws InterruptedException {
         ExponentiallyDecayingReservoir edr = new ExponentiallyDecayingReservoir(Clock.system());
         long startTime = edr.currentTimeInSeconds();
         Thread.sleep(1100);
-        long currentTimeInSeconds = edr.currentTimeInSeconds();
-        assertThat("Difference in current time across a short delay", currentTimeInSeconds - startTime,
+        assertThat("Difference in current time across a short delay", edr.currentTimeInSeconds() - startTime,
                 is(greaterThan(0L)));
     }
 }
