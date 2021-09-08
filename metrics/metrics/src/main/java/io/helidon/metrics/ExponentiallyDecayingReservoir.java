@@ -60,7 +60,7 @@ class ExponentiallyDecayingReservoir {
      */
     private static final long CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS = 250;
 
-    private static final List<Runnable> CURRENT_TIME_IN_SECONDS_UPDATERS = new ArrayList<>();
+    private static final List<ExponentiallyDecayingReservoir> reservoirs = new ArrayList<>();
 
     private static final AtomicBoolean EXECUTOR_UPDATER_CONFIGURED = new AtomicBoolean();
     private static final Logger LOGGER = Logger.getLogger(ExponentiallyDecayingReservoir.class.getName());
@@ -96,8 +96,8 @@ class ExponentiallyDecayingReservoir {
         this.alpha = alpha;
         this.size = size;
         this.count = new AtomicLong(0);
-        CURRENT_TIME_IN_SECONDS_UPDATERS.add(this::computeCurrentTimeInSeconds);
-        currentTimeInSeconds = computeCurrentTimeInSeconds();
+        reservoirs.add(this);
+        updateCurrentTimeInSeconds();
         this.startTime = currentTimeInSeconds;
         this.nextScaleTime = new AtomicLong(clock.nanoTick() + RESCALE_THRESHOLD);
     }
@@ -131,11 +131,14 @@ class ExponentiallyDecayingReservoir {
     }
 
     private static void updateCurrentTimeInSecondsForAllReservoirs() {
-        CURRENT_TIME_IN_SECONDS_UPDATERS.forEach(Runnable::run);
+        reservoirs.forEach(ExponentiallyDecayingReservoir::updateCurrentTimeInSeconds);
     }
 
-    private long computeCurrentTimeInSeconds() {
-        return TimeUnit.MILLISECONDS.toSeconds(clock.milliTime());
+    private void updateCurrentTimeInSeconds() {
+        currentTimeInSeconds = TimeUnit.MILLISECONDS.toSeconds(clock.milliTime());
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.log(Level.FINER, "Updating current time in seconds for " + hashCode() + " to " + currentTimeInSeconds);
+        }
     }
 
     public int size() {
