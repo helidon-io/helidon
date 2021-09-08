@@ -50,7 +50,7 @@ pipeline {
           }
         }
         stage('integration-tests') {
-          stages {
+          parallel {
             stage('test-vault') {
               agent {
                 kubernetes {
