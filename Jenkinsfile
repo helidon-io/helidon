@@ -66,6 +66,9 @@ pipeline {
               }
             }
             stage('test-native-image'){
+              agent {
+                label "linux"
+              }
               steps {
                 sh 'etc/scripts/test-native-image.sh'
               }
