@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -643,13 +642,9 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      * @throws NullPointerException if mapper is {@code null}
      */
-    default <U> Multi<Optional<U>> flatMapCompletionStage(Function<? super T, ? extends CompletionStage<? extends U>> mapper) {
+    default <U> Multi<U> flatMapCompletionStage(Function<? super T, ? extends CompletionStage<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return flatMap(t ->
-                Multi.create(
-                        mapper.apply(t)
-                                .thenApply(Optional::ofNullable)
-                ), 1, false, 1);
+        return flatMap(t -> Multi.create(mapper.apply(t)), 1, false, 1);
     }
 
     /**

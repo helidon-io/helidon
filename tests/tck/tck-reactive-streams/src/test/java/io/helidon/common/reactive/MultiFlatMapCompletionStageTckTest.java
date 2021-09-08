@@ -16,7 +16,6 @@
  */
 package io.helidon.common.reactive;
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,8 +58,7 @@ public class MultiFlatMapCompletionStageTckTest extends FlowPublisherVerificatio
                     } catch (InterruptedException e) {
                         throw new IllegalStateException(e);
                     }
-                }, exec))
-                .map(Optional::get);
+                }, exec));
     }
 
     @Override

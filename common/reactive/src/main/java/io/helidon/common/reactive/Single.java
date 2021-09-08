@@ -346,9 +346,9 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      * @throws NullPointerException if mapper is {@code null}
      */
-    default <U> Single<Optional<U>> flatMapCompletionStage(Function<? super T, ? extends CompletionStage<? extends U>> mapper) {
+    default <U> Single<U> flatMapCompletionStage(Function<? super T, ? extends CompletionStage<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return flatMapSingle(t -> Single.create(mapper.apply(t).thenApply(Optional::ofNullable)));
+        return flatMapSingle(t -> Single.create(mapper.apply(t)));
     }
 
     /**

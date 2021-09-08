@@ -52,7 +52,6 @@ public class MultiFlatMapCompletionStageTest {
     void singleThread() {
         List<Integer> result = Multi.just(1, 2, 3, 4)
                 .flatMapCompletionStage(CompletableFuture::completedFuture)
-                .map(Optional::get)
                 .collectList()
                 .await(100, TimeUnit.MILLISECONDS);
 
@@ -63,26 +62,25 @@ public class MultiFlatMapCompletionStageTest {
     void voidCs() {
         Throwable result = Multi.just(1, 2, 3, 4)
                 .flatMapCompletionStage(i -> CompletableFuture.<Void>completedFuture(null))
-                .map(Optional::get)
                 .map(Throwable.class::cast)
                 .onErrorResume(Function.identity())
                 .first()
                 .await(100, TimeUnit.MILLISECONDS);
 
-        assertThat(result, Matchers.instanceOf(NoSuchElementException.class));
+        assertThat(result, Matchers.instanceOf(NullPointerException.class));
     }
 
     @Test
     void multipleVoidCs() {
-        List<Optional<Integer>> result = Multi.just(1, 2, 3, 4)
+        TestSubscriber<Integer> subscriber = new TestSubscriber<>();
+        Multi.just(1, 2, 3, 4)
                 .flatMapCompletionStage(i -> CompletableFuture.completedFuture(i < 3 ? i : null))
-                .collectList()
-                .await(100, TimeUnit.MILLISECONDS);
+                .subscribe(subscriber);
 
-        assertThat(result,
-                Matchers.contains(Stream.of(1, 2, null, null)
-                        .map(Optional::ofNullable)
-                        .toArray()));
+        subscriber.requestMax();
+        subscriber.awaitDone(200, TimeUnit.MILLISECONDS);
+        subscriber.assertValues(1,2);
+        subscriber.assertError(NullPointerException.class);
     }
 
     @RepeatedTest(30)
@@ -99,7 +97,6 @@ public class MultiFlatMapCompletionStageTest {
                         throw new IllegalStateException(e);
                     }
                 }, exec))
-                .map(Optional::get)
                 .collectList()
                 .await(2, TimeUnit.SECONDS);
 

@@ -16,13 +16,10 @@
 
 package io.helidon.common.reactive;
 
-import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
@@ -49,7 +46,6 @@ public class SingleFlatMapCompletionStageTest {
     void singleThread() {
         Integer result = Single.just(1)
                 .flatMapCompletionStage(CompletableFuture::completedFuture)
-                .map(Optional::get)
                 .await(100, TimeUnit.MILLISECONDS);
 
         assertThat(result, Matchers.equalTo(1));
@@ -57,14 +53,14 @@ public class SingleFlatMapCompletionStageTest {
 
     @Test
     void voidCs() {
-        Throwable result = Single.just(1)
-                .flatMapCompletionStage(i -> CompletableFuture.<Void>completedFuture(null))
-                .map(Optional::get)
-                .map(Throwable.class::cast)
-                .onErrorResume(Function.identity())
-                .await(100, TimeUnit.MILLISECONDS);
+        TestSubscriber<Void> subscriber = new TestSubscriber<>();
 
-        assertThat(result, Matchers.instanceOf(NoSuchElementException.class));
+        Single.just(1)
+                .flatMapCompletionStage(i -> CompletableFuture.<Void>completedFuture(null))
+                .subscribe(subscriber);
+
+        subscriber.requestMax();
+        subscriber.assertError(NullPointerException.class);
     }
 
     @Test
@@ -79,7 +75,6 @@ public class SingleFlatMapCompletionStageTest {
                         throw new IllegalStateException(e);
                     }
                 }, exec))
-                .map(Optional::get)
                 .await(2, TimeUnit.SECONDS);
 
         assertThat(result, Matchers.equalTo(10));
