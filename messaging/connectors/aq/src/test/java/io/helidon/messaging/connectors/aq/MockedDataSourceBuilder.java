@@ -23,7 +23,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.Properties;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.sql.DataSource;
@@ -93,7 +93,7 @@ public class MockedDataSourceBuilder {
         Mockito.when(connection.createStatement()).thenReturn(sysGuidStatement);
         Mockito.when(connection.getDbCsId()).thenReturn((short) 2002);
         Mockito.when(connection.getMetaData()).thenReturn(databaseMetaData);
-        Mockito.when(connection.getTypeMap()).thenReturn(new Properties());
+        Mockito.when(connection.getTypeMap()).thenReturn(new HashMap<java.lang.String,java.lang.Class<?>>());
         Mockito.when(connection.prepareCall(ALL_QUEUES_SQL)).thenReturn(allQueuesStatement);
         Mockito.when(connection.prepareCall(ALL_QUEUE_TABLES_SQL)).thenReturn(allQueueTablesStatement);
         Mockito.when(allQueuesStatement.executeQuery()).thenReturn(allQueuesResultSet);
