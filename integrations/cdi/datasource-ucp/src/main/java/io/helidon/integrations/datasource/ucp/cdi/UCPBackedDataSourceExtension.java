@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
 import javax.enterprise.inject.CreationException;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.configurator.BeanConfigurator;
+import javax.enterprise.util.TypeLiteral;
 import javax.inject.Named;
 import javax.sql.DataSource;
 
@@ -97,14 +100,14 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
             .addQualifier(dataSourceName)
             .addTransitiveTypeClosure(PoolDataSource.class)
             .scope(ApplicationScoped.class)
-            .createWith(cc -> {
+            .produceWith(instance -> {
                     try {
-                        return createDataSource(dataSourceProperties);
+                        return createDataSource(instance, dataSourceName, dataSourceProperties);
                     } catch (final IntrospectionException | ReflectiveOperationException exception) {
                         throw new CreationException(exception.getMessage(), exception);
                     }
                 })
-            .destroyWith((dataSource, ignored) -> {
+            .disposeWith((dataSource, ignored) -> {
                     if (dataSource instanceof AutoCloseable) {
                         try {
                             ((AutoCloseable) dataSource).close();
@@ -117,32 +120,25 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
                 });
     }
 
-    private static PoolDataSource createDataSource(final Properties properties)
+    private static PoolDataSource createDataSource(final Instance<Object> instance,
+                                                   final Named dataSourceName,
+                                                   final Properties properties)
         throws IntrospectionException, ReflectiveOperationException {
-        Objects.requireNonNull(properties);
-
         // See
         // https://docs.oracle.com/en/database/oracle/oracle-database/19/jjucp/get-started.html#GUID-2CC8D6EC-483F-4942-88BA-C0A1A1B68226
         // for the general pattern.
         final PoolDataSource returnValue = PoolDataSourceFactory.getPoolDataSource();
-        assert returnValue != null;
         final Set<String> propertyNames = properties.stringPropertyNames();
-        assert propertyNames != null;
         if (!propertyNames.isEmpty()) {
             final BeanInfo beanInfo = Introspector.getBeanInfo(returnValue.getClass());
-            assert beanInfo != null;
             final PropertyDescriptor[] pds = beanInfo.getPropertyDescriptors();
-            assert pds != null;
-            assert pds.length > 0;
             for (final String propertyName : propertyNames) {
                 if (propertyName != null) {
                     for (final PropertyDescriptor pd : pds) {
-                        assert pd != null;
                         if (propertyName.equals(pd.getName())) {
                             final Method writeMethod = pd.getWriteMethod();
                             if (writeMethod != null) {
                                 final Class<?> type = pd.getPropertyType();
-                                assert type != null;
                                 if (type.equals(String.class)) {
                                     writeMethod.invoke(returnValue, properties.getProperty(propertyName));
                                 } else if (type.equals(Integer.TYPE)) {
@@ -157,6 +153,8 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
                     }
                 }
             }
+            // Permit further customization before the bean is actually created
+            instance.select(new TypeLiteral<Event<PoolDataSource>>() {}, dataSourceName).get().fire(returnValue);
         }
         return returnValue;
     }
