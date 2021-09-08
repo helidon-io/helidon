@@ -196,6 +196,10 @@ class ExponentiallyDecayingReservoir {
         }
     }
 
+    long currentTimeInSeconds() {
+        return currentTimeInSeconds;
+    }
+    
     private double weight(long t) {
         return exp(alpha * t);
     }

@@ -102,6 +102,7 @@
                             <configuration>
                                 <excludes>
                                     <exclude>**/TestServerWithKeyPerformanceIndicatorMetrics.java</exclude>
+                                    <exclude>**/TestExponentiallyDecayingReservoir.java</exclude>
                                 </excludes>
                             </configuration>
                         </execution>
@@ -129,6 +130,19 @@
                             <configuration>
                                 <includes>
                                     <include>**/TestServerWithKeyPerformanceIndicatorMetrics.java</include>
+                                </includes>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <!-- Run in separate invocation so we have only one task updating
+                                 ExponentiallyDecayingReservoir current time values. -->
+                            <id>exponentially-decaying-reservoir-check</id>
+                            <goals>
+                                <goal>test</goal>
+                            </goals>
+                            <configuration>
+                                <includes>
+                                    <include>**/TestExponentiallyDecayingReservoir.java</include>
                                 </includes>
                             </configuration>
                         </execution>
