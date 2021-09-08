@@ -179,6 +179,16 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             HttpRequestScopedPublisher publisher = new HttpRequestScopedPublisher(queue);
             requestContext = new RequestContext(publisher, request, Context.create(webServer.context()));
 
+            // Watch for prematurely closed channel
+            ctx.channel().closeFuture()
+                    .addListener(f -> {
+                        if (requestContext != null && !publisher.isCompleted()) {
+                            IllegalStateException e =
+                                    new IllegalStateException("Channel closed prematurely by other side!", f.cause());
+                            failPublisher(e);
+                        }
+                    });
+
             // Closure local variables that cache mutable instance variables
             RequestContext requestContextRef = requestContext;
 
