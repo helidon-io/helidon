@@ -47,7 +47,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
     . ${WS_DIR}/etc/scripts/includes/error_handlers.sh
 
     if [ -z "${GRAALVM_HOME}" ]; then
-        readonly export GRAALVM_HOME="/tools/graalvm-ce-java11-21.1.0"
+        export GRAALVM_HOME="/tools/graalvm-ce-java11-21.1.0"
     fi
 
     require_env() {
