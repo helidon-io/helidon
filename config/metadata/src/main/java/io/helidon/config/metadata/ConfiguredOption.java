@@ -89,7 +89,7 @@ public @interface ConfiguredOption {
     boolean required() default false;
 
     /**
-     * Default value of this option if not configured explicitly.w
+     * Default value of this option if not configured explicitly.
      * @return default value
      */
     String defaultValue() default UNCONFIGURED;
@@ -102,12 +102,22 @@ public @interface ConfiguredOption {
     boolean experimental() default false;
 
     /**
-     * Can be used to mark a builder method (or an option) as a list.
-     * Lists will be auto-detected if the parameter is an actual {@link java.util.List} or {@link java.util.Set}.
+     * Kind of this option.
+     * Defaults to {@link Kind#VALUE},
+     * autodetects {@link Kind#LIST} if the parameter is an actual {@link java.util.List} or {@link java.util.Set}.
+     * {@link Kind#MAP} is detected as well, though the type must be a String to a primitive or string
      *
-     * @return whether this options is expected to be a list of values
+     * @return kind of configuration option
      */
-    boolean list() default false;
+    Kind kind() default Kind.VALUE;
+
+    /**
+     * Set to true if the configuration may be provided by another module not know to us.
+     * The provider must then be configured to {@link Configured#provides()} this type.
+     *
+     * @return whether this requires a provider with configuration, defaults to {@code false}
+     */
+    boolean provider() default false;
 
     /**
      * For options that have a predefined set of allowed values.
@@ -115,4 +125,25 @@ public @interface ConfiguredOption {
      * @return allowed values
      */
     ConfiguredValue[] allowedValues() default {};
+
+    /**
+     * Option kind.
+     */
+    enum Kind {
+        /**
+         * Option is a single value (leaf node).
+         * Example: server port
+         */
+        VALUE,
+        /**
+         * Option is a list of values (either primitive, String or object nodes).
+         * Example: cipher suite in SSL, server sockets
+         */
+        LIST,
+        /**
+         * Option is a map of strings to primitive type or String.
+         * Example: tags in tracing, CDI configuration
+         */
+        MAP
+    }
 }

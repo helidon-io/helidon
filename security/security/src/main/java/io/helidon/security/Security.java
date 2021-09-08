@@ -553,7 +553,8 @@ public class Security {
     /**
      * Builder pattern class for helping create {@link Security} in a convenient way.
      */
-    @Configured(root = true, prefix = "security")
+    @Configured(root = true, prefix = "security", description = "Configuration of security providers, integration and other"
+            + " security options")
     public static final class Builder implements io.helidon.common.Builder<Security> {
         private final Set<AuditProvider> auditProviders = new LinkedHashSet<>();
         private final List<NamedProvider<AuthenticationProvider>> atnProviders = new LinkedList<>();
@@ -599,7 +600,7 @@ public class Security {
          * @return updated builder instance
          */
         @ConfiguredOption(value = "provider-policy.type", type = ProviderSelectionPolicyType.class,
-                          description = "Type of the policy.")
+                          description = "Type of the policy.", defaultValue = "FIRST")
         @ConfiguredOption(value = "provider-policy.class-name", description = "Provider selection policy class name, only used "
                 + "when type is set to CLASS", type = Class.class)
         public Builder providerSelectionPolicy(Function<ProviderSelectionPolicy.Providers, ProviderSelectionPolicy>
@@ -661,7 +662,7 @@ public class Security {
          * @param provider Provider implementing multiple security provider interfaces
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "providers", list = true, required = true)
+        @ConfiguredOption(value = "providers", kind = ConfiguredOption.Kind.LIST, required = true, provider = true)
         public Builder addProvider(SecurityProvider provider) {
             return addProvider(provider, provider.getClass().getSimpleName());
         }
@@ -727,7 +728,10 @@ public class Security {
          * @param provider Provider instance to use as the default for this runtime.
          * @return updated builder instance
          */
-        @ConfiguredOption("default-authentication-provider")
+        @ConfiguredOption(value = "default-authentication-provider",
+                          description = "ID of the default authentication provider",
+                          type = String.class,
+                          provider = true)
         public Builder authenticationProvider(AuthenticationProvider provider) {
             // explicit default provider
             this.authnProvider = new NamedProvider<>(provider.getClass().getSimpleName(), provider);
@@ -750,7 +754,9 @@ public class Security {
          * @param provider provider instance to use as the default for this runtime.
          * @return updated builder instance
          */
-        @ConfiguredOption("default-authorization-provider")
+        @ConfiguredOption(value = "default-authorization-provider",
+                          type = String.class,
+                          description = "ID of the default authorization provider")
         public Builder authorizationProvider(AuthorizationProvider provider) {
             // explicit default provider
             this.authzProvider = new NamedProvider<>(provider.getClass().getSimpleName(), provider);
@@ -1102,11 +1108,13 @@ public class Security {
          * @see #secret(String)
          * @see #secret(String, String)
          */
-        @ConfiguredOption(value = "secrets", list = true, type = Config.class, description = "Configured secrets")
+        @ConfiguredOption(value = "secrets", kind = ConfiguredOption.Kind.LIST, type = Config.class, description = "Configured secrets")
         @ConfiguredOption(value = "secrets.*.name", type = String.class, description = "Name of the secret, used for lookup")
         @ConfiguredOption(value = "secrets.*.provider", type = String.class, description = "Name of the secret provider")
-        @ConfiguredOption(value = "secrets.*.config", type = ProviderConfig.class, description = "Configuration specific to the"
-                + " secret provider")
+        @ConfiguredOption(value = "secrets.*.config",
+                          type = SecretsProviderConfig.class,
+                          provider = true,
+                          description = "Configuration specific to the secret provider")
         public <T extends ProviderConfig> Builder addSecret(String name,
                                                             SecretsProvider<T> secretProvider,
                                                             T providerConfig) {

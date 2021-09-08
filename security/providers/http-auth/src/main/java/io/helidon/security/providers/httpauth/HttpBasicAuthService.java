@@ -24,9 +24,10 @@ import io.helidon.security.spi.SecurityProviderService;
  * Basic authentication service.
  */
 public class HttpBasicAuthService implements SecurityProviderService {
+    static final String PROVIDER_CONFIG_KEY =  "http-basic-auth";
     @Override
     public String providerConfigKey() {
-        return "http-basic-auth";
+        return PROVIDER_CONFIG_KEY;
     }
 
     @Override

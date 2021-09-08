@@ -27,6 +27,7 @@ import io.helidon.common.crypto.SymmetricCipher;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.encryption.ConfigProperties;
+import io.helidon.security.SecretsProviderConfig;
 import io.helidon.security.spi.EncryptionProvider;
 import io.helidon.security.spi.ProviderConfig;
 import io.helidon.security.spi.SecretsProvider;
@@ -153,7 +154,7 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
     /**
      * Configuration of a secret.
      */
-    public static class SecretConfig implements ProviderConfig {
+    public static class SecretConfig implements SecretsProviderConfig {
         private final Supplier<Single<Optional<String>>> value;
 
         private SecretConfig(Supplier<Single<Optional<String>>> value) {

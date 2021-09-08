@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.config.metadata;
+package io.helidon.config.metadata.processor;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -55,8 +55,11 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.StandardLocation;
 
-import io.helidon.config.metadata.ConfiguredType.ConfiguredProperty;
-import io.helidon.config.metadata.ConfiguredType.ProducerMethod;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.config.metadata.ConfiguredOptions;
+import io.helidon.config.metadata.processor.ConfiguredType.ConfiguredProperty;
+import io.helidon.config.metadata.processor.ConfiguredType.ProducerMethod;
 
 import static io.helidon.config.metadata.ConfiguredOption.UNCONFIGURED;
 
@@ -67,6 +70,9 @@ import static io.helidon.config.metadata.ConfiguredOption.UNCONFIGURED;
  *   - XML Schema?
  */
 public class ConfigMetadataProcessor extends AbstractProcessor {
+    /**
+     * Configuration metadata file location.
+     */
     private static final String META_FILE = "META-INF/helidon/config-metadata.json";
     private static final Pattern JAVADOC_CODE = Pattern.compile("\\{@code (.*?)}");
     private static final Pattern JAVADOC_LINK = Pattern.compile("\\{@link (.*?)}");
@@ -93,6 +99,13 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
     private TypeMirror configType;
     private TypeMirror erasedListType;
     private TypeMirror erasedSetType;
+    private TypeMirror erasedMapType;
+
+    /**
+     * Public constructor required for service loader.
+     */
+    public ConfigMetadataProcessor() {
+    }
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -122,6 +135,7 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
         configType = elementUtils.getTypeElement("io.helidon.config.Config").asType();
         erasedListType = typeUtils.erasure(elementUtils.getTypeElement(List.class.getName()).asType());
         erasedSetType = typeUtils.erasure(elementUtils.getTypeElement(Set.class.getName()).asType());
+        erasedMapType = typeUtils.erasure(elementUtils.getTypeElement(Map.class.getName()).asType());
     }
 
     @Override
@@ -156,6 +170,7 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
         Configured configured = aClass.getAnnotation(Configured.class);
         boolean standalone = configured.root();
         String keyPrefix = configured.prefix();
+        String description = configured.description();
 
         String className = aClass.toString();
         String targetClass = className;
@@ -165,17 +180,10 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
         if (!configured.ignoreBuildMethod()
                 && typeUtils.isAssignable(typeUtils.erasure(aClass.asType()), typeUtils.erasure(builderType))) {
             // this is a builder, we need the target type
-            List<? extends TypeMirror> interfaces = (classElement).getInterfaces();
-            for (TypeMirror anInterface : interfaces) {
-                if (anInterface instanceof DeclaredType) {
-                    DeclaredType type = (DeclaredType) anInterface;
-                    if (typeUtils.isSameType(typeUtils.erasure(builderType), typeUtils.erasure(type))) {
-                        TypeMirror builtType = type.getTypeArguments().get(0);
-                        targetClass = typeUtils.erasure(builtType).toString();
-                        isBuilder = true;
-                        break;
-                    }
-                }
+            BuilderTypeInfo foundBuilder = findBuilder(classElement);
+            isBuilder = foundBuilder.isBuilder;
+            if (isBuilder) {
+                targetClass = foundBuilder.targetClass;
             }
         }
 
@@ -186,7 +194,12 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
           - an interface/abstract class only used for inheritance
          */
 
-        ConfiguredType type = new ConfiguredType(targetClass, standalone, keyPrefix, toProvides(aClass));
+        ConfiguredType type = new ConfiguredType(targetClass,
+                                                 standalone,
+                                                 keyPrefix,
+                                                 description,
+                                                 toProvides(aClass));
+
         newOptions.put(targetClass, type);
         String module = elementUtils.getModuleOf(aClass).toString();
         moduleTypes.computeIfAbsent(module, it -> new LinkedList<>()).add(targetClass);
@@ -205,6 +218,34 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
             // standalone class with create method(s), or interface/abstract class
             processTargetType(classElement, type, className, standalone);
         }
+    }
+
+    private BuilderTypeInfo findBuilder(TypeElement classElement) {
+        List<? extends TypeMirror> interfaces = classElement.getInterfaces();
+        for (TypeMirror anInterface : interfaces) {
+            if (anInterface instanceof DeclaredType) {
+                DeclaredType type = (DeclaredType) anInterface;
+                if (typeUtils.isSameType(typeUtils.erasure(builderType), typeUtils.erasure(type))) {
+                    TypeMirror builtType = type.getTypeArguments().get(0);
+                    return new BuilderTypeInfo(typeUtils.erasure(builtType).toString());
+                }
+            }
+        }
+        BuilderTypeInfo found = null;
+        // did not find it, let's try super interfaces of interfaces
+        for (TypeMirror anInterface : interfaces) {
+            if (anInterface instanceof DeclaredType) {
+                DeclaredType type = (DeclaredType) anInterface;
+                Element element = type.asElement();
+                if (element instanceof TypeElement) {
+                    found = findBuilder((TypeElement) element);
+                    if (found.isBuilder) {
+                        return found;
+                    }
+                }
+            }
+        }
+        return new BuilderTypeInfo();
     }
 
     private void addInterfaces(ConfiguredType type, TypeElement classElement) {
@@ -286,7 +327,7 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                 // not static
                 .filter(it -> !it.getModifiers().contains(Modifier.STATIC))
                 // return the same type (e.g. Builder)
-                .filter(it -> typeUtils.isSameType(builderElement.asType(), it.getReturnType()))
+                .filter(it -> isBuilderMethod(builderElement, it))
                 .forEach(it -> processBuilderMethod(it, type, className));
         List<? extends TypeMirror> interfaces = builderElement.getInterfaces();
         for (TypeMirror anInterface : interfaces) {
@@ -309,6 +350,15 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                     .filter(it -> typeUtils.isSameType(builderElement.asType(), it.getReturnType()))
                     .forEach(it -> processBuilderMethod(it, type, className));
         }
+    }
+
+    private boolean isBuilderMethod(TypeElement builderElement, ExecutableElement it) {
+        TypeMirror builderType = builderElement.asType();
+        TypeMirror methodReturnType = it.getReturnType();
+        if (typeUtils.isSameType(builderType, methodReturnType)) {
+            return true;
+        }
+        return it.getAnnotation(ConfiguredOption.class) != null;
     }
 
     private void processTargetType(TypeElement typeElement,
@@ -403,7 +453,8 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                                                                      data.type,
                                                                      data.experimental,
                                                                      !data.required,
-                                                                     data.list,
+                                                                     data.kind,
+                                                                     data.provider,
                                                                      data.allowedValues);
                     type.addProperty(prop);
                 }
@@ -490,7 +541,8 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                                                                  type.elementType,
                                                                  experimental,
                                                                  optional,
-                                                                 type.list,
+                                                                 type.kind,
+                                                                 annotation.provider,
                                                                  annotation.allowedValues);
             configuredType.addProperty(property);
         }
@@ -531,7 +583,13 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                 if (typeUtils.isSameType(erasedType, erasedListType) || typeUtils.isSameType(erasedType, erasedSetType)) {
                     DeclaredType type = (DeclaredType) paramType;
                     TypeMirror genericType = type.getTypeArguments().get(0);
-                    return new OptionType(genericType.toString(), true);
+                    return new OptionType(genericType.toString(), ConfiguredOption.Kind.LIST);
+                }
+
+                if (typeUtils.isSameType(erasedType, erasedMapType)) {
+                    DeclaredType type = (DeclaredType) paramType;
+                    TypeMirror genericType = type.getTypeArguments().get(1);
+                    return new OptionType(genericType.toString(), ConfiguredOption.Kind.MAP);
                 }
 
                 String typeName;
@@ -540,12 +598,12 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                 } else {
                     typeName = paramType.toString();
                 }
-                return new OptionType(typeName, annotation.list);
+                return new OptionType(typeName, annotation.kind);
             }
 
         } else {
             // use the one defined on annotation
-            return new OptionType(annotation.type, annotation.list);
+            return new OptionType(annotation.type, annotation.kind);
         }
     }
 
@@ -692,8 +750,10 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                 }
 
                 result.type = value.toString();
-            } else if (key.contentEquals("list")) {
-                result.list = (Boolean) value;
+            } else if (key.contentEquals("kind")) {
+                result.kind = ConfiguredOption.Kind.valueOf(value.toString());
+            } else if (key.contentEquals("provider")) {
+                result.provider = (Boolean) value;
             } else if (key.contentEquals("allowedValues")) {
                 ((List<AnnotationMirror>) value).stream()
                         .map(AllowedValue::create)
@@ -715,11 +775,11 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
 
     private static final class OptionType {
         private final String elementType;
-        private final boolean list;
+        private final ConfiguredOption.Kind kind;
 
-        private OptionType(String elementType, boolean list) {
+        private OptionType(String elementType, ConfiguredOption.Kind kind) {
             this.elementType = elementType;
-            this.list = list;
+            this.kind = kind;
         }
     }
 
@@ -771,6 +831,22 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
         private boolean required;
         private String defaultValue;
         private boolean experimental;
-        private boolean list;
+        private boolean provider;
+        private ConfiguredOption.Kind kind = ConfiguredOption.Kind.VALUE;
+    }
+
+    private static class BuilderTypeInfo {
+        private final boolean isBuilder;
+        private final String targetClass;
+
+        BuilderTypeInfo() {
+            this.isBuilder = false;
+            this.targetClass = null;
+        }
+
+        BuilderTypeInfo(String targetClass) {
+            this.isBuilder = true;
+            this.targetClass = targetClass;
+        }
     }
 }

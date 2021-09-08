@@ -145,7 +145,7 @@ and POJO's and you will be able to access these via the URL's described below.
 As per the instructions <<mp/introduction/02_microprofile.adoc, here>> ensure you have added a
 `src/main/resources/META-INF/beans.xml` file, so the CDI implementation can pick up your classes.
 
-A `Main` class is not needed, you can configure `io.helidon.microprofile.cdi.Main` as the entry point.
+A `ConfigMetadataMain` class is not needed, you can configure `io.helidon.microprofile.cdi.Main` as the entry point.
 
 Optionally, you can configure a custom entry point (such as when you need custom configuration setup).
 

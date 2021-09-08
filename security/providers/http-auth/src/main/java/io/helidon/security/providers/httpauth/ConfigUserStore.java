@@ -25,6 +25,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * User store loaded from configuration.
@@ -70,12 +72,20 @@ public class ConfigUserStore implements SecureUserStore {
         return Optional.ofNullable(users.get(login));
     }
 
+    @Configured
     static class ConfigUser implements User {
         private final Set<String> roles = new LinkedHashSet<>();
         private String login;
         private char[] password;
 
-        static ConfigUser create(Config config) {
+        @ConfiguredOption(value = "login", type = String.class, description = "User's login")
+        @ConfiguredOption(value = "password", type = String.class, description = "User's password")
+        @ConfiguredOption(value = "roles",
+                          type = String.class,
+                          kind = ConfiguredOption.Kind.LIST,
+                          description = "List of roles the user is in")
+        // method must be public so the annotation processor sees it
+        public static ConfigUser create(Config config) {
             ConfigUser cu = new ConfigUser();
 
             cu.login = config.get("login").asString().get();

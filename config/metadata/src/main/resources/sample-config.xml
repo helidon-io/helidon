@@ -1,6 +1,0 @@
-<config xmlns="https://www.helidon.io/config/2.3.1">
-    <server>
-        <host>string</host>
-        <port>3</port>
-    </server>
-</config>

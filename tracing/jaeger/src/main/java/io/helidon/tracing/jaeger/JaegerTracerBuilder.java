@@ -24,6 +24,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.tracing.TracerBuilder;
 
 import io.jaegertracing.Configuration;
@@ -148,6 +150,7 @@ import io.opentracing.util.GlobalTracer;
  *
  * @see <a href="https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md">Jaeger configuration</a>
  */
+@Configured(prefix = "tracing", root = true, description = "Jaeger tracer configuration.")
 public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final Logger LOGGER = Logger.getLogger(JaegerTracerBuilder.class.getName());
 
@@ -282,6 +285,8 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param password password to use
      * @return updated builder instance
      */
+    @ConfiguredOption(value = "username", type = String.class)
+    @ConfiguredOption(value = "password", type = String.class)
     public JaegerTracerBuilder basicAuth(String username, String password) {
         username(username);
         password(password);
@@ -294,6 +299,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param propagation propagation value
      * @return updated builder instance
      */
+    @ConfiguredOption(value = "propagation", kind = ConfiguredOption.Kind.LIST, type = Configuration.Propagation.class)
     public JaegerTracerBuilder addPropagation(Configuration.Propagation propagation) {
         this.propagations.add(propagation);
 
@@ -414,6 +420,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param logSpans whether to log spans
      * @return updated builder instance
      */
+    @ConfiguredOption
     public JaegerTracerBuilder logSpans(boolean logSpans) {
         this.reporterLogSpans = logSpans;
         return this;
@@ -425,6 +432,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param token token to authenticate
      * @return updated builder instance
      */
+    @ConfiguredOption
     public JaegerTracerBuilder token(String token) {
         this.token = token;
         return this;

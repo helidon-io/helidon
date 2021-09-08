@@ -49,6 +49,7 @@
         <module>config-mp</module>
         <module>yaml-mp</module>
         <module>metadata</module>
+        <module>metadata-processor</module>
     </modules>
 
     <build>

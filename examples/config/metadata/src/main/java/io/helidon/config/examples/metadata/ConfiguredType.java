@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package io.helidon.config.metadata;
+package io.helidon.config.examples.metadata;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -24,9 +25,11 @@ import java.util.Objects;
 import java.util.Set;
 
 import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObjectBuilder;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+
+import io.helidon.config.metadata.ConfiguredOption;
 
 final class ConfiguredType {
     private final Set<ConfiguredProperty> allProperties = new HashSet<>();
@@ -37,13 +40,15 @@ final class ConfiguredType {
     private final String targetClass;
     private final boolean standalone;
     private final String prefix;
+    private final String description;
     private final List<String> provides;
     private final List<String> inherited = new LinkedList<>();
 
-    ConfiguredType(String targetClass, boolean standalone, String prefix, List<String> provides) {
+    ConfiguredType(String targetClass, boolean standalone, String prefix, String description, List<String> provides) {
         this.targetClass = targetClass;
         this.standalone = standalone;
         this.prefix = prefix;
+        this.description = description;
         this.provides = provides;
     }
 
@@ -52,6 +57,49 @@ final class ConfiguredType {
         if (result.startsWith("[") && result.endsWith("]")) {
             return result.substring(1, result.length() - 1);
         }
+        return result;
+    }
+
+    String description() {
+        return description;
+    }
+
+    static ConfiguredType create(JsonObject type) {
+        ConfiguredType ct = new ConfiguredType(
+                type.getString("type"),
+                type.getBoolean("standalone", false),
+                type.getString("prefix", null),
+                type.getString("description", null),
+                toList(type.getJsonArray("provides"))
+        );
+
+        List<String> producers = toList(type.getJsonArray("producers"));
+        for (String producer : producers) {
+            ct.addProducer(ProducerMethod.parse(producer));
+        }
+        List<String> inherits = toList(type.getJsonArray("inherits"));
+        for (String inherit : inherits) {
+            ct.addInherited(inherit);
+        }
+
+        JsonArray options = type.getJsonArray("options");
+        for (JsonValue option : options) {
+            ct.addProperty(ConfiguredProperty.create(option.asJsonObject()));
+        }
+
+        return ct;
+    }
+
+    private static List<String> toList(JsonArray array) {
+        if (array == null) {
+            return List.of();
+        }
+        List<String> result = new ArrayList<>(array.size());
+
+        for (JsonValue jsonValue : array) {
+            result.add(((JsonString) jsonValue).getString());
+        }
+
         return result;
     }
 
@@ -85,102 +133,8 @@ final class ConfiguredType {
         return prefix;
     }
 
-    public void write(JsonBuilderFactory json, JsonArrayBuilder typeArray) {
-        JsonObjectBuilder typeObject = json.createObjectBuilder();
-
-        typeObject.add("type", targetClass());
-        if (standalone()) {
-            typeObject.add("standalone", true);
-        }
-        if (prefix() != null && !prefix.isBlank()) {
-            typeObject.add("prefix", prefix());
-        }
-        if (!inherited.isEmpty()) {
-            JsonArrayBuilder inheritedBuilder = json.createArrayBuilder();
-            inherited.forEach(inheritedBuilder::add);
-            typeObject.add("inherits", inheritedBuilder);
-        }
-
-        if (!provides.isEmpty()) {
-            JsonArrayBuilder providesBuilder = json.createArrayBuilder();
-            provides.forEach(providesBuilder::add);
-            typeObject.add("provides", providesBuilder);
-        }
-
-        JsonArrayBuilder producersBuilder = json.createArrayBuilder();
-        for (ProducerMethod method : producerMethods) {
-            producersBuilder.add(method.toString());
-        }
-
-        JsonArray producers = producersBuilder.build();
-        if (!producers.isEmpty()) {
-            typeObject.add("producers", producers);
-        }
-
-        JsonArrayBuilder options = json.createArrayBuilder();
-        for (ConfiguredProperty property : allProperties) {
-            writeProperty(json, options, "", property);
-        }
-        typeObject.add("options", options);
-
-        typeArray.add(typeObject);
-    }
-
-    private void writeProperty(JsonBuilderFactory json,
-                               JsonArrayBuilder optionsBuilder,
-                               String prefix,
-                               ConfiguredProperty property) {
-
-        JsonObjectBuilder optionBuilder = json.createObjectBuilder();
-        optionBuilder.add("key", prefix(prefix, property.key()));
-        optionBuilder.add("type", property.type());
-        optionBuilder.add("description", property.description());
-        if (property.defaultValue() != null) {
-            optionBuilder.add("defaultValue", property.defaultValue());
-        }
-        if (property.experimental) {
-            optionBuilder.add("experimental", true);
-        }
-        if (!property.optional) {
-            optionBuilder.add("required", true);
-        }
-        if (property.list()) {
-            optionBuilder.add("list", true);
-        }
-        String method = property.builderMethod();
-        if (method != null) {
-            optionBuilder.add("method", method);
-        }
-        if (property.configuredType != null) {
-            String finalPrefix;
-            if (property.list()) {
-                finalPrefix = prefix(prefix(prefix, property.key()), "*");
-            } else {
-                finalPrefix = prefix(prefix, property.key());
-            }
-            property.configuredType.properties()
-                    .forEach(it -> writeProperty(json, optionsBuilder, finalPrefix, it));
-        }
-        if (!property.allowedValues.isEmpty()) {
-            JsonArrayBuilder allowedValues = json.createArrayBuilder();
-
-            for (ConfigMetadataProcessor.AllowedValue allowedValue : property.allowedValues) {
-                allowedValues.add(json.createObjectBuilder()
-                                          .add("value", allowedValue.value())
-                                          .add("description", allowedValue.description()));
-            }
-
-            optionBuilder.add("allowedValues", allowedValues);
-        }
-
-        optionsBuilder.add(optionBuilder);
-    }
-
-    private String prefix(String currentPrefix, String newSuffix) {
-        if (currentPrefix.isEmpty()) {
-            return newSuffix;
-        }
-        return currentPrefix + "." + newSuffix;
+    List<String> provides() {
+        return provides;
     }
 
     @Override
@@ -190,6 +144,10 @@ final class ConfiguredType {
 
     void addInherited(String classOrIface) {
         inherited.add(classOrIface);
+    }
+
+    List<String> inherited() {
+        return inherited;
     }
 
     static final class ProducerMethod {
@@ -203,6 +161,21 @@ final class ConfiguredType {
             this.owningClass = owningClass;
             this.methodName = methodName;
             this.methodParams = methodParams;
+        }
+
+        public static ProducerMethod parse(String producer) {
+            int methodSeparator = producer.indexOf('#');
+            String owningClass = producer.substring(0, methodSeparator);
+            int paramBraceStart = producer.indexOf('(', methodSeparator);
+            String methodName = producer.substring(methodSeparator + 1, paramBraceStart);
+            int paramBraceEnd = producer.indexOf(')', paramBraceStart);
+            String parameters = producer.substring(paramBraceStart + 1, paramBraceEnd);
+            String[] methodParams = parameters.split(",");
+
+            return new ProducerMethod(false,
+                                      owningClass,
+                                      methodName,
+                                      methodParams);
         }
 
         @Override
@@ -222,10 +195,13 @@ final class ConfiguredType {
         private final String type;
         private final boolean experimental;
         private final boolean optional;
-        private final boolean list;
-        private final List<ConfigMetadataProcessor.AllowedValue> allowedValues;
+        private final ConfiguredOption.Kind kind;
+        private final List<AllowedValue> allowedValues;
+        private final boolean provider;
+
         // if this is a nested type
         private ConfiguredType configuredType;
+        private String outputKey;
 
         ConfiguredProperty(String builderMethod,
                            String key,
@@ -234,8 +210,9 @@ final class ConfiguredType {
                            String type,
                            boolean experimental,
                            boolean optional,
-                           boolean list,
-                           List<ConfigMetadataProcessor.AllowedValue> allowedValues) {
+                           ConfiguredOption.Kind kind,
+                           boolean provider,
+                           List<AllowedValue> allowedValues) {
             this.builderMethod = builderMethod;
             this.key = key;
             this.description = description;
@@ -243,36 +220,66 @@ final class ConfiguredType {
             this.type = type;
             this.experimental = experimental;
             this.optional = optional;
-            this.list = list;
+            this.kind = kind;
             this.allowedValues = allowedValues;
+            this.outputKey = key;
+            this.provider = provider;
         }
 
-        ConfiguredProperty(ProducerMethod builderMethod,
-                           String key,
-                           String description,
-                           String defaultValue,
-                           String type,
-                           boolean experimental,
-                           boolean optional,
-                           boolean list,
-                           List<ConfigMetadataProcessor.AllowedValue> allowedValues) {
-            this.builderMethod = builderMethod == null ? null : builderMethod.toString();
-            this.key = key;
-            this.description = description;
-            this.defaultValue = defaultValue;
-            this.type = type;
-            this.experimental = experimental;
-            this.optional = optional;
-            this.list = list;
-            this.allowedValues = allowedValues;
+        public static ConfiguredProperty create(JsonObject json) {
+            return new ConfiguredProperty(
+                    json.getString("method", null),
+                    json.getString("key"),
+                    json.getString("description"),
+                    json.getString("defaultValue", null),
+                    json.getString("type", "java.lang.String"),
+                    json.getBoolean("experimental", false),
+                    json.getBoolean("optional", true),
+                    toKind(json.getString("kind", null)),
+                    json.getBoolean("provider", false),
+                    toAllowedValues(json.getJsonArray("allowedValues"))
+            );
+        }
+
+        private static ConfiguredOption.Kind toKind(String kind) {
+            if (kind == null) {
+                return ConfiguredOption.Kind.VALUE;
+            }
+            return ConfiguredOption.Kind.valueOf(kind);
+        }
+
+        List<AllowedValue> allowedValues() {
+            return allowedValues;
+        }
+
+        private static List<AllowedValue> toAllowedValues(JsonArray allowedValues) {
+            if (allowedValues == null) {
+                return List.of();
+            }
+            List<AllowedValue> result = new ArrayList<>(allowedValues.size());
+
+            for (JsonValue allowedValue : allowedValues) {
+                JsonObject json = allowedValue.asJsonObject();
+                result.add(new AllowedValue(json.getString("value"), json.getString("description", null)));
+            }
+
+            return result;
         }
 
         String builderMethod() {
             return builderMethod;
         }
 
+        String outputKey() {
+            return outputKey;
+        }
+
         String key() {
             return key;
+        }
+
+        void key(String key) {
+            this.outputKey = key;
         }
 
         String description() {
@@ -295,8 +302,8 @@ final class ConfiguredType {
             return optional;
         }
 
-        boolean list() {
-            return list;
+        ConfiguredOption.Kind kind() {
+            return kind;
         }
 
         void nestedType(ConfiguredType nested) {
@@ -323,6 +330,28 @@ final class ConfiguredType {
         @Override
         public String toString() {
             return key;
+        }
+
+        boolean provider() {
+            return provider;
+        }
+    }
+
+    static final class AllowedValue {
+        private final String value;
+        private final String description;
+
+        private AllowedValue(String value, String description) {
+            this.value = value;
+            this.description = description;
+        }
+
+        String value() {
+            return value;
+        }
+
+        String description() {
+            return description;
         }
     }
 }

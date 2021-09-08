@@ -30,6 +30,8 @@ import java.util.regex.Pattern;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
@@ -46,6 +48,7 @@ import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.httpauth.spi.UserStoreService;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
+import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
 import io.helidon.security.util.TokenHandler;
 
@@ -219,7 +222,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                 .findFirst()
                 .map(this::validateBasicAuth)
                 .orElseGet(() ->
-                        failOrAbstain("Authorization header does not contain basic authentication: " + authorizationHeader));
+                                   failOrAbstain("Authorization header does not contain basic authentication: " + authorizationHeader));
     }
 
     private AuthenticationResponse validateBasicAuth(String basicAuthHeader) {
@@ -306,6 +309,8 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     /**
      * {@link HttpBasicAuthProvider} fluent API builder.
      */
+    @Configured(provides = {SecurityProvider.class,
+            AuthenticationProvider.class}, prefix = HttpBasicAuthService.PROVIDER_CONFIG_KEY)
     public static final class Builder implements io.helidon.common.Builder<HttpBasicAuthProvider> {
         private final List<SecureUserStore> userStores = new LinkedList<>();
         private final OutboundConfig.Builder outboundBuilder = OutboundConfig.builder();
@@ -374,6 +379,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
          * @param subjectType type of principal
          * @return updated builder instance
          */
+        @ConfiguredOption(value = "principal-type", defaultValue = "USER")
         public Builder subjectType(SubjectType subjectType) {
             this.subjectType = subjectType;
 
@@ -405,6 +411,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
          * @param store User store to use
          * @return updated builder instance
          */
+        @ConfiguredOption(value = "users", type = ConfigUserStore.ConfigUser.class, kind = ConfiguredOption.Kind.LIST)
         public Builder userStore(SecureUserStore store) {
             userStores.clear();
             userStores.add(store);
@@ -417,6 +424,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
          * @param realm security realm name to send to browser (or any other client) when unauthenticated
          * @return updated builder instance
          */
+        @ConfiguredOption(defaultValue = "helidon")
         public Builder realm(String realm) {
             this.realm = realm;
             return this;
@@ -430,6 +438,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
          * @param optional whether authentication is optional (true) or required (false)
          * @return updated builder instance
          */
+        @ConfiguredOption(defaultValue = "false")
         public Builder optional(boolean optional) {
             this.optional = optional;
             return this;

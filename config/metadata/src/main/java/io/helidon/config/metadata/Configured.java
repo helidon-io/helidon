@@ -66,6 +66,14 @@ public @interface Configured {
     boolean ignoreBuildMethod() default false;
 
     /**
+     * Description of this configured type. Only used if this is {@link #root()}. Nested options
+     * use documentation defined on the parent type.
+     *
+     * @return description of this (root) node
+     */
+    String description() default "";
+
+    /**
      * Additional types this type provides.
      * For example security expects a {@code SecurityProvider} - basic authentication provider is such a provider, so it
      * can be marked to provide this type.

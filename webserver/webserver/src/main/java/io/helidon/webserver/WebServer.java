@@ -356,7 +356,7 @@ public interface WebServer {
      * WebServer builder class provides a convenient way to set up WebServer with multiple server
      * sockets and optional multiple routings.
      */
-    @Configured(root = true, prefix = "server")
+    @Configured(root = true, prefix = "server", description = "Configuration of the HTTP server.")
     final class Builder implements io.helidon.common.Builder<WebServer>,
                                    SocketConfiguration.SocketConfigurationBuilder<Builder>,
                                    ParentingMediaContextBuilder<Builder>,

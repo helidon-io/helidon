@@ -20,6 +20,8 @@ import java.util.Objects;
 
 import io.helidon.common.Builder;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 import io.opentracing.Tracer;
 
@@ -99,6 +101,7 @@ import io.opentracing.Tracer;
  *           interface
  */
 @SuppressWarnings("rawtypes")
+@Configured(description = "OpenTracing tracer configuration.", ignoreBuildMethod = true)
 public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> {
     /**
      * Create a new builder for the service name.
@@ -128,6 +131,7 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * @param name name of the service using the tracer
      * @return updated builder instance
      */
+    @ConfiguredOption("service")
     T serviceName(String name);
 
     /**
@@ -172,6 +176,7 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * @param protocol protocol to use
      * @return updated builder instance
      */
+    @ConfiguredOption("protocol")
     T collectorProtocol(String protocol);
 
     /**
@@ -181,6 +186,7 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * @param port port to use
      * @return updated builder instance
      */
+    @ConfiguredOption("port")
     T collectorPort(int port);
 
     /**
@@ -190,6 +196,7 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * @param host host to use
      * @return updated builder instance
      */
+    @ConfiguredOption("host")
     T collectorHost(String host);
 
     /**
@@ -199,6 +206,7 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * @param path path to use
      * @return updated builder instance
      */
+    @ConfiguredOption("path")
     T collectorPath(String path);
 
     /**
@@ -208,6 +216,7 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * @param value value of the tag
      * @return updated builder instance
      */
+    @ConfiguredOption(value = "tags", kind = ConfiguredOption.Kind.MAP, type = String.class)
     T addTracerTag(String key, String value);
 
     /**
@@ -217,6 +226,7 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * @param value numeric value of the tag
      * @return updated builder instance
      */
+    @ConfiguredOption(value = "int-tags", kind = ConfiguredOption.Kind.MAP, type = Integer.class)
     T addTracerTag(String key, Number value);
 
     /**
@@ -226,6 +236,7 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * @param value boolean value of the tag
      * @return updated builder instance
      */
+    @ConfiguredOption(value = "boolean-tags", kind = ConfiguredOption.Kind.MAP, type = Boolean.class)
     T addTracerTag(String key, boolean value);
 
     /**
@@ -245,6 +256,7 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * @param enabled set to {@code false} to disable distributed tracing
      * @return updated builder instance
      */
+    @ConfiguredOption(defaultValue = "true")
     T enabled(boolean enabled);
 
     /**
@@ -253,6 +265,7 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * @param global whether to register this tracer as a global tracer once built
      * @return updated builder instance
      */
+    @ConfiguredOption(value = "global", defaultValue = "true")
     T registerGlobal(boolean global);
 
     /**

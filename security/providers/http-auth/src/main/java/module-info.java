@@ -25,6 +25,7 @@ module io.helidon.security.providers.httpauth {
     requires io.helidon.security.providers.common;
     requires io.helidon.security.util;
     requires java.logging;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.security.providers.httpauth;
 
