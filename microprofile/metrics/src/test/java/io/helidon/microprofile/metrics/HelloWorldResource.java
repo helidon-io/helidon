@@ -15,9 +15,10 @@
  */
 package io.helidon.microprofile.metrics;
 
+import io.helidon.webserver.ServerResponse;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
@@ -25,25 +26,23 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * HelloWorldResource class.
@@ -53,10 +52,12 @@ import java.util.concurrent.TimeUnit;
 @Counted
 public class HelloWorldResource {
 
+    private static final Logger LOGGER = Logger.getLogger(HelloWorldResource.class.getName());
+
     static final String SLOW_RESPONSE = "At last";
 
     // In case pipeline runs need a different time
-    static final int SLOW_DELAY_SECS = Integer.getInteger("helidon.asyncSimplyTimedDelaySeconds", 2);
+    static final int SLOW_DELAY_MS = Integer.getInteger("helidon.microprofile.metrics.asyncSimplyTimedDelayMS", 2 * 1000);
 
     static final String MESSAGE_SIMPLE_TIMER = "messageSimpleTimer";
     static final String SLOW_MESSAGE_TIMER = "slowMessageTimer";
@@ -67,17 +68,44 @@ public class HelloWorldResource {
     private static ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     static CountDownLatch slowRequestInProgress = null;
+    static CountDownLatch slowRequestInProgressDataCaptured = null;
+    static CountDownLatch slowRequestResponseSent = null;
 
     static void initSlowRequest() {
         slowRequestInProgress = new CountDownLatch(1);
+        slowRequestInProgressDataCaptured = new CountDownLatch(1);
+        slowRequestResponseSent = new CountDownLatch(1);
     }
 
     static void awaitSlowRequestStarted() throws InterruptedException {
         slowRequestInProgress.await();
     }
 
+    static void reportDuringRequestFetched() {
+        slowRequestInProgressDataCaptured.countDown();
+    }
+
+    static void awaitResponseSent() throws InterruptedException {
+        slowRequestResponseSent.await();
+    }
+
+    static Optional<org.eclipse.microprofile.metrics.ConcurrentGauge> inflightRequests(MetricRegistry metricRegistry) {
+        return metricRegistry.getConcurrentGauges((metricID, metric) -> metricID.getName().endsWith("inFlight"))
+                .values()
+                .stream()
+                .findAny();
+    }
+
+    static long inflightRequestsCount(MetricRegistry metricRegistry) {
+        return inflightRequests(metricRegistry).get().getCount();
+    }
+
     @Inject
     MetricRegistry metricRegistry;
+
+    @Inject
+    @RegistryType(type = MetricRegistry.Type.VENDOR)
+    private MetricRegistry vendorRegistry;
 
     public HelloWorldResource() {
 
@@ -104,18 +132,33 @@ public class HelloWorldResource {
     @Produces(MediaType.TEXT_PLAIN)
     @SimplyTimed(name = SLOW_MESSAGE_SIMPLE_TIMER, absolute = true)
     @Timed(name = SLOW_MESSAGE_TIMER, absolute = true)
-    public void slowMessage(@Suspended AsyncResponse ar) {
-        if (slowRequestInProgress != null) {
-            slowRequestInProgress.countDown();
+    public void slowMessage(@Suspended AsyncResponse ar, @Context ServerResponse serverResponse) {
+        if (slowRequestInProgress == null) {
+            ar.resume(new RuntimeException("slowRequestInProgress was unexpectedly null"));
+            return;
         }
+        serverResponse.whenSent()
+                .thenAccept(r -> slowRequestResponseSent.countDown());
+
+        long uponEntry = inflightRequestsCount();
+
+        slowRequestInProgress.countDown();
         executorService.execute(() -> {
             try {
-                TimeUnit.SECONDS.sleep(SLOW_DELAY_SECS);
+                long inAsyncExec = inflightRequestsCount();
+                TimeUnit.MILLISECONDS.sleep(SLOW_DELAY_MS);
+                slowRequestInProgressDataCaptured.await();
+                if (!ar.resume(SLOW_RESPONSE)) {
+                    throw new RuntimeException("Error resuming asynchronous response: not in suspended state");
+                }
+                long afterResume = inflightRequestsCount();
+                LOGGER.log(Level.FINE,
+                        "inAsyncExec: " + inAsyncExec + ", afterResume: " + afterResume);
             } catch (InterruptedException e) {
-                // absorb silently
+                throw new RuntimeException("Async test /slow wait was interrupted", e);
             }
-            ar.resume(SLOW_RESPONSE);
         });
+        LOGGER.log(Level.FINE, "uponEntry: " + uponEntry + ", beforeReturn: " + inflightRequestsCount());
     }
 
     @GET
@@ -126,11 +169,13 @@ public class HelloWorldResource {
     public void slowMessageWithArg(@PathParam("name") String input, @Suspended AsyncResponse ar) {
         executorService.execute(() -> {
             try {
-                TimeUnit.SECONDS.sleep(SLOW_DELAY_SECS);
+                TimeUnit.MILLISECONDS.sleep(SLOW_DELAY_MS);
+                if (!ar.resume(SLOW_RESPONSE + " " + input)) {
+                    throw new RuntimeException("Error resuming asynchronous response: not in suspended state");
+                }
             } catch (InterruptedException e) {
-                // absorb silently
+                throw new RuntimeException("Async test /slowWithArg{name} was interrupted", e);
             }
-            ar.resume(SLOW_RESPONSE + " " + input);
         });
     }
 
@@ -139,5 +184,25 @@ public class HelloWorldResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String testDeletedMetric() {
         return "Hello there";
+    }
+
+    @GET
+    @Path("/error")
+    @Produces(MediaType.TEXT_PLAIN)
+    public void triggerAsyncError(@Suspended AsyncResponse ar) {
+        executorService.execute(() -> {
+            try {
+                TimeUnit.MILLISECONDS.sleep(SLOW_DELAY_MS);
+                if (!ar.resume(new Exception("Expected execption"))) {
+                    throw new RuntimeException("Error resuming asynchronous response: not in suspended state");
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Error test /error was interrupted");
+            }
+        });
+    }
+
+    private long inflightRequestsCount() {
+        return inflightRequestsCount(vendorRegistry);
     }
 }

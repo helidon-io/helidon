@@ -19,10 +19,11 @@ package io.helidon.microprofile.metrics;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.Optional;
 import java.util.SortedMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.LongStream;
 
 import javax.inject.Inject;
@@ -33,8 +34,7 @@ import javax.ws.rs.core.MediaType;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
-import io.helidon.webserver.KeyPerformanceIndicatorSupport;
-import org.eclipse.microprofile.metrics.ConcurrentGauge;
+import io.helidon.webserver.ServerResponse;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
@@ -80,7 +80,7 @@ public class HelloWorldAsyncResponseTest {
     @Test
     public void test() throws NoSuchMethodException {
         MetricID metricID = MetricsCdiExtension.syntheticSimpleTimerMetricID(HelloWorldResource.class.getMethod("slowMessage",
-                AsyncResponse.class));
+                AsyncResponse.class, ServerResponse.class));
 
         SortedMap<MetricID, SimpleTimer> simpleTimers = registry.getSimpleTimers();
 
@@ -117,7 +117,7 @@ public class HelloWorldAsyncResponseTest {
          */
         assertThat("Mismatched string result", result, is(HelloWorldResource.SLOW_RESPONSE));
 
-        Duration minDuration = Duration.ofSeconds(HelloWorldResource.SLOW_DELAY_SECS);
+        Duration minDuration = Duration.ofMillis(HelloWorldResource.SLOW_DELAY_MS);
 
         assertThat("Change in count for explicit SimpleTimer",
                 explicitSimpleTimer.getCount() - explicitSimpleTimerCountBefore, is(1L));
@@ -163,30 +163,44 @@ public class HelloWorldAsyncResponseTest {
 
     @Test
     void testInflightRequests() throws InterruptedException, ExecutionException {
-        Optional<ConcurrentGauge> inflightRequests =
-                vendorRegistry.getConcurrentGauges((metricID, metric) -> metricID.getName().endsWith("inFlight"))
-                        .values()
-                        .stream()
-                        .findAny();
-        assertThat("In-flight requests ConcurrentGauge is present", inflightRequests.isPresent(),is(true));
+        assertThat("In-flight requests ConcurrentGauge is present", HelloWorldResource.inflightRequests(vendorRegistry).isPresent(),
+                is(true));
 
-        long beforeRequest = inflightRequests.get().getCount();
-        HelloWorldResource.initSlowRequest();
+        int testCount = Integer.getInteger("helidon.microprofile.metrics.asyncRepeatCount", 1);
+        for (int i = 0; i < testCount; i++) {
+            long beforeRequest = inflightRequestsCount();
+            HelloWorldResource.initSlowRequest();
 
-        Future<String> future =
-            webTarget
-                .path("helloworld/slow")
-                .request(MediaType.TEXT_PLAIN_TYPE)
-                .async()
-                .get(String.class);
-        HelloWorldResource.awaitSlowRequestStarted();
-        long duringRequest = inflightRequests.get().getCount();
-        String response = future.get();
-        long afterRequest = inflightRequests.get().getCount();
+            // The request processing will start but then stall, waiting until after this test fetches the "duringRequest"
+            // value of inflightRequests.
+            Future<String> future =
+                    webTarget
+                            .path("helloworld/slow")
+                            .request(MediaType.TEXT_PLAIN_TYPE)
+                            .async()
+                            .get(String.class);
 
-        assertThat("Slow response", response, containsString(SLOW_RESPONSE));
-        assertThat("Change in inflight during slow request", duringRequest - beforeRequest, is(1L));
-        assertThat("Change in inflight after slow request completes", afterRequest - beforeRequest, is(0L));
+            HelloWorldResource.awaitSlowRequestStarted();
+            long duringRequest = inflightRequestsCount();
+
+            HelloWorldResource.reportDuringRequestFetched();
+
+            String response = future.get();
+
+            // The response might arrive here before the server-side code which updates the inflight metric has run. So wait.
+            HelloWorldResource.awaitResponseSent();
+            long afterRequest = inflightRequestsCount();
+
+            assertThat("Slow response", response, containsString(SLOW_RESPONSE));
+            assertThat("Change in inflight from before (" + beforeRequest + ") to during (" + duringRequest
+                            + ") the slow request", duringRequest - beforeRequest, is(1L));
+            assertThat("Change in inflight from before (" + beforeRequest + ") to after (" + afterRequest
+                            + ") the slow request", afterRequest - beforeRequest, is(0L));
+        }
+    }
+
+    private long inflightRequestsCount() {
+        return HelloWorldResource.inflightRequestsCount(vendorRegistry);
     }
 
     @Test

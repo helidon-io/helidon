@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.helidon.config.Config;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.TracerBuilder;
 
+import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.noop.NoopTracer;
 import org.junit.jupiter.api.BeforeAll;
@@ -135,5 +136,17 @@ class ZipkinTracerBuilderTest {
                 Tag.create("tag5", 145),
                 Tag.create("tag6", 741)
         ));
+    }
+
+    @Test
+    void testActiveSpan() {
+        Tracer tracer = TracerBuilder.create("unit-test-active-span")
+                .collectorPort(49087)
+                .build();
+        Span span = tracer.buildSpan("unit-operation")
+                .start();
+        tracer.activateSpan(span);
+
+        span.finish();
     }
 }

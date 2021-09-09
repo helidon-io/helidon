@@ -15,11 +15,37 @@ This is a minor release of Helidon. It contains bug fixes and enhancements.
 
 2.4.0 is generally API compatible with 2.3.0. There has been a change that might impact a small number of our users:
 
-
 * `YamlMpConfigSource` has been moved to module `io.helidon.config:helidon-config-yaml-mp`. This is due to wrong JPMS definition where we could not provide a service of an optional dependency. To fix the dependency graph (so we do not depend on MP config from SE config), we had to create a new module.
 If you use this class directly, please update your dependencies (this may not be required, as it is on classpath of all MP applications), and change the package to `io.helidon.config.yaml.mp`.
 
 ### CHANGES
+
+## [2.3.3]
+
+This is a bug fix release of Helidon. It contains bug and performance fixes. We recommend all Helidon 2.x users upgrade to this release.
+
+### Compatibility
+
+2.3.3 is API compatible with 2.3.0.
+
+### CHANGES
+
+- WebServer and WebClient race conditions fixed [3351](https://github.com/oracle/helidon/pull/3351)
+- WebServer: Fix missing CORS headers if response has 404 status (#3206) [3280](https://github.com/oracle/helidon/pull/3280)
+- WebClient: HTTP to HTTPS request hang fix [3351](https://github.com/oracle/helidon/pull/3351)
+- Tracing: Modified Jaeger logic to not close scopes before switching threads [3274](https://github.com/oracle/helidon/pull/3274)
+- Security: Fix NPE in outbound of JWT provider. (#3295) [3297](https://github.com/oracle/helidon/pull/3297)
+- Reactive: 3129 3216 BEP refactor backport [3327](https://github.com/oracle/helidon/pull/3327)
+- MicroProfile: Use MP config instead of Config.create() in MP components. [3291](https://github.com/oracle/helidon/pull/3291)
+- Metrics: Performance: Improve some interceptor code paths in metrics (#3251) [3328](https://github.com/oracle/helidon/pull/3328)
+- Metrics: Metrics and routings fixes (#3260) [3324](https://github.com/oracle/helidon/pull/3324)
+- Metrics: Add the KPI metrics handler (with no qualifying path) exactly once each routing (#3255) [3282](https://github.com/oracle/helidon/pull/3282)
+- Metrics: Suppress empty labels in exemplars which result in {}; yield a truly empty string instead [3281](https://github.com/oracle/helidon/pull/3281)
+- Fault Tolerance: Explicitly destroy bean instance obtained from CDI object [3274](https://github.com/oracle/helidon/pull/3274)
+- Docs: Helidon config documentation updates (#3187) [3284](https://github.com/oracle/helidon/pull/3284)
+- Dependencies: Upgrade org.glassfish:jakarta.el to 3.0.4 [3331](https://github.com/oracle/helidon/pull/3331)
+- Dependencies: Upgrade helidon-build-tools to 2.2.3. to fix issues with Maven 3.8 and JDK 11.0.11+ [3362](https://github.com/oracle/helidon/pull/3362) [3370](https://github.com/oracle/helidon/pull/3370)
+
 
 ## [2.3.2]
 
@@ -1470,7 +1496,8 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.4.0-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.3.2...HEAD
+[2.4.0-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.3.3...HEAD
+[2.3.3]: https://github.com/oracle/helidon/compare/2.3.2...2.3.3
 [2.3.2]: https://github.com/oracle/helidon/compare/2.3.1...2.3.2
 [2.3.1]: https://github.com/oracle/helidon/compare/2.3.0...2.3.1
 [2.3.0]: https://github.com/oracle/helidon/compare/2.2.2...2.3.0
