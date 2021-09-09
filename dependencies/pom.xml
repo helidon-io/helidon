@@ -82,7 +82,7 @@
         <!-- Force upgrade version used by maven-jaxb2-plugin. Needed to support Java 16 -->
         <version.lib.jaxb-runtime>2.3.3</version.lib.jaxb-runtime>
         <version.lib.jedis>3.6.3</version.lib.jedis>
-        <version.lib.jersey>2.34</version.lib.jersey>
+        <version.lib.jersey>2.35</version.lib.jersey>
         <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
         <version.lib.jms-api>2.0</version.lib.jms-api>
         <version.lib.jsonb-api>1.0.2</version.lib.jsonb-api>
