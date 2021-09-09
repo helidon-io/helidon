@@ -107,7 +107,7 @@ Response response = client.target(serviceEndpoint)
     .get();
 ----
 
-include::../../shared/tracing/common-config.adoc[]
+include::../../shared/tracing/common-spans.adoc[]
 
 ==== Configuration using MP Config
 
@@ -140,10 +140,6 @@ tracing.paths.1.path="/metrics"
 tracing.paths.1.enabled=false
 tracing.paths.2.path="/health"
 tracing.paths.2.enabled=false
-tracing.paths.3.path="/greet"
-tracing.paths.4.components.web-server.spans.0.name="content-read"
-tracing.paths.4.components.web-server.spans.0.new-name="read"
-tracing.paths.4.components.web-server.spans.0.enabled=false
 ----
 
 ==== Renaming top level span using request properties
