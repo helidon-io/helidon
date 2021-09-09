@@ -17,7 +17,7 @@ mp.lra.coordinator.url: http://localhost:8070/lra-coordinator
 > :warning: **Experimental feature**: Helidon LRA coordinator is an experimental tool, running it in production is not advised
 
 ```shell
-docker build -t helidon/lra-coordinator https://github.com/oracle/helidon.git:lra/coordinator/server
+docker build -t helidon/lra-coordinator https://github.com/oracle/helidon.git#:lra/coordinator/server
 docker run -dp 8070:8070 --name lra-coordinator --network="host" helidon/lra-coordinator
 ```
 
