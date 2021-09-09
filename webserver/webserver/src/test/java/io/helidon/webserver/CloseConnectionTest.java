@@ -27,12 +27,12 @@ import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
 import io.helidon.webserver.utils.SocketHttpClient;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 
 public class CloseConnectionTest {
@@ -81,8 +81,8 @@ public class CloseConnectionTest {
             c.request(Http.Method.GET);
             String result = c.receive();
             SocketHttpClient.assertConnectionIsClosed(c);
-            assertThat(result, Matchers.containsString("item0"));
-            assertThat(result, not(Matchers.containsString("item9")));
+            assertThat(result, containsString("item0"));
+            assertThat(result, not(containsString("item9")));
         }
     }
 }
