@@ -246,5 +246,4 @@ public interface ResponseHeaders extends Headers {
      * @return a completion stage of sending process.
      */
     Single<ResponseHeaders> send();
-
 }

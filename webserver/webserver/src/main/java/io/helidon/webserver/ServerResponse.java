@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Parameters;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyFilter;
 import io.helidon.media.common.MessageBodyFilters;
@@ -92,6 +93,52 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * @return a response headers
      */
     ResponseHeaders headers();
+
+    /**
+     * Adds header values for a specified name.
+     *
+     * @param name   header name
+     * @param values header values
+     * @return this instance of {@link ServerResponse}
+     * @throws NullPointerException if the specified key is null.
+     * @see #headers()
+     * @see Parameters#add(String, String...)
+     * @see Http.Header header names constants
+     */
+    default ServerResponse addHeader(String name, String... values) {
+        headers().add(name, values);
+        return this;
+    }
+
+    /**
+     * Adds header values for a specified name.
+     *
+     * @param name   header name
+     * @param values header values
+     * @return this instance of {@link ServerResponse}
+     * @throws NullPointerException if the specified key is null.
+     * @see #headers()
+     * @see Parameters#add(String, Iterable)
+     * @see Http.Header header names constants
+     */
+    default ServerResponse addHeader(String name, Iterable<String> values) {
+        headers().add(name, values);
+        return this;
+    }
+
+    /**
+     * Copies all of the mappings from the specified {@code parameters} to this response headers instance.
+     *
+     * @param parameters to copy.
+     * @return this instance of {@link ServerResponse}
+     * @throws NullPointerException          if the specified {@code parameters} are null.
+     * @see #headers()
+     * @see Parameters#addAll(Parameters)
+     */
+    default ServerResponse addHeaders(Parameters parameters){
+        headers().addAll(parameters);
+        return this;
+    }
 
     /**
      * Get the writer context used to marshall data.
