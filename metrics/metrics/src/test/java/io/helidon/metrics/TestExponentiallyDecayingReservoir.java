@@ -27,12 +27,12 @@ class TestExponentiallyDecayingReservoir {
 
     @BeforeAll
     static void startExecutor() {
-        ExponentiallyDecayingReservoir.init();
+        PeriodicExecutor.start();
     }
 
     @AfterAll
     static void stopExecutor() {
-        ExponentiallyDecayingReservoir.onServerShutdown();
+        PeriodicExecutor.stop();
     }
 
     @Test
