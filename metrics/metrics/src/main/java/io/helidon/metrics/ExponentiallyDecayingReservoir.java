@@ -154,7 +154,7 @@ class ExponentiallyDecayingReservoir {
     }
 
     private void updateTimeInSeconds() {
-        currentTimeInSeconds = System.currentTimeMillis() / 1000;
+        currentTimeInSeconds = TimeUnit.MILLISECONDS.toSeconds(clock.milliTime());
     }
 
     long currentTimeInSeconds() {
