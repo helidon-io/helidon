@@ -18,6 +18,7 @@
  * Example of integration with OCI ATP in reactive application.
  */
 module io.helidon.examples.integrations.oci.atp.reactive {
+    requires java.logging;
     requires io.helidon.common.http;
     requires io.helidon.integrations.oci.atp;
     requires io.helidon.webserver;

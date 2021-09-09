@@ -16,9 +16,12 @@
 
 package io.helidon.examples.integrations.oci.atp.cdi;
 
-import java.io.InputStream;
-import java.nio.channels.Channels;
+import java.io.ByteArrayInputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.Optional;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import javax.inject.Inject;
 import javax.ws.rs.DELETE;
@@ -36,7 +39,6 @@ import io.helidon.common.http.Http;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.atp.OciAutonomousDb;
 import io.helidon.integrations.oci.atp.GenerateAutonomousDatabaseWallet;
-import io.helidon.integrations.oci.atp.GenerateAutonomousDatabaseWalletRx;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -45,6 +47,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  */
 @Path("/atp")
 public class AtpResource {
+    private static final Logger LOGGER = Logger.getLogger(AtpResource.class.getName());
+
     private final OciAutonomousDb autonomousDb;
 
     @Inject
@@ -60,7 +64,7 @@ public class AtpResource {
     @GET
     @Path("/wallet")
     public Response generateWallet() {
-        ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response> ociResponse = autonomousDb.generateWallet(GenerateAutonomousDatabaseWalletRx.Request.builder());
+        ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response> ociResponse = autonomousDb.generateWallet(GenerateAutonomousDatabaseWallet.Request.builder());
         Optional<GenerateAutonomousDatabaseWallet.Response> entity = ociResponse.entity();
 
         if (entity.isEmpty()) {
@@ -69,21 +73,29 @@ public class AtpResource {
 
         GenerateAutonomousDatabaseWallet.Response response = entity.get();
 
-        StreamingOutput stream = output -> response.writeTo(Channels.newChannel(output));
+        try {
+            LOGGER.log(Level.INFO, "Wallet Content Length: " + response.walletArchive().getContent().length);
+            ZipInputStream zipStream = new ZipInputStream(new ByteArrayInputStream(response.walletArchive().getContent()));
+            ZipEntry entry = null;
+            while ((entry = zipStream.getNextEntry()) != null) {
+                String entryName = entry.getName();
+                LOGGER.log(Level.INFO, "Wallet FileEntry:" + entryName);
+                //FileOutputStream out = new FileOutputStream(entryName);
+                //byte[] byteBuff = new byte[4096];
+                //int bytesRead = 0;
+                //while ((bytesRead = zipStream.read(byteBuff)) != -1) {
+                //    out.write(byteBuff, 0, bytesRead);
+                //}
+                //out.close();
+                zipStream.closeEntry();
+            }
+            zipStream.close();
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Exception while processing wallet content", e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        }
 
-        Response.ResponseBuilder ok = Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM_TYPE)
-                .header("opc-request-id", ociResponse.headers().first("opc-request-id").orElse(""))
-                .header("request-id", ociResponse.requestId());
-
-        ociResponse.headers()
-                .first(Http.Header.CONTENT_TYPE)
-                .ifPresent(ok::type);
-
-        ociResponse.headers()
-                .first(Http.Header.CONTENT_LENGTH)
-                .ifPresent(it -> ok.header(Http.Header.CONTENT_LENGTH, it));
-
-        return ok.build();
+        return Response.status(Response.Status.OK).build();
     }
 }
 
