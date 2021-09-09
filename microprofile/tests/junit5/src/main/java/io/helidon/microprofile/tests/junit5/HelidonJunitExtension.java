@@ -71,11 +71,11 @@ import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
  * Junit5 extension to support Helidon CDI container in tests.
  */
 class HelidonJunitExtension implements BeforeAllCallback,
-        AfterAllCallback,
-        BeforeEachCallback,
-        AfterEachCallback,
-        InvocationInterceptor,
-        ParameterResolver {
+                                       AfterAllCallback,
+                                       BeforeEachCallback,
+                                       AfterEachCallback,
+                                       InvocationInterceptor,
+                                       ParameterResolver {
     private static final Set<Class<? extends Annotation>> HELIDON_TEST_ANNOTATIONS =
             Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class);
     private static final Map<Class<? extends Annotation>, Annotation> BEAN_DEFINING = new HashMap<>();
@@ -160,7 +160,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
 
         Object result = Array.newInstance(annotClass, allAnnotations.size());
         for (int i = 0; i < allAnnotations.size(); i++) {
-            Array.set(result, i, allAnnotations.get(i));
+             Array.set(result, i, allAnnotations.get(i));
         }
 
         return (T[]) result;
@@ -211,9 +211,9 @@ class HelidonJunitExtension implements BeforeAllCallback,
                 // a test method
                 if (hasHelidonTestAnnotation(method)) {
                     throw new RuntimeException("When a class is annotated with @HelidonTest, "
-                            + "there is a single CDI container used to invoke all "
-                            + "test methods on the class. Method " + method
-                            + " has an annotation that modifies container behavior.");
+                                                       + "there is a single CDI container used to invoke all "
+                                                       + "test methods on the class. Method " + method
+                                                       + " has an annotation that modifies container behavior.");
                 }
             }
         }
@@ -224,9 +224,9 @@ class HelidonJunitExtension implements BeforeAllCallback,
                 // a test method
                 if (hasHelidonTestAnnotation(method)) {
                     throw new RuntimeException("When a class is annotated with @HelidonTest, "
-                            + "there is a single CDI container used to invoke all "
-                            + "test methods on the class. Method " + method
-                            + " has an annotation that modifies container behavior.");
+                                                       + "there is a single CDI container used to invoke all "
+                                                       + "test methods on the class. Method " + method
+                                                       + " has an annotation that modifies container behavior.");
                 }
             }
         }
@@ -245,13 +245,13 @@ class HelidonJunitExtension implements BeforeAllCallback,
         Constructor<?>[] constructors = testClass.getConstructors();
         if (constructors.length > 1) {
             throw new RuntimeException("When a class is annotated with @HelidonTest(resetPerTest=true),"
-                    + " the class must have only a single no-arg constructor");
+                                               + " the class must have only a single no-arg constructor");
         }
         if (constructors.length == 1) {
             Constructor<?> c = constructors[0];
             if (c.getParameterCount() > 0) {
                 throw new RuntimeException("When a class is annotated with @HelidonTest(resetPerTest=true),"
-                        + " the class must have a no-arg constructor");
+                                                   + " the class must have a no-arg constructor");
             }
         }
 
@@ -259,9 +259,9 @@ class HelidonJunitExtension implements BeforeAllCallback,
         for (Field field : fields) {
             if (field.getAnnotation(Inject.class) != null) {
                 throw new RuntimeException("When a class is annotated with @HelidonTest(resetPerTest=true),"
-                        + " injection into fields or constructor is not supported, as each"
-                        + " test method uses a different CDI container. Field " + field
-                        + " is annotated with @Inject");
+                                                   + " injection into fields or constructor is not supported, as each"
+                                                   + " test method uses a different CDI container. Field " + field
+                                                   + " is annotated with @Inject");
             }
         }
 
@@ -269,9 +269,9 @@ class HelidonJunitExtension implements BeforeAllCallback,
         for (Field field : fields) {
             if (field.getAnnotation(Inject.class) != null) {
                 throw new RuntimeException("When a class is annotated with @HelidonTest(resetPerTest=true),"
-                        + " injection into fields or constructor is not supported, as each"
-                        + " test method uses a different CDI container. Field " + field
-                        + " is annotated with @Inject");
+                                                   + " injection into fields or constructor is not supported, as each"
+                                                   + " test method uses a different CDI container. Field " + field
+                                                   + " is annotated with @Inject");
             }
         }
     }
