@@ -77,8 +77,8 @@ public interface OciAutonomousDbRx {
      * @param request get object request
      * @return future with response or error
      */
-    Single<ApiOptionalResponse<GenerateAutonomousDatabaseWalletRx.Response>> generateWallet(
-            GenerateAutonomousDatabaseWalletRx.Request request);
+    Single<ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response>> generateWallet(
+            GenerateAutonomousDatabaseWallet.Request request);
 
     /**
      * Fluent API Builder for {@link OciAutonomousDbRx}.

@@ -18,9 +18,7 @@ package io.helidon.integrations.oci.atp;
 
 import java.util.Optional;
 
-import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.connect.OciRestApi;
@@ -41,8 +39,8 @@ class OciAutonomousDbRxImpl implements OciAutonomousDbRx {
     }
 
     @Override
-    public Single<ApiOptionalResponse<GenerateAutonomousDatabaseWalletRx.Response>> generateWallet(
-            GenerateAutonomousDatabaseWalletRx.Request request) {
+    public Single<ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response>> generateWallet(
+            GenerateAutonomousDatabaseWallet.Request request) {
         String apiPath = "/20160918/autonomousDatabases/" + this.ocid + "/actions/generateWallet";
 
         if (!request.endpoint().isPresent()) {
@@ -53,10 +51,10 @@ class OciAutonomousDbRxImpl implements OciAutonomousDbRx {
 
         request.password(this.walletPassword);
 
-        return restApi.invokePublisherResponse(Http.Method.POST,
+        return restApi.invokeBytesResponse(Http.Method.POST,
                 apiPath,
                 request,
-                ApiOptionalResponse.<Multi<DataChunk>, GenerateAutonomousDatabaseWalletRx.Response>apiResponseBuilder()
-                                .entityProcessor(GenerateAutonomousDatabaseWalletRx.Response::create));
+                ApiOptionalResponse.<byte[], GenerateAutonomousDatabaseWallet.Response>apiResponseBuilder()
+                                .entityProcessor(GenerateAutonomousDatabaseWallet.Response::create));
     }
 }
