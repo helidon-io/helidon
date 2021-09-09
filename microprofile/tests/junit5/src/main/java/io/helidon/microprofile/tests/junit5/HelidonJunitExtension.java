@@ -294,7 +294,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
                     builder.withSources(MpConfigSources.classPath(it).toArray(new ConfigSource[0]));
                 }
             });
-
             config = builder
                     .withSources(MpConfigSources.create(configMeta.additionalKeys))
                     .addDefaultSources()
