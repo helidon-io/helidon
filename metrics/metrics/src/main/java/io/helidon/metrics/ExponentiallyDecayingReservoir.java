@@ -57,8 +57,6 @@ class ExponentiallyDecayingReservoir {
     private static final double DEFAULT_ALPHA = 0.015;
     private static final long RESCALE_THRESHOLD = TimeUnit.HOURS.toNanos(1);
 
-    private static final Logger LOGGER = Logger.getLogger(ExponentiallyDecayingReservoir.class.getName());
-
     private static final Duration CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL = Duration.ofMillis(250);
 
     private final ConcurrentSkipListMap<Double, WeightedSnapshot.WeightedSample> values;
