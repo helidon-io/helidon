@@ -222,7 +222,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                 .findFirst()
                 .map(this::validateBasicAuth)
                 .orElseGet(() ->
-                                   failOrAbstain("Authorization header does not contain basic authentication: " + authorizationHeader));
+                        failOrAbstain("Authorization header does not contain basic authentication: " + authorizationHeader));
     }
 
     private AuthenticationResponse validateBasicAuth(String basicAuthHeader) {
@@ -309,8 +309,9 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     /**
      * {@link HttpBasicAuthProvider} fluent API builder.
      */
-    @Configured(provides = {SecurityProvider.class,
-            AuthenticationProvider.class}, prefix = HttpBasicAuthService.PROVIDER_CONFIG_KEY)
+    @Configured(prefix = HttpBasicAuthService.PROVIDER_CONFIG_KEY,
+                description = "HTTP Basic Authentication provider",
+                provides = {SecurityProvider.class, AuthenticationProvider.class})
     public static final class Builder implements io.helidon.common.Builder<HttpBasicAuthProvider> {
         private final List<SecureUserStore> userStores = new LinkedList<>();
         private final OutboundConfig.Builder outboundBuilder = OutboundConfig.builder();

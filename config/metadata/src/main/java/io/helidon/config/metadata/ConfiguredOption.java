@@ -127,6 +127,21 @@ public @interface ConfiguredOption {
     ConfiguredValue[] allowedValues() default {};
 
     /**
+     * Configure to {@code true} if this option is deprecated.
+     *
+     * @return whether this configured option is deprecated
+     */
+    boolean deprecated() default false;
+
+    /**
+     * When set to {@code true}, this property will be part of the parent structure (e.g. the {@link #value()}
+     * must be empty, and this must be a complex node).
+     *
+     * @return whether to merge the child nodes directly with parent node without a key
+     */
+    boolean mergeWithParent() default false;
+
+    /**
      * Option kind.
      */
     enum Kind {

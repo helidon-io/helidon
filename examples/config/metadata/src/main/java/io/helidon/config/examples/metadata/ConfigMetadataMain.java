@@ -104,7 +104,7 @@ public final class ConfigMetadataMain {
         boolean isListStart = listStart;
 
         for (ConfiguredProperty property : properties) {
-            if (property.key().contains(".*.")) {
+            if (property.key() != null && property.key().contains(".*.")) {
                 // this is a nested key, must be resolved by the parent list node
                 continue;
             }
@@ -130,10 +130,8 @@ public final class ConfigMetadataMain {
                                       int nesting,
                                       boolean listStart) {
         String spaces = " ".repeat(nesting * 2);
-        String firstLineSpaces = listStart ? "" : spaces;
 
-        System.out.println(firstLineSpaces + "# " + description(property));
-        System.out.println(spaces + "# " + property.type());
+        printDocs(property, spaces, listStart);
 
         if (property.kind() == ConfiguredOption.Kind.LIST) {
             printListProperty(property, properties, typesMap, nesting, spaces);
@@ -154,11 +152,18 @@ public final class ConfigMetadataMain {
                 printAllowedValuesOrMissing(property, typesMap, nesting, spaces);
             } else {
                 // proper nested type
-                System.out.println(spaces + property.outputKey() + ":");
-                printType(nestedType, typesMap, nesting + 1, false);
+                if (property.merge()) {
+                    printType(nestedType, typesMap, nesting, false);
+                } else {
+                    System.out.println(spaces + property.outputKey() + ":");
+                    printType(nestedType, typesMap, nesting + 1, false);
+                }
             }
         } else {
             // this is a "leaf" node
+            if (property.defaultValue() == null) {
+                System.out.println(spaces + "# Generated value (property does not have a configured default)");
+            }
             System.out.println(spaces + property.outputKey() + ": " + toTypedValue(property, typed));
         }
     }
@@ -222,7 +227,8 @@ public final class ConfigMetadataMain {
         for (ConfiguredType provider : providers) {
             System.out.print(spaces + "- ");
             if (provider.prefix() != null) {
-                System.out.println(provider.prefix() + ":");
+                System.out.println("# " + provider.description());
+                System.out.println(spaces + "  " + provider.prefix() + ":");
                 printType(provider, typesMap, nesting + 2, false);
             } else {
                 printType(provider, typesMap, nesting + 1, true);
@@ -246,15 +252,17 @@ public final class ConfigMetadataMain {
             System.out.println(spaces + " # There are no modules on classpath providing " + property.type());
             return;
         }
-        System.out.println(spaces + " # The following providers are available. This element is not a list!");
+
         for (ConfiguredType provider : providers) {
-            System.out.println(spaces + "# " + provider.targetClass());
-            System.out.print(spaces + "- ");
+            System.out.println(spaces + "   # ****** Provider Configuration ******");
+            System.out.println(spaces + "   # " + provider.description());
+            System.out.println(spaces + "   # " + provider.targetClass());
+            System.out.println(spaces + "   # ************************************");
             if (provider.prefix() != null) {
-                System.out.println(provider.prefix() + ":");
+                System.out.println(spaces + "   " + provider.prefix() + ":");
                 printType(provider, typesMap, nesting + 2, false);
             } else {
-                printType(provider, typesMap, nesting + 1, true);
+                printType(provider, typesMap, nesting + 1, false);
             }
         }
     }
@@ -284,13 +292,29 @@ public final class ConfigMetadataMain {
                     System.out.println();
                     typedValue = new TypedValue("", true);
                     for (ConfiguredType.AllowedValue allowedValue : allowedValues) {
+                        // # Description
+                        // # This is the default value
+                        // actual value
+                        System.out.print(spaces + "  - ");
+                        String nextLinePrefix = spaces + "    ";
+                        boolean firstLine = true;
 
                         if (allowedValue.description() != null && !allowedValue.description().isBlank()) {
-                            System.out.println(spaces + "  - #" + allowedValue.description());
-                            System.out.println(spaces + "    " + output(typedValue, allowedValue.value()));
-                        } else {
-                            System.out.println(spaces + "  - " + output(typedValue, allowedValue.value()));
+                            firstLine = false;
+                            System.out.println("#" + allowedValue.description());
                         }
+                        if (allowedValue.value().equals(property.defaultValue())) {
+                            if (firstLine) {
+                                firstLine = false;
+                            } else {
+                                System.out.print(nextLinePrefix);
+                            }
+                            System.out.println("# This is the default value");
+                        }
+                        if (!firstLine) {
+                            System.out.print(nextLinePrefix);
+                        }
+                        System.out.println(output(typedValue, allowedValue.value()));
                     }
                 }
             } else {
@@ -307,6 +331,30 @@ public final class ConfigMetadataMain {
                 printProperty(element, properties, typesMap, nesting + 1, listStart);
                 listStart = false;
             }
+        }
+    }
+
+    private static void printDocs(ConfiguredProperty property, String spaces, boolean firstLineNoSpaces) {
+        String description = property.description();
+        description = (description == null || description.isBlank()) ? null : description;
+
+        // type
+        System.out.print((firstLineNoSpaces ? "" : spaces));
+        System.out.print("# ");
+        System.out.println(property.type());
+
+        // description
+        if (description != null) {
+            description = description.replace('\n', ' ');
+            System.out.print(spaces);
+            System.out.print("# ");
+            System.out.println(description);
+        }
+
+        // required
+        if (!property.optional()) {
+            System.out.print(spaces);
+            System.out.println("# *********** REQUIRED ***********");
         }
     }
 
@@ -349,16 +397,12 @@ public final class ConfigMetadataMain {
                 System.out.println(spaces + "# " + allowedValue.value() + ": " + allowedValue.description()
                         .replace("\n", " "));
             }
-            System.out.println(spaces + property.outputKey() + ": \"One of: " + values + "\"");
+            if (property.defaultValue() == null) {
+                System.out.println(spaces + property.outputKey() + ": \"One of: " + values + "\"");
+            } else {
+                System.out.println(spaces + property.outputKey() + ": \"" + property.defaultValue() + "\"");
+            }
         }
-    }
-
-    private static String description(ConfiguredProperty property) {
-        String description = property.description();
-        if (description == null) {
-            return "";
-        }
-        return description.replace('\n', ' ');
     }
 
     private static String toTypedValue(ConfiguredProperty property,

@@ -692,7 +692,7 @@ public interface WebServer {
          * @param config the additional named server socket configuration, never null
          * @return an updated builder
          */
-        @ConfiguredOption(value = "sockets", list = true)
+        @ConfiguredOption(value = "sockets", kind = ConfiguredOption.Kind.LIST)
         public Builder addSocket(SocketConfiguration config) {
             configurationBuilder.addSocket(config.name(), config);
             return this;

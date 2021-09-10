@@ -198,6 +198,7 @@ final class ConfiguredType {
         private final ConfiguredOption.Kind kind;
         private final List<AllowedValue> allowedValues;
         private final boolean provider;
+        private final boolean merge;
 
         // if this is a nested type
         private ConfiguredType configuredType;
@@ -212,6 +213,7 @@ final class ConfiguredType {
                            boolean optional,
                            ConfiguredOption.Kind kind,
                            boolean provider,
+                           boolean merge,
                            List<AllowedValue> allowedValues) {
             this.builderMethod = builderMethod;
             this.key = key;
@@ -224,19 +226,21 @@ final class ConfiguredType {
             this.allowedValues = allowedValues;
             this.outputKey = key;
             this.provider = provider;
+            this.merge = merge;
         }
 
         public static ConfiguredProperty create(JsonObject json) {
             return new ConfiguredProperty(
                     json.getString("method", null),
-                    json.getString("key"),
+                    json.getString("key", null),
                     json.getString("description"),
                     json.getString("defaultValue", null),
                     json.getString("type", "java.lang.String"),
                     json.getBoolean("experimental", false),
-                    json.getBoolean("optional", true),
+                    !json.getBoolean("required", false),
                     toKind(json.getString("kind", null)),
                     json.getBoolean("provider", false),
+                    json.getBoolean("merge", false),
                     toAllowedValues(json.getJsonArray("allowedValues"))
             );
         }
@@ -306,8 +310,8 @@ final class ConfiguredType {
             return kind;
         }
 
-        void nestedType(ConfiguredType nested) {
-            this.configuredType = nested;
+        boolean merge() {
+            return merge;
         }
 
         @Override

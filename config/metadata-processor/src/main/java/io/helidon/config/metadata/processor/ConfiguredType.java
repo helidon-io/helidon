@@ -139,7 +139,9 @@ final class ConfiguredType {
                                ConfiguredProperty property) {
 
         JsonObjectBuilder optionBuilder = json.createObjectBuilder();
-        optionBuilder.add("key", prefix(prefix, property.key()));
+        if (property.key() != null && !property.key.isBlank()) {
+            optionBuilder.add("key", prefix(prefix, property.key()));
+        }
         if (!"java.lang.String".equals(property.type)) {
             optionBuilder.add("type", property.type());
         }
@@ -158,6 +160,12 @@ final class ConfiguredType {
         }
         if (property.provider) {
             optionBuilder.add("provider", true);
+        }
+        if (property.deprecated()) {
+            optionBuilder.add("deprecated", true);
+        }
+        if (property.merge()) {
+            optionBuilder.add("merge", true);
         }
         String method = property.builderMethod();
         if (method != null) {
@@ -236,6 +244,8 @@ final class ConfiguredType {
         private final boolean optional;
         private final ConfiguredOption.Kind kind;
         private final boolean provider;
+        private final boolean deprecated;
+        private final boolean merge;
         private final List<ConfigMetadataProcessor.AllowedValue> allowedValues;
         // if this is a nested type
         private ConfiguredType configuredType;
@@ -249,6 +259,8 @@ final class ConfiguredType {
                            boolean optional,
                            ConfiguredOption.Kind kind,
                            boolean provider,
+                           boolean deprecated,
+                           boolean merge,
                            List<ConfigMetadataProcessor.AllowedValue> allowedValues) {
             this.builderMethod = builderMethod;
             this.key = key;
@@ -259,28 +271,8 @@ final class ConfiguredType {
             this.optional = optional;
             this.kind = kind;
             this.provider = provider;
-            this.allowedValues = allowedValues;
-        }
-
-        ConfiguredProperty(ProducerMethod builderMethod,
-                           String key,
-                           String description,
-                           String defaultValue,
-                           String type,
-                           boolean experimental,
-                           boolean optional,
-                           ConfiguredOption.Kind kind,
-                           boolean provider,
-                           List<ConfigMetadataProcessor.AllowedValue> allowedValues) {
-            this.builderMethod = builderMethod == null ? null : builderMethod.toString();
-            this.key = key;
-            this.description = description;
-            this.defaultValue = defaultValue;
-            this.type = type;
-            this.experimental = experimental;
-            this.optional = optional;
-            this.kind = kind;
-            this.provider = provider;
+            this.deprecated = deprecated;
+            this.merge = merge;
             this.allowedValues = allowedValues;
         }
 
@@ -314,6 +306,14 @@ final class ConfiguredType {
 
         ConfiguredOption.Kind kind() {
             return kind;
+        }
+
+        boolean deprecated() {
+            return deprecated;
+        }
+
+        boolean merge() {
+            return merge;
         }
 
         void nestedType(ConfiguredType nested) {

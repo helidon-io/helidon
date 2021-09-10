@@ -24,16 +24,23 @@ import java.util.function.Supplier;
 import io.helidon.common.Base64Value;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
+import io.helidon.security.SecretsProviderConfig;
 import io.helidon.security.spi.DigestProvider;
 import io.helidon.security.spi.EncryptionProvider;
 import io.helidon.security.spi.ProviderConfig;
 import io.helidon.security.spi.SecretsProvider;
+import io.helidon.security.spi.SecurityProvider;
 
 /**
  * Security provider to retrieve secrets from OCI Vault, and to use OCI KMS for encryption,
  * decryption and signatures.
  */
+@Configured(prefix = "oci-vault",
+            description = "OCI Vault Security Provider for secrets, encryption and digests",
+            provides = {SecretsProvider.class, EncryptionProvider.class, DigestProvider.class, SecurityProvider.class})
 public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurityProvider.OciVaultSecretConfig>,
                                                  EncryptionProvider<OciVaultSecurityProvider.OciVaultEncryptionConfig>,
                                                  DigestProvider<OciVaultSecurityProvider.OciVaultDigestConfig> {
@@ -41,6 +48,19 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
 
     OciVaultSecurityProvider(OciVaultRx ociVault) {
         this.ociVault = ociVault;
+    }
+
+    /**
+     * Create a new instance from configuration.
+     *
+     * @param config configuration with connectivity to OCI
+     * @return a new provider instance
+     */
+    @ConfiguredOption(mergeWithParent = true,
+                      type = OciVaultRx.class,
+                      description = "OCI Connectivity to Vault")
+    public static OciVaultSecurityProvider create(Config config) {
+        return new OciVaultSecurityProvider(OciVaultRx.create(config));
     }
 
     @Override
@@ -482,7 +502,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
     /**
      * Configuration of an OCI Vault secret.
      */
-    public static class OciVaultSecretConfig implements ProviderConfig {
+    public static class OciVaultSecretConfig implements SecretsProviderConfig {
         private final String secretId;
         private final Optional<SecretStage> stage;
         private final Optional<String> versionName;
@@ -529,6 +549,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
          * Fluent API builder for
          * {@link io.helidon.integrations.oci.vault.OciVaultSecurityProvider.OciVaultSecretConfig}.
          */
+        @Configured(description = "Secrets retrieved from OCI Vault instance", provides = SecretsProviderConfig.class)
         public static class Builder implements io.helidon.common.Builder<OciVaultSecretConfig> {
             private static final String SECRET_OCID_CONFIG_KEY = "ocid";
 
@@ -599,6 +620,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
              *
              * @see io.helidon.integrations.oci.vault.GetSecretBundle.Request#secretId(String)
              */
+            @ConfiguredOption(value = "ocid", required = true)
             public Builder secretId(String secretId) {
                 this.secretId = secretId;
                 return this;
@@ -612,6 +634,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
              *
              * @see io.helidon.integrations.oci.vault.GetSecretBundle.Request#stage(SecretStage)
              */
+            @ConfiguredOption
             public Builder stage(SecretStage stage) {
                 this.stage = stage;
                 return this;
@@ -625,6 +648,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
              *
              * @see io.helidon.integrations.oci.vault.GetSecretBundle.Request#versionName(String)
              */
+            @ConfiguredOption
             public Builder versionName(String versionName) {
                 this.versionName = versionName;
                 return this;
@@ -638,6 +662,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
              *
              * @see io.helidon.integrations.oci.vault.GetSecretBundle.Request#versionNumber(int)
              */
+            @ConfiguredOption
             public Builder versionNumber(Integer versionNumber) {
                 this.versionNumber = versionNumber;
                 return this;

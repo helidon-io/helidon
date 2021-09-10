@@ -65,9 +65,6 @@ import static io.helidon.config.metadata.ConfiguredOption.UNCONFIGURED;
 
 /**
  * Annotation processor.
- *
- * TODO:
- *   - XML Schema?
  */
 public class ConfigMetadataProcessor extends AbstractProcessor {
     /**
@@ -231,7 +228,7 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                 }
             }
         }
-        BuilderTypeInfo found = null;
+        BuilderTypeInfo found;
         // did not find it, let's try super interfaces of interfaces
         for (TypeMirror anInterface : interfaces) {
             if (anInterface instanceof DeclaredType) {
@@ -322,6 +319,8 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                 .stream()
                 .filter(it -> it.getKind() == ElementKind.METHOD)
                 .map(ExecutableElement.class::cast)
+                // the method is declared by this builder (if not, it is from super class or interface -> already handled)
+                .filter(it -> isMine(builderElement, it))
                 // public
                 .filter(it -> it.getModifiers().contains(Modifier.PUBLIC))
                 // not static
@@ -329,27 +328,11 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                 // return the same type (e.g. Builder)
                 .filter(it -> isBuilderMethod(builderElement, it))
                 .forEach(it -> processBuilderMethod(it, type, className));
-        List<? extends TypeMirror> interfaces = builderElement.getInterfaces();
-        for (TypeMirror anInterface : interfaces) {
-            Element interfaceElement = typeUtils.asElement(anInterface);
-            if (interfaceElement.getAnnotation(Configured.class) == null) {
-                continue;
-            }
-            String name = typeUtils.erasure(anInterface).toString();
+    }
 
-            // it should be in current sources
-            elementUtils.getAllMembers((TypeElement) interfaceElement)
-                    .stream()
-                    .filter(it -> it.getKind() == ElementKind.METHOD)
-                    .map(ExecutableElement.class::cast)
-                    // public
-                    .filter(it -> it.getModifiers().contains(Modifier.PUBLIC))
-                    // not static
-                    .filter(it -> !it.getModifiers().contains(Modifier.STATIC))
-                    // return the same type (e.g. Builder)
-                    .filter(it -> typeUtils.isSameType(builderElement.asType(), it.getReturnType()))
-                    .forEach(it -> processBuilderMethod(it, type, className));
-        }
+    private boolean isMine(TypeElement type, ExecutableElement method) {
+        Element enclosingElement = method.getEnclosingElement();
+        return type.equals(enclosingElement);
     }
 
     private boolean isBuilderMethod(TypeElement builderElement, ExecutableElement it) {
@@ -420,9 +403,9 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                 }
 
                 for (AnnotationMirror option : options) {
-                    ConfiguredOptionData data = createConfiguredOptionData(option);
+                    ConfiguredOptionData data = ConfiguredOptionData.create(elementUtils, typeUtils, option);
 
-                    if (data.name == null || data.name.isBlank()) {
+                    if ((data.name == null || data.name.isBlank()) && !data.merge) {
                         messager.printMessage(Diagnostic.Kind.ERROR,
                                               "ConfiguredOption on " + typeElement + "."
                                                       + validMethod
@@ -446,7 +429,7 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                         data.type = "java.lang.String";
                     }
 
-                    ConfiguredProperty prop = new ConfiguredProperty((String) null,
+                    ConfiguredProperty prop = new ConfiguredProperty(null,
                                                                      data.name,
                                                                      data.description,
                                                                      data.defaultValue,
@@ -455,6 +438,8 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                                                                      !data.required,
                                                                      data.kind,
                                                                      data.provider,
+                                                                     data.deprecated,
+                                                                     data.merge,
                                                                      data.allowedValues);
                     type.addProperty(prop);
                 }
@@ -472,6 +457,7 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                     .stream()
                     .filter(it -> it.getKind() == ElementKind.METHOD)
                     .map(ExecutableElement.class::cast)
+                    .filter(it -> isMine(typeElement, it))
                     // public
                     .filter(it -> it.getModifiers().contains(Modifier.PUBLIC))
                     // not static
@@ -518,14 +504,16 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
         }
 
         for (AnnotationMirror option : options) {
-            ConfiguredOptionData annotation = createConfiguredOptionData(option);
+            ConfiguredOptionData data = ConfiguredOptionData.create(elementUtils, typeUtils, option);
 
-            String name = key(annotation.name, element);
-            String description = description(annotation.description, element);
-            String defaultValue = defaultValue(annotation.defaultValue);
-            boolean experimental = annotation.experimental;
-            OptionType type = type(annotation, element);
-            boolean optional = defaultValue != null || !annotation.required;
+            String name = key(data.name, element);
+            String description = description(data.description, element);
+            String defaultValue = defaultValue(data.defaultValue);
+            boolean experimental = data.experimental;
+            OptionType type = type(data, element);
+            boolean optional = defaultValue != null || !data.required;
+            boolean deprecated = data.deprecated;
+            List<AllowedValue> allowedValues = allowedValues(data, type.elementType);
 
             String[] paramTypes = methodParams(element);
 
@@ -534,7 +522,7 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                                                               element.getSimpleName().toString(),
                                                               paramTypes);
 
-            ConfiguredProperty property = new ConfiguredProperty(builderMethod,
+            ConfiguredProperty property = new ConfiguredProperty(builderMethod.toString(),
                                                                  name,
                                                                  description,
                                                                  defaultValue,
@@ -542,8 +530,10 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                                                                  experimental,
                                                                  optional,
                                                                  type.kind,
-                                                                 annotation.provider,
-                                                                 annotation.allowedValues);
+                                                                 data.provider,
+                                                                 deprecated,
+                                                                 data.merge,
+                                                                 allowedValues);
             configuredType.addProperty(property);
         }
     }
@@ -616,7 +606,7 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
         return annotationValue;
     }
 
-    private String javadoc(String docComment) {
+    private static String javadoc(String docComment) {
         if (null == docComment) {
             return "";
         }
@@ -720,57 +710,24 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
         return result.toString();
     }
 
-    @SuppressWarnings("unchecked")
-    ConfiguredOptionData createConfiguredOptionData(AnnotationMirror configuredMirror) {
-        ConfiguredOptionData result = new ConfiguredOptionData();
-
-        Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues = configuredMirror.getElementValues();
-
-        TypeElement enumType = null;
-
-        for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : elementValues.entrySet()) {
-            Name key = entry.getKey().getSimpleName();
-            Object value = entry.getValue().getValue();
-
-            if (key.contentEquals("value")) {
-                result.name = (String) value;
-            } else if (key.contentEquals("description")) {
-                result.description = (String) value;
-            } else if (key.contentEquals("defaultValue")) {
-                result.defaultValue = (String) value;
-            } else if (key.contentEquals("experimental")) {
-                result.experimental = (Boolean) value;
-            } else if (key.contentEquals("required")) {
-                result.required = (Boolean) value;
-            } else if (key.contentEquals("type")) {
-                TypeMirror typeMirror = (TypeMirror) value;
-                Element element = typeUtils.asElement(typeMirror);
-                if (element.getKind() == ElementKind.ENUM) {
-                    enumType = (TypeElement) element;
-                }
-
-                result.type = value.toString();
-            } else if (key.contentEquals("kind")) {
-                result.kind = ConfiguredOption.Kind.valueOf(value.toString());
-            } else if (key.contentEquals("provider")) {
-                result.provider = (Boolean) value;
-            } else if (key.contentEquals("allowedValues")) {
-                ((List<AnnotationMirror>) value).stream()
-                        .map(AllowedValue::create)
-                        .forEach(result.allowedValues::add);
-
-            }
-        }
-        if (result.allowedValues.isEmpty() && (enumType != null)) {
-            enumType.getEnclosedElements()
+    static List<AllowedValue> allowedValues(Elements elementUtils, TypeElement typeElement) {
+        if (typeElement.getKind() == ElementKind.ENUM) {
+            return typeElement.getEnclosedElements()
                     .stream()
                     .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
-                    .forEach(element -> result.allowedValues
-                            .add(new AllowedValue(element.toString(), javadoc(elementUtils.getDocComment(element)))));
-
+                    .map(element -> new AllowedValue(element.toString(), javadoc(elementUtils.getDocComment(element))))
+                    .collect(Collectors.toList());
         }
+        return List.of();
+    }
 
-        return result;
+    private List<AllowedValue> allowedValues(ConfiguredOptionData annotation, String type) {
+        if (type.equals(annotation.type) || !annotation.allowedValues.isEmpty()) {
+            // this was already processed due to an explicit type defined in the annotation
+            // or allowed values explicitly configured in annotation
+            return annotation.allowedValues;
+        }
+        return allowedValues(elementUtils, elementUtils.getTypeElement(type));
     }
 
     private static final class OptionType {
@@ -832,7 +789,61 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
         private String defaultValue;
         private boolean experimental;
         private boolean provider;
+        private boolean deprecated;
+        private boolean merge;
         private ConfiguredOption.Kind kind = ConfiguredOption.Kind.VALUE;
+
+        @SuppressWarnings("unchecked")
+        static ConfiguredOptionData create(Elements elementUtils, Types typeUtils, AnnotationMirror configuredMirror) {
+            ConfiguredOptionData result = new ConfiguredOptionData();
+
+            Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues = configuredMirror.getElementValues();
+
+            TypeElement enumType = null;
+
+            for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : elementValues.entrySet()) {
+                Name key = entry.getKey().getSimpleName();
+                Object value = entry.getValue().getValue();
+
+                if (key.contentEquals("value")) {
+                    result.name = (String) value;
+                } else if (key.contentEquals("description")) {
+                    result.description = (String) value;
+                } else if (key.contentEquals("defaultValue")) {
+                    result.defaultValue = (String) value;
+                } else if (key.contentEquals("experimental")) {
+                    result.experimental = (Boolean) value;
+                } else if (key.contentEquals("required")) {
+                    result.required = (Boolean) value;
+                } else if (key.contentEquals("mergeWithParent")) {
+                    result.merge = (Boolean) value;
+                } else if (key.contentEquals("type")) {
+                    TypeMirror typeMirror = (TypeMirror) value;
+                    Element element = typeUtils.asElement(typeMirror);
+                    if (element.getKind() == ElementKind.ENUM) {
+                        enumType = (TypeElement) element;
+                    }
+
+                    result.type = value.toString();
+                } else if (key.contentEquals("kind")) {
+                    result.kind = ConfiguredOption.Kind.valueOf(value.toString());
+                } else if (key.contentEquals("provider")) {
+                    result.provider = (Boolean) value;
+                } else if (key.contentEquals("deprecated")) {
+                    result.deprecated = (Boolean) value;
+                } else if (key.contentEquals("allowedValues")) {
+                    ((List<AnnotationMirror>) value).stream()
+                            .map(AllowedValue::create)
+                            .forEach(result.allowedValues::add);
+
+                }
+            }
+            if (result.allowedValues.isEmpty() && (enumType != null)) {
+                result.allowedValues.addAll(allowedValues(elementUtils, enumType));
+            }
+
+            return result;
+        }
     }
 
     private static class BuilderTypeInfo {

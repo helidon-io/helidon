@@ -46,6 +46,8 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -70,6 +72,7 @@ import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
+import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.webclient.WebClientRequestBuilder;
 
@@ -612,6 +615,9 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     /**
      * Builder for {@link io.helidon.security.providers.oidc.OidcProvider}.
      */
+    @Configured(prefix = OidcProviderService.PROVIDER_CONFIG_KEY,
+                description = "Open ID Connect security provider",
+                provides = {AuthenticationProvider.class, SecurityProvider.class})
     public static final class Builder implements io.helidon.common.Builder<OidcProvider> {
         private boolean optional = false;
         private OidcConfig oidcConfig;
@@ -700,6 +706,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
          * @param propagate whether to propagate identity (true) or not (false)
          * @return updated builder instance
          */
+        @ConfiguredOption(defaultValue = "false")
         public Builder propagate(boolean propagate) {
             this.propagate = propagate;
             return this;
@@ -712,6 +719,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
          *
          * @return updated builder instance
          */
+        @ConfiguredOption(mergeWithParent = true)
         public Builder outboundConfig(OutboundConfig config) {
             this.outboundConfig = config;
             return this;
@@ -724,6 +732,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
          *
          * @return updated builder instance
          */
+        @ConfiguredOption(mergeWithParent = true)
         public Builder oidcConfig(OidcConfig config) {
             this.oidcConfig = config;
             return this;
@@ -732,11 +741,12 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         /**
          * Whether authentication is required.
          * By default, request will fail if the authentication cannot be verified.
-         * If set to false, request will process and this provider will abstain.
+         * If set to true, request will process and this provider will abstain.
          *
          * @param optional whether authentication is optional (true) or required (false)
          * @return updated builder instance
          */
+        @ConfiguredOption(defaultValue = "false")
         public Builder optional(boolean optional) {
             this.optional = optional;
             return this;
@@ -749,6 +759,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
          * @param useJwtGroups whether to use {@code groups} claim from JWT to retrieve roles
          * @return updated builder instance
          */
+        @ConfiguredOption(defaultValue = "true")
         public Builder useJwtGroups(boolean useJwtGroups) {
             this.useJwtGroups = useJwtGroups;
             return this;

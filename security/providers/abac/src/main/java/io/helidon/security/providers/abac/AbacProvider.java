@@ -336,7 +336,9 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
     /**
      * A fluent API builder for {@link AbacProvider}.
      */
-    @Configured(prefix = "abac", provides = {SecurityProvider.class, AuthorizationProvider.class})
+    @Configured(prefix = "abac",
+                description = "Attribute Based Access Control provider",
+                provides = {SecurityProvider.class, AuthorizationProvider.class})
     public static final class Builder implements io.helidon.common.Builder<AbacProvider> {
         private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
         private Config config = Config.empty();

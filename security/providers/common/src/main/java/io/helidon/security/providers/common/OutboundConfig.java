@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityEnvironment;
@@ -192,6 +194,7 @@ public final class OutboundConfig {
     /**
      * {@link OutboundConfig} builder when not reading it from configuration.
      */
+    @Configured(description = "Outbound configuration for outbound security")
     public static final class Builder implements io.helidon.common.Builder<OutboundConfig> {
         private final List<OutboundTarget> targets = new LinkedList<>();
         private final Set<String> names = new HashSet<>();
@@ -205,6 +208,8 @@ public final class OutboundConfig {
          * @param config target to add
          * @return updated builder instance
          */
+        @ConfiguredOption(value = "outbound",
+                          kind = ConfiguredOption.Kind.LIST)
         public Builder addTarget(OutboundTarget config) {
             if (names.contains(config.name())) {
                 throw new IllegalStateException("Duplicate name of a target: " + config.name());

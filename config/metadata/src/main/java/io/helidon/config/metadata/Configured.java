@@ -66,8 +66,8 @@ public @interface Configured {
     boolean ignoreBuildMethod() default false;
 
     /**
-     * Description of this configured type. Only used if this is {@link #root()}. Nested options
-     * use documentation defined on the parent type.
+     * Description of this configured type. Only used if this is {@link #root()}, or if {@link #provides()} is not empty.
+     * Nested options use documentation defined on the parent type.
      *
      * @return description of this (root) node
      */

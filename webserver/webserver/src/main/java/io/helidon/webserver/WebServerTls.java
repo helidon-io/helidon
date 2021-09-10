@@ -355,7 +355,7 @@ public final class WebServerTls {
          * @param enabled configure to {@code false} to disable SSL context (and SSL support on the server)
          * @return this builder
          */
-        @ConfiguredOption(description = "Can be used to disable TLS even if keys are configured.")
+        @ConfiguredOption(description = "Can be used to disable TLS even if keys are configured.", defaultValue = "true")
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
             this.explicitEnabled = enabled;

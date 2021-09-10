@@ -266,7 +266,7 @@ public interface SocketConfiguration {
          * @throws java.lang.NullPointerException in case the bind address is null
          * @throws io.helidon.config.ConfigException in case the address provided is not a valid host address
          */
-        @ConfiguredOption()
+        @ConfiguredOption(deprecated = true)
         default B bindAddress(String address) {
             try {
                 return bindAddress(InetAddress.getByName(address));

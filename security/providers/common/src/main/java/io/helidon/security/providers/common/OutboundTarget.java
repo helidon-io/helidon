@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.ClassToInstanceStore;
 
 /**
@@ -277,6 +279,7 @@ public final class OutboundTarget {
     /**
      * Fluent API builder for {@link OutboundTarget}.
      */
+    @Configured
     public static final class Builder implements io.helidon.common.Builder<OutboundTarget> {
         private final Set<String> transports = new HashSet<>();
         private final Set<String> hosts = new HashSet<>();
@@ -289,7 +292,16 @@ public final class OutboundTarget {
         private Builder() {
         }
 
-        private Builder name(String name) {
+        /**
+         * Configure the name of this outbound target.
+         *
+         * @param name name of the target, cannot be null
+         * @return updated builder
+         */
+        @ConfiguredOption(required = true)
+        public Builder name(String name) {
+            Objects.requireNonNull(name, "Outbound target name cannot be null");
+            // this method must be public, so we can read the configured option
             this.name = name;
             return this;
         }
@@ -322,6 +334,7 @@ public final class OutboundTarget {
          * @param host name or IP of host, with possible "*" asterisk character to match any sequence
          * @return updated builder instance
          */
+        @ConfiguredOption(value = "hosts", kind = ConfiguredOption.Kind.LIST)
         public Builder addHost(String host) {
             this.hosts.add(host);
             return this;
@@ -340,6 +353,7 @@ public final class OutboundTarget {
          * @param transport that is supported
          * @return updated builder instance
          */
+        @ConfiguredOption(value = "transport", kind = ConfiguredOption.Kind.LIST)
         public Builder addTransport(String transport) {
             this.transports.add(transport);
             return this;
@@ -352,6 +366,7 @@ public final class OutboundTarget {
          * @param path supported path (regular expression supported)
          * @return updated builder instance
          */
+        @ConfiguredOption(value = "paths", kind = ConfiguredOption.Kind.LIST)
         public Builder addPath(String path) {
             this.paths.add(path);
             return this;
@@ -364,6 +379,7 @@ public final class OutboundTarget {
          * @param method supported method (exact match ignoring case)
          * @return updated builder instance
          */
+        @ConfiguredOption(value = "methods", kind = ConfiguredOption.Kind.LIST)
         public Builder addMethod(String method) {
             this.methods.add(method.toUpperCase());
             return this;

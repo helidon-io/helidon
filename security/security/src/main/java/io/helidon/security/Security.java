@@ -490,7 +490,6 @@ public class Security {
         return resolveProvider(AuthenticationProvider.class, providerName);
     }
 
-    @SuppressWarnings("unchecked")
     Optional<AuthorizationProvider> resolveAtzProvider(String providerName) {
         return resolveProvider(AuthorizationProvider.class, providerName);
     }
@@ -503,7 +502,6 @@ public class Security {
         return providerSelectionPolicy.selectOutboundProviders();
     }
 
-    @SuppressWarnings("unchecked")
     private <T extends SecurityProvider> Optional<T> resolveProvider(Class<T> providerClass, String providerName) {
         if (null == providerName) {
             return providerSelectionPolicy.selectProvider(providerClass);
@@ -1108,7 +1106,10 @@ public class Security {
          * @see #secret(String)
          * @see #secret(String, String)
          */
-        @ConfiguredOption(value = "secrets", kind = ConfiguredOption.Kind.LIST, type = Config.class, description = "Configured secrets")
+        @ConfiguredOption(value = "secrets",
+                          kind = ConfiguredOption.Kind.LIST,
+                          type = Config.class,
+                          description = "Configured secrets")
         @ConfiguredOption(value = "secrets.*.name", type = String.class, description = "Name of the secret, used for lookup")
         @ConfiguredOption(value = "secrets.*.provider", type = String.class, description = "Name of the secret provider")
         @ConfiguredOption(value = "secrets.*.config",

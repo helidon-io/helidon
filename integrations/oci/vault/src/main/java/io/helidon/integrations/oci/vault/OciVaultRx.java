@@ -20,7 +20,10 @@ import java.util.function.Consumer;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
+import io.helidon.integrations.oci.connect.OciConfigProfile;
 import io.helidon.integrations.oci.connect.OciRestApi;
 
 /**
@@ -173,6 +176,7 @@ public interface OciVaultRx {
     /**
      * Fluent API builder for {@link io.helidon.integrations.oci.vault.OciVaultRx}.
      */
+    @Configured
     class Builder implements io.helidon.common.Builder<OciVaultRx> {
         private final OciRestApi.Builder accessBuilder = OciRestApi.builder();
 
@@ -259,6 +263,7 @@ public interface OciVaultRx {
             return this;
         }
 
+        @ConfiguredOption("vault.secret-api-version")
         public Builder secretApiVersion(String apiVersion) {
             this.secretApiVersion = apiVersion;
             return this;
@@ -279,6 +284,15 @@ public interface OciVaultRx {
             return this;
         }
 
+        @ConfiguredOption(value = "scheme", type = String.class, defaultValue = "https", description = "Scheme to use to "
+                + "connect to cloud")
+        @ConfiguredOption(value = "domain", type = String.class, defaultValue = "oraclecloud.com", description = "Cloud domain")
+        @ConfiguredOption(value = "config.instance-principal.enabled", type = Boolean.class, defaultValue = "false",
+                          description = "Instance principal can be used by VMs provided by Oracle cloud")
+        @ConfiguredOption(value = "config.resource-principal.enabled", type = Boolean.class, defaultValue = "false",
+                          description = "Resource principal can be used in fn (functions)")
+        @ConfiguredOption(value = "config.oci-profile", type = OciConfigProfile.class, description = "OCI profile is either "
+                + "read automatically from the default location, or can be configured explicitly")
         public Builder restApi(OciRestApi restApi) {
             this.restApi = restApi;
             return this;
