@@ -14,14 +14,26 @@
  * limitations under the License.
  */
 
-/**
- * Example of integration with OCI ATP in reactive application.
- */
-module io.helidon.examples.integrations.oci.atp.reactive {
-    requires java.logging;
-    requires io.helidon.common.http;
-    requires io.helidon.integrations.oci.atp;
-    requires io.helidon.webserver;
+package io.helidon.microprofile.tests.junit5;
 
-    exports io.helidon.examples.integrations.oci.atp.reactive;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.Test;
+
+import javax.inject.Inject;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+@HelidonTest
+@Configuration
+public class TestConfigurationDefaultProfile {
+
+    @Inject
+    @ConfigProperty(name = "mp.config.profile")
+    private String profile;
+
+    @Test
+    void testProfile(){
+        assertThat(profile, is("test"));
+    }
 }

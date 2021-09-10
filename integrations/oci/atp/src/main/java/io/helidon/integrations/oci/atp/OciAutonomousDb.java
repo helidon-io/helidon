@@ -43,5 +43,5 @@ public interface OciAutonomousDb {
      * @return future with response or error
      */
     ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response> generateWallet(
-            GenerateAutonomousDatabaseWalletRx.Request request);
+            GenerateAutonomousDatabaseWallet.Request request);
 }

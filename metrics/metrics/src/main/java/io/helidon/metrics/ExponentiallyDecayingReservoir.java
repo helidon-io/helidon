@@ -16,17 +16,13 @@
 
 package io.helidon.metrics;
 
+import java.time.Duration;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.min;
@@ -48,54 +44,19 @@ import static java.lang.Math.min;
  * @see <a href="http://dimacs.rutgers.edu/~graham/pubs/papers/fwddecay.pdf">
  * Cormode et al. Forward Decay: A Practical Time Decay Model for Streaming Systems. ICDE '09:
  * Proceedings of the 2009 IEEE International Conference on Data Engineering (2009)</a>
+ *
+ * To avoid calculating the current time in seconds during every update, use an executor that runs just a few times each second
+ * to update the current-time-in-seconds value for each instance. Each instance might have a separate {@code Clock} for obtaining
+ * the current time, so we cannot share a single static value for the current time across all instances. So each instance
+ * registers its own {@code Runnable} which updates its own value, and the single executor invokes all of them when it runs.
  */
 class ExponentiallyDecayingReservoir {
+
     private static final int DEFAULT_SIZE = 1028;
     private static final double DEFAULT_ALPHA = 0.015;
     private static final long RESCALE_THRESHOLD = TimeUnit.HOURS.toNanos(1);
 
-    /*
-     * Avoid computing the current time in seconds during every reservoir update by updating its value on a scheduled basis.
-     */
-    private static final long CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS = 250;
-
-    private static final List<Runnable> CURRENT_TIME_IN_SECONDS_UPDATERS = new ArrayList<>();
-
-    private static final ScheduledExecutorService CURRENT_TIME_UPDATER_EXECUTOR_SERVICE = initCurrentTimeUpdater();
-
-    private static final Logger LOGGER = Logger.getLogger(ExponentiallyDecayingReservoir.class.getName());
-
-    private volatile long currentTimeInSeconds;
-
-    private static ScheduledExecutorService initCurrentTimeUpdater() {
-        ScheduledExecutorService result = Executors.newSingleThreadScheduledExecutor();
-        result.scheduleAtFixedRate(ExponentiallyDecayingReservoir::updateCurrentTimeInSecondsForAllReservoirs,
-                CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS,
-                CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS);
-        return result;
-    }
-
-    static void onServerShutdown() {
-        CURRENT_TIME_UPDATER_EXECUTOR_SERVICE.shutdown();
-        try {
-            boolean stoppedNormally =
-                    CURRENT_TIME_UPDATER_EXECUTOR_SERVICE.awaitTermination(CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL_MS * 10,
-                            TimeUnit.MILLISECONDS);
-            if (!stoppedNormally) {
-                LOGGER.log(Level.WARNING, "Shutdown of current time updater timed out; continuing");
-            }
-        } catch (InterruptedException e) {
-            LOGGER.log(Level.WARNING, "InterruptedException caught while stopping the current time updater; continuing");
-        }
-    }
-
-    private static void updateCurrentTimeInSecondsForAllReservoirs() {
-        CURRENT_TIME_IN_SECONDS_UPDATERS.forEach(Runnable::run);
-    }
-
-    private long computeCurrentTimeInSeconds() {
-        return TimeUnit.MILLISECONDS.toSeconds(clock.milliTime());
-    }
+    private static final Duration CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL = Duration.ofMillis(250);
 
     private final ConcurrentSkipListMap<Double, WeightedSnapshot.WeightedSample> values;
     private final ReentrantReadWriteLock lock;
@@ -104,8 +65,8 @@ class ExponentiallyDecayingReservoir {
     private final AtomicLong count;
     private final Clock clock;
     private final AtomicLong nextScaleTime;
+    private volatile long currentTimeInSeconds;
     private volatile long startTime;
-
     /**
      * Creates a new {@link ExponentiallyDecayingReservoir} of 1028 elements, which offers a 99.9%
      * confidence level with a 5% margin of error assuming a normal distribution, and an alpha
@@ -114,7 +75,6 @@ class ExponentiallyDecayingReservoir {
     ExponentiallyDecayingReservoir(Clock clock) {
         this(DEFAULT_SIZE, DEFAULT_ALPHA, clock);
     }
-
     /**
      * Creates a new {@link ExponentiallyDecayingReservoir}.
      *
@@ -129,8 +89,8 @@ class ExponentiallyDecayingReservoir {
         this.alpha = alpha;
         this.size = size;
         this.count = new AtomicLong(0);
-        CURRENT_TIME_IN_SECONDS_UPDATERS.add(this::computeCurrentTimeInSeconds);
-        currentTimeInSeconds = computeCurrentTimeInSeconds();
+        PeriodicExecutor.enroll(this::updateTimeInSeconds, CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL);
+        this.updateTimeInSeconds();
         this.startTime = currentTimeInSeconds;
         this.nextScaleTime = new AtomicLong(clock.nanoTick() + RESCALE_THRESHOLD);
     }
@@ -191,6 +151,14 @@ class ExponentiallyDecayingReservoir {
         } finally {
             unlockForRegularUsage();
         }
+    }
+
+    private void updateTimeInSeconds() {
+        currentTimeInSeconds = TimeUnit.MILLISECONDS.toSeconds(clock.milliTime());
+    }
+
+    long currentTimeInSeconds() {
+        return currentTimeInSeconds;
     }
 
     private double weight(long t) {

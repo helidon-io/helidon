@@ -23,14 +23,15 @@
  * @see
  * io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExtension
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.datasource.ucp.cdi {
-    requires java.sql;
+    requires transitive java.sql;
     requires java.desktop; // For java.beans
-    requires jakarta.inject.api;
-    requires jakarta.enterprise.cdi.api;
+    requires transitive jakarta.inject.api;
+    requires transitive jakarta.enterprise.cdi.api;
     requires microprofile.config.api;
-    requires ucp;
-    requires io.helidon.integrations.datasource.cdi;
+    requires com.oracle.database.ucp;
+    requires transitive io.helidon.integrations.datasource.cdi;
 
     exports io.helidon.integrations.datasource.ucp.cdi;
 
