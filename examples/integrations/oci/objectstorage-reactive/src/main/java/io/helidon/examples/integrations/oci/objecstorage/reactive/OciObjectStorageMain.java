@@ -62,7 +62,7 @@ public final class OciObjectStorageMain {
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(OciObjectStorageHealthCheck.builder()
                         .ociObjectStorage(ociObjectStorage)
-                        .bucket(bucketName)
+                        .addBucket(bucketName)
                         .namespace(namespace)
                         .build())
                 .build();
