@@ -78,6 +78,7 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  */
 public class ServerCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(ServerCdiExtension.class.getName());
+    private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
     private static final AtomicBoolean IN_PROGRESS_OR_RUNNING = new AtomicBoolean();
 
     // build time
@@ -217,6 +218,8 @@ public class ServerCdiExtension implements Extension {
         serverBuilder = null;
         routingBuilder = null;
         namedRoutings = null;
+
+        STARTUP_LOGGER.finest("Server created");
     }
 
     private void registerJaxRsApplications(BeanManager beanManager) {
@@ -232,6 +235,7 @@ public class ServerCdiExtension implements Extension {
                     : Injections.createInjectionManager();
             jaxRsApplications.forEach(it -> addApplication(jaxRs, it, shared));
         }
+        STARTUP_LOGGER.finest("Registered jersey application(s)");
     }
 
     private void registerDefaultRedirect() {
@@ -242,6 +246,7 @@ public class ServerCdiExtension implements Extension {
                     res.headers().put(Http.Header.LOCATION, basePath);
                     res.send();
                 }));
+        STARTUP_LOGGER.finest("Builders ready");
     }
 
     private void registerStaticContent() {
@@ -270,6 +275,7 @@ public class ServerCdiExtension implements Extension {
         } else {
             routingBuilder.register(staticContent);
         }
+        STARTUP_LOGGER.finest("Static path");
     }
 
     private void registerClasspathStaticContent(Config config) {
@@ -289,6 +295,7 @@ public class ServerCdiExtension implements Extension {
         } else {
             routingBuilder.register(staticContent);
         }
+        STARTUP_LOGGER.finest("Static classpath");
     }
 
     private void stopServer(@Observes @Priority(PLATFORM_BEFORE) @BeforeDestroyed(ApplicationScoped.class) Object event) {
@@ -400,6 +407,7 @@ public class ServerCdiExtension implements Extension {
             Service service = (Service) objBean.create(context);
             registerWebServerService(serviceBeans.remove(bean), service);
         }
+        STARTUP_LOGGER.finest("Registered WebServer services");
     }
 
     private static List<Bean<?>> prioritySort(Set<Bean<?>> beans) {
