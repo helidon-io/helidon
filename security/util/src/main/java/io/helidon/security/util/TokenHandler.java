@@ -233,7 +233,7 @@ public final class TokenHandler {
          * @param header header name (such as Authorization), case insensitive
          * @return updated builder instance
          */
-        @ConfiguredOption("header")
+        @ConfiguredOption(key = "header")
         public Builder tokenHeader(String header) {
             Objects.requireNonNull(header);
 
@@ -247,7 +247,7 @@ public final class TokenHandler {
          * @param prefix prefix of header value to strip from it, case insensitive
          * @return updated builder instance
          */
-        @ConfiguredOption("prefix")
+        @ConfiguredOption(key = "prefix")
         public Builder tokenPrefix(String prefix) {
             Objects.requireNonNull(prefix);
 
@@ -261,7 +261,7 @@ public final class TokenHandler {
          * @param pattern pattern to use to extract the token, first group will be used
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "regexp", type = String.class)
+        @ConfiguredOption(key = "regexp", type = String.class)
         public Builder tokenPattern(Pattern pattern) {
             Objects.requireNonNull(pattern);
 
@@ -302,7 +302,7 @@ public final class TokenHandler {
          * @param format Format according to {@link String#format(String, Object...)}, token will be a single string parameter
          * @return updated builder instance
          */
-        @ConfiguredOption("format")
+        @ConfiguredOption(key = "format")
         public Builder tokenFormat(String format) {
             this.tokenFormat = format;
             return this;

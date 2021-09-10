@@ -140,7 +140,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
          * @param corePoolSize see {@link ThreadPoolExecutor#getCorePoolSize()}
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "16")
+        @ConfiguredOption("16")
         public Builder corePoolSize(int corePoolSize) {
             this.corePoolSize = corePoolSize;
             return this;
@@ -152,7 +152,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
          * @param daemon whether the threads are daemon threads
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "is-daemon", defaultValue = "true")
+        @ConfiguredOption(key = "is-daemon", value = "true")
         public Builder daemon(boolean daemon) {
             isDaemon = daemon;
             return this;
@@ -164,7 +164,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
          * @param threadNamePrefix prefix of a thread name
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "helidon-")
+        @ConfiguredOption("helidon-")
         public Builder threadNamePrefix(String threadNamePrefix) {
             this.threadNamePrefix = threadNamePrefix;
             return this;
@@ -176,7 +176,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
          * @param prestart whether to prestart the threads
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "should-prestart", defaultValue = "true")
+        @ConfiguredOption(key = "should-prestart", value = "true")
         public Builder prestart(boolean prestart) {
             this.prestart = prestart;
             return this;

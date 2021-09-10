@@ -78,9 +78,9 @@ public class ConfigUserStore implements SecureUserStore {
         private String login;
         private char[] password;
 
-        @ConfiguredOption(value = "login", type = String.class, description = "User's login")
-        @ConfiguredOption(value = "password", type = String.class, description = "User's password")
-        @ConfiguredOption(value = "roles",
+        @ConfiguredOption(key = "login", type = String.class, description = "User's login")
+        @ConfiguredOption(key = "password", type = String.class, description = "User's password")
+        @ConfiguredOption(key = "roles",
                           type = String.class,
                           kind = ConfiguredOption.Kind.LIST,
                           description = "List of roles the user is in")

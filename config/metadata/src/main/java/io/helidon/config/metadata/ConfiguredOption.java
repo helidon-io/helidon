@@ -59,7 +59,7 @@ public @interface ConfiguredOption {
      *
      * @return config key
      */
-    String value() default "";
+    String key() default "";
 
     /**
      * The type of the configuration option.
@@ -92,7 +92,7 @@ public @interface ConfiguredOption {
      * Default value of this option if not configured explicitly.
      * @return default value
      */
-    String defaultValue() default UNCONFIGURED;
+    String value() default UNCONFIGURED;
 
     /**
      * Set to {@code true} for experimental configuration.
@@ -134,7 +134,7 @@ public @interface ConfiguredOption {
     boolean deprecated() default false;
 
     /**
-     * When set to {@code true}, this property will be part of the parent structure (e.g. the {@link #value()}
+     * When set to {@code true}, this property will be part of the parent structure (e.g. the {@link #key()}
      * must be empty, and this must be a complex node).
      *
      * @return whether to merge the child nodes directly with parent node without a key

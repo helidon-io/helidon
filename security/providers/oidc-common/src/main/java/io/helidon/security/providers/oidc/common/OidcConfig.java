@@ -1262,7 +1262,7 @@ public final class OidcConfig {
          *                 authenticate the user, defaults to true
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "true")
+        @ConfiguredOption("true")
         public Builder redirect(boolean redirect) {
             this.redirect = redirect;
             return this;
@@ -1310,7 +1310,7 @@ public final class OidcConfig {
          * @param useJwk when set to true, jwk is used, when set to false, introspect endpoint is used
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "true")
+        @ConfiguredOption("true")
         public Builder validateJwtWithJwk(Boolean useJwk) {
             this.validateJwtWithJwk = useJwk;
             return this;
@@ -1338,7 +1338,7 @@ public final class OidcConfig {
          * @param scopes Space separated scopes to be required by default from OIDC server
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = DEFAULT_BASE_SCOPES)
+        @ConfiguredOption(value = DEFAULT_BASE_SCOPES)
         public Builder baseScopes(String scopes) {
             this.baseScopes = scopes;
             return this;
@@ -1353,7 +1353,7 @@ public final class OidcConfig {
          * @param useWellKnown whether to use well known location for OIDC metadata
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "true")
+        @ConfiguredOption("true")
         public Builder oidcMetadataWellKnown(Boolean useWellKnown) {
             this.oidcMetadataWellKnown = useWellKnown;
             return this;
@@ -1366,7 +1366,7 @@ public final class OidcConfig {
          * @param resource Resource pointing to the JWK
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "sign-jwk.resource")
+        @ConfiguredOption(key = "sign-jwk.resource")
         public Builder signJwk(Resource resource) {
             validateJwtWithJwk(true);
             this.signJwk = JwkKeys.builder().resource(resource).build();
@@ -1392,7 +1392,7 @@ public final class OidcConfig {
          * @param resource resource pointing to the JSON structure
          * @return updated builder instance
          */
-        @ConfiguredOption("oidc-metadata.resource")
+        @ConfiguredOption(key = "oidc-metadata.resource")
         public Builder oidcMetadata(Resource resource) {
             this.oidcMetadata = JSON.createReader(resource.stream()).readObject();
             return this;
@@ -1418,7 +1418,7 @@ public final class OidcConfig {
          * @param tokenHandler token handler to use
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "header-token")
+        @ConfiguredOption(key = "header-token")
         public Builder headerTokenHandler(TokenHandler tokenHandler) {
             this.headerHandler = tokenHandler;
             return this;
@@ -1430,7 +1430,7 @@ public final class OidcConfig {
          * @param useHeader set to true to use a header extracted with {@link #headerTokenHandler(TokenHandler)}
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "header-use", defaultValue = "false")
+        @ConfiguredOption(key = "header-use", value = "false")
         public Builder useHeader(Boolean useHeader) {
             this.useHeader = useHeader;
             return this;
@@ -1457,7 +1457,7 @@ public final class OidcConfig {
          * @param sameSite SameSite cookie attribute value
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = DEFAULT_COOKIE_SAME_SITE)
+        @ConfiguredOption(value = DEFAULT_COOKIE_SAME_SITE)
         public Builder cookieSameSite(String sameSite) {
             this.cookieSameSite = sameSite;
             this.cookieSameSiteDefault = false;
@@ -1471,7 +1471,7 @@ public final class OidcConfig {
          * @param secure whether the cookie should be secure (true) or not (false)
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "false")
+        @ConfiguredOption("false")
         public Builder cookieSecure(Boolean secure) {
             this.cookieSecure = secure;
             return this;
@@ -1484,7 +1484,7 @@ public final class OidcConfig {
          * @param httpOnly whether the cookie should be HttpOnly (true) or not (false)
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "true")
+        @ConfiguredOption("true")
         public Builder cookieHttpOnly(Boolean httpOnly) {
             this.cookieHttpOnly = httpOnly;
             return this;
@@ -1511,7 +1511,7 @@ public final class OidcConfig {
          * @param path the path to use as value of cookie "Path" attribute
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = DEFAULT_COOKIE_PATH)
+        @ConfiguredOption(value = DEFAULT_COOKIE_PATH)
         public Builder cookiePath(String path) {
             this.cookiePath = path;
             return this;
@@ -1570,7 +1570,7 @@ public final class OidcConfig {
          * @param tokenEndpointAuthentication authentication type
          * @return updated builder
          */
-        @ConfiguredOption(value = "token-endpoint-auth", defaultValue = "CLIENT_SECRET_BASIC")
+        @ConfiguredOption(key = "token-endpoint-auth", value = "CLIENT_SECRET_BASIC")
         public Builder tokenEndpointAuthentication(ClientAuthentication tokenEndpointAuthentication) {
 
             switch (tokenEndpointAuthentication) {
@@ -1608,7 +1608,7 @@ public final class OidcConfig {
          * @param cookieName name of a cookie
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = DEFAULT_COOKIE_NAME)
+        @ConfiguredOption(value = DEFAULT_COOKIE_NAME)
         public Builder cookieName(String cookieName) {
             this.cookieName = cookieName;
             return this;
@@ -1621,7 +1621,7 @@ public final class OidcConfig {
          * @param useCookie whether to use cookie to store JWT (true) or not (false))
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "cookie-use", defaultValue = "true")
+        @ConfiguredOption(key = "cookie-use", value = "true")
         public Builder useCookie(Boolean useCookie) {
             this.useCookie = useCookie;
             return this;
@@ -1633,7 +1633,7 @@ public final class OidcConfig {
          * @param paramName name of the query parameter to expect
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "query-param-name", defaultValue = DEFAULT_PARAM_NAME)
+        @ConfiguredOption(key = "query-param-name", value = DEFAULT_PARAM_NAME)
         public Builder paramName(String paramName) {
             this.paramName = paramName;
             return this;
@@ -1647,7 +1647,7 @@ public final class OidcConfig {
          * @return updated builder instance
          * @see #paramName(String)
          */
-        @ConfiguredOption(value = "query-param-use", defaultValue = "false")
+        @ConfiguredOption(key = "query-param-use", value = "false")
         public Builder useParam(Boolean useParam) {
             this.useParam = useParam;
             return this;
@@ -1672,7 +1672,7 @@ public final class OidcConfig {
          * @param protocol protocol to use (such as https)
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = DEFAULT_PROXY_PROTOCOL)
+        @ConfiguredOption(value = DEFAULT_PROXY_PROTOCOL)
         public Builder proxyProtocol(String protocol) {
             this.proxyProtocol = protocol;
             return this;
@@ -1704,7 +1704,7 @@ public final class OidcConfig {
          * @param proxyPort port of the proxy server to use
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "80")
+        @ConfiguredOption("80")
         public Builder proxyPort(int proxyPort) {
             this.proxyPort = proxyPort;
             return this;
@@ -1749,7 +1749,7 @@ public final class OidcConfig {
          * @param redirectUri the URI (path without protocol, host and port) used to redirect requests back to us
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = DEFAULT_REDIRECT_URI)
+        @ConfiguredOption(value = DEFAULT_REDIRECT_URI)
         public Builder redirectUri(String redirectUri) {
             this.redirectUri = redirectUri;
             return this;
@@ -1762,7 +1762,7 @@ public final class OidcConfig {
          * @param paramName name of the parameter used in the state parameter
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = DEFAULT_ATTEMPT_PARAM)
+        @ConfiguredOption(value = DEFAULT_ATTEMPT_PARAM)
         public Builder redirectAttemptParam(String paramName) {
             this.redirectAttemptParam = paramName;
             return this;
@@ -1776,7 +1776,7 @@ public final class OidcConfig {
          * @param maxRedirects maximal number of redirects from Helidon to OIDC provider
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "5")
+        @ConfiguredOption("5")
         public Builder maxRedirects(int maxRedirects) {
             this.maxRedirects = maxRedirects;
             return this;
@@ -1790,7 +1790,7 @@ public final class OidcConfig {
          * @param type Type of identity server. Currently supported is {@code idcs} or not configured (for default).
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = DEFAULT_SERVER_TYPE)
+        @ConfiguredOption(value = DEFAULT_SERVER_TYPE)
         public Builder serverType(String type) {
             this.serverType = type;
             return this;
@@ -1802,7 +1802,7 @@ public final class OidcConfig {
          * @param duration timeout
          * @return updated builder
          */
-        @ConfiguredOption(value = "client-timeout-millis", defaultValue = "30000")
+        @ConfiguredOption(key = "client-timeout-millis", value = "30000")
         public Builder clientTimeout(Duration duration) {
             this.clientTimeout = duration;
             return this;

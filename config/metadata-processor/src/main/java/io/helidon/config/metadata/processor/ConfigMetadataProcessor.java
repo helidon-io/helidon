@@ -805,11 +805,11 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
                 Name key = entry.getKey().getSimpleName();
                 Object value = entry.getValue().getValue();
 
-                if (key.contentEquals("value")) {
+                if (key.contentEquals("key")) {
                     result.name = (String) value;
                 } else if (key.contentEquals("description")) {
                     result.description = (String) value;
-                } else if (key.contentEquals("defaultValue")) {
+                } else if (key.contentEquals("value")) {
                     result.defaultValue = (String) value;
                 } else if (key.contentEquals("experimental")) {
                     result.experimental = (Boolean) value;

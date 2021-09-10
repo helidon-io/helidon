@@ -192,7 +192,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param corePoolSize see {@link ThreadPoolExecutor#getCorePoolSize()}
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "10")
+        @ConfiguredOption("10")
         public Builder corePoolSize(int corePoolSize) {
             this.corePoolSize = corePoolSize;
             return this;
@@ -204,7 +204,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param maxPoolSize see {@link ThreadPoolExecutor#getMaximumPoolSize()}
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "50")
+        @ConfiguredOption("50")
         public Builder maxPoolSize(int maxPoolSize) {
             this.maxPoolSize = maxPoolSize;
             return this;
@@ -216,7 +216,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param keepAliveMinutes see {@link ThreadPoolExecutor#getKeepAliveTime(TimeUnit)}
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "3")
+        @ConfiguredOption("3")
         public Builder keepAliveMinutes(int keepAliveMinutes) {
             this.keepAliveMinutes = keepAliveMinutes;
             return this;
@@ -228,7 +228,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param queueCapacity capacity of the queue backing the executor
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "10000")
+        @ConfiguredOption("10000")
         public Builder queueCapacity(int queueCapacity) {
             this.queueCapacity = queueCapacity;
             return this;
@@ -240,7 +240,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param daemon whether the threads are daemon threads
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "is-daemon", defaultValue = "true")
+        @ConfiguredOption(key = "is-daemon", value = "true")
         public Builder daemon(boolean daemon) {
             isDaemon = daemon;
             return this;
@@ -263,7 +263,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param growthThreshold the growth threshold
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "256")
+        @ConfiguredOption("256")
         Builder growthThreshold(int growthThreshold) {
             this.growthThreshold = growthThreshold;
             return this;
@@ -283,7 +283,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param growthRate the growth rate
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "5")
+        @ConfiguredOption("5")
         Builder growthRate(int growthRate) {
             this.growthRate = growthRate;
             return this;
@@ -306,7 +306,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param threadNamePrefix prefix of a thread name
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "helidon-")
+        @ConfiguredOption("helidon-")
         public Builder threadNamePrefix(String threadNamePrefix) {
             this.threadNamePrefix = threadNamePrefix;
             return this;
@@ -318,7 +318,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param prestart whether to prestart the threads
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "should-prestart", defaultValue = "true")
+        @ConfiguredOption(key = "should-prestart", value = "true")
         public Builder prestart(boolean prestart) {
             this.prestart = prestart;
             return this;
@@ -445,7 +445,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @return updated builder instance
          * @see #virtualIfAvailable(boolean)
          */
-        @ConfiguredOption(defaultValue = "false", experimental = true)
+        @ConfiguredOption(value = "false", experimental = true)
         public Builder virtualEnforced(boolean enforceVirtualThreads) {
             this.virtualThreadsEnforced = enforceVirtualThreads;
             return this;
@@ -461,7 +461,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param useVirtualThreads whether to use virtual threads or not, defaults to {@code false}
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "virtual-threads", defaultValue = "false", experimental = true)
+        @ConfiguredOption(key = "virtual-threads", value = "false", experimental = true)
         public Builder virtualIfAvailable(boolean useVirtualThreads) {
             this.useVirtualThreads = useVirtualThreads;
             return this;

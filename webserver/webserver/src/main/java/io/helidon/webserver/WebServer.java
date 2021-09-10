@@ -692,7 +692,7 @@ public interface WebServer {
          * @param config the additional named server socket configuration, never null
          * @return an updated builder
          */
-        @ConfiguredOption(value = "sockets", kind = ConfiguredOption.Kind.LIST)
+        @ConfiguredOption(key = "sockets", kind = ConfiguredOption.Kind.LIST)
         public Builder addSocket(SocketConfiguration config) {
             configurationBuilder.addSocket(config.name(), config);
             return this;
@@ -806,7 +806,7 @@ public interface WebServer {
          * @param workers a workers count
          * @return an updated builder
          */
-        @ConfiguredOption(value = "worker-count")
+        @ConfiguredOption(key = "worker-count")
         public Builder workersCount(int workers) {
             configurationBuilder.workersCount(workers);
             return this;
@@ -819,7 +819,7 @@ public interface WebServer {
          * @return updated builder instance
          * @see io.helidon.common.HelidonFeatures
          */
-        @ConfiguredOption(value = "features.print-details", defaultValue = "false")
+        @ConfiguredOption(key = "features.print-details", value = "false")
         public Builder printFeatureDetails(boolean shouldPrint) {
             configurationBuilder.printFeatureDetails(shouldPrint);
             return this;

@@ -597,9 +597,9 @@ public class Security {
          * @param pspFunction function to obtain an instance of the policy. This function will be only called once by security.
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "provider-policy.type", type = ProviderSelectionPolicyType.class,
-                          description = "Type of the policy.", defaultValue = "FIRST")
-        @ConfiguredOption(value = "provider-policy.class-name", description = "Provider selection policy class name, only used "
+        @ConfiguredOption(key = "provider-policy.type", type = ProviderSelectionPolicyType.class,
+                          description = "Type of the policy.", value = "FIRST")
+        @ConfiguredOption(key = "provider-policy.class-name", description = "Provider selection policy class name, only used "
                 + "when type is set to CLASS", type = Class.class)
         public Builder providerSelectionPolicy(Function<ProviderSelectionPolicy.Providers, ProviderSelectionPolicy>
                                                        pspFunction) {
@@ -613,7 +613,7 @@ public class Security {
          * @param time time instance with possible time shift, explicit timezone or overridden values
          * @return updated builder instance
          */
-        @ConfiguredOption("environment.server-time")
+        @ConfiguredOption(key = "environment.server-time")
         public Builder serverTime(SecurityTime time) {
             this.serverTime = time;
             return this;
@@ -637,7 +637,7 @@ public class Security {
          * @param tracingEnabled true to enable tracing, false to disable
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "tracing.enabled", defaultValue = "true")
+        @ConfiguredOption(key = "tracing.enabled", value = "true")
         public Builder tracingEnabled(boolean tracingEnabled) {
             this.tracingEnabled = tracingEnabled;
             return this;
@@ -660,7 +660,7 @@ public class Security {
          * @param provider Provider implementing multiple security provider interfaces
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "providers", kind = ConfiguredOption.Kind.LIST, required = true, provider = true)
+        @ConfiguredOption(key = "providers", kind = ConfiguredOption.Kind.LIST, required = true, provider = true)
         public Builder addProvider(SecurityProvider provider) {
             return addProvider(provider, provider.getClass().getSimpleName());
         }
@@ -726,7 +726,7 @@ public class Security {
          * @param provider Provider instance to use as the default for this runtime.
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "default-authentication-provider",
+        @ConfiguredOption(key = "default-authentication-provider",
                           description = "ID of the default authentication provider",
                           type = String.class,
                           provider = true)
@@ -752,7 +752,7 @@ public class Security {
          * @param provider provider instance to use as the default for this runtime.
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "default-authorization-provider",
+        @ConfiguredOption(key = "default-authorization-provider",
                           type = String.class,
                           description = "ID of the default authorization provider")
         public Builder authorizationProvider(AuthorizationProvider provider) {
@@ -1056,7 +1056,7 @@ public class Security {
          * @param enabled set to {@code false} to disable security
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "true")
+        @ConfiguredOption("true")
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
             return this;
@@ -1106,13 +1106,13 @@ public class Security {
          * @see #secret(String)
          * @see #secret(String, String)
          */
-        @ConfiguredOption(value = "secrets",
+        @ConfiguredOption(key = "secrets",
                           kind = ConfiguredOption.Kind.LIST,
                           type = Config.class,
                           description = "Configured secrets")
-        @ConfiguredOption(value = "secrets.*.name", type = String.class, description = "Name of the secret, used for lookup")
-        @ConfiguredOption(value = "secrets.*.provider", type = String.class, description = "Name of the secret provider")
-        @ConfiguredOption(value = "secrets.*.config",
+        @ConfiguredOption(key = "secrets.*.name", type = String.class, description = "Name of the secret, used for lookup")
+        @ConfiguredOption(key = "secrets.*.provider", type = String.class, description = "Name of the secret provider")
+        @ConfiguredOption(key = "secrets.*.config",
                           type = SecretsProviderConfig.class,
                           provider = true,
                           description = "Configuration specific to the secret provider")
@@ -1368,7 +1368,7 @@ public class Security {
          * @param supplier supplier of an executor service, as as {@link io.helidon.common.configurable.ThreadPoolSupplier}
          * @return updated builder
          */
-        @ConfiguredOption(value = "environment.executor-service", type = ThreadPoolSupplier.class)
+        @ConfiguredOption(key = "environment.executor-service", type = ThreadPoolSupplier.class)
         public Builder executorService(Supplier<ExecutorService> supplier) {
             this.executorService = supplier;
             return this;

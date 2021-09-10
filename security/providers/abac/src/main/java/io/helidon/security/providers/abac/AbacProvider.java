@@ -383,7 +383,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
          * @param failOnUnvalidated true for failure on unvalidated, false if it is OK to fail some of the validations
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "true")
+        @ConfiguredOption("true")
         public Builder failOnUnvalidated(boolean failOnUnvalidated) {
             this.failOnUnvalidated = failOnUnvalidated;
             return this;
@@ -395,7 +395,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
          * @param failIfNoneValidated true for failure on unvalidated, false if it is OK not to validate any attribute
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "true")
+        @ConfiguredOption("true")
         public Builder failIfNoneValidated(boolean failIfNoneValidated) {
             this.failIfNoneValidated = failIfNoneValidated;
             return this;

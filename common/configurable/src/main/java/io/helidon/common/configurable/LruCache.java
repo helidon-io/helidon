@@ -244,7 +244,7 @@ public final class LruCache<K, V> {
          * @param capacity maximal number of records in the cache before the oldest one is removed
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "10000")
+        @ConfiguredOption("10000")
         public Builder<K, V> capacity(int capacity) {
             this.capacity = capacity;
             return this;

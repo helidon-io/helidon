@@ -197,7 +197,7 @@ public final class WebServerTls {
          * @param clientAuth client authentication
          * @return this builder
          */
-        @ConfiguredOption(defaultValue = "none")
+        @ConfiguredOption("none")
         public Builder clientAuth(ClientAuthentication clientAuth) {
             this.clientAuth = Objects.requireNonNull(clientAuth);
             return this;
@@ -339,7 +339,7 @@ public final class WebServerTls {
          * @param cipherSuite allowed cipher suite
          * @return an updated builder
          */
-        @ConfiguredOption(value = "cipher-suite")
+        @ConfiguredOption(key = "cipher-suite")
         public Builder allowedCipherSuite(List<String> cipherSuite) {
             Objects.requireNonNull(cipherSuite);
             if (cipherSuite.isEmpty()) {
@@ -355,7 +355,7 @@ public final class WebServerTls {
          * @param enabled configure to {@code false} to disable SSL context (and SSL support on the server)
          * @return this builder
          */
-        @ConfiguredOption(description = "Can be used to disable TLS even if keys are configured.", defaultValue = "true")
+        @ConfiguredOption(description = "Can be used to disable TLS even if keys are configured.", value = "true")
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
             this.explicitEnabled = enabled;

@@ -288,7 +288,7 @@ public final class KeyConfig {
          * @param builder builder obtained from {@link KeyConfig#pemBuilder()}
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "pem")
+        @ConfiguredOption(key = "pem")
         public Builder updateWith(PemBuilder builder) {
             builder.updateBuilder(this);
             return this;
@@ -300,7 +300,7 @@ public final class KeyConfig {
          * @param builder builder obtained from {@link KeyConfig#keystoreBuilder()} ()}
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "keystore")
+        @ConfiguredOption(key = "keystore")
         public Builder updateWith(KeystoreBuilder builder) {
             builder.updateBuilder(this);
             return this;
@@ -349,7 +349,7 @@ public final class KeyConfig {
          *
          * @return updated builder instance
          */
-        @ConfiguredOption(type = Boolean.class, defaultValue = "false")
+        @ConfiguredOption(type = Boolean.class, value = "false")
         public KeystoreBuilder trustStore() {
             return trustStore(true);
         }
@@ -376,7 +376,7 @@ public final class KeyConfig {
          * @param keystore keystore resource, from file path, classpath, URL etc.
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "resource", required = true)
+        @ConfiguredOption(key = "resource", required = true)
         public KeystoreBuilder keystore(Resource keystore) {
             this.keystoreStream.stream(keystore);
             return this;
@@ -389,7 +389,7 @@ public final class KeyConfig {
          * @param keystoreType keystore type to load the key
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "type", defaultValue = "PKCS12")
+        @ConfiguredOption(key = "type", value = "PKCS12")
         public KeystoreBuilder keystoreType(String keystoreType) {
             this.keystoreType = keystoreType;
             return this;
@@ -413,7 +413,7 @@ public final class KeyConfig {
          * @param keystorePassword keystore password to use, calls {@link #keystorePassphrase(char[])}
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "passphrase")
+        @ConfiguredOption(key = "passphrase")
         public KeystoreBuilder keystorePassphrase(String keystorePassword) {
             return keystorePassphrase(keystorePassword.toCharArray());
         }
@@ -424,7 +424,7 @@ public final class KeyConfig {
          * @param keyAlias alias of the key in the keystore
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "key.alias", defaultValue = "1")
+        @ConfiguredOption(key = "key.alias", value = "1")
         public KeystoreBuilder keyAlias(String keyAlias) {
             this.keyAlias = keyAlias;
             return this;
@@ -437,7 +437,7 @@ public final class KeyConfig {
          * @param alias alias under which the certificate is stored in the keystore
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "cert.alias")
+        @ConfiguredOption(key = "cert.alias")
         public KeystoreBuilder certAlias(String alias) {
             this.certAlias = alias;
             return this;
@@ -449,7 +449,7 @@ public final class KeyConfig {
          * @param alias alias of certificate chain in the keystore
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "cert-chain.alias")
+        @ConfiguredOption(key = "cert-chain.alias")
         public KeystoreBuilder certChainAlias(String alias) {
             this.certChainAlias = alias;
             return this;
@@ -477,7 +477,7 @@ public final class KeyConfig {
          * @param privateKeyPassphrase pass-phrase of the key
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "key.passphrase")
+        @ConfiguredOption(key = "key.passphrase")
         public KeystoreBuilder keyPassphrase(String privateKeyPassphrase) {
             return keyPassphrase(privateKeyPassphrase.toCharArray());
         }
@@ -662,7 +662,7 @@ public final class KeyConfig {
          * @param resource key resource (file, classpath, URL etc.)
          * @return updated builder instance
          */
-        @ConfiguredOption("key.resource")
+        @ConfiguredOption(key = "key.resource")
         public PemBuilder key(Resource resource) {
             privateKeyStream.stream(resource);
             return this;
@@ -699,7 +699,7 @@ public final class KeyConfig {
          * @param passphrase passphrase used to encrypt the private key
          * @return updated builder instance
          */
-        @ConfiguredOption("key.passphrase")
+        @ConfiguredOption(key = "key.passphrase")
         public PemBuilder keyPassphrase(String passphrase) {
             return keyPassphrase(passphrase.toCharArray());
         }
@@ -710,7 +710,7 @@ public final class KeyConfig {
          * @param resource resource (e.g. classpath, file path, URL etc.)
          * @return updated builder instance
          */
-        @ConfiguredOption("cert-chain.resource")
+        @ConfiguredOption(key = "cert-chain.resource")
         public PemBuilder certChain(Resource resource) {
             certChainStream.stream(resource);
             return this;

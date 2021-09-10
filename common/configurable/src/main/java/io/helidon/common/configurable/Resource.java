@@ -106,7 +106,7 @@ public interface Resource {
      * @param bytes       raw bytes of this resource
      * @return resource instance
      */
-    @ConfiguredOption(value = "content", description = "Base64 encoded content of the resource")
+    @ConfiguredOption(key = "content", description = "Base64 encoded content of the resource")
     static Resource create(String description, byte[] bytes) {
         Objects.requireNonNull(bytes, "Resource bytes must not be null");
         return new ResourceImpl(Source.BINARY_CONTENT, description, bytes);
@@ -155,16 +155,16 @@ public interface Resource {
      * @return a resource ready to load from one of the locations
      * @throws io.helidon.config.ConfigException in case this config does not define a resource configuration
      */
-    @ConfiguredOption(value = "resource-path", description = "Classpath location of the resource.")
-    @ConfiguredOption(value = "path", description = "File system path to the resource.")
-    @ConfiguredOption(value = "content-plain", description = "Plain text content of the resource")
-    @ConfiguredOption(value = "uri", type = URI.class, description = "URI of the resource.")
-    @ConfiguredOption(value = "proxy-host", description = "Host of the proxy when using url.")
-    @ConfiguredOption(value = "proxy-port", type = Integer.class, description = "Port of the proxy when using url.")
-    @ConfiguredOption(value = "use-proxy",
+    @ConfiguredOption(key = "resource-path", description = "Classpath location of the resource.")
+    @ConfiguredOption(key = "path", description = "File system path to the resource.")
+    @ConfiguredOption(key = "content-plain", description = "Plain text content of the resource")
+    @ConfiguredOption(key = "uri", type = URI.class, description = "URI of the resource.")
+    @ConfiguredOption(key = "proxy-host", description = "Host of the proxy when using url.")
+    @ConfiguredOption(key = "proxy-port", type = Integer.class, description = "Port of the proxy when using url.")
+    @ConfiguredOption(key = "use-proxy",
                       type = Boolean.class,
                       description = "Whether to use proxy. Only used if proxy-host is defined as well.",
-                      defaultValue = "true")
+                      value = "true")
     static Resource create(Config resourceConfig) {
         return ResourceUtil.fromConfigPath(resourceConfig.get("path"))
                 .or(() -> ResourceUtil.fromConfigResourcePath(resourceConfig.get("resource-path")))

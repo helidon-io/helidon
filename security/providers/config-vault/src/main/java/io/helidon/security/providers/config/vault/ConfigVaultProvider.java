@@ -207,7 +207,7 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
          * @param value the secret value
          * @return a new secret configuration
          */
-        @ConfiguredOption(value = "value", description = "Value of the secret, can be a reference to another configuration key"
+        @ConfiguredOption(key = "value", description = "Value of the secret, can be a reference to another configuration key"
                 + ", such as ${app.secret}")
         public static SecretConfig create(String value) {
             return new SecretConfig(() -> Single.just(Optional.of(value)));

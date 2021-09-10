@@ -157,7 +157,7 @@ public class SecurityTime {
          * @param seconds number of seconds by which we want to shift the system time, may be negative
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "0")
+        @ConfiguredOption("0")
         public Builder shiftBySeconds(long seconds) {
             this.shiftBySeconds = seconds;
             return this;
@@ -170,13 +170,13 @@ public class SecurityTime {
          * @param value value to set on the field, see javadoc of each field to see possible values
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "year", type = Long.class)
-        @ConfiguredOption(value = "month", type = Long.class)
-        @ConfiguredOption(value = "day-of-month", type = Long.class)
-        @ConfiguredOption(value = "hour-of-day", type = Long.class)
-        @ConfiguredOption(value = "minute", type = Long.class)
-        @ConfiguredOption(value = "second", type = Long.class)
-        @ConfiguredOption(value = "millisecond", type = Long.class)
+        @ConfiguredOption(key = "year", type = Long.class)
+        @ConfiguredOption(key = "month", type = Long.class)
+        @ConfiguredOption(key = "day-of-month", type = Long.class)
+        @ConfiguredOption(key = "hour-of-day", type = Long.class)
+        @ConfiguredOption(key = "minute", type = Long.class)
+        @ConfiguredOption(key = "second", type = Long.class)
+        @ConfiguredOption(key = "millisecond", type = Long.class)
         public Builder value(ChronoField field, long value) {
             this.values.add(new ChronoValues(field, value));
             return this;

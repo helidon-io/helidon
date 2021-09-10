@@ -285,8 +285,8 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param password password to use
      * @return updated builder instance
      */
-    @ConfiguredOption(value = "username", type = String.class)
-    @ConfiguredOption(value = "password", type = String.class)
+    @ConfiguredOption(key = "username", type = String.class)
+    @ConfiguredOption(key = "password", type = String.class)
     public JaegerTracerBuilder basicAuth(String username, String password) {
         username(username);
         password(password);
@@ -299,7 +299,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param propagation propagation value
      * @return updated builder instance
      */
-    @ConfiguredOption(value = "propagation", kind = ConfiguredOption.Kind.LIST, type = Configuration.Propagation.class)
+    @ConfiguredOption(key = "propagation", kind = ConfiguredOption.Kind.LIST, type = Configuration.Propagation.class)
     public JaegerTracerBuilder addPropagation(Configuration.Propagation propagation) {
         this.propagations.add(propagation);
 

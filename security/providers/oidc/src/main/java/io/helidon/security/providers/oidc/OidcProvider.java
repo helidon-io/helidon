@@ -706,7 +706,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
          * @param propagate whether to propagate identity (true) or not (false)
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "false")
+        @ConfiguredOption("false")
         public Builder propagate(boolean propagate) {
             this.propagate = propagate;
             return this;
@@ -746,7 +746,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
          * @param optional whether authentication is optional (true) or required (false)
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "false")
+        @ConfiguredOption("false")
         public Builder optional(boolean optional) {
             this.optional = optional;
             return this;
@@ -759,7 +759,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
          * @param useJwtGroups whether to use {@code groups} claim from JWT to retrieve roles
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "true")
+        @ConfiguredOption("true")
         public Builder useJwtGroups(boolean useJwtGroups) {
             this.useJwtGroups = useJwtGroups;
             return this;

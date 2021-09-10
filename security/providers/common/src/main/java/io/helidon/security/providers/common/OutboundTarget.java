@@ -334,7 +334,7 @@ public final class OutboundTarget {
          * @param host name or IP of host, with possible "*" asterisk character to match any sequence
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "hosts", kind = ConfiguredOption.Kind.LIST)
+        @ConfiguredOption(key = "hosts", kind = ConfiguredOption.Kind.LIST)
         public Builder addHost(String host) {
             this.hosts.add(host);
             return this;
@@ -353,7 +353,7 @@ public final class OutboundTarget {
          * @param transport that is supported
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "transport", kind = ConfiguredOption.Kind.LIST)
+        @ConfiguredOption(key = "transport", kind = ConfiguredOption.Kind.LIST)
         public Builder addTransport(String transport) {
             this.transports.add(transport);
             return this;
@@ -366,7 +366,7 @@ public final class OutboundTarget {
          * @param path supported path (regular expression supported)
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "paths", kind = ConfiguredOption.Kind.LIST)
+        @ConfiguredOption(key = "paths", kind = ConfiguredOption.Kind.LIST)
         public Builder addPath(String path) {
             this.paths.add(path);
             return this;
@@ -379,7 +379,7 @@ public final class OutboundTarget {
          * @param method supported method (exact match ignoring case)
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "methods", kind = ConfiguredOption.Kind.LIST)
+        @ConfiguredOption(key = "methods", kind = ConfiguredOption.Kind.LIST)
         public Builder addMethod(String method) {
             this.methods.add(method.toUpperCase());
             return this;

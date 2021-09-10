@@ -254,7 +254,7 @@ public interface SocketConfiguration {
          * @param port the server port of the server socket
          * @return this builder
          */
-        @ConfiguredOption(defaultValue = "0")
+        @ConfiguredOption("0")
         B port(int port);
 
         /**
@@ -305,7 +305,7 @@ public interface SocketConfiguration {
          * @param backlog a maximum length of the queue of incoming connections
          * @return this builder
          */
-        @ConfiguredOption(defaultValue = "1024")
+        @ConfiguredOption("1024")
         B backlog(int backlog);
 
         /**
@@ -315,7 +315,7 @@ public interface SocketConfiguration {
          * @param unit time unit to use with the configured amount
          * @return this builder
          */
-        @ConfiguredOption(value = "timeout-millis", type = Long.class, defaultValue = "0",
+        @ConfiguredOption(key = "timeout-millis", type = Long.class, value = "0",
                           description = "Socket timeout in milliseconds")
         B timeout(long amount, TimeUnit unit);
 
@@ -366,7 +366,7 @@ public interface SocketConfiguration {
          * @param size maximal number of bytes of combined header values
          * @return this builder
          */
-        @ConfiguredOption(defaultValue = "8192")
+        @ConfiguredOption("8192")
         B maxHeaderSize(int size);
 
         /**
@@ -377,7 +377,7 @@ public interface SocketConfiguration {
          * @param length maximal number of characters
          * @return this builder
          */
-        @ConfiguredOption(defaultValue = "4096")
+        @ConfiguredOption("4096")
         B maxInitialLineLength(int length);
 
         /**
@@ -389,7 +389,7 @@ public interface SocketConfiguration {
          * @param value compression flag
          * @return this builder
          */
-        @ConfiguredOption(defaultValue = "false")
+        @ConfiguredOption("false")
         B enableCompression(boolean value);
 
         /**

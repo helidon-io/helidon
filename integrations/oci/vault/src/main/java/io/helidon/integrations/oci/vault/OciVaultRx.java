@@ -263,7 +263,7 @@ public interface OciVaultRx {
             return this;
         }
 
-        @ConfiguredOption("vault.secret-api-version")
+        @ConfiguredOption(key = "vault.secret-api-version")
         public Builder secretApiVersion(String apiVersion) {
             this.secretApiVersion = apiVersion;
             return this;
@@ -284,14 +284,14 @@ public interface OciVaultRx {
             return this;
         }
 
-        @ConfiguredOption(value = "scheme", type = String.class, defaultValue = "https", description = "Scheme to use to "
+        @ConfiguredOption(key = "scheme", type = String.class, value = "https", description = "Scheme to use to "
                 + "connect to cloud")
-        @ConfiguredOption(value = "domain", type = String.class, defaultValue = "oraclecloud.com", description = "Cloud domain")
-        @ConfiguredOption(value = "config.instance-principal.enabled", type = Boolean.class, defaultValue = "false",
+        @ConfiguredOption(key = "domain", type = String.class, value = "oraclecloud.com", description = "Cloud domain")
+        @ConfiguredOption(key = "config.instance-principal.enabled", type = Boolean.class, value = "false",
                           description = "Instance principal can be used by VMs provided by Oracle cloud")
-        @ConfiguredOption(value = "config.resource-principal.enabled", type = Boolean.class, defaultValue = "false",
+        @ConfiguredOption(key = "config.resource-principal.enabled", type = Boolean.class, value = "false",
                           description = "Resource principal can be used in fn (functions)")
-        @ConfiguredOption(value = "config.oci-profile", type = OciConfigProfile.class, description = "OCI profile is either "
+        @ConfiguredOption(key = "config.oci-profile", type = OciConfigProfile.class, description = "OCI profile is either "
                 + "read automatically from the default location, or can be configured explicitly")
         public Builder restApi(OciRestApi restApi) {
             this.restApi = restApi;

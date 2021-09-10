@@ -380,7 +380,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
          * @param subjectType type of principal
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "principal-type", defaultValue = "USER")
+        @ConfiguredOption(key = "principal-type", value = "USER")
         public Builder subjectType(SubjectType subjectType) {
             this.subjectType = subjectType;
 
@@ -412,7 +412,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
          * @param store User store to use
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "users", type = ConfigUserStore.ConfigUser.class, kind = ConfiguredOption.Kind.LIST)
+        @ConfiguredOption(key = "users", type = ConfigUserStore.ConfigUser.class, kind = ConfiguredOption.Kind.LIST)
         public Builder userStore(SecureUserStore store) {
             userStores.clear();
             userStores.add(store);
@@ -425,7 +425,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
          * @param realm security realm name to send to browser (or any other client) when unauthenticated
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "helidon")
+        @ConfiguredOption("helidon")
         public Builder realm(String realm) {
             this.realm = realm;
             return this;
@@ -439,7 +439,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
          * @param optional whether authentication is optional (true) or required (false)
          * @return updated builder instance
          */
-        @ConfiguredOption(defaultValue = "false")
+        @ConfiguredOption("false")
         public Builder optional(boolean optional) {
             this.optional = optional;
             return this;

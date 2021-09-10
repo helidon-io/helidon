@@ -620,7 +620,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
              *
              * @see io.helidon.integrations.oci.vault.GetSecretBundle.Request#secretId(String)
              */
-            @ConfiguredOption(value = "ocid", required = true)
+            @ConfiguredOption(key = "ocid", required = true)
             public Builder secretId(String secretId) {
                 this.secretId = secretId;
                 return this;

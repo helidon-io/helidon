@@ -236,7 +236,7 @@ public class OciConfigProfile implements OciConfigProvider {
          * @param userOcid OCID of the user
          * @return updated builder
          */
-        @ConfiguredOption("user")
+        @ConfiguredOption(key = "user")
         public Builder userOcid(String userOcid) {
             this.userOcid = userOcid;
             this.fullConfig.put("user", userOcid);
@@ -250,7 +250,7 @@ public class OciConfigProfile implements OciConfigProvider {
          * @param tenancyOcid OCID of the tenancy
          * @return updated builder
          */
-        @ConfiguredOption("tenancy")
+        @ConfiguredOption(key = "tenancy")
         public Builder tenancyOcid(String tenancyOcid) {
             this.tenancyOcid = tenancyOcid;
             this.fullConfig.put("tenancy", tenancyOcid);
@@ -264,7 +264,7 @@ public class OciConfigProfile implements OciConfigProvider {
          * @param keyFingerprint key fingerprint
          * @return updated builder
          */
-        @ConfiguredOption("fingerprint")
+        @ConfiguredOption(key = "fingerprint")
         public Builder keyFingerprint(String keyFingerprint) {
             this.keyFingerprint = keyFingerprint;
             this.fullConfig.put("fingerprint", keyFingerprint);
@@ -292,7 +292,7 @@ public class OciConfigProfile implements OciConfigProvider {
          * @param privateKey private key
          * @return updated builder
          */
-        @ConfiguredOption("key-pem")
+        @ConfiguredOption(key = "key-pem")
         public Builder privateKey(String privateKey) {
             this.privateKey = privateKey;
             this.fullConfig.put("key-pem", privateKey);

@@ -208,7 +208,7 @@ public final class OutboundConfig {
          * @param config target to add
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "outbound",
+        @ConfiguredOption(key = "outbound",
                           kind = ConfiguredOption.Kind.LIST)
         public Builder addTarget(OutboundTarget config) {
             if (names.contains(config.name())) {
