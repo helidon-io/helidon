@@ -100,7 +100,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * @param name   header name
      * @param values header values
      * @return this instance of {@link ServerResponse}
-     * @throws NullPointerException if the specified key is null.
+     * @throws NullPointerException if the specified name is null.
      * @see #headers()
      * @see Parameters#add(String, String...)
      * @see Http.Header header names constants
@@ -116,7 +116,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * @param name   header name
      * @param values header values
      * @return this instance of {@link ServerResponse}
-     * @throws NullPointerException if the specified key is null.
+     * @throws NullPointerException if the specified name is null.
      * @see #headers()
      * @see Parameters#add(String, Iterable)
      * @see Http.Header header names constants
@@ -131,7 +131,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      *
      * @param parameters to copy.
      * @return this instance of {@link ServerResponse}
-     * @throws NullPointerException          if the specified {@code parameters} are null.
+     * @throws NullPointerException if the specified {@code parameters} are null.
      * @see #headers()
      * @see Parameters#addAll(Parameters)
      */
