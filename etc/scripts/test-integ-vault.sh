@@ -28,8 +28,11 @@ mvn ${MAVEN_ARGS} --version
 
 # Workaround
 # For some reason the processor was built at the wrong time
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/config/metadata-processor/pom.xml \
-    install -e \
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
+    install \
+    -pl :helidon-config-metadata-processor \
+    -am \
+    -e \
     -DskipTests \
     -Dmaven.test.skip=true \
     -Ppipeline
