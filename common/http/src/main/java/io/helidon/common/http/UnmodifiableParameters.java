@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,22 +83,22 @@ class UnmodifiableParameters implements Parameters {
     }
 
     @Override
-    public void putAll(Parameters parameters) {
+    public UnmodifiableParameters putAll(Parameters parameters) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void add(String key, String... values) {
+    public UnmodifiableParameters add(String key, String... values) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void add(String key, Iterable<String> values) {
+    public UnmodifiableParameters add(String key, Iterable<String> values) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void addAll(Parameters parameters) {
+    public UnmodifiableParameters addAll(Parameters parameters) {
         throw new UnsupportedOperationException();
     }
 

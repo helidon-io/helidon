@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -280,9 +280,9 @@ public class HashParameters implements Parameters {
     }
 
     @Override
-    public void putAll(Parameters parameters) {
+    public HashParameters putAll(Parameters parameters) {
         if (parameters == null) {
-            return;
+            return this;
         }
 
         for (Map.Entry<String, List<String>> entry : parameters.toMap().entrySet()) {
@@ -291,14 +291,15 @@ public class HashParameters implements Parameters {
                 content.put(entry.getKey(), Collections.unmodifiableList(values));
             }
         }
+        return this;
     }
 
     @Override
-    public void add(String key, String... values) {
+    public HashParameters add(String key, String... values) {
         Objects.requireNonNull(key, "Parameter 'key' is null!");
         if (values == null || values.length == 0) {
             // do not necessarily create an entry in the map, simply immediately return
-            return;
+            return this;
         }
 
         content.compute(key, (s, list) -> {
@@ -311,15 +312,16 @@ public class HashParameters implements Parameters {
                 return Collections.unmodifiableList(newValues);
             }
         });
+        return this;
     }
 
     @Override
-    public void add(String key, Iterable<String> values) {
+    public HashParameters add(String key, Iterable<String> values) {
         Objects.requireNonNull(key, "Parameter 'key' is null!");
         List<String> vls = internalListCopy(values);
         if (vls == null) {
             // do not necessarily create an entry in the map, simply immediately return
-            return;
+            return this;
         }
 
         content.compute(key, (s, list) -> {
@@ -332,17 +334,19 @@ public class HashParameters implements Parameters {
                 return Collections.unmodifiableList(newValues);
             }
         });
+        return this;
     }
 
     @Override
-    public void addAll(Parameters parameters) {
+    public HashParameters addAll(Parameters parameters) {
         if (parameters == null) {
-            return;
+            return this;
         }
         Map<String, List<String>> map = parameters.toMap();
         for (Map.Entry<String, List<String>> entry : map.entrySet()) {
             add(entry.getKey(), entry.getValue());
         }
+        return this;
     }
 
     @Override

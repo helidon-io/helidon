@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Optional;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Parameters;
 
 /**
  * Headers that can be modified (until request is sent) for
@@ -198,4 +199,15 @@ public interface WebClientRequestHeaders extends Headers {
      */
     void clear();
 
+    @Override
+    WebClientRequestHeaders putAll(Parameters parameters);
+
+    @Override
+    WebClientRequestHeaders add(String key, String... values);
+
+    @Override
+    WebClientRequestHeaders add(String key, Iterable<String> values);
+
+    @Override
+    WebClientRequestHeaders addAll(Parameters parameters);
 }
