@@ -167,12 +167,8 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
         requestContext.setProperty(SPAN_FINISHED_PROPERTY, true);
         span.finish();
 
-        // using the helidon context is not supported here, as we may be executing in a completion stage future returned
+        // using the helidon context is not supported here, as we may be executing in a completion stage returned
         // from a third party component
-        // Context context = Contexts.context().orElseThrow(() ->
-        //      new IllegalStateException("Context must be available in Jersey"));
-        // context.get(Scope.class).ifPresent(Scope::close);
-
         Scope scope = (Scope) requestContext.getProperty(SPAN_SCOPE_PROPERTY);
         if (scope != null) {
             scope.close();
