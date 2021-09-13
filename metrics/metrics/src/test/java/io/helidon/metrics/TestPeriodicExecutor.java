@@ -16,17 +16,31 @@
 package io.helidon.metrics;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 class TestPeriodicExecutor {
 
     private static final int SLEEP_TIME_MS = 1500;
+    private static final int SLEEP_TIME_NO_DATA_MS = 100;
 
     private static final int FAST_INTERVAL = 250;
     private static final int SLOW_INTERVAL = 400;
@@ -35,6 +49,8 @@ class TestPeriodicExecutor {
 
     private static final double MIN_FAST_COUNT = 1500 / FAST_INTERVAL * SLOWDOWN_FACTOR;
     private static final double MIN_SLOW_COUNT = 1500 / SLOW_INTERVAL * SLOWDOWN_FACTOR;
+
+    private static final Logger PERIODIC_EXECUTOR_LOGGER = Logger.getLogger(PeriodicExecutor.class.getName());
 
     @Test
     void testWithNoDeferrals() throws InterruptedException {
@@ -105,6 +121,89 @@ class TestPeriodicExecutor {
             if (exec.executorState() == PeriodicExecutor.State.STARTED) {
                 exec.stopExecutor();
             }
+        }
+    }
+
+    @Test
+    void testWarningOnStopWhenStopped() throws InterruptedException {
+
+        MyHandler handler = new MyHandler();
+        PERIODIC_EXECUTOR_LOGGER.addHandler(handler);
+        try {
+            PeriodicExecutor executor = PeriodicExecutor.create();
+            executor.stopExecutor();
+            Thread.sleep(SLEEP_TIME_NO_DATA_MS);
+            handler.clear();
+
+            executor.stopExecutor();
+            List<LogRecord> logRecords = handler.logRecords();
+            assertThat("Expected log records", logRecords.size(), is(1));
+            assertThat("Log record level", logRecords.get(0)
+                    .getLevel(), is(equalTo(Level.WARNING)));
+            assertThat("Log record content", logRecords.get(0)
+                            .getMessage(),
+                    containsString("Unexpected attempt to stop"));
+        } finally {
+            PERIODIC_EXECUTOR_LOGGER.removeHandler(handler);
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(names = { "DORMANT", "STARTED"})
+    void testFineLoggingOnExpectedStop(PeriodicExecutor.State testState) throws InterruptedException {
+        MyHandler handler = new MyHandler();
+        Level originalLevel = PERIODIC_EXECUTOR_LOGGER.getLevel();
+
+        PERIODIC_EXECUTOR_LOGGER.addHandler(handler);
+        try {
+            PERIODIC_EXECUTOR_LOGGER.setLevel(Level.FINE);
+            PeriodicExecutor executor = PeriodicExecutor.create();
+
+            if (testState == PeriodicExecutor.State.STARTED) {
+                executor.startExecutor();
+                Thread.sleep(SLEEP_TIME_NO_DATA_MS);
+            }
+
+            handler.clear();
+
+            executor.stopExecutor();
+            List<LogRecord> logRecords = handler.logRecords();
+            assertThat("Expected log records", logRecords.size(), is(1));
+            assertThat("Log record level", logRecords.get(0)
+                    .getLevel(), is(equalTo(Level.FINE)));
+            assertThat("Log record content", logRecords.get(0)
+                            .getMessage(),
+                    containsString("Received stop request in state"));
+            assertThat("Log record parameter (current state)", logRecords.get(0).getParameters(),
+                    arrayContaining(testState));
+        } finally {
+            PERIODIC_EXECUTOR_LOGGER.removeHandler(handler);
+            PERIODIC_EXECUTOR_LOGGER.setLevel(originalLevel);
+        }
+    }
+
+    private static class MyHandler extends Handler {
+
+        private List<LogRecord> logRecords = new ArrayList<>();
+
+        @Override
+        public void publish(LogRecord record) {
+            logRecords.add(record);
+        }
+
+        @Override
+        public void flush() {
+        }
+
+        @Override
+        public void close() throws SecurityException {
+        }
+
+        void clear() {
+            logRecords.clear();
+        }
+        List<LogRecord> logRecords() {
+            return logRecords;
         }
     }
 }
