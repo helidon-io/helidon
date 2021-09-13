@@ -24,16 +24,6 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
-if [ -z "${GRAALVM_HOME}" ]; then
-    echo "ERROR: GRAALVM_HOME is not set";
-    exit 1
-fi
-
-if [ ! -x "${GRAALVM_HOME}/bin/native-image" ]; then
-    echo "ERROR: ${GRAALVM_HOME}/bin/native-image does not exist or is not executable";
-    exit 1
-fi
-
 mvn ${MAVEN_ARGS} --version
 
 # Temporary workaround until job stages will share maven repository
@@ -49,12 +39,22 @@ cd ${WS_DIR}/tests/integration/native-image
 # Prime build all native-image tests
 mvn ${MAVEN_ARGS} clean install 
 
-# Build native images
-readonly native_image_tests="se-1 mp-1 mp-3" # mp-2  - mp-2 fails
+# Build jlink images
+# mp-2 fails because of https://github.com/oracle/helidon-build-tools/issues/478
+readonly native_image_tests="se-1 mp-1 mp-3"
 for native_test in ${native_image_tests}; do
     cd ${WS_DIR}/tests/integration/native-image/${native_test}
-    mvn ${MAVEN_ARGS} clean package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false -Djlink.image.testImage=false
+    mvn ${MAVEN_ARGS} package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false -Djlink.image.testImage=false
 done
+
+# Run tests with classpath and then module path
+
+# Run SE-1 (does not contain module-info.java)
+cd ${WS_DIR}/tests/integration/native-image/se-1
+jri_dir=${WS_DIR}/tests/integration/native-image/se-1/target/helidon-tests-native-image-se-1-jri
+
+# Classpath
+${jri_dir}/bin/start --test
 
 # Run MP-1
 cd ${WS_DIR}/tests/integration/native-image/mp-1

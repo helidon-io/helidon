@@ -24,19 +24,7 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
-if [ -z "${GRAALVM_HOME}" ]; then
-    echo "ERROR: GRAALVM_HOME is not set";
-    exit 1
-fi
-
-if [ ! -x "${GRAALVM_HOME}/bin/native-image" ]; then
-    echo "ERROR: ${GRAALVM_HOME}/bin/native-image does not exist or is not executable";
-    exit 1
-fi
-
 mvn ${MAVEN_ARGS} --version
-echo "GRAALVM_HOME=${GRAALVM_HOME}";
-${GRAALVM_HOME}/bin/native-image --version;
 
 # Temporary workaround until job stages will share maven repository
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
@@ -51,14 +39,34 @@ cd ${WS_DIR}/tests/integration/native-image
 # Prime build all native-image tests
 mvn ${MAVEN_ARGS} clean install 
 
-# Build native images
-readonly native_image_tests="se-1 mp-1 mp-2 mp-3"
-for native_test in ${native_image_tests}; do
-    cd ${WS_DIR}/tests/integration/native-image/${native_test}
-    mvn ${MAVEN_ARGS} clean package -Pnative-image 
-done
+# Run tests with classpath and then module path
 
-# Run this one because it has no pre-reqs and self-tests
-# Uses relative path to read configuration
+#
+# Run SE-1 (does not contain module-info.java)
+#
+cd ${WS_DIR}/tests/integration/native-image/se-1
+# Classpath
+java -Dexit.on.started=! -jar target/helidon-tests-native-image-se-1.jar
+
+#
+# Run MP-1
+#
 cd ${WS_DIR}/tests/integration/native-image/mp-1
-${WS_DIR}/tests/integration/native-image/mp-1/target/helidon-tests-native-image-mp-1
+# Classpath
+java -jar target/helidon-tests-native-image-mp-1.jar
+# Module Path
+java --module-path target/helidon-tests-native-image-mp-1.jar:target/libs \
+  --module helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main
+
+#
+# Run MP-3 (just start and stop)
+#
+cd ${WS_DIR}/tests/integration/native-image/mp-3
+# Classpath
+java -Dexit.on.started=! -jar target/helidon-tests-native-image-mp-3.jar
+
+# Module Path
+java -Dexit.on.started=! \
+  --module-path target/helidon-tests-native-image-mp-3.jar:target/libs \
+  --add-modules helidon.tests.nimage.quickstartmp \
+  --module io.helidon.microprofile.cdi/io.helidon.microprofile.cdi.Main

@@ -81,20 +81,12 @@ pipeline {
                 sh 'etc/scripts/test-packaging-jlink.sh'
               }
             }
-            stage('test-packaging-classpath'){
+            stage('test-packaging-jar'){
               agent {
                 label "linux"
               }
               steps {
-                sh 'etc/scripts/test-packaging-classpath.sh'
-              }
-            }
-            stage('test-packaging-modulepath'){
-              agent {
-                label "linux"
-              }
-              steps {
-                sh 'etc/scripts/test-packaging-modulepath.sh'
+                sh 'etc/scripts/test-packaging-jar.sh'
               }
             }
           }
