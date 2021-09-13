@@ -36,7 +36,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 == Configuring Tracing with Helidon MP
 Tracing support is implemented for both for Helidon MP Server and for Jersey client.
-In addition you need to add one of the tracer implementations:
+In addition, you need to add one of the tracer implementations:
 
 - <<tracing/02_zipkin.adoc,Zipkin>>
 - <<tracing/03_jaeger.adoc,Jaeger>>
@@ -54,6 +54,19 @@ tracing.service=event-service
 ----
 
 include::../../shared/tracing/common-config.adoc[]
+
+To disable Helidon tracing for web server and security:
+[source,properties]
+----
+tracing.components.web-server.enabled=false
+tracing.components.security.enabled=false
+----
+
+To disables MP Tracing as by specification:
+[source,properties]
+----
+mp.opentracing.server.skip-pattern=.*
+----
 
 == Creating custom spans
 
@@ -94,3 +107,57 @@ Response response = client.target(serviceEndpoint)
     .get();
 ----
 
+include::../../shared/tracing/common-spans.adoc[]
+
+==== Configuration using MP Config
+
+Tracing configuration can be defined in `microprofile-config.properties` file.
+
+[source, properties]
+.Tracing configuration
+----
+tracing.components.web-server.spans.0.name="HTTP Request"
+tracing.components.web-server.spans.0.logs.0.name="content-write"
+tracing.components.web-server.spans.0.logs.0.enabled=false
+----
+
+==== Path based configuration in Helidon Web Server
+
+For Web Server we have a path based support for configuring tracing, in addition
+to the configuration described above.
+
+Configuration of path can use any path string supported by the
+Web Server. The configuration itself has the same possibilities
+as traced configuration described above. The path specific configuration
+will be merged with global configuration (path is the "newer" configuration, global is the "older")
+
+[source,properties]
+.Configuration properties
+----
+tracing.paths.0.path="/favicon.ico"
+tracing.paths.0.enabled=false
+tracing.paths.1.path="/metrics"
+tracing.paths.1.enabled=false
+tracing.paths.2.path="/health"
+tracing.paths.2.enabled=false
+----
+
+==== Renaming top level span using request properties
+
+To have a nicer overview in search pane of a tracer, you can customize the top-level span name using configuration.
+
+Example:
+[source,properties]
+.Configuration properties
+----
+tracing.components.web-server.spans.0.name="HTTP Request"
+tracing.components.web-server.spans.0.new-name: "HTTP %1$s %2$s"
+----
+
+This is supported ONLY for the span named "HTTP Request" on component "web-server".
+
+Parameters provided:
+
+1. Method - HTTP method
+2. Path - path of the request (such as '/greet')
+3. Query - query of the request (may be null)
