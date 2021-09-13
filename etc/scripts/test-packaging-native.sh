@@ -52,7 +52,8 @@ cd ${WS_DIR}/tests/integration/native-image
 mvn ${MAVEN_ARGS} clean install 
 
 # Build native images
-readonly native_image_tests="se-1 mp-1 mp-2 mp-3"
+# mp-2 is too big, waiting for more memory
+readonly native_image_tests="se-1 mp-1 mp-3"
 for native_test in ${native_image_tests}; do
     cd ${WS_DIR}/tests/integration/native-image/${native_test}
     mvn ${MAVEN_ARGS} clean package -Pnative-image 
