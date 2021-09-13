@@ -41,6 +41,7 @@ ${GRAALVM_HOME}/bin/native-image --version;
 # Temporary workaround until job stages will share maven repository
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     install -e \
+    -Dmaven.test.skip=true \
     -DskipTests \
     -Ppipeline
 
@@ -59,4 +60,3 @@ done
 
 # Run this one because it has no pre-reqs and self-tests
 ${WS_DIR}/tests/integration/native-image/mp-1/target/helidon-tests-native-image-mp-1
-

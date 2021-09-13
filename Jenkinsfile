@@ -65,12 +65,36 @@ pipeline {
                 junit testResults: '**/target/surefire-reports/*.xml'
               }
             }
-            stage('test-native-image'){
+            stage('test-packaging-native'){
               agent {
                 label "linux"
               }
               steps {
-                sh 'etc/scripts/test-native-image.sh'
+                sh 'etc/scripts/test-packaging-native.sh'
+              }
+            }
+            stage('test-packaging-jlink'){
+              agent {
+                label "linux"
+              }
+              steps {
+                sh 'etc/scripts/test-packaging-jlink.sh'
+              }
+            }
+            stage('test-packaging-classpath'){
+              agent {
+                label "linux"
+              }
+              steps {
+                sh 'etc/scripts/test-packaging-classpath.sh'
+              }
+            }
+            stage('test-packaging-modulepath'){
+              agent {
+                label "linux"
+              }
+              steps {
+                sh 'etc/scripts/test-packaging-modulepath.sh'
               }
             }
           }

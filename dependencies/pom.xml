@@ -73,7 +73,7 @@
         <version.lib.jandex>2.3.1.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
-        <version.lib.jaxb-impl>2.3.2</version.lib.jaxb-impl>
+        <version.lib.jaxb-impl>2.3.5</version.lib.jaxb-impl>
         <version.lib.jaxrs-api>2.1.6</version.lib.jaxrs-api>
         <version.lib.jboss.classfilewriter>1.2.5.Final</version.lib.jboss.classfilewriter>
         <version.lib.jboss.logging>3.2.1.Final</version.lib.jboss.logging>
