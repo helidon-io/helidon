@@ -69,18 +69,6 @@ public class ServerImpl implements Server {
                 .bindAddress(listenHost);
 
         serverExtension.listenHost(this.host);
-
-        STARTUP_LOGGER.finest("Builders ready");
-
-        STARTUP_LOGGER.finest("Static classpath");
-
-        STARTUP_LOGGER.finest("Static path");
-
-        STARTUP_LOGGER.finest("Registered jersey application(s)");
-
-        STARTUP_LOGGER.finest("Registered WebServer services");
-
-        STARTUP_LOGGER.finest("Server created");
     }
 
     @Override
