@@ -512,6 +512,11 @@
             </dependency>
             <dependency>
                 <groupId>org.glassfish.tyrus</groupId>
+                <artifactId>tyrus-container-grizzly-client</artifactId>
+                <version>${version.lib.tyrus}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.tyrus</groupId>
                 <artifactId>tyrus-server</artifactId>
                 <version>${version.lib.tyrus}</version>
             </dependency>
