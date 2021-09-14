@@ -45,7 +45,7 @@ public class CloseConnectionTest {
         InetAddress localHost = InetAddress.getLocalHost();
         webServer = WebServer
                 .builder()
-                .port(5555)
+                .port(0)
                 .bindAddress(localHost)
                 .routing(Routing.builder()
                         .get((req, res) -> {
