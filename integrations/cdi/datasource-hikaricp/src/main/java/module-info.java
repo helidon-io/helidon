@@ -30,7 +30,7 @@ module io.helidon.integrations.datasource.hikaricp.cdi {
     requires java.annotation;
     requires microprofile.config.api;
     requires transitive io.helidon.integrations.datasource.cdi;
-    requires microprofile.metrics.api;
+    requires static microprofile.metrics.api;
     requires com.zaxxer.hikari;
 
     exports io.helidon.integrations.datasource.hikaricp.cdi;

@@ -40,15 +40,12 @@ class MicroProfileMetricsTrackerFactory implements MetricsTrackerFactory {
     @Inject
     MicroProfileMetricsTrackerFactory(@RegistryType(type = MetricRegistry.Type.VENDOR) final MetricRegistry registry) {
         super();
-        this.registry = Objects.requireNonNull(registry, "registry");
+        this.registry = registry;
     }
 
     @Override
     public IMetricsTracker create(final String poolName, final PoolStats poolStats) {
-        return
-            new MicroProfileMetricsTracker(Objects.requireNonNull(poolName, "poolName"),
-                                           Objects.requireNonNull(poolStats, "poolStats"),
-                                           this.registry);
+        return new MicroProfileMetricsTracker(poolName, poolStats, this.registry);
     }
 
 }

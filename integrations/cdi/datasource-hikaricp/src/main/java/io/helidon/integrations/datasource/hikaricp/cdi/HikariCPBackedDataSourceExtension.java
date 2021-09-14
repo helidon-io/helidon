@@ -109,7 +109,7 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
             .beanClass(HikariDataSource.class)
             .scope(ApplicationScoped.class)
             .produceWith(instance -> {
-                    final HikariConfig config = new HikariConfig(dataSourceProperties);
+                    final HikariConfig config = produceHikariConfig(instance, dataSourceName, dataSourceProperties);
                     // Permit further customization before the bean is actually created
                     instance.select(new TypeLiteral<Event<HikariConfig>>() {}, dataSourceName).get().fire(config);
                     return new HikariDataSource(config);
@@ -127,9 +127,9 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
                 });
     }
 
-    private static HikariDataSource produceHikariDataSource(final Instance<Object> instance,
-                                                            final Named dataSourceName,
-                                                            final Properties dataSourceProperties) {
+    private static HikariConfig produceHikariConfig(final Instance<Object> instance,
+                                                    final Named dataSourceName,
+                                                    final Properties dataSourceProperties) {
         final HikariConfig hikariConfig = new HikariConfig(dataSourceProperties);
         Instance<MetricsTrackerFactory> i;
         if (dataSourceName == null) {
@@ -146,7 +146,7 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
         if (!i.isUnsatisfied()) {
             hikariConfig.setMetricsTrackerFactory(i.get());
         }
-        return new HikariDataSource(hikariConfig);
+        return hikariConfig;
     }
 
     private void processAnnotatedType(@Observes
