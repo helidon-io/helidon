@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.examples</groupId>
         <artifactId>helidon-examples-project</artifactId>
-        <version>2.3.3</version>
+        <version>2.3.4-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.examples.logging</groupId>
     <artifactId>helidon-examples-logging-project</artifactId>
