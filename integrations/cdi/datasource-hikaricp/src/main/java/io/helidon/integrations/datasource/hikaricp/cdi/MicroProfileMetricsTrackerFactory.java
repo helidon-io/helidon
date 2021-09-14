@@ -15,8 +15,6 @@
  */
 package io.helidon.integrations.datasource.hikaricp.cdi;
 
-import java.util.Objects;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
