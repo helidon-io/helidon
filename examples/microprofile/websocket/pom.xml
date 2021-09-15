@@ -51,6 +51,16 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>org.glassfish.tyrus</groupId>
+            <artifactId>tyrus-client</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.tyrus</groupId>
+            <artifactId>tyrus-container-grizzly-client</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
@@ -60,7 +70,6 @@
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>

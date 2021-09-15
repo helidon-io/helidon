@@ -513,8 +513,23 @@
             </dependency>
             <dependency>
                 <groupId>org.glassfish.tyrus</groupId>
+                <artifactId>tyrus-container-grizzly-client</artifactId>
+                <version>${version.lib.tyrus}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.tyrus</groupId>
                 <artifactId>tyrus-server</artifactId>
                 <version>${version.lib.tyrus}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.glassfish.tyrus</groupId>
+                        <artifactId>tyrus-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.tyrus</groupId>
+                        <artifactId>tyrus-container-grizzly-client</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- Security related -->
