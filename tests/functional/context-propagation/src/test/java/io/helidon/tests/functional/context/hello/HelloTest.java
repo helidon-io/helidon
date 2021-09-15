@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,12 @@
 
 package io.helidon.tests.functional.context.hello;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
+import javax.inject.Inject;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.LogConfig;
-import io.helidon.microprofile.server.Server;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -34,22 +30,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Unit test for {@link HelloResource}.
  */
+@HelidonTest
 class HelloTest {
-    private static Server server;
-    private static WebTarget baseTarget;
+    private final WebTarget baseTarget;
 
-    @BeforeAll
-    static void initClass() {
-        LogConfig.configureRuntime();
-        Main.main(new String[0]);
-        server = Main.server();
-        Client client = ClientBuilder.newClient();
-        baseTarget = client.target("http://localhost:" + server.port());
-    }
-
-    @AfterAll
-    static void destroyClass() {
-        server.stop();
+    @Inject
+    HelloTest(WebTarget baseTarget) {
+        this.baseTarget = baseTarget;
     }
 
     @Test
