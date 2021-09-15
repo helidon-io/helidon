@@ -29,8 +29,6 @@ module io.helidon.integrations.cdi.hibernate {
     requires jakarta.inject.api;
     requires jakarta.enterprise.cdi.api;
     requires org.hibernate.orm.core;
-    // needed only for native image, transitive dependency of hibernate-core
-    requires dom4j;
 
     exports io.helidon.integrations.cdi.hibernate;
 
