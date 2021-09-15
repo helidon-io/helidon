@@ -265,19 +265,20 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         // Initialize our implementation
         RegistryProducer.clearApplicationRegistry();
 
-        // Register beans manually
-        discovery.addAnnotatedType(RegistryProducer.class, "RegistryProducer");
-        discovery.addAnnotatedType(MetricProducer.class, "MetricProducer");
-        discovery.addAnnotatedType(InterceptorCounted.class, "InterceptorCounted");
-        discovery.addAnnotatedType(InterceptorMetered.class, "InterceptorMetered");
-        discovery.addAnnotatedType(InterceptorTimed.class, "InterceptorTimed");
-        discovery.addAnnotatedType(InterceptorConcurrentGauge.class, "InterceptorConcurrentGauge");
-        discovery.addAnnotatedType(InterceptorSimplyTimed.class, InterceptorSimplyTimed.class.getSimpleName());
+        // Register beans manually with annotated type identifiers that are deliberately the same as those used by the container
+        // during bean discovery to avoid accidental duplicate registration in odd packaging scenarios.
+        discovery.addAnnotatedType(RegistryProducer.class, RegistryProducer.class.getName());
+        discovery.addAnnotatedType(MetricProducer.class, MetricProducer.class.getName());
+        discovery.addAnnotatedType(InterceptorCounted.class, InterceptorCounted.class.getName());
+        discovery.addAnnotatedType(InterceptorMetered.class, InterceptorMetered.class.getName());
+        discovery.addAnnotatedType(InterceptorTimed.class, InterceptorTimed.class.getName());
+        discovery.addAnnotatedType(InterceptorConcurrentGauge.class, InterceptorConcurrentGauge.class.getName());
+        discovery.addAnnotatedType(InterceptorSimplyTimed.class, InterceptorSimplyTimed.class.getName());
 
         // Telling CDI about our private SyntheticSimplyTimed annotation and its interceptor
         // is enough for CDI to intercept invocations of methods so annotated.
-        discovery.addAnnotatedType(InterceptorSyntheticSimplyTimed.class, InterceptorSyntheticSimplyTimed.class.getSimpleName());
-        discovery.addAnnotatedType(SyntheticSimplyTimed.class, SyntheticSimplyTimed.class.getSimpleName());
+        discovery.addAnnotatedType(InterceptorSyntheticSimplyTimed.class, InterceptorSyntheticSimplyTimed.class.getName());
+        discovery.addAnnotatedType(SyntheticSimplyTimed.class, SyntheticSimplyTimed.class.getName());
 
         restEndpointsMetricsEnabled = restEndpointsMetricsEnabled();
     }
