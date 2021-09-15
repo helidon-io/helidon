@@ -49,14 +49,14 @@ mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
 cd ${WS_DIR}/tests/integration/native-image
 
 # Prime build all native-image tests
-mvn ${MAVEN_ARGS} clean install 
+mvn ${MAVEN_ARGS} -e clean install
 
 # Build native images
 # mp-2 is too big, waiting for more memory
 readonly native_image_tests="se-1 mp-1 mp-3"
 for native_test in ${native_image_tests}; do
     cd ${WS_DIR}/tests/integration/native-image/${native_test}
-    mvn ${MAVEN_ARGS} clean package -Pnative-image 
+    mvn ${MAVEN_ARGS} -e clean package -Pnative-image
 done
 
 # Run this one because it has no pre-reqs and self-tests

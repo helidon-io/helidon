@@ -37,14 +37,14 @@ mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
 cd ${WS_DIR}/tests/integration/native-image
 
 # Prime build all native-image tests
-mvn ${MAVEN_ARGS} clean install 
+mvn ${MAVEN_ARGS} -e clean install
 
 # Build jlink images
 # mp-2 fails because of https://github.com/oracle/helidon-build-tools/issues/478
 readonly native_image_tests="se-1 mp-1 mp-3"
 for native_test in ${native_image_tests}; do
     cd ${WS_DIR}/tests/integration/native-image/${native_test}
-    mvn ${MAVEN_ARGS} package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false -Djlink.image.testImage=false
+    mvn ${MAVEN_ARGS} package -e -Pjlink-image -Djlink.image.addClassDataSharingArchive=false -Djlink.image.testImage=false
 done
 
 # Run tests with classpath and then module path

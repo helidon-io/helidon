@@ -83,7 +83,6 @@ public class PrematureConnectionCutTest {
             latch.await(TIMEOUT.getSeconds(), TimeUnit.SECONDS);
 
             exceptions.forEach(e -> {
-                e.printStackTrace();
                 assertThat(e.getCause(), Matchers.instanceOf(IllegalStateException.class));
                 assertThat(e.getCause().getMessage(), Matchers.is("Channel closed prematurely by other side!"));
             });

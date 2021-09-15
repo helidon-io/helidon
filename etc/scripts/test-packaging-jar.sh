@@ -37,7 +37,7 @@ mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
 cd ${WS_DIR}/tests/integration/native-image
 
 # Prime build all native-image tests
-mvn ${MAVEN_ARGS} clean install 
+mvn ${MAVEN_ARGS} -e clean install
 
 # Run tests with classpath and then module path
 
