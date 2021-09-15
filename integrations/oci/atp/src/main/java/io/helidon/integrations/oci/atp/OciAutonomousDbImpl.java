@@ -27,8 +27,7 @@ class OciAutonomousDbImpl implements OciAutonomousDb {
 
     @Override
     public ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response> generateWallet(
-            GenerateAutonomousDatabaseWalletRx.Request request) {
-            return delegate.generateWallet(request).await()
-                .map(reactiveResponse -> GenerateAutonomousDatabaseWallet.Response.create(reactiveResponse.bytePublisher()));
+            GenerateAutonomousDatabaseWallet.Request request) {
+            return delegate.generateWallet(request).await();
     }
 }

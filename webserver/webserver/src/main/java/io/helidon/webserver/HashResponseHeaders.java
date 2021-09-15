@@ -266,7 +266,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
     /**
      * Sets an HTTP status code. The code is managed with headers because it has the same lifecycle.
      *
-     * @status an HTTP status code.
+     * @param httpStatusCode an HTTP status code.
      */
     void httpStatus(Http.ResponseStatus httpStatusCode) {
         Objects.requireNonNull(httpStatusCode, "Parameter 'httpStatus' is null!");
@@ -309,23 +309,27 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
     }
 
     @Override
-    public void putAll(Parameters parameters) {
+    public HashResponseHeaders putAll(Parameters parameters) {
         completable.runIfNotCompleted(() -> super.putAll(parameters), COMPLETED_EXCEPTION_MESSAGE);
+        return this;
     }
 
     @Override
-    public void add(String key, String... values) {
+    public HashResponseHeaders add(String key, String... values) {
         completable.runIfNotCompleted(() -> super.add(key, values), COMPLETED_EXCEPTION_MESSAGE);
+        return this;
     }
 
     @Override
-    public void add(String key, Iterable<String> values) {
+    public HashResponseHeaders add(String key, Iterable<String> values) {
         completable.runIfNotCompleted(() -> super.add(key, values), COMPLETED_EXCEPTION_MESSAGE);
+        return this;
     }
 
     @Override
-    public void addAll(Parameters parameters) {
+    public HashResponseHeaders addAll(Parameters parameters) {
         completable.runIfNotCompleted(() -> super.addAll(parameters), COMPLETED_EXCEPTION_MESSAGE);
+        return this;
     }
 
     @Override
@@ -354,7 +358,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
     }
 
     /**
-     * If not yet completed then ompletes and return {@code true}, otherwise returns {@code false}.
+     * If not yet completed then completes and return {@code true}, otherwise returns {@code false}.
      * <p>
      * All possible exceptions are forwarded to {@link BareResponse#onError(Throwable)} method.
      *
@@ -370,7 +374,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
     private static class CompletionSupport {
 
         private enum State {
-            OPEN, COMPLETING, COMPLETED;
+            OPEN, COMPLETING, COMPLETED
         }
 
         // A simple locking mechanism.
@@ -382,7 +386,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
         /**
          * Creates new instance.
          *
-         * @param bareResponse
+         * @param bareResponse bare response
          */
         CompletionSupport(BareResponse bareResponse) {
             this.bareResponse = bareResponse;

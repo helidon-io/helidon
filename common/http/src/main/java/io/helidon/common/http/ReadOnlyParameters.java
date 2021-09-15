@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,17 +120,17 @@ public class ReadOnlyParameters implements Parameters {
     }
 
     @Override
-    public void putAll(Parameters parameters) {
+    public ReadOnlyParameters putAll(Parameters parameters) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void add(String key, String... values) {
+    public ReadOnlyParameters add(String key, String... values) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void add(String key, Iterable<String> values) {
+    public ReadOnlyParameters add(String key, Iterable<String> values) {
         throw new UnsupportedOperationException();
     }
 
@@ -140,7 +140,7 @@ public class ReadOnlyParameters implements Parameters {
     }
 
     @Override
-    public void addAll(Parameters parameters) {
+    public ReadOnlyParameters addAll(Parameters parameters) {
         throw new UnsupportedOperationException();
     }
 
