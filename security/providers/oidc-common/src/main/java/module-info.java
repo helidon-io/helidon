@@ -19,6 +19,7 @@
  */
 module io.helidon.security.providers.oidc.common {
     requires java.logging;
+
     requires io.helidon.security.util;
     requires io.helidon.security.providers.common;
     requires io.helidon.security.jwt;
@@ -28,6 +29,7 @@ module io.helidon.security.providers.oidc.common {
     requires io.helidon.webclient.security;
     requires io.helidon.webclient.tracing;
     requires io.helidon.media.jsonp;
+    requires io.helidon.common.crypto;
 
     requires jersey.client;
     requires java.ws.rs;

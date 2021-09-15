@@ -306,7 +306,10 @@ public final class OidcConfig {
     private final String redirectUri;
     private final boolean useCookie;
     private final String cookieName;
+    private final String cookieNameToken;
+    private final String cookieNameId;
     private final String cookieOptions;
+
     private final boolean useParam;
     private final String paramName;
 

@@ -183,7 +183,30 @@ public final class OidcSupport implements Service {
     public void update(Routing.Rules rules) {
         if (enabled) {
             rules.get(oidcConfig.redirectUri(), this::processOidcRedirect)
+                    .get("/oidc/logout", this::processLogout)
+                    .get("/oidc/loggedoutlog", (req, res) -> res.send("You have been logged out"))
                     .any(this::addRequestAsHeader);
+        }
+    }
+
+    private void processLogout(ServerRequest req, ServerResponse res) {
+        // todo obtain token using configured approach
+        Optional<String> jsessionid = req.headers().cookies()
+                .first("JSESSIONID_ID");
+
+        if (jsessionid.isPresent()) {
+            String idToken = jsessionid.get();
+
+            String location = oidcConfig.identityUri()
+                    + "/oauth2/v1/userlogout"
+                    + "?id_token_hint="
+                    + idToken
+                    + "&post_logout_redirect_uri=http://localhost:7987/oidc/loggedout"
+                    + "&state=abcdef";
+
+            res.status(Http.Status.TEMPORARY_REDIRECT_307)
+                    .header(Http.Header.LOCATION, location)
+                    .send();
         }
     }
 
@@ -245,6 +268,8 @@ public final class OidcSupport implements Service {
 
     private String processJsonResponse(ServerRequest req, ServerResponse res, JsonObject json) {
         String tokenValue = json.getString("access_token");
+        String idToken = json.getString("id_token");
+
         //redirect to "state"
         String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
         res.status(Http.Status.TEMPORARY_REDIRECT_307);
@@ -256,8 +281,13 @@ public final class OidcSupport implements Service {
         res.headers().add(Http.Header.LOCATION, state);
 
         if (oidcConfig.useCookie()) {
+            OidcCookie cookie = new OidcCookie(tokenValue, idToken);
+
             res.headers()
                     .add("Set-Cookie", oidcConfig.cookieName() + "=" + tokenValue + oidcConfig.cookieOptions());
+
+            cookie.idToken().ifPresent(it -> res.headers()
+                    .add("Set-Cookie", oidcConfig.cookieName() + "_ID=" + it + oidcConfig.cookieOptions()));
         }
 
         res.send();

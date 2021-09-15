@@ -71,6 +71,10 @@
             <artifactId>helidon-jersey-media-jsonp</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-crypto</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.bundles</groupId>
             <artifactId>helidon-bundles-config</artifactId>
             <scope>test</scope>
