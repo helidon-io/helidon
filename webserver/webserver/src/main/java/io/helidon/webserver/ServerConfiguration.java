@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -183,6 +184,37 @@ public interface ServerConfiguration extends SocketConfiguration {
     Map<String, SocketConfiguration> sockets();
 
     /**
+     * The maximum amount of time that the server will wait to shut
+     * down regardless of the value of any additionally requested
+     * quiet period.
+     *
+     * <p>The default implementation of this method returns {@link
+     * Duration#ofSeconds(long) Duration.ofSeconds(10L)}.</p>
+     *
+     * @return the {@link Duration} to use
+     */
+    default Duration maxShutdownTimeout() {
+        return Duration.ofSeconds(10L);
+    }
+
+    /**
+     * The quiet period during which the webserver will wait for new
+     * incoming connections after it has been told to shut down.
+     *
+     * <p>The webserver will wait no longer than the duration returned
+     * by the {@link #maxShutdownTimeout()} method.</p>
+     *
+     * <p>The default implementation of this method returns {@link
+     * Duration#ofSeconds(long) Duration.ofSeconds(0L)}, indicating
+     * that there will be no quiet period.</p>
+     *
+     * @return the {@link Duration} to use
+     */
+    default Duration shutdownQuietPeriod() {
+        return Duration.ofSeconds(0L);
+    }
+
+    /**
      * Returns an <a href="http://opentracing.io">opentracing.io</a> tracer. Default is {@link GlobalTracer}.
      *
      * @return a tracer to use - never {@code null} (defaulting to {@link GlobalTracer}
@@ -278,6 +310,8 @@ public interface ServerConfiguration extends SocketConfiguration {
         private final Map<String, SocketConfiguration> sockets = new HashMap<>();
         private int workers;
         private Tracer tracer;
+        private Duration maxShutdownTimeout;
+        private Duration shutdownQuietPeriod;
         private ExperimentalConfiguration experimental;
         private Optional<Transport> transport;
         private Context context;
@@ -285,6 +319,8 @@ public interface ServerConfiguration extends SocketConfiguration {
 
         private Builder() {
             transport = Optional.ofNullable(null);
+            maxShutdownTimeout = Duration.ofSeconds(10L);
+            shutdownQuietPeriod = Duration.ofSeconds(0L);
         }
 
         /**
@@ -513,6 +549,31 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         /**
+         * Configure the maximum amount of time that the server will wait to shut
+         * down regardless of the value of any additionally requested
+         * quiet period.
+         * @param maxShutdownTimeout the {@link Duration} to use
+         * @return an updated builder
+         */
+        public Builder maxShutdownTimeout(Duration maxShutdownTimeout) {
+            this.maxShutdownTimeout =
+                Objects.requireNonNull(maxShutdownTimeout, "Parameter 'maxShutdownTimeout' must not be null!");
+            return this;
+        }
+
+        /**
+         * Configure the quiet period during which the webserver will wait for new
+         * incoming connections after it has been told to shut down.
+         * @param shutdownQuietPeriod the {@link Duration} to use
+         * @return an updated builder
+         */
+        public Builder shutdownQuietPeriod(Duration shutdownQuietPeriod) {
+            this.shutdownQuietPeriod =
+                Objects.requireNonNull(shutdownQuietPeriod, "Parameter 'shutdownQuietPeriod' must not be null!");
+            return this;
+        }
+
+        /**
          * Configure experimental features.
          * @param experimental experimental configuration
          * @return an updated builder
@@ -588,6 +649,10 @@ public interface ServerConfiguration extends SocketConfiguration {
                     .ifPresent(this::workersCount);
 
             config.get("features.print-details").asBoolean().ifPresent(this::printFeatureDetails);
+
+            // shutdown timeouts
+            config.get("max-shutdown-timeout-seconds").asLong().ifPresent(it -> maxShutdownTimeout(Duration.ofSeconds(it)));
+            config.get("shutdown-quiet-period-seconds").asLong().ifPresent(it -> shutdownQuietPeriod(Duration.ofSeconds(it)));
 
             // sockets
             Config socketsConfig = config.get("sockets");
@@ -693,6 +758,14 @@ public interface ServerConfiguration extends SocketConfiguration {
 
         Tracer tracer() {
             return tracer;
+        }
+
+        Duration maxShutdownTimeout() {
+            return maxShutdownTimeout;
+        }
+
+        Duration shutdownQuietPeriod() {
+            return shutdownQuietPeriod;
         }
 
         ExperimentalConfiguration experimental() {

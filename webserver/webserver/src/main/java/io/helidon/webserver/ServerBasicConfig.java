@@ -17,6 +17,7 @@
 package io.helidon.webserver;
 
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,6 +38,8 @@ class ServerBasicConfig implements ServerConfiguration {
     private final int workers;
     private final Tracer tracer;
     private final Map<String, SocketConfiguration> socketConfigs;
+    private final Duration maxShutdownTimeout;
+    private final Duration shutdownQuietPeriod;
     private final ExperimentalConfiguration experimental;
     private final Optional<Transport> transport;
     private final Context context;
@@ -51,6 +54,8 @@ class ServerBasicConfig implements ServerConfiguration {
         this.socketConfig = builder.defaultSocketBuilder().build();
         this.workers = builder.workers();
         this.tracer = builder.tracer();
+        this.maxShutdownTimeout = builder.maxShutdownTimeout();
+        this.shutdownQuietPeriod = builder.shutdownQuietPeriod();
         this.experimental = builder.experimental();
         this.transport = builder.transport();
         this.context = builder.context();
@@ -139,6 +144,16 @@ class ServerBasicConfig implements ServerConfiguration {
     @Override
     public int initialBufferSize() {
         return socketConfig.initialBufferSize();
+    }
+
+    @Override
+    public Duration maxShutdownTimeout() {
+        return maxShutdownTimeout;
+    }
+
+    @Override
+    public Duration shutdownQuietPeriod() {
+        return shutdownQuietPeriod;
     }
 
     @Override
