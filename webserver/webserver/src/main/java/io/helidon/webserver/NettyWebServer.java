@@ -473,7 +473,11 @@ class NettyWebServer implements WebServer {
         Transport transport = configuration.transport().orElse(new NioTransport());
         // (Note that an NioTransport's isAvailableFor() method will
         // always return true when passed this.)
-        return transport.isAvailableFor(this) ? transport : new NioTransport();
+        if (!transport.isAvailableFor(this)) {
+            transport = new NioTransport();
+        }
+        LOGGER.fine("Using Transport " + transport);
+        return transport;
     }
 
     private Transport transport() {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,23 +22,16 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.webserver.transport</groupId>
+        <artifactId>helidon-webserver-transport-project</artifactId>
         <version>2.4.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-project</artifactId>
-    <name>Helidon WebServer Project</name>
+    <groupId>io.helidon.webserver.transport.netty</groupId>
+    <artifactId>helidon-webserver-transport-netty-project</artifactId>
+    <name>Helidon WebServer Transport Netty Project</name>
     <packaging>pom</packaging>
 
     <modules>
-        <module>webserver</module>
-        <module>transport</module>
-        <module>jersey</module>
-        <module>test-support</module>
-        <module>access-log</module>
-        <module>tyrus</module>
-        <module>cors</module>
-        <module>static-content</module>
+        <module>epoll</module>
     </modules>
 </project>
