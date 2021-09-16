@@ -33,6 +33,9 @@ import io.netty.channel.epoll.EpollServerSocketChannel;
  * A {@link Transport} implementation based upon Netty's <a
  * href="https://netty.io/wiki/native-transports.html#using-the-linux-native-transport"
  * target="_parent">epoll-based native transport</a>.
+ *
+ * <p>This {@link Transport} implementation is currently experimental
+ * and its API and implementation are subject to change.</p>
  */
 public final class EPollTransport implements Transport {
 
