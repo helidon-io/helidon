@@ -70,9 +70,10 @@ public class GreetingService implements Service {
         greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
 
         mctx = new GreetingServiceMicrostreamContext(EmbeddedStorageManagerBuilder.create(config.get("microstream")));
-        mctx.start().thenAccept(st -> {
-            mctx.initRootElement();
-        });
+        // we need to initialize the root element first
+        // if we do not wait here, we have a race where HTTP method may be invoked before we initialize root
+        mctx.start().await();
+        mctx.initRootElement();
     }
 
     /**
