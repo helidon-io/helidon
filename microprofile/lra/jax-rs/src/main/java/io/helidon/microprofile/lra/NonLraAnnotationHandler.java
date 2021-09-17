@@ -43,8 +43,10 @@ class NonLraAnnotationHandler implements AnnotationHandler {
         if (propagate) {
             // Save lraId from header to thread local for possible clients
             String lraFromHeader = requestContext.getHeaders().getFirst(LRA_HTTP_CONTEXT_HEADER);
-            Contexts.context()
-                    .ifPresent(c -> c.register(LRA_HTTP_CONTEXT_HEADER, UriBuilder.fromPath(lraFromHeader).build()));
+            if (lraFromHeader != null && !lraFromHeader.isBlank()) {
+                Contexts.context()
+                        .ifPresent(c -> c.register(LRA_HTTP_CONTEXT_HEADER, UriBuilder.fromPath(lraFromHeader).build()));
+            }
         }
         // clear lra header
         requestContext.getHeaders().remove(LRA_HTTP_CONTEXT_HEADER);
