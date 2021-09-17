@@ -56,6 +56,7 @@ public class UriComponentTest {
         assertThat(parameters.first("c"), is(Optional.empty()));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void sanityParse() throws Exception {
         Parameters parameters = UriComponent.decodeQuery(URI.create("http://foo/bar?a=b&c=d&a=e").getRawQuery(), true);
