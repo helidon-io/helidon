@@ -33,8 +33,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import org.hamcrest.Matchers;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.anyOf;
 import org.junit.jupiter.api.Test;
+import org.mockito.AdditionalMatchers;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -83,15 +86,18 @@ public class PrematureConnectionCutTest {
             latch.await(TIMEOUT.getSeconds(), TimeUnit.SECONDS);
 
             exceptions.forEach(e -> {
-                assertThat(e.getCause(), Matchers.instanceOf(IllegalStateException.class));
-                assertThat(e.getCause().getMessage(), Matchers.is("Channel closed prematurely by other side!"));
+                assertThat(e.getCause(), anyOf(
+                        // One of the following exceptions is expected:
+                        // IOE: Connection reset by peer - on MacOS
+                        // ISE: Channel closed prematurely by other side! - on Linux
+                        instanceOf(IllegalStateException.class),
+                        instanceOf(IOException.class))
+                );
             });
             threadFactory.threads.forEach(t -> {
-                assertThat("Thread " + t.getName() + " is in invalid state.",
-                        t.getState(),
-                        Matchers.is(Thread.State.TERMINATED));
+                assertThat("Thread " + t.getName() + " is in invalid state.", t.getState(), is(Thread.State.TERMINATED));
             });
-            assertThat(exceptions.size(), Matchers.is(5));
+            assertThat(exceptions.size(), is(5));
         } finally {
             if (webServer != null) {
                 webServer.shutdown();

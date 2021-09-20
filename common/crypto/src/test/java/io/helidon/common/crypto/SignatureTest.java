@@ -40,11 +40,19 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class SignatureTest {
+    private static final SecureRandom RANDOM;
+    static {
+        try {
+            RANDOM = SecureRandom.getInstance("SHA1PRNG");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Cannot create secure random", e);
+        }
+    }
 
     private static Stream<ParameterWrapper> initParams() throws IllegalAccessException, NoSuchAlgorithmException {
         List<ParameterWrapper> params = new ArrayList<>();
         Map<String, Map<Integer, KeyPair>> generatedKeys = new HashMap<>();
-        for (Integer keySize : List.of(160, 224, 256, 384, 521)) {
+        for (Integer keySize : List.of(256, 384, 521)) {
             generatedKeys.computeIfAbsent("ECDSA", mapKey -> new HashMap<>())
                     .put(keySize, keyPair("EC", keySize));
         }
@@ -78,8 +86,7 @@ public class SignatureTest {
 
     private static KeyPair keyPair(String generator, int keySize) throws NoSuchAlgorithmException {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance(generator);
-        SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-        keyGen.initialize(keySize, random);
+        keyGen.initialize(keySize, RANDOM);
         return keyGen.generateKeyPair();
     }
 

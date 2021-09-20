@@ -261,8 +261,15 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             }
             // Create response and handler for its completion
             BareResponseImpl bareResponse =
-                    new BareResponseImpl(ctx, request, requestContext, publisher::isCompleted, publisher::hasRequests,
-                                         prevRequestFuture, requestEntityAnalyzed, requestId);
+                    new BareResponseImpl(ctx,
+                                         request,
+                                         requestContext,
+                                         publisher::isCompleted,
+                                         publisher::hasRequests,
+                                         publisher::isCancelled,
+                                         prevRequestFuture,
+                                         requestEntityAnalyzed,
+                                         requestId);
             prevRequestFuture = new CompletableFuture<>();
             CompletableFuture<?> thisResp = prevRequestFuture;
             bareResponse.whenCompleted()
@@ -372,7 +379,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     && HttpUtil.isKeepAlive(requestContext.request())
                     && !requestEntityAnalyzed.isDone()) {
                 if (hadContentAlready) {
-                    LOGGER.finest(() -> "More then one unhandled content present. Closing the connection.");
+                    LOGGER.finest(() -> "More than one unhandled content present. Closing the connection.");
                     requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
                 } else {
                     //We are checking the unhandled entity, but we cannot be sure if connection should be closed or not.

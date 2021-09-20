@@ -94,6 +94,9 @@ public class DataChunkInputStream extends InputStream {
 
     @Override
     public void close() {
+        if (subscription != null) {
+            this.subscription.cancel();
+        }
         // Assert: if current != next, next cannot ever be resolved with a chunk that needs releasing
         Optional.ofNullable(current).ifPresent(it -> current.whenComplete(DataChunkInputStream::releaseChunk));
         current = null;

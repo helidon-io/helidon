@@ -183,11 +183,11 @@ public Response delete(@PathParam("file-name") String fileName) {
 <1> Use `deleteObject` function and configure a `DeleteObject.Request.builder()` to submit the delete request
 <2> Return the result
 
-== Object Storage Health Check
+== Object Storage Health Checks
 
 If your Helidon application depends on Object Storage accessibility, you may consider setting
-up a health check to verify connectivity with an OCI bucket. To do so, first add the following
-dependency in your pom file:
+up a health check to verify connectivity with one ore more OCI buckets in a namespace.
+To do so, first add the following dependency to your pom file:
 
 [source,xml]
 ----
@@ -199,8 +199,24 @@ dependency in your pom file:
 
 By adding this dependency to your application, you get a (built-in) health check automatically
 registered for you. This health check is controlled by the Config properties `oci.objectstorage.namespace`
-and `oci.objectstorage.bucket`, in addition to the user-specific configuration under `~/.oci/config`.
+and `oci.objectstorage.healthchecks`, in addition to the user-specific configuration under `~/.oci/config`.
 
-When executed, this health check will _ping_ the bucket to make sure it is accessible in your
-environment. For more information about health checks see <<mp/health/01_introduction.adoc,
+The value of `oci.objectstorage.healthchecks` must denote a list of bucket names to check. For example:
+
+[source,yaml]
+----
+oci:
+  objectstorage:
+    namespace: "mynamespace"
+    healthchecks: [ "myfirstbucket", "mysecondbucket" ]
+----
+
+When executed, this health check will _ping_ the buckets `myfirstbucket` and `mysecondbucket` in
+`mynamespace` to make sure they are accessible in your environment. The `data` object in a
+health check JSON response shall include a status code (e.g., 200) for each bucket in your
+list, as well as an `UP` status for the health check itself if and only if all buckets are
+successfully pinged.
+
+Note that OCI operations such as these may incur some significant latency.
+For more information about health checks see <<mp/health/01_introduction.adoc,
 MicroProfile Health>>.
