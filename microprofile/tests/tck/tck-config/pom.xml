@@ -68,6 +68,8 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
+                        <!-- required for Weld -->
+                        <argLine>--add-opens=java.base/java.lang=ALL-UNNAMED</argLine>
                         <systemPropertyVariables>
                             <java.util.logging.config.file>src/test/resources/logging.properties</java.util.logging.config.file>
                         </systemPropertyVariables>

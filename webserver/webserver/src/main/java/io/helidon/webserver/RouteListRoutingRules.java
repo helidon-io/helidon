@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,6 +140,7 @@ class RouteListRoutingRules implements Routing.Rules {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public RouteListRoutingRules register(Supplier<? extends Service>... serviceBuilders) {
         if (serviceBuilders != null && serviceBuilders.length > 0) {
             records.add(new Record(null,
@@ -160,6 +161,7 @@ class RouteListRoutingRules implements Routing.Rules {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public RouteListRoutingRules register(String pathPattern, Supplier<? extends Service>... serviceBuilders) {
         if (serviceBuilders != null && serviceBuilders.length > 0) {
             records.add(new Record(PathPattern.compile(pathPattern),

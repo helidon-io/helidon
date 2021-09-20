@@ -114,6 +114,20 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!--
+                     This is needed for Java 17, where Neo4j can no longer access
+                     non-public field of Throwable. This is not needed for runtime,
+                     as the database process is separate from the application
+                     -->
+                    <argLine>
+                        --add-opens=java.base/java.lang=ALL-UNNAMED
+                    </argLine>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

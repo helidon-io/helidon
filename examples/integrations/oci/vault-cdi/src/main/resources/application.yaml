@@ -14,26 +14,31 @@
 # limitations under the License.
 #
 
-# The values are read from
-# ~/helidon/conf/examples.yaml
-# or you can just update them here
+#
+# The values under oci.properties are read from ~/helidon/conf/examples.yaml
+#
 
 server:
   port: 8080
 
+#
+# The following properties under app are accessed by the application
+#
 app:
   vault:
-    # Vault OCID (the vault you want to use for this example
+    # Vault OCID (the vault you want to use for this example)
     vault-ocid: "${oci.properties.vault-ocid}"
     compartment-ocid: "${oci.properties.compartment-ocid}"
     encryption-key-ocid: "${oci.properties.vault-key-ocid}"
     signature-key-ocid: "${oci.properties.vault-rsa-key-ocid}"
 
+#
+# The following properties under oci are accessed by Helidon
+#
 oci:
+  vault:
+    healthchecks: [ "${oci.properties.vault-ocid}" ]
   custom:
     vault:
       # named OCI configuration
       cryptographic-endpoint: "${oci.properties.cryptographic-endpoint}"
-  vault:
-    vault-ocid: "${oci.properties.vault-ocid}"    # Vault healthcheck property
-

@@ -62,7 +62,7 @@ public final class OciVaultMain {
         // setup vault health check
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(OciVaultHealthCheck.builder()
-                        .vaultId(vaultOcid)
+                        .addVaultId(vaultOcid)
                         .ociVault(ociVault)
                         .build())
                 .build();

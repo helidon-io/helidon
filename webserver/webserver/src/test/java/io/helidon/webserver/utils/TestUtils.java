@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,6 +100,7 @@ public class TestUtils {
      * @return a map
      * @throws IllegalStateException in case of odd number of entries
      */
+    @SafeVarargs
     public static <T> Map<String, T> toMap(T... entries) {
         if (entries.length % 2 == 1) {
             throw new IllegalArgumentException("Invalid entries");
@@ -111,6 +112,7 @@ public class TestUtils {
                          Map::putAll);
     }
 
+    @SafeVarargs
     public static <T> List<T> toList(T... entries) {
         return IntStream.range(0, entries.length)
                 .collect(ArrayList::new,
