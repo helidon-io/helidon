@@ -64,6 +64,10 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     private static final Logger LOGGER = Logger.getLogger(NettyClientHandler.class.getName());
 
     private static final AttributeKey<WebClientServiceResponse> SERVICE_RESPONSE = AttributeKey.valueOf("serviceResponse");
+    /**
+     * Instance of the publisher used to handle response.
+     */
+    static final AttributeKey<BufferedEmittingPublisher> PUBLISHER = AttributeKey.valueOf("publisher");
 
     private static final List<HttpInterceptor> HTTP_INTERCEPTORS = new ArrayList<>();
 
@@ -112,6 +116,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             LOGGER.finest(() -> "(client reqID: " + requestId + ") Initial http response message received");
 
             this.publisher = new HttpResponsePublisher(ctx);
+            channel.attr(PUBLISHER).set(this.publisher);
             this.responseCloser = new ResponseCloser(ctx);
             WebClientResponseImpl.Builder responseBuilder = WebClientResponseImpl.builder();
             responseBuilder.contentPublisher(publisher)
