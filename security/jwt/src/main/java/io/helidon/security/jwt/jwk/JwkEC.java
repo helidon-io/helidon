@@ -16,6 +16,9 @@
 
 package io.helidon.security.jwt.jwk;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -29,6 +32,7 @@ import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -212,6 +216,91 @@ public class JwkEC extends JwkPki {
         }
 
         return javaAlg;
+    }
+
+    @Override
+    public boolean doVerify(byte[] signedBytes, byte[] signatureToVerify) {
+        try {
+            return super.doVerify(signedBytes, signatureToVerify);
+        } catch (JwtException e) {
+            if (e.getCause().getMessage().contains("encoding")) {
+                return changeSignatureEncodingToDER(signedBytes, signatureToVerify);
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    private boolean changeSignatureEncodingToDER(byte[] signedBytes, byte[] signatureToVerify) {
+        String alg = signatureAlgorithm();
+
+        if (ALG_NONE.equals(alg)) {
+            return verifyNoneAlg(signatureToVerify);
+        }
+
+        byte[] rBytes = Arrays.copyOfRange(signatureToVerify, 0, 32);
+        byte[] sBytes = Arrays.copyOfRange(signatureToVerify, 32, 64);
+
+        BigInteger r = new BigInteger(1, rBytes);
+        BigInteger s = new BigInteger(1, sBytes);
+
+        byte[] rb = r.toByteArray();
+        byte[] sb = s.toByteArray();
+
+        byte[] signatureDerBytes;
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            int length = 1 + calculateBodyLength(rb.length) + rb.length + 1 + calculateBodyLength(sb.length) + sb.length;
+            outputStream.write(16 | 32);
+            writeLength(outputStream, length);
+            outputStream.write(2);
+            writeLength(outputStream, rb.length);
+            outputStream.write(rb);
+            outputStream.write(2);
+            writeLength(outputStream, sb.length);
+            outputStream.write(sb);
+            signatureDerBytes = outputStream.toByteArray();
+        } catch (IOException e) {
+            throw new JwtException("Signature encoding conversion to DER has failed.", e);
+        }
+        return super.doVerify(signedBytes, signatureDerBytes);
+    }
+
+    private static int calculateBodyLength(int length) {
+        int count = 1;
+
+        if (length > 127) {
+            int size = 1;
+            int val = length;
+
+            while ((val >>>= 8) != 0) {
+                size++;
+            }
+
+            for (int i = (size - 1) * 8; i >= 0; i -= 8) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private void writeLength(OutputStream os, int length) throws IOException {
+        if (length > 127) {
+            int size = 1;
+            int val = length;
+
+            while ((val >>>= 8) != 0) {
+                size++;
+            }
+
+            os.write((byte) (size | 0x80));
+
+            for (int i = (size - 1) * 8; i >= 0; i -= 8) {
+                os.write((byte) (length >> i));
+            }
+        } else {
+            os.write((byte) length);
+        }
     }
 
     /**

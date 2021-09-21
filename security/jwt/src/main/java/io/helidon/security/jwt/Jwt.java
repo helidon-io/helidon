@@ -29,7 +29,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 import javax.json.Json;
@@ -53,20 +55,11 @@ import io.helidon.security.jwt.jwk.Jwk;
 public class Jwt {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
     /*
-    Header claims
-    */
-    private final Map<String, JsonValue> headerClaims;
-    //"alg":"RS256"
-    // "HS256" - HMAC SHA-256
-    // "none" - no signature or encryption
-    private final Optional<String> algorithm;
-    //"kid":"2f7c5316f335f2786d0d311bb3d385c9e18500db"
-    private final Optional<String> keyId;
-    //"typ":"JWT" | JWE
-    private final Optional<String> type;
-    //"cty":"JWT" - for nested tokens only
-    private final Optional<String> contentType;
+     All header information.
+     */
+    private final JwtHeaders headers;
 
     /*
     Payload claims
@@ -224,19 +217,13 @@ public class Jwt {
     /**
      * Create a token based on json.
      *
-     * @param headerJson  headers
+     * @param headers headers
      * @param payloadJson payload
      */
-    Jwt(JsonObject headerJson, JsonObject payloadJson) {
+    Jwt(JwtHeaders headers, JsonObject payloadJson) {
         // generic stuff
-        this.headerClaims = getClaims(headerJson);
+        this.headers = headers;
         this.payloadClaims = getClaims(payloadJson);
-
-        // known headers
-        this.algorithm = JwtUtil.getString(headerJson, "alg");
-        this.keyId = JwtUtil.getString(headerJson, "kid");
-        this.type = JwtUtil.getString(headerJson, "typ");
-        this.contentType = JwtUtil.getString(headerJson, "cty");
 
         // known payload
         this.issuer = JwtUtil.getString(payloadJson, "iss");
@@ -290,16 +277,11 @@ public class Jwt {
 
     private Jwt(Builder builder) {
         // generic stuff
-        this.headerClaims = new HashMap<>();
-        this.headerClaims.putAll(JwtUtil.transformToJson(builder.headerClaims));
         this.payloadClaims = new HashMap<>();
         this.payloadClaims.putAll(JwtUtil.transformToJson(builder.payloadClaims));
 
-        // known headers
-        this.algorithm = builder.algorithm.or(() -> toOptionalString(builder.payloadClaims, "alg"));
-        this.keyId = builder.keyId.or(() -> toOptionalString(builder.payloadClaims, "kid"));
-        this.type = builder.type.or(() -> toOptionalString(builder.payloadClaims, "typ"));
-        this.contentType = builder.contentType.or(() -> toOptionalString(builder.payloadClaims, "cty"));
+        // headers
+        this.headers = builder.headerBuilder.build();
 
         // known payload
         this.issuer = builder.issuer;
@@ -307,7 +289,7 @@ public class Jwt {
         this.issueTime = builder.issueTime;
         this.notBefore = builder.notBefore;
         this.subject = builder.subject.or(() -> toOptionalString(builder.payloadClaims, "sub"));
-        this.audience = builder.audience;
+        this.audience = Optional.ofNullable(builder.audience);
         this.jwtId = builder.jwtId;
         this.email = builder.email.or(() -> toOptionalString(builder.payloadClaims, "email"));
         this.emailVerified = builder.emailVerified.or(() -> getClaim(builder.payloadClaims, "email_verified"));
@@ -370,7 +352,7 @@ public class Jwt {
      */
     public static List<Validator<Jwt>> defaultTimeValidators() {
         List<Validator<Jwt>> validators = new LinkedList<>();
-        validators.add(new ExpirationValidator());
+        validators.add(new ExpirationValidator(false));
         validators.add(new IssueTimeValidator());
         validators.add(new NotBeforeValidator());
         return validators;
@@ -417,10 +399,21 @@ public class Jwt {
      * @param mandatory  whether the audience field is mandatory in the token
      */
     public static void addAudienceValidator(Collection<Validator<Jwt>> validators, String audience, boolean mandatory) {
+        addAudienceValidator(validators, Set.of(audience), mandatory);
+    }
+
+    /**
+     * Add validator of audience to the collection of validators.
+     *
+     * @param validators collection of validators
+     * @param audience   audience expected to be in the token
+     * @param mandatory  whether the audience field is mandatory in the token
+     */
+    public static void addAudienceValidator(Collection<Validator<Jwt>> validators, Set<String> audience, boolean mandatory) {
         validators.add((jwt, collector) -> {
             Optional<List<String>> jwtAudiences = jwt.audience();
             if (jwtAudiences.isPresent()) {
-                if (jwtAudiences.get().contains(audience)) {
+                if (audience.stream().anyMatch(jwtAudiences.get()::contains)) {
                     return;
                 }
                 collector.fatal(jwt, "Audience must contain " + audience + ", yet it is: " + jwtAudiences);
@@ -462,7 +455,7 @@ public class Jwt {
      * @return claim value if present
      */
     public Optional<JsonValue> headerClaim(String claim) {
-        return Optional.ofNullable(headerClaims.get(claim));
+        return headers.headerClaim(claim);
     }
 
     /**
@@ -493,6 +486,15 @@ public class Jwt {
     }
 
     /**
+     * Headers.
+     *
+     * @return JWT headers information
+     */
+    public JwtHeaders headers() {
+        return headers;
+    }
+
+    /**
      * All payload claims in raw json form.
      *
      * @return map of payload names to claims
@@ -507,7 +509,7 @@ public class Jwt {
      * @return algorithm or empty if claim is not defined
      */
     public Optional<String> algorithm() {
-        return algorithm;
+        return headers.algorithm();
     }
 
     /**
@@ -516,7 +518,7 @@ public class Jwt {
      * @return key id or empty if claim is not defined
      */
     public Optional<String> keyId() {
-        return keyId;
+        return headers.keyId();
     }
 
     /**
@@ -525,7 +527,7 @@ public class Jwt {
      * @return type or empty if claim is not defined
      */
     public Optional<String> type() {
-        return type;
+        return headers.type();
     }
 
     /**
@@ -534,7 +536,7 @@ public class Jwt {
      * @return content type or empty if claim is not defined
      */
     public Optional<String> contentType() {
-        return contentType;
+        return headers.contentType();
     }
 
     /**
@@ -822,15 +824,7 @@ public class Jwt {
      * @return JsonObject for header
      */
     public JsonObject headerJson() {
-        JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
-        headerClaims.forEach(objectBuilder::add);
-
-        algorithm.ifPresent(it -> objectBuilder.add("alg", it));
-        keyId.ifPresent(it -> objectBuilder.add("kid", it));
-        type.ifPresent(it -> objectBuilder.add("typ", it));
-        contentType.ifPresent(it -> objectBuilder.add("cty", it));
-
-        return objectBuilder.build();
+        return headers.headerJson();
     }
 
     /**
@@ -923,18 +917,47 @@ public class Jwt {
      * @return errors instance to check for validation result
      */
     public Errors validate(String issuer, String audience) {
+        return validate(issuer, Set.of(audience));
+    }
+
+    /**
+     * Validates all default values.
+     * Values validated:
+     * <ul>
+     * <li>{@link #expirationTime() Expiration time} if defined</li>
+     * <li>{@link #issueTime() Issue time} if defined</li>
+     * <li>{@link #notBefore() Not before time} if defined</li>
+     * <li>{@link #issuer()} Issuer} if defined</li>
+     * <li>{@link #audience() Audience} if defined</li>
+     * </ul>
+     *
+     * @param issuer   validates that this JWT was issued by this issuer. Setting this to non-null value will make
+     *                 issuer claim mandatory
+     * @param audience validates that this JWT was issued for this audience. Setting this to non-null value and with
+     *                 any non-null value in the Set will make audience claim mandatory
+     * @return errors instance to check for validation result
+     */
+    public Errors validate(String issuer, Set<String> audience) {
         List<Validator<Jwt>> validators = defaultTimeValidators();
         if (null != issuer) {
             addIssuerValidator(validators, issuer, true);
         }
         if (null != audience) {
-            addAudienceValidator(validators, audience, true);
+            audience.stream()
+                    .filter(Objects::nonNull)
+                    .findAny()
+                    .ifPresent(it -> addAudienceValidator(validators, audience, true));
         }
+        addUserPrincipalValidator(validators);
         return validate(validators);
     }
 
+    private static void addUserPrincipalValidator(Collection<Validator<Jwt>> validators) {
+        validators.add(new UserPrincipalValidator());
+    }
+
     private abstract static class OptionalValidator {
-        private boolean mandatory;
+        private final boolean mandatory;
 
         OptionalValidator() {
             this.mandatory = false;
@@ -958,6 +981,13 @@ public class Jwt {
         private final TemporalUnit allowedTimeSkewUnit;
 
         private InstantValidator() {
+            this.instant = Instant.now();
+            this.allowedTimeSkewAmount = 5;
+            this.allowedTimeSkewUnit = ChronoUnit.SECONDS;
+        }
+
+        private InstantValidator(boolean mandatory) {
+            super(mandatory);
             this.instant = Instant.now();
             this.allowedTimeSkewAmount = 5;
             this.allowedTimeSkewUnit = ChronoUnit.SECONDS;
@@ -1170,7 +1200,8 @@ public class Jwt {
      * Validator of expiration claim.
      */
     public static final class ExpirationValidator extends InstantValidator implements Validator<Jwt> {
-        private ExpirationValidator() {
+        private ExpirationValidator(boolean mandatory) {
+            super(mandatory);
         }
 
         private ExpirationValidator(Instant now, int allowedTimeSkew, TemporalUnit allowedTimeSkewUnit, boolean mandatory) {
@@ -1183,7 +1214,17 @@ public class Jwt {
          * @return expiration time validator with defaults
          */
         public static ExpirationValidator create() {
-            return new ExpirationValidator();
+            return new ExpirationValidator(false);
+        }
+
+        /**
+         * New instance with default values (allowed time skew 5 seconds).
+         *
+         * @param mandatory if this value is mandatory or not
+         * @return expiration time validator with defaults
+         */
+        public static ExpirationValidator create(boolean mandatory) {
+            return new ExpirationValidator(mandatory);
         }
 
         /**
@@ -1268,12 +1309,8 @@ public class Jwt {
      * Builder of a {@link Jwt}.
      */
     public static final class Builder implements io.helidon.common.Builder<Jwt> {
-        private final Map<String, Object> headerClaims = new HashMap<>();
+        private final JwtHeaders.Builder headerBuilder = JwtHeaders.builder();
         private final Map<String, Object> payloadClaims = new HashMap<>();
-        private Optional<String> algorithm = Optional.empty();
-        private Optional<String> keyId = Optional.empty();
-        private Optional<String> type = Optional.empty();
-        private Optional<String> contentType = Optional.empty();
         private Optional<String> issuer = Optional.empty();
         private Optional<Instant> expirationTime = Optional.empty();
         private Optional<Instant> issueTime = Optional.empty();
@@ -1281,7 +1318,7 @@ public class Jwt {
         private Optional<String> subject = Optional.empty();
         private Optional<String> userPrincipal = Optional.empty();
         private Optional<List<String>> userGroups = Optional.empty();
-        private Optional<List<String>> audience = Optional.empty();
+        private List<String> audience;
         private Optional<String> jwtId = Optional.empty();
         private Optional<String> email = Optional.empty();
         private Optional<Boolean> emailVerified = Optional.empty();
@@ -1317,7 +1354,7 @@ public class Jwt {
          * @return updated builder instance
          */
         public Builder keyId(String keyId) {
-            this.keyId = Optional.of(keyId);
+            headerBuilder.keyId(keyId);
             return this;
         }
 
@@ -1328,7 +1365,7 @@ public class Jwt {
          * @return updated builder instance
          */
         public Builder type(String type) {
-            this.type = Optional.ofNullable(type);
+            headerBuilder.type(type);
             return this;
         }
 
@@ -1377,7 +1414,7 @@ public class Jwt {
          * @return updated builder instance
          */
         public Builder contentType(String contentType) {
-            this.contentType = Optional.ofNullable(contentType);
+            headerBuilder.contentType(contentType);
             return this;
         }
 
@@ -1389,7 +1426,7 @@ public class Jwt {
          * @return updated builder instance
          */
         public Builder addHeaderClaim(String claim, Object value) {
-            addClaim(headerClaims, claim, value);
+            headerBuilder.addHeaderClaim(claim, value);
             return this;
         }
 
@@ -1418,7 +1455,7 @@ public class Jwt {
          * @return updated builder instance
          */
         public Builder algorithm(String algorithm) {
-            this.algorithm = Optional.of(algorithm);
+            headerBuilder.algorithm(algorithm);
             return this;
         }
 
@@ -1509,10 +1546,38 @@ public class Jwt {
          * @param audience audience of this JWT
          * @return updated builder instance
          */
+        public Builder addAudience(String audience) {
+            if (this.audience == null) {
+                this.audience = new LinkedList<>();
+            }
+            this.audience.add(audience);
+            return this;
+        }
+
+        /**
+         * Add audience.
+         *
+         * @param audience audience to add
+         * @return updated builder
+         * @deprecated use {@link #addAudience(String)} or {@link #audience(java.util.List)} instead
+         */
+        @Deprecated(forRemoval = true, since = "2.4.0")
         public Builder audience(String audience) {
-            List<String> audiences = this.audience.orElse(new LinkedList<>());
-            audiences.add(audience);
-            this.audience = Optional.of(audiences);
+            return addAudience(audience);
+        }
+
+        /**
+         * Audience identifies the expected recipients of this JWT (optional).
+         * Replaces existing configured audiences.
+         * This configures audience in header claims, usually this is defined in payload.
+         *
+         * See <a href="https://tools.ietf.org/html/rfc7519#section-4.1.3">RFC 7519, section 4.1.3</a>.
+         *
+         * @param audience audience of this JWT
+         * @return updated builder instance
+         */
+        public Builder audience(List<String> audience) {
+            this.audience = new LinkedList<>(audience);
             return this;
         }
 
@@ -1805,5 +1870,18 @@ public class Jwt {
             this.payloadClaims.remove(name);
             return this;
         }
+    }
+
+    private static final class UserPrincipalValidator extends OptionalValidator implements Validator<Jwt> {
+
+        private UserPrincipalValidator() {
+            super(true);
+        }
+
+        @Override
+        public void validate(Jwt object, Errors.Collector collector) {
+            super.validate("User Principal", object.userPrincipal(), collector);
+        }
+
     }
 }
