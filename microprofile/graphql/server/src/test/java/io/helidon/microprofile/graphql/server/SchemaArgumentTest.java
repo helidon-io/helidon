@@ -121,6 +121,17 @@ class SchemaArgumentTest {
     }
 
     @Test
+    public void testSchemaArgumentGenerationWithDataFetchingEnvironment() {
+        SchemaArgument schemaArgument = SchemaArgument.builder()
+                .argumentName("test")
+                .dataFetchingEnvironment(true)
+                .argumentType("String")
+                .build();
+
+        assertThat(schemaArgument.isDataFetchingEnvironment(), is(true));
+    }
+
+    @Test
     public void testSchemaGeneration() {
         SchemaArgument schemaArgument = SchemaArgument.builder()
                 .argumentName("name")
