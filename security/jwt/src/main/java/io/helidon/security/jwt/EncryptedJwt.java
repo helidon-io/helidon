@@ -25,10 +25,8 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,8 +37,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import javax.json.Json;
-import javax.json.JsonReaderFactory;
 
 import io.helidon.common.Errors;
 import io.helidon.security.jwt.jwk.Jwk;
@@ -65,7 +61,6 @@ public final class EncryptedJwt {
             .compile("(^[\\S]+)\\.([\\S]+)\\.([\\S]+)\\.([\\S]+)\\.([\\S]+$)");
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     static {
         RSA_ALGORITHMS = Map.of(SupportedAlgorithm.RSA_OAEP, "RSA/ECB/OAEPWithSHA-1AndMGF1Padding",
@@ -244,15 +239,6 @@ public final class EncryptedJwt {
         return URL_ENCODER.encodeToString(bytes);
     }
 
-    private static String decode(String base64, Errors.Collector collector, String description) {
-        try {
-            return new String(URL_DECODER.decode(base64), StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            collector.fatal(base64, description + " is not a base64 encoded string.");
-            return null;
-        }
-    }
-
     private static byte[] decodeBytes(String base64, Errors.Collector collector, String description) {
         try {
             return URL_DECODER.decode(base64);
@@ -270,11 +256,10 @@ public final class EncryptedJwt {
      * Selected {@link Jwk} needs to have private key set.
      *
      * @param jwkKeys   jwk keys
-     * @param collector error collector
      * @return empty optional if any error has occurred or SignedJwt instance if the decryption and validation was successful
      */
-    public Optional<SignedJwt> decrypt(JwkKeys jwkKeys, Errors.Collector collector) {
-        return decrypt(jwkKeys, null, collector);
+    public SignedJwt decrypt(JwkKeys jwkKeys) {
+        return decrypt(jwkKeys, null);
     }
 
     /**
@@ -284,11 +269,10 @@ public final class EncryptedJwt {
      * Provided {@link Jwk} needs to have private key set.
      *
      * @param jwk       jwk keys
-     * @param collector error collector
      * @return empty optional if any error has occurred or SignedJwt instance if the decryption and validation was successful
      */
-    public Optional<SignedJwt> decrypt(Jwk jwk, Errors.Collector collector) {
-        return decrypt(null, jwk, collector);
+    public SignedJwt decrypt(Jwk jwk) {
+        return decrypt(null, jwk);
     }
 
     /**
@@ -300,10 +284,11 @@ public final class EncryptedJwt {
      *
      * @param jwkKeys    jwk keys
      * @param defaultJwk default jwk
-     * @param collector  error collector
      * @return empty optional if any error has occurred or SignedJwt instance if the decryption and validation was successful
      */
-    public Optional<SignedJwt> decrypt(JwkKeys jwkKeys, Jwk defaultJwk, Errors.Collector collector) {
+    public SignedJwt decrypt(JwkKeys jwkKeys, Jwk defaultJwk) {
+        Errors.Collector errors = Errors.collector();
+
         String headerBase64 = encode(header.headerJson().toString().getBytes(StandardCharsets.UTF_8));
         String alg = header.algorithm().orElse(null);
         String kid = header.keyId().orElse(null);
@@ -316,17 +301,17 @@ public final class EncryptedJwt {
             } else if (kid.equals(defaultJwk.keyId())) {
                 jwk = defaultJwk;
             } else {
-                collector.fatal("Could not find JWK for kid: " + kid);
+                errors.fatal("Could not find JWK for kid: " + kid);
             }
         } else {
             jwk = defaultJwk;
             if (jwk == null) {
-                collector.fatal("Could not find any suitable JWK.");
+                errors.fatal("Could not find any suitable JWK.");
             }
         }
 
         if (enc == null) {
-            collector.fatal("Content encryption algorithm not set.");
+            errors.fatal("Content encryption algorithm not set.");
         }
 
         if (alg != null) {
@@ -334,31 +319,29 @@ public final class EncryptedJwt {
                 SupportedAlgorithm supportedAlgorithm = SupportedAlgorithm.getValue(alg);
                 algorithm = RSA_ALGORITHMS.get(supportedAlgorithm);
             } catch (IllegalArgumentException e) {
-                collector.fatal("Value of the claim alg not supported! alg: " + alg);
+                errors.fatal("Value of the claim alg not supported. alg: " + alg);
             }
         } else {
-            collector.fatal("No alg header was present among JWE headers");
+            errors.fatal("No alg header was present among JWE headers");
         }
 
         PrivateKey privateKey = null;
         Jwk finalJwk = jwk;
         if (jwk instanceof JwkRSA) {
             privateKey = ((JwkRSA) jwk).privateKey().orElseGet(() -> {
-                collector.fatal("No private key present in RSA JWK kid: " + finalJwk.keyId());
+                errors.fatal("No private key present in RSA JWK kid: " + finalJwk.keyId());
                 return null;
             });
         } else if (jwk instanceof JwkEC) {
             privateKey = ((JwkEC) jwk).privateKey().orElseGet(() -> {
-                collector.fatal("No private key present in EC JWK kid: " + finalJwk.keyId());
+                errors.fatal("No private key present in EC JWK kid: " + finalJwk.keyId());
                 return null;
             });
         } else if (jwk != null) {
-            collector.fatal("Not supported JWK type: " + jwk.keyType() + ", JWK class: " + jwk.getClass().getName());
+            errors.fatal("Not supported JWK type: " + jwk.keyType() + ", JWK class: " + jwk.getClass().getName());
         }
 
-        if (collector.hasFatal()) {
-            return Optional.empty();
-        }
+        errors.collect().checkValid();
 
         byte[] decryptedKey = decryptRsa(algorithm, privateKey, encryptedKey);
         //Base64 headers are used as an aad. This aad has to be in US_ASCII encoding.
@@ -375,7 +358,7 @@ public final class EncryptedJwt {
             throw new JwtException("Unsupported content encryption: " + enc);
         }
         String decryptedPayload = new String(aesAlgorithm.decrypt(encryptionParts), StandardCharsets.UTF_8);
-        return Optional.of(SignedJwt.parseToken(decryptedPayload));
+        return SignedJwt.parseToken(decryptedPayload);
     }
 
     /**

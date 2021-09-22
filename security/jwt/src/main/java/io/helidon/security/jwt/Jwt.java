@@ -952,7 +952,12 @@ public class Jwt {
         return validate(validators);
     }
 
-    private static void addUserPrincipalValidator(Collection<Validator<Jwt>> validators) {
+    /**
+     * Adds a validator that makes sure the {@link Jwt#userPrincipal()} is present.
+     *
+     * @param validators validator collection to update
+     */
+    public static void addUserPrincipalValidator(Collection<Validator<Jwt>> validators) {
         validators.add(new UserPrincipalValidator());
     }
 

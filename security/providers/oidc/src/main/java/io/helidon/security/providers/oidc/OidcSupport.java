@@ -205,7 +205,7 @@ public final class OidcSupport implements Service {
                     + "&state=abcdef";
 
             res.status(Http.Status.TEMPORARY_REDIRECT_307)
-                    .header(Http.Header.LOCATION, location)
+                    .addHeader(Http.Header.LOCATION, location)
                     .send();
         }
     }
@@ -268,7 +268,7 @@ public final class OidcSupport implements Service {
 
     private String processJsonResponse(ServerRequest req, ServerResponse res, JsonObject json) {
         String tokenValue = json.getString("access_token");
-        String idToken = json.getString("id_token");
+        String idToken = json.getString("id_token", null);
 
         //redirect to "state"
         String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
@@ -281,13 +281,10 @@ public final class OidcSupport implements Service {
         res.headers().add(Http.Header.LOCATION, state);
 
         if (oidcConfig.useCookie()) {
-            OidcCookie cookie = new OidcCookie(tokenValue, idToken);
-
-            res.headers()
-                    .add("Set-Cookie", oidcConfig.cookieName() + "=" + tokenValue + oidcConfig.cookieOptions());
-
-            cookie.idToken().ifPresent(it -> res.headers()
-                    .add("Set-Cookie", oidcConfig.cookieName() + "_ID=" + it + oidcConfig.cookieOptions()));
+            res.addHeader("Set-Cookie", oidcConfig.cookieName() + "=" + tokenValue + oidcConfig.cookieOptions());
+            if (idToken != null) {
+                res.addHeader("Set-Cookie", oidcConfig.cookieName() + "_ID=" + idToken + oidcConfig.cookieOptions());
+            }
         }
 
         res.send();

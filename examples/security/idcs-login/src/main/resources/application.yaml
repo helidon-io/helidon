@@ -31,6 +31,7 @@ security:
   - abac:
     # Adds ABAC Provider - it does not require any configuration
   - oidc:
+      audience: "https://idcs-f936fc684541496a8b004edb789d59e1.identity.pint.oc9qadev.com:443"
       client-id: "${security.properties.idcs-client-id}"
       client-secret: "${security.properties.idcs-client-secret}"
       identity-uri: "${security.properties.idcs-uri}"
@@ -56,6 +57,6 @@ security:
         methods: ["get"]
         authenticate: true
         roles-allowed: ["my_admins"]
-#        abac:
-#          scopes: ["first_scope", "second_scope"]
+        abac:
+          scopes: ["first_scope", "second_scope"]
 

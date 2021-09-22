@@ -20,7 +20,6 @@ import java.util.Optional;
 
 import javax.json.JsonObject;
 
-import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.security.jwt.EncryptedJwt.SupportedAlgorithm;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -99,13 +98,11 @@ public class EncryptedJwtTest {
         EncryptedJwt encryptedOne = builder(signedJwt).jwks(jwkKeys, "RS_512").build();
         EncryptedJwt encryptedSecond = builder(signedJwt).jwks(jwkKeys, "RS_512").build();
         assertThat(encryptedOne.token(), not(encryptedSecond.token()));
-        Errors.Collector collector = Errors.collector();
+
         EncryptedJwt encryptedJwt = parseToken(encryptedOne.token());
-        SignedJwt decryptedOne = encryptedJwt.decrypt(jwkKeys, collector).get();
-        collector.collect().checkValid();
+        SignedJwt decryptedOne = encryptedJwt.decrypt(jwkKeys);
         EncryptedJwt encryptedJwt2 = parseToken(encryptedSecond.token());
-        SignedJwt decryptedTwo = encryptedJwt2.decrypt(jwkKeys, collector).get();
-        collector.collect().checkValid();
+        SignedJwt decryptedTwo = encryptedJwt2.decrypt(jwkKeys);
         assertThat(decryptedOne.headerJson(), is(decryptedTwo.headerJson()));
     }
 
@@ -122,13 +119,12 @@ public class EncryptedJwtTest {
                 .encryption(SupportedEncryption.A128CBC_HS256)
                 .build();
         assertThat(encryptedOne.token(), not(encryptedSecond.token()));
-        Errors.Collector collector = Errors.collector();
+
         EncryptedJwt encryptedJwt = parseToken(encryptedOne.token());
-        SignedJwt decryptedOne = encryptedJwt.decrypt(jwkKeys, collector).get();
-        collector.collect().checkValid();
+        SignedJwt decryptedOne = encryptedJwt.decrypt(jwkKeys);
         EncryptedJwt encryptedJwt2 = parseToken(encryptedSecond.token());
-        SignedJwt decryptedTwo = encryptedJwt2.decrypt(jwkKeys, collector).get();
-        collector.collect().checkValid();
+        SignedJwt decryptedTwo = encryptedJwt2.decrypt(jwkKeys);
+
         assertThat(decryptedOne.headerJson(), is(decryptedTwo.headerJson()));
     }
 
