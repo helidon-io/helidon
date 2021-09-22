@@ -302,6 +302,7 @@ class BareResponseImpl implements BareResponse {
                     LOGGER.finest(() -> log("Closing with an empty buffer; keep-alive: false", ctx));
                 } else {
                     LOGGER.finest(() -> log("Writing an empty last http content; keep-alive: true"));
+                    ctx.channel().read();
                 }
                 writeLastContent(throwable, listener);
             });
