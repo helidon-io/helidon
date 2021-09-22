@@ -268,11 +268,11 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
      * @param params template suffix paframs.
      * @return string to log.
      */
-    private String log(String template, Object channel, Object... params) {
+    private String log(String template, Channel channel, Object... params) {
         List<Object> list = new ArrayList<>(params.length + 2);
         list.add(System.identityHashCode(this));
-        list.add(channel != null ? System.identityHashCode(channel) : "N/A");
+        list.add(channel != null ? channel.id() : "N/A");
         list.addAll(Arrays.asList(params));
-        return String.format("[Initializer: %s, Channel: %s] " + template, list.toArray());
+        return String.format("[Initializer: %s, Channel: 0x%s] " + template, list.toArray());
     }
 }
