@@ -26,8 +26,8 @@ public class SingleFlatMapOptionalTest {
     @Test
     void presentOptional() {
         TestSubscriber<Object> subscriber = new TestSubscriber<>();
-        Single.just(Optional.of("test"))
-                .flatMapOptional(Function.identity())
+        Single.just("test")
+                .flatMapOptional(Optional::of)
                 .subscribe(subscriber);
 
         subscriber.requestMax();

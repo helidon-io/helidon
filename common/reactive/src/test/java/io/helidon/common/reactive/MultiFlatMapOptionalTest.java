@@ -17,7 +17,6 @@
 package io.helidon.common.reactive;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,8 +26,7 @@ public class MultiFlatMapOptionalTest {
     void presentOptionals() {
         TestSubscriber<Integer> subscriber = new TestSubscriber<>();
         Multi.range(1, 5)
-                .map(Optional::of)
-                .flatMapOptional(Function.identity())
+                .flatMapOptional(Optional::of)
                 .subscribe(subscriber);
 
         subscriber.requestMax();
@@ -39,8 +37,7 @@ public class MultiFlatMapOptionalTest {
     void emptyOptionals() {
         TestSubscriber<Integer> subscriber = new TestSubscriber<>();
         Multi.range(1, 5)
-                .map(i -> Optional.<Integer>empty())
-                .flatMapOptional(Function.identity())
+                .flatMapOptional(i -> Optional.<Integer>empty())
                 .subscribe(subscriber);
 
         subscriber.requestMax();
@@ -52,8 +49,7 @@ public class MultiFlatMapOptionalTest {
     void mixedOptionals() {
         TestSubscriber<Integer> subscriber = new TestSubscriber<>();
         Multi.range(1, 5)
-                .map(i -> (i % 2) == 0 ? Optional.of(i) : Optional.<Integer>empty())
-                .flatMapOptional(Function.identity())
+                .flatMapOptional(i -> (i % 2) == 0 ? Optional.of(i) : Optional.<Integer>empty())
                 .subscribe(subscriber);
 
         subscriber.requestMax();
