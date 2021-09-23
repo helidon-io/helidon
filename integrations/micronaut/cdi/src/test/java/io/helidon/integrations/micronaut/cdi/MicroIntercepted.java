@@ -28,7 +28,7 @@ import io.micronaut.context.annotation.Type;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Around
-@Type(µInterceptor.class)
+@Type(MicroInterceptor.class)
 @Inherited
-public @interface µIntercepted {
+public @interface MicroIntercepted {
 }

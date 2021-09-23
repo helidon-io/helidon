@@ -22,7 +22,7 @@ import io.micronaut.aop.MethodInterceptor;
 import io.micronaut.aop.MethodInvocationContext;
 
 @Singleton
-public class µInterceptor implements MethodInterceptor<Object, Object> {
+public class MicroInterceptor implements MethodInterceptor<Object, Object> {
     @Override
     public Object intercept(MethodInvocationContext<Object, Object> context) {
         return context.proceed() + ".µ";

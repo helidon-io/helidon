@@ -22,13 +22,13 @@ public interface TestBean {
         return name() + ".cdiAnnotated";
     }
 
-    @µIntercepted
+    @MicroIntercepted
     default String µAnnotated() {
         return name() + ".µAnnotated";
     }
 
     @CdiIntercepted
-    @µIntercepted
+    @MicroIntercepted
     default String bothAnnotated() {
         return name() + ".bothAnnotated";
     }

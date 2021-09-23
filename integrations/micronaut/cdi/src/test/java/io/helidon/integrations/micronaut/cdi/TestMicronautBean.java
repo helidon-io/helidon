@@ -19,13 +19,13 @@ package io.helidon.integrations.micronaut.cdi;
 @MicronautBeanDef
 public class TestMicronautBean implements TestBean {
     @Override
-    @µIntercepted
+    @MicroIntercepted
     public String µAnnotated() {
         return TestBean.super.µAnnotated();
     }
 
     @Override
-    @µIntercepted
+    @MicroIntercepted
     public String bothAnnotated() {
         return TestBean.super.bothAnnotated();
     }
