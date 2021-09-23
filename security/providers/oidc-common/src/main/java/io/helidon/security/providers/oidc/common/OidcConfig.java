@@ -18,11 +18,17 @@ package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.json.Json;
@@ -36,6 +42,7 @@ import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.SetCookie;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -308,7 +315,6 @@ public final class OidcConfig {
     private final String cookieName;
 //    private final String cookieNameToken;
 //    private final String cookieNameId;
-    private final String cookieOptions;
 
     private final boolean useParam;
     private final String paramName;
@@ -341,6 +347,7 @@ public final class OidcConfig {
     private final WebClient appWebClient;
     private final URI introspectUri;
     private final Duration clientTimeout;
+    private final CookieHandler cookieHandler;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
@@ -392,27 +399,7 @@ public final class OidcConfig {
             this.introspectEndpoint = appClient.target(builder.introspectUri);
         }
 
-        StringBuilder cookieOptionsBuilder = new StringBuilder();
-        cookieOptionsBuilder.append(";Path=").append(builder.cookiePath);
-        if (builder.cookieHttpOnly) {
-            cookieOptionsBuilder.append(";HttpOnly");
-        }
-        if (!builder.cookieSameSite.isEmpty()) {
-            cookieOptionsBuilder.append(";SameSite=").append(builder.cookieSameSite);
-        }
-        if (builder.cookieMaxAge != null) {
-            cookieOptionsBuilder.append(";Max-Age=").append(builder.cookieMaxAge);
-        }
-        if (builder.cookieDomain != null) {
-            cookieOptionsBuilder.append(";Domain=").append(builder.cookieDomain);
-        }
-        if (builder.cookieSecure) {
-            cookieOptionsBuilder.append(";Secure");
-        }
-
-        this.cookieOptions = cookieOptionsBuilder.toString();
-
-        LOGGER.finest(() -> "OIDC Cookie options: " + cookieOptions);
+        this.cookieHandler = new CookieHandler(builder);
 
         if ((builder.scopeAudience == null) || builder.scopeAudience.trim().isEmpty()) {
             this.scopeAudience = "";
@@ -586,9 +573,20 @@ public final class OidcConfig {
      * @return cookie options to use in cookie string
      * @see Builder#cookieHttpOnly(Boolean)
      * @see Builder#cookieDomain(String)
+     * @deprecated please use {@link #cookieHandler()} instead
      */
+    @Deprecated(forRemoval = true, since = "2.4.0")
     public String cookieOptions() {
-        return cookieOptions;
+        return cookieHandler.createCookieOptions();
+    }
+
+    /**
+     * Cookie handler to create cookies or unset cookies.
+     *
+     * @return a new cookie handler
+     */
+    public CookieHandler cookieHandler() {
+        return cookieHandler;
     }
 
     /**
@@ -1773,6 +1771,94 @@ public final class OidcConfig {
 
         private void clientTimeoutMillis(long millis) {
             this.clientTimeout(Duration.ofMillis(millis));
+        }
+    }
+
+    /**
+     * Handler of cookies used in OIDC.
+     */
+    public static class CookieHandler {
+        private static final Logger LOGGER = Logger.getLogger(CookieHandler.class.getName());
+
+        private final String createCookieOptions;
+        private final List<Consumer<SetCookie.Builder>> removeCookieUpdaters = new LinkedList<>();
+        private final List<Consumer<SetCookie.Builder>> createCookieUpdaters = new LinkedList<>();
+
+        CookieHandler(Builder builder) {
+            // need to copy the values here, so we do not use future values of the builder
+            String path = builder.cookiePath;
+            boolean httpOnly = builder.cookieHttpOnly;
+            String sameSite = builder.cookieSameSite;
+            String domain = builder.cookieDomain;
+            boolean secure = builder.cookieSecure;
+            Long maxAge = builder.cookieMaxAge;
+
+            removeCookieUpdaters.add(it -> it.path(path));
+            if (httpOnly) {
+                removeCookieUpdaters.add(it -> it.httpOnly(true));
+            }
+            if (sameSite != null && !sameSite.isBlank()) {
+                SetCookie.SameSite sameSiteEnum = SetCookie.SameSite.valueOf(sameSite.toUpperCase(Locale.ROOT));
+                removeCookieUpdaters.add(it -> it.sameSite(sameSiteEnum));
+            }
+            if (domain != null) {
+                removeCookieUpdaters.add(it -> it.domain(domain));
+            }
+            if (secure) {
+                removeCookieUpdaters.add(it -> it.secure(true));
+            }
+            // now we can share the updaters, from this point the two lists diverge
+            createCookieUpdaters.addAll(removeCookieUpdaters);
+
+            if (maxAge != null) {
+                createCookieUpdaters.add(it -> it.maxAge(Duration.ofSeconds(maxAge)));
+            }
+            // set expires to 0 - this removes the cookie from browsers
+            removeCookieUpdaters.add(it -> it.expires(Instant.ofEpochMilli(0)));
+
+            String cookieName = builder.cookieName;
+            String value = createCookie(cookieName, "value").build().toString();
+            int index = value.indexOf(';');
+            if (index < 0) {
+                this.createCookieOptions = "";
+            } else {
+                this.createCookieOptions = value.substring(index + 1);
+            }
+
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest(() -> "OIDC Create cookie example: " + value);
+                LOGGER.finest(() -> "OIDC Remove cookie example: " + removeCookie(cookieName).build());
+            }
+        }
+
+        String createCookieOptions() {
+            return createCookieOptions;
+        }
+
+        /**
+         * {@link io.helidon.common.http.SetCookie} builder to set a new cookie.
+         *
+         * @param name name of the cookie
+         * @param value value of the cookie
+         * @return a new builder to configure set cookie configured from OIDC Config
+         */
+        public SetCookie.Builder createCookie(String name, String value) {
+            SetCookie.Builder builder = SetCookie.builder(name, value);
+            createCookieUpdaters.forEach(it -> it.accept(builder));
+            return builder;
+        }
+
+        /**
+         * {@link io.helidon.common.http.SetCookie} builder to remove an existing cookie (such as during logout).
+         *
+         * @param name name of the cookie
+         * @return a new builder to configure set cookie configured from OIDC Config with expiration set to epoch begin and
+         *  empty value
+         */
+        public SetCookie.Builder removeCookie(String name) {
+            SetCookie.Builder builder = SetCookie.builder(name, "");
+            removeCookieUpdaters.forEach(it -> it.accept(builder));
+            return builder;
         }
     }
 }

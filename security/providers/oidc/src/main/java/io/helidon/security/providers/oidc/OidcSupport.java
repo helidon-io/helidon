@@ -35,6 +35,7 @@ import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.webserver.ResponseHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -119,11 +120,13 @@ public final class OidcSupport implements Service {
     private static final String DEFAULT_REDIRECT = "/index.html";
 
     private final OidcConfig oidcConfig;
+    private final OidcConfig.CookieHandler cookieHandler;
     private final boolean enabled;
 
     private OidcSupport(Builder builder) {
         this.oidcConfig = builder.oidcConfig;
         this.enabled = builder.enabled;
+        this.cookieHandler = oidcConfig.cookieHandler();
     }
 
     /**
@@ -184,15 +187,29 @@ public final class OidcSupport implements Service {
         if (enabled) {
             rules.get(oidcConfig.redirectUri(), this::processOidcRedirect)
                     .get("/oidc/logout", this::processLogout)
-                    .get("/oidc/loggedoutlog", (req, res) -> res.send("You have been logged out"))
+                    .get("/oidc/error", this::processOidcError)
+                    .get("/oidc/loggedout", this::loggedOut)
                     .any(this::addRequestAsHeader);
         }
+    }
+
+    private void processOidcError(ServerRequest serverRequest, ServerResponse serverResponse) {
+        serverRequest.content()
+                .as(String.class)
+                .thenAccept(it -> {
+                    serverResponse.status(Http.Status.NO_CONTENT_204);
+                    serverResponse.send();
+                });
+    }
+
+    private void loggedOut(ServerRequest req, ServerResponse res) {
+        res.send("You have been logged out");
     }
 
     private void processLogout(ServerRequest req, ServerResponse res) {
         // todo obtain token using configured approach
         Optional<String> jsessionid = req.headers().cookies()
-                .first("JSESSIONID_ID");
+                .first(oidcConfig.cookieName() + "_ID");
 
         if (jsessionid.isPresent()) {
             String idToken = jsessionid.get();
@@ -202,7 +219,11 @@ public final class OidcSupport implements Service {
                     + "?id_token_hint="
                     + idToken
                     + "&post_logout_redirect_uri=http://localhost:7987/oidc/loggedout"
-                    + "&state=abcdef";
+                    + "&state=my_state";
+
+            ResponseHeaders headers = res.headers();
+            headers.addCookie(cookieHandler.removeCookie(oidcConfig.cookieName()).build());
+            headers.addCookie(cookieHandler.removeCookie(oidcConfig.cookieName() + "_ID").build());
 
             res.status(Http.Status.TEMPORARY_REDIRECT_307)
                     .addHeader(Http.Header.LOCATION, location)
@@ -281,9 +302,11 @@ public final class OidcSupport implements Service {
         res.headers().add(Http.Header.LOCATION, state);
 
         if (oidcConfig.useCookie()) {
-            res.addHeader("Set-Cookie", oidcConfig.cookieName() + "=" + tokenValue + oidcConfig.cookieOptions());
+            ResponseHeaders headers = res.headers();
+            headers.addCookie(cookieHandler.createCookie(oidcConfig.cookieName(), tokenValue).build());
+
             if (idToken != null) {
-                res.addHeader("Set-Cookie", oidcConfig.cookieName() + "_ID=" + idToken + oidcConfig.cookieOptions());
+                headers.addCookie(cookieHandler.createCookie(oidcConfig.cookieName() + "_ID", idToken).build());
             }
         }
 

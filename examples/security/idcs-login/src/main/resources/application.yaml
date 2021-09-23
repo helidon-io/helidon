@@ -57,6 +57,6 @@ security:
         methods: ["get"]
         authenticate: true
         roles-allowed: ["my_admins"]
-        abac:
-          scopes: ["first_scope", "second_scope"]
+#        abac:
+#          scopes: ["first_scope", "second_scope"]
 
