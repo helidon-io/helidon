@@ -78,6 +78,7 @@ Single.just("1")
 |skip|Skip first n items, all the others are emitted.
 |flatMap|Transform each upstream item with the supplied function into a `Flow.Publisher`, subscribe to them and then flatten their items into a single sequence of items emitted to the downstream.
 |flatMap|Transform each upstream item with the supplied function and flatten the resulting `Flow.Publisher` to downstream while limiting the maximum number of concurrent inner `Flow.Publisher`s and their in-flight item count, optionally aggregating and delaying all errors until all sources terminate.
+|flatMapCompletionStage|Transform each upstream item with the supplied function and flatten the resulting `CompletionStage` results to downstream.
 |flatMapIterable|Transform each upstream item with the supplied function and flatten the resulting `Iterable` to the downstream.
 |observeOn|Re-emit the upstream's signals to the downstream on the given executor's thread using a default buffer size of 32 and errors skipping ahead of items.
 |observeOn|Re-emit the upstream's signals to the downstream on the given executor's thread.
