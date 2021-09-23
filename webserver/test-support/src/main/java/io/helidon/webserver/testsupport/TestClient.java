@@ -249,7 +249,7 @@ public class TestClient {
         }
 
         @Override
-        public Single<Void> close() {
+        public Single<Void> closeConnection() {
             throw new UnsupportedOperationException();
         }
     }

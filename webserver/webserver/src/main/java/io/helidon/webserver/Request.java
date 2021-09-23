@@ -195,8 +195,8 @@ abstract class Request implements ServerRequest {
     }
 
     @Override
-    public Single<Void> close() {
-        return this.bareRequest.close();
+    public Single<Void> closeConnection() {
+        return this.bareRequest.closeConnection();
     }
 
     private final class MessageBodyEventListener implements MessageBodyContext.EventListener {

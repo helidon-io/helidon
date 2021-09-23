@@ -138,7 +138,7 @@ class BareRequestImpl implements BareRequest {
     }
 
     @Override
-    public Single<Void> close() {
+    public Single<Void> closeConnection() {
         CompletableFuture<Void> cf = new CompletableFuture<>();
         ctx.close().addListener(f -> {
             if (f.isSuccess()) {

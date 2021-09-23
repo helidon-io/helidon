@@ -18,6 +18,9 @@ package io.helidon.webserver;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 import io.helidon.webserver.utils.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterEach;
@@ -37,11 +41,14 @@ import static org.hamcrest.Matchers.not;
 
 public class CloseConnectionTest {
 
+    private static final Duration TIME_OUT = Duration.of(30, ChronoUnit.SECONDS);
     private WebServer webServer;
+    private CompletableFuture<Void> closedConnectionFuture;
     private final ScheduledExecutorService exec = Executors.newSingleThreadScheduledExecutor();
 
     @BeforeEach
     void setUp() throws UnknownHostException {
+        closedConnectionFuture = new CompletableFuture<>();
         InetAddress localHost = InetAddress.getLocalHost();
         webServer = WebServer
                 .builder()
@@ -50,10 +57,12 @@ public class CloseConnectionTest {
                 .routing(Routing.builder()
                         .get((req, res) -> {
                             res.send(Multi
-                                    .interval(100, 200, TimeUnit.MILLISECONDS, exec)
+                                    .interval(100, 100, TimeUnit.MILLISECONDS, exec)
                                     .peek(i -> {
                                         if (i > 2) {
-                                            req.close();
+                                            req.closeConnection()
+                                                    .onError(closedConnectionFuture::completeExceptionally)
+                                                    .forSingle(closedConnectionFuture::complete);
                                         }
                                     })
                                     .map(i -> "item" + i)
@@ -66,12 +75,12 @@ public class CloseConnectionTest {
                         .build())
                 .build()
                 .start()
-                .await();
+                .await(TIME_OUT);
     }
 
     @AfterEach
     void tearDown() {
-        webServer.shutdown().await();
+        webServer.shutdown().await(TIME_OUT);
         exec.shutdown();
     }
 
@@ -80,6 +89,7 @@ public class CloseConnectionTest {
         try (SocketHttpClient c = new SocketHttpClient(webServer)) {
             c.request(Http.Method.GET);
             String result = c.receive();
+            Single.create(closedConnectionFuture, true).await(TIME_OUT);
             SocketHttpClient.assertConnectionIsClosed(c);
             assertThat(result, containsString("item0"));
             assertThat(result, not(containsString("item9")));

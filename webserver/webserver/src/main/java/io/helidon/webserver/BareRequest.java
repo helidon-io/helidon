@@ -116,9 +116,10 @@ public interface BareRequest {
     long requestId();
 
     /**
-     * Closes the connection.
+     * Request to close the connection and report success or failure asynchronously with returned single.
+     * After connection is closed it is not possible to use it again.
      *
-     * @return Single completed when channel is closed.
+     * @return Single completed when connection is closed.
      */
-    Single<Void> close();
+    Single<Void> closeConnection();
 }
