@@ -24,9 +24,6 @@ import java.util.logging.Logger;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 
-import io.helidon.common.reactive.BufferedEmittingPublisher;
-
-
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -44,10 +41,10 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.concurrent.FutureListener;
 
-import static io.helidon.webclient.NettyClientHandler.PUBLISHER;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.CONNECTION_IDENT;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.IN_USE;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.RECEIVED;
+import static io.helidon.webclient.WebClientRequestBuilderImpl.RESPONSE_RECEIVED;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.RESULT;
 
 /**
@@ -143,14 +140,12 @@ class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
                     WebClientRequestBuilderImpl.removeChannelFromCache(key, channel);
                 }
             }
-            CompletableFuture<WebClientServiceResponse> responseReceived = channel.attr(RECEIVED).get();
-            CompletableFuture<WebClientResponse> responseFuture = channel.attr(RESULT).get();
-            WebClientException exception = new WebClientException("Connection reset by the host");
-            responseReceived.completeExceptionally(exception);
-            responseFuture.completeExceptionally(exception);
-            if (channel.hasAttr(PUBLISHER)) {
-                BufferedEmittingPublisher<?> publisher = channel.attr(PUBLISHER).get();
-                publisher.fail(exception);
+            if (!channel.attr(RESPONSE_RECEIVED).get()) {
+                CompletableFuture<WebClientServiceResponse> responseReceived = channel.attr(RECEIVED).get();
+                CompletableFuture<WebClientResponse> responseFuture = channel.attr(RESULT).get();
+                WebClientException exception = new WebClientException("Connection reset by the host");
+                responseReceived.completeExceptionally(exception);
+                responseFuture.completeExceptionally(exception);
             }
             super.channelInactive(ctx);
         }

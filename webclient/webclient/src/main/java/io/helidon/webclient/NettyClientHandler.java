@@ -155,6 +155,16 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                 }
             }
 
+            channel.closeFuture()
+                    .addListener(f -> {
+                        // Connection closed without last HTTP content received. Some server problem
+                        // so we need to fail the publisher and report an exception.
+                        if (!responseCloser.isClosed()) {
+                            WebClientException exception = new WebClientException("Connection reset by the host");
+                            publisher.fail(exception);
+                        }
+                    });
+
             requestConfiguration.cookieManager().put(requestConfiguration.requestURI(),
                                                      clientResponse.headers().toMap());
 
