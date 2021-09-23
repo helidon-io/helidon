@@ -352,6 +352,22 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     }
 
     /**
+     * Transform item with supplied function and flatten resulting {@link java.util.Optional} to downstream
+     * as Single with its value as item if present or empty Single.
+     *
+     * @param <U>    mapped item type
+     * @param mapper mapper
+     * @return Single
+     * @throws NullPointerException if mapper is {@code null}
+     */
+    default <U> Single<U> flatMapOptional(Function<? super T, Optional<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return flatMapSingle(t -> mapper.apply(t)
+                .map(Single::just)
+                .orElseGet(Single::empty));
+    }
+
+    /**
      * Map this {@link Single} instance to a new {@link Single} of another type using the given {@link Function}.
      *
      * @param <U>    mapped item type
