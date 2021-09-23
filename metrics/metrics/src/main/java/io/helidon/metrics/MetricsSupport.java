@@ -427,14 +427,14 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      */
     @Override
     public void update(Routing.Rules rules) {
-        ExponentiallyDecayingReservoir.init();
+        PeriodicExecutor.start();
 
         configureEndpoint(rules, rules);
     }
 
     @Override
     protected void onShutdown() {
-        ExponentiallyDecayingReservoir.onServerShutdown();
+        PeriodicExecutor.stop();
     }
 
     private static KeyPerformanceIndicatorSupport.Context kpiContext(ServerRequest request) {
