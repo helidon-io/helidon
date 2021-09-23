@@ -354,7 +354,7 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
          * @return encountered error messages.
          */
         public List<ErrorMessage> getMessages() {
-            return messages;
+            return List.copyOf(messages);
         }
     }
 

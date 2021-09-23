@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientFactory;
 
 /**
- * Factor for V3 client.
+ * Factory for V3 client.
  */
 public class EtcdV3ClientFactory implements EtcdClientFactory {
     @Override
-    public EtcdClient createClient(URI uri) {
-        return new EtcdV3Client(uri);
+    public EtcdClient createClient(URI... uris) {
+        return new EtcdV3Client(uris);
     }
 }

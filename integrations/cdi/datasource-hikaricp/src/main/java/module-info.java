@@ -22,13 +22,15 @@
  * @see
  * io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.datasource.hikaricp.cdi {
-    requires jakarta.enterprise.cdi.api;
-    requires jakarta.inject.api;
-    requires java.sql;
+    requires transitive jakarta.enterprise.cdi.api;
+    requires transitive jakarta.inject.api;
+    requires transitive java.sql;
     requires java.annotation;
     requires microprofile.config.api;
-    requires io.helidon.integrations.datasource.cdi;
+    requires transitive io.helidon.integrations.datasource.cdi;
+    requires static microprofile.metrics.api;
     requires com.zaxxer.hikari;
 
     exports io.helidon.integrations.datasource.hikaricp.cdi;

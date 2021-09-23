@@ -247,4 +247,15 @@ public interface ResponseHeaders extends Headers {
      */
     Single<ResponseHeaders> send();
 
+    @Override
+    ResponseHeaders putAll(Parameters parameters);
+
+    @Override
+    ResponseHeaders add(String key, String... values);
+
+    @Override
+    ResponseHeaders add(String key, Iterable<String> values);
+
+    @Override
+    ResponseHeaders addAll(Parameters parameters);
 }

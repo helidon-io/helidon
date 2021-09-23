@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import java.net.URI;
 public interface EtcdClientFactory {
     /**
      * Create a new client.
-     * @param uri URI of etcd
+     * @param uris URIs of etcd
      * @return client
      */
-    EtcdClient createClient(URI uri);
+    EtcdClient createClient(URI... uris);
 }

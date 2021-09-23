@@ -16,6 +16,8 @@
 
 package io.helidon.integrations.oci.objectstorage.health;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
@@ -47,21 +49,21 @@ import static io.helidon.common.http.Http.Status.OK_200;
 public final class OciObjectStorageHealthCheck implements HealthCheck {
     private static final Logger LOGGER = Logger.getLogger(OciObjectStorageHealthCheck.class.getName());
 
-    private final String bucket;
+    private final List<String> buckets;
     private final String namespace;
     private final OciObjectStorage ociObjectStorage;
 
     @Inject
-    OciObjectStorageHealthCheck(@ConfigProperty(name = "oci.objectstorage.bucket") String bucket,
-                                @ConfigProperty(name = "oci.objectstorage.namespace") String namespace,
-                                OciObjectStorage objectStorage) {
-        this.bucket = bucket;
+    OciObjectStorageHealthCheck(@ConfigProperty(name = "oci.objectstorage.namespace") String namespace,
+                                @ConfigProperty(name = "oci.objectstorage.healthchecks") List<String> buckets,
+                                OciObjectStorage ociObjectStorage) {
+        this.buckets = buckets;
         this.namespace = namespace;
-        this.ociObjectStorage = objectStorage;
+        this.ociObjectStorage = ociObjectStorage;
     }
 
     private OciObjectStorageHealthCheck(Builder builder) {
-        this.bucket = builder.bucket;
+        this.buckets = builder.buckets;
         this.namespace = builder.namespace;
         this.ociObjectStorage = builder.ociObjectStorage;
     }
@@ -86,36 +88,35 @@ public final class OciObjectStorageHealthCheck implements HealthCheck {
     }
 
     /**
-     * Checks that the OCI Object Storage bucket is accessible, if defined. Will report
-     * error only if the bucket has been defined and it is not accessible for some reason.
-     * Can block since all health checks are called asynchronously.
+     * Checks that the OCI Object Storage buckets are accessible. Will report a status code
+     * or an error message for each bucket as data. Can block since all health checks are
+     * called asynchronously.
      *
      * @return a response
      */
     @Override
     public HealthCheckResponse call() {
         HealthCheckResponseBuilder builder = HealthCheckResponse.named("objectStorage");
-        if (bucket != null) {
-            // Attempt to retrieve bucket's metadata
+
+        boolean status = true;
+        for (String bucket : buckets) {
             try {
                 ApiOptionalResponse<GetBucket.Response> r = ociObjectStorage.getBucket(GetBucket.Request.builder()
-                                                                                               .namespace(namespace)
-                                                                                               .bucket(bucket));
-                builder.state(r.status().equals(OK_200));
+                        .namespace(namespace)
+                        .bucket(bucket));
                 LOGGER.fine(() -> "OCI ObjectStorage health check for bucket " + bucket
                         + " returned status code " + r.status().code());
+                builder.withData(bucket, r.status().code());
+                status = status && r.status().equals(OK_200);
             } catch (Throwable t) {
-                builder.down()
-                        .withData("Error", t.getClass().getName())
-                        .withData("Message", t.getMessage());
-            } finally {
-                builder.withData("bucket", bucket);
+                LOGGER.fine(() -> "OCI ObjectStorage health check for bucket " + bucket
+                        + " exception " + t.getMessage());
+                status = false;
+                builder.withData(bucket, t.getMessage());
             }
-        } else {
-            LOGGER.fine("OCI ObjectStorage health check disabled when bucket not defined");
-            builder.up();
         }
-        builder.withData("namespace", namespace);
+
+        builder.state(status);
         return builder.build();
     }
 
@@ -124,19 +125,17 @@ public final class OciObjectStorageHealthCheck implements HealthCheck {
      */
     public static final class Builder implements io.helidon.common.Builder<OciObjectStorageHealthCheck> {
 
-        private String bucket;
         private String namespace;
         private OciObjectStorageRx ociObjectStorageRx;
         private OciObjectStorage ociObjectStorage;
+        private final List<String> buckets = new ArrayList<>();
 
         private Builder() {
         }
 
         @Override
         public OciObjectStorageHealthCheck build() {
-            Objects.requireNonNull(bucket);
             Objects.requireNonNull(namespace);
-
             if (ociObjectStorageRx == null) {
                 ociObjectStorageRx = OciObjectStorageRx.builder()
                         .namespace(namespace)
@@ -154,7 +153,7 @@ public final class OciObjectStorageHealthCheck implements HealthCheck {
          */
         public Builder config(Config config) {
             config.get("oci.objectstorage.namespace").asString().ifPresent(this::namespace);
-            config.get("oci.objectstorage.bucket").asString().ifPresent(this::bucket);
+            config.get("oci.objectstorage.healthchecks").asList(String.class).ifPresent(this.buckets::addAll);
             return this;
         }
 
@@ -170,13 +169,13 @@ public final class OciObjectStorageHealthCheck implements HealthCheck {
         }
 
         /**
-         * Set the bucket's name.
+         * Add a bucket to the list.
          *
          * @param bucket bucket's name.
          * @return the builder.
          */
-        public Builder bucket(String bucket) {
-            this.bucket = bucket;
+        public Builder addBucket(String bucket) {
+            this.buckets.add(bucket);
             return this;
         }
 

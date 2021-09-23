@@ -33,6 +33,7 @@
 
     <modules>
         <module>webserver</module>
+        <module>transport</module>
         <module>jersey</module>
         <module>test-support</module>
         <module>access-log</module>

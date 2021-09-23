@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,15 +53,21 @@ public class EtcdConfigSource extends AbstractConfigSource
     private static final Logger LOGGER = Logger.getLogger(EtcdConfigSource.class.getName());
 
     private final EtcdEndpoint endpoint;
+    private final List<EtcdEndpoint> endpoints;
     private final EtcdClient client;
 
     EtcdConfigSource(EtcdConfigSourceBuilder builder) {
         super(builder);
 
-        endpoint = builder.target();
+        endpoints = builder.target();
+        if (endpoints.size() < 1) {
+            throw new IllegalArgumentException("At least one endpoint must be defined");
+        }
+
+        endpoint = endpoints.get(0);
         client = endpoint.api()
                 .clientFactory()
-                .createClient(endpoint.uri());
+                .createClient(endpoints.stream().map(EtcdEndpoint::uri).toArray(URI[]::new));
     }
 
     @Override

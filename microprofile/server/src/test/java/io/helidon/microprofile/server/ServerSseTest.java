@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,7 @@ class ServerSseTest {
     private void innerTest(String endpoint, CompletableFuture<Void> future, int eventNum) throws InterruptedException {
         Server server = Server.builder()
                 .addApplication("/", new TestApplication1())
+                .port(0)
                 .build();
         server.start();
 

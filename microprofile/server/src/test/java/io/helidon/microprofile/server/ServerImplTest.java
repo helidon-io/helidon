@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ class ServerImplTest {
     @Test
     void testCustomExecutorService() {
         Server server = Server.builder()
+                .port(0)
                 .addApplication("/app1", new TestApplication1())
                 .addApplication(JaxRsApplication.builder()
                                         .contextRoot("/app2")
@@ -88,6 +89,7 @@ class ServerImplTest {
     @Test
     void testTwoApps() {
         Server server = Server.builder()
+                .port(0)
                 .addApplication("/app1", new TestApplication1())
                 .addApplication("/app2/", new TestApplication2())       // trailing slash ignored
                 .build();

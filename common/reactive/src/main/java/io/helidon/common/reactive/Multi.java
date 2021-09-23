@@ -634,6 +634,21 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Transform item with supplied function and flatten resulting {@link java.util.concurrent.CompletionStage} results
+     * to downstream. As reactive streams forbids null values, CompletionStage result is mapped to
+     * {@link java.util.Optional}.
+     *
+     * @param mapper {@link Function} receiving item as parameter and returning {@link java.util.concurrent.CompletionStage}
+     * @param <U>    output item type
+     * @return Multi
+     * @throws NullPointerException if mapper is {@code null}
+     */
+    default <U> Multi<U> flatMapCompletionStage(Function<? super T, ? extends CompletionStage<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return flatMap(t -> Multi.create(mapper.apply(t)), 1, false, 1);
+    }
+
+    /**
      * Transform item with supplied function and flatten resulting {@link Iterable} to downstream.
      *
      * @param iterableMapper {@link Function} receiving item as parameter and returning {@link Iterable}

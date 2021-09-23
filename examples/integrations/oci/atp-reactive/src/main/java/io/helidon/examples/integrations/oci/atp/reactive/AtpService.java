@@ -16,19 +16,26 @@
 
 package io.helidon.examples.integrations.oci.atp.reactive;
 
+import java.io.ByteArrayInputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.integrations.oci.atp.OciAutonomousDbRx;
-import io.helidon.integrations.oci.atp.GenerateAutonomousDatabaseWalletRx;
+import io.helidon.integrations.oci.atp.GenerateAutonomousDatabaseWallet;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 class AtpService implements Service {
+    private static final Logger LOGGER = Logger.getLogger(AtpService.class.getName());
+
     private final OciAutonomousDbRx autonomousDbRx;
 
     AtpService(OciAutonomousDbRx autonomousDbRx) {
@@ -44,18 +51,35 @@ class AtpService implements Service {
      * Generate wallet file for the configured ATP.
      */
     private void generateWallet(ServerRequest req, ServerResponse res) {
-        autonomousDbRx.generateWallet(GenerateAutonomousDatabaseWalletRx.Request.builder())
+        autonomousDbRx.generateWallet(GenerateAutonomousDatabaseWallet.Request.builder())
                 .forSingle(apiResponse -> {
-                    Optional<GenerateAutonomousDatabaseWalletRx.Response> entity = apiResponse.entity();
+                    Optional<GenerateAutonomousDatabaseWallet.Response> entity = apiResponse.entity();
                     if (entity.isEmpty()) {
                         res.status(Http.Status.NOT_FOUND_404).send();
                     } else {
-                        GenerateAutonomousDatabaseWalletRx.Response response = entity.get();
-                        // copy the content length header to response
-                        apiResponse.headers()
-                                .first(Http.Header.CONTENT_LENGTH)
-                                .ifPresent(res.headers()::add);
-                        res.send(response.publisher());
+                        GenerateAutonomousDatabaseWallet.Response response = entity.get();
+                        try {
+                            LOGGER.log(Level.INFO, "Wallet Content Length: " + response.walletArchive().getContent().length);
+                            ZipInputStream zipStream = new ZipInputStream(new ByteArrayInputStream(response.walletArchive().getContent()));
+                            ZipEntry entry = null;
+                            while ((entry = zipStream.getNextEntry()) != null) {
+                                String entryName = entry.getName();
+                                LOGGER.log(Level.INFO, "Wallet FileEntry:" + entryName);
+                                //FileOutputStream out = new FileOutputStream(entryName);
+                                //byte[] byteBuff = new byte[4096];
+                                //int bytesRead = 0;
+                                //while ((bytesRead = zipStream.read(byteBuff)) != -1) {
+                                //    out.write(byteBuff, 0, bytesRead);
+                                //}
+                                //out.close();
+                                zipStream.closeEntry();
+                            }
+                            zipStream.close();
+                        } catch (Exception e) {
+                            LOGGER.log(Level.WARNING, "Exception while processing wallet content", e);
+                            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+                        }
+                        res.status(Http.Status.OK_200).send();
                     }
                 })
                 .exceptionally(res::send);
