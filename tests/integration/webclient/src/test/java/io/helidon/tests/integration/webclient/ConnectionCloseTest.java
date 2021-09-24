@@ -30,11 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
-/**
- * This test needs to run in its own VM as it will cause an abrupt server shutdown to
- * verify a connection closed condition after some chunks were flushed by the server.
- */
-class ConnectionClose extends TestParent {
+class ConnectionCloseTest extends TestParent {
 
     @Test
     void testCutConnection() throws ExecutionException, InterruptedException, TimeoutException {

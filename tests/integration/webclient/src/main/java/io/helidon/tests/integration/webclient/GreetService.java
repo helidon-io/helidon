@@ -213,7 +213,11 @@ public class GreetService implements Service {
                 .limit(15)
                 .peek(s -> {
                     if ("item2".equals(s)) {
-                        Main.webServer.shutdown();        // abrupt shutdown to detect connection close
+                        try {
+                            Main.webServer.shutdown().get(10, TimeUnit.SECONDS);
+                        } catch (Throwable t) {
+                            LOGGER.log(Level.SEVERE, "Webserver failed to shut down!", t);
+                        }
                     }
                 })
                 .map(String::getBytes)
