@@ -18,6 +18,7 @@
 package io.helidon.microprofile.lra.tck;
 
 import java.net.URI;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Destroyed;
@@ -36,6 +37,8 @@ import io.helidon.microprofile.server.ServerCdiExtension;
 @ApplicationScoped
 public class CoordinatorAppService {
 
+    private static final Logger LOGGER = Logger.getLogger(CoordinatorAppService.class.getName());
+
     @Inject
     Config config;
 
@@ -49,6 +52,7 @@ public class CoordinatorAppService {
         String urlProperty = System.getProperty("lra.coordinator.url", "");
         // Maven can't set null
         urlProperty = urlProperty.isEmpty() ? "http://localhost:" + port + "/lra-coordinator" : urlProperty;
+        LOGGER.info("Using LRA Coordinator: " + urlProperty);
         return URI.create(urlProperty);
     });
 

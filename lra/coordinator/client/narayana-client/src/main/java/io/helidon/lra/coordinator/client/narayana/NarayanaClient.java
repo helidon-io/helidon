@@ -120,7 +120,8 @@ public class NarayanaClient implements CoordinatorClient {
                                                 + "'Long-Running-Action' header."))
                 )
                 .onErrorResumeWith(t -> connectionError("Unable to start LRA", t))
-                .peek(lraId -> logF("LRA started - LRAID: {1}", () -> List.of(lraId)))
+                .peek(lraId -> logF("LRA started - LRAID: {0} parent: {1}",
+                        () -> List.of(lraId, Optional.ofNullable(parentLRA))))
                 .first());
     }
 
@@ -134,7 +135,7 @@ public class NarayanaClient implements CoordinatorClient {
                 .flatMap(status -> {
                     switch (status.family()) {
                         case SUCCESSFUL:
-                            logF("LRA cancelled - LRAID: {1}", () -> List.of(lraId));
+                            logF("LRA cancelled - LRAID: {0}", () -> List.of(lraId));
                             return Single.empty();
                         case CLIENT_ERROR:
                         default:
@@ -161,12 +162,13 @@ public class NarayanaClient implements CoordinatorClient {
                 .flatMap(status -> {
                     switch (status.family()) {
                         case SUCCESSFUL:
-                            logF("LRA closed - LRAID: {1}", () -> List.of(lraId));
+                            logF("LRA closed - LRAID: {0}", () -> List.of(lraId));
                             return Single.empty();
                         case CLIENT_ERROR:
                         default:
-                            if (410 == status.code()) {
-                                logF("LRA already closed - LRAID: {1}", () -> List.of(lraId));
+                            // 404 can happen when coordinator already cleaned terminated lra's
+                            if (List.of(410, 404).contains(status.code())) {
+                                logF("LRA already closed - LRAID: {0}", () -> List.of(lraId));
                                 return Single.empty();
                             }
                             return connectionError("Unable to close lra - LRAID: " + lraId, status.code());
@@ -198,7 +200,9 @@ public class NarayanaClient implements CoordinatorClient {
                             return connectionError(res.lastEndpointURI()
                                     + "Too late to join LRA - LRAID: " + lraId, 412);
                         case 404:
-                            return connectionError("Not found " + lraId, 404);
+                            // Narayana returns 404 for already terminated lras
+                        case 410:
+                            return connectionError("Not found " + lraId, 410);
                         case 200:
                             return Single.just(res
                                     .headers()

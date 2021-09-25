@@ -16,13 +16,18 @@
 
 package io.helidon.microprofile.lra.tck;
 
+import java.io.StringReader;
 import java.net.URI;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 
 import org.eclipse.microprofile.lra.tck.service.spi.LRACallbackException;
 import org.eclipse.microprofile.lra.tck.service.spi.LRARecoveryService;
@@ -31,18 +36,12 @@ public class HelidonLRARecoveryService implements LRARecoveryService {
 
     private static final Logger LOGGER = Logger.getLogger(HelidonLRARecoveryService.class.getName());
 
-    private static final String externalCoordinator = System.getProperty("lra.coordinator.url", "");
-
     @Override
     public void waitForCallbacks(URI lraId) {
-        if ("".equals(externalCoordinator)) {
-            // Helidon coordinator has simple recovery loop
-            // Narayana does recovery with backoff, this would take ages
-            try {
-                this.waitForRecovery(lraId);
-            } catch (LRACallbackException e) {
-                LOGGER.log(Level.WARNING, "Wait for callback failed.", e);
-            }
+        try {
+            this.waitForRecovery(lraId);
+        } catch (LRACallbackException e) {
+            LOGGER.log(Level.WARNING, "Wait for callback failed.", e);
         }
     }
 
@@ -51,7 +50,7 @@ public class HelidonLRARecoveryService implements LRARecoveryService {
         int counter = 0;
 
         do {
-            if (counter > 9) return;
+            if (counter > 15) return;
             LOGGER.info("Recovery attempt #" + ++counter + " of " + lraId);
         } while (!waitForEndPhaseReplay(lraId));
         LOGGER.info("LRA " + lraId + " has finished the recovery");
@@ -61,18 +60,33 @@ public class HelidonLRARecoveryService implements LRARecoveryService {
     @Override
     public boolean waitForEndPhaseReplay(URI lraId) {
         Client client = ClientBuilder.newClient();
+        String lraIdString = lraId.toASCIIString();
+        URI coordinatorUri = coordinatorPath(lraId);
+        LOGGER.info("Coordinator url for " + lraIdString + " is " + coordinatorUri.toASCIIString());
         try {
-
             Response response = client
-                    .target(lraId)
+                    .target(coordinatorUri)
                     .path("recovery")
-                    .queryParam("lraId", lraId.toASCIIString())
+                    .queryParam("lraId", lraIdString)
                     .request()
                     .get();
 
             String recoveringLras = response.readEntity(String.class);
             response.close();
-            if (recoveringLras.contains(lraId.toASCIIString())) {
+            System.out.println(recoveringLras);
+            if (recoveringLras.contains(lraIdString)) {
+                for (JsonValue jval : Json.createReader(new StringReader(recoveringLras)).readArray()) {
+                    if (jval.getValueType() == JsonValue.ValueType.STRING) {
+                        // Oracle TMM
+                        return false;
+                    }
+                    JsonObject jsonLra = jval.asJsonObject();
+                    if (lraIdString.equals(jsonLra.getString("lraId"))) {
+                        boolean recovering = jsonLra.getBoolean("recovering");
+                        LOGGER.info("LRA " + lraIdString + " is recovering: " + recovering);
+                        return recovering;
+                    }
+                }
                 // intended LRA is among those still waiting for recovering
                 return false;
             }
@@ -82,5 +96,10 @@ public class HelidonLRARecoveryService implements LRARecoveryService {
             client.close();
         }
         return true;
+    }
+
+    private URI coordinatorPath(URI lraId) {
+        String path = lraId.toASCIIString();
+        return UriBuilder.fromPath(path.substring(0, path.lastIndexOf('/'))).build();
     }
 }

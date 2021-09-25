@@ -300,7 +300,7 @@ public class LoadBalancedCoordinatorTest {
                 .get(TIMEOUT_SEC, TimeUnit.SECONDS);
 
         assertThat(response.getStatusInfo().getReasonPhrase(), response.getStatus(), isIn(endNestedLRAWork.expectedResponseStatuses()));
-        assertThat(UriBuilder.fromPath(response.getHeaderString(LRA_HTTP_CONTEXT_HEADER)).build(), is(nestedLraId));
+        assertThat(UriBuilder.fromUri(response.getHeaderString(LRA_HTTP_CONTEXT_HEADER)).build(), is(nestedLraId));
         assertThat(await(CdiNestedCompleteOrCompensate.CS_END_NESTED_LRA), is(nestedLraId));
         assertFalse(getCompletable(CdiNestedCompleteOrCompensate.CS_END_PARENT_LRA).isDone());
         if (endNestedLRAWork == Work.BOOM) {
@@ -498,9 +498,10 @@ public class LoadBalancedCoordinatorTest {
     }
 
     private void waitForRecovery(URI lraId) {
+        URI coordinatorPath = coordinatorPath(lraId);
         for (int i = 0; i < 10; i++) {
             WebClient client = WebClient.builder()
-                    .baseUri(lraId)
+                    .baseUri(coordinatorPath)
                     .build();
 
             WebClientResponse response = client
@@ -521,5 +522,10 @@ public class LoadBalancedCoordinatorTest {
             }
             System.out.println("Waiting for recovery attempt #" + i + " LRA is still waiting: " + recoveringLras);
         }
+    }
+
+    private URI coordinatorPath(URI lraId) {
+        String path = lraId.toASCIIString();
+        return UriBuilder.fromPath(path.substring(0, path.lastIndexOf('/'))).build();
     }
 }
