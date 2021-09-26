@@ -14,14 +14,14 @@
 # limitations under the License.
 #
 
-# The values are read from
-# ~/helidon/conf/examples.yaml
-# or you can just update them here
-
 server:
   port: 8080
 
+#
+# The following properties under oci are accessed by Helidon. Values
+# under oci.properties.* are read from ~/helidon/conf/examples.yaml.
+#
 oci:
   objectstorage:
     namespace: "${oci.properties.objectstorage-namespace}"
-    bucket: "${oci.properties.objectstorage-bucket}"
+    healthchecks: [ "${oci.properties.objectstorage-bucket}" ]

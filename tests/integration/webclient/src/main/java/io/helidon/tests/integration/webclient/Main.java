@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
-
 import io.opentracing.Tracer;
 
 /**
@@ -32,6 +31,8 @@ import io.opentracing.Tracer;
 public final class Main {
 
     static int serverPort;
+
+    static WebServer webServer;
 
     /**
      * Cannot be instantiated.
@@ -72,21 +73,20 @@ public final class Main {
 
     private static CompletionStage<WebServer> startIt(Config config, WebServer.Builder serverBuilder) {
         serverBuilder.config(config.get("server"));
-        WebServer server = serverBuilder.routing(createRouting(config))
+        webServer = serverBuilder.routing(createRouting(config))
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
-        CompletionStage<WebServer> start = server.start();
+        CompletionStage<WebServer> start = webServer.start();
 
         start.thenAccept(ws -> {
-            serverPort = ws.port();
-            System.out.println(
-                    "WEB server is up! http://localhost:" + ws.port() + "/greet");
-            ws.whenShutdown().thenRun(()
-                                              -> System.out.println("WEB server is DOWN. Good bye!"));
-        })
+                    serverPort = ws.port();
+                    System.out.println(
+                            "WEB server is up! http://localhost:" + ws.port() + "/greet");
+                    ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
+                })
                 .exceptionally(t -> {
                     System.err.println("Startup failed: " + t.getMessage());
                     t.printStackTrace(System.err);

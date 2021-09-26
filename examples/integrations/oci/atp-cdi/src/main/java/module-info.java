@@ -18,6 +18,7 @@
  * Example of integration with OCI ATP in CDI application.
  */
 module io.helidon.examples.integrations.oci.atp.cdi {
+    requires java.logging;
     requires java.ws.rs;
     requires java.json.bind;
     requires jakarta.inject.api;

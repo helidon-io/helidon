@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,10 @@ import java.util.regex.Pattern;
 import javax.annotation.sql.DataSourceDefinition;
 import javax.annotation.sql.DataSourceDefinitions;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.CreationException;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.Annotated;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
@@ -38,6 +40,7 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.inject.spi.configurator.BeanConfigurator;
+import javax.enterprise.util.TypeLiteral;
 import javax.inject.Named;
 import javax.sql.DataSource;
 
@@ -45,6 +48,7 @@ import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.metrics.MetricsTrackerFactory;
 import org.eclipse.microprofile.config.Config;
 
 /**
@@ -104,8 +108,13 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
             .addTransitiveTypeClosure(HikariDataSource.class)
             .beanClass(HikariDataSource.class)
             .scope(ApplicationScoped.class)
-            .createWith(ignored -> new HikariDataSource(new HikariConfig(dataSourceProperties)))
-            .destroyWith((dataSource, ignored) -> {
+            .produceWith(instance -> {
+                    final HikariConfig config = produceHikariConfig(instance, dataSourceName, dataSourceProperties);
+                    // Permit further customization before the bean is actually created
+                    instance.select(new TypeLiteral<Event<HikariConfig>>() {}, dataSourceName).get().fire(config);
+                    return new HikariDataSource(config);
+                })
+            .disposeWith((dataSource, ignored) -> {
                     if (dataSource instanceof AutoCloseable) {
                         try {
                             ((AutoCloseable) dataSource).close();
@@ -116,6 +125,28 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
                         }
                     }
                 });
+    }
+
+    private static HikariConfig produceHikariConfig(final Instance<Object> instance,
+                                                    final Named dataSourceName,
+                                                    final Properties dataSourceProperties) {
+        final HikariConfig hikariConfig = new HikariConfig(dataSourceProperties);
+        Instance<MetricsTrackerFactory> i;
+        if (dataSourceName == null) {
+            i = instance.select(MetricsTrackerFactory.class);
+        } else {
+            if (hikariConfig.getPoolName() == null) {
+                hikariConfig.setPoolName(dataSourceName.value());
+            }
+            i = instance.select(MetricsTrackerFactory.class, dataSourceName);
+            if (i.isUnsatisfied()) {
+                i = instance.select(MetricsTrackerFactory.class);
+            }
+        }
+        if (!i.isUnsatisfied()) {
+            hikariConfig.setMetricsTrackerFactory(i.get());
+        }
+        return hikariConfig;
     }
 
     private void processAnnotatedType(@Observes

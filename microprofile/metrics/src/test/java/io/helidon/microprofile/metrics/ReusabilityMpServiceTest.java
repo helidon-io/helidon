@@ -30,7 +30,7 @@ public class ReusabilityMpServiceTest {
                 .addResourceClass(resourceClass)
                 .host("localhost")
                 // choose a random available port
-                .port(-1)
+                .port(0)
                 .build();
     }
 

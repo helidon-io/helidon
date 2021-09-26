@@ -51,7 +51,7 @@ public class ObjectStorageResource {
 
     @Inject
     ObjectStorageResource(OciObjectStorage objectStorage,
-                          @ConfigProperty(name = "oci.objectstorage.bucket")
+                          @ConfigProperty(name = "oci.properties.objectstorage-bucket")
                                   String bucketName) {
         this.objectStorage = objectStorage;
         this.bucketName = bucketName;
