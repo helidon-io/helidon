@@ -156,6 +156,15 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         }
 
         @Override
+        public <T> T create(Class<T> createMe) {
+            try {
+                return shared.create(createMe);
+            } catch (Throwable t) {
+                return forApplication.create(createMe);
+            }
+        }
+
+        @Override
         public <T> T createAndInitialize(Class<T> createMe) {
             try {
                 return shared.createAndInitialize(createMe);
@@ -362,6 +371,11 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
 
         @Override
         public boolean isRegistrable(Class<?> clazz) {
+            throw new UnsupportedOperationException("Not supported");
+        }
+
+        @Override
+        public <T> T create(Class<T> createMe) {
             throw new UnsupportedOperationException("Not supported");
         }
 

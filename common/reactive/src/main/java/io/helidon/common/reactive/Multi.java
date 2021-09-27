@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -633,6 +634,21 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Transform item with supplied function and flatten resulting {@link java.util.concurrent.CompletionStage} results
+     * to downstream. As reactive streams forbids null values, CompletionStage result is mapped to
+     * {@link java.util.Optional}.
+     *
+     * @param mapper {@link Function} receiving item as parameter and returning {@link java.util.concurrent.CompletionStage}
+     * @param <U>    output item type
+     * @return Multi
+     * @throws NullPointerException if mapper is {@code null}
+     */
+    default <U> Multi<U> flatMapCompletionStage(Function<? super T, ? extends CompletionStage<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return flatMap(t -> Multi.create(mapper.apply(t)), 1, false, 1);
+    }
+
+    /**
      * Transform item with supplied function and flatten resulting {@link Iterable} to downstream.
      *
      * @param iterableMapper {@link Function} receiving item as parameter and returning {@link Iterable}
@@ -656,6 +672,22 @@ public interface Multi<T> extends Subscribable<T> {
                                          int prefetch) {
         Objects.requireNonNull(iterableMapper, "iterableMapper is null");
         return new MultiFlatMapIterable<>(this, iterableMapper, prefetch);
+    }
+
+    /**
+     * Transform item with supplied function and flatten resulting {@link java.util.Optional} to downstream
+     * as one item if present or nothing if empty.
+     *
+     * @param mapper {@link Function} receiving item as parameter and returning {@link java.util.Optional}
+     * @param <U>    output item type
+     * @return Multi
+     */
+    default <U> Multi<U> flatMapOptional(Function<? super T, Optional<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return flatMap(t -> mapper.apply(t)
+                .map(Multi::just)
+                .orElseGet(Multi::empty)
+        );
     }
 
     /**
