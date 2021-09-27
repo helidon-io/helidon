@@ -33,6 +33,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
+import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyContext;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.common.MessageBodyReaderContext;
@@ -191,6 +192,11 @@ abstract class Request implements ServerRequest {
     @Override
     public long requestId() {
         return bareRequest.requestId();
+    }
+
+    @Override
+    public Single<Void> closeConnection() {
+        return this.bareRequest.closeConnection();
     }
 
     private final class MessageBodyEventListener implements MessageBodyContext.EventListener {
