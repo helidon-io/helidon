@@ -34,5 +34,6 @@
         <module>prometheus</module>
         <module>trace-exemplar</module>
         <module>jaeger</module>
+        <module>api</module>
     </modules>
 </project>

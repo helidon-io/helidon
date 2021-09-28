@@ -13,12 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics;
+package io.helidon.metrics.api;
+
+import io.helidon.config.Config;
 
 /**
  * Settings for KPI metrics.
  */
 public interface KeyPerformanceIndicatorMetricsSettings {
+
+    /**
+     * Creates a new {@code KeyPerformanceIndicatorMetricsSettings} instance from the specified config node containing KPI
+     * metrics settings.
+     *
+     * @param kpiConfig config node containing KPI metrics settings
+     * @return new KPI metrics settings reflecting the config
+     */
+    static KeyPerformanceIndicatorMetricsSettings create(Config kpiConfig) {
+        return builder().config(kpiConfig).build();
+    }
 
     /**
      * Creates a new builder for the settings.
@@ -106,6 +119,7 @@ public interface KeyPerformanceIndicatorMetricsSettings {
          */
         static final long LONG_RUNNING_REQUESTS_THRESHOLD_MS_DEFAULT = 10 * 1000; // 10 seconds
 
+        // The following constants are used in JavaDoc.
         private static final String CONFIG_KEY_PREFIX = "metrics." + KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
         private static final String QUALIFIED_LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY =
                 LONG_RUNNING_REQUESTS_CONFIG_KEY + "." + KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
@@ -129,6 +143,23 @@ public interface KeyPerformanceIndicatorMetricsSettings {
          */
         public Builder longRunningRequestThresholdMs(long value) {
             longRunningRequestThresholdMs = value;
+            return this;
+        }
+
+        /**
+         * Updates the KPI metrics settings in the builder based on the provided {@code Config} object.
+         *
+         * @param kpiConfig KPI metrics config node
+         * @return updated builder instance
+         */
+        public Builder config(Config kpiConfig) {
+            kpiConfig.get(KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY)
+                    .asBoolean()
+                    .ifPresent(this::extended);
+            kpiConfig.get(LONG_RUNNING_REQUESTS_CONFIG_KEY)
+                    .get(LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY)
+                    .asLong()
+                    .ifPresent(this::longRunningRequestThresholdMs);
             return this;
         }
 

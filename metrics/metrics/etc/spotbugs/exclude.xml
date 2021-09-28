@@ -60,4 +60,10 @@
         <Bug pattern="PREDICTABLE_RANDOM" />
     </Match>
 
+    <Match>
+        <!-- The class is public so we cannot just rename it to avoid this violation. -->
+        <Class name="io.helidon.metrics.RegistryFactory" />
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+    </Match>
+
 </FindBugsFilter>

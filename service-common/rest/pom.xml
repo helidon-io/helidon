@@ -35,6 +35,10 @@
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-cors</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics-api</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

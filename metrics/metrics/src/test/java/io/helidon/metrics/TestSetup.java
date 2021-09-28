@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
  */
 package io.helidon.metrics;
 
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -24,8 +25,10 @@ public class TestSetup {
 
     @Test
     void testMetricToTypeMapForCompleteness() {
+        Registry registry = (Registry)
+                io.helidon.metrics.api.RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
         for (MetricType mt : MetricType.values()) {
-            if (!Registry.metricToTypeMap().containsValue(mt) && mt != MetricType.INVALID) {
+            if (!registry.metricToTypeMap().containsValue(mt) && mt != MetricType.INVALID) {
                 Assertions.fail("MetricType " + mt.name() + " is not represented in Registry.METRIC_TO_TYPE_MAP");
             }
         }

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.metrics.RegistryFactoryProviderImpl;
+
 /**
  * Helidon Metrics implementation.
  */
@@ -23,6 +25,7 @@ module io.helidon.metrics {
     requires io.helidon.common;
     requires io.helidon.common.serviceloader;
     requires io.helidon.webserver.cors;
+    requires transitive io.helidon.metrics.api;
 
     requires transitive microprofile.metrics.api;
     requires java.management;
@@ -34,6 +37,8 @@ module io.helidon.metrics {
     requires io.helidon.servicecommon.rest;
 
     exports io.helidon.metrics;
+
+    provides io.helidon.metrics.api.RegistryFactoryProvider with RegistryFactoryProviderImpl;
 
     uses io.helidon.metrics.ExemplarService;
 }

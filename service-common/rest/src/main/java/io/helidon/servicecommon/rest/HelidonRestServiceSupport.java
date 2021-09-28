@@ -20,6 +20,8 @@ import java.util.Objects;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
+import io.helidon.metrics.api.ComponentMetricsSettings;
+import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.cors.CorsEnabledServiceHelper;
@@ -32,6 +34,7 @@ import io.helidon.webserver.cors.CrossOriginConfig;
  *     <ul>
  *         <li>Setting up the endpoint path (web context) for the service, using settings in the builder and config.</li>
  *         <li>Providing automatic CORS support (and the ability to control it via config).</li>
+ *         <li>Providing support for metrics-capable components to locate a correct {@link RegistryFactory}</li>
  *     </ul>
  *
  * <p>
@@ -47,6 +50,7 @@ public abstract class HelidonRestServiceSupport implements Service {
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
     private final Logger logger;
     private int webServerCount;
+    private final RegistryFactory componentRegistryFactory;
 
     /**
      * Shared initialization for new service support instances.
@@ -59,6 +63,7 @@ public abstract class HelidonRestServiceSupport implements Service {
         this.logger = logger;
         this.context = builder.context;
         corsEnabledServiceHelper = CorsEnabledServiceHelper.create(serviceName, builder.crossOriginConfig);
+        componentRegistryFactory = RegistryFactory.instance(builder.componentMetricsSettings);
     }
 
     /**
@@ -95,6 +100,14 @@ public abstract class HelidonRestServiceSupport implements Service {
             serviceEndpointRoutingRules.any(context, corsEnabledServiceHelper.processor());
         }
         postConfigureEndpoint(defaultRules, serviceEndpointRoutingRules);
+    }
+
+    /**
+     *
+     * @return the metrics {@link RegistryFactory} created for this service support instance
+     */
+    public RegistryFactory componentMetricsRegistryFactory() {
+        return componentRegistryFactory;
     }
 
     /**
@@ -144,6 +157,7 @@ public abstract class HelidonRestServiceSupport implements Service {
         private String context;
         private Config config = Config.empty();
         private CrossOriginConfig crossOriginConfig = null;
+        private ComponentMetricsSettings componentMetricsSettings = ComponentMetricsSettings.DEFAULT;
 
         protected Builder(Class<B> builderClass, String defaultContext) {
             this.builderClass = builderClass;
@@ -171,6 +185,21 @@ public abstract class HelidonRestServiceSupport implements Service {
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
 
+            config.get(ComponentMetricsSettings.METRICS_CONFIG_KEY)
+                    .as(ComponentMetricsSettings::create)
+                    .ifPresent(this::componentMetricsSettings);
+
+            return me();
+        }
+
+        /**
+         * Set the component metrics configuration to be used by this builder.
+         *
+         * @param componentMetricsSettings new settings to use
+         * @return updated builder instance
+         */
+        public B componentMetricsSettings(ComponentMetricsSettings componentMetricsSettings) {
+            this.componentMetricsSettings = componentMetricsSettings;
             return me();
         }
 

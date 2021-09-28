@@ -15,23 +15,17 @@
  */
 package io.helidon.metrics;
 
-class KeyPerformanceIndicatorMetricsSettingsImpl implements KeyPerformanceIndicatorMetricsSettings {
+import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.NoOpRegistryFactory;
 
-    private final boolean isExtended;
-    private final long longRunningRequestThresholdMs;
-
-    KeyPerformanceIndicatorMetricsSettingsImpl(Builder builder) {
-        this.isExtended = builder.isExtended();
-        this.longRunningRequestThresholdMs = builder.longRunningRequestThresholdMs();
-    }
+/**
+ * Full-featured metrics implementation of {@link io.helidon.metrics.api.RegistryFactoryProvider}.
+ */
+public class RegistryFactoryProviderImpl implements io.helidon.metrics.api.RegistryFactoryProvider {
 
     @Override
-    public boolean isExtended() {
-        return isExtended;
-    }
-
-    @Override
-    public long longRunningRequestThresholdMs() {
-        return longRunningRequestThresholdMs;
+    public io.helidon.metrics.api.RegistryFactory newRegistryFactory(MetricsSettings metricsSettings) {
+        return metricsSettings.isEnabled() ? RegistryFactory.create(metricsSettings)
+                : NoOpRegistryFactory.create();
     }
 }

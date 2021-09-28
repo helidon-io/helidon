@@ -50,6 +50,8 @@ import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
+import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
@@ -62,10 +64,10 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
-import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
-import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
-import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.LONG_RUNNING_REQUESTS_CONFIG_KEY;
-import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY;
+import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
+import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
+import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.LONG_RUNNING_REQUESTS_CONFIG_KEY;
+import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY;
 
 /**
  * Support for metrics for Helidon Web Server.
@@ -110,6 +112,10 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
     private static KeyPerformanceIndicatorMetricsSettings kpiSettings;
 
     private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
+
+    private static final String DISABLED_ENDPOINT_MESSAGE = "metrics is disabled";
+    private static final Handler DISABLED_ENDPOINT_HANDLER =
+            (req, res) -> res.status(Http.Status.NOT_FOUND_404.code()).send(DISABLED_ENDPOINT_MESSAGE);
 
     protected MetricsSupport(Builder builder) {
         super(LOGGER, builder, SERVICE_NAME);
@@ -384,6 +390,16 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      */
     @Override
     protected void postConfigureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules) {
+        // If metrics are disabled, the RegistryFactory will be the no-op, not the full-featured one.
+        if (rf instanceof io.helidon.metrics.RegistryFactory) {
+            setUpFullFeaturedEndpoint(defaultRules, serviceEndpointRoutingRules, (io.helidon.metrics.RegistryFactory) rf);
+        } else {
+            setUpMetricsDisabledEndpoint(defaultRules, serviceEndpointRoutingRules);
+        }
+    }
+
+    private void setUpFullFeaturedEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules,
+            io.helidon.metrics.RegistryFactory rf) {
         Registry base = rf.getARegistry(MetricRegistry.Type.BASE);
         Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
         Registry app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
@@ -410,6 +426,28 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
                             .get(context() + "/" + type + "/{metric}", (req, res) -> getByName(req, res, registry))
                             .options(context() + "/" + type, (req, res) -> optionsAll(req, res, registry))
                             .options(context() + "/" + type + "/{metric}", (req, res) -> optionsOne(req, res, registry));
+                });
+    }
+
+    private void setUpMetricsDisabledEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules) {
+        // routing to top-level root (/metrics)
+        serviceEndpointRoutingRules
+                .get(context(), DISABLED_ENDPOINT_HANDLER)
+                .options(context(), DISABLED_ENDPOINT_HANDLER);
+
+        // routing to GET and OPTIONS for each metrics scope (registry type) and a specific metric within each scope:
+        // application, base, vendor
+        Stream.of(MetricRegistry.Type.values())
+                .map(MetricRegistry.Type::name)
+                .map(String::toLowerCase)
+                .forEach(type -> {
+                    Stream.of("", "/{metric}") // for the whole scope and for a specific metric within that scope
+                            .map(suffix -> context() + "/" + type + suffix)
+                            .forEach(path ->
+                                serviceEndpointRoutingRules
+                                        .get(path, DISABLED_ENDPOINT_HANDLER)
+                                        .options(path, DISABLED_ENDPOINT_HANDLER)
+                                        );
                 });
     }
 

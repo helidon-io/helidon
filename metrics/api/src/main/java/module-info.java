@@ -12,21 +12,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
+module io.helidon.metrics.api {
 
-/**
- * Support types for REST services.
- */
-module io.helidon.servicecommon.rest {
+    requires io.helidon.common.serviceloader;
+    requires io.helidon.config;
 
-    requires java.logging;
+    requires microprofile.metrics.api;
 
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.webserver;
-    requires transitive io.helidon.webserver.cors;
-    requires transitive io.helidon.metrics.api;
+    exports io.helidon.metrics.api;
 
-    exports io.helidon.servicecommon.rest;
+    uses io.helidon.metrics.api.RegistryFactoryProvider;
 
 }

@@ -12,21 +12,19 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
+package io.helidon.metrics.api;
 
 /**
- * Support types for REST services.
+ * Provides {@link RegistryFactory} instances.
+ * <p>A component that contains an implementation of {@code RegistryFactoryProvider} should identify it using the service
+ * loader mechanism.</p>
  */
-module io.helidon.servicecommon.rest {
+public interface RegistryFactoryProvider {
 
-    requires java.logging;
-
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.webserver;
-    requires transitive io.helidon.webserver.cors;
-    requires transitive io.helidon.metrics.api;
-
-    exports io.helidon.servicecommon.rest;
-
+    /**
+     * @param metricsSettings the {@link MetricsSettings} to use in creating the new registry factory
+     * @return a new {@link RegistryFactory}.
+     */
+    RegistryFactory newRegistryFactory(MetricsSettings metricsSettings);
 }
