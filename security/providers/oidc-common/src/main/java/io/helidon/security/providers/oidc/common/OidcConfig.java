@@ -290,6 +290,7 @@ public final class OidcConfig {
     static final int DEFAULT_PROXY_PORT = 80;
     static final String DEFAULT_OIDC_METADATA_URI = "/.well-known/openid-configuration";
     static final String DEFAULT_REDIRECT_URI = "/oidc/redirect";
+    static final String DEFAULT_LOGOUT_URI = "/oidc/logout";
     static final String DEFAULT_COOKIE_NAME = "JSESSIONID";
     static final boolean DEFAULT_COOKIE_USE = true;
     static final String DEFAULT_COOKIE_PATH = "/";
@@ -311,10 +312,13 @@ public final class OidcConfig {
     private static final Logger LOGGER = Logger.getLogger(OidcConfig.class.getName());
     private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
     private final String redirectUri;
+    private final String logoutUri;
+    private final boolean logoutEnabled;
     private final boolean useCookie;
     private final String cookieName;
-//    private final String cookieNameToken;
-//    private final String cookieNameId;
+    private final String cookieEncryptionName;
+    private final char[] cookieEncryptionPassword;
+    private final boolean cookieEncryptionEnabled;
 
     private final boolean useParam;
     private final String paramName;
@@ -348,18 +352,27 @@ public final class OidcConfig {
     private final URI introspectUri;
     private final Duration clientTimeout;
     private final CookieHandler cookieHandler;
+    private final URI postLogoutUri;
+    private final URI logoutEndpointUri;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
         this.useCookie = builder.useCookie;
         this.cookieName = builder.cookieName;
         this.cookieValuePrefix = cookieName + "=";
+        this.cookieEncryptionEnabled = builder.cookieEncryptionEnabled;
+        this.cookieEncryptionPassword = builder.cookieEncryptionPassword;
+        this.cookieEncryptionName = builder.cookieEncryptionName;
         this.useParam = builder.useParam;
         this.paramName = builder.paramName;
         this.redirectUri = builder.redirectUri;
+        this.logoutUri = builder.logoutUri;
+        this.logoutEnabled = builder.logoutEnabled;
+        this.postLogoutUri = builder.postLogoutUri;
         this.useHeader = builder.useHeader;
         this.headerHandler = builder.headerHandler;
         this.authorizationEndpointUri = builder.authorizationEndpointUri.toString();
+        this.logoutEndpointUri = builder.logoutEndpointUri;
         this.baseScopes = builder.baseScopes;
         this.validateJwtWithJwk = builder.validateJwtWithJwk;
         this.issuer = builder.issuer;
@@ -505,6 +518,35 @@ public final class OidcConfig {
     }
 
     /**
+     * Whether logout is enabled.
+     *
+     * @return {@code true} if logout is enabled
+     */
+    public boolean logoutEnabled() {
+        return logoutEnabled;
+    }
+
+    /**
+     * Logout URI.
+     *
+     * @return uri that processes logout in Helidon and redirects to OIDC server logout
+     * @see Builder#logoutUri(String)
+     */
+    public String logoutUri() {
+        return logoutUri;
+    }
+
+    /**
+     * Post logout redirect URI.
+     *
+     * @return uri that OIDC server redirects to once logout is finished
+     * @see Builder#postLogoutUri(java.net.URI)
+     */
+    public URI postLogoutUri() {
+        return postLogoutUri;
+    }
+
+    /**
      * Token endpoint of the OIDC server.
      *
      * @return target the endpoint is on
@@ -565,6 +607,36 @@ public final class OidcConfig {
      */
     public String cookieName() {
         return cookieName;
+    }
+
+    /**
+     * Name of the security encryption to use to encrypt/decrypt cookies.
+     *
+     * @return string with the name, or empty if encryption through security should not be used
+     * @see Builder#cookieEncryptionName(String)
+     */
+    public Optional<String> cookieEncryptionName() {
+        return Optional.ofNullable(cookieEncryptionName);
+    }
+
+    /**
+     * Master password for cookie encryption.
+     *
+     * @return password to use to encrypt/decrypt cookies
+     * @see Builder#cookieEncryptionPassword(char[])
+     */
+    public Optional<char[]> cookieEncryptionPassword() {
+        return Optional.ofNullable(cookieEncryptionPassword);
+    }
+
+    /**
+     * Whether cookies should be encrypted or not.
+     *
+     * @return whether to encrypt cookie content
+     * @see Builder#cookieEncryptionEnabled(boolean)
+     */
+    public boolean cookieEncryptionEnabled() {
+        return cookieEncryptionEnabled;
     }
 
     /**
@@ -637,6 +709,16 @@ public final class OidcConfig {
      */
     public String authorizationEndpointUri() {
         return authorizationEndpointUri;
+    }
+
+    /**
+     * Logout endpoint on OIDC server.
+     *
+     * @return URI of the logout endpoint
+     * @see Builder#logoutEndpointUri(java.net.URI)
+     */
+    public URI logoutEndpointUri() {
+        return logoutEndpointUri;
     }
 
     /**
@@ -932,6 +1014,8 @@ public final class OidcConfig {
         private String clientId;
         private String clientSecret;
         private String redirectUri = DEFAULT_REDIRECT_URI;
+        private String logoutUri = DEFAULT_LOGOUT_URI;
+        private boolean logoutEnabled = false;
         private boolean useCookie = DEFAULT_COOKIE_USE;
         private String cookieName = DEFAULT_COOKIE_NAME;
         private String cookieDomain;
@@ -963,6 +1047,7 @@ public final class OidcConfig {
         private ClientAuthentication tokenEndpointAuthentication
                 = ClientAuthentication.CLIENT_SECRET_BASIC;
         private URI authorizationEndpointUri;
+        private URI logoutEndpointUri;
         private JwkKeys signJwk;
         private boolean oidcMetadataWellKnown = true;
 
@@ -983,6 +1068,10 @@ public final class OidcConfig {
         private WebClient appWebClient;
         private WebClient webClient;
         private Duration clientTimeout = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS);
+        private URI postLogoutUri;
+        private String cookieEncryptionName;
+        private char[] cookieEncryptionPassword;
+        private Boolean cookieEncryptionEnabled;
 
         @Override
         public OidcConfig build() {
@@ -1034,6 +1123,11 @@ public final class OidcConfig {
                                                             "authorization_endpoint",
                                                             "/oauth2/v1/authorize");
 
+            this.logoutEndpointUri = getOidcEndpoint(collector,
+                                                     logoutEndpointUri,
+                                                     "end_session_endpoint",
+                                                     "oauth2/v1/userlogout");
+
             if ((null == issuer) && (null != oidcMetadata)) {
                 this.issuer = oidcMetadata.getString("issuer");
             }
@@ -1043,6 +1137,18 @@ public final class OidcConfig {
             }
 
             collector.collect().checkValid();
+
+            if (useCookie && logoutEnabled) {
+                // only enable encryption if logout is enabled and cookies are used
+                // this default should change for 3.0.0
+                if (cookieEncryptionEnabled == null) {
+                    cookieEncryptionEnabled = true;
+                }
+            } else {
+                if (cookieEncryptionEnabled == null) {
+                    cookieEncryptionEnabled = false;
+                }
+            }
 
             if (cookieSameSiteDefault && useCookie) {
                 // compare frontend and oidc endpoints to see if
@@ -1217,6 +1323,10 @@ public final class OidcConfig {
             config.get("query-param-name").asString().ifPresent(this::paramName);
             config.get("header-use").asBoolean().ifPresent(this::useHeader);
             config.get("header-token").as(TokenHandler.class).ifPresent(this::headerTokenHandler);
+            // encryption of cookies
+            config.get("cookie-encryption-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabled);
+            config.get("cookie-encryption-password").as(char[].class).ifPresent(this::cookieEncryptionPassword);
+            config.get("cookie-encryption-name").asString().ifPresent(this::cookieEncryptionName);
 
             // OIDC server configuration
             config.get("base-scopes").asString().ifPresent(this::baseScopes);
@@ -1232,6 +1342,9 @@ public final class OidcConfig {
                     .map(ClientAuthentication::valueOf)
                     .ifPresent(this::tokenEndpointAuthentication);
             config.get("authorization-endpoint-uri").as(URI.class).ifPresent(this::authorizationEndpointUri);
+            config.get("logout-endpoint-uri").as(URI.class).ifPresent(this::logoutEndpointUri);
+            config.get("post-logout-uri").as(URI.class).ifPresent(this::postLogoutUri);
+            config.get("logout-enabled").asBoolean().ifPresent(this::logoutEnabled);
 
             config.get("introspect-endpoint-uri").as(URI.class).ifPresent(this::introspectEndpointUri);
             config.get("validate-with-jwk").asBoolean().ifPresent(this::validateJwtWithJwk);
@@ -1248,6 +1361,70 @@ public final class OidcConfig {
 
             config.get("client-timeout-millis").asLong().ifPresent(this::clientTimeoutMillis);
 
+            return this;
+        }
+
+        /**
+         * Name of the encryption configuration available through {@link Security#encrypt(String, byte[])} and
+         * {@link Security#decrypt(String, String)}.
+         * If configured, cookie encryption will be enabled unless explicitly set to {@code false}.
+         * If configured, Security MUST be configured in global or current {@code io.helidon.common.context.Context} (this
+         * is done automatically in Helidon MP).
+         *
+         * @param cookieEncryptionName name of the encryption configuration in security used to encrypt/decrypt cookies
+         * @return updated builder
+         */
+        public Builder cookieEncryptionName(String cookieEncryptionName) {
+            this.cookieEncryptionName = cookieEncryptionName;
+            if (cookieEncryptionEnabled == null) {
+                cookieEncryptionEnabled = false;
+            }
+            return this;
+        }
+
+        /**
+         * Master password for encryption/decryption of cookies. This must be configured to the same value on each microservice
+         * using the cookie.
+         * If configured, cookie encryption will be enabled unless explicitly set to {@code false}.
+         *
+         * @param cookieEncryptionPassword encryption password
+         * @return updated builder
+         */
+        public Builder cookieEncryptionPassword(char[] cookieEncryptionPassword) {
+            this.cookieEncryptionPassword = cookieEncryptionPassword;
+            if (cookieEncryptionEnabled == null) {
+                cookieEncryptionEnabled = false;
+            }
+            return this;
+        }
+
+        /**
+         * Whether to encrypt cookies created by this microservice.
+         * Defaults to {@code false} when only JWT is used for backward compatibility,
+         * defaults to {@code true} when logout is enabled (as we need to store
+         * the ID token as well)
+         *
+         * @param cookieEncryptionEnabled whether cookies should be encrypted {@code true}, or as obtained from
+         *                               OIDC server {@code false}
+         * @return updated builder instance
+         */
+        public Builder cookieEncryptionEnabled(boolean cookieEncryptionEnabled) {
+            this.cookieEncryptionEnabled = cookieEncryptionEnabled;
+            return this;
+        }
+
+        /**
+         * Whether to enable logout support.
+         * When logout is enabled, we use two cookies (User token and user ID token) and we expose
+         * an endpoint {@link #logoutUri(String)} that can be used to log the user out from Helidon session
+         * and also from OIDC session (uses {@link #logoutEndpointUri(java.net.URI)} on OIDC server).
+         * Logout support is disabled by default.
+         *
+         * @param logoutEnabled whether to enable logout
+         * @return updated builder instance
+         */
+        public Builder logoutEnabled(Boolean logoutEnabled) {
+            this.logoutEnabled = logoutEnabled;
             return this;
         }
 
@@ -1578,8 +1755,22 @@ public final class OidcConfig {
         }
 
         /**
+         * URI of a logout endpoint used to redirect users to for logging-out.
+         * If not defined, it is obtained from {@link #oidcMetadata(Resource)}, if that is not defined
+         * an attempt is made to use {@link #identityUri(URI)}/oauth2/v1/userlogout.
+         *
+         * @param logoutEndpointUri URI to use to log out
+         * @return updated builder instance
+         */
+        public Builder logoutEndpointUri(URI logoutEndpointUri) {
+            this.logoutEndpointUri = logoutEndpointUri;
+            return this;
+        }
+
+        /**
          * Name of the cookie to use.
          * Defaults to {@value #DEFAULT_COOKIE_NAME}.
+         * Helidon uses two cookies - one to store the user's token, one to store the user's ID token (needed for logout).
          *
          * @param cookieName name of a cookie
          * @return updated builder instance
@@ -1717,6 +1908,36 @@ public final class OidcConfig {
          */
         public Builder redirectUri(String redirectUri) {
             this.redirectUri = redirectUri;
+            return this;
+        }
+
+        /**
+         * Path to register web server for logout link.
+         * This should be used by application to redirect user to to logout the current user
+         * from Helidon based session (when using cookies and redirection).
+         * This endpoint will logout user from Helidon session (remove Helidon cookies) and redirect user to
+         * logout screen of the OIDC server.
+         *
+         * @param logoutUri URI path for logout component
+         * @return updated builder instance
+         */
+        public Builder logoutUri(String logoutUri) {
+            this.logoutUri = logoutUri;
+            return this;
+        }
+
+        /**
+         * URI to redirect to once the logout process is done.
+         * The endpoint should not be protected by OIDC (as this would server no purpose, just to log the user in again).
+         * This endpoint usually must be registered with the application as the allowed post-logout redirect URI.
+         * Note that the URI should not contain any query parameters. You can obtain state using the
+         * state query parameter that must be provided to {@link #logoutUri(String)}.
+         *
+         * @param uri this will be used by teh OIDC server to redirect user to once logout is done
+         * @return updated builder instance
+         */
+        public Builder postLogoutUri(URI uri) {
+            this.postLogoutUri = uri;
             return this;
         }
 

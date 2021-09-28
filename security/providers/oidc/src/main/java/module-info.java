@@ -20,6 +20,7 @@
 module io.helidon.security.providers.oidc {
     requires io.helidon.config;
     requires io.helidon.common;
+    requires io.helidon.common.crypto;
     requires io.helidon.security;
     requires java.logging;
 

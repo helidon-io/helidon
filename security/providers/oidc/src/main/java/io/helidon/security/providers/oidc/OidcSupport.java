@@ -16,10 +16,20 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -27,8 +37,12 @@ import java.util.regex.Pattern;
 
 import javax.json.JsonObject;
 
+import io.helidon.common.Base64Value;
+import io.helidon.common.context.Contexts;
+import io.helidon.common.crypto.SymmetricCipher;
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
@@ -122,11 +136,38 @@ public final class OidcSupport implements Service {
     private final OidcConfig oidcConfig;
     private final OidcConfig.CookieHandler cookieHandler;
     private final boolean enabled;
+    private final Function<String, Single<String>> encryptor;
+    private final Function<String, Single<String>> decryptor;
 
     private OidcSupport(Builder builder) {
         this.oidcConfig = builder.oidcConfig;
         this.enabled = builder.enabled;
         this.cookieHandler = oidcConfig.cookieHandler();
+
+        if (oidcConfig.cookieEncryptionEnabled()) {
+            Optional<String> encryptName = oidcConfig.cookieEncryptionName();
+            if (encryptName.isPresent()) {
+                String encryptionConfigurationName = encryptName.get();
+                encryptor = secret -> securityFromContext()
+                        .encrypt(encryptionConfigurationName, secret.getBytes(StandardCharsets.UTF_8));
+                decryptor = cipherText -> securityFromContext()
+                        .decrypt(encryptionConfigurationName, cipherText)
+                        .map(bytes -> new String(bytes, StandardCharsets.UTF_8));
+            } else {
+                char[] masterPassword = oidcConfig.cookieEncryptionPassword()
+                        .orElseGet(OidcSupport::generateMasterPassword);
+
+                SymmetricCipher symmetricCipher = SymmetricCipher.create(masterPassword);
+
+                encryptor = secret -> Single.just(symmetricCipher.encrypt(Base64Value.create(secret)).toBase64());
+                decryptor = cipherText -> Single.just(symmetricCipher.decrypt(Base64Value.createFromEncoded(cipherText))
+                                                              .toDecodedString());
+            }
+        } else {
+            // disabled encryption
+            encryptor = Single::just;
+            decryptor = Single::just;
+        }
     }
 
     /**
@@ -185,50 +226,78 @@ public final class OidcSupport implements Service {
     @Override
     public void update(Routing.Rules rules) {
         if (enabled) {
-            rules.get(oidcConfig.redirectUri(), this::processOidcRedirect)
-                    .get("/oidc/logout", this::processLogout)
-                    .get("/oidc/error", this::processOidcError)
-                    .get("/oidc/loggedout", this::loggedOut)
-                    .any(this::addRequestAsHeader);
+            rules.get(oidcConfig.redirectUri(), this::processOidcRedirect);
+            if (oidcConfig.logoutEnabled()) {
+                rules.get(oidcConfig.logoutUri(), this::processLogout);
+            }
+            rules.any(this::addRequestAsHeader);
         }
     }
 
-    private void processOidcError(ServerRequest serverRequest, ServerResponse serverResponse) {
-        serverRequest.content()
-                .as(String.class)
-                .thenAccept(it -> {
-                    serverResponse.status(Http.Status.NO_CONTENT_204);
-                    serverResponse.send();
-                });
+    private static Security securityFromContext() {
+        return Contexts.context()
+                .orElseGet(Contexts::globalContext)
+                .get(Security.class)
+                .orElseThrow(() -> new SecurityException("When using encryption configuration name for OIDC,"
+                                                                 + " Security must be registered with current or"
+                                                                 + " global context"));
     }
 
-    private void loggedOut(ServerRequest req, ServerResponse res) {
-        res.send("You have been logged out");
+    private static char[] generateMasterPassword() {
+        Path path = Paths.get(".helidon-oidc-secret");
+        if (!Files.exists(path)) {
+
+            String password = UUID.randomUUID().toString();
+            try {
+                Files.writeString(path, password, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+                Files.setPosixFilePermissions(path, Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+            } catch (IOException e) {
+                throw new SecurityException("Failed to create OIDC secret " + path.toAbsolutePath(), e);
+            }
+            LOGGER.warning("OIDC requires encryption configuration which was not provided. We will generate a password"
+                                   + " that will only work for the current service instance. To disable encryption, use"
+                                   + " cookie-encryption-enabled: false configuration, to configure master password, use"
+                                   + " cookie-encryption-password: my-master-password (must be configured to same value on all"
+                                   + " instances that share the cookie), to configure encryption using security"
+                                   + " (support for vaults), use"
+                                   + " cookie-encryption-name: name (must have corresponding encryption provider and"
+                                   + " configuration with the provided name in security), this also requires Security to be"
+                                   + " registered with current or global Context (this works automatically in Helidon MP)."
+                                   + " This message is logged just once, before generating the master password");
+
+        }
+
+        try {
+            // to be consistent, I always read the content from the file, even when creating it
+            return Files.readString(path, StandardCharsets.UTF_8).toCharArray();
+        } catch (IOException e) {
+            throw new SecurityException("Cannot read OIDC secret file: " + path.toAbsolutePath(), e);
+        }
     }
 
     private void processLogout(ServerRequest req, ServerResponse res) {
-        // todo obtain token using configured approach
-        Optional<String> jsessionid = req.headers().cookies()
-                .first(oidcConfig.cookieName() + "_ID");
+        Optional<String> idTokenCookie = req.headers()
+                .cookies()
+                .first(oidcConfig.cookieName() + "_2");
 
-        if (jsessionid.isPresent()) {
-            String idToken = jsessionid.get();
+        idTokenCookie.ifPresent(s -> decryptor.apply(s)
+                .forSingle(idToken -> {
+                    StringBuilder sb = new StringBuilder(oidcConfig.logoutEndpointUri()
+                                                                 + "?id_token_hint="
+                                                                 + idToken
+                                                                 + "&post_logout_redirect_uri=" + oidcConfig.postLogoutUri());
 
-            String location = oidcConfig.identityUri()
-                    + "/oauth2/v1/userlogout"
-                    + "?id_token_hint="
-                    + idToken
-                    + "&post_logout_redirect_uri=http://localhost:7987/oidc/loggedout"
-                    + "&state=my_state";
+                    req.queryParams().first("state")
+                            .ifPresent(it -> sb.append("&state=").append(it));
 
-            ResponseHeaders headers = res.headers();
-            headers.addCookie(cookieHandler.removeCookie(oidcConfig.cookieName()).build());
-            headers.addCookie(cookieHandler.removeCookie(oidcConfig.cookieName() + "_ID").build());
+                    ResponseHeaders headers = res.headers();
+                    headers.addCookie(cookieHandler.removeCookie(oidcConfig.cookieName()).build());
+                    headers.addCookie(cookieHandler.removeCookie(oidcConfig.cookieName() + "_2").build());
 
-            res.status(Http.Status.TEMPORARY_REDIRECT_307)
-                    .addHeader(Http.Header.LOCATION, location)
-                    .send();
-        }
+                    res.status(Http.Status.TEMPORARY_REDIRECT_307)
+                            .addHeader(Http.Header.LOCATION, sb.toString())
+                            .send();
+                }));
     }
 
     private void addRequestAsHeader(ServerRequest req, ServerResponse res) {
@@ -305,8 +374,13 @@ public final class OidcSupport implements Service {
             ResponseHeaders headers = res.headers();
             headers.addCookie(cookieHandler.createCookie(oidcConfig.cookieName(), tokenValue).build());
 
-            if (idToken != null) {
-                headers.addCookie(cookieHandler.createCookie(oidcConfig.cookieName() + "_ID", idToken).build());
+            if (idToken != null && oidcConfig.logoutEnabled()) {
+                encryptor.apply(idToken)
+                        .forSingle(it -> {
+                            headers.addCookie(cookieHandler.createCookie(oidcConfig.cookieName() + "_2", idToken).build());
+                            res.send();
+                        });
+                return "done";
             }
         }
 

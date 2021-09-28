@@ -19,6 +19,7 @@ package io.helidon.security.examples.idcs;
 import java.util.Optional;
 
 import io.helidon.common.LogConfig;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
@@ -57,6 +58,8 @@ public final class IdcsMain {
         Config config = buildConfig();
 
         Security security = Security.create(config.get("security"));
+        // this is needed for proper encryption/decryption of cookies
+        Contexts.globalContext().register(security);
 
         Routing.Builder routing = Routing.builder()
                 .register(WebSecurity.create(security, config.get("security")))

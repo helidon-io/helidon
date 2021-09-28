@@ -35,6 +35,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-crypto</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.security</groupId>
             <artifactId>helidon-security</artifactId>
         </dependency>

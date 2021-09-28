@@ -41,6 +41,7 @@ security:
       frontend-uri: "${security.properties.frontend-uri}"
       # support for non-public signature JWK (and maybe other IDCS specific handling)
       server-type: "idcs"
+      logout-enabled: true
   - idcs-role-mapper:
       multitenant: false
       oidc-config:
@@ -50,6 +51,7 @@ security:
         client-id: "${security.properties.idcs-client-id}"
         client-secret: "${security.properties.idcs-client-secret}"
         identity-uri: "${security.properties.idcs-uri}"
+        logout-enabled: "true"
   web-server:
     # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
     paths:
