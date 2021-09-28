@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import io.helidon.metrics.api.AbstractRegistry;
@@ -94,27 +95,13 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
     }
 
     @Override
-    protected HelidonMetric newImpl(Metadata metadata) {
-        String registryTypeName = registryType().getName();
-        switch (metadata.getTypeRaw()) {
-            case COUNTER:
-                return HelidonCounter.create(registryTypeName, metadata);
-            case GAUGE:
-                throw new IllegalArgumentException("Attempt to create Gauge without an implementation");
-            case HISTOGRAM:
-                return HelidonHistogram.create(registryTypeName, metadata);
-            case METERED:
-                return HelidonMeter.create(registryTypeName, metadata);
-            case TIMER:
-                return HelidonTimer.create(registryTypeName, metadata);
-            case SIMPLE_TIMER:
-                return HelidonSimpleTimer.create(registryTypeName, metadata);
-            case CONCURRENT_GAUGE:
-                return HelidonConcurrentGauge.create(registryTypeName, metadata);
-            case INVALID:
-            default:
-                throw new IllegalArgumentException("Unexpected metric type " + metadata.getType());
-        }
+    protected Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> prepareMetricFactories() {
+        return Map.of(MetricType.COUNTER, HelidonCounter::create,
+                MetricType.HISTOGRAM, HelidonHistogram::create,
+                MetricType.METERED, HelidonMeter::create,
+                MetricType.TIMER, HelidonTimer::create,
+                MetricType.SIMPLE_TIMER, HelidonSimpleTimer::create,
+                MetricType.CONCURRENT_GAUGE, HelidonConcurrentGauge::create);
     }
 
     // -- declarations which let us keep the methods in the superclass protected; we do not want them public.

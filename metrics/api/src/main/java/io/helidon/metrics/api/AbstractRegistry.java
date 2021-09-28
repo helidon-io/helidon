@@ -29,7 +29,10 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,6 +63,8 @@ import org.eclipse.microprofile.metrics.Timer;
  */
 public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegistry {
 
+    private static final Logger LOGGER = Logger.getLogger(AbstractRegistry.class.getName());
+
     private static final Tag[] NO_TAGS = new Tag[0];
     private final Map<Class<? extends M>, MetricType> metricToTypeMap = prepareMetricToTypeMap();
 
@@ -67,6 +72,8 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
     private final Map<MetricID, M> allMetrics = new ConcurrentHashMap<>();
     private final Map<String, List<MetricID>> allMetricIDsByName = new ConcurrentHashMap<>();
     private final Map<String, Metadata> allMetadata = new ConcurrentHashMap<>(); // metric name -> metadata
+
+    private final Map<MetricType, BiFunction<String, Metadata, M>> metricFactories = prepareMetricFactories();
 
     /**
      * Create a registry of a certain type.
@@ -439,13 +446,7 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
      */
     protected abstract <T extends Metric> M toImpl(Metadata metadata, T metric);
 
-    /**
-     * Creates a new instance of the kind of metric specified by the metadata.
-     *
-     * @param metadata {@code Metadata} for the metric
-     * @return new instance of the indicated metric type
-     */
-    protected abstract M newImpl(Metadata metadata);
+    protected abstract Map<MetricType, BiFunction<String, Metadata, M>> prepareMetricFactories();
 
     // -- Package private -----------------------------------------------------
 
@@ -562,9 +563,10 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
         return clazz.cast(getOptionalMetric(metricName, tags)
                 .filter(existingMetric -> enforceConsistentMetadata(existingMetric, newMetadata, tags))
                 .orElseGet(() -> {
+                    warnOfMismatchedType(clazz, newMetadata);
                     final Metadata metadata = getOrRegisterMetadata(metricName, newMetadata, tags);
                     return registerMetric(metricName,
-                                    newImpl(metadata),
+                                    metricFactories.get(MetricType.from(clazz)).apply(type.getName(), metadata),
                                     tags);
                 }));
     }
@@ -593,7 +595,9 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
                                     .withName(metricName)
                                     .withType(newType)
                                     .build(), tags);
-                    return registerMetric(metricName, newImpl(metadata), tags);
+                    return registerMetric(metricName,
+                            metricFactories.get(MetricType.from(clazz)).apply(type.getName(), metadata),
+                            tags);
                 });
         if (!clazz.isInstance(result)) {
             throw new IllegalArgumentException("Metric types " + result.metadata().getType()
@@ -654,6 +658,14 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
         metadata = getOrRegisterMetadata(metricName, metadata, tags);
         registerMetric(metricName, toImpl(metadata, metric), tags);
         return metric;
+    }
+
+    private <U extends Metric> void warnOfMismatchedType(Class<U> clazz, Metadata metadata) {
+        if (!metadata.getTypeRaw().equals(MetricType.from(clazz))) {
+            LOGGER.log(Level.WARNING,
+                    "MetricType from metadata \"{0}\" conflicts with type of metric being created \"{1}\"",
+                    new Object[] {metadata.getTypeRaw(), MetricType.from(clazz)});
+        }
     }
 
     private boolean enforceMetricUniqueness(String metricName) {

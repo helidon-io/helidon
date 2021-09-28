@@ -16,6 +16,7 @@
 package io.helidon.metrics.api;
 
 import java.util.Map;
+import java.util.function.BiFunction;
 
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -34,6 +35,16 @@ class NoOpMetricRegistry extends AbstractRegistry<NoOpMetric> {
 
     private NoOpMetricRegistry(Type type) {
         super(type);
+    }
+
+    @Override
+    protected Map<MetricType, BiFunction<String, Metadata, NoOpMetric>> prepareMetricFactories() {
+        return Map.of(MetricType.COUNTER, NoOpMetric.NoOpCounter::create,
+                MetricType.HISTOGRAM, NoOpMetric.NoOpHistogram::create,
+                MetricType.METERED, NoOpMetric.NoOpMeter::create,
+                MetricType.TIMER, NoOpMetric.NoOpTimer::create,
+                MetricType.SIMPLE_TIMER, NoOpMetric.NoOpSimpleTimer::create,
+                MetricType.CONCURRENT_GAUGE, NoOpMetric.NoOpConcurrentGauge::create);
     }
 
     @Override
@@ -71,29 +82,5 @@ class NoOpMetricRegistry extends AbstractRegistry<NoOpMetric> {
                       NoOpMetric.NoOpMeter.class, MetricType.METERED,
                       NoOpMetric.NoOpTimer.class, MetricType.TIMER,
                       NoOpMetric.NoOpSimpleTimer.class, MetricType.SIMPLE_TIMER);
-    }
-
-    @Override
-    protected NoOpMetric newImpl(Metadata metadata) {
-        String registryTypeName = registryType().getName();
-        switch (metadata.getTypeRaw()) {
-            case COUNTER:
-                return NoOpMetric.NoOpCounter.create(registryTypeName, metadata);
-            case GAUGE:
-                throw new IllegalArgumentException("Attempt to create Gauge without an implementation");
-            case HISTOGRAM:
-                return NoOpMetric.NoOpHistogram.create(registryTypeName, metadata);
-            case METERED:
-                return NoOpMetric.NoOpMeter.create(registryTypeName, metadata);
-            case TIMER:
-                return NoOpMetric.NoOpTimer.create(registryTypeName, metadata);
-            case SIMPLE_TIMER:
-                return NoOpMetric.NoOpSimpleTimer.create(registryTypeName, metadata);
-            case CONCURRENT_GAUGE:
-                return NoOpMetric.NoOpConcurrentGauge.create(registryTypeName, metadata);
-            case INVALID:
-            default:
-                throw new IllegalArgumentException("Unexpected metric type " + metadata.getType());
-        }
     }
 }

@@ -32,7 +32,7 @@ public class TestComponentMetricsSettings {
 
     @Test
     void testWithComponentMetricsEnabled() {
-        test(true, 1L);
+        test(true, 0L);
     }
 
     private static void test(boolean componentMetricsEnabled, long expectedCounterValue) {
