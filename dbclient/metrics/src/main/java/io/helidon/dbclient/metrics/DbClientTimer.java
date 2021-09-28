@@ -71,7 +71,7 @@ final class DbClientTimer extends DbClientMetric<Timer> {
 
     @Override
     protected MetricType metricType() {
-        return MetricType.COUNTER;
+        return MetricType.TIMER;
     }
 
     @Override
