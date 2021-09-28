@@ -663,8 +663,9 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
     private <U extends Metric> void warnOfMismatchedType(Class<U> clazz, Metadata metadata) {
         if (!metadata.getTypeRaw().equals(MetricType.from(clazz))) {
             LOGGER.log(Level.WARNING,
-                    "MetricType from metadata \"{0}\" conflicts with type of metric being created \"{1}\"",
-                    new Object[] {metadata.getTypeRaw(), MetricType.from(clazz)});
+                    String.format("MetricType '%s' from metadata conflicts with metric type '%s' being created",
+                        metadata.getTypeRaw(), MetricType.from(clazz)),
+                    new IllegalArgumentException());
         }
     }
 
