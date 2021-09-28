@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -124,14 +125,38 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
         super.prometheusType(sb, nameWithUnits, PROMETHEUS_TYPE);
     }
 
+    // For testing
+    AtomicLong currentMinuteRef() {
+        return (delegate instanceof ConcurrentGaugeImpl)
+                ? ((ConcurrentGaugeImpl) delegate).currentMinute
+                : null;
+    }
+
     static class ConcurrentGaugeImpl implements ConcurrentGauge {
+
+        private static final Duration CURRENT_MINUTE_UPDATE_INTERVAL = Duration.ofMillis(500);
+
+        private static final Clock SYSTEM_CLOCK = Clock.system();
+        private static final AtomicLong SYSTEM_CURRENT_MINUTE = new AtomicLong(currentTimeMinute(SYSTEM_CLOCK));
+
+        /*
+         * Most concurrent gauges will use the system clock, and all of them can share the same current-time-in-minutes value.
+         * To update that (likely) common value, we enroll an updater for the static, shared value.
+         * Any concurrent gauge that uses a non-system clock will compute the current-time-in-minutes value on every update.
+         */
+        static {
+            PeriodicExecutor.enroll(ConcurrentGaugeImpl::updateSystemCurrentMinute, CURRENT_MINUTE_UPDATE_INTERVAL);
+        }
+
         private final AtomicLong count;
         private final AtomicLong lastMax;
         private final AtomicLong lastMin;
         private final AtomicLong currentMax;
         private final AtomicLong currentMin;
         private final AtomicLong lastMinute;
+        private final AtomicLong currentMinute;
         private final Clock clock;
+        private final boolean usingSystemClock;
 
         ConcurrentGaugeImpl(Clock clock) {
             this.clock = clock;
@@ -140,7 +165,9 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
             lastMin = new AtomicLong(Long.MAX_VALUE);
             currentMax = new AtomicLong(Long.MIN_VALUE);
             currentMin = new AtomicLong(Long.MAX_VALUE);
-            lastMinute = new AtomicLong(currentTimeMinute());
+            usingSystemClock = clock == SYSTEM_CLOCK;
+            currentMinute = usingSystemClock ? SYSTEM_CURRENT_MINUTE : new AtomicLong(currentTimeMinute());
+            lastMinute = new AtomicLong(currentMinute.get());
         }
 
         @Override
@@ -183,17 +210,31 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
         }
 
         public synchronized void updateState() {
-            long currentMinute = currentTimeMinute();
-            long diff = currentMinute - lastMinute.get();
+            if (!usingSystemClock) {
+                updateCurrentMinute();
+            }
+            long diff = currentMinute.get() - lastMinute.get();
             if (diff >= 1L) {
                 lastMax.set(currentMax.get());
                 lastMin.set(currentMin.get());
-                lastMinute.set(currentMinute);
+                lastMinute.set(currentMinute.get());
             }
         }
 
         private long currentTimeMinute() {
-            return clock.milliTime() / 1000 / 60;
+            return currentTimeMinute(clock);
+        }
+
+        private static long currentTimeMinute(Clock clock) {
+            return clock.milliTime() / 1000 / 10;
+        }
+
+        private long updateCurrentMinute() {
+            return currentMinute.getAndSet(currentTimeMinute());
+        }
+
+        private static void updateSystemCurrentMinute() {
+            SYSTEM_CURRENT_MINUTE.set(currentTimeMinute(SYSTEM_CLOCK));
         }
 
         @Override

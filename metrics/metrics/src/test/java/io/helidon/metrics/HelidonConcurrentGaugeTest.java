@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 
 /**
  * Class HelidonConcurrentGaugeTest.
@@ -135,6 +136,14 @@ public class HelidonConcurrentGaugeTest {
         System.out.println("Verifying max and min from last minute ...");
         assertThat(formatErrorOutput("checking max"), gauge.getMax(), is(5L));
         assertThat(formatErrorOutput("checking min"), gauge.getMin(), is(-5L));
+    }
+
+    @Test
+    void checkSharedCurrentTimeMinute() {
+        HelidonConcurrentGauge g1 = HelidonConcurrentGauge.create("application", meta, Clock.system());
+        HelidonConcurrentGauge g2 = HelidonConcurrentGauge.create("application", meta, Clock.system());
+
+        assertThat("Current minute AtomicLong from ConcurrentGauge", g1.currentMinuteRef(), is(sameInstance(g2.currentMinuteRef())));
     }
 
     private void ensureSecondsInMinute() throws InterruptedException {
