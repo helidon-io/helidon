@@ -59,6 +59,11 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
             <version>${project.version}</version>
         </dependency>
