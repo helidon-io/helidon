@@ -17,8 +17,6 @@
 package io.helidon.microprofile.cdi;
 
 import java.lang.invoke.MethodHandles;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -204,7 +202,7 @@ class HelidonProxyServices implements ProxyServices {
     }
 
     private ClassDefiningCl createCl(ClassLoader parent) {
-        return AccessController.doPrivileged((PrivilegedAction<ClassDefiningCl>) () -> new ClassDefiningCl(parent));
+        return new ClassDefiningCl(parent);
     }
 
     // a classloader that exposes define class methods

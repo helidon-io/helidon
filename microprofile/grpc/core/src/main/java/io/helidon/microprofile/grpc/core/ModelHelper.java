@@ -23,7 +23,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
@@ -90,56 +89,45 @@ public final class ModelHelper {
     }
 
     /**
-     * Get privileged action to obtain methods declared on given class.
-     * If run using security manager, the returned privileged action
-     * must be invoked within a doPrivileged block.
+     * Get collection of methods declared on given class.
      *
      * @param clazz class for which to get the declared methods.
-     * @return privileged action to obtain methods declared on the {@code clazz} class.
-     * @see java.security.AccessController#doPrivileged(java.security.PrivilegedAction)
+     * @return methods declared on the {@code clazz} class.
      */
-    public static PrivilegedAction<Collection<? extends Method>> getDeclaredMethodsPA(final Class<?> clazz) {
-        return () -> Arrays.asList(clazz.getDeclaredMethods());
+    public static Collection<? extends Method> getDeclaredMethods(final Class<?> clazz) {
+        return Arrays.asList(clazz.getDeclaredMethods());
     }
 
     /**
-     * Get privileged action to find a method on a class given an existing method.
-     * If run using security manager, the returned privileged action
-     * must be invoked within a doPrivileged block.
-     * <p>
-     * If there exists a public method on the class that has the same name
-     * and parameters as the existing method then that public method is
-     * returned from the action.
+     * Find a method in a class. If there exists a public method on the class
+     * that has the same name and parameters then that public method is
+     * returned.
      * <p>
      * Otherwise, if there exists a public method on the class that has
-     * the same name and the same number of parameters as the existing method,
+     * the same name and the same number of parameters,
      * and each generic parameter type, in order, of the public method is equal
-     * to the generic parameter type, in the same order, of the existing method
-     * or is an instance of {@link TypeVariable} then that public method is
-     * returned from the action.
+     * to the generic parameter type, in the same order or is an instance of
+     * {@link TypeVariable} then that public method is returned.
      *
      * @param cls the class to search for a public method
      * @param m the method to find
-     * @return privileged action to return public method found.
-     * @see java.security.AccessController#doPrivileged(java.security.PrivilegedAction)
+     * @return public method found.
      */
-    public static PrivilegedAction<Method> findMethodOnClassPA(final Class<?> cls, final Method m) {
-        return () -> {
-            try {
-                return cls.getMethod(m.getName(), m.getParameterTypes());
-            } catch (final NoSuchMethodException e) {
-                for (final Method method : cls.getMethods()) {
-                    if (method.getName().equals(m.getName())
-                            && method.getParameterTypes().length == m.getParameterTypes().length) {
-                        if (compareParameterTypes(m.getGenericParameterTypes(),
-                                method.getGenericParameterTypes())) {
-                            return method;
-                        }
+    public static Method findMethodOnClass(final Class<?> cls, final Method m) {
+        try {
+            return cls.getMethod(m.getName(), m.getParameterTypes());
+        } catch (final NoSuchMethodException e) {
+            for (final Method method : cls.getMethods()) {
+                if (method.getName().equals(m.getName())
+                        && method.getParameterTypes().length == m.getParameterTypes().length) {
+                    if (compareParameterTypes(m.getGenericParameterTypes(),
+                            method.getGenericParameterTypes())) {
+                        return method;
                     }
                 }
-                return null;
             }
-        };
+            return null;
+        }
     }
 
     /**

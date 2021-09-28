@@ -19,8 +19,6 @@ package io.helidon.microprofile.grpc.core;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -154,14 +152,11 @@ public abstract class AbstractServiceBuilder {
     protected List<Method> getAllDeclaredMethods(Class<?> clazz) {
         List<Method> result = new LinkedList<>();
 
-        AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
-            Class current = clazz;
-            while (current != Object.class && current != null) {
-                result.addAll(Arrays.asList(current.getDeclaredMethods()));
-                current = current.getSuperclass();
-            }
-            return null;
-        });
+        Class current = clazz;
+        while (current != Object.class && current != null) {
+            result.addAll(Arrays.asList(current.getDeclaredMethods()));
+            current = current.getSuperclass();
+        }
 
         return result;
     }
