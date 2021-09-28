@@ -16,31 +16,26 @@
 
 package io.helidon.examples.integrations.oci.atp.cdi;
 
-import java.io.ByteArrayInputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import javax.inject.Inject;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
+import javax.inject.Named;
 import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 
-import io.helidon.common.http.Http;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.atp.OciAutonomousDb;
 import io.helidon.integrations.oci.atp.GenerateAutonomousDatabaseWallet;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import oracle.ucp.jdbc.PoolDataSource;
 
 /**
  * JAX-RS resource - REST API for the atp example.
@@ -50,10 +45,12 @@ public class AtpResource {
     private static final Logger LOGGER = Logger.getLogger(AtpResource.class.getName());
 
     private final OciAutonomousDb autonomousDb;
+    private final PoolDataSource atpDataSource;
 
     @Inject
-    AtpResource(OciAutonomousDb autonomousDb) {
+    AtpResource(OciAutonomousDb autonomousDb, @Named("atp") PoolDataSource atpDataSource) {
         this.autonomousDb = autonomousDb;
+        this.atpDataSource = Objects.requireNonNull(atpDataSource);
     }
 
     /**
@@ -68,34 +65,27 @@ public class AtpResource {
         Optional<GenerateAutonomousDatabaseWallet.Response> entity = ociResponse.entity();
 
         if (entity.isEmpty()) {
+            LOGGER.log(Level.SEVERE, "GenerateAutonomousDatabaseWallet.Response is empty");
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
         GenerateAutonomousDatabaseWallet.Response response = entity.get();
-
+        GenerateAutonomousDatabaseWallet.WalletArchive walletArchive = response.walletArchive();
+        String returnEntity = null;
         try {
-            LOGGER.log(Level.INFO, "Wallet Content Length: " + response.walletArchive().getContent().length);
-            ZipInputStream zipStream = new ZipInputStream(new ByteArrayInputStream(response.walletArchive().getContent()));
-            ZipEntry entry = null;
-            while ((entry = zipStream.getNextEntry()) != null) {
-                String entryName = entry.getName();
-                LOGGER.log(Level.INFO, "Wallet FileEntry:" + entryName);
-                //FileOutputStream out = new FileOutputStream(entryName);
-                //byte[] byteBuff = new byte[4096];
-                //int bytesRead = 0;
-                //while ((bytesRead = zipStream.read(byteBuff)) != -1) {
-                //    out.write(byteBuff, 0, bytesRead);
-                //}
-                //out.close();
-                zipStream.closeEntry();
-            }
-            zipStream.close();
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Exception while processing wallet content", e);
+            this.atpDataSource.setSSLContext(walletArchive.getSSLContext());
+            this.atpDataSource.setURL(walletArchive.getJdbcUrl("helidonatp"));
+            Connection connection = this.atpDataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement("SELECT 'Hello world!!' FROM DUAL");
+            ResultSet rs = ps.executeQuery();
+            rs.next();
+            returnEntity = rs.getString(1);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error setting up DataSource", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
         }
 
-        return Response.status(Response.Status.OK).build();
+        return Response.status(Response.Status.OK).entity(returnEntity).build();
     }
 }
 

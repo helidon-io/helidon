@@ -21,7 +21,12 @@
 server:
   port: 8080
 
+db:
+  userName: ADMIN
+  password: HelidonATP123
+  serviceName: helidonatp
+
 oci:
   atp:
-    ocid: "${oci.properties.atp-ocid}"
-    walletPassword: "${oci.properties.atp-walletPassword}"
+    ocid: "ocid1.autonomousdatabase.oc1.iad.abuwcljsdqiktkdsqab2rrdbgu5wopsjhguno32fxeokevjxdyix6356ilpq"
+    walletPassword: "HelidonTest1"
