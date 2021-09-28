@@ -37,6 +37,7 @@ import io.helidon.integrations.oci.atp.GenerateAutonomousDatabaseWallet;
 
 import oracle.ucp.jdbc.PoolDataSource;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 /**
  * JAX-RS resource - REST API for the atp example.
  */
@@ -46,11 +47,14 @@ public class AtpResource {
 
     private final OciAutonomousDb autonomousDb;
     private final PoolDataSource atpDataSource;
+    private final String atpServiceName;
 
     @Inject
-    AtpResource(OciAutonomousDb autonomousDb, @Named("atp") PoolDataSource atpDataSource) {
+    AtpResource(OciAutonomousDb autonomousDb, @Named("atp") PoolDataSource atpDataSource,
+                @ConfigProperty(name = "oracle.ucp.jdbc.PoolDataSource.atp.serviceName") String atpServiceName) {
         this.autonomousDb = autonomousDb;
         this.atpDataSource = Objects.requireNonNull(atpDataSource);
+        this.atpServiceName = atpServiceName;
     }
 
     /**
@@ -74,12 +78,13 @@ public class AtpResource {
         String returnEntity = null;
         try {
             this.atpDataSource.setSSLContext(walletArchive.getSSLContext());
-            this.atpDataSource.setURL(walletArchive.getJdbcUrl("helidonatp"));
-            Connection connection = this.atpDataSource.getConnection();
+            this.atpDataSource.setURL(walletArchive.getJdbcUrl(this.atpServiceName));
+            try(Connection connection = this.atpDataSource.getConnection();
             PreparedStatement ps = connection.prepareStatement("SELECT 'Hello world!!' FROM DUAL");
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            returnEntity = rs.getString(1);
+            ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                returnEntity = rs.getString(1);
+            }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error setting up DataSource", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
