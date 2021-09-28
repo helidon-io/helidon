@@ -15,6 +15,8 @@
  */
 module io.helidon.metrics.api {
 
+    requires java.logging;
+
     requires io.helidon.common.serviceloader;
     requires io.helidon.config;
 

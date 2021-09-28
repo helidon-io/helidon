@@ -203,6 +203,10 @@ public abstract class HelidonRestServiceSupport implements Service {
             return me();
         }
 
+        protected ComponentMetricsSettings componentMetricsSettings() {
+            return componentMetricsSettings;
+        }
+
         /**
          * Returns the config (if any) assigned for this builder.
          *

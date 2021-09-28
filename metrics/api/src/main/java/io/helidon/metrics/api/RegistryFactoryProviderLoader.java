@@ -15,8 +15,11 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
@@ -46,6 +49,8 @@ import io.helidon.config.Config;
  */
 class RegistryFactoryProviderLoader {
 
+    private static final Logger LOGGER = Logger.getLogger(RegistryFactoryProviderLoader.class.getName());
+
     private static final LazyValue<RegistryFactoryProvider> LAZY_FACTORY_PROVIDER =
             LazyValue.create(RegistryFactoryProviderLoader::loadRegistryFactoryProvider);
 
@@ -58,11 +63,12 @@ class RegistryFactoryProviderLoader {
     private static final RegistryFactory NO_OP_INSTANCE = NoOpRegistryFactory.create();
 
     private static RegistryFactoryProvider loadRegistryFactoryProvider() {
-        return HelidonServiceLoader.builder(ServiceLoader.load(RegistryFactoryProvider.class))
+        List<RegistryFactoryProvider> providers = HelidonServiceLoader.builder(ServiceLoader.load(RegistryFactoryProvider.class))
                 .addService(NO_OP_FACTORY_PROVIDER, Integer.MAX_VALUE)
                 .build()
-                .iterator()
-                .next();
+                .asList();
+        LOGGER.log(Level.INFO, "Metrics registry factory provider: {0}", providers.get(0).getClass().getName());
+        return providers.get(0);
     }
 
     private static final AtomicReference<MetricsSettings> METRICS_SETTINGS = new AtomicReference<>();
