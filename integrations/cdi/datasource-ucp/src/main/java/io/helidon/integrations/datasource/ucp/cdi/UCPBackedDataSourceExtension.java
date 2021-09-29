@@ -173,18 +173,18 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
                             }
                         }
                     }
-                    if (!handled && !propertyName.equals("serviceName")) {
+                    if (!handled && !propertyName.equals("serviceName") && !propertyName.equals("pdbRoles")) {
                         // We have found a property that is not a Java
                         // Beans property of the PoolDataSource, but
                         // is supposed to be a property of the
                         // connection factory that it wraps.
                         //
-                        // (Sadly, "serviceName" is a special property
-                        // that has significance to certain connection
-                        // factories (such as Oracle database-oriented
-                        // DataSources), and to the
-                        // oracle.ucp.jdbc.UCPConnectionBuilder class,
-                        // which underlies getConnection(user,
+                        // (Sadly, "serviceName" and "pdbRoles" are
+                        // special properties that have significance
+                        // to certain connection factories (such as
+                        // Oracle database-oriented DataSources), and
+                        // to the oracle.ucp.jdbc.UCPConnectionBuilder
+                        // class, which underlies getConnection(user,
                         // password) calls, but which sadly cannot be
                         // set on a PoolDataSource except by means of
                         // some irrelevant XML configuration.  We work
@@ -238,6 +238,23 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
                         Method m = returnValue.getClass().getDeclaredMethod("setServiceName", String.class);
                         if (m.trySetAccessible()) {
                             m.invoke(returnValue, serviceName);
+                        }
+                    } catch (final NoSuchMethodException ignoreOnPurpose) {
+
+                    }
+                }
+                // Set the PoolDataSource's pdbRoles property so
+                // that it appears to the PoolDataSource to have been
+                // set via the undocumented XML configuration that the
+                // PoolDataSource can apparently be configured with in
+                // certain (irrelevant for Helidon) application server
+                // cases.
+                final Object pdbRoles = connectionFactoryProperties.get("pdbRoles");
+                if (pdbRoles instanceof Properties) {
+                    try {
+                        Method m = returnValue.getClass().getDeclaredMethod("setPdbRoles", Properties.class);
+                        if (m.trySetAccessible()) {
+                            m.invoke(returnValue, (Properties) pdbRoles);
                         }
                     } catch (final NoSuchMethodException ignoreOnPurpose) {
 
