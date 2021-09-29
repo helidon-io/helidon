@@ -459,16 +459,11 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
     }
 
     private Optional<M> getOptionalMetric(String metricName, Tag... tags) {
-        // Looks up metric by name and tags without creating a throw-away MetricID (which can be expensive).
-        List<MetricID> metricIDs = allMetricIDsByName.get(metricName);
-        return metricIDs == null ? Optional.empty() : metricIDs.stream()
-                .filter(metricID -> metricID.getTags().equals(tagsMap(tags)))
-                .findFirst()
-                .map(allMetrics::get);
+        return getOptionalMetric(new MetricID(metricName, tags));
     }
 
-    private static Map<String, String> tagsMap(Tag... tags) {
-        return Arrays.stream(tags).collect(Collectors.toMap(Tag::getTagName, Tag::getTagValue));
+    private Optional<M> getOptionalMetric(MetricID metricID) {
+        return Optional.ofNullable(allMetrics.get(metricID));
     }
 
     protected List<Map.Entry<MetricID, M>> getMetricsByName(String metricName) {
@@ -560,7 +555,7 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
          * new to register; the existing registration is enough so return that
          * previously-registered metric.
          */
-        return clazz.cast(getOptionalMetric(metricName, tags)
+        return toType(getOptionalMetric(metricName, tags)
                 .filter(existingMetric -> enforceConsistentMetadata(existingMetric, newMetadata, tags))
                 .orElseGet(() -> {
                     warnOfMismatchedType(clazz, newMetadata);
@@ -568,7 +563,7 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
                     return registerMetric(metricName,
                                     metricFactories.get(MetricType.from(clazz)).apply(type.getName(), metadata),
                                     tags);
-                }));
+                }), clazz);
     }
 
     /**
@@ -599,11 +594,7 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
                             metricFactories.get(MetricType.from(clazz)).apply(type.getName(), metadata),
                             tags);
                 });
-        if (!clazz.isInstance(result)) {
-            throw new IllegalArgumentException("Metric types " + result.metadata().getType()
-                    + " and " + MetricType.from(clazz).toString() + " do not match");
-        }
-        return clazz.cast(result);
+        return toType(result, clazz);
     }
 
     /**
@@ -682,6 +673,16 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
             throw new IllegalArgumentException("Attempt to reregister the existing metric " + metricID);
         }
         return true;
+    }
+
+    private <T extends M, U extends Metric> U toType(T m1, Class<U> clazz) {
+        MetricType type1 = toType(m1);
+        MetricType type2 = MetricType.from(clazz);
+        if (type1 == type2) {
+            return clazz.cast(m1);
+        }
+        throw new IllegalArgumentException("Metric types " + type1.toString()
+                + " and " + type2.toString() + " do not match");
     }
 
     /**
@@ -763,6 +764,22 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
                 .map(MetricType::from)
                 .findFirst()
                 .orElse(MetricType.INVALID);
+    }
+
+    private MetricType toType(Metric metric) {
+        // Find subtype of Metric, needed for user-defined metrics
+        Class<?> clazz = metric.getClass();
+        do {
+            Optional<Class<?>> optionalClass = Arrays.stream(clazz.getInterfaces())
+                    .filter(Metric.class::isAssignableFrom)
+                    .findFirst();
+            if (optionalClass.isPresent()) {
+                clazz = optionalClass.get();
+                break;
+            }
+            clazz = clazz.getSuperclass();
+        } while (clazz != null);
+        return MetricType.from(clazz == null ? metric.getClass() : clazz);
     }
 
     protected Map<Class<? extends M>, MetricType> metricToTypeMap() {
