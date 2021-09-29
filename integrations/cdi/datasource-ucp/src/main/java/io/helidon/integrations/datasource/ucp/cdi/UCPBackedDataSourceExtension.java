@@ -34,6 +34,7 @@ import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.configurator.BeanConfigurator;
 import javax.enterprise.util.TypeLiteral;
 import javax.inject.Named;
+import javax.net.ssl.SSLContext;
 import javax.sql.DataSource;
 
 import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
@@ -245,6 +246,10 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
             }
             // Permit further customization before the bean is actually created
             instance.select(new TypeLiteral<Event<PoolDataSource>>() {}, dataSourceName).get().fire(returnValue);
+        }
+        final Instance<SSLContext> sslContextInstance = instance.select(SSLContext.class);
+        if (!sslContextInstance.isUnsatisfied()) {
+            returnValue.setSSLContext(sslContextInstance.get());
         }
         return returnValue;
     }
