@@ -426,6 +426,9 @@ public final class OidcConfig {
         }
 
         this.tokenCookieHandler = builder.tokenCookieBuilder.build();
+        if (logoutEnabled) {
+            builder.idTokenCookieBuilder.encryptionEnabled(true);
+        }
         this.idTokenCookieHandler = builder.idTokenCookieBuilder.build();
 
         if ((builder.scopeAudience == null) || builder.scopeAudience.trim().isEmpty()) {
@@ -1017,7 +1020,6 @@ public final class OidcConfig {
         private final OidcCookieHandler.Builder tokenCookieBuilder = OidcCookieHandler.builder()
                 .cookieName(DEFAULT_COOKIE_NAME);
         private final OidcCookieHandler.Builder idTokenCookieBuilder = OidcCookieHandler.builder()
-                .encryptionEnabled(true)
                 .cookieName(DEFAULT_COOKIE_NAME + "_2");
 
         private boolean useParam = DEFAULT_PARAM_USE;
