@@ -40,7 +40,7 @@ import javax.sql.DataSource;
 import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
 
 import oracle.ucp.jdbc.PoolDataSource;
-import oracle.ucp.jdbc.PoolDataSourceFactory;
+import oracle.ucp.jdbc.PoolDataSourceImpl;
 
 /**
  * An {@link Extension} that arranges for named {@link DataSource}
@@ -99,7 +99,7 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
                                  final Properties dataSourceProperties) {
         beanConfigurator
             .addQualifier(dataSourceName)
-            .addTransitiveTypeClosure(PoolDataSource.class)
+            .addTransitiveTypeClosure(PoolDataSourceImpl.class)
             .scope(ApplicationScoped.class)
             .produceWith(instance -> {
                     try {
@@ -121,14 +121,14 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
                 });
     }
 
-    private static PoolDataSource createDataSource(final Instance<Object> instance,
-                                                   final Named dataSourceName,
-                                                   final Properties properties)
+    private static PoolDataSourceImpl createDataSource(final Instance<Object> instance,
+                                                       final Named dataSourceName,
+                                                       final Properties properties)
         throws IntrospectionException, ReflectiveOperationException, SQLException {
         // See
         // https://docs.oracle.com/en/database/oracle/oracle-database/19/jjucp/get-started.html#GUID-2CC8D6EC-483F-4942-88BA-C0A1A1B68226
         // for the general pattern.
-        final PoolDataSource returnValue = PoolDataSourceFactory.getPoolDataSource();
+        final PoolDataSourceImpl returnValue = new PoolDataSourceImpl();
         final Set<String> propertyNames = properties.stringPropertyNames();
         if (!propertyNames.isEmpty()) {
             final Properties connectionFactoryProperties = new Properties();
@@ -173,7 +173,7 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
                             }
                         }
                     }
-                    if (!handled && !propertyName.equals("serviceName") && !propertyName.equals("pdbRoles")) {
+                    if (!handled) {
                         // We have found a property that is not a Java
                         // Beans property of the PoolDataSource, but
                         // is supposed to be a property of the
@@ -221,53 +221,52 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
                     }
                 }
             }
+            final Object serviceName = connectionFactoryProperties.remove("serviceName");
+            final Object pdbRoles = connectionFactoryProperties.remove("pdbRoles");
             if (!connectionFactoryProperties.stringPropertyNames().isEmpty()) {
                 // We found some String-typed properties that are
                 // destined for the underlying connection factory to
                 // hopefully fully configure it.  Apply them here.
                 returnValue.setConnectionFactoryProperties(connectionFactoryProperties);
-                // Set the PoolDataSource's serviceName property so
-                // that it appears to the PoolDataSource to have been
-                // set via the undocumented XML configuration that the
-                // PoolDataSource can apparently be configured with in
-                // certain (irrelevant for Helidon) application server
-                // cases.
-                final String serviceName = connectionFactoryProperties.getProperty("serviceName");
-                if (serviceName != null) {
-                    try {
-                        Method m = returnValue.getClass().getDeclaredMethod("setServiceName", String.class);
-                        if (m.trySetAccessible()) {
-                            m.invoke(returnValue, serviceName);
-                        }
-                    } catch (final NoSuchMethodException ignoreOnPurpose) {
-
+            }
+            // Set the PoolDataSource's serviceName property so that
+            // it appears to the PoolDataSource to have been set via
+            // the undocumented XML configuration that the
+            // PoolDataSource can apparently be configured with in
+            // certain (irrelevant for Helidon) application server
+            // cases.
+            if (serviceName instanceof String) {
+                try {
+                    Method m = returnValue.getClass().getDeclaredMethod("setServiceName", String.class);
+                    if (m.trySetAccessible()) {
+                        m.invoke(returnValue, serviceName);
                     }
-                }
-                // Set the PoolDataSource's pdbRoles property so
-                // that it appears to the PoolDataSource to have been
-                // set via the undocumented XML configuration that the
-                // PoolDataSource can apparently be configured with in
-                // certain (irrelevant for Helidon) application server
-                // cases.
-                final Object pdbRoles = connectionFactoryProperties.get("pdbRoles");
-                if (pdbRoles instanceof Properties) {
-                    try {
-                        Method m = returnValue.getClass().getDeclaredMethod("setPdbRoles", Properties.class);
-                        if (m.trySetAccessible()) {
-                            m.invoke(returnValue, (Properties) pdbRoles);
-                        }
-                    } catch (final NoSuchMethodException ignoreOnPurpose) {
+                } catch (final NoSuchMethodException ignoreOnPurpose) {
 
-                    }
                 }
             }
-            // Permit further customization before the bean is actually created
-            instance.select(new TypeLiteral<Event<PoolDataSource>>() {}, dataSourceName).get().fire(returnValue);
+            // Set the PoolDataSource's pdbRoles property so that it
+            // appears to the PoolDataSource to have been set via the
+            // undocumented XML configuration that the PoolDataSource
+            // can apparently be configured with in certain
+            // (irrelevant for Helidon) application server cases.
+            if (pdbRoles instanceof Properties) {
+                try {
+                    Method m = returnValue.getClass().getDeclaredMethod("setPdbRoles", Properties.class);
+                    if (m.trySetAccessible()) {
+                        m.invoke(returnValue, pdbRoles);
+                    }
+                } catch (final NoSuchMethodException ignoreOnPurpose) {
+
+                }
+            }
         }
         final Instance<SSLContext> sslContextInstance = instance.select(SSLContext.class);
         if (!sslContextInstance.isUnsatisfied()) {
             returnValue.setSSLContext(sslContextInstance.get());
         }
+        // Permit further customization before the bean is actually created
+        instance.select(new TypeLiteral<Event<PoolDataSource>>() {}, dataSourceName).get().fire(returnValue);
         return returnValue;
     }
 
