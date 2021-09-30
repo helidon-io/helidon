@@ -314,12 +314,12 @@ public final class OidcConfig {
      * Default name of the header we expect JWT in.
      */
     public static final String PARAM_HEADER_NAME = "X_OIDC_TOKEN_HEADER";
+
     static final int DEFAULT_PROXY_PORT = 80;
     static final String DEFAULT_REDIRECT_URI = "/oidc/redirect";
     static final String DEFAULT_LOGOUT_URI = "/oidc/logout";
     static final String DEFAULT_COOKIE_NAME = "JSESSIONID";
     static final boolean DEFAULT_COOKIE_USE = true;
-
     static final String DEFAULT_PARAM_NAME = "accessToken";
     static final boolean DEFAULT_PARAM_USE = false;
     static final boolean DEFAULT_HEADER_USE = false;
@@ -334,13 +334,13 @@ public final class OidcConfig {
 
     private static final Logger LOGGER = Logger.getLogger(OidcConfig.class.getName());
     private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
+
     private final String redirectUri;
     private final String logoutUri;
     private final boolean logoutEnabled;
     private final boolean useCookie;
     private final boolean useParam;
     private final String paramName;
-
     private final URI identityUri;
     private final WebTarget tokenEndpoint;
     private final URI tokenEndpointUri;
@@ -441,7 +441,6 @@ public final class OidcConfig {
                 this.scopeAudience = tmp + "/";
             }
         }
-
         LOGGER.finest(() -> "OIDC Scope audience: " + scopeAudience);
 
         this.redirectUriWithHost = builder.frontendUri + builder.redirectUri;
@@ -1006,6 +1005,11 @@ public final class OidcConfig {
     public static class Builder implements io.helidon.common.Builder<OidcConfig> {
         private static final String DEFAULT_SERVER_TYPE = "@default";
 
+        private final OidcCookieHandler.Builder tokenCookieBuilder = OidcCookieHandler.builder()
+                .cookieName(DEFAULT_COOKIE_NAME);
+        private final OidcCookieHandler.Builder idTokenCookieBuilder = OidcCookieHandler.builder()
+                .cookieName(DEFAULT_COOKIE_NAME + "_2");
+
         private String issuer;
         private String audience;
         private String baseScopes = DEFAULT_BASE_SCOPES;
@@ -1017,37 +1021,26 @@ public final class OidcConfig {
         private String logoutUri = DEFAULT_LOGOUT_URI;
         private boolean logoutEnabled = false;
         private boolean useCookie = DEFAULT_COOKIE_USE;
-        private final OidcCookieHandler.Builder tokenCookieBuilder = OidcCookieHandler.builder()
-                .cookieName(DEFAULT_COOKIE_NAME);
-        private final OidcCookieHandler.Builder idTokenCookieBuilder = OidcCookieHandler.builder()
-                .cookieName(DEFAULT_COOKIE_NAME + "_2");
-
         private boolean useParam = DEFAULT_PARAM_USE;
         private String paramName = DEFAULT_PARAM_NAME;
-
         // optional properties
         private String proxyProtocol = DEFAULT_PROXY_PROTOCOL;
         private String proxyHost;
         private int proxyPort = DEFAULT_PROXY_PORT;
-
         private String scopeAudience;
         private OidcMetadata.Builder oidcMetadata = OidcMetadata.builder();
         private String frontendUri;
-
         private boolean useHeader = OidcConfig.DEFAULT_HEADER_USE;
         private TokenHandler headerHandler = TokenHandler.builder()
                 .tokenHeader("Authorization")
                 .tokenPrefix("bearer ")
                 .build();
-
         private URI tokenEndpointUri;
-        private ClientAuthentication tokenEndpointAuthentication
-                = ClientAuthentication.CLIENT_SECRET_BASIC;
+        private ClientAuthentication tokenEndpointAuthentication = ClientAuthentication.CLIENT_SECRET_BASIC;
         private URI authorizationEndpointUri;
         private URI logoutEndpointUri;
         private JwkKeys signJwk;
         private boolean oidcMetadataWellKnown = true;
-
         private boolean validateJwtWithJwk = DEFAULT_JWT_VALIDATE_JWK;
         private URI introspectUri;
         private boolean redirect = DEFAULT_REDIRECT;
@@ -1997,5 +1990,4 @@ public final class OidcConfig {
             }
         }
     }
-
 }
