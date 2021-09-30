@@ -79,7 +79,7 @@ class PrometheusName {
      * @return name with stat name with units
      */
     String nameStatUnits(String statName) {
-        return nameStat(statName) + "_" + prometheusUnit;
+        return nameStat(statName) + (prometheusUnit.isBlank() ? "" :  "_" + prometheusUnit);
     }
 
     String nameStat(String statName) {
