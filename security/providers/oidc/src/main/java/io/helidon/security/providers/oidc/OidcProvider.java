@@ -359,11 +359,17 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
 
             String authorizationEndpoint = oidcConfig.authorizationEndpointUri();
 
+            String host = null;
+            String hostHeader = providerRequest.env().headers().keySet().stream().filter(k->k.equalsIgnoreCase("host")).findFirst().get();
+            if(hostHeader!=null){
+                host = providerRequest.env().transport()+"://"+providerRequest.env().headers().get(hostHeader).stream().findFirst().get();
+            }
+
             String nonce = UUID.randomUUID().toString();
             StringBuilder queryString = new StringBuilder("?");
             queryString.append("client_id=").append(oidcConfig.clientId()).append("&");
             queryString.append("response_type=code&");
-            queryString.append("redirect_uri=").append(oidcConfig.redirectUriWithHost()).append("&");
+            queryString.append("redirect_uri=").append(oidcConfig.redirectUriWithHost(host)).append("&");
             queryString.append("scope=").append(scopeString).append("&");
             queryString.append("nonce=").append(nonce).append("&");
             queryString.append("state=").append(encodeState(state));

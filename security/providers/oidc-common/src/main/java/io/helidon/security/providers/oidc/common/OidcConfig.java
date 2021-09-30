@@ -315,7 +315,7 @@ public final class OidcConfig {
     private final URI tokenEndpointUri;
     private final String cookieValuePrefix;
     private final String scopeAudience;
-    private final String redirectUriWithHost;
+    private final String frontendUri;
     private final boolean useHeader;
     private final TokenHandler headerHandler;
     private final String authorizationEndpointUri;
@@ -347,6 +347,7 @@ public final class OidcConfig {
         this.useParam = builder.useParam;
         this.paramName = builder.paramName;
         this.redirectUri = builder.redirectUri;
+        this.frontendUri = builder.frontendUri;
         this.useHeader = builder.useHeader;
         this.headerHandler = builder.headerHandler;
         this.authorizationEndpointUri = builder.authorizationEndpointUri.toString();
@@ -424,8 +425,7 @@ public final class OidcConfig {
 
         LOGGER.finest(() -> "OIDC Scope audience: " + scopeAudience);
 
-        this.redirectUriWithHost = builder.frontendUri + builder.redirectUri;
-        LOGGER.finest(() -> "Redirect URI with host: " + redirectUriWithHost);
+        LOGGER.finest(() -> "Redirect URI with host: " + this.frontendUri+this.redirectUri);
     }
 
     /**
@@ -651,11 +651,19 @@ public final class OidcConfig {
     /**
      * Redirect URI with host information.
      *
+     * If the configured frontend URI is null then the frontendUri parameter will be used if provided.
+     *
+     * @param frontendUri frontend URI to use.  If null configured one will be used.
      * @return redirect URI
      * @see Builder#redirectUri(String)
      */
-    public String redirectUriWithHost() {
-        return redirectUriWithHost;
+    public String redirectUriWithHost(String frontendUri) {
+        String host = this.frontendUri;
+
+        if(this.frontendUri==null && frontendUri!=null){
+            host = frontendUri;
+        }
+        return host+this.redirectUri;
     }
 
     /**

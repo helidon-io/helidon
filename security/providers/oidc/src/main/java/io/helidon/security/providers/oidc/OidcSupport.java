@@ -221,10 +221,12 @@ public final class OidcSupport implements Service {
     private void processCode(String code, ServerRequest req, ServerResponse res) {
         WebClient webClient = oidcConfig.appWebClient();
 
+        String host = req.absoluteUri().getScheme()+"://"+req.headers().value("host").get();
+
         FormParams.Builder form = FormParams.builder()
                 .add("grant_type", "authorization_code")
                 .add("code", code)
-                .add("redirect_uri", oidcConfig.redirectUriWithHost());
+                .add("redirect_uri", oidcConfig.redirectUriWithHost(host));
 
         WebClientRequestBuilder post = webClient.post()
                 .uri(oidcConfig.tokenEndpointUri())

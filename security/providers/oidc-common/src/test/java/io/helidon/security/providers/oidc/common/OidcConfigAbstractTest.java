@@ -78,7 +78,7 @@ abstract class OidcConfigAbstractTest {
         OidcConfig config = getConfig();
         assertAll("All values computed either from configured or default values",
                   () -> assertThat("Redirect URI with host",
-                                   config.redirectUriWithHost(),
+                                   config.redirectUriWithHost(null),
                                    is("http://something:7001/oidc/redirect"))
         );
     }
