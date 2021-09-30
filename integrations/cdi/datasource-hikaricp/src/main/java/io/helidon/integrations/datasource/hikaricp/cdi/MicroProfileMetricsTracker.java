@@ -25,6 +25,7 @@ import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 
@@ -76,6 +77,7 @@ final class MicroProfileMetricsTracker implements IMetricsTracker {
                                .withName(METRIC_NAME_WAIT)
                                .withDescription("Connection acquisition time")
                                .withUnit(MetricUnits.NANOSECONDS)
+                               .withType(MetricType.HISTOGRAM)
                                .build(),
                                this.metricCategoryTag);
         this.connectionCreationHistogram =
@@ -83,6 +85,7 @@ final class MicroProfileMetricsTracker implements IMetricsTracker {
                                .withName(METRIC_NAME_CONNECT)
                                .withDescription("Connection creation time")
                                .withUnit(MetricUnits.MILLISECONDS)
+                               .withType(MetricType.HISTOGRAM)
                                .build(),
                                this.metricCategoryTag);
         this.connectionUsageHistogram =
@@ -90,29 +93,34 @@ final class MicroProfileMetricsTracker implements IMetricsTracker {
                                .withName(METRIC_NAME_USAGE)
                                .withDescription("Connection usage time")
                                .withUnit(MetricUnits.MILLISECONDS)
+                               .withType(MetricType.HISTOGRAM)
                                .build(),
                                this.metricCategoryTag);
         this.connectionTimeoutCounter =
             registry.counter(Metadata.builder()
                              .withName(METRIC_NAME_TIMEOUT_RATE)
                              .withDescription("Connection timeout total count")
+                             .withType(MetricType.COUNTER)
                              .build(),
                              this.metricCategoryTag);
         registry.<Gauge<Integer>>register(Metadata.builder()
                                           .withName(METRIC_NAME_TOTAL_CONNECTIONS)
                                           .withDescription("Total connections")
+                                          .withType(MetricType.GAUGE)
                                           .build(),
                                           poolStats::getTotalConnections,
                                           this.metricCategoryTag);
         registry.<Gauge<Integer>>register(Metadata.builder()
                                           .withName(METRIC_NAME_IDLE_CONNECTIONS)
                                           .withDescription("Idle connections")
+                                          .withType(MetricType.GAUGE)
                                           .build(),
                                           poolStats::getIdleConnections,
                                           this.metricCategoryTag);
         registry.<Gauge<Integer>>register(Metadata.builder()
                                           .withName(METRIC_NAME_ACTIVE_CONNECTIONS)
                                           .withDescription("Active connections")
+                                          .withType(MetricType.GAUGE)
                                           .build(),
                                           poolStats::getActiveConnections,
                                           this.metricCategoryTag);
@@ -122,18 +130,21 @@ final class MicroProfileMetricsTracker implements IMetricsTracker {
         registry.<Gauge<Integer>>register(Metadata.builder()
                                           .withName(METRIC_NAME_PENDING_CONNECTIONS)
                                           .withDescription("Pending connections")
+                                          .withType(MetricType.GAUGE)
                                           .build(),
                                           poolStats::getPendingThreads,
                                           this.metricCategoryTag);
         registry.<Gauge<Integer>>register(Metadata.builder()
                                           .withName(METRIC_NAME_MAX_CONNECTIONS)
                                           .withDescription("Max connections")
+                                          .withType(MetricType.GAUGE)
                                           .build(),
                                           poolStats::getMaxConnections,
                                           this.metricCategoryTag);
         registry.<Gauge<Integer>>register(Metadata.builder()
                                           .withName(METRIC_NAME_MIN_CONNECTIONS)
                                           .withDescription("Min connections")
+                                          .withType(MetricType.GAUGE)
                                           .build(),
                                           poolStats::getMinConnections,
                                           this.metricCategoryTag);
