@@ -79,9 +79,11 @@ public class AtpResource {
         try {
             this.atpDataSource.setSSLContext(walletArchive.getSSLContext());
             this.atpDataSource.setURL(walletArchive.getJdbcUrl(this.atpServiceName));
-            try(Connection connection = this.atpDataSource.getConnection();
-            PreparedStatement ps = connection.prepareStatement("SELECT 'Hello world!!' FROM DUAL");
-            ResultSet rs = ps.executeQuery()) {
+            try(
+                Connection connection = this.atpDataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement("SELECT 'Hello world!!' FROM DUAL");
+                ResultSet rs = ps.executeQuery()
+            ){
                 rs.next();
                 returnEntity = rs.getString(1);
             }
