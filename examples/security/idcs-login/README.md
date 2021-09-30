@@ -17,12 +17,14 @@ Edit application.yaml for IdcsMain.java or OidcConfig variable definition for Id
     1. Create two resources called `first_scope` and `second_scope`
     2. Primary Audience = `http://localhost:7987/"`   (ensure there is a trailing /)
 3. Within **Client Configuration**
-   1.  Register a client
-   2.  Allowed Grant Types = Client Credentials,JWT Assertion, Refresh Token, Authorization Code
-   3.  Check "Allow non-HTTPS URLs"
-   4.  Set ReDirect URL to `http://localhost:7987/oidc/redirect`
-   5.  Client Type = Confidential
-   6.  Add all Scopes defined in the resources section
+   1. Register a client
+   2. Allowed Grant Types = Client Credentials,JWT Assertion, Refresh Token, Authorization Code
+   3. Check "Allow non-HTTPS URLs"
+   4. Set Redirect URL to `http://localhost:7987/oidc/redirect`
+   5. Client Type = Confidential
+   6. Add all Scopes defined in the resources section
+   7. Set allowed operations to `Introspect`
+   8. Set Post Logout Redirect URL to `http://localhost:7987/loggedout`
 
 Ensure you save and *activate* the application
 
@@ -48,10 +50,7 @@ Try the endpoints:
 
 3. Open http://localhost:7987/rest/profile in your browser. This should present
  you with a response highlighting your logged in role (null) correctly as you are not logged in
-4. Navigate to `http://localhost:7987/jersey` this should
-   1. Redirect you to the OIDCS login console to authenticate yourself, once done
-   2. Redirects you back to the application and should display your users credentials/IDCS information
-5. Executing `http://localhost:7987/jersey` displays the user details from IDCS
+4. Open `http://localhost:7987/oidc/logout` in your browser. This will log you out from your IDCS and Helidon sessions
 
 ## Calling Sample from Postman
 

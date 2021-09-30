@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ security:
       # support for non-public signature JWK (and maybe other IDCS specific handling)
       server-type: "idcs"
       logout-enabled: true
+      post-logout-uri: "http://localhost:7987/loggedout"
   - idcs-role-mapper:
       multitenant: false
       oidc-config:
@@ -51,7 +52,6 @@ security:
         client-id: "${security.properties.idcs-client-id}"
         client-secret: "${security.properties.idcs-client-secret}"
         identity-uri: "${security.properties.idcs-uri}"
-        logout-enabled: "true"
   web-server:
     # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
     paths:

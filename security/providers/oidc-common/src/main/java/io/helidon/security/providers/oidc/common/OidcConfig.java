@@ -18,17 +18,12 @@ package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.json.Json;
@@ -280,6 +275,38 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  *     <td>30 seconds</td>
  *     <td>Timeout on HTTP client calls</td>
  * </tr>
+ * <tr>
+ *     <td>{@code cookie-encryption-enabled}</td>
+ *     <td>Depends on other configuration</td>
+ *     <td>Whether cookies should be encrypted. Will be enabled if logout is enabled.</td>
+ * </tr>
+ * <tr>
+ *     <td>{@code cookie-encryption-password}</td>
+ *     <td>Generated for this service (as a file)</td>
+ *     <td>Encryption password to be used for symmetric cipher. Must be the same for all services that are intended
+ *     to share a cookie as a form of authentication</td>
+ * </tr>
+ * <tr>
+ *     <td>{@code cookie-encryption-name}</td>
+ *     <td>&nbsp;</td>
+ *     <td>Name of encryption configuration in {@link io.helidon.security.Security}. If used, security must be registered
+ *     in curent context or in global context (this is done automatically in Helidon MP).</td>
+ * </tr>
+ * <tr>
+ *     <td>{@code logout-endpoint-uri}</td>
+ *     <td>From well known metadata endpoint</td>
+ *     <td>Endpoint to redirect user to to log out from OIDC server.</td>
+ * </tr>
+ * <tr>
+ *     <td>{@code post-logout-uri}</td>
+ *     <td>&nbsp;</td>
+ *     <td>Required if logout is enabled. Endpoint the OIDC server redirects back to after logging user out.</td>
+ * </tr>
+ * <tr>
+ *     <td>{@code logout-enabled}</td>
+ *     <td>{@code false}</td>
+ *     <td>Whether logout support should be enabled. Requires encryption of cookies (and cookies must be used).</td>
+ * </tr>
  * </table>
  */
 public final class OidcConfig {
@@ -288,15 +315,11 @@ public final class OidcConfig {
      */
     public static final String PARAM_HEADER_NAME = "X_OIDC_TOKEN_HEADER";
     static final int DEFAULT_PROXY_PORT = 80;
-    static final String DEFAULT_OIDC_METADATA_URI = "/.well-known/openid-configuration";
     static final String DEFAULT_REDIRECT_URI = "/oidc/redirect";
     static final String DEFAULT_LOGOUT_URI = "/oidc/logout";
     static final String DEFAULT_COOKIE_NAME = "JSESSIONID";
     static final boolean DEFAULT_COOKIE_USE = true;
-    static final String DEFAULT_COOKIE_PATH = "/";
-    static final boolean DEFAULT_COOKIE_HTTP_ONLY = true;
-    static final boolean DEFAULT_COOKIE_SECURE = false;
-    static final String DEFAULT_COOKIE_SAME_SITE = "Lax";
+
     static final String DEFAULT_PARAM_NAME = "accessToken";
     static final boolean DEFAULT_PARAM_USE = false;
     static final boolean DEFAULT_HEADER_USE = false;
@@ -315,18 +338,12 @@ public final class OidcConfig {
     private final String logoutUri;
     private final boolean logoutEnabled;
     private final boolean useCookie;
-    private final String cookieName;
-    private final String cookieEncryptionName;
-    private final char[] cookieEncryptionPassword;
-    private final boolean cookieEncryptionEnabled;
-
     private final boolean useParam;
     private final String paramName;
 
     private final URI identityUri;
     private final WebTarget tokenEndpoint;
     private final URI tokenEndpointUri;
-    private final String cookieValuePrefix;
     private final String scopeAudience;
     private final String redirectUriWithHost;
     private final boolean useHeader;
@@ -351,18 +368,14 @@ public final class OidcConfig {
     private final WebClient appWebClient;
     private final URI introspectUri;
     private final Duration clientTimeout;
-    private final CookieHandler cookieHandler;
+    private final OidcCookieHandler tokenCookieHandler;
+    private final OidcCookieHandler idTokenCookieHandler;
     private final URI postLogoutUri;
     private final URI logoutEndpointUri;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
         this.useCookie = builder.useCookie;
-        this.cookieName = builder.cookieName;
-        this.cookieValuePrefix = cookieName + "=";
-        this.cookieEncryptionEnabled = builder.cookieEncryptionEnabled;
-        this.cookieEncryptionPassword = builder.cookieEncryptionPassword;
-        this.cookieEncryptionName = builder.cookieEncryptionName;
         this.useParam = builder.useParam;
         this.paramName = builder.paramName;
         this.redirectUri = builder.redirectUri;
@@ -398,7 +411,7 @@ public final class OidcConfig {
             this.clientSecret = null;
         }
 
-        if (null == builder.signJwk) {
+        if (builder.signJwk == null) {
             this.signJwk = JwkKeys.builder().build();
         } else {
             this.signJwk = builder.signJwk;
@@ -412,7 +425,8 @@ public final class OidcConfig {
             this.introspectEndpoint = appClient.target(builder.introspectUri);
         }
 
-        this.cookieHandler = new CookieHandler(builder);
+        this.tokenCookieHandler = builder.tokenCookieBuilder.build();
+        this.idTokenCookieHandler = builder.idTokenCookieBuilder.build();
 
         if ((builder.scopeAudience == null) || builder.scopeAudience.trim().isEmpty()) {
             this.scopeAudience = "";
@@ -604,39 +618,11 @@ public final class OidcConfig {
      *
      * @return name of the cookie to use
      * @see Builder#cookieName(String)
+     * @deprecated use {@link #tokenCookieHandler()} instead
      */
+    @Deprecated(forRemoval = true, since = "2.4.0")
     public String cookieName() {
-        return cookieName;
-    }
-
-    /**
-     * Name of the security encryption to use to encrypt/decrypt cookies.
-     *
-     * @return string with the name, or empty if encryption through security should not be used
-     * @see Builder#cookieEncryptionName(String)
-     */
-    public Optional<String> cookieEncryptionName() {
-        return Optional.ofNullable(cookieEncryptionName);
-    }
-
-    /**
-     * Master password for cookie encryption.
-     *
-     * @return password to use to encrypt/decrypt cookies
-     * @see Builder#cookieEncryptionPassword(char[])
-     */
-    public Optional<char[]> cookieEncryptionPassword() {
-        return Optional.ofNullable(cookieEncryptionPassword);
-    }
-
-    /**
-     * Whether cookies should be encrypted or not.
-     *
-     * @return whether to encrypt cookie content
-     * @see Builder#cookieEncryptionEnabled(boolean)
-     */
-    public boolean cookieEncryptionEnabled() {
-        return cookieEncryptionEnabled;
+        return tokenCookieHandler.cookieName();
     }
 
     /**
@@ -645,20 +631,29 @@ public final class OidcConfig {
      * @return cookie options to use in cookie string
      * @see Builder#cookieHttpOnly(Boolean)
      * @see Builder#cookieDomain(String)
-     * @deprecated please use {@link #cookieHandler()} instead
+     * @deprecated please use {@link #tokenCookieHandler()} instead
      */
     @Deprecated(forRemoval = true, since = "2.4.0")
     public String cookieOptions() {
-        return cookieHandler.createCookieOptions();
+        return tokenCookieHandler.createCookieOptions();
     }
 
     /**
-     * Cookie handler to create cookies or unset cookies.
+     * Cookie handler to create cookies or unset cookies for token.
      *
      * @return a new cookie handler
      */
-    public CookieHandler cookieHandler() {
-        return cookieHandler;
+    public OidcCookieHandler tokenCookieHandler() {
+        return tokenCookieHandler;
+    }
+
+    /**
+     * Cookie handler to create cookies or unset cookies for id token.
+     *
+     * @return a new cookie handler
+     */
+    public OidcCookieHandler idTokenCookieHandler() {
+        return idTokenCookieHandler;
     }
 
     /**
@@ -686,9 +681,12 @@ public final class OidcConfig {
      *
      * @return prefix of cookie value
      * @see Builder#cookieName(String)
+     * @deprecated use {@link io.helidon.security.providers.oidc.common.OidcCookieHandler} instead, this method
+     *      will no longer be avilable
      */
+    @Deprecated(forRemoval = true, since = "2.4.0")
     public String cookieValuePrefix() {
-        return cookieValuePrefix;
+        return tokenCookieHandler.cookieValuePrefix();
     }
 
     /**
@@ -1008,7 +1006,6 @@ public final class OidcConfig {
         private String issuer;
         private String audience;
         private String baseScopes = DEFAULT_BASE_SCOPES;
-        private String proxyUri;
         // mandatory properties
         private URI identityUri;
         private String clientId;
@@ -1017,13 +1014,11 @@ public final class OidcConfig {
         private String logoutUri = DEFAULT_LOGOUT_URI;
         private boolean logoutEnabled = false;
         private boolean useCookie = DEFAULT_COOKIE_USE;
-        private String cookieName = DEFAULT_COOKIE_NAME;
-        private String cookieDomain;
-        private String cookiePath = DEFAULT_COOKIE_PATH;
-        private Long cookieMaxAge;
-        private boolean cookieHttpOnly = DEFAULT_COOKIE_HTTP_ONLY;
-        private boolean cookieSecure = DEFAULT_COOKIE_SECURE;
-        private String cookieSameSite = DEFAULT_COOKIE_SAME_SITE;
+        private final OidcCookieHandler.Builder tokenCookieBuilder = OidcCookieHandler.builder()
+                .cookieName(DEFAULT_COOKIE_NAME);
+        private final OidcCookieHandler.Builder idTokenCookieBuilder = OidcCookieHandler.builder()
+                .encryptionEnabled(true)
+                .cookieName(DEFAULT_COOKIE_NAME + "_2");
 
         private boolean useParam = DEFAULT_PARAM_USE;
         private String paramName = DEFAULT_PARAM_NAME;
@@ -1034,7 +1029,7 @@ public final class OidcConfig {
         private int proxyPort = DEFAULT_PROXY_PORT;
 
         private String scopeAudience;
-        private JsonObject oidcMetadata;
+        private OidcMetadata.Builder oidcMetadata = OidcMetadata.builder();
         private String frontendUri;
 
         private boolean useHeader = OidcConfig.DEFAULT_HEADER_USE;
@@ -1069,124 +1064,82 @@ public final class OidcConfig {
         private WebClient webClient;
         private Duration clientTimeout = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS);
         private URI postLogoutUri;
-        private String cookieEncryptionName;
-        private char[] cookieEncryptionPassword;
-        private Boolean cookieEncryptionEnabled;
 
         @Override
         public OidcConfig build() {
-            if (null != serverType) {
-                // explicit server type
-                if (!"idcs".equals(serverType) && !DEFAULT_SERVER_TYPE.equals(serverType)) {
-                    LOGGER.warning("OIDC server-type is configured to " + serverType + ", currently only \"idcs\", and"
-                                           + " \"" + DEFAULT_SERVER_TYPE + "\" are supported");
-                    serverType = DEFAULT_SERVER_TYPE;
-                }
-            } else {
-                serverType = DEFAULT_SERVER_TYPE;
-            }
-
-            if ((null == proxyUri) && (null != proxyHost)) {
-                this.proxyUri = proxyProtocol
-                        + "://"
-                        + proxyHost
-                        + ":"
-                        + proxyPort;
-            }
+            fixServerType();
 
             Errors.Collector collector = Errors.collector();
-            // validate
-            if (null == clientId) {
-                collector.fatal("Client Id must be configured (\"client-id\" key in config)");
-            }
-            if (null == clientSecret) {
-                collector.fatal("Client Secret must be configured (\"client-secret\" key in config)");
-            }
 
-            if (null == identityUri) {
-                collector.fatal("Identity URI must be configured  (\"identity-uri\" key in config)");
-            }
+            validateExists(collector, clientId, "Client Id", "client-id");
+            validateExists(collector, clientSecret, "Client Secret", "client-secret");
+            validateExists(collector, identityUri, "Identity URI", "identity-uri");
 
             // first set of validations
             collector.collect().checkValid();
             collector = Errors.collector();
 
-            loadOidcMetadata(collector);
+            WebClient.Builder webClientBuilder = webClientBaseBuilder();
+            ClientBuilder clientBuilder = clientBaseBuilder();
 
-            this.tokenEndpointUri = getOidcEndpoint(collector,
-                                                    tokenEndpointUri,
-                                                    "token_endpoint",
-                                                    "/oauth2/v1/token");
+            this.generalClient = clientBuilder.build();
+            this.webClient = webClientBuilder.build();
 
-            this.authorizationEndpointUri = getOidcEndpoint(collector,
-                                                            authorizationEndpointUri,
-                                                            "authorization_endpoint",
-                                                            "/oauth2/v1/authorize");
+            OidcMetadata oidcMetadata = this.oidcMetadata.webClient(webClient)
+                    .remoteEnabled(oidcMetadataWellKnown)
+                    .identityUri(identityUri)
+                    .collector(collector)
+                    .build();
 
-            this.logoutEndpointUri = getOidcEndpoint(collector,
-                                                     logoutEndpointUri,
-                                                     "end_session_endpoint",
-                                                     "oauth2/v1/userlogout");
+            this.tokenEndpointUri = oidcMetadata.getOidcEndpoint(collector,
+                                                                 tokenEndpointUri,
+                                                                 "token_endpoint",
+                                                                 "/oauth2/v1/token");
 
-            if ((null == issuer) && (null != oidcMetadata)) {
-                this.issuer = oidcMetadata.getString("issuer");
+            this.authorizationEndpointUri = oidcMetadata.getOidcEndpoint(collector,
+                                                                         authorizationEndpointUri,
+                                                                         "authorization_endpoint",
+                                                                         "/oauth2/v1/authorize");
+
+            this.logoutEndpointUri = oidcMetadata.getOidcEndpoint(collector,
+                                                                  logoutEndpointUri,
+                                                                  "end_session_endpoint",
+                                                                  "oauth2/v1/userlogout");
+
+            if (issuer == null) {
+                oidcMetadata.getString("issuer").ifPresent(it -> issuer = it);
             }
 
-            if ((null == audience) && (null != identityUri)) {
+            if ((audience == null) && (identityUri != null)) {
                 this.audience = identityUri.toString();
             }
 
-            collector.collect().checkValid();
-
             if (useCookie && logoutEnabled) {
-                // only enable encryption if logout is enabled and cookies are used
-                // this default should change for 3.0.0
-                if (cookieEncryptionEnabled == null) {
-                    cookieEncryptionEnabled = true;
-                }
-            } else {
-                if (cookieEncryptionEnabled == null) {
-                    cookieEncryptionEnabled = false;
+                if (postLogoutUri == null) {
+                    collector.fatal("post-logout-uri must be defined when logout is enabled.");
                 }
             }
+
+            // second set of validations
+            collector.collect().checkValid();
 
             if (cookieSameSiteDefault && useCookie) {
                 // compare frontend and oidc endpoints to see if
                 // we should use lax or strict by default
-                if (null != identityUri) {
+                if (identityUri != null) {
                     String identityHost = identityUri.getHost();
-                    if (null != frontendUri) {
+                    if (frontendUri != null) {
                         String frontendHost = URI.create(frontendUri).getHost();
                         if (identityHost.equals(frontendHost)) {
                             LOGGER.info("As frontend host and identity host are equal, setting Same-Site policy to Strict"
                                                 + " this can be overridden using configuration option of OIDC: "
                                                 + "\"cookie-same-site\"");
-                            this.cookieSameSite = "Strict";
+                            this.tokenCookieBuilder.sameSite(SetCookie.SameSite.STRICT);
+                            this.idTokenCookieBuilder.sameSite(SetCookie.SameSite.STRICT);
                         }
                     }
                 }
             }
-
-            ClientBuilder clientBuilder = ClientBuilder.newBuilder();
-            WebClient.Builder webClientBuilder = WebClient.builder()
-                    .addService(WebClientTracing.create())
-                    .addMediaSupport(JsonpSupport.create())
-                    .connectTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS)
-                    .readTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
-
-            clientBuilder.property(OutboundConfig.PROPERTY_DISABLE_OUTBOUND, Boolean.TRUE);
-
-            if (proxyHost != null) {
-                clientBuilder.property(ClientProperties.PROXY_URI, proxyUri);
-                webClientBuilder.proxy(Proxy.builder()
-                                               .type(Proxy.ProxyType.HTTP)
-                                               .host(proxyProtocol + "://" + proxyHost)
-                                               .port(proxyPort)
-                                               .build());
-            }
-
-            this.generalClient = clientBuilder.build();
-            this.webClient = webClientBuilder.build();
 
             if (tokenEndpointAuthentication == ClientAuthentication.CLIENT_SECRET_BASIC) {
                 HttpAuthenticationFeature basicAuth = HttpAuthenticationFeature.basicBuilder()
@@ -1213,77 +1166,33 @@ public final class OidcConfig {
             tokenEndpoint = appClient.target(tokenEndpointUri);
 
             if (validateJwtWithJwk) {
-                if (null == signJwk) {
+                if (signJwk == null) {
                     // not configured - use default location
-                    URI jwkUri = getOidcEndpoint(collector,
-                                                 null,
-                                                 "jwks_uri",
-                                                 null);
-                    if (null != jwkUri) {
+                    URI jwkUri = oidcMetadata.getOidcEndpoint(collector,
+                                                              null,
+                                                              "jwks_uri",
+                                                              null);
+                    if (jwkUri != null) {
                         if ("idcs".equals(serverType)) {
                             this.signJwk = IdcsSupport.signJwk(appWebClient, webClient, tokenEndpointUri, jwkUri, clientTimeout);
                         } else {
                             this.signJwk = JwkKeys.builder()
-                                    .resource(Resource.create(jwkUri))
+                                    .json(webClient.get()
+                                                  .uri(jwkUri)
+                                                  .request(JsonObject.class)
+                                                  .await())
                                     .build();
                         }
                     }
                 }
             } else {
-                this.introspectUri = getOidcEndpoint(collector,
-                                                     introspectUri,
-                                                     "introspection_endpoint",
-                                                     "/oauth2/v1/introspect");
+                this.introspectUri = oidcMetadata.getOidcEndpoint(collector,
+                                                                  introspectUri,
+                                                                  "introspection_endpoint",
+                                                                  "/oauth2/v1/introspect");
             }
 
             return new OidcConfig(this);
-        }
-
-        private URI getOidcEndpoint(Errors.Collector collector,
-                                    URI currentValue,
-                                    String metaKey,
-                                    String defaultUri) {
-            if (null == currentValue) {
-                if (null == oidcMetadata) {
-                    collector.fatal("When " + metaKey + " is not explicitly defined, the OIDC metadata must exist");
-                } else {
-                    String endpoint = oidcMetadata.getString(metaKey);
-                    if (null == endpoint) {
-                        if (null == identityUri) {
-                            collector
-                                    .fatal(metaKey + " URI is not defined in well known configuration");
-                        } else {
-                            if (null == defaultUri) {
-                                collector
-                                        .fatal(metaKey + " default URI is not defined and URI was not in OIDC metadata");
-                            } else {
-                                return URI.create(identityUri + defaultUri);
-                            }
-                        }
-                    } else {
-                        URI uri = URI.create(endpoint);
-                        LOGGER.finest(() -> metaKey + " loaded from well known metadata: " + uri);
-                        return uri;
-                    }
-                }
-            } else {
-                LOGGER.finest(() -> metaKey + " explicitly configured: " + currentValue);
-                return currentValue;
-            }
-
-            return currentValue;
-        }
-
-        private void loadOidcMetadata(Errors.Collector collector) {
-            if ((null == oidcMetadata) && oidcMetadataWellKnown) {
-                try {
-                    String wellKnown = identityUri + OidcConfig.DEFAULT_OIDC_METADATA_URI;
-                    oidcMetadata = JSON.createReader(Resource.create(URI.create(wellKnown)).stream()).readObject();
-                    LOGGER.finest(() -> "OIDC Metadata loaded from well known URI: " + wellKnown);
-                } catch (Exception e) {
-                    collector.fatal(e, "Failed to load metadata: " + e.getClass().getName() + ": " + e.getMessage());
-                }
-            }
         }
 
         /**
@@ -1313,6 +1222,7 @@ public final class OidcConfig {
             // token handling
             config.get("cookie-use").asBoolean().ifPresent(this::useCookie);
             config.get("cookie-name").asString().ifPresent(this::cookieName);
+            config.get("cookie-name-id-token").asString().ifPresent(this::cookieNameIdToken);
             config.get("cookie-domain").asString().ifPresent(this::cookieDomain);
             config.get("cookie-path").asString().ifPresent(this::cookiePath);
             config.get("cookie-max-age-seconds").asLong().ifPresent(this::cookieMaxAgeSeconds);
@@ -1367,49 +1277,56 @@ public final class OidcConfig {
         /**
          * Name of the encryption configuration available through {@link Security#encrypt(String, byte[])} and
          * {@link Security#decrypt(String, String)}.
-         * If configured, cookie encryption will be enabled unless explicitly set to {@code false}.
-         * If configured, Security MUST be configured in global or current {@code io.helidon.common.context.Context} (this
+         * If configured and encryption is enabled for any cookie,
+         * Security MUST be configured in global or current {@code io.helidon.common.context.Context} (this
          * is done automatically in Helidon MP).
          *
          * @param cookieEncryptionName name of the encryption configuration in security used to encrypt/decrypt cookies
          * @return updated builder
          */
         public Builder cookieEncryptionName(String cookieEncryptionName) {
-            this.cookieEncryptionName = cookieEncryptionName;
-            if (cookieEncryptionEnabled == null) {
-                cookieEncryptionEnabled = false;
-            }
+            this.tokenCookieBuilder.encryptionName(cookieEncryptionName);
+            this.idTokenCookieBuilder.encryptionName(cookieEncryptionName);
             return this;
         }
 
         /**
          * Master password for encryption/decryption of cookies. This must be configured to the same value on each microservice
          * using the cookie.
-         * If configured, cookie encryption will be enabled unless explicitly set to {@code false}.
          *
          * @param cookieEncryptionPassword encryption password
          * @return updated builder
          */
         public Builder cookieEncryptionPassword(char[] cookieEncryptionPassword) {
-            this.cookieEncryptionPassword = cookieEncryptionPassword;
-            if (cookieEncryptionEnabled == null) {
-                cookieEncryptionEnabled = false;
-            }
+            this.tokenCookieBuilder.encryptionPassword(cookieEncryptionPassword);
+            this.idTokenCookieBuilder.encryptionPassword(cookieEncryptionPassword);
+
             return this;
         }
 
         /**
-         * Whether to encrypt cookies created by this microservice.
-         * Defaults to {@code false} when only JWT is used for backward compatibility,
-         * defaults to {@code true} when logout is enabled (as we need to store
-         * the ID token as well)
+         * Whether to encrypt token cookie created by this microservice.
+         * Defaults to {@code false}.
          *
-         * @param cookieEncryptionEnabled whether cookies should be encrypted {@code true}, or as obtained from
+         * @param cookieEncryptionEnabled whether cookie should be encrypted {@code true}, or as obtained from
          *                               OIDC server {@code false}
          * @return updated builder instance
          */
         public Builder cookieEncryptionEnabled(boolean cookieEncryptionEnabled) {
-            this.cookieEncryptionEnabled = cookieEncryptionEnabled;
+            this.tokenCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
+            return this;
+        }
+
+        /**
+         * Whether to encrypt id token cookie created by this microservice.
+         * Defaults to {@code true}.
+         *
+         * @param cookieEncryptionEnabled whether cookie should be encrypted {@code true}, or as obtained from
+         *                               OIDC server {@code false}
+         * @return updated builder instance
+         */
+        public Builder cookieEncryptionEnabledIdToken(boolean cookieEncryptionEnabled) {
+            this.idTokenCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
             return this;
         }
 
@@ -1560,7 +1477,7 @@ public final class OidcConfig {
          * @return updated builder instance
          */
         public Builder oidcMetadata(Resource resource) {
-            this.oidcMetadata = JSON.createReader(resource.stream()).readObject();
+            this.oidcMetadata.json(JSON.createReader(resource.stream()).readObject());
             return this;
         }
 
@@ -1572,7 +1489,7 @@ public final class OidcConfig {
          * @see #oidcMetadata(Resource)
          */
         public Builder oidcMetadata(JsonObject metadata) {
-            this.oidcMetadata = metadata;
+            this.oidcMetadata.json(metadata);
             return this;
         }
 
@@ -1621,7 +1538,19 @@ public final class OidcConfig {
          * @return updated builder instance
          */
         public Builder cookieSameSite(String sameSite) {
-            this.cookieSameSite = sameSite;
+            return cookieSameSite(SetCookie.SameSite.valueOf(sameSite.toUpperCase(Locale.ROOT)));
+        }
+
+        /**
+         * When using cookie, used to set the SameSite cookie value. Can be
+         * "Strict" or "Lax"
+         *
+         * @param sameSite SameSite cookie attribute
+         * @return updated builder instance
+         */
+        public Builder cookieSameSite(SetCookie.SameSite sameSite) {
+            this.tokenCookieBuilder.sameSite(sameSite);
+            this.idTokenCookieBuilder.sameSite(sameSite);
             this.cookieSameSiteDefault = false;
             return this;
         }
@@ -1634,19 +1563,21 @@ public final class OidcConfig {
          * @return updated builder instance
          */
         public Builder cookieSecure(Boolean secure) {
-            this.cookieSecure = secure;
+            this.tokenCookieBuilder.secure(secure);
+            this.idTokenCookieBuilder.secure(secure);
             return this;
         }
 
         /**
          * When using cookie, if set to true, the HttpOnly attribute will be configured.
-         * Defaults to {@value #DEFAULT_COOKIE_HTTP_ONLY}.
+         * Defaults to {@value OidcCookieHandler.Builder#DEFAULT_HTTP_ONLY}.
          *
          * @param httpOnly whether the cookie should be HttpOnly (true) or not (false)
          * @return updated builder instance
          */
         public Builder cookieHttpOnly(Boolean httpOnly) {
-            this.cookieHttpOnly = httpOnly;
+            this.tokenCookieBuilder.httpOnly(httpOnly);
+            this.idTokenCookieBuilder.httpOnly(httpOnly);
             return this;
         }
 
@@ -1659,7 +1590,8 @@ public final class OidcConfig {
          * @return updated builder instance
          */
         public Builder cookieMaxAgeSeconds(long age) {
-            this.cookieMaxAge = age;
+            this.tokenCookieBuilder.maxAge(age);
+            this.idTokenCookieBuilder.maxAge(age);
             return this;
         }
 
@@ -1671,7 +1603,8 @@ public final class OidcConfig {
          * @return updated builder instance
          */
         public Builder cookiePath(String path) {
-            this.cookiePath = path;
+            this.tokenCookieBuilder.path(path);
+            this.idTokenCookieBuilder.path(path);
             return this;
         }
 
@@ -1683,7 +1616,8 @@ public final class OidcConfig {
          * @return updated builder instance
          */
         public Builder cookieDomain(String domain) {
-            this.cookieDomain = domain;
+            this.tokenCookieBuilder.domain(domain);
+            this.idTokenCookieBuilder.domain(domain);
             return this;
         }
 
@@ -1770,13 +1704,27 @@ public final class OidcConfig {
         /**
          * Name of the cookie to use.
          * Defaults to {@value #DEFAULT_COOKIE_NAME}.
-         * Helidon uses two cookies - one to store the user's token, one to store the user's ID token (needed for logout).
          *
          * @param cookieName name of a cookie
          * @return updated builder instance
          */
         public Builder cookieName(String cookieName) {
-            this.cookieName = cookieName;
+            this.tokenCookieBuilder.cookieName(cookieName);
+            return this;
+        }
+
+        /**
+         * Name of the cookie to use for id token.
+         * Defaults to {@value #DEFAULT_COOKIE_NAME}_2.
+         *
+         * This cookie is only used when logout is enabled, as otherwise it is not needed.
+         * Content of this cookie is encrypted.
+         *
+         * @param cookieName name of a cookie
+         * @return updated builder instance
+         */
+        public Builder cookieNameIdToken(String cookieName) {
+            this.idTokenCookieBuilder.cookieName(cookieName);
             return this;
         }
 
@@ -1849,7 +1797,7 @@ public final class OidcConfig {
          * @see #proxyPort(int)
          */
         public Builder proxyHost(String proxyHost) {
-            if ((null == proxyHost) || proxyHost.isEmpty()) {
+            if ((proxyHost == null) || proxyHost.isEmpty()) {
                 this.proxyHost = null;
             } else {
                 this.proxyHost = proxyHost;
@@ -1993,93 +1941,59 @@ public final class OidcConfig {
         private void clientTimeoutMillis(long millis) {
             this.clientTimeout(Duration.ofMillis(millis));
         }
-    }
 
-    /**
-     * Handler of cookies used in OIDC.
-     */
-    public static class CookieHandler {
-        private static final Logger LOGGER = Logger.getLogger(CookieHandler.class.getName());
-
-        private final String createCookieOptions;
-        private final List<Consumer<SetCookie.Builder>> removeCookieUpdaters = new LinkedList<>();
-        private final List<Consumer<SetCookie.Builder>> createCookieUpdaters = new LinkedList<>();
-
-        CookieHandler(Builder builder) {
-            // need to copy the values here, so we do not use future values of the builder
-            String path = builder.cookiePath;
-            boolean httpOnly = builder.cookieHttpOnly;
-            String sameSite = builder.cookieSameSite;
-            String domain = builder.cookieDomain;
-            boolean secure = builder.cookieSecure;
-            Long maxAge = builder.cookieMaxAge;
-
-            removeCookieUpdaters.add(it -> it.path(path));
-            if (httpOnly) {
-                removeCookieUpdaters.add(it -> it.httpOnly(true));
+        private static void validateExists(Errors.Collector collector, Object value, String name, String configKey) {
+            // validate
+            if (value == null) {
+                collector.fatal(name + " must be configured (\"" + configKey + "\" key in config)");
             }
-            if (sameSite != null && !sameSite.isBlank()) {
-                SetCookie.SameSite sameSiteEnum = SetCookie.SameSite.valueOf(sameSite.toUpperCase(Locale.ROOT));
-                removeCookieUpdaters.add(it -> it.sameSite(sameSiteEnum));
-            }
-            if (domain != null) {
-                removeCookieUpdaters.add(it -> it.domain(domain));
-            }
-            if (secure) {
-                removeCookieUpdaters.add(it -> it.secure(true));
-            }
-            // now we can share the updaters, from this point the two lists diverge
-            createCookieUpdaters.addAll(removeCookieUpdaters);
+        }
 
-            if (maxAge != null) {
-                createCookieUpdaters.add(it -> it.maxAge(Duration.ofSeconds(maxAge)));
-            }
-            // set expires to 0 - this removes the cookie from browsers
-            removeCookieUpdaters.add(it -> it.expires(Instant.ofEpochMilli(0)));
+        private WebClient.Builder webClientBaseBuilder() {
+            WebClient.Builder webClientBuilder = WebClient.builder()
+                    .addService(WebClientTracing.create())
+                    .addMediaSupport(JsonpSupport.create())
+                    .connectTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS)
+                    .readTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
 
-            String cookieName = builder.cookieName;
-            String value = createCookie(cookieName, "value").build().toString();
-            int index = value.indexOf(';');
-            if (index < 0) {
-                this.createCookieOptions = "";
+            if (proxyHost != null) {
+                webClientBuilder.proxy(Proxy.builder()
+                                               .type(Proxy.ProxyType.HTTP)
+                                               .host(proxyProtocol + "://" + proxyHost)
+                                               .port(proxyPort)
+                                               .build());
+            }
+            return webClientBuilder;
+        }
+
+        private ClientBuilder clientBaseBuilder() {
+            ClientBuilder clientBuilder = ClientBuilder.newBuilder();
+
+            clientBuilder.property(OutboundConfig.PROPERTY_DISABLE_OUTBOUND, Boolean.TRUE);
+
+            if (proxyHost != null) {
+                clientBuilder.property(ClientProperties.PROXY_URI, proxyProtocol
+                        + "://"
+                        + proxyHost
+                        + ":"
+                        + proxyPort);
+            }
+
+            return clientBuilder;
+        }
+
+        private void fixServerType() {
+            if (null != serverType) {
+                // explicit server type
+                if (!"idcs".equals(serverType) && !DEFAULT_SERVER_TYPE.equals(serverType)) {
+                    LOGGER.warning("OIDC server-type is configured to " + serverType + ", currently only \"idcs\", and"
+                                           + " \"" + DEFAULT_SERVER_TYPE + "\" are supported");
+                    serverType = DEFAULT_SERVER_TYPE;
+                }
             } else {
-                this.createCookieOptions = value.substring(index + 1);
+                serverType = DEFAULT_SERVER_TYPE;
             }
-
-            if (LOGGER.isLoggable(Level.FINEST)) {
-                LOGGER.finest(() -> "OIDC Create cookie example: " + value);
-                LOGGER.finest(() -> "OIDC Remove cookie example: " + removeCookie(cookieName).build());
-            }
-        }
-
-        String createCookieOptions() {
-            return createCookieOptions;
-        }
-
-        /**
-         * {@link io.helidon.common.http.SetCookie} builder to set a new cookie.
-         *
-         * @param name name of the cookie
-         * @param value value of the cookie
-         * @return a new builder to configure set cookie configured from OIDC Config
-         */
-        public SetCookie.Builder createCookie(String name, String value) {
-            SetCookie.Builder builder = SetCookie.builder(name, value);
-            createCookieUpdaters.forEach(it -> it.accept(builder));
-            return builder;
-        }
-
-        /**
-         * {@link io.helidon.common.http.SetCookie} builder to remove an existing cookie (such as during logout).
-         *
-         * @param name name of the cookie
-         * @return a new builder to configure set cookie configured from OIDC Config with expiration set to epoch begin and
-         *  empty value
-         */
-        public SetCookie.Builder removeCookie(String name) {
-            SetCookie.Builder builder = SetCookie.builder(name, "");
-            removeCookieUpdaters.forEach(it -> it.accept(builder));
-            return builder;
         }
     }
+
 }

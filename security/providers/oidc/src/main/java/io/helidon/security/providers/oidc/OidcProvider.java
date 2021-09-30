@@ -68,6 +68,7 @@ import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.security.providers.oidc.common.OidcCookieHandler;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.util.TokenHandler;
@@ -101,6 +102,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     private final OidcOutboundConfig outboundConfig;
     private final boolean useJwtGroups;
     private final BiConsumer<StringBuilder, String> scopeAppender;
+    private final OidcCookieHandler cookieHandler;
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
         this.optional = builder.optional;
@@ -108,6 +110,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         this.propagate = builder.propagate && (oidcOutboundConfig.hasOutbound());
         this.useJwtGroups = builder.useJwtGroups;
         this.outboundConfig = oidcOutboundConfig;
+        this.cookieHandler = oidcConfig.tokenCookieHandler();
 
         attemptPattern = Pattern.compile(".*?" + oidcConfig.redirectAttemptParam() + "=(\\d+).*");
 
@@ -255,11 +258,24 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             }
 
             if (oidcConfig.useCookie()) {
-                token = token
-                        .or(() -> findCookie(providerRequest.env().headers()));
-
                 if (token.isEmpty()) {
-                    missingLocations.add("cookie");
+                    // only do this for cookies
+                    Optional<Single<String>> cookie = cookieHandler.findCookie(providerRequest.env().headers());
+                    if (cookie.isEmpty()) {
+                        missingLocations.add("cookie");
+                    } else {
+                        return cookie.get()
+                                .flatMapSingle(it -> validateToken(providerRequest, it))
+                                .onErrorResumeWithSingle(throwable -> {
+                                    if (LOGGER.isLoggable(Level.FINEST)) {
+                                        LOGGER.log(Level.FINEST, "Invalid token in cookie", throwable);
+                                    }
+                                    return Single.just(errorResponse(providerRequest,
+                                                                     Http.Status.UNAUTHORIZED_401,
+                                                                     null,
+                                                                     "Invalid token"));
+                                });
+                    }
                 }
             }
         } catch (SecurityException e) {
@@ -277,26 +293,6 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                                                                    "Missing token, could not find in either of: "
                                                                            + missingLocations));
         }
-    }
-
-    private Optional<String> findCookie(Map<String, List<String>> headers) {
-        List<String> cookies = headers.get("Cookie");
-        if ((null == cookies) || cookies.isEmpty()) {
-            return Optional.empty();
-        }
-
-        for (String cookie : cookies) {
-            //a=b; c=d; e=f
-            String[] cookieValues = cookie.split(";");
-            for (String cookieValue : cookieValues) {
-                String trimmed = cookieValue.trim();
-                if (trimmed.startsWith(oidcConfig.cookieValuePrefix())) {
-                    return Optional.of(trimmed.substring(oidcConfig.cookieValuePrefix().length()));
-                }
-            }
-        }
-
-        return Optional.empty();
     }
 
     private Set<String> expectedScopes(ProviderRequest request) {
@@ -450,14 +446,14 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         return URLEncoder.encode(state, StandardCharsets.UTF_8);
     }
 
-    private CompletionStage<AuthenticationResponse> validateToken(ProviderRequest providerRequest, String token) {
+    private Single<AuthenticationResponse> validateToken(ProviderRequest providerRequest, String token) {
         SignedJwt signedJwt;
         try {
             signedJwt = SignedJwt.parseToken(token);
         } catch (Exception e) {
             //invalid token
             LOGGER.log(Level.FINEST, "Could not parse inbound token", e);
-            return CompletableFuture.completedFuture(AuthenticationResponse.failed("Invalid token", e));
+            return Single.just(AuthenticationResponse.failed("Invalid token", e));
         }
 
         return jwtValidator.apply(signedJwt, Errors.collector())

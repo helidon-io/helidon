@@ -40,6 +40,7 @@ public class SetCookie {
     private final String path;
     private final boolean secure;
     private final boolean httpOnly;
+    private final SameSite sameSite;
 
     private SetCookie(Builder builder) {
         this.name = builder.name;
@@ -50,6 +51,7 @@ public class SetCookie {
         this.path = builder.path;
         this.secure = builder.secure;
         this.httpOnly = builder.httpOnly;
+        this.sameSite = builder.sameSite;
     }
 
     /**
@@ -191,6 +193,11 @@ public class SetCookie {
         if (httpOnly) {
             result.append(PARAM_SEPARATOR);
             result.append("HttpOnly");
+        }
+        if (sameSite != null) {
+            result.append(PARAM_SEPARATOR);
+            result.append("SameSite=");
+            result.append(sameSite.text());
         }
         return result.toString();
     }

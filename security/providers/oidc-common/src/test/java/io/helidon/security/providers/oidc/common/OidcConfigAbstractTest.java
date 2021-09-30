@@ -63,7 +63,8 @@ abstract class OidcConfigAbstractTest {
                   () -> assertThat("Base scopes to use", config.baseScopes(), is(OidcConfig.DEFAULT_BASE_SCOPES)),
                   () -> assertThat("Cookie value prefix", config.cookieValuePrefix(), is("JSESSIONID=")),
                   () -> assertThat("Cookie name", config.cookieName(), is(OidcConfig.DEFAULT_COOKIE_NAME)),
-                  () -> assertThat("Cookie options", config.cookieOptions(), is(";Path=/;HttpOnly;SameSite=Lax")),
+                  // cookie options should be separated by space as defined by the specification
+                  () -> assertThat("Cookie options", config.cookieOptions(), is("; Path=/; HttpOnly; SameSite=Lax")),
                   () -> assertThat("Audience", config.audience(), is("https://identity.oracle.com")),
                   () -> assertThat("Parameter name", config.paramName(), is("accessToken")),
                   () -> assertThat("Issuer", config.issuer(), nullValue()),

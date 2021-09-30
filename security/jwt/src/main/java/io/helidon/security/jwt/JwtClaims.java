@@ -31,6 +31,9 @@ class JwtClaims {
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
+    protected JwtClaims() {
+    }
+
     protected static String decode(String base64, Errors.Collector collector, String description) {
         try {
             return new String(URL_DECODER.decode(base64), StandardCharsets.UTF_8);
