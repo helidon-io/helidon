@@ -19,6 +19,7 @@ package io.helidon.microprofile.grpc.core;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -253,7 +254,7 @@ public class AnnotatedMethodList implements Iterable<AnnotatedMethod> {
     private static List<Method> allDeclaredMethods(Class<?> c) {
         List<Method> l = new ArrayList<>();
         while (c != null && c != Object.class) {
-            l.addAll(ModelHelper.getDeclaredMethods(c));
+            l.addAll(AccessController.doPrivileged(ModelHelper.getDeclaredMethodsPA(c)));
             c = c.getSuperclass();
         }
         return l;
