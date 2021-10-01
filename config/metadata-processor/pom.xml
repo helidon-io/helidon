@@ -34,20 +34,11 @@
     </description>
 
     <dependencies>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>jakarta.json</artifactId>
-            <scope>runtime</scope>
-        </dependency>
+        <!--
+        This module should not have any dependencies, so we can configure it easily by
+        adding a dependency, rather then defining a proper annotation processor path in
+        maven compiler plugin
+        -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

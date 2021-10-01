@@ -19,8 +19,6 @@
  */
 module io.helidon.config.metadata.processor {
     requires java.compiler;
-    requires java.json;
-    requires io.helidon.config.metadata;
 
     exports io.helidon.config.metadata.processor;
 

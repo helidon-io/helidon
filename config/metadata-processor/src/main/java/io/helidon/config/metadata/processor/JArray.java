@@ -16,20 +16,27 @@
 
 package io.helidon.config.metadata.processor;
 
-import org.junit.jupiter.api.Test;
+import java.io.PrintWriter;
+import java.util.LinkedList;
+import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
+class JArray {
+    private final List<JObject> values = new LinkedList<>();
 
-class ConfigMetadataProcessorTest {
-    @Test
-    void testToConfigKey() {
-        ConfigMetadataProcessor p = new ConfigMetadataProcessor();
-        assertAll(
-                () -> assertThat(p.toConfigKey("maxInitialLineLength"), is("max-initial-line-length")),
-                () -> assertThat(p.toConfigKey("port"), is("port")),
-                () -> assertThat(p.toConfigKey("listenAddress"), is("listen-address"))
-        );
+    public void add(JObject object) {
+        values.add(object);
+    }
+
+    public void write(PrintWriter metaWriter) {
+        metaWriter.write('[');
+
+        for (int i = 0; i < values.size(); i++) {
+            values.get(i).write(metaWriter);
+            if (i < (values.size() - 1)) {
+                metaWriter.write(',');
+            }
+        }
+
+        metaWriter.write(']');
     }
 }

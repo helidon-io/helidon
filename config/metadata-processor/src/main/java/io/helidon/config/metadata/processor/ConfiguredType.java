@@ -22,13 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObjectBuilder;
-
-import io.helidon.config.metadata.ConfiguredOption;
+import java.util.stream.Collectors;
 
 final class ConfiguredType {
     private final Set<ConfiguredProperty> allProperties = new HashSet<>();
@@ -89,8 +83,8 @@ final class ConfiguredType {
         return prefix;
     }
 
-    public void write(JsonBuilderFactory json, JsonArrayBuilder typeArray) {
-        JsonObjectBuilder typeObject = json.createObjectBuilder();
+    public void write(JArray typeArray) {
+        JObject typeObject = new JObject();
 
         typeObject.add("type", targetClass());
         if (standalone()) {
@@ -103,42 +97,33 @@ final class ConfiguredType {
             typeObject.add("description", description);
         }
         if (!inherited.isEmpty()) {
-            JsonArrayBuilder inheritedBuilder = json.createArrayBuilder();
-            inherited.forEach(inheritedBuilder::add);
-            typeObject.add("inherits", inheritedBuilder);
+            typeObject.add("inherits", inherited);
         }
 
         if (!provides.isEmpty()) {
-            JsonArrayBuilder providesBuilder = json.createArrayBuilder();
-            provides.forEach(providesBuilder::add);
-            typeObject.add("provides", providesBuilder);
+            typeObject.add("provides", provides);
         }
 
-        JsonArrayBuilder producersBuilder = json.createArrayBuilder();
-        for (ProducerMethod method : producerMethods) {
-            producersBuilder.add(method.toString());
+        if (!producerMethods.isEmpty()) {
+            typeObject.add("producers", producerMethods.stream()
+                    .map(Object::toString)
+                    .collect(Collectors.toList()));
         }
 
-        JsonArray producers = producersBuilder.build();
-        if (!producers.isEmpty()) {
-            typeObject.add("producers", producers);
-        }
-
-        JsonArrayBuilder options = json.createArrayBuilder();
+        JArray options = new JArray();
         for (ConfiguredProperty property : allProperties) {
-            writeProperty(json, options, "", property);
+            writeProperty(options, "", property);
         }
         typeObject.add("options", options);
 
         typeArray.add(typeObject);
     }
 
-    private void writeProperty(JsonBuilderFactory json,
-                               JsonArrayBuilder optionsBuilder,
+    private void writeProperty(JArray optionsBuilder,
                                String prefix,
                                ConfiguredProperty property) {
 
-        JsonObjectBuilder optionBuilder = json.createObjectBuilder();
+        JObject optionBuilder = new JObject();
         if (property.key() != null && !property.key.isBlank()) {
             optionBuilder.add("key", prefix(prefix, property.key()));
         }
@@ -155,8 +140,8 @@ final class ConfiguredType {
         if (!property.optional) {
             optionBuilder.add("required", true);
         }
-        if (property.kind() != ConfiguredOption.Kind.VALUE) {
-            optionBuilder.add("kind", property.kind().name());
+        if (!property.kind().equals("VALUE")) {
+            optionBuilder.add("kind", property.kind());
         }
         if (property.provider) {
             optionBuilder.add("provider", true);
@@ -173,19 +158,19 @@ final class ConfiguredType {
         }
         if (property.configuredType != null) {
             String finalPrefix;
-            if (property.kind() == ConfiguredOption.Kind.LIST) {
+            if (property.kind().equals("LIST")) {
                 finalPrefix = prefix(prefix(prefix, property.key()), "*");
             } else {
                 finalPrefix = prefix(prefix, property.key());
             }
             property.configuredType.properties()
-                    .forEach(it -> writeProperty(json, optionsBuilder, finalPrefix, it));
+                    .forEach(it -> writeProperty(optionsBuilder, finalPrefix, it));
         }
         if (!property.allowedValues.isEmpty()) {
-            JsonArrayBuilder allowedValues = json.createArrayBuilder();
+            JArray allowedValues = new JArray();
 
-            for (ConfigMetadataProcessor.AllowedValue allowedValue : property.allowedValues) {
-                allowedValues.add(json.createObjectBuilder()
+            for (ConfigMetadataHandler.AllowedValue allowedValue : property.allowedValues) {
+                allowedValues.add(new JObject()
                                           .add("value", allowedValue.value())
                                           .add("description", allowedValue.description()));
             }
@@ -242,11 +227,11 @@ final class ConfiguredType {
         private final String type;
         private final boolean experimental;
         private final boolean optional;
-        private final ConfiguredOption.Kind kind;
+        private final String kind;
         private final boolean provider;
         private final boolean deprecated;
         private final boolean merge;
-        private final List<ConfigMetadataProcessor.AllowedValue> allowedValues;
+        private final List<ConfigMetadataHandler.AllowedValue> allowedValues;
         // if this is a nested type
         private ConfiguredType configuredType;
 
@@ -257,11 +242,11 @@ final class ConfiguredType {
                            String type,
                            boolean experimental,
                            boolean optional,
-                           ConfiguredOption.Kind kind,
+                           String kind,
                            boolean provider,
                            boolean deprecated,
                            boolean merge,
-                           List<ConfigMetadataProcessor.AllowedValue> allowedValues) {
+                           List<ConfigMetadataHandler.AllowedValue> allowedValues) {
             this.builderMethod = builderMethod;
             this.key = key;
             this.description = description;
@@ -304,7 +289,7 @@ final class ConfiguredType {
             return optional;
         }
 
-        ConfiguredOption.Kind kind() {
+        String kind() {
             return kind;
         }
 
