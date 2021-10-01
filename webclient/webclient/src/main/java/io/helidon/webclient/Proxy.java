@@ -143,6 +143,10 @@ public class Proxy {
                 .build();
     }
 
+    Function<URI, Boolean> noProxyPredicate() {
+        return noProxy;
+    }
+
     static Function<URI, Boolean> prepareNoProxy(Set<String> noProxyHosts) {
         if (noProxyHosts.isEmpty()) {
             // if no exceptions, then simple
