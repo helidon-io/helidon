@@ -99,9 +99,9 @@ class ParticipantImpl implements Participant {
                             .getDeclaredAnnotations())
                             .map(Annotation::annotationType)
                             .noneMatch(JAX_RS_ANNOTATIONS::contains)) {
-                        //no jar-rs annotation means LRA cdi method
+                        //no jax-rs method
                         URI uri = UriBuilder.fromUri(baseUri)
-                                .path(ParticipantCdiResource.CDI_PARTICIPANT_PATH) //Auxiliary Jax-Rs resource for cdi methods
+                                .path(NonJaxRsResource.CONTEXT_PATH) //Auxiliary non Jax-Rs resource
                                 .path(e.getKey().getSimpleName().toLowerCase())//@Complete -> /complete
                                 .path(resourceClazz.getName())
                                 .path(method.getName())

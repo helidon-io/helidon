@@ -28,7 +28,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
@@ -60,7 +59,6 @@ public class JaxRsCdiExtension implements Extension {
 
     private final List<JaxRsApplication> applicationMetas = new LinkedList<>();
 
-    private final Set<Class<? extends Application>> internalApplications = new LinkedHashSet<>();
     private final Set<Class<? extends Application>> applications = new LinkedHashSet<>();
     private final Set<Class<?>> resources = new HashSet<>();
     private final Set<Class<?>> providers = new HashSet<>();
@@ -102,16 +100,6 @@ public class JaxRsCdiExtension implements Extension {
     }
 
     /**
-     * Register application which should accompany main applications.
-     * Internal application can only coexist with existing one, implicit or declared one.
-     *
-     * @param jaxRsApplication which can't block creation of implicit synthetic application
-     */
-    public void registerInternalApplication(Class<? extends Application> jaxRsApplication) {
-        internalApplications.add(jaxRsApplication);
-    }
-
-    /**
      * List of applications including discovered and explicitly configured applications.
      * <p>
      * This method should only be called in {@code Initialized(ApplicationScoped.class)} observer methods,
@@ -140,15 +128,13 @@ public class JaxRsCdiExtension implements Extension {
         }
 
         // make sure the resources are used as a default if application does not define any
-        applicationMetas.addAll(
-                Stream.of(internalApplications, applications)
-                        .flatMap(Set::stream)
-                        .map(appClass -> JaxRsApplication.builder()
-                                .applicationClass(appClass)
-                                .config(ResourceConfig.forApplicationClass(appClass, allClasses))
-                                .build())
-                        .collect(Collectors.toList())
-        );
+        applicationMetas.addAll(applications
+                                        .stream()
+                                        .map(appClass -> JaxRsApplication.builder()
+                                                .applicationClass(appClass)
+                                                .config(ResourceConfig.forApplicationClass(appClass, allClasses))
+                                                .build())
+                                        .collect(Collectors.toList()));
 
         applications.clear();
         resources.clear();

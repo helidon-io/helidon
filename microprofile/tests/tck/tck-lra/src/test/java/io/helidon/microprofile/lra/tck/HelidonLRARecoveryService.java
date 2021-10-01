@@ -73,7 +73,6 @@ public class HelidonLRARecoveryService implements LRARecoveryService {
 
             String recoveringLras = response.readEntity(String.class);
             response.close();
-            System.out.println(recoveringLras);
             if (recoveringLras.contains(lraIdString)) {
                 for (JsonValue jval : Json.createReader(new StringReader(recoveringLras)).readArray()) {
                     if (jval.getValueType() == JsonValue.ValueType.STRING) {

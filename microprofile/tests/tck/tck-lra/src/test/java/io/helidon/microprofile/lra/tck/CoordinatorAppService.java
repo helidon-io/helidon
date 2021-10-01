@@ -18,6 +18,7 @@
 package io.helidon.microprofile.lra.tck;
 
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -46,6 +47,7 @@ public class CoordinatorAppService {
     ServerCdiExtension serverCdiExtension;
 
     LazyValue<URI> coordinatorUri = LazyValue.create(() -> {
+        CoordinatorDeployer.started().await(5, TimeUnit.SECONDS);
         // Check if external coordinator is set or use internal with random port
         int randomPort = serverCdiExtension.port(CoordinatorDeployer.COORDINATOR_ROUTING_NAME);
         String port = System.getProperty("lra.coordinator.port", String.valueOf(randomPort));

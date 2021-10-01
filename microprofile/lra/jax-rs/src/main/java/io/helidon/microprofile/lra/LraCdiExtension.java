@@ -57,7 +57,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 
 import io.helidon.common.Reflected;
-import io.helidon.microprofile.server.JaxRsCdiExtension;
 
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.Compensate;
@@ -74,7 +73,6 @@ import org.jboss.jandex.IndexView;
 import org.jboss.jandex.Indexer;
 
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
-import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 /**
  * MicroProfile Long Running Actions CDI extension.
@@ -114,7 +112,7 @@ public class LraCdiExtension implements Extension {
                 Forget.class,
                 Status.class,
                 Application.class,
-                ParticipantCdiResource.class).forEach(c -> runtimeIndex(DotName.createSimple(c.getName())));
+                NonJaxRsResource.class).forEach(c -> runtimeIndex(DotName.createSimple(c.getName())));
 
         List<URL> indexFiles;
         try {
@@ -149,7 +147,7 @@ public class LraCdiExtension implements Extension {
                 CoordinatorLocatorService.class,
                 HandlerService.class,
                 InspectionService.class,
-                ParticipantCdiResource.class,
+                NonJaxRsResource.class,
                 ParticipantService.class
         )
                 .forEach(clazz -> event
@@ -204,14 +202,6 @@ public class LraCdiExtension implements Extension {
         if (beanTypesWithCdiLRAMethods.contains(event.getBean().getBeanClass())) {
             lraCdiBeanReferences.put(event.getBean().getBeanClass(), event.getBean());
         }
-    }
-
-    void beforeFixApps(@Observes
-                       @Priority(PLATFORM_BEFORE - 1)
-                       @Initialized(ApplicationScoped.class) Object event,
-                       BeanManager bm) {
-        bm.getExtension(JaxRsCdiExtension.class)
-                .registerInternalApplication(ParticipantApp.class);
     }
 
     private void ready(

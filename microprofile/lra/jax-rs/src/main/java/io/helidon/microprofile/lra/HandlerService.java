@@ -32,6 +32,7 @@ import io.helidon.lra.coordinator.client.CoordinatorClient;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
+import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
 import org.eclipse.microprofile.lra.annotation.Forget;
 import org.eclipse.microprofile.lra.annotation.Status;
@@ -53,6 +54,8 @@ class HandlerService {
     private static final Set<String> STAND_ALONE_ANNOTATIONS = Set.of(
             Status.class.getName(),
             Complete.class.getName(),
+            Compensate.class.getName(),
+            AfterLRA.class.getName(),
             Forget.class.getName()
     );
 

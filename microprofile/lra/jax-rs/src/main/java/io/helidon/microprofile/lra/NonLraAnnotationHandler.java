@@ -37,7 +37,7 @@ class NonLraAnnotationHandler implements AnnotationHandler {
     public void handleJaxRsBefore(ContainerRequestContext requestContext,
                                   ResourceInfo resourceInfo) {
         // Skip internal resource
-        if (resourceInfo.getResourceClass() == ParticipantCdiResource.class) return;
+        if (resourceInfo.getResourceClass() == NonJaxRsResource.class) return;
 
         // not LRA method at all
         if (propagate) {
