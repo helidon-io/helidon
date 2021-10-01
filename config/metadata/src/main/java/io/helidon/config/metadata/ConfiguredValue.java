@@ -22,7 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Can be used to define a list of possible values of an option.
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 public @interface ConfiguredValue {
     /**
      * Value of the option.

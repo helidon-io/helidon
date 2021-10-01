@@ -46,7 +46,7 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.METHOD)
 @Inherited
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Repeatable(ConfiguredOptions.class)
 public @interface ConfiguredOption {
     /**

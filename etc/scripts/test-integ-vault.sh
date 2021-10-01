@@ -26,17 +26,6 @@ error_trap_setup
 
 mvn ${MAVEN_ARGS} --version
 
-# Workaround
-# For some reason the processor was built at the wrong time
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
-    install \
-    -pl :helidon-config-metadata-processor \
-    -am \
-    -e \
-    -DskipTests \
-    -Dmaven.test.skip=true \
-    -Ppipeline
-
 # Temporary workaround until job stages will share maven repository
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     install -e \

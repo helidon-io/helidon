@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.TYPE)
 @Inherited
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 public @interface Configured {
     /**
      * Whether this is a root configuration object.

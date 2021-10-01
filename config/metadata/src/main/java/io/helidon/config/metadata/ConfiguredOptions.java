@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.METHOD)
 @Inherited
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 public @interface ConfiguredOptions {
     /**
      * Group of options when used on a type.
