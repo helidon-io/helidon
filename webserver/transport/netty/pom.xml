@@ -33,5 +33,6 @@
 
     <modules>
         <module>epoll</module>
+        <module>iouring</module>
     </modules>
 </project>
