@@ -16,9 +16,12 @@
 
 package io.helidon.webserver.transport.netty.iouring;
 
+import java.util.Optional;
+
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.Transport;
 import io.helidon.webserver.WebServer;
+
 import io.netty.channel.ChannelFactory;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
@@ -26,7 +29,6 @@ import io.netty.incubator.channel.uring.IOUring;
 import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
 import io.netty.incubator.channel.uring.IOUringServerSocketChannel;
 
-import java.util.Optional;
 
 /**
  * A {@link Transport} implementation based upon Netty's <a
