@@ -169,7 +169,15 @@ class BareResponseImpl implements BareResponse {
             throw new IllegalStateException("Status and headers were already sent");
         }
 
-        response = new DefaultHttpResponse(HTTP_1_1, valueOf(status.code()));
+        HttpResponseStatus nettyStatus;
+        if (status instanceof Http.Status) {
+            // default reason phrase
+            nettyStatus = valueOf(status.code());
+        } else {
+            // custom reason phrase
+            nettyStatus = valueOf(status.code(), status.reasonPhrase());
+        }
+        response = new DefaultHttpResponse(HTTP_1_1, nettyStatus);
         for (Map.Entry<String, List<String>> headerEntry : headers.entrySet()) {
             response.headers().add(headerEntry.getKey(), headerEntry.getValue());
         }
