@@ -35,13 +35,12 @@ import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.webserver.RequestHeaders;
-import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.lra.LRAResponse;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
@@ -51,12 +50,13 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_ENDED_C
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_PARENT_CONTEXT_HEADER;
 
 @Reflected
-@RoutingPath(NonJaxRsResource.CONTEXT_PATH)
-class NonJaxRsResource implements Service {
+class NonJaxRsResource {
 
     private static final Logger LOGGER = Logger.getLogger(NonJaxRsResource.class.getName());
 
-    static final String CONTEXT_PATH = "/lra-participant";
+    static final String CONFIG_CONTEXT_KEY = "lra.participant.non-jax-rs";
+    static final String CONFIG_CONTEXT_PATH_KEY = CONFIG_CONTEXT_KEY + ".context-path";
+    static final String CONTEXT_PATH_DEFAULT = "/lra-participant";
     private static final String LRA_PARTICIPANT = "lra-participant";
 
     private final ExecutorService exec;
@@ -74,20 +74,28 @@ class NonJaxRsResource implements Service {
             );
 
     private final ParticipantService participantService;
+    private final String contextPath;
 
     @Inject
-    NonJaxRsResource(ParticipantService participantService, Config config) {
+    NonJaxRsResource(ParticipantService participantService,
+                     @ConfigProperty(name = CONFIG_CONTEXT_PATH_KEY,
+                             defaultValue = CONTEXT_PATH_DEFAULT) String contextPath,
+                     Config config) {
         this.participantService = participantService;
+        this.contextPath = contextPath;
         exec = ThreadPoolSupplier.builder()
                 .name(LRA_PARTICIPANT)
-                .config(config.get("lra.participant.non-jax-rs.pool"))
+                .config(config.get(CONFIG_CONTEXT_KEY))
                 .build()
                 .get();
     }
 
-    @Override
-    public void update(Routing.Rules rules) {
-        rules
+    String contextPath() {
+        return contextPath;
+    }
+
+    Service createNonJaxRsParticipantResource() {
+        return rules -> rules
                 .any("/{type}/{fqdn}/{methodName}", (req, res) -> {
                     LOGGER.log(Level.FINE, () -> "Non JAX-RS LRA resource " + req.method().name() + " " + req.absoluteUri());
                     RequestHeaders headers = req.headers();

@@ -47,6 +47,7 @@ class ParticipantService {
 
     private final LraCdiExtension lraCdiExtension;
     private final BeanManager beanManager;
+    private final String nonJaxRsContextPath;
     private final Optional<URI> participantUri;
 
     private final Map<Class<?>, Participant> participants = new HashMap<>();
@@ -54,16 +55,19 @@ class ParticipantService {
     @Inject
     ParticipantService(LraCdiExtension lraCdiExtension,
                        BeanManager beanManager,
+                       @ConfigProperty(name = NonJaxRsResource.CONFIG_CONTEXT_PATH_KEY,
+                               defaultValue = NonJaxRsResource.CONTEXT_PATH_DEFAULT) String nonJaxRsContextPath,
                        @ConfigProperty(name = "mp.lra.participant.url") Optional<URI> participantUri) {
         this.lraCdiExtension = lraCdiExtension;
         this.beanManager = beanManager;
+        this.nonJaxRsContextPath = nonJaxRsContextPath;
         this.participantUri = participantUri;
     }
 
     Participant participant(URI defaultBaseUri, Class<?> clazz) {
         return participants.computeIfAbsent(clazz, c ->
                 // configured value overrides base uri
-                new ParticipantImpl(participantUri.orElse(defaultBaseUri), c));
+                new ParticipantImpl(participantUri.orElse(defaultBaseUri), nonJaxRsContextPath, c));
     }
 
     /**
