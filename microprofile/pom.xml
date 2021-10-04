@@ -56,5 +56,6 @@
         <module>graphql</module>
         <module>scheduling</module>
         <module>rsocket</module>
+        <module>lra</module>
     </modules>
 </project>

@@ -156,10 +156,7 @@ final class HelidonCounter extends MetricImpl implements Counter {
     }
 
     @Override
-    public String toString() {
-        return "HelidonCounter{"
-                + "delegate=" + delegate + ","
-                + "metadata=" + metadata()
-                + '}';
+    protected String toStringDetails() {
+        return ", counter='" + getCount() + '\'';
     }
 }

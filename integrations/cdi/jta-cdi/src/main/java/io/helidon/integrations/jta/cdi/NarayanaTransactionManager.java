@@ -20,6 +20,7 @@ import javax.enterprise.context.BeforeDestroyed;
 import javax.enterprise.context.Destroyed;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Event;
+import javax.enterprise.inject.Vetoed;
 import javax.inject.Inject;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
@@ -40,8 +41,12 @@ import com.arjuna.ats.jta.common.JTAEnvironmentBean;
  * implementation.
  *
  * @see com.arjuna.ats.jta.common.JTAEnvironmentBean#getTransactionManager()
+ *
+ * @deprecated An equivalent class now exists in Narayana itself.
  */
 @ApplicationScoped
+@Deprecated(forRemoval = true)
+@Vetoed
 class NarayanaTransactionManager extends DelegatingTransactionManager {
 
 

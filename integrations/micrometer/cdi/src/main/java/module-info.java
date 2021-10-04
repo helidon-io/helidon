@@ -33,11 +33,12 @@ module io.helidon.integrations.micrometer.cdi {
     requires io.helidon.servicecommon.rest;
     requires io.helidon.servicecommon.restcdi;
     requires io.helidon.config;
+    requires io.helidon.config.mp;
+    requires io.helidon.microprofile.server;
     requires io.helidon.webserver.cors;
     requires io.helidon.integrations.micrometer;
 
     requires micrometer.core;
-    requires micrometer.registry.prometheus;
     requires simpleclient;
 
     exports io.helidon.integrations.micrometer.cdi;

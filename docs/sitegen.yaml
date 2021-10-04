@@ -360,6 +360,14 @@ backend:
               items:
                 - includes:
                     - "mp/jwtauth/*.adoc"
+            - title: "Long Running Actions"
+              pathprefix: "/mp/lra"
+              glyph:
+                type: "icon"
+                value: "pending_actions"
+              items:
+                - includes:
+                    - "mp/lra/*.adoc"
             - title: "Metrics"
               pathprefix: "/mp/metrics"
               glyph:

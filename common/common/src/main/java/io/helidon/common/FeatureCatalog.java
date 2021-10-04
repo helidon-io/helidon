@@ -191,6 +191,14 @@ final class FeatureCatalog {
                     .path("HCP Vault")
                     .flavor(HelidonFlavor.SE)
                     .experimental(true));
+        add("io.helidon.integrations.microstream",
+            FeatureDescriptor.builder()
+                    .name("Microstream")
+                    .description("Microstream Integration")
+                    .path("Microstream")
+                    .flavor(HelidonFlavor.SE)
+                    .experimental(true)
+                    .nativeSupported(false));
         /*
          * MP Modules
          */
@@ -389,6 +397,23 @@ final class FeatureCatalog {
                     .flavor(HelidonFlavor.MP)
                     .experimental(true));
 
+        add("io.helidon.microprofile.lra",
+                FeatureDescriptor.builder()
+                        .name("Long Running Actions")
+                        .description("MicroProfile Long Running Actions")
+                        .path("LRA")
+                        .flavor(HelidonFlavor.MP)
+                        .nativeSupported(true)
+                        .experimental(true));
+
+        add("io.helidon.integrations.microstream.cdi",
+            FeatureDescriptor.builder()
+                    .name("Microstream")
+                    .description("Microstream Integration")
+                    .path("Microstream")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true)
+                    .nativeSupported(false));
         /*
          * Common modules
          */

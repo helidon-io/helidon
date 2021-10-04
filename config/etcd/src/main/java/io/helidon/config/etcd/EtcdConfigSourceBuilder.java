@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 package io.helidon.config.etcd;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import io.helidon.common.Builder;
 import io.helidon.config.AbstractConfigSourceBuilder;
@@ -67,9 +70,9 @@ public final class EtcdConfigSourceBuilder extends AbstractConfigSourceBuilder<E
     private static final String KEY_KEY = "key";
     private static final String API_KEY = "api";
 
-    private EtcdEndpoint etcdEndpoint;
+    private List<EtcdEndpoint> etcdEndpoints;
 
-    private URI uri = DEFAULT_URI;
+    private URI[] uris = {DEFAULT_URI};
     private String key;
     private EtcdApi version = DEFAULT_VERSION;
 
@@ -134,11 +137,11 @@ public final class EtcdConfigSourceBuilder extends AbstractConfigSourceBuilder<E
     /**
      * Etcd endpoint remote URI.
      *
-     * @param uri endpoint URI
+     * @param uris endpoint URIs
      * @return updated builder instance
      */
-    public EtcdConfigSourceBuilder uri(URI uri) {
-        this.uri = uri;
+    public EtcdConfigSourceBuilder uri(URI... uris) {
+        this.uris = uris;
         return this;
     }
 
@@ -164,9 +167,9 @@ public final class EtcdConfigSourceBuilder extends AbstractConfigSourceBuilder<E
         return this;
     }
 
-    EtcdEndpoint target() {
-        if (null == etcdEndpoint) {
-            if (null == uri) {
+    List<EtcdEndpoint> target() {
+        if (null == etcdEndpoints) {
+            if (null == uris || uris.length == 0) {
                 throw new IllegalArgumentException("etcd URI must be defined");
             }
             if (null == key) {
@@ -175,9 +178,16 @@ public final class EtcdConfigSourceBuilder extends AbstractConfigSourceBuilder<E
             if (null == version) {
                 throw new IllegalArgumentException("etcd api (version) must be defined");
             }
-            this.etcdEndpoint = new EtcdEndpoint(uri, key, version);
+            // Key and version are shared by all endpoints
+            etcdEndpoints = Arrays.stream(uris)
+                    .map(uri -> new EtcdEndpoint(uri, key, version))
+                    .collect(Collectors.toList());
         }
-        return etcdEndpoint;
+        return etcdEndpoints;
+    }
+
+    EtcdEndpoint target(int k) {
+        return target().get(k);
     }
 
     /**

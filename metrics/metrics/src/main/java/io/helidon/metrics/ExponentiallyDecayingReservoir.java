@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -43,11 +44,19 @@ import static java.lang.Math.min;
  * @see <a href="http://dimacs.rutgers.edu/~graham/pubs/papers/fwddecay.pdf">
  * Cormode et al. Forward Decay: A Practical Time Decay Model for Streaming Systems. ICDE '09:
  * Proceedings of the 2009 IEEE International Conference on Data Engineering (2009)</a>
+ *
+ * To avoid calculating the current time in seconds during every update, use an executor that runs just a few times each second
+ * to update the current-time-in-seconds value for each instance. Each instance might have a separate {@code Clock} for obtaining
+ * the current time, so we cannot share a single static value for the current time across all instances. So each instance
+ * registers its own {@code Runnable} which updates its own value, and the single executor invokes all of them when it runs.
  */
 class ExponentiallyDecayingReservoir {
+
     private static final int DEFAULT_SIZE = 1028;
     private static final double DEFAULT_ALPHA = 0.015;
     private static final long RESCALE_THRESHOLD = TimeUnit.HOURS.toNanos(1);
+
+    private static final Duration CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL = Duration.ofMillis(250);
 
     private final ConcurrentSkipListMap<Double, WeightedSnapshot.WeightedSample> values;
     private final ReentrantReadWriteLock lock;
@@ -56,8 +65,8 @@ class ExponentiallyDecayingReservoir {
     private final AtomicLong count;
     private final Clock clock;
     private final AtomicLong nextScaleTime;
+    private volatile long currentTimeInSeconds;
     private volatile long startTime;
-
     /**
      * Creates a new {@link ExponentiallyDecayingReservoir} of 1028 elements, which offers a 99.9%
      * confidence level with a 5% margin of error assuming a normal distribution, and an alpha
@@ -66,7 +75,6 @@ class ExponentiallyDecayingReservoir {
     ExponentiallyDecayingReservoir(Clock clock) {
         this(DEFAULT_SIZE, DEFAULT_ALPHA, clock);
     }
-
     /**
      * Creates a new {@link ExponentiallyDecayingReservoir}.
      *
@@ -81,7 +89,9 @@ class ExponentiallyDecayingReservoir {
         this.alpha = alpha;
         this.size = size;
         this.count = new AtomicLong(0);
-        this.startTime = currentTimeInSeconds();
+        PeriodicExecutor.enroll(this::updateTimeInSeconds, CURRENT_TIME_IN_SECONDS_UPDATE_INTERVAL);
+        this.updateTimeInSeconds();
+        this.startTime = currentTimeInSeconds;
         this.nextScaleTime = new AtomicLong(clock.nanoTick() + RESCALE_THRESHOLD);
     }
 
@@ -90,7 +100,7 @@ class ExponentiallyDecayingReservoir {
     }
 
     public void update(long value, String label) {
-        update(value, currentTimeInSeconds(), label);
+        update(value, currentTimeInSeconds, label);
     }
 
     /**
@@ -143,8 +153,12 @@ class ExponentiallyDecayingReservoir {
         }
     }
 
-    private long currentTimeInSeconds() {
-        return TimeUnit.MILLISECONDS.toSeconds(clock.milliTime());
+    private void updateTimeInSeconds() {
+        currentTimeInSeconds = TimeUnit.MILLISECONDS.toSeconds(clock.milliTime());
+    }
+
+    long currentTimeInSeconds() {
+        return currentTimeInSeconds;
     }
 
     private double weight(long t) {
@@ -174,7 +188,7 @@ class ExponentiallyDecayingReservoir {
         try {
             if (nextScaleTime.compareAndSet(next, now + RESCALE_THRESHOLD)) {
                 final long oldStartTime = startTime;
-                this.startTime = currentTimeInSeconds();
+                this.startTime = currentTimeInSeconds;
                 final double scalingFactor = exp(-alpha * (startTime - oldStartTime));
                 if (Double.compare(scalingFactor, 0) == 0) {
                     values.clear();

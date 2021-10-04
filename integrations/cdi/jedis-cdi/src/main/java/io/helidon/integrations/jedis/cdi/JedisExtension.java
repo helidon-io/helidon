@@ -258,7 +258,6 @@ public class JedisExtension implements javax.enterprise.inject.spi.Extension {
                     } else {
                         qualifiers = Collections.singleton(NamedLiteral.of(instanceName));
                     }
-                    final Annotation[] qualifiersArray = qualifiers.toArray(new Annotation[qualifiers.size()]);
 
                     event.<JedisPoolConfig>addBean()
                         .addTransitiveTypeClosure(JedisPoolConfig.class)
@@ -276,6 +275,8 @@ public class JedisExtension implements javax.enterprise.inject.spi.Extension {
                                 }
                                 return returnValue;
                             });
+
+                    final Annotation[] qualifiersArray = qualifiers.toArray(new Annotation[qualifiers.size()]);
 
                     event.<JedisPool>addBean()
                         .addTransitiveTypeClosure(JedisPool.class)
@@ -316,6 +317,12 @@ public class JedisExtension implements javax.enterprise.inject.spi.Extension {
         final Integer socketTimeout =
             getPropertyValue(config, JedisPool.class, instanceName, "socketTimeout",
                              Integer.class, Integer.valueOf(Protocol.DEFAULT_TIMEOUT));
+        final Integer infiniteSocketTimeout =
+            getPropertyValue(config, JedisPool.class, instanceName, "infiniteSocketTimeout",
+                             Integer.class, Integer.valueOf(Protocol.DEFAULT_TIMEOUT));
+        final String user =
+            getPropertyValue(config, JedisPool.class, instanceName, "user",
+                             String.class, null);
         final String password =
             getPropertyValue(config, JedisPool.class, instanceName, "password",
                              String.class, null);
@@ -380,6 +387,8 @@ public class JedisExtension implements javax.enterprise.inject.spi.Extension {
                              port.intValue(),
                              connectionTimeout.intValue(),
                              socketTimeout.intValue(),
+                             infiniteSocketTimeout.intValue(),
+                             user,
                              password,
                              database.intValue(),
                              clientName,

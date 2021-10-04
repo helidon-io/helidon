@@ -42,6 +42,7 @@ import javax.net.ssl.SSLContext;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
 import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
@@ -216,6 +217,7 @@ class NettyWebServer implements WebServer {
         }
 
         if (!started) {
+            SerializationConfig.configureRuntime();
 
             channelsUpFuture.thenAccept(this::started)
                             .exceptionally(throwable -> {
@@ -270,7 +272,9 @@ class NettyWebServer implements WebServer {
                         }
 
                         Channel channel = ((ChannelFuture) channelFuture).channel();
-                        LOGGER.info(() -> "Channel '" + name + "' started: " + channel);
+                        LOGGER.info(() -> "Channel '" + name + "' started: " + channel
+                                + (socketConfig.tls().isPresent() ? " with TLS " : ""));
+
                         channels.put(name, channel);
 
                         channel.closeFuture().addListener(future -> {
@@ -369,9 +373,12 @@ class NettyWebServer implements WebServer {
 
         forceQueuesRelease();
 
-        // there's no need for a quiet time as the channel is not expected to be used from now on
-        Future<?> bossGroupFuture = bossGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
-        Future<?> workerGroupFuture = workerGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
+        long maxShutdownTimeoutSeconds = configuration.maxShutdownTimeout().toSeconds();
+        long shutdownQuietPeriod = configuration.shutdownQuietPeriod().toSeconds();
+        Future<?> bossGroupFuture =
+            bossGroup.shutdownGracefully(shutdownQuietPeriod, maxShutdownTimeoutSeconds, TimeUnit.SECONDS);
+        Future<?> workerGroupFuture =
+            workerGroup.shutdownGracefully(shutdownQuietPeriod, maxShutdownTimeoutSeconds, TimeUnit.SECONDS);
 
         workerGroupFuture.addListener(workerFuture -> {
             bossGroupFuture.addListener(bossFuture -> {
@@ -437,6 +444,15 @@ class NettyWebServer implements WebServer {
     }
 
     @Override
+    public boolean hasTls(String socketName) {
+        HttpInitializer httpInitializer = initializers.get(socketName);
+        if (httpInitializer == null) {
+            return false;
+        }
+        return httpInitializer.hasTls();
+    }
+
+    @Override
     public void updateTls(WebServerTls tls) {
         updateTls(tls, WebServer.DEFAULT_SOCKET_NAME);
     }
@@ -460,7 +476,11 @@ class NettyWebServer implements WebServer {
         Transport transport = configuration.transport().orElse(new NioTransport());
         // (Note that an NioTransport's isAvailableFor() method will
         // always return true when passed this.)
-        return transport.isAvailableFor(this) ? transport : new NioTransport();
+        if (!transport.isAvailableFor(this)) {
+            transport = new NioTransport();
+        }
+        LOGGER.fine("Using Transport " + transport);
+        return transport;
     }
 
     private Transport transport() {

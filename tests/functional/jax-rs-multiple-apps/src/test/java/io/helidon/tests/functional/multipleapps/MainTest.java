@@ -13,62 +13,58 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.tests.functional.multipleapps;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.spi.CDI;
+import javax.inject.Inject;
 import javax.json.JsonObject;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
 
-import io.helidon.microprofile.server.Server;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import io.helidon.microprofile.server.Server;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@HelidonTest
 class MainTest {
 
-    private static Server server;
-    private static String serverUrl;
-
-    @BeforeAll
-    public static void startTheServer() throws Exception {
-        server = Server.create().start();
-        serverUrl = "http://localhost:" + server.port();
-    }
+    @Inject
+    private WebTarget target;
 
     @Test
     void testHelloWorld1() {
-        Client client = ClientBuilder.newClient();
-
-        JsonObject jsonObject = client
-                .target(serverUrl)
+        Response response = target.path("app1")
                 .path("greet1")
                 .request()
                 .header("who", "World 1")
-                .get(JsonObject.class);
-        Assertions.assertEquals("Hello World 1!", jsonObject.getString("message"),
+                .get();
+        assertEquals(response.getStatus(), 200);
+        assertTrue(response.getHeaders().containsKey("sharedfilter"));
+        assertTrue(response.getHeaders().containsKey("filter1"));
+        assertFalse(response.getHeaders().containsKey("filter2"));
+        JsonObject jsonObject = response.readEntity(JsonObject.class);
+        assertEquals("Hello World 1!", jsonObject.getString("message"),
                 "default message");
     }
 
     @Test
     void testHelloWorld2() {
-        Client client = ClientBuilder.newClient();
-
-        JsonObject jsonObject = client
-                .target(serverUrl)
+        Response response = target.path("app2")
                 .path("greet2")
                 .request()
                 .header("who", "World 2")
-                .get(JsonObject.class);
-        Assertions.assertEquals("Hello World 2!", jsonObject.getString("message"),
+                .get();
+        assertEquals(response.getStatus(), 200);
+        assertTrue(response.getHeaders().containsKey("sharedfilter"));
+        assertTrue(response.getHeaders().containsKey("filter2"));
+        assertFalse(response.getHeaders().containsKey("filter1"));
+        JsonObject jsonObject = response.readEntity(JsonObject.class);
+        assertEquals("Hello World 2!", jsonObject.getString("message"),
                 "default message");
-    }
-
-    @AfterAll
-    static void destroyClass() {
-        CDI<Object> current = CDI.current();
-        ((SeContainer) current).close();
     }
 }

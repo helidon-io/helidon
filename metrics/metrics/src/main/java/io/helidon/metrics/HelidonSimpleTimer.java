@@ -268,4 +268,10 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
     public int hashCode() {
         return Objects.hash(super.hashCode(), delegate);
     }
+
+    @Override
+    protected String toStringDetails() {
+        return ", count='" + getCount() + '\''
+                + ", elapsedTime='" + getElapsedTime() + '\'';
+    }
 }

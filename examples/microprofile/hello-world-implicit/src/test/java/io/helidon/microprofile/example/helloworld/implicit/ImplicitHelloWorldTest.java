@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,12 @@
 
 package io.helidon.microprofile.example.helloworld.implicit;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.spi.CDI;
+import javax.inject.Inject;
 import javax.json.JsonObject;
-import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
 
-import io.helidon.microprofile.server.Server;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,25 +31,18 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 /**
  * Unit test for {@link HelloWorldResource}.
  */
+@HelidonTest
 class ImplicitHelloWorldTest {
-    private static Server server;
+    private final WebTarget target;
 
-
-    @BeforeAll
-    static void initClass() {
-        server = Server.create().start();
+    @Inject
+    ImplicitHelloWorldTest(WebTarget target) {
+        this.target = target;
     }
-
-    @AfterAll
-    static void destroyClass() {
-        CDI<Object> current = CDI.current();
-        ((SeContainer) current).close();
-    }
-
     @Test
     void testJsonResource() {
-        JsonObject jsonObject = ClientBuilder.newClient()
-                .target("http://localhost:" + server.port()  + "/helloworld/unit")
+        JsonObject jsonObject = target
+                .path("/helloworld/unit")
                 .request()
                 .get(JsonObject.class);
 

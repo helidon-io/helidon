@@ -51,6 +51,10 @@
             <artifactId>helidon-integrations-oci-vault</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.oci</groupId>
+            <artifactId>helidon-integrations-oci-vault-health</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml-mp</artifactId>
         </dependency>

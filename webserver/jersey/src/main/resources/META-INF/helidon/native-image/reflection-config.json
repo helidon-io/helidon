@@ -24,6 +24,7 @@
         "javax.ws.rs.ext.WriterInterceptor",
         "javax.ws.rs.ext.ParamConverterProvider",
         "javax.ws.rs.container.DynamicFeature",
+        "javax.ws.rs.sse.Sse",
         "org.glassfish.jersey.internal.inject.Providers",
         "org.glassfish.jersey.process.Inflector",
         "org.glassfish.jersey.process.internal.Inflecting",
@@ -40,7 +41,8 @@
         "org.glassfish.jersey.server.internal.process.RequestProcessingConfigurator$ContainerRequestFactory",
         "org.glassfish.jersey.server.internal.process.RequestProcessingConfigurator$UriRoutingContextFactory",
         "javassist.util.proxy.MethodHandler",
-        "java.lang.Boolean"
+        "java.lang.Boolean",
+        "java.net.URI"
     ],
     "exclude": [
     ]

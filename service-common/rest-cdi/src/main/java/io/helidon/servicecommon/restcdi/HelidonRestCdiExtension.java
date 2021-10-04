@@ -19,9 +19,11 @@ package io.helidon.servicecommon.restcdi;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -46,7 +48,8 @@ import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.interceptor.Interceptor;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
+import io.helidon.config.mp.MpConfig;
+import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Routing;
@@ -236,26 +239,14 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
             @Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
             BeanManager bm, ServerCdiExtension server) {
 
-        Config config = ((Config) ConfigProvider.getConfig()).get(configPrefix);
+        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(configPrefix);
         serviceSupport = serviceSupportFactory.apply(config);
 
-        ConfigValue<String> routingNameConfig = config.get("routing")
-                .asString();
-        Routing.Builder defaultRouting = server.serverRoutingBuilder();
+        RoutingBuilders routingBuilders = RoutingBuilders.create(config);
 
-        Routing.Builder endpointRouting = defaultRouting;
+        serviceSupport.configureEndpoint(routingBuilders.defaultRoutingBuilder(), routingBuilders.routingBuilder());
 
-        if (routingNameConfig.isPresent()) {
-            String routingName = routingNameConfig.get();
-            // support for overriding this back to default routing using config
-            if (!"@default".equals(routingName)) {
-                endpointRouting = server.serverNamedRoutingBuilder(routingName);
-            }
-        }
-
-        serviceSupport.configureEndpoint(endpointRouting);
-
-        return defaultRouting;
+        return routingBuilders.defaultRoutingBuilder();
     }
 
     protected T serviceSupport() {
@@ -277,19 +268,23 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
         private WorkItemsManager() {
         }
 
-        private final Map<Executable, Map<Class<? extends Annotation>, Set<W>>> workItemsByExecutable = new HashMap<>();
+        private final Map<Executable, Map<Class<? extends Annotation>, List<W>>> workItemsByExecutable = new HashMap<>();
 
         public void put(Executable executable, Class<? extends Annotation> annotationType, W workItem) {
-            workItemsByExecutable
+            List<W> workItems = workItemsByExecutable
                     .computeIfAbsent(executable, e -> new HashMap<>())
-                    .computeIfAbsent(annotationType, t -> new HashSet<>())
-                    .add(workItem);
+                    .computeIfAbsent(annotationType, t -> new ArrayList<>());
+            // This method is invoked only during annotation processing from CDI extensions, so linear scans of the lists
+            // does not hurt runtime performance during request handling.
+            if (!workItems.contains(workItem)) {
+                workItems.add(workItem);
+            }
         }
 
         public Iterable<W> workItems(Executable executable, Class<? extends Annotation> annotationType) {
             return workItemsByExecutable
                     .getOrDefault(executable, Collections.emptyMap())
-                    .getOrDefault(annotationType, Collections.emptySet());
+                    .getOrDefault(annotationType, Collections.emptyList());
         }
     }
 

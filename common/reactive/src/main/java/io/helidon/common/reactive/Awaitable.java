@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.common.reactive;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -43,7 +44,7 @@ public interface Awaitable<T> {
     CompletableFuture<T> toCompletableFuture();
 
     /**
-     * Block until {@link CompletableFuture} is completed, throws only unchecked exceptions.
+     * Block until future is completed, throws only unchecked exceptions.
      *
      * @return T payload type
      * @throws java.util.concurrent.CancellationException if the computation was cancelled
@@ -54,7 +55,7 @@ public interface Awaitable<T> {
     }
 
     /**
-     * Block until {@link CompletableFuture} is completed, throws only unchecked exceptions.
+     * Block until future is completed, throws only unchecked exceptions.
      *
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the timeout argument
@@ -66,6 +67,25 @@ public interface Awaitable<T> {
     default T await(long timeout, TimeUnit unit) {
         try {
             return this.toCompletableFuture().get(timeout, unit);
+        } catch (ExecutionException e) {
+            throw new CompletionException(e.getCause());
+        } catch (InterruptedException | TimeoutException e) {
+            throw new CompletionException(e);
+        }
+    }
+
+    /**
+     * Block until future is completed, throws only unchecked exceptions.
+     *
+     * @param duration the maximum time to wait
+     * @return the result value
+     * @throws java.util.concurrent.CancellationException if this future was cancelled
+     * @throws java.util.concurrent.CompletionException   if this future completed exceptionally,
+     *                                                    was interrupted while waiting or the wait timed out
+     */
+    default T await(Duration duration) {
+        try {
+            return this.toCompletableFuture().get(duration.toNanos(), TimeUnit.NANOSECONDS);
         } catch (ExecutionException e) {
             throw new CompletionException(e.getCause());
         } catch (InterruptedException | TimeoutException e) {

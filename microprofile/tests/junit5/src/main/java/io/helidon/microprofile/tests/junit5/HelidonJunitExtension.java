@@ -294,7 +294,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
                     builder.withSources(MpConfigSources.classPath(it).toArray(new ConfigSource[0]));
                 }
             });
-
             config = builder
                     .withSources(MpConfigSources.create(configMeta.additionalKeys))
                     .addDefaultSources()
@@ -508,6 +507,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
         private final Map<String, String> additionalKeys = new HashMap<>();
         private final List<String> additionalSources = new ArrayList<>();
         private boolean useExisting;
+        private String profile;
 
         private ConfigMeta() {
             // to allow SeContainerInitializer (forbidden by default because of native image)
@@ -517,6 +517,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
             additionalKeys.put("server.port", "0");
             // higher ordinal then all the defaults, system props and environment variables
             additionalKeys.putIfAbsent(ConfigSource.CONFIG_ORDINAL, "1000");
+            // profile
+            additionalKeys.put("mp.config.profile", "test");
         }
 
         private void addConfig(AddConfig[] configs) {
@@ -530,7 +532,10 @@ class HelidonJunitExtension implements BeforeAllCallback,
                 return;
             }
             useExisting = config.useExisting();
+            profile = config.profile();
             additionalSources.addAll(List.of(config.configSources()));
+            //set additional key for profile
+            additionalKeys.put("mp.config.profile", profile);
         }
 
         ConfigMeta nextMethod() {
@@ -539,6 +544,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
             methodMeta.additionalKeys.putAll(this.additionalKeys);
             methodMeta.additionalSources.addAll(this.additionalSources);
             methodMeta.useExisting = this.useExisting;
+            methodMeta.profile = this.profile;
 
             return methodMeta;
         }

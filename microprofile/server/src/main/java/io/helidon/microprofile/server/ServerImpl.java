@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import io.helidon.microprofile.cdi.HelidonContainer;
  * Server to handle lifecycle of microprofile implementation.
  */
 public class ServerImpl implements Server {
+    private static final Logger LOGGER = Logger.getLogger(Server.class.getName());
+
     private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
 
     private final HelidonContainer helidonContainer = HelidonContainer.instance();
@@ -41,6 +43,7 @@ public class ServerImpl implements Server {
 
     ServerImpl(Builder builder) {
         this.container = (SeContainer) CDI.current();
+        LOGGER.finest(() -> "Container context id: " + HelidonContainer.instance().context().id());
 
         InetAddress listenHost;
         if (null == builder.host()) {
@@ -64,18 +67,6 @@ public class ServerImpl implements Server {
                 .bindAddress(listenHost);
 
         serverExtension.listenHost(this.host);
-
-        STARTUP_LOGGER.finest("Builders ready");
-
-        STARTUP_LOGGER.finest("Static classpath");
-
-        STARTUP_LOGGER.finest("Static path");
-
-        STARTUP_LOGGER.finest("Registered jersey application(s)");
-
-        STARTUP_LOGGER.finest("Registered WebServer services");
-
-        STARTUP_LOGGER.finest("Server created");
     }
 
     @Override

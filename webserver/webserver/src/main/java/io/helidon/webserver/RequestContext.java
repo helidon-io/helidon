@@ -65,6 +65,10 @@ class RequestContext {
         });
     }
 
+    Context scope() {
+        return scope;
+    }
+
     boolean hasRequests() {
         return publisher.hasRequests();
     }

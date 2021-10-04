@@ -74,8 +74,6 @@
         <version.lib.testng>6.13.1</version.lib.testng>
         <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
         <version.lib.bedrock>5.0.11</version.lib.bedrock>
-        <version.lib.okhttp3>3.14.1</version.lib.okhttp3>
-        <version.lib.okio>1.17.2</version.lib.okio>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
         <version.lib.weld-junit>2.0.0.Final</version.lib.weld-junit>
         <version.lib.jmh>1.23</version.lib.jmh>
@@ -99,10 +97,10 @@
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>2.2.1</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>2.2.3</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
-        <version.plugin.jandex>1.0.6</version.plugin.jandex>
+        <version.plugin.jandex>1.1.0</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.javadoc>3.3.0</version.plugin.javadoc>
         <version.plugin.jaxb>0.14.0</version.plugin.jaxb>
@@ -123,29 +121,31 @@
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
         <version.plugin.wiremock>2.14.0</version.plugin.wiremock>
 
-        <version.helidon-cli>2.2.0</version.helidon-cli>
+        <version.helidon-cli>2.2.3</version.helidon-cli>
 
-        <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/2.9/</javadoc.link.jackson-annotations>
-        <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/2.9/</javadoc.link.jackson-core>
-        <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/2.9/</javadoc.link.jackson-databind>
-        <javadoc.link.jaxrs>https://jax-rs.github.io/apidocs/${version.lib.jaxrs-api}</javadoc.link.jaxrs>
+        <!-- Links to external javadocs. If you see a hardcoded version it means the javadocs for the version we use is not available. -->
+        <javadoc.jackson.version>2.12</javadoc.jackson.version>
+        <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
+        <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-core>
+        <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-databind>
+        <javadoc.link.jaxrs>https://eclipse-ee4j.github.io/jaxrs-api/apidocs/${version.lib.jaxrs-api}</javadoc.link.jaxrs>
         <javadoc.link.netty>https://static.javadoc.io/io.netty/netty-transport/${version.lib.netty}</javadoc.link.netty>
-        <javadoc.link.cdi>http://docs.jboss.org/cdi/api/${version.lib.cdi-api}</javadoc.link.cdi>
+        <javadoc.link.cdi>http://docs.jboss.org/cdi/api/2.0</javadoc.link.cdi>
         <javadoc.link.javax-inject>http://javax-inject.github.io/javax-inject/api/</javadoc.link.javax-inject>
         <javadoc.link.reactive-streams>http://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</javadoc.link.reactive-streams>
-        <javadoc.link.jersey>https://jersey.github.io/apidocs/2.28/jersey</javadoc.link.jersey>
+        <javadoc.link.jersey>https://eclipse-ee4j.github.io/jersey.github.io/apidocs/${version.lib.jersey}/jersey</javadoc.link.jersey>
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
         <javadoc.link.netty-transport>https://static.javadoc.io/io.netty/netty-transport/${version.lib.netty}</javadoc.link.netty-transport>
         <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</javadoc.link.opentracing>
         <javadoc.link.prometheus>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</javadoc.link.prometheus>
-        <javadoc.link.zipkin>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/${version.lib.zipkin}</javadoc.link.zipkin>
+        <javadoc.link.zipkin>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/2.12.3</javadoc.link.zipkin>
         <javadoc.link.jakarta-jsonb>https://static.javadoc.io/jakarta.json.bind/jakarta.json.bind-api/${version.lib.jsonb-api}</javadoc.link.jakarta-jsonb>
         <javadoc.link.jakarta-persistence>https://static.javadoc.io/jakarta.persistence/jakarta.persistence-api/${version.lib.persistence-api}</javadoc.link.jakarta-persistence>
-        <javadoc.link.jakarta-jsonp>https://static.javadoc.io/jakarta.json/jakarta.json-api/1.1.6</javadoc.link.jakarta-jsonp>
+        <javadoc.link.jakarta-jsonp>https://static.javadoc.io/jakarta.json/jakarta.json-api/${version.lib.jsonp-api}</javadoc.link.jakarta-jsonp>
         <javadoc.link.javax-jsonb>https://static.javadoc.io/javax.json.bind/javax.json.bind-api/1.0</javadoc.link.javax-jsonb>
-        <javadoc.link.javax-jaxb>https://static.javadoc.io/javax.xml.bind/jaxb-api/${version.lib.jaxb-api}</javadoc.link.javax-jaxb>
-        <javadoc.link.javax-persistence>https://static.javadoc.io/javax.persistence/javax.persistence-api/${version.lib.persistence-api}</javadoc.link.javax-persistence>
-        <javadoc.link.javax-transaction>https://static.javadoc.io/javax.transaction/javax.transaction-api/${version.lib.transaction-api}</javadoc.link.javax-transaction>
+        <javadoc.link.javax-jaxb>https://static.javadoc.io/javax.xml.bind/jaxb-api/2.3.1</javadoc.link.javax-jaxb>
+        <javadoc.link.javax-persistence>https://static.javadoc.io/javax.persistence/javax.persistence-api/2.2</javadoc.link.javax-persistence>
+        <javadoc.link.javax-transaction>https://static.javadoc.io/javax.transaction/javax.transaction-api/1.3</javadoc.link.javax-transaction>
         <javadoc.link.microprofile-config>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config}</javadoc.link.microprofile-config>
         <javadoc.link.microprofile-health>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health}</javadoc.link.microprofile-health>
         <javadoc.link.microprofile-metrics>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</javadoc.link.microprofile-metrics>
@@ -169,6 +169,7 @@
         <module>media</module>
         <module>webserver</module>
         <module>security</module>
+        <module>lra</module>
         <module>microprofile</module>
         <module>tracing</module>
         <module>bundles</module>
@@ -230,116 +231,116 @@
                         <quiet>true</quiet>
                         <!--<verbose>true</verbose>-->
                         <isOffline>true</isOffline>
-<!--                        <offlineLinks>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.jackson-annotations}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/jackson-annotations</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.jackson-core}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/jackson-core</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.jackson-databind}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/jackson-databind</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.jaxrs}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/jaxrs</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.netty}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/netty</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.cdi}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/cdi</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.javax-inject}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/javax-inject</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.reactive-streams}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/reactive-streams</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.jersey}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/jersey</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.typesafe-config}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/typesafe-config</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.netty-transport}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/netty-transport</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.opentracing}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/opentracing</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.prometheus}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/prometheus</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.zipkin}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/zipkin</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.jakarta-jsonb}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/jakarta-jsonb</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.jakarta-persistence}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/jakarta-persistence</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.jakarta-jsonp}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/jakarta-jsonp</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.javax-jsonb}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/javax-jsonb</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.javax-jaxb}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/javax-jaxb</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.javax-persistence}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/javax-persistence</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.javax-transaction}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/javax-transaction</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.microprofile-config}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/microprofile-config</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.microprofile-health}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/microprofile-health</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.microprofile-metrics}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/microprofile-metrics</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.weld}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/weld</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.narayana}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/narayana</location>-->
-<!--                            </offlineLink>-->
-<!--                            <offlineLink>-->
-<!--                                <url>${javadoc.link.eclipselink}</url>-->
-<!--                                <location>${javadoc.packagelist.dir}/eclipselink</location>-->
-<!--                            </offlineLink>-->
-<!--                        </offlineLinks>-->
+                        <offlineLinks>
+                            <offlineLink>
+                                <url>${javadoc.link.jackson-annotations}</url>
+                                <location>${javadoc.packagelist.dir}/jackson-annotations</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.jackson-core}</url>
+                                <location>${javadoc.packagelist.dir}/jackson-core</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.jackson-databind}</url>
+                                <location>${javadoc.packagelist.dir}/jackson-databind</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.jaxrs}</url>
+                                <location>${javadoc.packagelist.dir}/jaxrs</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.netty}</url>
+                                <location>${javadoc.packagelist.dir}/netty</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.cdi}</url>
+                                <location>${javadoc.packagelist.dir}/cdi</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.javax-inject}</url>
+                                <location>${javadoc.packagelist.dir}/javax-inject</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.reactive-streams}</url>
+                                <location>${javadoc.packagelist.dir}/reactive-streams</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.jersey}</url>
+                                <location>${javadoc.packagelist.dir}/jersey</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.typesafe-config}</url>
+                                <location>${javadoc.packagelist.dir}/typesafe-config</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.netty-transport}</url>
+                                <location>${javadoc.packagelist.dir}/netty-transport</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.opentracing}</url>
+                                <location>${javadoc.packagelist.dir}/opentracing</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.prometheus}</url>
+                                <location>${javadoc.packagelist.dir}/prometheus</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.zipkin}</url>
+                                <location>${javadoc.packagelist.dir}/zipkin</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.jakarta-jsonb}</url>
+                                <location>${javadoc.packagelist.dir}/jakarta-jsonb</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.jakarta-persistence}</url>
+                                <location>${javadoc.packagelist.dir}/jakarta-persistence</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.jakarta-jsonp}</url>
+                                <location>${javadoc.packagelist.dir}/jakarta-jsonp</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.javax-jsonb}</url>
+                                <location>${javadoc.packagelist.dir}/javax-jsonb</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.javax-jaxb}</url>
+                                <location>${javadoc.packagelist.dir}/javax-jaxb</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.javax-persistence}</url>
+                                <location>${javadoc.packagelist.dir}/javax-persistence</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.javax-transaction}</url>
+                                <location>${javadoc.packagelist.dir}/javax-transaction</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-config}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-config</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-health}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-health</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-metrics}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-metrics</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.weld}</url>
+                                <location>${javadoc.packagelist.dir}/weld</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.narayana}</url>
+                                <location>${javadoc.packagelist.dir}/narayana</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.eclipselink}</url>
+                                <location>${javadoc.packagelist.dir}/eclipselink</location>
+                            </offlineLink>
+                        </offlineLinks>
                         <additionalJOptions combine.children="append">
                             <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin</additionalJOption>
                             <additionalJOption>--add-exports=java.base/sun.security.util=io.helidon.common.pki
@@ -736,6 +737,16 @@
                             <property>top.parent.basedir</property>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>generate-top-parent-basedir-site</id>
+                        <goals>
+                            <goal>highest-basedir</goal>
+                        </goals>
+                        <phase>pre-site</phase>
+                        <configuration>
+                            <property>top.parent.basedir</property>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -1067,23 +1078,6 @@
                         <artifactId>bsh</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp</artifactId>
-                <version>${version.lib.okhttp3}</version>
-            </dependency>
-            <dependency>
-                <!-- required for dependency convergence
-                used from both
-                com.squareup.okhttp3:mockwebserver:3.13.1
-                com.squareup.moshi:moshi:1.8.0
-                both referenced by
-                io.zipkin.zipkin2:zipkin-junit:2.12.5
-                -->
-                <groupId>com.squareup.okio</groupId>
-                <artifactId>okio</artifactId>
-                <version>${version.lib.okio}</version>
             </dependency>
             <dependency>
                 <groupId>org.awaitility</groupId>

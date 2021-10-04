@@ -90,9 +90,15 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     static final AttributeKey<CompletableFuture<WebClientResponse>> RESULT = AttributeKey.valueOf("result");
     static final AttributeKey<AtomicBoolean> IN_USE = AttributeKey.valueOf("inUse");
     static final AttributeKey<AtomicBoolean> RETURN = AttributeKey.valueOf("finished");
+    static final AttributeKey<Boolean> RESPONSE_RECEIVED = AttributeKey.valueOf("responseReceived");
     static final AttributeKey<WebClientResponse> RESPONSE = AttributeKey.valueOf("response");
     static final AttributeKey<ConnectionIdent> CONNECTION_IDENT = AttributeKey.valueOf("connectionIdent");
     static final AttributeKey<Long> REQUEST_ID = AttributeKey.valueOf("requestID");
+
+    /**
+     * Whether the channel will be closed and keep-alive caching should not be applied.
+     */
+    static final AttributeKey<Boolean> WILL_CLOSE = AttributeKey.valueOf("willClose");
 
     private static final AtomicLong REQUEST_NUMBER = new AtomicLong(0);
     private static final String DEFAULT_TRANSPORT_PROTOCOL = "http";
@@ -523,13 +529,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         CompletableFuture<WebClientServiceRequest> sent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> responseReceived = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> complete = new CompletableFuture<>();
-        Single<WebClientServiceRequest> singleSent = Single.create(sent);
-        Single<WebClientServiceResponse> singleResponseReceived = Single.create(responseReceived);
-        Single<WebClientServiceResponse> singleComplete = Single.create(complete);
-        WebClientServiceRequest completedRequest = new WebClientServiceRequestImpl(this,
-                                                                                   singleSent,
-                                                                                   singleResponseReceived,
-                                                                                   singleComplete);
+        WebClientServiceRequest completedRequest = new WebClientServiceRequestImpl(this, sent, responseReceived, complete);
         CompletionStage<WebClientServiceRequest> rcs = CompletableFuture.completedFuture(completedRequest);
 
         for (WebClientService service : services) {
@@ -541,13 +541,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         }
 
         return Single.create(rcs.thenCompose(serviceRequest -> {
-            //Relative URI is used in request if no proxy set
-            URI requestURI = proxy == Proxy.noProxy() ? prepareRelativeURI() : finalUri;
+            URI requestUri = relativizeNoProxy(finalUri, proxy);
             requestId = serviceRequest.requestId();
             HttpHeaders headers = toNettyHttpHeaders();
             DefaultHttpRequest request = new DefaultHttpRequest(toNettyHttpVersion(httpVersion),
                                                                 toNettyMethod(method),
-                                                                requestURI.toASCIIString(),
+                                                                requestUri.toASCIIString(),
                                                                 headers);
             boolean keepAlive = HttpUtil.isKeepAlive(request);
 
@@ -585,8 +584,10 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                 LOGGER.finest(() -> "(client reqID: " + requestId + ") "
                         + "Channel hashcode -> " + channelFuture.channel().hashCode());
                 channelFuture.channel().attr(REQUEST).set(clientRequest);
+                channelFuture.channel().attr(RESPONSE_RECEIVED).set(false);
                 channelFuture.channel().attr(RECEIVED).set(responseReceived);
                 channelFuture.channel().attr(COMPLETED).set(complete);
+                channelFuture.channel().attr(WILL_CLOSE).set(!keepAlive);
                 channelFuture.channel().attr(RESULT).set(result);
                 channelFuture.channel().attr(REQUEST_ID).set(requestId);
                 Throwable cause = future.cause();
@@ -674,16 +675,26 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return UriComponentEncoder.encode(fragment, UriComponentEncoder.Type.FRAGMENT);
     }
 
-    private URI prepareRelativeURI() {
-        String path = finalUri.getRawPath();
-        String fragment = finalUri.getRawFragment();
-        String query = finalUri.getRawQuery();
-        StringBuilder sb = new StringBuilder();
-        constructRelativeURI(sb, path, query, fragment);
-        return URI.create(sb.toString());
+
+    /**
+     * Relativize final URI if no proxy or if host in no-proxy list.
+     *
+     * @param finalUri the final URI
+     * @return possibly converted URI
+     */
+    static URI relativizeNoProxy(URI finalUri, Proxy proxy) {
+        if (proxy == Proxy.noProxy() || proxy.noProxyPredicate().apply(finalUri)) {
+            String path = finalUri.getRawPath();
+            String fragment = finalUri.getRawFragment();
+            String query = finalUri.getRawQuery();
+            StringBuilder sb = new StringBuilder();
+            constructRelativeURI(sb, path, query, fragment);
+            return URI.create(sb.toString());
+        }
+        return finalUri;
     }
 
-    private void constructRelativeURI(StringBuilder stringBuilder, String path, String query, String fragment) {
+    private static void constructRelativeURI(StringBuilder stringBuilder, String path, String query, String fragment) {
         if (path != null) {
             stringBuilder.append(path);
         }

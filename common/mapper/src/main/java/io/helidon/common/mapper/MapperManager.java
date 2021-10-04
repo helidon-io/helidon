@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -186,6 +186,7 @@ public interface MapperManager {
          * @param mapper     the mapper to map source instances to target instances
          * @param sourceType class of the source instance
          * @param targetType class of the target instance
+         * @param priority   order of the mapper usage
          * @param <S>        type of source
          * @param <T>        type of target
          * @return updated builder instance
@@ -225,6 +226,7 @@ public interface MapperManager {
          * @param mapper     the mapper to map source instances to target instances
          * @param sourceType generic type of the source instance
          * @param targetType generic type of the target instance
+         * @param priority   order of the mapper usage
          * @param <S>        type of source
          * @param <T>        type of target
          * @return updated builder instance

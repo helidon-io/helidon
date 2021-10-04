@@ -45,6 +45,7 @@ public interface InjectionProvider {
          *
          * @param vault to use
          * @param vaultConfig configuration located on the vault node
+         * @param instanceConfig configuration of an instance
          * @return a new instance to be injected
          */
         T apply(Vault vault, Config vaultConfig, InstanceConfig instanceConfig);

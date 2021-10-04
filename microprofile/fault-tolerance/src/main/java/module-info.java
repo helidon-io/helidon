@@ -29,6 +29,7 @@ module io.helidon.microprofile.faulttolerance {
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.metrics;
+    requires io.helidon.config.mp;
 
     requires jakarta.enterprise.cdi.api;
 
@@ -37,6 +38,8 @@ module io.helidon.microprofile.faulttolerance {
     requires microprofile.fault.tolerance.api;
 
     requires jersey.weld2.se;
+    requires weld.api;
+    requires weld.spi;
 
     exports io.helidon.microprofile.faulttolerance;
 

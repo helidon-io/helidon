@@ -111,4 +111,9 @@ class TestWebServer implements WebServer {
     public void updateTls(WebServerTls tls, String socketName) {
 
     }
+
+    @Override
+    public boolean hasTls(String socketName) {
+        return false;
+    }
 }

@@ -39,5 +39,6 @@
         <module>jul</module>
         <module>log4j</module>
         <module>slf4j</module>
+        <module>logback-aot</module>
     </modules>
 </project>

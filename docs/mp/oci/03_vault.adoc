@@ -70,7 +70,7 @@ oci.vault.cryptographic-endpoint: "<...>"
 
 The OCIDs can be set up and found in OCI under Security tab.
 
-image::oci/ocivault.png[OCI Vault, align="center"]
+image::oci/vaultkey.png[OCI Vault, align="center"]
 
 REST endpoint should be setup as follows:
 
@@ -104,9 +104,9 @@ public class VaultResource {
 ----
 
 <1> `OciVault` support class is configured and injected automatically
-<2> <3> <4> <5> Properties a read from the configuration
+<2> <3> <4> <5> Properties read from the configuration
 
-== OCI Vault usage
+== OCI Vault Usage
 
 === Encryption
 
@@ -159,7 +159,7 @@ public String sign(@PathParam("text") String dataToSign) {
 }
 ----
 
-=== Verification of a signature
+==== Verification of a Signature
 
 To verify the correctness of the signature, submit a `GET` request to `/verify` endpoint:
 
@@ -180,7 +180,7 @@ To verify the correctness of the signature, submit a `GET` request to `/verify` 
     }
 ----
 
-=== Creating a signature
+==== Creating a Signature
 
 To create a secret with a provided name, submit a `GET` request to `/secret`:
 
@@ -202,7 +202,7 @@ public String createSecret(@PathParam("name") String name,
 }
 ----
 
-=== Getting a signature
+==== Getting a Signature
 
 To get a secret by its OCID, use `GET` Request to `/secret`:
 
@@ -225,7 +225,7 @@ public String getSecret(@PathParam("id") String secretOcid) {
 }
 ----
 
-=== Deleting a signature
+==== Deleting a Signature
 
 To delete a secret, a `DELETE` request to `/secret` should be used:
 
@@ -243,3 +243,40 @@ public String deleteSecret(@PathParam("id") String secretOcid) {
     return "Secret " + secretOcid + " was deleted";
 }
 ----
+
+== Vault Health Checks
+
+If your Helidon application depends on Vault accessibility, you may consider setting up a health
+check to verify connectivity with one ore more vaults. To do so, first add the following dependency
+to your pom file:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.oci</groupId>
+    <artifactId>helidon-integrations-oci-vault-health</artifactId>
+</dependency>
+----
+
+By adding this dependency to your application, you get a (built-in) health check automatically
+registered for you. This health check is controlled by the Config property `oci.vault.healthchecks`,
+in addition to the user-specific configuration under `~/.oci/config`.
+
+The value of `oci.vault.healthchecks` must denote a list of OCI vault IDs. For example:
+
+[source,yaml]
+----
+oci:
+  vault:
+    healthchecks: [ "ocid1.vault...aaa", "ocid1.vault....bbb" ]
+----
+
+When executed, this health check will _ping_ the vaults `ocid1.vault...aaa` and `ocid1.vault....bbb`
+to make sure they are accessible in your environment. The `data` object in a
+health check JSON response shall include a status code (e.g., 200) for each vault in your
+list (using its display name instead of its OCID if non-empty), as well as an `UP` status for the health
+check itself if and only if all vaults are successfully pinged.
+
+Note that OCI operations such as these may incur some significant latency.
+For more information about health checks see <<mp/health/01_introduction.adoc,
+MicroProfile Health>>.

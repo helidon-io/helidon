@@ -7,6 +7,8 @@ com.fasterxml.jackson.databind.deser.std
 com.fasterxml.jackson.databind.exc
 com.fasterxml.jackson.databind.ext
 com.fasterxml.jackson.databind.introspect
+com.fasterxml.jackson.databind.jdk14
+com.fasterxml.jackson.databind.json
 com.fasterxml.jackson.databind.jsonFormatVisitors
 com.fasterxml.jackson.databind.jsonschema
 com.fasterxml.jackson.databind.jsontype

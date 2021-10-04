@@ -18,23 +18,25 @@
 
 :description: Helidon metrics
 :keywords: helidon, metrics, microprofile, guide
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+:h1Prefix: MP
+
 // tag::intro[]
+
 This guide describes how to create a sample Helidon {intro-project-name} project
-that can be used to run some basic examples using both built-in and custom metrics with Helidon {h1Prefix}.
+that can be used to run some basic examples using both built-in and custom metrics with Helidon.
 
-== What you need
+== What You Need
 
-[width=50%,role="flex, sm7"]
-|===
-|About 30 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|https://github.com/helm/helm[Helm]
-|===
+For this 30 minute tutorial, you will need the following:
+
+include::{common-page-prefix-inc}[tag=common-prereqs-helm]
 
 // end::intro[]
 
 // tag::create-sample-project[]
-=== Create a sample Helidon {h1Prefix} project
+
+=== Create a Sample Helidon {h1Prefix} Project
 
 Use the Helidon {h1Prefix} Maven archetype to create a simple project that can be used for the examples in this guide.
 
@@ -52,7 +54,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 // end::create-sample-project[]
 
 // tag::using-built-in-metrics-intro[]
-=== Using the built-in metrics
+=== Using the Built-In Metrics
 
 Helidon provides three scopes of metrics: base, vendor, and application. Here are the metric endpoints:
 
@@ -202,7 +204,7 @@ endif::[]
 // end::KPI[]
 
 // tag::metrics-metadata[]
-=== Metrics metadata
+=== Metrics Metadata
 
 Each metric has associated metadata that describes:
 
@@ -251,7 +253,7 @@ You can get the metadata for any scope, such as `/metrics/base`, as shown below:
 // tag::k8s-and-prometheus-integration[]
 
 === Integration with Kubernetes and Prometheus
-==== Kubernetes integration
+==== Kubernetes Integration
 The following example shows how to integrate the Helidon {h1Prefix} application with Kubernetes.
 
 [source,bash,subs="attributes+"]
@@ -331,7 +333,7 @@ curl http://localhost:31143/metrics
 
 NOTE: Leave the application running in Kubernetes since it will be used for Prometheus integration.
 
-==== Prometheus integration
+==== Prometheus Integration
 
 The metrics service that you just deployed into Kubernetes is already annotated with `prometheus.io/scrape:`.  This will allow
 Prometheus to discover the service and scrape the metrics.  In this exercise, you will install Prometheus
@@ -361,7 +363,7 @@ kubectl --namespace default port-forward $POD_NAME 7090:9090
 Now open your browser and navigate to `http://localhost:7090/targets`.  Search for helidon on the page and you will see your
 Helidon application as one of the Prometheus targets.
 
-==== Final cleanup
+==== Final Cleanup
 
 You can now delete the Kubernetes resources that were just created during this example.
 

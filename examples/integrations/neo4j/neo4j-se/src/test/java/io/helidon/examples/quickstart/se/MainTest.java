@@ -69,7 +69,9 @@ public class MainTest {
             webServer.shutdown()
                     .await(10, TimeUnit.SECONDS);
         }
-        embeddedDatabaseServer.close();
+        if (embeddedDatabaseServer != null) {
+            embeddedDatabaseServer.close();
+        }
     }
 
     @Test

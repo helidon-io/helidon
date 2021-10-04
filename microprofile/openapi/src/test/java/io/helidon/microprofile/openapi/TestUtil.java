@@ -34,6 +34,7 @@ import io.helidon.microprofile.server.Server;
 import org.yaml.snakeyaml.Yaml;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Useful utility methods during testing.
@@ -198,9 +199,14 @@ public class TestUtil {
      */
     @SuppressWarnings(value = "unchecked")
     public static <T> T fromYaml(Map<String, Object> map, String dottedPath, Class<T> cl) {
+        Map<String, Object> originalMap = map;
         String[] segments = dottedPath.split("\\.");
         for (int i = 0; i < segments.length - 1; i++) {
             map = (Map<String, Object>) map.get(segments[i]);
+            if (map == null) {
+                fail("Traversing dotted path " + dottedPath + " segment " + segments[i] + " not found in parsed map "
+                        + originalMap);
+            }
         }
         return cl.cast(map.get(segments[segments.length - 1]));
     }

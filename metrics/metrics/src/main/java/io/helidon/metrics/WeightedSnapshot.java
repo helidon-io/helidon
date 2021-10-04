@@ -321,6 +321,9 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
 
     /**
      * Labeled sample with a weight.
+     *
+     * If the label is empty, then this sample will never be an exemplar so we do not need to default the timestamp to the
+     * current time.
      */
     static class WeightedSample extends Labeled.Impl {
 
@@ -335,11 +338,11 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
         }
 
         WeightedSample(long value, double weight, String label) {
-            this(value, weight, System.currentTimeMillis(), label);
+            this(value, weight, label.isEmpty() ? 0 : System.currentTimeMillis(), label);
         }
 
         WeightedSample(long value) {
-            this(value, 1.0, System.currentTimeMillis(), "");
+            this(value, 1.0, 0, "");
         }
 
         long getValue() {
