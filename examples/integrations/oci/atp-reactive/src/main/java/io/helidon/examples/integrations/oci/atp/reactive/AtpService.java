@@ -20,7 +20,7 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.jdbc.JdbcDbClientProvider;
@@ -58,29 +58,20 @@ class AtpService implements Service {
     private void generateWallet(ServerRequest req, ServerResponse res) {
         autonomousDbRx.generateWallet(GenerateAutonomousDatabaseWallet.Request.builder())
                 .map(ApiOptionalResponse::entity)
-                .map(e -> e.map(GenerateAutonomousDatabaseWallet.Response::walletArchive))
-                .flatMap(maybeArchive ->
-                        maybeArchive.map(archive -> {
-                                    try {
-                                        return createDbClient(archive).execute(exec -> exec.query("SELECT 'Hello world!!' FROM DUAL"));
-                                    } catch (SQLException sqlException) {
-                                        LOGGER.log(Level.SEVERE, "Error creating DbClient", sqlException);
-                                    }
-                                    res.status(500).send();
-                                    return null;
-                                }
-                        ).orElseGet(() -> {
-                            res.status(404).send();
-                            return Multi.empty();
-                        })
-                )
+                .flatMap(e -> e.map(Single::just).orElseGet(() -> {
+                    res.status(404).send();
+                    return Single.empty();
+                }))
+                .map(GenerateAutonomousDatabaseWallet.Response::walletArchive)
+                .flatMap(archive -> createDbClient(archive))
+                .flatMap(dbClient -> dbClient.execute(exec -> exec.query("SELECT 'Hello world!!' FROM DUAL")))
                 .first()
                 .map(dbRow -> dbRow.column(1).as(String.class))
                 .onError(res::send)
                 .forSingle(res::send);
     }
 
-    DbClient createDbClient(GenerateAutonomousDatabaseWallet.WalletArchive walletArchive) throws SQLException {
+    Single<DbClient> createDbClient(GenerateAutonomousDatabaseWallet.WalletArchive walletArchive) {
         PoolDataSource pds = PoolDataSourceFactory.getPoolDataSource();
         try {
             pds.setSSLContext(walletArchive.getSSLContext());
@@ -94,9 +85,9 @@ class AtpService implements Service {
             pds.setConnectionFactoryClassName(OracleDataSource.class.getName());
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error setting up PoolDataSource", e);
-            throw e;
+            return Single.error(e);
         }
-        return new JdbcDbClientProvider().builder()
+        return Single.just(new JdbcDbClientProvider().builder()
                 .connectionPool(() -> {
                     try {
                         return pds.getConnection();
@@ -104,6 +95,6 @@ class AtpService implements Service {
                         throw new IllegalStateException("Error while setting up new connection", e);
                     }
                 })
-                .build();
+                .build());
     }
 }
