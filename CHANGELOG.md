@@ -7,6 +7,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [2.3.4]
+
+This is a bug fix release of Helidon. It contains bug fixes. We recommend all Helidon 2.x users upgrade to this release.
+
+### Compatibility
+
+2.3.4 is API compatible with 2.3.0.
+
+### CHANGES
+- WebServer: Fix issue when Netty server hangs when under load. [3435](https://github.com/oracle/helidon/pull/3435)
+- WebServer: Fix race condition when analysing whether entity is fully read [3434](https://github.com/oracle/helidon/pull/3434)
+- Tracing: Using Jersey context rather then Helidon context. [3436](https://github.com/oracle/helidon/pull/3436)
+- Metrics: PeriodicExecutor can incorrectly log warning message; and warning text can be wrong [3433](https://github.com/oracle/helidon/pull/3433)
+- Metrics: native-image build fails due to metrics performance optimization [3433](https://github.com/oracle/helidon/pull/3433)
+- Grpc: Enable DataFetchingEnvironment as part of @GraphQLApi @Query methods [3428](https://github.com/oracle/helidon/pull/3428)
+- Build-tools: upgrade to build-tools 2.2.4: fixes issues with jlink, devloop, and maven 2.8.2 [3465](https://github.com/oracle/helidon/pull/3465)
+
 ## [2.3.3]
 
 This is a bug fix release of Helidon. It contains bug and performance fixes. We recommend all Helidon 2.x users upgrade to this release.
@@ -1481,6 +1498,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.3.4]: https://github.com/oracle/helidon/compare/2.3.3...2.3.4
 [2.3.3]: https://github.com/oracle/helidon/compare/2.3.2...2.3.3
 [2.3.2]: https://github.com/oracle/helidon/compare/2.3.1...2.3.2
 [2.3.1]: https://github.com/oracle/helidon/compare/2.3.0...2.3.1
