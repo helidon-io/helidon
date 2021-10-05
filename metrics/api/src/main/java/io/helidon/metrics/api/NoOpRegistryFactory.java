@@ -23,8 +23,11 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 
 /**
  * No-op implementation of {@link RegistryFactory}.
+ * <p>
+ *     This impl simply prepares app, vendor, and base registries that produce no-op metrics.
+ * </p>
  */
-public class NoOpRegistryFactory implements RegistryFactory {
+class NoOpRegistryFactory implements RegistryFactory {
 
     /**
      * @return a new no-op registry factory

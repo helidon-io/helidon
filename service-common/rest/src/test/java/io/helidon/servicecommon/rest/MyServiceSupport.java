@@ -36,7 +36,7 @@ public class MyServiceSupport extends HelidonRestServiceSupport {
 
     public MyServiceSupport(Builder builder) {
         super(LOGGER, builder, "myService");
-        registryFactory = RegistryFactory.instance(builder.componentMetricsSettings());
+        registryFactory = RegistryFactory.getInstance(builder.componentMetricsSettings());
         appRegistry = registryFactory.getRegistry(MetricRegistry.Type.APPLICATION);
         counter = appRegistry.counter("myCounter");
     }

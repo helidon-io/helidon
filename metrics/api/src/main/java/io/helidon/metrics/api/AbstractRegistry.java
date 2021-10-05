@@ -61,12 +61,11 @@ import org.eclipse.microprofile.metrics.Timer;
  * @param <M> general type of metric implementation supported by an implementation of this class (e.g., {@code
  * HelidonMetric}
  */
-public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegistry {
+public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRegistry {
 
     private static final Logger LOGGER = Logger.getLogger(AbstractRegistry.class.getName());
 
     private static final Tag[] NO_TAGS = new Tag[0];
-    private final Map<Class<? extends M>, MetricType> metricToTypeMap = prepareMetricToTypeMap();
 
     private final MetricRegistry.Type type;
     private final Map<MetricID, M> allMetrics = new ConcurrentHashMap<>();
@@ -91,8 +90,8 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
      * @return true if it's a Helidon metric and has been marked as deleted; false otherwise
      */
     public static boolean isMarkedAsDeleted(Metric metric) {
-        return (metric instanceof BaseMetric)
-                && ((BaseMetric) metric).isDeleted();
+        return (metric instanceof HelidonMetric)
+                && ((HelidonMetric) metric).isDeleted();
     }
 
     @Override
@@ -243,11 +242,12 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
             return false;
         }
 
-        final boolean result = doomedMetrics.stream()
-                .peek(entry -> entry.getValue().markAsDeleted())
-                .map(entry -> allMetrics.remove(entry.getKey()) != null)
-                .reduce((a, b) -> a || b)
-                .orElse(false);
+        boolean result = false;
+        for (Map.Entry<MetricID, M> doomedMetric : doomedMetrics) {
+            doomedMetric.getValue().markAsDeleted();
+            result |= allMetrics.remove(doomedMetric.getKey()) != null;
+        }
+
         allMetricIDsByName.remove(name);
         allMetadata.remove(name);
         return result;
@@ -279,18 +279,15 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
     }
 
     @Override
-    public void removeMatching(MetricFilter filter) {
+    public synchronized void removeMatching(MetricFilter filter) {
         allMetrics.entrySet().stream()
                 .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
-                .map(entry -> remove(entry.getKey()))
-                .reduce((a, b) -> a || b);
+                .forEach(entry -> remove(entry.getKey()));
     }
 
     @Override
     public SortedSet<String> getNames() {
-        return allMetrics.keySet().stream()
-                .map(MetricID::getName)
-                .collect(Collectors.toCollection(TreeSet::new));
+        return new TreeSet<>(allMetricIDsByName.keySet());
     }
 
     @Override
@@ -452,9 +449,9 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
 
     protected Optional<Map.Entry<MetricID, M>> getOptionalMetricEntry(String metricName) {
         return getOptionalMetricWithIDsEntry(metricName).map(entry -> {
-                final MetricID metricID = entry.getValue().get(0);
-                return new AbstractMap.SimpleImmutableEntry<>(metricID,
-                        allMetrics.get(metricID));
+            final MetricID metricID = entry.getValue().get(0);
+            return new AbstractMap.SimpleImmutableEntry<>(metricID,
+                                                          allMetrics.get(metricID));
         });
     }
 
@@ -486,7 +483,7 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
         return allMetricIDsByName.get(metricName);
     }
 
-    static <T extends Metadata, U extends Metadata> boolean  metadataMatches(T a, U b) {
+    static <T extends Metadata, U extends Metadata> boolean metadataMatches(T a, U b) {
         if (a == b) {
             return true;
         }
@@ -495,28 +492,27 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
         }
         return a.getName().equals(b.getName())
                 && a.getTypeRaw().equals(b.getTypeRaw())
-                && (a.getDisplayName().equals(b.getDisplayName())
+                && a.getDisplayName().equals(b.getDisplayName())
                 && Objects.equals(a.getDescription(), b.getDescription())
                 && Objects.equals(a.getUnit(), b.getUnit())
-                && (a.isReusable() == b.isReusable())
-            );
+                && (a.isReusable() == b.isReusable());
     }
 
     // -- Private methods -----------------------------------------------------
 
     private static boolean enforceConsistentMetadata(Metadata existingMetadata, Metadata newMetadata,
-            Tag... tags) {
+                                                     Tag... tags) {
         if (!metadataMatches(existingMetadata, newMetadata)) {
             throw new IllegalArgumentException("New metric " + new MetricID(newMetadata.getName(), tags)
-                    + " with metadata " + newMetadata
-                    + " conflicts with a metric already registered with metadata "
-                    + existingMetadata);
+                                                       + " with metadata " + newMetadata
+                                                       + " conflicts with a metric already registered with metadata "
+                                                       + existingMetadata);
         }
         return true;
     }
 
     private <T extends M> boolean enforceConsistentMetadata(T existingMetric,
-            Metadata newMetadata, Tag... tags) {
+                                                            Metadata newMetadata, Tag... tags) {
 
         return enforceConsistentMetadata(existingMetric.metadata(), newMetadata, tags);
     }
@@ -524,9 +520,11 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
     private static boolean enforceConsistentMetadataType(Metadata existingMetadata, MetricType newType, Tag... tags) {
         if (!existingMetadata.getTypeRaw().equals(newType)) {
             throw new IllegalArgumentException("Attempting to register a new metric "
-                    + new MetricID(existingMetadata.getName(), tags) + " of type " + newType.toString()
-                    + " found pre-existing metadata with conflicting type "
-                    + existingMetadata.getTypeRaw().toString());
+                                                       + new MetricID(existingMetadata.getName(), tags)
+                                                       + " of type "
+                                                       + newType.toString()
+                                                       + " found pre-existing metadata with conflicting type "
+                                                       + existingMetadata.getTypeRaw().toString());
         }
         return true;
     }
@@ -547,8 +545,8 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
      * metadata prohibits reuse
      */
     private synchronized <U extends Metric> U getOrRegisterMetric(Metadata newMetadata,
-            Class<U> clazz,
-            Tag... tags) throws IllegalArgumentException {
+                                                                  Class<U> clazz,
+                                                                  Tag... tags) throws IllegalArgumentException {
         final String metricName = newMetadata.getName();
         /*
          * If there is an existing compatible metric then there's really nothing
@@ -556,14 +554,15 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
          * previously-registered metric.
          */
         return toType(getOptionalMetric(metricName, tags)
-                .filter(existingMetric -> enforceConsistentMetadata(existingMetric, newMetadata, tags))
-                .orElseGet(() -> {
-                    warnOfMismatchedType(clazz, newMetadata);
-                    final Metadata metadata = getOrRegisterMetadata(metricName, newMetadata, tags);
-                    return registerMetric(metricName,
-                                    metricFactories.get(MetricType.from(clazz)).apply(type.getName(), metadata),
-                                    tags);
-                }), clazz);
+                              .filter(existingMetric -> enforceConsistentMetadata(existingMetric, newMetadata, tags))
+                              .orElseGet(() -> {
+                                  warnOfMismatchedType(clazz, newMetadata);
+                                  final Metadata metadata = getOrRegisterMetadata(metricName, newMetadata, tags);
+                                  return registerMetric(metricName,
+                                                        metricFactories.get(MetricType.from(clazz))
+                                                                .apply(type.getName(), metadata),
+                                                        tags);
+                              }), clazz);
     }
 
     /**
@@ -580,19 +579,19 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
      * @return the existing or newly-created metric
      */
     private synchronized <U extends Metric> U getOrRegisterMetric(String metricName,
-            Class<U> clazz,
-            Tag... tags) {
+                                                                  Class<U> clazz,
+                                                                  Tag... tags) {
         final MetricType newType = MetricType.from(clazz);
         M result = getOptionalMetric(metricName, tags)
                 .orElseGet(() -> {
                     final Metadata metadata = getOrRegisterMetadata(metricName, newType,
-                            () ->  Metadata.builder()
-                                    .withName(metricName)
-                                    .withType(newType)
-                                    .build(), tags);
+                                                                    () -> Metadata.builder()
+                                                                            .withName(metricName)
+                                                                            .withType(newType)
+                                                                            .build(), tags);
                     return registerMetric(metricName,
-                            metricFactories.get(MetricType.from(clazz)).apply(type.getName(), metadata),
-                            tags);
+                                          metricFactories.get(MetricType.from(clazz)).apply(type.getName(), metadata),
+                                          tags);
                 });
         return toType(result, clazz);
     }
@@ -617,14 +616,13 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
         final MetricType metricType = MetricType.from(metric.getClass());
 
         final Metadata metadata = getOrRegisterMetadata(metricName, metricType,
-                () -> Metadata.builder()
-                        .withName(metricName)
-                        .withType(metricType)
-                        .build(), NO_TAGS);
+                                                        () -> Metadata.builder()
+                                                                .withName(metricName)
+                                                                .withType(metricType)
+                                                                .build(), NO_TAGS);
         registerMetric(metricName, toImpl(metadata, metric), NO_TAGS);
         return metric;
     }
-
 
     /**
      * Registers a new metric, using the metadata's name and the tags, described
@@ -654,9 +652,9 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
     private <U extends Metric> void warnOfMismatchedType(Class<U> clazz, Metadata metadata) {
         if (!metadata.getTypeRaw().equals(MetricType.from(clazz))) {
             LOGGER.log(Level.WARNING,
-                    String.format("MetricType '%s' from metadata conflicts with metric type '%s' being created",
-                        metadata.getTypeRaw(), MetricType.from(clazz)),
-                    new IllegalArgumentException());
+                       String.format("MetricType '%s' from metadata conflicts with metric type '%s' being created",
+                                     metadata.getTypeRaw(), MetricType.from(clazz)),
+                       new IllegalArgumentException());
         }
     }
 
@@ -682,7 +680,7 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
             return clazz.cast(m1);
         }
         throw new IllegalArgumentException("Metric types " + type1.toString()
-                + " and " + type2.toString() + " do not match");
+                                                   + " and " + type2.toString() + " do not match");
     }
 
     /**
@@ -716,7 +714,7 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
      * @return existing metadata if any; otherwise the metadata from the provided supplier
      */
     private synchronized Metadata getOrRegisterMetadata(String metricName, MetricType newMetricType,
-            Supplier<Metadata> metadataFactory, Tag... tags) {
+                                                        Supplier<Metadata> metadataFactory, Tag... tags) {
 
         return getOptionalMetadata(metricName)
                 .filter(existingMetadata -> enforceConsistentMetadataType(existingMetadata, newMetricType, tags))
@@ -782,8 +780,9 @@ public abstract class AbstractRegistry<M extends BaseMetric> extends MetricRegis
         return MetricType.from(clazz == null ? metric.getClass() : clazz);
     }
 
-    protected Map<Class<? extends M>, MetricType> metricToTypeMap() {
-        return metricToTypeMap;
+    // For testing
+    protected Map<MetricType, BiFunction<String, Metadata, M>> metricFactories() {
+        return metricFactories;
     }
 
     /**

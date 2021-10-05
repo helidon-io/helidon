@@ -23,11 +23,11 @@ import org.eclipse.microprofile.metrics.Metadata;
  * Helidon relies on this additional behavior beyond that provided by MP {@code Metric}.
  * </p>
  */
-public abstract class AbstractMetric implements BaseMetric {
+public abstract class AbstractMetric implements HelidonMetric {
 
     private final String registryType;
     private final Metadata metadata;
-    private boolean isDeleted;
+    private volatile boolean isDeleted;
 
     protected AbstractMetric(String registryType, Metadata metadata) {
         this.registryType = registryType;

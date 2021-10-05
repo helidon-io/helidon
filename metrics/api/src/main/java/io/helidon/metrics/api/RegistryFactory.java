@@ -30,7 +30,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
  *     the {@code getInstance} methods), and</li>
  *     <li>retrieving the appropriate registry factory for a metrics-capable component, based on the component's own metrics
  *     settings combined with the overall metrics settings and whether full-featured metrics are available on the path (see the
- *     {@link #instance} method).</li>
+ *     {@link #getInstance} method).</li>
  * </ul>
  */
 public interface RegistryFactory {
@@ -41,7 +41,7 @@ public interface RegistryFactory {
      * @return new {@code RegistryFactory}
      */
     static RegistryFactory create() {
-        return RegistryFactoryProviderLoader.create();
+        return RegistryFactoryManager.create();
     }
 
     /**
@@ -51,7 +51,7 @@ public interface RegistryFactory {
      * @return new {@code RegistryFactory}
      */
     static RegistryFactory create(MetricsSettings metricsSettings) {
-        return RegistryFactoryProviderLoader.create(metricsSettings);
+        return RegistryFactoryManager.create(metricsSettings);
     }
 
     /**
@@ -64,7 +64,7 @@ public interface RegistryFactory {
      */
     @Deprecated
     static RegistryFactory create(Config config) {
-        return RegistryFactoryProviderLoader.create(config);
+        return RegistryFactoryManager.create(config);
     }
 
     /**
@@ -74,7 +74,7 @@ public interface RegistryFactory {
      * @return {@code RegistryFactory}
      */
     static RegistryFactory getInstance() {
-        return RegistryFactoryProviderLoader.getInstance();
+        return RegistryFactoryManager.getInstance();
     }
 
     /**
@@ -87,7 +87,7 @@ public interface RegistryFactory {
      */
     @Deprecated
     static RegistryFactory getInstance(Config config) {
-        return RegistryFactoryProviderLoader.getInstance(config);
+        return RegistryFactoryManager.getInstance(config);
     }
 
     /**
@@ -98,7 +98,7 @@ public interface RegistryFactory {
      * @return the new {@code RegistryFactory}
      */
     static RegistryFactory getInstance(MetricsSettings metricSettings) {
-        return RegistryFactoryProviderLoader.getInstance(metricSettings);
+        return RegistryFactoryManager.getInstance(metricSettings);
     }
 
     /**
@@ -108,12 +108,12 @@ public interface RegistryFactory {
      * @param componentMetricsSettings metrics settings for the component requesting the registry factory
      * @return either the active {@code RegistryFactory} or a no-op one (if the component's metrics settings indicate)
      */
-    static RegistryFactory instance(ComponentMetricsSettings componentMetricsSettings) {
-        return RegistryFactoryProviderLoader.instance(componentMetricsSettings);
+    static RegistryFactory getInstance(ComponentMetricsSettings componentMetricsSettings) {
+        return RegistryFactoryManager.getInstance(componentMetricsSettings);
     }
 
     /**
-     * Returns a {@link MetricRegistry} instance of the requested type.
+     * Returns a {@link MetricRegistry} getInstance of the requested type.
      *
      * @param type {@link MetricRegistry.Type} of the registry to be returned
      * @return the {@code MetricRegistry} of the requested type

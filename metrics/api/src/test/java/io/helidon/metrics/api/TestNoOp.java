@@ -30,7 +30,7 @@ public class TestNoOp {
 
     @BeforeAll
     static void setUpFactory() {
-        factory = RegistryFactory.create(MetricsSettings.builder().enable(false).build());
+        factory = RegistryFactory.create(MetricsSettings.builder().enabled(false).build());
     }
 
     @Test

@@ -40,16 +40,16 @@ class ComponentMetricsSettingsImpl implements ComponentMetricsSettings {
         }
 
         @Override
-        public ComponentMetricsSettings.Builder enable(boolean value) {
+        public ComponentMetricsSettings.Builder enabled(boolean value) {
             this.isEnabled = value;
             return this;
         }
 
         @Override
         public ComponentMetricsSettings.Builder config(Config config) {
-            config.get(ComponentMetricsSettings.ENABLED_CONFIG_KEY)
+            config.get(ComponentMetricsSettings.Builder.ENABLED_CONFIG_KEY)
                     .asBoolean()
-                    .ifPresent(this::enable);
+                    .ifPresent(this::enabled);
             return this;
         }
     }

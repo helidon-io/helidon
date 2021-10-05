@@ -16,6 +16,8 @@
 package io.helidon.metrics.api;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Settings for KPI metrics.
@@ -43,8 +45,20 @@ public interface KeyPerformanceIndicatorMetricsSettings {
     }
 
     /**
+     * Creates a builder using the values from an existing {@code KeyPerformanceIndicatorMetricsSettings} instance.
      *
-     * @return  whether extended KPI metrics are enabled in the settings
+     * @param kpiMetricsSettings existing KPI metrics settings to copy
+     * @return new {@code Builder} initialized according to the provide settings
+     */
+    static Builder builder(KeyPerformanceIndicatorMetricsSettings kpiMetricsSettings) {
+        return builder()
+                .extended(kpiMetricsSettings.isExtended())
+                .longRunningRequestThresholdMs(kpiMetricsSettings.longRunningRequestThresholdMs());
+    }
+
+    /**
+     *
+     * @return whether extended KPI metrics are enabled in the settings
      */
     boolean isExtended();
 
@@ -85,6 +99,7 @@ public interface KeyPerformanceIndicatorMetricsSettings {
      * </tr>
      * </table>
      */
+    @Configured(prefix = MetricsSettings.Builder.METRICS_CONFIG_KEY + "." + Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY)
     class Builder implements io.helidon.common.Builder<KeyPerformanceIndicatorMetricsSettings> {
         private boolean isExtendedKpiEnabled = KEY_PERFORMANCE_INDICATORS_EXTENDED_DEFAULT;
         private long longRunningRequestThresholdMs = LONG_RUNNING_REQUESTS_THRESHOLD_MS_DEFAULT;
@@ -130,6 +145,8 @@ public interface KeyPerformanceIndicatorMetricsSettings {
          * @param value whether extended KPI metrics should be enabled
          * @return updated builder instance
          */
+        @ConfiguredOption(
+                key = KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY)
         public Builder extended(boolean value) {
             this.isExtendedKpiEnabled = value;
             return this;
@@ -141,6 +158,9 @@ public interface KeyPerformanceIndicatorMetricsSettings {
          * @param value long-running request threshold
          * @return updated builder instance
          */
+        @ConfiguredOption(
+                key = LONG_RUNNING_REQUESTS_CONFIG_KEY + "." + LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY,
+                value = "" + LONG_RUNNING_REQUESTS_THRESHOLD_MS_DEFAULT)
         public Builder longRunningRequestThresholdMs(long value) {
             longRunningRequestThresholdMs = value;
             return this;

@@ -68,6 +68,15 @@ The following example will demonstrate how to use the built-in metrics.  All exa
 from the root directory of your project (helidon-quickstart-{lower-case-flavor}).
 // end::using-built-in-metrics-intro[]
 
+// tag::metrics-dependency[]
+----
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics</artifactId>
+</dependency>
+----
+// end::metrics-dependency[]
+
 // tag::build-and-run-intro[]
 
 [source,bash,subs="attributes+"]
@@ -164,6 +173,51 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/vendor/request
 NOTE: You cannot get the individual fields of a metric. For example, you cannot target http://localhost:8080/metrics/vendor/requests.meter.count.
 // end::get-single-metric[]
 
+// tag::controlling[]
+// tag::controlling-intro[]
+
+=== Controlling Metrics Behavior
+You can control how metrics behaves in several ways by adding a `metrics` section to your application configuration. You can:
+
+*  disable metrics entirely,
+*  disable the use of metrics from individual components, and
+*  control the key performance indicator metrics which Helidon collects.
+
+// end::controlling-intro[]
+
+// tag::enabling-disabling-whole-intro[]
+==== Enabling and Disabling Metrics as a Whole
+By default, if your application depends on the Helidon metrics Maven module then metrics are enabled.
+You can disable metrics entirely using configuration:
+[source,properties]
+.Configuration properties file disabling metrics
+----
+metrics.enabled=false
+----
+// end::enabling-disabling-whole-intro[]
+
+// tag::enabling-disabling-whole-summary[]
+With metrics disabled, Helidon never updates any metrics and the `/metrics` endpoints respond with `404` plus a message that metrics are disabled.
+// end::enabling-disabling-whole-summary[]
+
+// tag::controlling-by-component-intro[]
+==== Enabling and Disabling Metrics Usage by a Component
+Helidon contains several components and integrations which register and update metrics.
+Depending on how the component is written, you might be able to disable just that component's use of metrics:
+[source,properties]
+.Configuration properties file disabling a component's use of metrics
+----
+some-component.metrics.enabled=false
+----
+Check the documentation for a specific component to find out whether that component uses metrics and whether it allows you to disable that use.
+// end::controlling-by-component-intro[]
+
+// tag::controlling-by-component-summary[]
+If you disable a component's use of metrics, Helidon does not register the component's metrics in the visible metrics registries nor do those metrics ever update their values. The response from the `/metrics` endpoint excludes that component's metrics.
+
+Note that if you disable overall metrics, no component updates its metrics regardless of any component-level metrics settings.
+// end::controlling-by-component-summary[]
+
 // tag::KPI[]
 ==== Key Performance Indicator (KPI) Metrics
 Any time you include the Helidon metrics module in your application, Helidon tracks two basic performance indicator metrics:
@@ -185,23 +239,8 @@ You can enable and control these metrics using configuration:
 metrics.key-performance-indicators.extended = true
 metrics.key-performance-indicators.long-running.threshold-ms = 2000
 ----
-
-ifeval::["{h1Prefix}" == "SE"]
-Your Helidon {h1Prefix} application can also control the behavior of the KPI metrics programmatically.
-
-. Prepare a `KeyPerformanceIndicatorSettings` object, using its builder, and then pass the builder when invoking the `MetricsSupport.Builder#keyPerformanceIndicatorMetricsSettings()` method.
-. Prepare a `Config` object and pass it to the `MetricsSupport.Builder#keyPerformanceIndicatorMetricsConfig()` method.
-+
-[source,properties]
-+
-.Example KPI metrics config fragment
-----
-extended = true
-long-running.threshold-ms = 2000
-----
-endif::[]
-
 // end::KPI[]
+// end::controlling[]
 
 // tag::metrics-metadata[]
 === Metrics Metadata

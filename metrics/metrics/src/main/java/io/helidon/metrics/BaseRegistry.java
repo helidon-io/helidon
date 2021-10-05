@@ -25,6 +25,7 @@ import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.util.List;
 
+import io.helidon.metrics.api.BaseMetricsSettings;
 import io.helidon.metrics.api.MetricsSettings;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -47,15 +48,13 @@ import org.eclipse.microprofile.metrics.Tag;
  * (section 4.5 of the spec).</li>
  * </ul>
  *
- * Each metric can be disabled using {@link MetricsSettings.Builder#enableBaseMetric(String, boolean)} or by using the
+ * Each metric can be disabled using {@link BaseMetricsSettings.Builder#enableBaseMetric(String, boolean)} or by using the
  * equivalent configuration property
  * {@code helidon.metrics.base.${metric_name}.enabled=false}. Further, to suppress
- * all base metrics use {@link MetricsSettings.Builder#enableBase(boolean)} or set the equivalent config property
- * {@code helidon.metrics.base.enabled=false}.
+ * all base metrics use {@link BaseMetricsSettings.Builder#enabled(boolean)} or set the equivalent config property
+ * {@code {{@value BaseMetricsSettings.Builder#}}metrics.base.enabled=false}.
  */
 final class BaseRegistry extends Registry {
-
-    static final String BASE_ENABLED_KEY = MetricsSettings.BASE_CONFIG_KEY + "." + MetricsSettings.ENABLED_CONFIG_KEY;
 
     private static final Metadata MEMORY_USED_HEAP = Metadata.builder()
             .withName("memory.usedHeap")
@@ -213,7 +212,7 @@ final class BaseRegistry extends Registry {
 
         BaseRegistry result = new BaseRegistry(metricsSettings);
 
-        if (!metricsSettings.isBaseEnabled()) {
+        if (!metricsSettings.baseMetricsSettings().isEnabled()) {
             return result;
         }
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
@@ -281,7 +280,7 @@ final class BaseRegistry extends Registry {
     }
 
     private static void register(BaseRegistry registry, Metadata meta, Metric metric, Tag... tags) {
-        if (registry.metricsSettings.isBaseMetricEnabled(meta.getName())) {
+        if (registry.metricsSettings.baseMetricsSettings().isBaseMetricEnabled(meta.getName())) {
             registry.register(meta, metric, tags);
         }
     }

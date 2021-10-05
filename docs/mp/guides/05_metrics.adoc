@@ -85,6 +85,8 @@ You can see the results in the sample output shown in earlier example runs.
 
 include::{metrics-common}[tag=KPI]
 
+include::{metrics-common}[tag=controlling]
+
 include::{metrics-common}[tag=metrics-metadata]
 
 === Application-Specific Metrics Data

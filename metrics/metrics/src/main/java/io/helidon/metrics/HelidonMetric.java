@@ -20,8 +20,6 @@ import java.util.List;
 
 import javax.json.JsonObjectBuilder;
 
-import io.helidon.metrics.api.BaseMetric;
-
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 
@@ -29,7 +27,7 @@ import org.eclipse.microprofile.metrics.MetricID;
  * Helidon Extension of {@link Metric}.
  * All metrics should inherit from {@link MetricImpl}.
  */
-interface HelidonMetric extends BaseMetric {
+interface HelidonMetric extends io.helidon.metrics.api.HelidonMetric {
     /**
      * Name of this metric.
      *

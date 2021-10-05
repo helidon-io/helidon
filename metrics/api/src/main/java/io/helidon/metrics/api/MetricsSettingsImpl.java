@@ -15,9 +15,6 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import io.helidon.config.Config;
 
 class MetricsSettingsImpl implements MetricsSettings {
@@ -29,15 +26,13 @@ class MetricsSettingsImpl implements MetricsSettings {
     }
 
     private final boolean isEnabled;
-    private final boolean isBaseEnabled;
-    private final Map<String, Boolean> isBaseMetricEnabled;
     private final KeyPerformanceIndicatorMetricsSettings kpiMetricsSettings;
+    private final BaseMetricsSettings baseMetricsSettings;
 
     private MetricsSettingsImpl(MetricsSettingsImpl.Builder builder) {
         this.isEnabled = builder.isEnabled;
-        this.isBaseEnabled = builder.isBaseEnabled;
-        this.isBaseMetricEnabled = builder.isBaseMetricEnabled;
-        this.kpiMetricsSettings = builder.kpiMetricsSettings;
+        this.kpiMetricsSettings = builder.kpiMetricsSettingsBuilder.build();
+        this.baseMetricsSettings = builder.baseMetricsSettingsBuilder.build();
     }
 
     @Override
@@ -46,27 +41,21 @@ class MetricsSettingsImpl implements MetricsSettings {
     }
 
     @Override
-    public boolean isBaseEnabled() {
-        return isBaseEnabled;
-    }
-
-    @Override
-    public boolean isBaseMetricEnabled(String dottedName) {
-        return isBaseEnabled && isBaseMetricEnabled.getOrDefault(dottedName, true);
-    }
-
-    @Override
     public KeyPerformanceIndicatorMetricsSettings keyPerformanceIndicatorSettings() {
         return kpiMetricsSettings;
+    }
+
+    @Override
+    public BaseMetricsSettings baseMetricsSettings() {
+        return baseMetricsSettings;
     }
 
     static class Builder implements MetricsSettings.Builder {
 
         private boolean isEnabled = true;
-        private boolean isBaseEnabled = true;
-        private final Map<String, Boolean> isBaseMetricEnabled = new HashMap<>();
-        private KeyPerformanceIndicatorMetricsSettings kpiMetricsSettings =
-                KeyPerformanceIndicatorMetricsSettings.builder().build();
+        private KeyPerformanceIndicatorMetricsSettings.Builder kpiMetricsSettingsBuilder =
+                KeyPerformanceIndicatorMetricsSettings.builder();
+        private BaseMetricsSettings.Builder baseMetricsSettingsBuilder = BaseMetricsSettings.builder();
 
         @Override
         public MetricsSettings build() {
@@ -74,52 +63,35 @@ class MetricsSettingsImpl implements MetricsSettings {
         }
 
         @Override
-        public MetricsSettings.Builder enable(boolean value) {
+        public MetricsSettings.Builder enabled(boolean value) {
             isEnabled = value;
             return this;
         }
 
         @Override
-        public MetricsSettings.Builder enableBase(boolean value) {
-            isBaseEnabled = value;
+        public MetricsSettings.Builder baseMetricsSettings(BaseMetricsSettings.Builder baseMetricsSettingsBuilder) {
+            this.baseMetricsSettingsBuilder = baseMetricsSettingsBuilder;
             return this;
         }
 
         @Override
-        public MetricsSettings.Builder enableBaseMetric(String dottedName, boolean value) {
-            isBaseMetricEnabled.put(dottedName, value);
-            return this;
-        }
-
-        @Override
-        public MetricsSettings.Builder config(Config config) {
-            config.get(MetricsSettings.ENABLED_CONFIG_KEY)
+        public MetricsSettings.Builder config(Config metricsSettingsConfig) {
+            metricsSettingsConfig.get(MetricsSettings.Builder.ENABLED_CONFIG_KEY)
                     .asBoolean()
-                    .ifPresent(this::enable);
-            Config baseConfig = config.get(MetricsSettings.BASE_CONFIG_KEY);
-                    baseConfig.get(MetricsSettings.ENABLED_CONFIG_KEY)
-                    .asBoolean()
-                    .ifPresent(this::enableBase);
-            // The metrics config section might contain individual base metric settings: base.${metricName}.enabled
-            baseConfig.detach()
-                    .asMap()
-                    .ifPresent(map -> map.forEach((key, value) -> {
-                        int enabledSuffixStart = key.lastIndexOf(".enabled");
-                        if (enabledSuffixStart > -1) {
-                            String metricName = key.substring(0, enabledSuffixStart);
-                            enableBaseMetric(metricName, Boolean.parseBoolean(value));
-                        }
-                    }));
-            config.get(KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY)
-                    .as(KeyPerformanceIndicatorMetricsSettings::create)
+                    .ifPresent(this::enabled);
+            metricsSettingsConfig.get(BaseMetricsSettings.Builder.BASE_METRICS_CONFIG_KEY)
+                    .as(cfg -> BaseMetricsSettings.builder().config(cfg))
+                    .ifPresent(this::baseMetricsSettings);
+            metricsSettingsConfig.get(KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY)
+                    .as(cfg -> KeyPerformanceIndicatorMetricsSettings.builder().config(cfg))
                     .ifPresent(this::keyPerformanceIndicatorSettings);
             return this;
         }
 
         @Override
         public MetricsSettings.Builder keyPerformanceIndicatorSettings(
-                KeyPerformanceIndicatorMetricsSettings kpiMetricsSettings) {
-            this.kpiMetricsSettings = kpiMetricsSettings;
+                KeyPerformanceIndicatorMetricsSettings.Builder kpiMetricsSettings) {
+            this.kpiMetricsSettingsBuilder = kpiMetricsSettings;
             return this;
         }
     }

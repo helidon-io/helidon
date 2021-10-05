@@ -19,9 +19,9 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 
 /**
- * Helidon-required behavior for each type of metric implementation.
+ * Helidon-required behavior for each type (e.g., full-featured or no-op) of metric implementation.
  */
-public interface BaseMetric extends Metric {
+public interface HelidonMetric extends Metric {
 
     /**
      * @return the metadata for the metric

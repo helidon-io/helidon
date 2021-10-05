@@ -13,21 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.helidon.metrics.api {
+package io.helidon.metrics.api;
 
-    requires java.logging;
+class NoOpMetricsSupportProviderImpl implements MetricsSupportProvider<NoOpMetricsSupport> {
 
-    requires io.helidon.common.http;
-    requires io.helidon.common.serviceloader;
-    requires transitive io.helidon.config;
-    requires io.helidon.webserver;
-
-    requires transitive microprofile.metrics.api;
-    requires io.helidon.config.metadata;
-
-    exports io.helidon.metrics.api;
-
-    uses io.helidon.metrics.api.RegistryFactoryProvider;
-    uses io.helidon.metrics.api.MetricsSupportProvider;
+    @Override
+    public NoOpMetricsSupport.Builder builder() {
+        return NoOpMetricsSupport.builder();
+    }
 
 }

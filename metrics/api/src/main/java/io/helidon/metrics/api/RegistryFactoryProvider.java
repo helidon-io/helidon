@@ -23,8 +23,13 @@ package io.helidon.metrics.api;
 public interface RegistryFactoryProvider {
 
     /**
+     * Creates a new {@link RegistryFactory} according to the specified metrics settings.
+     * <p>
+     *     Implementations of this method should assume that {@code MetricsSettings.isEnabled()} is {@code true} and do not
+     *     need to check that themselves.
+     * </p>
      * @param metricsSettings the {@link MetricsSettings} to use in creating the new registry factory
-     * @return a new {@link RegistryFactory}.
+     * @return a new {@link RegistryFactory} based on the provided metrics settings
      */
-    RegistryFactory newRegistryFactory(MetricsSettings metricsSettings);
+    RegistryFactory create(MetricsSettings metricsSettings);
 }

@@ -36,7 +36,7 @@ public class TestNoOpRegistry {
 
     @BeforeAll
     static void setUpRegistry() {
-        RegistryFactory registryFactory = RegistryFactory.create(MetricsSettings.builder().enable(false).build());
+        RegistryFactory registryFactory = RegistryFactory.create(MetricsSettings.builder().enabled(false).build());
         appRegistry = registryFactory.getRegistry(MetricRegistry.Type.APPLICATION);
     }
 
@@ -51,7 +51,7 @@ public class TestNoOpRegistry {
     void checkDifferentInstances() {
         SimpleTimer simplerTimer = appRegistry.simpleTimer("testForUnsupportedOp");
         SimpleTimer otherSimpleTimer = appRegistry.simpleTimer("someOtherName");
-        assertThat("Same metric instance for different names", otherSimpleTimer, is(not(sameInstance(simplerTimer))));
+        assertThat("Same metric getInstance for different names", otherSimpleTimer, is(not(sameInstance(simplerTimer))));
     }
 
     @Test
@@ -64,7 +64,7 @@ public class TestNoOpRegistry {
         SimpleTimer simpleTimer = NoOpMetric.NoOpSimpleTimer.create(MetricRegistry.Type.APPLICATION.getName(), metadata);
         appRegistry.register(metricName, simpleTimer);
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> appRegistry.register(metricName, simpleTimer),
-                "Expected failure due to duplicate metric registration");
+                                () -> appRegistry.register(metricName, simpleTimer),
+                                "Expected failure due to duplicate metric registration");
     }
 }

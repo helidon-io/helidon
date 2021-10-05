@@ -23,7 +23,7 @@
 :common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 :common-guides: ../../common/guides
 :metrics-common: {common-guides}/metrics.adoc
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.metrics/io/helidon/metrics
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.metrics.api/io/helidon/metrics/api
 :metrics-support-builder-javadoc: {javadoc-base-url-api}/MetricsSupport.Builder.html
 :lower-case-flavor: se
 :intro-project-name: {h1Prefix}
@@ -37,14 +37,7 @@ The generated source code is already configured for both metrics and health chec
 
 [source,xml]
 .Notice that the metrics dependency is already in the project's pom.xml file:
-----
-<dependency>
-    <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics</artifactId>
-</dependency>
-----
-
-
+include::{metrics-common}[tag=metrics-dependency]
 [source,java]
 .Replace the `Main.createRouting` method with the following code:
 ----
@@ -89,9 +82,96 @@ include::{metrics-common}[tag=vendor-metrics-json-output]
 
 include::{metrics-common}[tag=get-single-metric]
 
+////
+Controlling Metrics section
+
+For the SE guide, we stitch in the shared content about controlling metrics around SE-specific content that is not shared. It makes for a bit choppy-looking source here but it renders just fine and lets us easily share the content that's common between SE and MP.
+
+////
+include::{metrics-common}[tag=controlling-intro]
+
+Your Helidon SE application can also control metrics programmatically as described in the following sections.
+
+include::{metrics-common}[tag=enabling-disabling-whole-intro]
+
+A Helidon SE application can disable metrics programmatically.
+[source,java]
+.Disable all metrics behavior
+----
+import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.MetricsSupport;
+import io.helidon.metrics.api.RegistryFactory;
+...
+
+    MetricsSettings metricsSettings = MetricsSettings.builder()
+            .enabled(false)
+            .build(); // <1>
+
+    MetricsSupport metricsSupport = MetricsSupport.create(metricsSettings); // <2>
+
+    RegistryFactory registryFactory = RegistryFactory.getInstance(metricsSettings); // <3>
+----
+<1> Create a link:{javadoc-base-url-api}/MetricsSettings.html[`MetricsSettings]` instance (via its link:{javadoc-base-url-api}/MetricsSettings.Builder.html[`Builder`]) with metrics disabled.
+<2> Get a link:{javadoc-base-url-api}/MetricsSupport.html[`MetricsSupport]` service (usable in setting routing rules) that responds
+to the `/metrics endpoint` with `404` and an explanatory message.
+<3> Get a link:{javadoc-base-url-api}/RegistryFactory.html[`RegistryFactory]` instance that provides `MetricRegistry` instances which register
+ no-op metric objects (counters, timers, etc.).
+
+These builders and interfaces also have methods which accept `Config` objects representing the `metrics` node from the application configuration.
+
+include::{metrics-common}[tag=enabling-disabling-whole-summary]
+
 include::{metrics-common}[tag=KPI]
 
-Your Helidon SE application can also enable or disable the extended KPI metrics and control the long-running request threshold using methods on the link:{metrics-support-builder-javadoc}[MetricsSupport.Builder] class.
+Your Helidon SE application can also control the KPI settings programmatically.
+[source,java]
+.Assign KPI metrics behavior from code
+----
+import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
+import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.MetricsSupport;
+import io.helidon.metrics.api.RegistryFactory;
+...
+
+    KeyPerformanceIndicatorMetricsSettings.Builder kpiSettingsBuilder =
+        KeyPerformanceIndicatorMetricsSettings.builder()
+            .extended(true)
+            .longRunningThresholdMs(2000); <1>
+
+    MetricsSettings metricsSettings = MetricsSettings.builder()
+            .keyPerformanceIndicatorSettings(kpiSettingsBuilder)
+            .build(); // <2>
+----
+<1> Create a link:{javadoc-base-url-api}/KeyPerformanceIndicatorMetricsSettings.html[`KeyPerformanceIndicatorMetricsSettings]` instance (via its link:{javadoc-base-url-api}/KeyPerformanceIndicatorMetricsSettings.Builder.html[`Builder`]) with non-default values.
+<2> Create a link:{javadoc-base-url-api}/MetricsSettings.html[`MetricsSettings]` instance reflecting the KPI settings.
+
+include::{metrics-common}[tag=controlling-by-component-intro]
+
+Your Helidon SE application can disable a metrics-capable component's use of metrics programmatically.
+
+[source,java]
+.Disable metrics use in a metrics-capable component
+----
+import io.helidon.metrics.api.ComponentMetricsSettings;
+...
+
+    ComponentMetricsSettings.Builder componentMetricsSettingsBuilder = ComponentMetricsSettings.builder()
+            .enabled(false); // <1>
+
+    SomeService someService = SomeService.builder()
+            ...
+            .componentMetricsSettings(componentMetricsSettingsBuilder)
+            ...
+            .build(); // <2>
+
+----
+<1> Create a link:{javadoc-base-url-api}/ComponentMetricsSettings.html[`ComponentMetricsSettings]` instance (via its link:{javadoc-base-url-api}/ComponentMetricsSettings.Builder.html[`Builder`]) indicating that metrics usage should be disabled.
+<2> Create an instance of the service with its metrics usage disabled.
+
+include::{metrics-common}[tag=controlling-by-component-summary]
+
+
+// end of Controlling Metrics section
 
 include::{metrics-common}[tag=metrics-metadata]
 
@@ -653,6 +733,9 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 <2> Cumulative time spent in the `getDefaultMessageHandler` method during its executions.
 
 include::{metrics-common}[tag=k8s-and-prometheus-integration]
+
+=== Advanced Topic: Metrics-capable Applications and Components
+Metrics-capable components are written to register and update metrics but can work even if the Helidon metrics implementation _is not_ on the runtime path. Please see this additional section on <<se/guides/_metrics-capable-components.adoc,Metrics-capable components>> which describes this feature.
 
 === Summary
 

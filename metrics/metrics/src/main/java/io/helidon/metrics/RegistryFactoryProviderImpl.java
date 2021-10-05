@@ -16,7 +16,6 @@
 package io.helidon.metrics;
 
 import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.api.NoOpRegistryFactory;
 
 /**
  * Full-featured metrics implementation of {@link io.helidon.metrics.api.RegistryFactoryProvider}.
@@ -24,8 +23,7 @@ import io.helidon.metrics.api.NoOpRegistryFactory;
 public class RegistryFactoryProviderImpl implements io.helidon.metrics.api.RegistryFactoryProvider {
 
     @Override
-    public io.helidon.metrics.api.RegistryFactory newRegistryFactory(MetricsSettings metricsSettings) {
-        return metricsSettings.isEnabled() ? RegistryFactory.create(metricsSettings)
-                : NoOpRegistryFactory.create();
+    public io.helidon.metrics.api.RegistryFactory create(MetricsSettings metricsSettings) {
+        return RegistryFactory.create(metricsSettings);
     }
 }

@@ -13,21 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.helidon.metrics.api {
+package io.helidon.metrics;
 
-    requires java.logging;
+import io.helidon.metrics.api.MetricsSupportProvider;
 
-    requires io.helidon.common.http;
-    requires io.helidon.common.serviceloader;
-    requires transitive io.helidon.config;
-    requires io.helidon.webserver;
+/**
+ * Provider which furnishes a builder for {@link MetricsSupport} instances.
+ */
+public class MetricsSupportProviderImpl implements MetricsSupportProvider<MetricsSupport> {
 
-    requires transitive microprofile.metrics.api;
-    requires io.helidon.config.metadata;
-
-    exports io.helidon.metrics.api;
-
-    uses io.helidon.metrics.api.RegistryFactoryProvider;
-    uses io.helidon.metrics.api.MetricsSupportProvider;
-
+    @Override
+    public MetricsSupport.Builder builder() {
+        return MetricsSupport.builder();
+    }
 }

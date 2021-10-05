@@ -37,7 +37,7 @@ public class TestComponentMetricsSettings {
 
     private static void test(boolean componentMetricsEnabled, long expectedCounterValue) {
         ComponentMetricsSettings cms = ComponentMetricsSettings.builder()
-                .enable(componentMetricsEnabled)
+                .enabled(componentMetricsEnabled)
                 .build();
 
         MyServiceSupport myServiceSupport = MyServiceSupport.builder().componentMetricsSettings(cms).build();

@@ -34,7 +34,7 @@ public class ConfiguredTestSupport extends HelidonRestServiceSupport {
     /**
      * Initialization.
      *
-     * @param builder     builder for the service support instance.
+     * @param builder     builder for the service support getInstance.
      */
     private ConfiguredTestSupport(Builder builder) {
         super(Logger.getLogger(ConfiguredTestSupport.class.getName()), builder, "testservice");

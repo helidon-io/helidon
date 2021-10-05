@@ -15,9 +15,7 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.List;
 import java.util.ServiceLoader;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,19 +24,23 @@ import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 
 /**
- * Loads an available {@link RegistryFactoryProvider} if available via the service loader mechanism, providing a default
- * implementation otherwise (which will return {@code RegistryFactory} instances which yield no-op metrics instances).
+ * Manages the creation, caching, and reuse of {@link RegistryFactory} instances according to provided metrics settings or
+ * configuration.
+ *
+ * <p>
+ * This class loads a {@link RegistryFactoryProvider} if available via the service loader mechanism,
+ * providing a default implementation otherwise (which will return {@code RegistryFactory} instances which yield
+ * no-op metrics instances).
  * <p>
  *     The class includes these groups of static methods:
  *     <ul>
- *         <li>The {@code create} methods create a {@link RegistryFactory} according to the specified settings (or defaults) but
- *         keep no reference to such registry factories.</li>
- *         <li>The {@code getInstance} methods provide a {@code RegistryFactory} according to the specified settings (or
- *         defaults) while saving the returned {@link RegistryFactory} as the singleton instance which the {@link #getInstance()}
- *         method returns.</li>
- *         <li>The {@link RegistryFactory#instance(ComponentMetricsSettings)} method which metrics-capable components invoke,
+ *         <li>The {@code create} methods create a new {@link RegistryFactory} according to the specified settings (or defaults)
+ *         but keep no reference to such registry factories.</li>
+ *         <li>The {@code getInstance} methods reuse a single {@code RegistryFactory}, initialized using the default
+ *         {@link MetricsSettings} but changeable via {@link #getInstance(MetricsSettings)}.</li>
+ *         <li>The {@link RegistryFactory#getInstance(ComponentMetricsSettings)} method which metrics-capable components invoke,
  *         passing a {@code ComponentMetricsSettings} object to indicate what type of {@code RegistryFactory} they need to use,
- *         based on their config and settings.
+ *         based on their component-specific metrics settings.
  *         </li>
  *     </ul>
  * </p>
@@ -47,33 +49,32 @@ import io.helidon.config.Config;
  *     or not and to return a suitable {@code RegistryFactory}.
  * </p>
  */
-class RegistryFactoryProviderLoader {
+class RegistryFactoryManager {
 
-    private static final Logger LOGGER = Logger.getLogger(RegistryFactoryProviderLoader.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(RegistryFactoryManager.class.getName());
 
     private static final LazyValue<RegistryFactoryProvider> LAZY_FACTORY_PROVIDER =
-            LazyValue.create(RegistryFactoryProviderLoader::loadRegistryFactoryProvider);
+            LazyValue.create(RegistryFactoryManager::loadRegistryFactoryProvider);
 
     private static final RegistryFactoryProvider NO_OP_FACTORY_PROVIDER = (metricsSettings) -> NoOpRegistryFactory.create();
 
     // Instance managed and returned by the {@link getInstance} methods.
-    private static volatile RegistryFactory instance = create();
+    private static final RegistryFactory INSTANCE = create();
 
     // If metrics-capable components ask for a no-op factory, reuse the same one.
     private static final RegistryFactory NO_OP_INSTANCE = NoOpRegistryFactory.create();
 
     private static RegistryFactoryProvider loadRegistryFactoryProvider() {
-        List<RegistryFactoryProvider> providers = HelidonServiceLoader.builder(ServiceLoader.load(RegistryFactoryProvider.class))
+        RegistryFactoryProvider provider = HelidonServiceLoader.builder(ServiceLoader.load(RegistryFactoryProvider.class))
                 .addService(NO_OP_FACTORY_PROVIDER, Integer.MAX_VALUE)
                 .build()
-                .asList();
-        LOGGER.log(Level.INFO, "Metrics registry factory provider: {0}", providers.get(0).getClass().getName());
-        return providers.get(0);
+                .asList()
+                .get(0);
+        LOGGER.log(Level.INFO, "Metrics registry factory provider: {0}", provider.getClass().getName());
+        return provider;
     }
 
-    private static final AtomicReference<MetricsSettings> METRICS_SETTINGS = new AtomicReference<>();
-
-    private RegistryFactoryProviderLoader() {
+    private RegistryFactoryManager() {
     }
 
     static RegistryFactory create() {
@@ -82,8 +83,8 @@ class RegistryFactoryProviderLoader {
 
     static RegistryFactory create(MetricsSettings metricsSettings) {
         return metricsSettings.isEnabled()
-                ? LAZY_FACTORY_PROVIDER.get().newRegistryFactory(metricsSettings)
-                : NO_OP_FACTORY_PROVIDER.newRegistryFactory(metricsSettings);
+                ? LAZY_FACTORY_PROVIDER.get().create(metricsSettings)
+                : NO_OP_FACTORY_PROVIDER.create(metricsSettings);
     }
 
     @Deprecated
@@ -92,17 +93,17 @@ class RegistryFactoryProviderLoader {
     }
 
     static RegistryFactory getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     static synchronized RegistryFactory getInstance(MetricsSettings metricsSettings) {
-        instance.update(metricsSettings);
-        return instance;
+        INSTANCE.update(metricsSettings);
+        return INSTANCE;
     }
 
-    static synchronized RegistryFactory instance(ComponentMetricsSettings componentMetricsSettings){
+    static synchronized RegistryFactory getInstance(ComponentMetricsSettings componentMetricsSettings) {
         return componentMetricsSettings.isEnabled()
-                ? instance
+                ? INSTANCE
                 : NO_OP_INSTANCE;
     }
 

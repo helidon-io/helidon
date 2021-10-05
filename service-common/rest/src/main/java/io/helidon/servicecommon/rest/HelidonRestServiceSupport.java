@@ -63,7 +63,7 @@ public abstract class HelidonRestServiceSupport implements Service {
         this.logger = logger;
         this.context = builder.context;
         corsEnabledServiceHelper = CorsEnabledServiceHelper.create(serviceName, builder.crossOriginConfig);
-        componentRegistryFactory = RegistryFactory.instance(builder.componentMetricsSettings);
+        componentRegistryFactory = RegistryFactory.getInstance(builder.componentMetricsSettings);
     }
 
     /**
@@ -185,7 +185,7 @@ public abstract class HelidonRestServiceSupport implements Service {
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
 
-            config.get(ComponentMetricsSettings.METRICS_CONFIG_KEY)
+            config.get(ComponentMetricsSettings.Builder.METRICS_CONFIG_KEY)
                     .as(ComponentMetricsSettings::create)
                     .ifPresent(this::componentMetricsSettings);
 

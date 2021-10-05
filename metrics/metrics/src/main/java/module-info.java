@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.metrics.RegistryFactoryProviderImpl;
-
 /**
  * Helidon Metrics implementation.
  */
@@ -38,7 +36,8 @@ module io.helidon.metrics {
 
     exports io.helidon.metrics;
 
-    provides io.helidon.metrics.api.RegistryFactoryProvider with RegistryFactoryProviderImpl;
+    provides io.helidon.metrics.api.RegistryFactoryProvider with io.helidon.metrics.RegistryFactoryProviderImpl;
+    provides io.helidon.metrics.api.MetricsSupportProvider with io.helidon.metrics.MetricsSupportProviderImpl;
 
     uses io.helidon.metrics.ExemplarService;
 }

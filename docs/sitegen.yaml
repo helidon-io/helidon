@@ -144,6 +144,8 @@ backend:
                 type: "icon"
                 value: "av_timer"
               items:
+                - excludes:
+                    - "se/metrics/_*.adoc"
                 - includes:
                     - "se/metrics/*.adoc"
             - title: "OpenAPI"

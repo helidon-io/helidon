@@ -21,6 +21,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
 import io.helidon.config.yaml.YamlConfigParser;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -61,20 +62,20 @@ public class TestMetricsSettings {
     void testConfigBaseDisabled() {
         MetricsSettings metricsSettings = MetricsSettings.builder().config(baseDisabled).build();
         assertThat("Top-level metrics enabled", metricsSettings.isEnabled(), is(true));
-        assertThat("Base metrics enabled", metricsSettings.isBaseEnabled(), is(false));
+        assertThat("Base metrics enabled", metricsSettings.baseMetricsSettings().isEnabled(), is(false));
     }
 
     @Test
     void testConfigSelectiveBaseMetricDisabled() {
         MetricsSettings metricsSettings = MetricsSettings.builder().config(baseSelectiveDisabled).build();
         assertThat("Top-level metrics enabled", metricsSettings.isEnabled(), is(true));
-        assertThat("Base metrics enabled", metricsSettings.isBaseEnabled(), is(true));
+        assertThat("Base metrics enabled", metricsSettings.baseMetricsSettings().isEnabled(), is(true));
         assertThat("memory.usedHeap base metric enabled",
-                metricsSettings.isBaseMetricEnabled("memory.usedHeap"),
-                is(false));
+                   metricsSettings.baseMetricsSettings().isBaseMetricEnabled("memory.usedHeap"),
+                   is(false));
         assertThat("memory.committedHelp base metric enabled",
-                metricsSettings.isBaseMetricEnabled("memory.committedHeap"),
-                is(true));
+                   metricsSettings.baseMetricsSettings().isBaseMetricEnabled("memory.committedHeap"),
+                   is(true));
     }
 
     @Test
@@ -82,7 +83,8 @@ public class TestMetricsSettings {
         MetricsSettings metricsSettings = MetricsSettings.builder().config(withKpi).build();
         assertThat("top-level metrics enabled", metricsSettings.isEnabled(), is(true));
         assertThat("KPI settings extended", metricsSettings.keyPerformanceIndicatorSettings().isExtended(), is(true));
-        assertThat("Long-running threshold", metricsSettings.keyPerformanceIndicatorSettings().longRunningRequestThresholdMs(),
-                is(789L));
+        assertThat("Long-running threshold",
+                   metricsSettings.keyPerformanceIndicatorSettings().longRunningRequestThresholdMs(),
+                   is(789L));
     }
 }

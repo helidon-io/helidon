@@ -16,6 +16,9 @@
 package io.helidon.metrics.api;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.config.metadata.ConfiguredValue;
 
 /**
  * Settings which control metrics behavior for a metrics-capable component.
@@ -26,23 +29,12 @@ import io.helidon.config.Config;
 public interface ComponentMetricsSettings {
 
     /**
-     * By convention, the config key within the component's config section containing metrics settings for the component.
-     */
-    String METRICS_CONFIG_KEY = "metrics";
-
-    /**
-     * Config key within the component's {@code metrics} config section controlling whether metrics are enabled for that
-     * component.
-     */
-    String ENABLED_CONFIG_KEY = "enabled";
-
-    /**
      * Default {@code ComponentMetricsSettings}.
      */
     ComponentMetricsSettings DEFAULT = builder().build();
 
     /**
-     * Returns metrics settings created from a {@code Config} node, by convention the {@code metrics} config
+     * Returns component metrics settings created from a {@code Config} node, by convention the {@code metrics} config
      * section within the component's own config section.
      * <p>Equivalent to {@code ComponentMetricsSettings.builder().config(config).build()}.</p>
      *
@@ -71,7 +63,18 @@ public interface ComponentMetricsSettings {
     /**
      * Builder for {@code ComponentMetricsSettings}.
      */
+    @Configured(prefix = Builder.METRICS_CONFIG_KEY)
     interface Builder extends io.helidon.common.Builder<ComponentMetricsSettings> {
+
+        /**
+         * By convention, the config key within the component's config section containing metrics settings for the component.
+         */
+        String METRICS_CONFIG_KEY = "metrics";
+        /**
+         * Config key within the component's {@code metrics} config section controlling whether metrics are enabled for that
+         * component.
+         */
+        String ENABLED_CONFIG_KEY = "enabled";
 
         /**
          * Constructs a {@code ComponentMetricsSettings} object from the builder.
@@ -86,7 +89,13 @@ public interface ComponentMetricsSettings {
          * @param value true if metrics should be enabled for the component; false if not
          * @return updated builder
          */
-        ComponentMetricsSettings.Builder enable(boolean value);
+        @ConfiguredOption(
+                key = ENABLED_CONFIG_KEY,
+                allowedValues = {
+                        @ConfiguredValue(value = "true", description = "metrics should be enabled for the component"),
+                        @ConfiguredValue(value = "false", description = "metrics should be disabled forthe component")
+                })
+        ComponentMetricsSettings.Builder enabled(boolean value);
 
         /**
          * Updates the builder using the provided metrics config.

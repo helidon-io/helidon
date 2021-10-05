@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -83,19 +82,20 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
 
     @Override
     protected Map<Class<? extends HelidonMetric>, MetricType> prepareMetricToTypeMap() {
-        final Map<Class<? extends HelidonMetric>, MetricType> result = new HashMap<>();
-        result.put(HelidonConcurrentGauge.class, MetricType.CONCURRENT_GAUGE);
-        result.put(HelidonCounter.class, MetricType.COUNTER);
-        result.put(HelidonGauge.class, MetricType.GAUGE);
-        result.put(HelidonHistogram.class, MetricType.HISTOGRAM);
-        result.put(HelidonMeter.class, MetricType.METERED);
-        result.put(HelidonTimer.class, MetricType.TIMER);
-        result.put(HelidonSimpleTimer.class, MetricType.SIMPLE_TIMER);
-        return result;
+        return Map.of(
+                HelidonConcurrentGauge.class, MetricType.CONCURRENT_GAUGE,
+                HelidonCounter.class, MetricType.COUNTER,
+                HelidonGauge.class, MetricType.GAUGE,
+                HelidonHistogram.class, MetricType.HISTOGRAM,
+                HelidonMeter.class, MetricType.METERED,
+                HelidonTimer.class, MetricType.TIMER,
+                HelidonSimpleTimer.class, MetricType.SIMPLE_TIMER);
     }
 
     @Override
     protected Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> prepareMetricFactories() {
+        // Omit gauge because creating a gauge requires an existing delegate instance.
+        // These factory methods do not use delegates.
         return Map.of(MetricType.COUNTER, HelidonCounter::create,
                 MetricType.HISTOGRAM, HelidonHistogram::create,
                 MetricType.METERED, HelidonMeter::create,
@@ -111,6 +111,11 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
     }
 
     @Override
+    protected Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> metricFactories() {
+        return super.metricFactories();
+    }
+
+    @Override
     protected Stream<Map.Entry<MetricID, HelidonMetric>> stream() {
         return super.stream();
     }
@@ -123,10 +128,5 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
     @Override
     protected List<Map.Entry<MetricID, HelidonMetric>> getMetricsByName(String metricName) {
         return super.getMetricsByName(metricName);
-    }
-
-    @Override
-    protected Map<Class<? extends HelidonMetric>, MetricType> metricToTypeMap() {
-        return super.metricToTypeMap();
     }
 }

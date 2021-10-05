@@ -16,26 +16,22 @@
 package io.helidon.metrics.api;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
- * Settings which control metrics behavior for metrics overall.
+ * Settings which control behavior for metrics overall (not just for a single metrics-capable component).
  */
 public interface MetricsSettings {
 
     /**
-     * Config key within the config {@code metrics} section controlling whether metrics are enabled.
+     * Returns default metrics settings based on default config.
+     *
+     * @return new settings reflecting the default config
      */
-    String ENABLED_CONFIG_KEY = "enabled";
-
-    /**
-     * The config key containing settings for all of metrics.
-     */
-    String METRICS_CONFIG_KEY = "metrics";
-
-    /**
-     * Config key within the config {@code metrics} section controlling the base registry.
-     */
-    String BASE_CONFIG_KEY = "base";
+    static MetricsSettings create() {
+        return create(Config.create());
+    }
 
     /**
      * Returns metrics settings based on a {@code Config} node, by convention the {@code metrics} config
@@ -59,23 +55,25 @@ public interface MetricsSettings {
     }
 
     /**
+     * Creates a builder based on the values in an existing {@code MetricsSettings} instance.
+     *
+     * @param metricsSettings existing instance to copy
+     * @return {@code MetricsSettings.Builder} initialized according to the provided settings
+     */
+    static Builder builder(MetricsSettings metricsSettings) {
+        return builder()
+                .enabled(metricsSettings.isEnabled())
+                .keyPerformanceIndicatorSettings(
+                        KeyPerformanceIndicatorMetricsSettings.builder(metricsSettings.keyPerformanceIndicatorSettings()))
+                .baseMetricsSettings(
+                        BaseMetricsSettings.builder(metricsSettings.baseMetricsSettings()));
+    }
+
+    /**
      *
      * @return whether metrics are enabled according to the settings
      */
-     boolean isEnabled();
-
-    /**
-     *
-     * @return whether the base metrics registry is enabled according to the settings
-     */
-    boolean isBaseEnabled();
-
-    /**
-     *
-     * @param dottedName dotted name (e.g., {@code memory.usedHeap}) for the base metric of interest
-     * @return whether that metric is enabled or not
-     */
-    boolean isBaseMetricEnabled(String dottedName);
+    boolean isEnabled();
 
     /**
      *
@@ -84,9 +82,29 @@ public interface MetricsSettings {
     KeyPerformanceIndicatorMetricsSettings keyPerformanceIndicatorSettings();
 
     /**
+     *
+     * @return the base metrics settings
+     */
+    BaseMetricsSettings baseMetricsSettings();
+
+    /**
      * Builder for {@code MetricsSettings}.
      */
+    @Configured(prefix = Builder.METRICS_CONFIG_KEY)
     interface Builder extends io.helidon.common.Builder<MetricsSettings> {
+
+        /**
+         * Config key within the config {@code metrics} section controlling whether metrics are enabled.
+         */
+        String ENABLED_CONFIG_KEY = "enabled";
+        /**
+         * The config key containing settings for all of metrics.
+         */
+        String METRICS_CONFIG_KEY = "metrics";
+        /**
+         * Config key within the config {@code metrics} section controlling the base registry.
+         */
+        String BASE_CONFIG_KEY = "base";
 
         /**
          * Constructs a {@code MetricsSettings} object from the builder.
@@ -101,7 +119,8 @@ public interface MetricsSettings {
          * @param value true if metrics should be enabled; false if not
          * @return updated builder
          */
-        Builder enable(boolean value);
+        @ConfiguredOption(key = ENABLED_CONFIG_KEY)
+        Builder enabled(boolean value);
 
         /**
          * Updates the builder using the provided metrics config.
@@ -112,28 +131,26 @@ public interface MetricsSettings {
         Builder config(Config config);
 
         /**
-         * Sets whether base metrics should be enabled.
-         *
-         * @param value true if base metrics should be used; false otherwise
-         * @return updated builder
-         */
-        Builder enableBase(boolean value);
-
-        /**
-         * Sets whether a specific base metric should be enabled.
-         *
-         * @param dottedName the dotted name (e.g., {@code memory.usedHeap} for the base metric
-         * @param value whether that base metric should be enabled or not
-         * @return updated builder
-         */
-        Builder enableBaseMetric(String dottedName, boolean value);
-
-        /**
          * Set the KPI metrics settings.
          *
          * @param kpiSettings key performance indicator metrics settings to use
          * @return updated builder
          */
-        Builder keyPerformanceIndicatorSettings(KeyPerformanceIndicatorMetricsSettings kpiSettings);
+        @ConfiguredOption(
+                key = KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY,
+                kind = ConfiguredOption.Kind.MAP
+        )
+        Builder keyPerformanceIndicatorSettings(KeyPerformanceIndicatorMetricsSettings.Builder kpiSettings);
+
+        /**
+         * Set the base metrics settings.
+         *
+         * @param baseMetricsSettingsBuilder base metrics settings to use
+         * @return updated builder
+         */
+        @ConfiguredOption(
+                key = BASE_CONFIG_KEY,
+                kind = ConfiguredOption.Kind.MAP)
+        Builder baseMetricsSettings(BaseMetricsSettings.Builder baseMetricsSettingsBuilder);
     }
 }

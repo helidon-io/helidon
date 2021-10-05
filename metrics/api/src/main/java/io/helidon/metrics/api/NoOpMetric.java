@@ -46,6 +46,10 @@ class NoOpMetric extends AbstractMetric {
             return new NoOpCounter(registryType, metadata);
         }
 
+        static NoOpCounter create(String registryType, Metadata metadata, Counter counter) {
+            return new NoOpCounter(registryType, metadata);
+        }
+
         private NoOpCounter(String registryType, Metadata metadata) {
             super(registryType, metadata);
         }
@@ -312,7 +316,6 @@ class NoOpMetric extends AbstractMetric {
         return new NoOpTimer.Context() {
         };
     }
-
 
     static class NoOpSimpleTimer extends NoOpMetric implements SimpleTimer {
 

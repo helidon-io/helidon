@@ -107,7 +107,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      *
      * @param config configuration of the registry factory used to update behavior of the instance returned
      * @return registry factory singleton
-     * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#getInstance(Config)}
+     * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#getInstance(MetricsSettings)}
      */
     @Deprecated
     public static RegistryFactory getInstance(Config config) {
