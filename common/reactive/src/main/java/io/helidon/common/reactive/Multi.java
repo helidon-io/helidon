@@ -849,6 +849,17 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Executes given {@link java.lang.Runnable} when stream is finished without value(empty stream).
+     *
+     * @param ifEmpty {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Multi<T> ifEmpty(Runnable ifEmpty) {
+        Objects.requireNonNull(ifEmpty, "IfEmpty callback is null");
+        return new MultiIfEmptyPublisher<>(this, ifEmpty);
+    }
+
+    /**
      * Invoke provided consumer for every item in stream.
      *
      * @param consumer consumer to be invoked

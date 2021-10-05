@@ -518,6 +518,17 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     }
 
     /**
+     * Executes given {@link java.lang.Runnable} when stream is finished without value(empty stream).
+     *
+     * @param ifEmpty {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Single<T> ifEmpty(Runnable ifEmpty) {
+        Objects.requireNonNull(ifEmpty, "IfEmpty callback is null");
+        return new SingleIfEmptyPublisher<>(this, ifEmpty);
+    }
+
+    /**
      * Invoke provided consumer for the item in stream.
      *
      * @param consumer consumer to be invoked
