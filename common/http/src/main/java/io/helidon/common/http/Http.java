@@ -56,7 +56,16 @@ public final class Http {
      * Copied from JAX-RS.
      */
     public enum Status implements ResponseStatus {
-
+        /**
+         * 100 Continue,
+         * see <a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.1.1">HTTP/1.1 documentations</a>
+         */
+        CONTINUE_100(100, "Continue"),
+        /**
+         * 101 Switching Protocols,
+         * see <a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.1.2">HTTP/1.1 documentations</a>
+         */
+        SWITCHING_PROTOCOLS_101(101, "Switching Protocols"),
         /**
          * 200 OK, see <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">HTTP/1.1 documentation</a>.
          */

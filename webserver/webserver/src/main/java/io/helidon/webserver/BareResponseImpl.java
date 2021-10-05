@@ -170,7 +170,7 @@ class BareResponseImpl implements BareResponse {
         }
 
         HttpResponseStatus nettyStatus;
-        if (status instanceof Http.Status) {
+        if (status instanceof Http.Status || status.reasonPhrase() == null) {
             // default reason phrase
             nettyStatus = valueOf(status.code());
         } else {
