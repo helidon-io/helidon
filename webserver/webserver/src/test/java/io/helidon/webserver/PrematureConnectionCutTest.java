@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
-import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
@@ -50,7 +50,7 @@ public class PrematureConnectionCutTest {
     Logger LOGGER = Logger.getLogger(PrematureConnectionCutTest.class.getName());
     private static final Duration TIMEOUT = Duration.of(3, ChronoUnit.SECONDS);
 
-    @RepeatedTest(3000)
+    @Test
     void cutConnectionBefore100Continue() throws Exception {
         CountDownLatch latch = new CountDownLatch(5);
 
