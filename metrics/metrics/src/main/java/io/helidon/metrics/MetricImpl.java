@@ -297,7 +297,7 @@ abstract class MetricImpl implements HelidonMetric {
             boolean withHelpType,
             String typeName,
             Derived derived) {
-        appendPrometheusElement(sb, name.units(), () -> name.nameStatUnits(statName), withHelpType, typeName, derived.value(),
+        appendPrometheusElement(sb, name, () -> name.nameStatUnits(statName), withHelpType, typeName, derived.value(),
                 derived.sample());
     }
 
@@ -307,12 +307,12 @@ abstract class MetricImpl implements HelidonMetric {
             boolean withHelpType,
             String typeName,
             Sample.Labeled sample) {
-        appendPrometheusElement(sb, name.units(), () -> name.nameStatUnits(statName), withHelpType, typeName, sample.value(),
+        appendPrometheusElement(sb, name, () -> name.nameStatUnits(statName), withHelpType, typeName, sample.value(),
                 sample);
     }
 
     private void appendPrometheusElement(StringBuilder sb,
-            Units units,
+            PrometheusName name,
             Supplier<String> nameToUse,
             boolean withHelpType,
             String typeName,
@@ -321,11 +321,11 @@ abstract class MetricImpl implements HelidonMetric {
         if (withHelpType) {
             prometheusType(sb, nameToUse.get(), typeName);
         }
-        Object convertedValue = units.convert(value);
-        sb.append(nameToUse.get())
+        Object convertedValue = name.units().convert(value);
+        sb.append(nameToUse.get() + name.prometheusTags())
                 .append(" ")
                 .append(convertedValue)
-                .append(prometheusExemplar(sample, units))
+                .append(prometheusExemplar(sample, name.units()))
                 .append("\n");
     }
 
