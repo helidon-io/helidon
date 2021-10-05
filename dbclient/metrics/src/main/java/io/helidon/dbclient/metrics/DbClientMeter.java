@@ -57,7 +57,7 @@ final class DbClientMeter extends DbClientMetric<Meter> {
 
     @Override
     protected MetricType metricType() {
-        return MetricType.COUNTER;
+        return MetricType.METERED;
     }
 
     @Override
