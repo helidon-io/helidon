@@ -21,6 +21,16 @@
 server:
   port: 8080
 
+oracle:
+  ucp:
+    jdbc:
+      PoolDataSource:
+        atp:
+          connectionFactoryClassName: oracle.jdbc.pool.OracleDataSource
+          serviceName: "${atp.db.serviceName}"
+          user: "${atp.db.user}"
+          password: "${atp.db.password}"
+
 oci:
   atp:
     ocid: "${oci.properties.atp-ocid}"
