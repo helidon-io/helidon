@@ -31,7 +31,7 @@ mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     install -e \
     -Dmaven.test.skip=true \
     -DskipTests \
-    -Ppipeline,staging
+    -Ppipeline
 
 # Run native image tests
 cd ${WS_DIR}/tests/integration/native-image
