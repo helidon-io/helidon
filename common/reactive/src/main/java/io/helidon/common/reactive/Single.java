@@ -524,7 +524,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Multi
      */
     default Single<T> ifEmpty(Runnable ifEmpty) {
-        Objects.requireNonNull(ifEmpty, "IfEmpty callback is null");
+        Objects.requireNonNull(ifEmpty, "ifEmpty callback is null");
         return new SingleIfEmptyPublisher<>(this, ifEmpty);
     }
 

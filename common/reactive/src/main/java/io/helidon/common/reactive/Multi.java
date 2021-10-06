@@ -855,7 +855,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> ifEmpty(Runnable ifEmpty) {
-        Objects.requireNonNull(ifEmpty, "IfEmpty callback is null");
+        Objects.requireNonNull(ifEmpty, "ifEmpty callback is null");
         return new MultiIfEmptyPublisher<>(this, ifEmpty);
     }
 

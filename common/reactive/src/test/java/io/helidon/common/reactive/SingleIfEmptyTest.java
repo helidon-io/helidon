@@ -19,6 +19,8 @@ package io.helidon.common.reactive;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +39,21 @@ public class SingleIfEmptyTest {
                 .onError(t -> result.add("onError"))
                 .ignoreElement();
         assertThat(result, contains("ifEmpty", "onComplete"));
+    }
+
+    @Test
+    void multipleEmpty() {
+        List<String> result = new ArrayList<>();
+        Single.just(Optional.<String>empty())
+                .flatMapOptional(Function.identity())
+                .ifEmpty(() -> result.add("ifEmptyOptional"))
+                .flatMapSingle(s -> Single.<String>empty())
+                .ifEmpty(() -> result.add("ifEmpty"))
+                .onComplete(() -> result.add("onComplete"))
+                .peek(result::add)
+                .onError(t -> result.add("onError"))
+                .ignoreElement();
+        assertThat(result, contains("ifEmptyOptional", "ifEmpty", "onComplete"));
     }
 
     @Test
