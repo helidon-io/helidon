@@ -19,111 +19,145 @@ package io.helidon.webserver;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.hamcrest.Matchers;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 
 public class PrematureConnectionCutTest {
 
-    private static final Duration TIMEOUT = Duration.of(3, ChronoUnit.SECONDS);
+    private static final Logger LOGGER = Logger.getLogger(PrematureConnectionCutTest.class.getName());
+    private static final Duration TIMEOUT = Duration.of(15, ChronoUnit.SECONDS);
+    private static final int CALL_NUM = 5;
 
     @Test
-    void cutConnectionBefore100Continue() throws Exception {
-        CountDownLatch latch = new CountDownLatch(5);
-
-        TestThreadFactory threadFactory = new TestThreadFactory();
+    void cutConnectionBefore100Continue() {
         List<Exception> exceptions = Collections.synchronizedList(new ArrayList<>());
 
+        TestAsyncRunner asyncRunner = null;
         WebServer webServer = null;
         try {
+            final TestAsyncRunner async = asyncRunner = new TestAsyncRunner(CALL_NUM);
             webServer = WebServer.builder()
                     .port(0)
                     .routing(Routing.builder()
                             .post((req, res) -> req.content()
                                     .as(InputStream.class)
-                                    .thenAccept(is -> {
-                                        threadFactory.newThread(() -> {
-                                            try {
-                                                is.readAllBytes(); // this is where thread could get blocked indefinitely
-                                                res.send();
-                                            } catch (IOException e) {
-                                                exceptions.add(e);
-                                                latch.countDown();
-                                            }
-                                        }).start();
-                                    })
+                                    .thenAccept(is -> async.run(() -> {
+                                        try {
+                                            is.readAllBytes(); // this is where thread could get blocked indefinitely
+                                        } catch (IOException e) {
+                                            exceptions.add(e);
+                                        } finally {
+                                            res.send();
+                                        }
+                                    }))
                             )
                     )
                     .build()
                     .start()
                     .await(TIMEOUT);
 
-            for (int i = 0; i < 5; i++) {
+            WebClient webClient = WebClient.builder()
+                    .baseUri("http://localhost:" + webServer.port())
+                    .build();
+
+            for (int i = 0; i < CALL_NUM; i++) {
                 //Sending request with fake content length, but not continuing after 100 code
-                incomplete100Call(webServer);
+                incomplete100Call(webClient);
             }
 
-            // Wait for error from each thread
-            // latch result is ignored for better assertion message later
-            latch.await(TIMEOUT.getSeconds(), TimeUnit.SECONDS);
+            // Wait for all threads to finish
+            asyncRunner.await();
+
+            assertThat("All threads didn't finished in time, probably deadlocked.", asyncRunner.finishedThreads.get(), is(CALL_NUM));
+            assertThat("All exceptions didn't have been delivered, when connection closed.", exceptions.size(), is(CALL_NUM));
 
             exceptions.forEach(e -> {
-                assertThat(e.getCause(), Matchers.instanceOf(IllegalStateException.class));
-                assertThat(e.getCause().getMessage(), Matchers.is("Channel closed prematurely by other side!"));
+                assertThat(e.getCause(), instanceOf(IllegalStateException.class));
+                assertThat(e.getCause().getMessage(), is("Channel closed prematurely by other side!"));
             });
-            threadFactory.threads.forEach(t -> {
-                assertThat("Thread " + t.getName() + " is in invalid state.",
-                        t.getState(),
-                        Matchers.is(Thread.State.TERMINATED));
-            });
-            assertThat(exceptions.size(), Matchers.is(5));
         } finally {
-            if (webServer != null) {
-                webServer.shutdown();
-            }
+            Objects.requireNonNull(webServer).shutdown().await(TIMEOUT);
+            Objects.requireNonNull(asyncRunner).shutdown();
         }
     }
 
     /**
      * Force Netty to avoid auto close and wait for content with fake content-length
      */
-    private void incomplete100Call(WebServer webServer) throws Exception {
-        try (Socket socket = new Socket(InetAddress.getLocalHost(), webServer.port())) {
-            PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-            pw.println("POST / HTTP/1.1");
-            pw.println("Host: 127.0.0.1");
-            pw.println("Expect: 100-continue");
-            pw.println("content-length: 100");
-            pw.println("");
-            pw.flush();
+    private void incomplete100Call(WebClient webClient) {
+        WebClientResponse response = null;
+        try {
+            response = webClient
+                    .post()
+                    .headers(h -> {
+                        h.add("Expect", "100-continue");
+                        h.contentLength(100);
+                        return h;
+                    })
+                    .submit()
+                    .await(TIMEOUT);
+        } finally {
+            Objects.requireNonNull(response).close();
         }
     }
 
-    private static class TestThreadFactory implements ThreadFactory {
-        List<Thread> threads = new ArrayList<>();
+    private static class TestAsyncRunner {
+        final CountDownLatch latch;
+        AtomicInteger finishedThreads = new AtomicInteger();
+        ExecutorService exec = Executors.newCachedThreadPool();
 
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            threads.add(t);
-            return t;
+        public TestAsyncRunner(int calls) {
+            this.latch = new CountDownLatch(calls);
+        }
+
+        void run(Runnable r) {
+            exec.submit(() -> {
+                r.run();
+                finishedThreads.incrementAndGet();
+                latch.countDown();
+            });
+        }
+
+        void await() {
+            try {
+                if (!latch.await(TIMEOUT.getSeconds(), TimeUnit.SECONDS)) {
+                    LOGGER.severe("Latch timeout " + TIMEOUT);
+                }
+            } catch (InterruptedException e) {
+                LOGGER.log(Level.SEVERE, "Latch interrupted " + TIMEOUT, e);
+            }
+        }
+
+        void shutdown() {
+            exec.shutdown();
+            try {
+                if (!exec.awaitTermination(300, TimeUnit.MILLISECONDS)) {
+                    exec.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                exec.shutdownNow();
+            }
         }
     }
-
 }
 
