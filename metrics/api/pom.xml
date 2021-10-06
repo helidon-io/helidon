@@ -67,7 +67,6 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-metadata</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
