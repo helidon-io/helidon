@@ -127,7 +127,7 @@
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
-        <version.lib.persistence-api>2.3.0</version.lib.persistence-api>
+        <version.lib.persistence-api>2.2.3</version.lib.persistence-api>
         <version.lib.postgresql>42.2.18</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>1.7.30</version.lib.slf4j>
