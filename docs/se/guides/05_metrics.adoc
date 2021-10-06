@@ -113,7 +113,7 @@ import io.helidon.metrics.api.RegistryFactory;
 ----
 <1> Create a link:{javadoc-base-url-api}/MetricsSettings.html[`MetricsSettings]` instance (via its link:{javadoc-base-url-api}/MetricsSettings.Builder.html[`Builder`]) with metrics disabled.
 <2> Get a link:{javadoc-base-url-api}/MetricsSupport.html[`MetricsSupport]` service (usable in setting routing rules) that responds
-to the `/metrics endpoint` with `404` and an explanatory message.
+to the `/metrics` endpoint with `404` and an explanatory message.
 <3> Get a link:{javadoc-base-url-api}/RegistryFactory.html[`RegistryFactory]` instance that provides `MetricRegistry` instances which register
  no-op metric objects (counters, timers, etc.).
 

@@ -27,7 +27,7 @@ import io.helidon.common.serviceloader.HelidonServiceLoader;
  * provider for a no-op {@link MetricsSupport}, then uses the selected provider to create instances of {@code MetricsSupport}.
  * <p>
  *     The {@code MetricsSupport} static factory methods delegate to the package private static methods in this class so we can
- *     hide the provider getInstance we use.
+ *     hide the provider instance we use.
  * </p>
  */
 class MetricsSupportManager {

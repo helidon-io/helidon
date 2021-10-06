@@ -113,7 +113,7 @@ public interface RegistryFactory {
     }
 
     /**
-     * Returns a {@link MetricRegistry} getInstance of the requested type.
+     * Returns a {@link MetricRegistry} instance of the requested type.
      *
      * @param type {@link MetricRegistry.Type} of the registry to be returned
      * @return the {@code MetricRegistry} of the requested type

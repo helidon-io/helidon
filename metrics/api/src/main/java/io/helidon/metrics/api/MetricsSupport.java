@@ -19,12 +19,30 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 
 /**
- * Behavior of metrics support implementations.
+ * Behavior for supporting metrics for the Helidon Web Server.
+ *
+ * <p>
+ * By default, {@code MetricsSupport} creates the {@code /metrics} endpoint with three sub-paths: {@code application},
+ * {@code vendor}, and {@code base}.
+ * <p>
+ * To register these endpoints with the web server:
+ * <pre>{@code
+ * Routing.builder()
+ *        .register(MetricsSupport.create())
+ * }</pre>
+ * <p>
+ * This class supports finer-grained settings using {@link MetricsSettings} and Helidon Config via
+ * {@link #create(MetricsSettings)}.
+ * <p>
+ * During request handling the application metrics registry is then available as follows:
+ * <pre>{@code
+ *  req.context().get(MetricRegistry.class).ifPresent(reg -> reg.counter("myCounter").inc());
+ * }</pre>
  */
 public interface MetricsSupport extends Service {
 
     /**
-     * Creates a new {@code MetricsSupport} getInstance using default metrics settings.
+     * Creates a new {@code MetricsSupport} instance using default metrics settings.
      *
      * @return new metrics support using default metrics settings
      */
@@ -33,7 +51,7 @@ public interface MetricsSupport extends Service {
     }
 
     /**
-     * Creates a new {@code MetricsSupport} getInstance using the specified metrics settings.
+     * Creates a new {@code MetricsSupport} instance using the specified metrics settings.
      *
      * @param metricsSettings metrics settings to use in initializing the metrics support
      * @return new metrics support using specified metrics settings
@@ -58,18 +76,27 @@ public interface MetricsSupport extends Service {
 
     /**
      * Builder for {@code MetricsSupport}.
+     * <p>
+     *     Callers can influence how {@code MetricsSupport} behaves by assigning {@link io.helidon.metrics.api.MetricsSettings}.
+     * </p>
      *
      * @param <T> specific implementation type of {@code MetricsSupport}
      */
     interface Builder<T extends MetricsSupport> extends io.helidon.common.Builder<T> {
 
         /**
-         * Returns the new {@code MetricsSupport} getInstance according to the builder's settings.
+         * Returns the new {@code MetricsSupport} instance according to the builder's settings.
          *
          * @return the new metrics support
          */
         T build();
 
+        /**
+         * Assigns {@code MetricsSettings} which will be used in creating the {@code MetricsSupport} instance at build-time.
+         *
+         * @param metricsSettingsBuilder the metrics settings to assign for use in building the {@code MetricsSupport} instance
+         * @return updated builder
+         */
         Builder<T> metricsSettings(MetricsSettings.Builder metricsSettingsBuilder);
     }
 }

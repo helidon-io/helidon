@@ -47,7 +47,7 @@ A _metrics-dependent_ component is written to register and update metrics. It ha
 .Hard dependency from metrics-dependent component on the Helidon metrics implementation
 include::{common-guides}/metrics.adoc[tag=metrics-dependency]
 
-Such component cannot run without the metrics implementation on the runtime path, and the Maven dependency makes sure the Helidon metrics implementation is present at runtime.
+Such a component cannot run without the metrics implementation on the runtime path, and the Maven dependency makes sure the Helidon metrics implementation is present at runtime.
 A Docker image built from such an application, for example, contains the Helidon metrics implementation.
 
 == Metrics-capable Components
@@ -167,10 +167,10 @@ An application (or another component) which uses your `UtilComponent` would crea
 
 1. Load its config (typically from the Helidon `application` config source).
 2. Locate the config node within the app config for `UtilComponent` (perhaps using the key `util` for example).
-3. Pass the `util` config node to `UtilComponent.Builder`'s `config` method.
+3. Pass the `util` config node to `UtilComponent.Builder` `config` method.
 4. Use the builder to create a new `UtilComponent` instance.
 
-Alternatively, the app might support its own config setting for `observability` with settings `off`, `normal`, `max`. At levels `normal` or `max`, the app enables `UtilComponent` metrics for `normal` or `max` settings, and disables metrics for `off`.
+Alternatively, the app might support its own config setting for `observability` with settings `off`, `normal`, and `max`. At levels `normal` or `max`, the app enables `UtilComponent` metrics and disables metrics for `off`.
 [source,java]
 .App code translating app observability to metrics settings
 ----

@@ -51,7 +51,7 @@ public class TestNoOpRegistry {
     void checkDifferentInstances() {
         SimpleTimer simplerTimer = appRegistry.simpleTimer("testForUnsupportedOp");
         SimpleTimer otherSimpleTimer = appRegistry.simpleTimer("someOtherName");
-        assertThat("Same metric getInstance for different names", otherSimpleTimer, is(not(sameInstance(simplerTimer))));
+        assertThat("Same metric instance for different names", otherSimpleTimer, is(not(sameInstance(simplerTimer))));
     }
 
     @Test
