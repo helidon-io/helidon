@@ -209,6 +209,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          */
         private enum CharClass {
             IDENTIFIER_START,   // Any character for which the method Character.isJavaIdentifierStart returns true
+                                // or '_'
             IDENTIFIER_PART,    // Any character for which the method Character.isJavaIdentifierPart returns true
             LF,                 // Line feed / new line (\n), terminates line alone or in CR LF sequence
             CR,                 // Carriage return (\r), terminates line in CR LF sequence
@@ -234,8 +235,9 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                     case '-': return DASH;
                     case '/': return SLASH;
                     case ':': return COLON;
+                    case '_': return IDENTIFIER_START;
                     default:
-                        return Character.isJavaIdentifierStart(c) || c == '_'
+                        return Character.isJavaIdentifierStart(c)
                                 ? IDENTIFIER_START
                                 : (Character.isJavaIdentifierPart(c) ? IDENTIFIER_PART : OTHER);
                 }
@@ -291,8 +293,10 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                 },
                 // Transitions from COLON state
                 {
-                    PARAMETER,           // IDENTIFIER_START: first character of named parameter, switch to PARAMETER state
-                    STATEMENT,           // IDENTIFIER_PART: can't be first character of named parameter, go back to STATEMENT state
+                    PARAMETER,           // IDENTIFIER_START: first character of named parameter,
+                                         //                   switch to PARAMETER state
+                    STATEMENT,           // IDENTIFIER_PART: can't be first character of named parameter,
+                                         //                  go back to STATEMENT state
                     STATEMENT,           // LF: can't be first character of named parameter, go back to STATEMENT state
                     STATEMENT,           // CR: can't be first character of named parameter, go back to STATEMENT state
                     STRING,              // APOSTROPHE: not a named parameter but beginning of SQL string processing,
@@ -325,8 +329,10 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                 },
                 // Transitions from MULTILN_COMMENT_BG state
                 {
-                    STATEMENT,           // IDENTIFIER_START: not starting sequence of multi line comment, go back to STATEMENT state
-                    STATEMENT,           // IDENTIFIER_PART: not starting sequence of multi line comment, go back to STATEMENT state
+                    STATEMENT,           // IDENTIFIER_START: not starting sequence of multi line comment,
+                                         //                   go back to STATEMENT state
+                    STATEMENT,           // IDENTIFIER_PART: not starting sequence of multi line comment,
+                                         //                  go back to STATEMENT state
                     STATEMENT,           // LF: not starting sequence of multi line comment, go back to STATEMENT state
                     STATEMENT,           // CR: not starting sequence of multi line comment, go back to STATEMENT state
                     STRING,              // APOSTROPHE: not starting sequence of multi line comment but beginning of SQL
@@ -343,8 +349,10 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                 },
                 // Transitions from MULTILN_COMMENT_END state
                 {
-                    MULTILN_COMMENT,     // IDENTIFIER_START: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
-                    MULTILN_COMMENT,     // IDENTIFIER_PART: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
+                    MULTILN_COMMENT,     // IDENTIFIER_START: not ending sequence of multi line comment,
+                                         //                   go back to MULTILN_COMMENT state
+                    MULTILN_COMMENT,     // IDENTIFIER_PART: not ending sequence of multi line comment,
+                                         //                  go back to MULTILN_COMMENT state
                     MULTILN_COMMENT,     // LF: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
                     MULTILN_COMMENT,     // CR: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
                     MULTILN_COMMENT,     // APOSTROPHE: not ending sequence of multi line comment,
@@ -373,8 +381,10 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                 },
                 // Transitions from SINGLELN_COMMENT_BG state
                 {
-                    STATEMENT,           // IDENTIFIER_START: not starting sequence of single line comment, go back to STATEMENT state
-                    STATEMENT,           // IDENTIFIER_PART: not starting sequence of single line comment, go back to STATEMENT state
+                    STATEMENT,           // IDENTIFIER_START: not starting sequence of single line comment,
+                                         //                   go back to STATEMENT state
+                    STATEMENT,           // IDENTIFIER_PART: not starting sequence of single line comment,
+                                         //                  go back to STATEMENT state
                     STATEMENT,           // LF: not starting sequence of single line comment, go back to STATEMENT state
                     STATEMENT,           // CR: not starting sequence of single line comment, go back to STATEMENT state
                     STRING,              // APOSTROPHE: not starting sequence of single line comment but beginning of SQL
@@ -390,8 +400,10 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                 },
                 // Transitions from SINGLELN_COMMENT_END state
                 {
-                    SINGLELN_COMMENT,     // IDENTIFIER_START: not ending sequence of single line comment, go back to SINGLELN_COMMENT state
-                    SINGLELN_COMMENT,     // IDENTIFIER_PART: not ending sequence of single line comment, go back to SINGLELN_COMMENT state
+                    SINGLELN_COMMENT,     // IDENTIFIER_START: not ending sequence of single line comment,
+                                          //                   go back to SINGLELN_COMMENT state
+                    SINGLELN_COMMENT,     // IDENTIFIER_PART: not ending sequence of single line comment,
+                                          //                  go back to SINGLELN_COMMENT state
                     STATEMENT,            // LF: end of single line comment, switch to STATEMENT state
                     SINGLELN_COMMENT_END, // CR: not ending sequence of single line comment but possible ending sequence
                                           //     of next single line comment, retry end of single line comment processing
@@ -453,8 +465,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
            // Actions performed on transitions from COLON state
            {
                Parser::setFirstParamChar,   // IDENTIFIER_START: set first parameter character
-               Parser::addColonAndCopyChar, // IDENTIFIER_PART: not a parameter, add delayed colon and copy current statement character
-                                            //         to output
+               Parser::addColonAndCopyChar, // IDENTIFIER_PART: not a parameter, add delayed colon and copy current
+                                            //                  statement character to output
                Parser::addColonAndCopyChar, // LF: not a parameter, add delayed colon and copy current statement character
                                             //     to output
                Parser::addColonAndCopyChar, // CR: not a parameter, add delayed colon and copy current statement character
