@@ -104,6 +104,7 @@ Single.just("1")
 |never|Get a `Multi` instance that never completes.
 |concat|Concat streams to one.
 |onTerminate|Executes given `java.lang.Runnable` when any of signals onComplete, onCancel or onError is received.
+|ifEmpty|Executes given `java.lang.Runnable` when stream is finished without value(empty stream).
 |onComplete|Executes given `java.lang.Runnable` when onComplete signal is received.
 |onError|Executes the given java.util.function.Consumer when an onError signal is received.
 |onCancel|Executes given `java.lang.Runnable` when a cancel signal is received.
