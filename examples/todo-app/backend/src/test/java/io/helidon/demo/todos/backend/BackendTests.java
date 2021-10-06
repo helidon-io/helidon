@@ -40,14 +40,14 @@ import java.util.Properties;
 
 import static io.helidon.config.ConfigSources.classpath;
 
-public class BackendTests {
+class BackendTests {
 
     private static WebClient client;
     private static Server server;
     private final static String CASSANDRA_HOST = "127.0.0.1";
 
     @BeforeAll
-    public static void init() throws IOException {
+    static void init() throws IOException {
         Properties cassandraProperties = initCassandra();
 
         Config config = Config.builder()
@@ -70,7 +70,7 @@ public class BackendTests {
     }
 
     @AfterAll
-    public static void stopServer() {
+    static void stopServer() {
         EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
         server.stop();
     }
@@ -99,7 +99,7 @@ public class BackendTests {
     }
 
     @Test
-    public void testTODOScenario() {
+    void testTODOScenario() {
         final String encodingID = Base64.getEncoder().encodeToString("john:password".getBytes());
         JsonObject todo = Json.createObjectBuilder()
                 .add("title",  "todo title")
