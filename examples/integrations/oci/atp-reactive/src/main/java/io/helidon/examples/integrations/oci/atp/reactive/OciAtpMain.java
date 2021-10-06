@@ -30,21 +30,23 @@ import static io.helidon.config.ConfigSources.file;
  * This example sets up a web server to serve REST API to retrieve ATP wallet.
  */
 public final class OciAtpMain {
+    /**
+     * Cannot be instantiated.
+     */
     private OciAtpMain() {
     }
 
     /**
-     * Main method.
+     * Application main entry point.
      *
-     * @param args ignored
+     * @param args command line arguments.
      */
     public static void main(String[] args) {
+        // load logging configuration
         LogConfig.configureRuntime();
-        // as I cannot share my configuration of OCI, let's combine the configuration
-        // from my home directory with the one compiled into the jar
-        // when running this example, you can either update the application.yaml in resources directory
-        // or use the same approach
-        Config config = buildConfig();
+
+        // By default this will pick up application.yaml from the classpath
+        Config config = Config.create();
 
         Config ociConfig = config.get("oci");
 
@@ -56,7 +58,7 @@ public final class OciAtpMain {
         WebServer server = WebServer.builder()
                 .config(config.get("server"))
                 .routing(Routing.builder()
-                        .register("/atp", new AtpService(autonomousDbRx)))
+                                 .register("/atp", new AtpService(autonomousDbRx, config)))
                 .build();
 
         // Start the server and print some info.
@@ -67,15 +69,5 @@ public final class OciAtpMain {
 
         // Server threads are not daemon. NO need to block. Just react.
         server.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
-    }
-
-    private static Config buildConfig() {
-        return Config.builder()
-                .sources(
-                        // you can use this file to override the defaults that are built-in
-                        file(System.getProperty("user.home") + "/helidon/conf/examples.yaml").optional(),
-                        // in jar file (see src/main/resources/application.yaml)
-                        classpath("application.yaml"))
-                .build();
     }
 }

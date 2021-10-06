@@ -19,9 +19,18 @@
  */
 module io.helidon.examples.integrations.oci.atp.reactive {
     requires java.logging;
+    requires java.json;
+    requires java.sql;
+
     requires io.helidon.common.http;
+    requires io.helidon.common.reactive;
+    requires io.helidon.dbclient;
+    requires io.helidon.dbclient.jdbc;
     requires io.helidon.integrations.oci.atp;
     requires io.helidon.webserver;
+
+    requires com.oracle.database.jdbc;
+    requires com.oracle.database.ucp;
 
     exports io.helidon.examples.integrations.oci.atp.reactive;
 }
