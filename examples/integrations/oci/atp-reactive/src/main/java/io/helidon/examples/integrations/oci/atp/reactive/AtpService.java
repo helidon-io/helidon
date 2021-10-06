@@ -16,30 +16,35 @@
 
 package io.helidon.examples.integrations.oci.atp.reactive;
 
-import java.io.ByteArrayInputStream;
-import java.util.logging.Level;
+import java.sql.SQLException;
 import java.util.logging.Logger;
-import java.util.Optional;
-import java.util.OptionalLong;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.logging.Level;
 
-import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.Http;
-import io.helidon.integrations.oci.atp.OciAutonomousDbRx;
+import io.helidon.common.reactive.Single;
+import io.helidon.config.Config;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.jdbc.JdbcDbClientProvider;
+import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.atp.GenerateAutonomousDatabaseWallet;
+import io.helidon.integrations.oci.atp.OciAutonomousDbRx;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
+import oracle.jdbc.pool.OracleDataSource;
+import oracle.ucp.jdbc.PoolDataSource;
+import oracle.ucp.jdbc.PoolDataSourceFactory;
+
 class AtpService implements Service {
     private static final Logger LOGGER = Logger.getLogger(AtpService.class.getName());
 
     private final OciAutonomousDbRx autonomousDbRx;
+    private final Config config;
 
-    AtpService(OciAutonomousDbRx autonomousDbRx) {
+    AtpService(OciAutonomousDbRx autonomousDbRx, Config config) {
         this.autonomousDbRx = autonomousDbRx;
+        this.config = config;
     }
 
     @Override
@@ -52,36 +57,44 @@ class AtpService implements Service {
      */
     private void generateWallet(ServerRequest req, ServerResponse res) {
         autonomousDbRx.generateWallet(GenerateAutonomousDatabaseWallet.Request.builder())
-                .forSingle(apiResponse -> {
-                    Optional<GenerateAutonomousDatabaseWallet.Response> entity = apiResponse.entity();
-                    if (entity.isEmpty()) {
-                        res.status(Http.Status.NOT_FOUND_404).send();
-                    } else {
-                        GenerateAutonomousDatabaseWallet.Response response = entity.get();
-                        try {
-                            LOGGER.log(Level.INFO, "Wallet Content Length: " + response.walletArchive().getContent().length);
-                            ZipInputStream zipStream = new ZipInputStream(new ByteArrayInputStream(response.walletArchive().getContent()));
-                            ZipEntry entry = null;
-                            while ((entry = zipStream.getNextEntry()) != null) {
-                                String entryName = entry.getName();
-                                LOGGER.log(Level.INFO, "Wallet FileEntry:" + entryName);
-                                //FileOutputStream out = new FileOutputStream(entryName);
-                                //byte[] byteBuff = new byte[4096];
-                                //int bytesRead = 0;
-                                //while ((bytesRead = zipStream.read(byteBuff)) != -1) {
-                                //    out.write(byteBuff, 0, bytesRead);
-                                //}
-                                //out.close();
-                                zipStream.closeEntry();
-                            }
-                            zipStream.close();
-                        } catch (Exception e) {
-                            LOGGER.log(Level.WARNING, "Exception while processing wallet content", e);
-                            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
-                        }
-                        res.status(Http.Status.OK_200).send();
+                .map(ApiOptionalResponse::entity)
+                .flatMap(e -> e.map(Single::just).orElseGet(() -> {
+                    res.status(404).send();
+                    return Single.empty();
+                }))
+                .map(GenerateAutonomousDatabaseWallet.Response::walletArchive)
+                .flatMap(archive -> createDbClient(archive))
+                .flatMap(dbClient -> dbClient.execute(exec -> exec.query("SELECT 'Hello world!!' FROM DUAL")))
+                .first()
+                .map(dbRow -> dbRow.column(1).as(String.class))
+                .onError(res::send)
+                .forSingle(res::send);
+    }
+
+    Single<DbClient> createDbClient(GenerateAutonomousDatabaseWallet.WalletArchive walletArchive) {
+        PoolDataSource pds = PoolDataSourceFactory.getPoolDataSource();
+        try {
+            pds.setSSLContext(walletArchive.getSSLContext());
+            pds.setURL(walletArchive.getJdbcUrl(config.get("db.serviceName")
+                    .as(String.class)
+                    .orElseThrow(() -> new IllegalStateException("Missing serviceName!!"))));
+            pds.setUser(config.get("db.userName").as(String.class).orElse("ADMIN"));
+            pds.setPassword(config.get("db.password")
+                    .as(String.class)
+                    .orElseThrow(() -> new IllegalStateException("Missing password!!")));
+            pds.setConnectionFactoryClassName(OracleDataSource.class.getName());
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error setting up PoolDataSource", e);
+            return Single.error(e);
+        }
+        return Single.just(new JdbcDbClientProvider().builder()
+                .connectionPool(() -> {
+                    try {
+                        return pds.getConnection();
+                    } catch (SQLException e) {
+                        throw new IllegalStateException("Error while setting up new connection", e);
                     }
                 })
-                .exceptionally(res::send);
+                .build());
     }
 }

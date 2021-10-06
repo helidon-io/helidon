@@ -27,9 +27,13 @@ import io.helidon.common.crypto.SymmetricCipher;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.encryption.ConfigProperties;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.security.SecretsProviderConfig;
 import io.helidon.security.spi.EncryptionProvider;
 import io.helidon.security.spi.ProviderConfig;
 import io.helidon.security.spi.SecretsProvider;
+import io.helidon.security.spi.SecurityProvider;
 
 /**
  * Security provider to retrieve secrets directly from configuration and to encrypt/decrypt data
@@ -153,7 +157,9 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
     /**
      * Configuration of a secret.
      */
-    public static class SecretConfig implements ProviderConfig {
+    @Configured(description = "Provider of secrets defined in configuration itself",
+                provides = SecretsProviderConfig.class)
+    public static class SecretConfig implements SecretsProviderConfig {
         private final Supplier<Single<Optional<String>>> value;
 
         private SecretConfig(Supplier<Single<Optional<String>>> value) {
@@ -201,6 +207,8 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
          * @param value the secret value
          * @return a new secret configuration
          */
+        @ConfiguredOption(key = "value", description = "Value of the secret, can be a reference to another configuration key"
+                + ", such as ${app.secret}")
         public static SecretConfig create(String value) {
             return new SecretConfig(() -> Single.just(Optional.of(value)));
         }
@@ -213,6 +221,9 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
     /**
      * Fluent API builder for {@link ConfigVaultProvider}.
      */
+    @Configured(prefix = "config-vault",
+                description = "Secrets and Encryption provider using just configuration",
+                provides = {SecurityProvider.class, SecretsProvider.class, EncryptionProvider.class})
     public static class Builder implements io.helidon.common.Builder<ConfigVaultProvider> {
         private Config config = Config.empty();
         private Optional<char[]> masterPassword = Optional.empty();
@@ -260,6 +271,7 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
          * @param masterPassword password to use
          * @return updated builder
          */
+        @ConfiguredOption(required = true, type = String.class)
         public Builder masterPassword(char[] masterPassword) {
             this.masterPassword = Optional.of(masterPassword);
             return this;

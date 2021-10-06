@@ -333,6 +333,9 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
      * @return true if demand is higher than 0
      */
     public boolean hasRequests() {
+        if (isCompleted() || isCancelled()) {
+            return false;
+        }
         return requested.get() > emitted;
     }
 

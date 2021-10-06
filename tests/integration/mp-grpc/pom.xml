@@ -116,7 +116,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>-Dgrpc.marshaller.java.enabled=true</argLine>
+                    <argLine>
+                        -Dgrpc.marshaller.java.enabled=true
+                        --add-opens=java.base/java.lang=ALL-UNNAMED
+                    </argLine>
                 </configuration>
             </plugin>
 

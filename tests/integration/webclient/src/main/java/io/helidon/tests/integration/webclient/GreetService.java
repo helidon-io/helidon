@@ -16,19 +16,22 @@
 
 package io.helidon.tests.integration.webclient;
 
-import java.security.Principal;
-import java.util.Collections;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonException;
 import javax.json.JsonObject;
+import java.security.Principal;
+import java.util.Collections;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.security.SecurityContext;
 import io.helidon.webclient.WebClient;
@@ -89,7 +92,8 @@ public class GreetService implements Service {
                 .get("/valuesPropagated", this::valuesPropagated)
                 .get("/obtainedQuery", this::obtainedQuery)
                 .get("/pattern with space", this::getDefaultMessageHandler)
-                .put("/greeting", this::updateGreetingHandler);
+                .put("/greeting", this::updateGreetingHandler)
+                .get("/connectionClose", this::connectionClose);
     }
 
     private void contentLength(ServerRequest serverRequest, ServerResponse serverResponse) {
@@ -199,6 +203,28 @@ public class GreetService implements Service {
         request.content().as(JsonObject.class)
                 .thenAccept(jo -> updateGreetingFromJson(jo, response))
                 .exceptionally(ex -> processErrors(ex, request, response));
+    }
+
+    private void connectionClose(ServerRequest request, ServerResponse response) {
+        response.send(Multi
+                .interval(100, 500, TimeUnit.MILLISECONDS,
+                        Executors.newSingleThreadScheduledExecutor())
+                .map(i -> "item" + i)
+                .limit(15)
+                .peek(s -> {
+                    if ("item2".equals(s)) {
+                        try {
+                            Main.webServer.shutdown().get(10, TimeUnit.SECONDS);
+                        } catch (Throwable t) {
+                            LOGGER.log(Level.SEVERE, "Webserver failed to shut down!", t);
+                        }
+                    }
+                })
+                .map(String::getBytes)
+                .map(DataChunk::create)
+                // force flush after each chunk
+                .flatMap(bb -> Multi.just(bb, DataChunk.create(true)))
+        );
     }
 
     private void sendResponse(ServerResponse response, String name) {

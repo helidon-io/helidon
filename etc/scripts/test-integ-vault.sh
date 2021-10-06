@@ -30,6 +30,7 @@ mvn ${MAVEN_ARGS} --version
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     install -e \
     -DskipTests \
+    -Dmaven.test.skip=true \
     -Ppipeline
 
 # Run integrations tests for Vault

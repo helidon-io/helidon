@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.micronaut.cdi;
+/**
+ * Annotation processor generating JSON metadata for configuration.
+ */
+module io.helidon.config.metadata.processor {
+    requires java.compiler;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+    exports io.helidon.config.metadata.processor;
 
-import io.micronaut.aop.Around;
-import io.micronaut.context.annotation.Type;
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.TYPE})
-@Around
-@Type(µInterceptor.class)
-@Inherited
-public @interface µIntercepted {
+    provides javax.annotation.processing.Processor with io.helidon.config.metadata.processor.ConfigMetadataProcessor;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -233,23 +233,27 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
     }
 
     @Override
-    public void putAll(Parameters parameters) {
+    public WebClientRequestHeaders putAll(Parameters parameters) {
         headers.putAll(parameters.toMap());
+        return this;
     }
 
     @Override
-    public void add(String key, String... values) {
+    public WebClientRequestHeaders add(String key, String... values) {
         headers.computeIfAbsent(key, k -> new ArrayList<>()).addAll(Arrays.asList(values));
+        return this;
     }
 
     @Override
-    public void add(String key, Iterable<String> values) {
+    public WebClientRequestHeaders add(String key, Iterable<String> values) {
         headers.computeIfAbsent(key, k -> new ArrayList<>()).addAll(iterableToList(values));
+        return this;
     }
 
     @Override
-    public void addAll(Parameters parameters) {
+    public WebClientRequestHeaders addAll(Parameters parameters) {
         parameters.toMap().forEach(this::add);
+        return this;
     }
 
     @Override

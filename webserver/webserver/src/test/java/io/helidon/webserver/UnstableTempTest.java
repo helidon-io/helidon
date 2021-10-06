@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,7 +98,10 @@ public class UnstableTempTest {
             return Single.just(DataChunk.create(ByteBuffer.wrap(fileContent.getBytes())));
         });
         Mockito.when(response.headers()).thenReturn(responseHeaders);
-        Mockito.when(response.send(Mockito.any(Function.class))).then(mock -> {
+        @SuppressWarnings("unchecked")
+        Function<MessageBodyWriterContext, Flow.Publisher<DataChunk>> anyFunction =
+            (Function<MessageBodyWriterContext, Flow.Publisher<DataChunk>>) Mockito.any(Function.class);
+        Mockito.when(response.send(anyFunction)).then(mock -> {
             Function<MessageBodyWriterContext, Flow.Publisher<DataChunk>> argument = mock.getArgument(0);
             return Single.create(argument.apply(ctx)).onError(throwable -> throwable.printStackTrace());
         });

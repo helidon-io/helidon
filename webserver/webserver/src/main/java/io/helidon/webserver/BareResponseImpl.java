@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
@@ -73,6 +74,7 @@ class BareResponseImpl implements BareResponse {
     private final RequestContext requestContext;
     private final BooleanSupplier requestContentConsumed;
     private final BooleanSupplier contentRequested;
+    private final BooleanSupplier contentRequestCancelled;
     private final long requestId;
     private final String http2StreamId;
     private final HttpHeaders requestHeaders;
@@ -105,12 +107,14 @@ class BareResponseImpl implements BareResponse {
                      RequestContext requestContext,
                      BooleanSupplier requestContentConsumed,
                      BooleanSupplier contentRequested,
+                     BooleanSupplier contentRequestCancelled,
                      CompletableFuture<?> prevRequestChunk,
                      CompletableFuture<ChannelFutureListener> requestEntityAnalyzed,
                      long requestId) {
         this.requestContext = requestContext;
         this.requestContentConsumed = requestContentConsumed;
         this.contentRequested = contentRequested;
+        this.contentRequestCancelled = contentRequestCancelled;
         this.requestEntityAnalyzed = requestEntityAnalyzed;
         this.responseFuture = new CompletableFuture<>();
         this.headersFuture = new CompletableFuture<>();
@@ -195,7 +199,7 @@ class BareResponseImpl implements BareResponse {
         if (keepAlive) {
             if (!requestContentConsumed.getAsBoolean()) {
                 LOGGER.finer(() -> log("Request content not fully read with keep-alive: true", ctx));
-                if (!contentRequested.getAsBoolean()) {
+                if (!contentRequested.getAsBoolean() || contentRequestCancelled.getAsBoolean()) {
                     requestEntityAnalyzed = requestEntityAnalyzed.thenApply(listener -> {
                         if (listener.equals(ChannelFutureListener.CLOSE)) {
                             response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
@@ -296,9 +300,12 @@ class BareResponseImpl implements BareResponse {
         requestEntityAnalyzed = requestEntityAnalyzed.thenApply(listener -> {
             requestContext.runInScope(() -> {
                 if (ChannelFutureListener.CLOSE.equals(listener)) {
-                    LOGGER.finest(() -> log("Closing with an empty buffer; keep-alive: false", ctx));
+                    if (LOGGER.isLoggable(Level.FINEST)) {
+                        LOGGER.finest(log("Closing with an empty buffer; keep-alive: false", ctx));
+                    }
                 } else {
                     LOGGER.finest(() -> log("Writing an empty last http content; keep-alive: true"));
+                    ctx.channel().read();
                 }
                 writeLastContent(throwable, listener);
             });
@@ -554,9 +561,9 @@ class BareResponseImpl implements BareResponse {
     private String log(String template, Object... params) {
         List<Object> list = new ArrayList<>(params.length + 3);
         list.add(System.identityHashCode(this));
-        list.add(ctx != null ? System.identityHashCode(ctx.channel()) : "N/A");
+        list.add(ctx != null ? ctx.channel().id() : "N/A");
         list.add(http2StreamId != null ? http2StreamId : "N/A");
         list.addAll(Arrays.asList(params));
-        return String.format("[Response: %s, Channel: %s, StreamID: %s] " + template, list.toArray());
+        return String.format("[Response: %s, Channel: 0x%s, StreamID: %s] " + template, list.toArray());
     }
 }

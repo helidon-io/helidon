@@ -97,33 +97,37 @@ class WebClientQueryParams implements Parameters {
     }
 
     @Override
-    public void putAll(Parameters parameters) {
+    public WebClientQueryParams putAll(Parameters parameters) {
         if (parameters == null) {
-            return;
+            return this;
         }
         rawParams.putAll(parameters);
         parameters.toMap().forEach((key, value) -> encodedParams.put(encode(key), encodeIterable(value)));
+        return this;
     }
 
     @Override
-    public void add(String key, String... values) {
+    public WebClientQueryParams add(String key, String... values) {
         rawParams.add(key, values);
         encodedParams.add(encode(key), encodeIterable(Arrays.asList(values)));
+        return this;
     }
 
     @Override
-    public void add(String key, Iterable<String> values) {
+    public WebClientQueryParams add(String key, Iterable<String> values) {
         rawParams.add(key, values);
         encodedParams.add(encode(key), encodeIterable(values));
+        return this;
     }
 
     @Override
-    public void addAll(Parameters parameters) {
+    public WebClientQueryParams addAll(Parameters parameters) {
         if (parameters == null) {
-            return;
+            return this;
         }
         rawParams.addAll(parameters);
         parameters.toMap().forEach((key, value) -> encodedParams.add(key, encodeIterable(value)));
+        return this;
     }
 
     private Iterable<String> encodeIterable(Iterable<String> iterable) {

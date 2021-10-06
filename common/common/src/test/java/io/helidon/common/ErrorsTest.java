@@ -81,7 +81,7 @@ class ErrorsTest {
 
         Errors.ErrorMessagesException thrown = assertThrows(Errors.ErrorMessagesException.class,
                                                             errors::checkValid);
-        assertThat(thrown.getMessages(), sameInstance(errors));
+        assertThat(thrown.getMessages(), is(errors));
     }
 
     @Test
@@ -147,7 +147,7 @@ class ErrorsTest {
 
         Errors.ErrorMessagesException thrown = assertThrows(Errors.ErrorMessagesException.class,
                                                             errors::checkValid);
-        assertThat(thrown.getMessages(), sameInstance(errors));
+        assertThat(thrown.getMessages(), is(errors));
 
         assertThat(errors.log(LOGGER), is(false));
         assertThat(errors.size(), is(1));

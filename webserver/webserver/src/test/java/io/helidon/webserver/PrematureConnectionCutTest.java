@@ -36,7 +36,11 @@ import java.util.logging.Logger;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.anyOf;
 import org.junit.jupiter.api.Test;
+import org.mockito.AdditionalMatchers;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -92,8 +96,13 @@ public class PrematureConnectionCutTest {
             assertThat("All exceptions didn't have been delivered, when connection closed.", exceptions.size(), is(CALL_NUM));
 
             exceptions.forEach(e -> {
-                assertThat(e.getCause(), instanceOf(IllegalStateException.class));
-                assertThat(e.getCause().getMessage(), is("Channel closed prematurely by other side!"));
+                assertThat(e.getCause(), anyOf(
+                        // One of the following exceptions is expected:
+                        // IOE: Connection reset by peer - on MacOS
+                        // ISE: Channel closed prematurely by other side! - on Linux
+                        instanceOf(IllegalStateException.class),
+                        instanceOf(IOException.class))
+                );
             });
         } finally {
             Objects.requireNonNull(webServer).shutdown().await(TIMEOUT);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webserver;
 
 import java.nio.charset.Charset;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -34,15 +35,16 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests support for compression in the webserver.
+ * Tests that verify 413 conditions with very large payloads.
  */
 public class MaxPayloadSizeTest {
     private static final Logger LOGGER = Logger.getLogger(MaxPayloadSizeTest.class.getName());
 
     private static final long MAX_PAYLOAD_SIZE = 128L;
-    private static String PAYLOAD = new String(new char[1024]).replace('\0', 'A');
+    private static final String PAYLOAD = new String(new char[1024]).replace('\0', 'A');
 
     private static WebServer webServer;
     private static WebClient webClient;
@@ -141,16 +143,21 @@ public class MaxPayloadSizeTest {
 
     /**
      * If actual payload length is greater than max when using chunked encoding, a 413
-     * must be returned.
+     * must be returned. Given that this publisher can write up to 3 chunks (using chunked
+     * encoding), we also check for a connection reset exception condition.
      */
     @Test
     public void testActualLengthExceededWithPayload() {
-        WebClientRequestBuilder builder = webClient.post();
-        WebClientResponse response = builder.path("/maxpayload")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .submit(new PayloadPublisher(PAYLOAD, 3))
-                .await(5, TimeUnit.SECONDS);
-        assertThat(response.status().code(), is(Http.Status.REQUEST_ENTITY_TOO_LARGE_413.code()));
+        try {
+            WebClientRequestBuilder builder = webClient.post();
+            WebClientResponse response = builder.path("/maxpayload")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .submit(new PayloadPublisher(PAYLOAD, 3))
+                    .await(5, TimeUnit.SECONDS);
+            assertThat(response.status().code(), is(Http.Status.REQUEST_ENTITY_TOO_LARGE_413.code()));
+        } catch (CompletionException e) {
+            assertTrue(isConnectionReset(e));
+        }
     }
 
     /**
@@ -221,5 +228,17 @@ public class MaxPayloadSizeTest {
                 }
             });
         }
+    }
+
+    /**
+     * On a 413 result, the server shall attempt to close the connection (Netty channel).
+     * In some scenarios (slow systems?), the client may receive a connection reset
+     * while attempting to write more data.
+     *
+     * @param e a completion exception
+     * @return boolean indicating if this is a connection reset scenario
+     */
+    private static boolean isConnectionReset(CompletionException e) {
+        return e.getCause() instanceof IllegalStateException && e.getMessage().contains("Connection reset");
     }
 }

@@ -16,7 +16,8 @@
 
 package io.helidon.integrations.oci.vault.health;
 
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -46,18 +47,18 @@ import static io.helidon.common.http.Http.Status.OK_200;
 public final class OciVaultHealthCheck implements HealthCheck {
     private static final Logger LOGGER = Logger.getLogger(OciVaultHealthCheck.class.getName());
 
-    private final String vaultId;
+    private final List<String> vaultIds;
     private final OciVault ociVault;
 
     @Inject
-    OciVaultHealthCheck(@ConfigProperty(name = "oci.vault.vault-ocid") String vaultId,
+    OciVaultHealthCheck(@ConfigProperty(name = "oci.vault.healthchecks") List<String> vaultIds,
                         OciVault ociVault) {
-        this.vaultId = vaultId;
+        this.vaultIds = vaultIds;
         this.ociVault = ociVault;
     }
 
     private OciVaultHealthCheck(Builder builder) {
-        this.vaultId = builder.vaultId;
+        this.vaultIds = builder.vaultIds;
         this.ociVault = builder.vault;
     }
 
@@ -89,21 +90,25 @@ public final class OciVaultHealthCheck implements HealthCheck {
     @Override
     public HealthCheckResponse call() {
         HealthCheckResponseBuilder builder = HealthCheckResponse.named("vault");
-        builder.withData("vaultId", vaultId);
-        try {
-            ApiOptionalResponse<GetVault.Response> r =  ociVault.getVault(GetVault.Request.builder().vaultId(vaultId));
-            builder.state(r.status().equals(OK_200));
-            r.entity().ifPresent(e -> {
-                builder.withData("compartmentId", e.compartmentId());
-                builder.withData("displayName", e.displayName());
-            });
-            LOGGER.fine(() -> "OCI vault health check " + vaultId + " returned status code " + r.status().code());
-        } catch (Throwable t) {
-            builder.down()
-                    .withData("Error", t.getClass().getName())
-                    .withData("Message", t.getMessage());
-            LOGGER.fine(() -> "OCI vault health check " + vaultId + " exception " + t.getMessage());
+
+        boolean status = true;
+        for (String vaultId : vaultIds) {
+            try {
+                ApiOptionalResponse<GetVault.Response> r =  ociVault.getVault(GetVault.Request.builder().vaultId(vaultId));
+                LOGGER.fine(() -> "OCI vault health check " + vaultId + " returned status code " + r.status().code());
+                r.entity().ifPresentOrElse(e -> {
+                    String id = e.displayName() != null && !e.displayName().isEmpty() ? e.displayName() : vaultId;
+                    builder.withData(id, r.status().code());
+                }, () -> builder.withData(vaultId, r.status().code()));
+                status = status && r.status().equals(OK_200);
+            } catch (Throwable t) {
+                LOGGER.fine(() -> "OCI vault health check " + vaultId + " exception " + t.getMessage());
+                status = false;
+                builder.withData(vaultId, t.getMessage());
+            }
         }
+
+        builder.state(status);
         return builder.build();
     }
 
@@ -112,16 +117,15 @@ public final class OciVaultHealthCheck implements HealthCheck {
      */
     public static final class Builder implements io.helidon.common.Builder<OciVaultHealthCheck> {
 
-        private String vaultId;
         private OciVaultRx vaultRx;
         private OciVault vault;
+        private final List<String> vaultIds = new ArrayList<>();
 
         private Builder() {
         }
 
         @Override
         public OciVaultHealthCheck build() {
-            Objects.requireNonNull(vaultId);
             if (vaultRx == null) {
                 vaultRx = OciVaultRx.create();
             }
@@ -136,7 +140,7 @@ public final class OciVaultHealthCheck implements HealthCheck {
          * @return the builder.
          */
         public Builder config(Config config) {
-            config.get("oci.vault.vault-ocid").asString().ifPresent(this::vaultId);
+            config.get("oci.vault.healthchecks").asList(String.class).ifPresent(this.vaultIds::addAll);
             return this;
         }
 
@@ -146,8 +150,8 @@ public final class OciVaultHealthCheck implements HealthCheck {
          * @param vaultId vault ID.
          * @return the builder.
          */
-        public Builder vaultId(String vaultId) {
-            this.vaultId = vaultId;
+        public Builder addVaultId(String vaultId) {
+            this.vaultIds.add(vaultId);
             return this;
         }
 

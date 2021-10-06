@@ -40,7 +40,8 @@ public final class SignedJwt {
     private static final Pattern JWT_PATTERN = Pattern
             .compile("([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9_\\-/=+]*)");
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
-    private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder();
+    private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
+
     private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     private final String tokenContent;

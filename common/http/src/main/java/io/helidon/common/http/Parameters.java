@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,10 +172,11 @@ public interface Parameters {
      * (optional operation).
      *
      * @param parameters to copy.
+     * @return this instance of {@link Parameters}
      * @throws NullPointerException          if the specified {@code parameters} are null.
      * @throws UnsupportedOperationException if put operation is not supported (unmodifiable Parameters).
      */
-    void putAll(Parameters parameters);
+    Parameters putAll(Parameters parameters);
 
     /**
      * Adds specified values tu association with the specified key (optional operation).
@@ -183,10 +184,11 @@ public interface Parameters {
      *
      * @param key    key with which the specified value is to be associated
      * @param values value to be add to association with the specified key
+     * @return this instance of {@link Parameters}
      * @throws NullPointerException          if the specified key is null.
      * @throws UnsupportedOperationException if put operation is not supported (unmodifiable Parameters).
      */
-    void add(String key, String... values);
+    Parameters add(String key, String... values);
 
     /**
      * Adds specified values tu association with the specified key (optional operation).
@@ -194,20 +196,22 @@ public interface Parameters {
      *
      * @param key    key with which the specified value is to be associated
      * @param values value to be add to association with the specified key. If {@code null} then noting will be add.
+     * @return this instance of {@link Parameters}
      * @throws NullPointerException          if the specified key is null.
      * @throws UnsupportedOperationException if put operation is not supported (unmodifiable Parameters).
      */
-    void add(String key, Iterable<String> values);
+    Parameters add(String key, Iterable<String> values);
 
     /**
      * Copies all of the mappings from the specified {@code parameters} to this instance adding values to existing associations
      * (optional operation).
      *
      * @param parameters to copy.
+     * @return this instance of {@link Parameters}
      * @throws NullPointerException          if the specified {@code parameters} are null.
      * @throws UnsupportedOperationException if put operation is not supported (unmodifiable Parameters).
      */
-    void addAll(Parameters parameters);
+    Parameters addAll(Parameters parameters);
 
     /**
      * Removes the mapping for a key if it is present (optional operation).

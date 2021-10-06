@@ -28,7 +28,8 @@ module io.helidon.security.providers.oidc.common {
     requires io.helidon.webclient.security;
     requires io.helidon.webclient.tracing;
     requires io.helidon.media.jsonp;
-
+    requires static io.helidon.config.metadata;
+    
     requires jersey.client;
     requires java.ws.rs;
 

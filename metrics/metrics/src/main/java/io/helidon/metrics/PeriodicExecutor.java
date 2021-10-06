@@ -18,6 +18,7 @@ package io.helidon.metrics;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +45,8 @@ class PeriodicExecutor {
     }
 
     private static final Logger LOGGER = Logger.getLogger(PeriodicExecutor.class.getName());
+
+    private static final String STOP_LOG_MESSAGE = "Received stop request in state {0}";
 
     enum State {
         DORMANT, // never started
@@ -125,15 +128,21 @@ class PeriodicExecutor {
     }
 
     synchronized void stopExecutor() {
-        if (state == State.STARTED) {
-            LOGGER.log(Level.FINE, "Shutting down");
-            currentTimeUpdaterExecutorService.shutdownNow();
-        } else {
-            LOGGER.log(Level.WARNING, String.format(
-                    "Attempt to stop; the expected state is %s but found %s; ignored",
-                    State.DORMANT,
-                    state),
-                    new IllegalStateException());
+        LOGGER.log(Level.FINE, STOP_LOG_MESSAGE, state);
+        switch (state) {
+            case STARTED:
+                currentTimeUpdaterExecutorService.shutdownNow();
+                break;
+
+            case DORMANT:
+                break;
+
+            default:
+                LOGGER.log(Level.WARNING, String.format(
+                        "Unexpected attempt to stop; the expected states are %s but found %s; ignored",
+                        Set.of(State.DORMANT, State.STARTED),
+                        state),
+                        new IllegalStateException());
         }
         state = State.STOPPED;
     }

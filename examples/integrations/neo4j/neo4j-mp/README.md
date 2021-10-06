@@ -16,7 +16,7 @@ Goto the Neo4j browser and play the first step of the movies graph: [`:play movi
 Then build with JDK11+
 ```bash
 mvn package
-java -jar target/helidon-integrations-neo4j-mp.jar
+java -jar target/helidon-examples-integration-neo4j-mp.jar
 ```
 
 ## Exercise the application

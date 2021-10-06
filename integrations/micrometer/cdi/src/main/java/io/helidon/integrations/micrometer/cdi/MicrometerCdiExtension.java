@@ -176,8 +176,8 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSu
         LOGGER.log(Level.FINE, () -> "Before bean discovery " + discovery);
 
         // Register types manually
-        discovery.addAnnotatedType(MeterRegistryProducer.class, "MeterRegistryProducer");
-        discovery.addAnnotatedType(MeterProducer.class, "MeterProducer");
+        discovery.addAnnotatedType(MeterRegistryProducer.class, MeterRegistryProducer.class.getName());
+        discovery.addAnnotatedType(MeterProducer.class, MeterProducer.class.getName());
 
         prepareInterceptor(discovery, Counted.class, InterceptorCounted.class, CountedLiteral.INSTANCE);
         prepareInterceptor(discovery, Timed.class, InterceptorTimed.class, TimedLiteral.INSTANCE);
@@ -252,7 +252,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSu
                 .add(InterceptorBindingLiteral.INSTANCE)
                 .methods()
                 .forEach(m -> m.add(Nonbinding.Literal.INSTANCE));
-        bbd.addAnnotatedType(interceptorClass, interceptorClass.getSimpleName())
+        bbd.addAnnotatedType(interceptorClass, interceptorClass.getName())
                 .add(literal);
     }
 
