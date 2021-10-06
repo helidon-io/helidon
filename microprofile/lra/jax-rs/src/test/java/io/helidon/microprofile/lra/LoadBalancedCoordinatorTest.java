@@ -479,11 +479,11 @@ public class LoadBalancedCoordinatorTest {
         assertThat(await(Recovery.CS_START_COMPENSATE_LRA), is(lraId));
         assertThat(await(Recovery.CS_COMPENSATE_FIRST), is(lraId));
         LocalDateTime first = LocalDateTime.now();
-        LOGGER.info("First compensate attempt after " + Duration.between(start, first));
+        LOGGER.fine("First compensate attempt after " + Duration.between(start, first));
         waitForRecovery(lraId);
         assertThat(await(Recovery.CS_COMPENSATE_SECOND), is(lraId));
         LocalDateTime second = LocalDateTime.now();
-        LOGGER.info("Second compensate attempt after " + Duration.between(first, second));
+        LOGGER.fine("Second compensate attempt after " + Duration.between(first, second));
         assertLoadBalancerCalledProperly();
     }
 
@@ -501,11 +501,11 @@ public class LoadBalancedCoordinatorTest {
         assertThat(await(Recovery.CS_START_COMPLETE_LRA), is(lraId));
         assertThat(await(Recovery.CS_COMPLETE_FIRST), is(lraId));
         LocalDateTime first = LocalDateTime.now();
-        LOGGER.info("First complete attempt after " + Duration.between(start, first));
+        LOGGER.fine("First complete attempt after " + Duration.between(start, first));
         waitForRecovery(lraId);
         assertThat(await(Recovery.CS_COMPLETE_SECOND), is(lraId));
         LocalDateTime second = LocalDateTime.now();
-        LOGGER.info("Second complete attempt after " + Duration.between(first, second));
+        LOGGER.fine("Second complete attempt after " + Duration.between(first, second));
         assertLoadBalancerCalledProperly();
     }
 
@@ -586,11 +586,11 @@ public class LoadBalancedCoordinatorTest {
                     .await(TIMEOUT_SEC, TimeUnit.SECONDS);
             response.close();
             if (!recoveringLras.contains(lraId.toASCIIString())) {
-                LOGGER.info("LRA is no longer among those recovering " + lraId.toASCIIString());
+                LOGGER.fine("LRA is no longer among those recovering " + lraId.toASCIIString());
                 // intended LRA is not longer among those recovering
                 break;
             }
-            LOGGER.info("Waiting for recovery attempt #" + i + " LRA is still waiting: " + recoveringLras);
+            LOGGER.fine("Waiting for recovery attempt #" + i + " LRA is still waiting: " + recoveringLras);
         }
     }
 

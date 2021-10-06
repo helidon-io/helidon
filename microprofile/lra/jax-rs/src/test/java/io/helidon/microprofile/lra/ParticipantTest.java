@@ -82,7 +82,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @AddBean(ParticipantTest.TestResource.class)
 // Override context
 @AddConfig(key = NonJaxRsResource.CONFIG_CONTEXT_PATH_KEY, value = ParticipantTest.CUSTOM_CONTEXT)
-public class ParticipantTest {
+class ParticipantTest {
 
     private static final long TIMEOUT_SEC = 10L;
     static final String CUSTOM_CONTEXT = "custom-lra-context";
@@ -101,7 +101,7 @@ public class ParticipantTest {
     @Produces
     @ApplicationScoped
     @RoutingPath("/lra-coordinator")
-    public Service mockCoordinator() {
+    Service mockCoordinator() {
         return rules -> rules
                 .post("/start", (req, res) -> {
                     String lraId = URI.create("http://localhost:" + port + "/lra-coordinator/xxx-xxx-001").toASCIIString();
@@ -178,8 +178,7 @@ public class ParticipantTest {
         @Path("/start")
         public void start(
                 @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
-                @HeaderParam(Work.HEADER_KEY) Work work
-        ) {
+                @HeaderParam(Work.HEADER_KEY) Work work) {
             work.doWork(lraId);
         }
 
