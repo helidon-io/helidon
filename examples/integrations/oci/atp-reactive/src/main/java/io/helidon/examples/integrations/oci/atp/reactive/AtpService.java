@@ -57,16 +57,14 @@ class AtpService implements Service {
      */
     private void generateWallet(ServerRequest req, ServerResponse res) {
         autonomousDbRx.generateWallet(GenerateAutonomousDatabaseWallet.Request.builder())
-                .map(ApiOptionalResponse::entity)
-                .flatMap(e -> e.map(Single::just).orElseGet(() -> {
-                    res.status(404).send();
-                    return Single.empty();
-                }))
+                .flatMapOptional(ApiOptionalResponse::entity)
                 .map(GenerateAutonomousDatabaseWallet.Response::walletArchive)
-                .flatMap(archive -> createDbClient(archive))
+                .ifEmpty(() -> LOGGER.severe("Unable to obtain wallet!"))
+                .flatMapSingle(this::createDbClient)
                 .flatMap(dbClient -> dbClient.execute(exec -> exec.query("SELECT 'Hello world!!' FROM DUAL")))
                 .first()
                 .map(dbRow -> dbRow.column(1).as(String.class))
+                .ifEmpty(() -> res.status(404).send())
                 .onError(res::send)
                 .forSingle(res::send);
     }
