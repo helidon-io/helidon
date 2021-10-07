@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.integrations</groupId>
         <artifactId>helidon-integrations-micrometer-project</artifactId>
-        <version>2.3.4-SNAPSHOT</version>
+        <version>2.3.4</version>
     </parent>
 
     <groupId>io.helidon.integrations.micrometer</groupId>
