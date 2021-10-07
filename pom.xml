@@ -60,7 +60,7 @@
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
         <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
-        <version.lib.kafka-junit5>3.2.1</version.lib.kafka-junit5>
+        <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
         <version.lib.netty.tcnative>2.0.36.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>

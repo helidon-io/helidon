@@ -29,7 +29,7 @@ import io.helidon.common.LazyValue;
 import com.oracle.svm.core.annotate.Substitute;
 import com.oracle.svm.core.annotate.TargetClass;
 import org.apache.kafka.common.KafkaException;
-import org.apache.kafka.common.record.BufferSupplier;
+import org.apache.kafka.common.utils.BufferSupplier;
 import org.apache.kafka.common.utils.ByteBufferInputStream;
 import org.apache.kafka.common.utils.ByteBufferOutputStream;
 
