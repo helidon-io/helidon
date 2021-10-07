@@ -30,7 +30,7 @@ import javax.ws.rs.core.MediaType;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.mp.MpConfigSources;
-import io.helidon.config.yaml.YamlMpConfigSource;
+import io.helidon.config.yaml.mp.YamlMpConfigSource;
 import io.helidon.microprofile.tests.junit5.Configuration;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
@@ -74,7 +74,8 @@ class BackendTests {
     }
 
     private static Properties initCassandra() throws IOException {
-        EmbeddedCassandraServerHelper.startEmbeddedCassandra(EmbeddedCassandraServerHelper.CASSANDRA_RNDPORT_YML_FILE, 20000L);
+        EmbeddedCassandraServerHelper.startEmbeddedCassandra(EmbeddedCassandraServerHelper.CASSANDRA_RNDPORT_YML_FILE,
+                                                             20000L);
         Properties prop = new Properties();
         prop.put("cassandra.port", String.valueOf(EmbeddedCassandraServerHelper.getNativeTransportPort()));
         prop.put("cassandra.servers.host.host", CASSANDRA_HOST);

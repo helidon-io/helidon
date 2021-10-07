@@ -1159,6 +1159,11 @@
                 <version>${version.lib.logback}</version>
             </dependency>
             <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>${version.lib.logback}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.activemq</groupId>
                 <artifactId>activemq-client</artifactId>
                 <version>${version.lib.activemq}</version>
