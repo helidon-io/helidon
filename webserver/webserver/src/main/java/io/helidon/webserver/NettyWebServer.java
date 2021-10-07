@@ -373,9 +373,12 @@ class NettyWebServer implements WebServer {
 
         forceQueuesRelease();
 
-        // there's no need for a quiet time as the channel is not expected to be used from now on
-        Future<?> bossGroupFuture = bossGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
-        Future<?> workerGroupFuture = workerGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
+        long maxShutdownTimeoutSeconds = configuration.maxShutdownTimeout().toSeconds();
+        long shutdownQuietPeriod = configuration.shutdownQuietPeriod().toSeconds();
+        Future<?> bossGroupFuture =
+            bossGroup.shutdownGracefully(shutdownQuietPeriod, maxShutdownTimeoutSeconds, TimeUnit.SECONDS);
+        Future<?> workerGroupFuture =
+            workerGroup.shutdownGracefully(shutdownQuietPeriod, maxShutdownTimeoutSeconds, TimeUnit.SECONDS);
 
         workerGroupFuture.addListener(workerFuture -> {
             bossGroupFuture.addListener(bossFuture -> {
@@ -473,7 +476,11 @@ class NettyWebServer implements WebServer {
         Transport transport = configuration.transport().orElse(new NioTransport());
         // (Note that an NioTransport's isAvailableFor() method will
         // always return true when passed this.)
-        return transport.isAvailableFor(this) ? transport : new NioTransport();
+        if (!transport.isAvailableFor(this)) {
+            transport = new NioTransport();
+        }
+        LOGGER.fine("Using Transport " + transport);
+        return transport;
     }
 
     private Transport transport() {

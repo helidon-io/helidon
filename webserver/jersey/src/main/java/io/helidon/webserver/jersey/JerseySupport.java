@@ -53,6 +53,7 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
 
 import io.opentracing.SpanContext;
@@ -300,7 +301,13 @@ public class JerseySupport implements Service {
 
                         service.execute(() -> { // No need to use submit() since the future is not used.
                             try {
-                                LOGGER.finer("Handling in Jersey started.");
+                                if (LOGGER.isLoggable(Level.FINER)) {
+                                    LOGGER.finer("Handling in Jersey started for connection: "
+                                                         + Contexts.context()
+                                            .flatMap(ctx -> ctx.get(WebServer.class.getName() + ".connection",
+                                                                    String.class))
+                                            .orElse("Unknown"));
+                                }
 
                                 // Register Application instance in context in case there is more
                                 // than one application. Class SecurityFilter requires this.

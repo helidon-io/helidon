@@ -32,6 +32,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.CreationException;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.Annotated;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
@@ -47,6 +48,7 @@ import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.metrics.MetricsTrackerFactory;
 import org.eclipse.microprofile.config.Config;
 
 /**
@@ -107,7 +109,7 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
             .beanClass(HikariDataSource.class)
             .scope(ApplicationScoped.class)
             .produceWith(instance -> {
-                    final HikariConfig config = new HikariConfig(dataSourceProperties);
+                    final HikariConfig config = produceHikariConfig(instance, dataSourceName, dataSourceProperties);
                     // Permit further customization before the bean is actually created
                     instance.select(new TypeLiteral<Event<HikariConfig>>() {}, dataSourceName).get().fire(config);
                     return new HikariDataSource(config);
@@ -123,6 +125,28 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
                         }
                     }
                 });
+    }
+
+    private static HikariConfig produceHikariConfig(final Instance<Object> instance,
+                                                    final Named dataSourceName,
+                                                    final Properties dataSourceProperties) {
+        final HikariConfig hikariConfig = new HikariConfig(dataSourceProperties);
+        Instance<MetricsTrackerFactory> i;
+        if (dataSourceName == null) {
+            i = instance.select(MetricsTrackerFactory.class);
+        } else {
+            if (hikariConfig.getPoolName() == null) {
+                hikariConfig.setPoolName(dataSourceName.value());
+            }
+            i = instance.select(MetricsTrackerFactory.class, dataSourceName);
+            if (i.isUnsatisfied()) {
+                i = instance.select(MetricsTrackerFactory.class);
+            }
+        }
+        if (!i.isUnsatisfied()) {
+            hikariConfig.setMetricsTrackerFactory(i.get());
+        }
+        return hikariConfig;
     }
 
     private void processAnnotatedType(@Observes

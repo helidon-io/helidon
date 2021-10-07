@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,6 +99,7 @@ public class RequestContentTest {
         assertThat(sb.toString(), is("apply_filter-FIRST-SECOND-THIRD-"));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void multiThreadingFilterAndReaderTest() throws Exception {
         CountDownLatch subscribedLatch = new CountDownLatch(1);
@@ -186,9 +187,9 @@ public class RequestContentTest {
             return future;
         });
 
-        List result = request.content().as(List.class).toCompletableFuture()
+        List<String> result = (List<String>) request.content().as(List.class).toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);
-        assertThat((List<String>) result, hasItems(
+        assertThat(result, hasItems(
                 is("FIRST"),
                 is("SECOND"),
                 is("THIRD")));

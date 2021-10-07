@@ -323,7 +323,8 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     }
 
     /**
-     * Map this {@link Single} instance to a {@link Single} using the given {@link Mapper}.
+     * Transforms item with supplied function and flatten resulting {@link io.helidon.common.reactive.Single}
+     * to downstream.
      *
      * @param <U>    mapped items type
      * @param mapper mapper
@@ -331,7 +332,39 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @throws NullPointerException if mapper is {@code null}
      */
     default <U> Single<U> flatMapSingle(Function<? super T, ? extends Single<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
         return new SingleFlatMapSingle<>(this, mapper);
+    }
+
+    /**
+     * Transforms item with supplied function and flatten resulting {@link java.util.concurrent.CompletionStage} result
+     * to downstream. As reactive streams forbids null values, CompletionStage result is mapped to
+     * {@link java.util.Optional}.
+     *
+     * @param <U>    mapped items type
+     * @param mapper mapper
+     * @return Single
+     * @throws NullPointerException if mapper is {@code null}
+     */
+    default <U> Single<U> flatMapCompletionStage(Function<? super T, ? extends CompletionStage<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return flatMapSingle(t -> Single.create(mapper.apply(t)));
+    }
+
+    /**
+     * Transform item with supplied function and flatten resulting {@link java.util.Optional} to downstream
+     * as Single with its value as item if present or empty Single.
+     *
+     * @param <U>    mapped item type
+     * @param mapper mapper
+     * @return Single
+     * @throws NullPointerException if mapper is {@code null}
+     */
+    default <U> Single<U> flatMapOptional(Function<? super T, Optional<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return flatMapSingle(t -> mapper.apply(t)
+                .map(Single::just)
+                .orElseGet(Single::empty));
     }
 
     /**
@@ -482,6 +515,17 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
                 onTerminate,
                 null,
                 onTerminate);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when stream is finished without value(empty stream).
+     *
+     * @param ifEmpty {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Single<T> ifEmpty(Runnable ifEmpty) {
+        Objects.requireNonNull(ifEmpty, "ifEmpty callback is null");
+        return new SingleIfEmptyPublisher<>(this, ifEmpty);
     }
 
     /**

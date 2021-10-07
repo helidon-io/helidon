@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Flow;
@@ -263,6 +264,32 @@ class RetryTest {
         ts.cdl.await(1, TimeUnit.SECONDS);
 
         assertThat("Last delay should increase", lastDelayCalls, contains(0L, 1L, 2L));
+    }
+
+    @Test
+    public void testExceptionCause() {
+        AtomicBoolean isTimeout = new AtomicBoolean(false);
+        AtomicBoolean isRuntime = new AtomicBoolean(false);
+
+        Retry.builder()
+                .retryPolicy(Retry.JitterRetryPolicy.builder().build())
+                .overallTimeout(Duration.ofSeconds(1))
+                .build().invoke(() -> CompletableFuture.runAsync(() -> {
+                    try {
+                        Thread.sleep(2000);
+                        throw new RuntimeException("Hello");
+                    } catch (InterruptedException e) {
+                        // falls through
+                    }
+                }))
+                .exceptionallyAccept(t -> {
+                    isTimeout.set(t instanceof TimeoutException);
+                    isRuntime.set(t.getCause() instanceof RuntimeException);
+                })
+                .await();
+
+        assertThat("Must be a TimeoutException", isTimeout.get(), is(true));
+        assertThat("Must be a RuntimeException", isRuntime.get(), is(true));
     }
 
     private static class TestSubscriber implements Flow.Subscriber<Integer> {

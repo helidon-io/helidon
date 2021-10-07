@@ -13,7 +13,7 @@ Goto the Neo4j browser and play the first step of the movies graph: [`:play movi
 Build and run with With JDK11+
 ```bash
 mvn package
-java -jar target/helidon-integrations-neo4j-se.jar  
+java -jar target/helidon-examples-integration-neo4j-se.jar  
 ```
 
 Then access the rest API like this:

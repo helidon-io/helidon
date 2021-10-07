@@ -38,7 +38,6 @@ import io.netty.handler.proxy.ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.concurrent.FutureListener;
 
 import static io.helidon.webclient.WebClientRequestBuilderImpl.CONNECTION_IDENT;
@@ -71,7 +70,7 @@ class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
 
         // read timeout (we also want to timeout waiting on a proxy)
         Duration readTimeout = configuration.readTimout();
-        pipeline.addLast("readTimeout", new ReadTimeoutHandler(readTimeout.toMillis(), TimeUnit.MILLISECONDS));
+        pipeline.addLast("readTimeout", new HelidonReadTimeoutHandler(readTimeout.toMillis(), TimeUnit.MILLISECONDS));
 
         // proxy configuration
         configuration.proxy()

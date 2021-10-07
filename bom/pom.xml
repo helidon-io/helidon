@@ -291,6 +291,16 @@
                 <artifactId>helidon-config-mp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config-metadata</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config-metadata-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- security -->
             <dependency>
                 <groupId>io.helidon.security</groupId>
@@ -1126,6 +1136,32 @@
                 <groupId>io.helidon.tests.integration.tools</groupId>
                 <artifactId>helidon-tests-integration-tools-client</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <!-- Microstream -->
+            <dependency>
+            	<groupId>io.helidon.integrations.microstream</groupId>
+            	<artifactId>helidon-integrations-microstream</artifactId>
+            	<version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+            	<groupId>io.helidon.integrations.microstream</groupId>
+            	<artifactId>helidon-integrations-microstream-cdi</artifactId>
+            	<version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+            	<groupId>io.helidon.integrations.microstream</groupId>
+            	<artifactId>helidon-integrations-microstream-health</artifactId>
+            	<version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+            	<groupId>io.helidon.integrations.microstream</groupId>
+            	<artifactId>helidon-integrations-microstream-metrics</artifactId>
+            	<version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+            	<groupId>io.helidon.integrations.microstream</groupId>
+            	<artifactId>helidon-integrations-microstream-cache</artifactId>
+            	<version>${helidon.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
