@@ -18,11 +18,12 @@ This is a bug fix release of Helidon. It contains bug fixes. We recommend all He
 ### CHANGES
 - WebServer: Fix issue when Netty server hangs when under load. [3435](https://github.com/oracle/helidon/pull/3435)
 - WebServer: Fix race condition when analysing whether entity is fully read [3434](https://github.com/oracle/helidon/pull/3434)
+- Webclient: Relativize request URI if host is in no-host list, in addition to the no-proxy case. [3442](https://github.com/oracle/helidon/pull/3478)
 - Tracing: Using Jersey context rather then Helidon context. [3436](https://github.com/oracle/helidon/pull/3436)
 - Metrics: PeriodicExecutor can incorrectly log warning message; and warning text can be wrong [3433](https://github.com/oracle/helidon/pull/3433)
 - Metrics: native-image build fails due to metrics performance optimization [3433](https://github.com/oracle/helidon/pull/3433)
 - Grpc: Enable DataFetchingEnvironment as part of @GraphQLApi @Query methods [3428](https://github.com/oracle/helidon/pull/3428)
-- Build-tools: upgrade to build-tools 2.2.4: fixes issues with jlink, devloop, and maven 2.8.2 [3465](https://github.com/oracle/helidon/pull/3465)
+- Build-tools: upgrade to build-tools 2.2.4: fixes issues with jlink, devloop, and maven 3.8 [3465](https://github.com/oracle/helidon/pull/3465)
 
 ## [2.3.3]
 
