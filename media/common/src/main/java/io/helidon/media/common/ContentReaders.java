@@ -19,7 +19,6 @@ package io.helidon.media.common;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -168,15 +167,7 @@ public final class ContentReaders {
 
         @Override
         public String map(String s) {
-            try {
-                return URLDecoder.decode(s, charset.name());
-            } catch (UnsupportedEncodingException e) {
-                /*
-                 * Convert the encoding exception into an unchecked one to simplify the mapper's use
-                 * in lambdas.
-                 */
-                throw new RuntimeException(e);
-            }
+            return URLDecoder.decode(s, charset);
         }
     }
     /**

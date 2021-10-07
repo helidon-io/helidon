@@ -15,9 +15,9 @@
  */
 package io.helidon.media.multipart;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -245,7 +245,7 @@ final class MimeParser {
     }
 
     private static final Logger LOGGER = Logger.getLogger(MimeParser.class.getName());
-    private static final Charset HEADER_ENCODING = Charset.forName("ISO8859-1");
+    private static final Charset HEADER_ENCODING = StandardCharsets.ISO_8859_1;
 
     /**
      * All states.
@@ -696,8 +696,6 @@ final class MimeParser {
      * @return a header line or an empty string if the blank line separating the
      * header from the body has been reached, or {@code null} if the there is
      * no more data in the buffer
-     * @throws UnsupportedEncodingException if an error occurs while decoding
-     * from the buffer
      */
     private String readHeaderLine() {
         // FIXME: what about multi-line headers?
