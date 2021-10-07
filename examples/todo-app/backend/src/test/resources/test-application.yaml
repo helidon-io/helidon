@@ -14,13 +14,22 @@
 # limitations under the License.
 #
 
+# increase importance
+config_ordinal: 500
+
+# we use custom config and Helidon JUnit integration, must allow initializer
+mp:
+  initializer:
+    allow: true
+    no-warn: true
+
 server:
   port: 0
-  host: 0.0.0.0
+  host: localhost
 
 tracing:
   service: "todo:back"
-  host: "zipkin"
+  enabled: false
 
 security:
   providers:
