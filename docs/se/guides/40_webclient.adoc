@@ -38,8 +38,8 @@ that can be used to run some basic examples using WebClient.
 
 === WebClient features
 
-Helidon WebClient is used to perform Http REST request to target endpoint and handle their response. Built in a reactive
-approach, you are no longer blocked while waiting for the data.
+Helidon WebClient is used to perform Http REST request to target endpoint and handle their response. Built on top of
+a reactive approach, you are no longer blocked while waiting for the data.
 
 *Note*: WebClient is still experimental and not intended for production use. APIs and features are not yet fully tested
 and are subject to change.
@@ -48,7 +48,7 @@ The WebClient main features:
 
     * *Reactive*:
 As mentioned, the code execution is not blocked by waiting for server response when a request is performed. To avoid
-memory overflow, the client request the amount of data to allocate the right size.
+memory overflow, the client has built-in back-pressure support.
 
     * *User-friendly*:
 Every client and request is created by a builder pattern, so it improves readability and code maintenance.
@@ -139,11 +139,11 @@ WebClient webClient = WebClient.builder()
                 .addMediaSupport(JsonpSupport.create())     // <2>
                 .build();
 ----
-<1> Uri from which all request will be executed.
+<1> The base URI of the outbound requests.
 <2> Register a support for Jsonp.
 
 By default, Helidon quickstart run on the host localhost and port 8080. If you changed these values in configuration
-files, make sure to modify them in the Uri as well.
+file, make sure to modify the base URI as well.
 Once build, the WebClient can be used to send a GET request to the greeting application.
 
 [source,java]
@@ -156,15 +156,18 @@ webClient.get()     // <1>
     .await();   // <5>
 ----
 <1> Create a Http GET request.
-<2> Path to reach after the base uri provided during instantiation.
-<3> Execute the request and return `Single` of the desired type.
+<2> Target endpoint path.
+<3> Execute the request and return Single with response entity handled as a String.
 <4> Print the response in the console.
 <5> Wait for server response because of reactive approach.
 
+
+
 The path method joins `/greet` to the WebClient base Uri. The target Uri for this request becomes
-`http://localhost:8080/greet` where the response should be a greeting message. As the response will be printed in the
-console, a String is more convenient than the default return type for the request. The default type is WebClientResponse
-which contains response code, headers and non-handled entity.
+`http://localhost:8080/greet` where the response should be a greeting message. Received response entity will be
+automatically handled as a String. If no specific type is put into the method request(),
+WebClientResponse is returned by default. This WebClientResponse object contains response code, headers and non-handled
+entity.
 
 ==== Run the application
 
@@ -200,8 +203,9 @@ When the ClientExample finishes its execution, you can stop the Main class by pr
 
 ==== Discover other WebClient functionality
 
-In practice, String is not the most used returned type. It could be more interesting to return an object such as
-JsonObject. Earlier, Json support was added to the webclient, so it can be used instead of String.
+In practice, String is not the most useful return type, since it usually needs some more handling.In this case it could
+be more interesting to return an object such as JsonObject. Earlier, Json support was added to the webclient,
+so it can be used instead of String.
 
 [source,java]
 .Replace String by JsonObject:
@@ -218,7 +222,7 @@ webClient.get()
 ----
 <1> Request a JsonObject as return value.
 
-In the Uri, the string after `greet` is a path parameter which allows the application to greet someone.
+In the Uri, the String following `greet` is a path parameter which allows the application to greet someone.
 
 [source,bash]
 .Output:
@@ -249,14 +253,14 @@ webClient.put()     // <2>
     .await();
 ----
 <1> Create a JsonObject with key `greeting` and value `bonjour`.
-<2> Execute a PUT request.
+<2> Create a PUT request.
 <3> Submit the JsonObject created earlier.
 <4> Once done, make a GET call to verify the modification was processed to the greeting.
 
 According to the quickstart documentation, a Json object can be sent to the application to change the greeting following
 this structure: `{"greeting" : "value"}`. The first three lines of code create the JsonObject with the required content.
-This time, we use the put and submit methods to push the new greeting. One way to check the greeting modification
-is to get greeting and display it to the console. `thenCompose` method will execute a GET request after
+This time, we use the PUT request and submit methods to push the new greeting. One way to check the greeting modification
+is to execute GET request again and display obtained response. `thenCompose` method will execute a GET request after
 the PUT request is executed.
 
 [source,bash]
@@ -335,7 +339,7 @@ public static void main(String[] args) {
 The metric name can indicate what is measured. In this example, the metric target GET requests on the localhost.
 In order to pass this information to the webclient, the `nameFormat` method extracts it from the metric name.
 Otherwise, the metric name can also have nothing in common with its job. In this case, the methods with `OPTIONAL`
-comment can be used. The `methods` will target the Http request type of your choice. `success` and `error` will
+comment are not required to be used. The `methods` will target the Http request type of your choice. `success` and `error` will
 respectively measure request if they are successful or failed, and `description` add a metric description.
 
 [source,java]
