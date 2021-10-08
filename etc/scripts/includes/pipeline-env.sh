@@ -46,6 +46,10 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
 
     . ${WS_DIR}/etc/scripts/includes/error_handlers.sh
 
+    if [ -z "${GRAALVM_HOME}" ]; then
+        export GRAALVM_HOME="/tools/graalvm-ce-java11-21.1.0"
+    fi
+
     require_env() {
         if [ -z "$(eval echo \$${1})" ] ; then
             echo "ERROR: ${1} not set in the environment"
@@ -57,7 +61,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
     # Modified shell variables: JAVA_HOME - JDK home directory
     #                           PATH      - executables search path
     graalvm() {
-        JAVA_HOME='/tools/graalvm-ce-java11-21.1.0'
+        JAVA_HOME=${GRAALVM_HOME}
         PATH="${PATH}:${JAVA_HOME}/bin"
     }
 
