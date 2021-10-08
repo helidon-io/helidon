@@ -94,8 +94,10 @@ public class TestMetricsSettings {
     void testRESTSettings() {
         MetricsSettings metricsSettings = MetricsSettings.builder().config(withRESTSettings).build();
         assertThat("top-level metrics enabled", metricsSettings.isEnabled(), is(true));
-        assertThat("KPI settings extended", metricsSettings.keyPerformanceIndicatorSettings().isExtended(), is(false));
-        assertThat("Configured routing", metricsSettings.routing(), is("my-routing"));
-        assertThat("Configured web-context", metricsSettings.webContext(), is("/mycontext"));
+        assertThat("KPI settings extended",
+                   metricsSettings.keyPerformanceIndicatorSettings().isExtended(),
+                   is(false));
+        assertThat("Configured routing", metricsSettings.restServiceSettings().routing(), is("my-routing"));
+        assertThat("Configured web-context", metricsSettings.restServiceSettings().webContext(), is("/mycontext"));
     }
 }

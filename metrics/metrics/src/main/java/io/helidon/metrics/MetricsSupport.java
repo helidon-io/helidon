@@ -116,7 +116,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     }
 
     protected MetricsSupport(MetricsSettings metricsSettings) {
-        super(LOGGER, metricsSettings, SERVICE_NAME);
+        super(LOGGER, metricsSettings.restServiceSettings(), SERVICE_NAME);
         rf = RegistryFactory.getInstance(metricsSettings);
         this.metricsSettings = metricsSettings;
     }

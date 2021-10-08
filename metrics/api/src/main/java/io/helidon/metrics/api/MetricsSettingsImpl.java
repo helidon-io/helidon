@@ -17,20 +17,19 @@ package io.helidon.metrics.api;
 
 import io.helidon.config.Config;
 import io.helidon.servicecommon.rest.RestServiceSettings;
-import io.helidon.webserver.cors.CrossOriginConfig;
 
 class MetricsSettingsImpl implements MetricsSettings {
 
     private final boolean isEnabled;
     private final KeyPerformanceIndicatorMetricsSettings kpiMetricsSettings;
     private final BaseMetricsSettings baseMetricsSettings;
-    private final RestServiceSettings serviceSettings;
+    private final RestServiceSettings restServiceSettings;
 
     private MetricsSettingsImpl(MetricsSettingsImpl.Builder builder) {
         isEnabled = builder.isEnabled;
         kpiMetricsSettings = builder.kpiMetricsSettingsBuilder.build();
         baseMetricsSettings = builder.baseMetricsSettingsBuilder.build();
-        serviceSettings = builder.serviceSettingsBuilder.build();
+        restServiceSettings = builder.restServiceSettingsBuilder.build();
     }
 
     @Override
@@ -49,18 +48,8 @@ class MetricsSettingsImpl implements MetricsSettings {
     }
 
     @Override
-    public String webContext() {
-        return serviceSettings.webContext();
-    }
-
-    @Override
-    public String routing() {
-        return serviceSettings.routing();
-    }
-
-    @Override
-    public CrossOriginConfig crossOriginConfig() {
-        return serviceSettings.crossOriginConfig();
+    public RestServiceSettings restServiceSettings() {
+        return restServiceSettings;
     }
 
     static class Builder implements MetricsSettings.Builder {
@@ -69,7 +58,7 @@ class MetricsSettingsImpl implements MetricsSettings {
         private KeyPerformanceIndicatorMetricsSettings.Builder kpiMetricsSettingsBuilder =
                 KeyPerformanceIndicatorMetricsSettings.builder();
         private BaseMetricsSettings.Builder baseMetricsSettingsBuilder = BaseMetricsSettings.builder();
-        private RestServiceSettings.Builder serviceSettingsBuilder = RestServiceSettings.builder()
+        private RestServiceSettings.Builder restServiceSettingsBuilder = RestServiceSettings.builder()
                 .webContext(DEFAULT_CONTEXT);
 
         protected Builder() {
@@ -101,7 +90,7 @@ class MetricsSettingsImpl implements MetricsSettings {
 
         @Override
         public Builder config(Config metricsSettingsConfig) {
-            serviceSettingsBuilder.config(metricsSettingsConfig);
+            restServiceSettingsBuilder.config(metricsSettingsConfig);
             baseMetricsSettingsBuilder.config(metricsSettingsConfig.get(BaseMetricsSettings.Builder.BASE_METRICS_CONFIG_KEY));
             kpiMetricsSettingsBuilder.config(metricsSettingsConfig
                                                      .get(KeyPerformanceIndicatorMetricsSettings.Builder
@@ -120,8 +109,8 @@ class MetricsSettingsImpl implements MetricsSettings {
         }
 
         @Override
-        public MetricsSettings.Builder serviceSettings(RestServiceSettings.Builder serviceSettingsBuilder) {
-            this.serviceSettingsBuilder = serviceSettingsBuilder;
+        public MetricsSettings.Builder restServiceSettings(RestServiceSettings.Builder restServiceSettingsBuilder) {
+            this.restServiceSettingsBuilder = restServiceSettingsBuilder;
             return this;
         }
     }
