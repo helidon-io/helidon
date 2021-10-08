@@ -120,6 +120,7 @@
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
         <version.lib.netty>4.1.63.Final</version.lib.netty>
+        <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
         <version.lib.oci-java-sdk-objectstorage>2.3.0</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
@@ -1273,6 +1274,12 @@
                 <artifactId>netty-transport-native-kqueue</artifactId>
                 <version>${version.lib.netty}</version>
                 <classifier>osx-x86_64</classifier>
+            </dependency>
+            <dependency>
+                <groupId>io.netty.incubator</groupId>
+                <artifactId>netty-incubator-transport-native-io_uring</artifactId>
+                <version>${version.lib.netty-io_uring}</version>
+                <classifier>linux-x86_64</classifier>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
