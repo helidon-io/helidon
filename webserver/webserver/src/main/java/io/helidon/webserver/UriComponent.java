@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package io.helidon.webserver;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
 import io.helidon.common.http.HashParameters;
 import io.helidon.common.http.Parameters;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Extracted from Jersey
@@ -86,22 +87,17 @@ final class UriComponent {
     }
 
     private static void decodeQueryParam(Parameters params, String param, boolean decodeNames, boolean decodeValues) {
-        try {
-            int equals = param.indexOf('=');
-            if (equals > 0) {
-                params.add((decodeNames) ? URLDecoder.decode(param.substring(0, equals), "UTF-8") : param.substring(0, equals),
-                           (decodeValues)
-                                   ? URLDecoder.decode(param.substring(equals + 1), "UTF-8")
-                                   : param.substring(equals + 1));
-            } else if (equals == 0) {
-                // no key declared, ignore
-                return;
-            } else if (!param.isEmpty()) {
-                params.add((decodeNames) ? URLDecoder.decode(param, "UTF-8") : param, "");
-            }
-        } catch (UnsupportedEncodingException ex) {
-            // This should never occur
-            throw new IllegalArgumentException("Should never occur!", ex);
+        int equals = param.indexOf('=');
+        if (equals > 0) {
+            params.add((decodeNames) ? URLDecoder.decode(param.substring(0, equals), UTF_8) : param.substring(0, equals),
+                       (decodeValues)
+                               ? URLDecoder.decode(param.substring(equals + 1), UTF_8)
+                               : param.substring(equals + 1));
+        } else if (equals == 0) {
+            // no key declared, ignore
+            return;
+        } else if (!param.isEmpty()) {
+            params.add((decodeNames) ? URLDecoder.decode(param, UTF_8) : param, "");
         }
     }
 }
