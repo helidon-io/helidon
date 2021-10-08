@@ -16,23 +16,21 @@
 package io.helidon.metrics.api;
 
 import io.helidon.config.Config;
+import io.helidon.servicecommon.rest.RestServiceSettings;
+import io.helidon.webserver.cors.CrossOriginConfig;
 
 class MetricsSettingsImpl implements MetricsSettings {
-
-    static final MetricsSettings DEFAULT = builder().build();
-
-    static Builder builder() {
-        return new Builder();
-    }
 
     private final boolean isEnabled;
     private final KeyPerformanceIndicatorMetricsSettings kpiMetricsSettings;
     private final BaseMetricsSettings baseMetricsSettings;
+    private final RestServiceSettings serviceSettings;
 
     private MetricsSettingsImpl(MetricsSettingsImpl.Builder builder) {
-        this.isEnabled = builder.isEnabled;
-        this.kpiMetricsSettings = builder.kpiMetricsSettingsBuilder.build();
-        this.baseMetricsSettings = builder.baseMetricsSettingsBuilder.build();
+        isEnabled = builder.isEnabled;
+        kpiMetricsSettings = builder.kpiMetricsSettingsBuilder.build();
+        baseMetricsSettings = builder.baseMetricsSettingsBuilder.build();
+        serviceSettings = builder.serviceSettingsBuilder.build();
     }
 
     @Override
@@ -50,48 +48,80 @@ class MetricsSettingsImpl implements MetricsSettings {
         return baseMetricsSettings;
     }
 
+    @Override
+    public String webContext() {
+        return serviceSettings.webContext();
+    }
+
+    @Override
+    public String routing() {
+        return serviceSettings.routing();
+    }
+
+    @Override
+    public CrossOriginConfig crossOriginConfig() {
+        return serviceSettings.crossOriginConfig();
+    }
+
     static class Builder implements MetricsSettings.Builder {
 
         private boolean isEnabled = true;
         private KeyPerformanceIndicatorMetricsSettings.Builder kpiMetricsSettingsBuilder =
                 KeyPerformanceIndicatorMetricsSettings.builder();
         private BaseMetricsSettings.Builder baseMetricsSettingsBuilder = BaseMetricsSettings.builder();
+        private RestServiceSettings.Builder serviceSettingsBuilder = RestServiceSettings.builder()
+                .webContext(DEFAULT_CONTEXT);
+
+        protected Builder() {
+        }
+
+        protected Builder(MetricsSettings serviceSettings) {
+            isEnabled = serviceSettings.isEnabled();
+            kpiMetricsSettingsBuilder = KeyPerformanceIndicatorMetricsSettings.builder(
+                    serviceSettings.keyPerformanceIndicatorSettings());
+            baseMetricsSettingsBuilder = BaseMetricsSettings.builder(serviceSettings.baseMetricsSettings());
+        }
 
         @Override
-        public MetricsSettings build() {
+        public MetricsSettingsImpl build() {
             return new MetricsSettingsImpl(this);
         }
 
         @Override
-        public MetricsSettings.Builder enabled(boolean value) {
+        public Builder enabled(boolean value) {
             isEnabled = value;
             return this;
         }
 
         @Override
-        public MetricsSettings.Builder baseMetricsSettings(BaseMetricsSettings.Builder baseMetricsSettingsBuilder) {
+        public Builder baseMetricsSettings(BaseMetricsSettings.Builder baseMetricsSettingsBuilder) {
             this.baseMetricsSettingsBuilder = baseMetricsSettingsBuilder;
             return this;
         }
 
         @Override
-        public MetricsSettings.Builder config(Config metricsSettingsConfig) {
+        public Builder config(Config metricsSettingsConfig) {
+            serviceSettingsBuilder.config(metricsSettingsConfig);
+            baseMetricsSettingsBuilder.config(metricsSettingsConfig.get(BaseMetricsSettings.Builder.BASE_METRICS_CONFIG_KEY));
+            kpiMetricsSettingsBuilder.config(metricsSettingsConfig
+                                                     .get(KeyPerformanceIndicatorMetricsSettings.Builder
+                                                                  .KEY_PERFORMANCE_INDICATORS_CONFIG_KEY));
             metricsSettingsConfig.get(MetricsSettings.Builder.ENABLED_CONFIG_KEY)
                     .asBoolean()
                     .ifPresent(this::enabled);
-            metricsSettingsConfig.get(BaseMetricsSettings.Builder.BASE_METRICS_CONFIG_KEY)
-                    .as(cfg -> BaseMetricsSettings.builder().config(cfg))
-                    .ifPresent(this::baseMetricsSettings);
-            metricsSettingsConfig.get(KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY)
-                    .as(cfg -> KeyPerformanceIndicatorMetricsSettings.builder().config(cfg))
-                    .ifPresent(this::keyPerformanceIndicatorSettings);
             return this;
         }
 
         @Override
-        public MetricsSettings.Builder keyPerformanceIndicatorSettings(
+        public Builder keyPerformanceIndicatorSettings(
                 KeyPerformanceIndicatorMetricsSettings.Builder kpiMetricsSettings) {
             this.kpiMetricsSettingsBuilder = kpiMetricsSettings;
+            return this;
+        }
+
+        @Override
+        public MetricsSettings.Builder serviceSettings(RestServiceSettings.Builder serviceSettingsBuilder) {
+            this.serviceSettingsBuilder = serviceSettingsBuilder;
             return this;
         }
     }

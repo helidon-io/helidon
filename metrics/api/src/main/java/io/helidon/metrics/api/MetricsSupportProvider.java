@@ -28,4 +28,12 @@ public interface MetricsSupportProvider<T extends MetricsSupport> {
      */
     T.Builder<T> builder();
 
+    /**
+     * Create a new instance of the specific type of {@link MetricsSupport}.
+     *
+     * @param metricsSettings metrics settings to use in creating the {@code MetricsSupport} instance
+     * @return the new {@code MetricsSupport} instance
+     */
+    T create(MetricsSettings metricsSettings);
+
 }

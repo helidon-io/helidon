@@ -18,11 +18,16 @@ package io.helidon.metrics.api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.servicecommon.rest.RestServiceSettings;
 
 /**
- * Settings which control behavior for metrics overall (not just for a single metrics-capable component).
+ * Settings which control behavior for metrics overall.
+ * <p>
+ *     This class controls all of metrics, not just a single component's usage of metrics. For that, see
+ *     {@link io.helidon.metrics.api.ComponentMetricsSettings}.
+ * </p>
  */
-public interface MetricsSettings {
+public interface MetricsSettings extends RestServiceSettings {
 
     /**
      * Returns default metrics settings based on default config.
@@ -61,12 +66,7 @@ public interface MetricsSettings {
      * @return {@code MetricsSettings.Builder} initialized according to the provided settings
      */
     static Builder builder(MetricsSettings metricsSettings) {
-        return builder()
-                .enabled(metricsSettings.isEnabled())
-                .keyPerformanceIndicatorSettings(
-                        KeyPerformanceIndicatorMetricsSettings.builder(metricsSettings.keyPerformanceIndicatorSettings()))
-                .baseMetricsSettings(
-                        BaseMetricsSettings.builder(metricsSettings.baseMetricsSettings()));
+        return new MetricsSettingsImpl.Builder(metricsSettings);
     }
 
     /**
@@ -97,14 +97,21 @@ public interface MetricsSettings {
          * Config key within the config {@code metrics} section controlling whether metrics are enabled.
          */
         String ENABLED_CONFIG_KEY = "enabled";
+
         /**
          * The config key containing settings for all of metrics.
          */
         String METRICS_CONFIG_KEY = "metrics";
+
         /**
          * Config key within the config {@code metrics} section controlling the base registry.
          */
         String BASE_CONFIG_KEY = "base";
+
+        /**
+         * Default web context for the metrics endpoint.
+         */
+        String DEFAULT_CONTEXT = "/metrics";
 
         /**
          * Constructs a {@code MetricsSettings} object from the builder.
@@ -136,10 +143,8 @@ public interface MetricsSettings {
          * @param kpiSettings key performance indicator metrics settings to use
          * @return updated builder
          */
-        @ConfiguredOption(
-                key = KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY,
-                kind = ConfiguredOption.Kind.MAP
-        )
+        @ConfiguredOption(key = KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY,
+                          kind = ConfiguredOption.Kind.MAP)
         Builder keyPerformanceIndicatorSettings(KeyPerformanceIndicatorMetricsSettings.Builder kpiSettings);
 
         /**
@@ -148,9 +153,10 @@ public interface MetricsSettings {
          * @param baseMetricsSettingsBuilder base metrics settings to use
          * @return updated builder
          */
-        @ConfiguredOption(
-                key = BASE_CONFIG_KEY,
-                kind = ConfiguredOption.Kind.MAP)
+        @ConfiguredOption(key = BASE_CONFIG_KEY,
+                          kind = ConfiguredOption.Kind.MAP)
         Builder baseMetricsSettings(BaseMetricsSettings.Builder baseMetricsSettingsBuilder);
+
+        Builder serviceSettings(RestServiceSettings.Builder serviceSettingsBuilder);
     }
 }

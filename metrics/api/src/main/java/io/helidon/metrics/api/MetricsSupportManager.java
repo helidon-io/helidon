@@ -63,8 +63,6 @@ class MetricsSupportManager {
     }
 
     static MetricsSupport create(MetricsSettings metricsSettings) {
-        return MetricsSupportManager.builder()
-                .metricsSettings(MetricsSettings.builder(metricsSettings))
-                .build();
+        return LAZY_PROVIDER.get().create(metricsSettings);
     }
 }

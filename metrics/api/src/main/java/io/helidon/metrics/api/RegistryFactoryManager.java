@@ -78,7 +78,7 @@ class RegistryFactoryManager {
     }
 
     static RegistryFactory create() {
-        return create(MetricsSettingsImpl.DEFAULT);
+        return create(MetricsSettings.builder().build());
     }
 
     static RegistryFactory create(MetricsSettings metricsSettings) {

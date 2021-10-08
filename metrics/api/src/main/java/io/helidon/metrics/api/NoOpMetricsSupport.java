@@ -44,6 +44,10 @@ class NoOpMetricsSupport implements MetricsSupport {
         return new Builder();
     }
 
+    static NoOpMetricsSupport create(MetricsSettings metricsSettings) {
+        return new NoOpMetricsSupport(metricsSettings);
+    }
+
     static void createEndpointForDisabledMetrics(String endpointContext, Routing.Rules serviceEndpointRoutingRules) {
         // routing to top-level root (/metrics)
         serviceEndpointRoutingRules
@@ -65,6 +69,9 @@ class NoOpMetricsSupport implements MetricsSupport {
     }
 
     private NoOpMetricsSupport(Builder builder) {
+    }
+
+    private NoOpMetricsSupport(MetricsSettings metricsSettings) {
     }
 
     @Override

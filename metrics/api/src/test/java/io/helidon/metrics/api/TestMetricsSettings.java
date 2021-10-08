@@ -42,6 +42,7 @@ public class TestMetricsSettings {
     private static Config baseDisabled;
     private static Config baseSelectiveDisabled;
     private static Config withKpi;
+    private static Config withRESTSettings;
 
     @BeforeAll
     static void loadConfig() throws IOException {
@@ -50,6 +51,7 @@ public class TestMetricsSettings {
         baseDisabled = all.get("baseDisabled").get("metrics");
         baseSelectiveDisabled = all.get("baseSelectiveDisabled").get("metrics");
         withKpi = all.get("withKpi").get("metrics");
+        withRESTSettings = all.get("withRESTSettings").get("metrics");
     }
 
     @Test
@@ -86,5 +88,14 @@ public class TestMetricsSettings {
         assertThat("Long-running threshold",
                    metricsSettings.keyPerformanceIndicatorSettings().longRunningRequestThresholdMs(),
                    is(789L));
+    }
+
+    @Test
+    void testRESTSettings() {
+        MetricsSettings metricsSettings = MetricsSettings.builder().config(withRESTSettings).build();
+        assertThat("top-level metrics enabled", metricsSettings.isEnabled(), is(true));
+        assertThat("KPI settings extended", metricsSettings.keyPerformanceIndicatorSettings().isExtended(), is(false));
+        assertThat("Configured routing", metricsSettings.routing(), is("my-routing"));
+        assertThat("Configured web-context", metricsSettings.webContext(), is("/mycontext"));
     }
 }

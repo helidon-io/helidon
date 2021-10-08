@@ -20,6 +20,7 @@ module io.helidon.metrics.api {
     requires io.helidon.common.http;
     requires io.helidon.common.serviceloader;
     requires transitive io.helidon.config;
+    requires transitive io.helidon.servicecommon.rest;
     requires io.helidon.webserver;
 
     requires transitive microprofile.metrics.api;

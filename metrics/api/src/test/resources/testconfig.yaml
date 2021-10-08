@@ -36,3 +36,8 @@ withKpi:
       extended: true
       long-running-requests:
         threshold-ms: 789
+
+withRESTSettings:
+  metrics:
+    web-context: /mycontext
+    routing: my-routing

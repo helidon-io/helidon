@@ -22,4 +22,8 @@ class NoOpMetricsSupportProviderImpl implements MetricsSupportProvider<NoOpMetri
         return NoOpMetricsSupport.builder();
     }
 
+    @Override
+    public NoOpMetricsSupport create(MetricsSettings metricsSettings) {
+        return NoOpMetricsSupport.create(metricsSettings);
+    }
 }

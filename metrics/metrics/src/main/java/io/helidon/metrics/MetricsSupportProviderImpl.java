@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics;
 
+import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.MetricsSupportProvider;
 
 /**
@@ -25,5 +26,11 @@ public class MetricsSupportProviderImpl implements MetricsSupportProvider<Metric
     @Override
     public MetricsSupport.Builder builder() {
         return MetricsSupport.builder();
+    }
+
+    @Override
+    public MetricsSupport create(MetricsSettings metricsSettings) {
+        // Don't use create because that delegates to the API MetricsSupport class which would deledate right back here.
+        return new MetricsSupport(metricsSettings);
     }
 }

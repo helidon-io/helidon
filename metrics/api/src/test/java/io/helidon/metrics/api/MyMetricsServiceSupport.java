@@ -17,6 +17,7 @@ package io.helidon.metrics.api;
 
 import java.util.logging.Logger;
 
+import io.helidon.config.Config;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Routing;
 
@@ -27,7 +28,6 @@ public class MyMetricsServiceSupport extends HelidonRestServiceSupport {
 
     private static final Logger LOGGER = Logger.getLogger(MyMetricsServiceSupport.class.getName());
 
-    private final MetricsCapableRestServiceHelper helper;
     private final Counter counter;
 
     static MyMetricsServiceSupport.Builder builder() {
@@ -36,12 +36,11 @@ public class MyMetricsServiceSupport extends HelidonRestServiceSupport {
 
     public MyMetricsServiceSupport(Builder builder) {
         super(LOGGER, builder, "myService");
-        helper = MetricsCapableRestServiceHelper.create(builder.componentMetricsSettingsBuilder.build());
 
-        MetricRegistry appRegistry = helper
-                .registryFactory()
+        MetricRegistry registry = RegistryFactory
+                .getInstance(builder.componentMetricsSettingsBuilder.build())
                 .getRegistry(MetricRegistry.Type.APPLICATION);
-        counter = appRegistry.counter("myCounter");
+        counter = registry.counter("myCounter");
     }
 
     @Override
@@ -71,6 +70,15 @@ public class MyMetricsServiceSupport extends HelidonRestServiceSupport {
 
         public Builder componentMetricsSettings(ComponentMetricsSettings.Builder componentMetricsSettings) {
             componentMetricsSettingsBuilder = componentMetricsSettings;
+            return this;
+        }
+
+        @Override
+        public Builder config(Config config) {
+            super.config(config);
+            config.get(ComponentMetricsSettings.Builder.METRICS_CONFIG_KEY)
+                    .as(ComponentMetricsSettings::builder)
+                    .ifPresent(this::componentMetricsSettings);
             return this;
         }
 

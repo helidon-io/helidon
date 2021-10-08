@@ -18,7 +18,6 @@ package io.helidon.metrics.api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.config.metadata.ConfiguredValue;
 
 /**
  * Settings which control metrics behavior for a metrics-capable component.
@@ -52,6 +51,16 @@ public interface ComponentMetricsSettings {
      */
     static ComponentMetricsSettings.Builder builder() {
         return new ComponentMetricsSettingsImpl.Builder();
+    }
+
+    /**
+     * Returns a builder for {@code ComponentMetricsSettings} based on the provided component metric settings config node.
+     *
+     * @param componentMetricsConfig the config node containing the component metrics config section
+     * @return new builder initialized with the config settings
+     */
+    static ComponentMetricsSettings.Builder builder(Config componentMetricsConfig) {
+        return builder().config(componentMetricsConfig);
     }
 
     /**
@@ -89,12 +98,7 @@ public interface ComponentMetricsSettings {
          * @param value true if metrics should be enabled for the component; false if not
          * @return updated builder
          */
-        @ConfiguredOption(
-                key = ENABLED_CONFIG_KEY,
-                allowedValues = {
-                        @ConfiguredValue(value = "true", description = "metrics should be enabled for the component"),
-                        @ConfiguredValue(value = "false", description = "metrics should be disabled forthe component")
-                })
+        @ConfiguredOption(key = ENABLED_CONFIG_KEY)
         ComponentMetricsSettings.Builder enabled(boolean value);
 
         /**
