@@ -25,7 +25,6 @@ module io.helidon.servicecommon.rest {
     requires transitive io.helidon.config;
     requires transitive io.helidon.webserver;
     requires transitive io.helidon.webserver.cors;
-    requires transitive io.helidon.metrics.api;
 
     exports io.helidon.servicecommon.rest;
 

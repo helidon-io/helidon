@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.servicecommon.rest;
+package io.helidon.metrics.api;
 
-import io.helidon.metrics.api.ComponentMetricsSettings;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class TestComponentMetricsSettings {
-
+public class TestMetricsCapableServiceSettings {
 
     @Test
     void testWithComponentMetricsDisabled() {
@@ -36,14 +34,14 @@ public class TestComponentMetricsSettings {
     }
 
     private static void test(boolean componentMetricsEnabled, long expectedCounterValue) {
-        ComponentMetricsSettings cms = ComponentMetricsSettings.builder()
-                .enabled(componentMetricsEnabled)
-                .build();
+        ComponentMetricsSettings.Builder cms = ComponentMetricsSettings
+                .builder()
+                .enabled(componentMetricsEnabled);
 
-        MyServiceSupport myServiceSupport = MyServiceSupport.builder().componentMetricsSettings(cms).build();
+        MyMetricsServiceSupport myServiceSupport = MyMetricsServiceSupport.builder().componentMetricsSettings(cms).build();
         myServiceSupport.access();
 
         assertThat("Counter value with component metrics  = " + componentMetricsEnabled,
-                myServiceSupport.getCount(), is(expectedCounterValue));
+                   myServiceSupport.getCount(), is(expectedCounterValue));
     }
 }

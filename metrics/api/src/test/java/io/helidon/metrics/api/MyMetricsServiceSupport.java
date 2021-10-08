@@ -13,31 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.servicecommon.rest;
-
-import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.webserver.Routing;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
+package io.helidon.metrics.api;
 
 import java.util.logging.Logger;
 
-public class MyServiceSupport extends HelidonRestServiceSupport {
+import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
+import io.helidon.webserver.Routing;
 
-    private static final Logger LOGGER = Logger.getLogger(MyServiceSupport.class.getName());
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 
-    static Builder builder() {
+public class MyMetricsServiceSupport extends HelidonRestServiceSupport {
+
+    private static final Logger LOGGER = Logger.getLogger(MyMetricsServiceSupport.class.getName());
+
+    private final MetricsCapableRestServiceHelper helper;
+    private final Counter counter;
+
+    static MyMetricsServiceSupport.Builder builder() {
         return new Builder();
     }
 
-    private final RegistryFactory registryFactory;
-    private final MetricRegistry appRegistry;
-    private final Counter counter;
-
-    public MyServiceSupport(Builder builder) {
+    public MyMetricsServiceSupport(Builder builder) {
         super(LOGGER, builder, "myService");
-        registryFactory = RegistryFactory.getInstance(builder.componentMetricsSettings());
-        appRegistry = registryFactory.getRegistry(MetricRegistry.Type.APPLICATION);
+        helper = MetricsCapableRestServiceHelper.create(builder.componentMetricsSettingsBuilder.build());
+
+        MetricRegistry appRegistry = helper
+                .registryFactory()
+                .getRegistry(MetricRegistry.Type.APPLICATION);
         counter = appRegistry.counter("myCounter");
     }
 
@@ -50,7 +53,6 @@ public class MyServiceSupport extends HelidonRestServiceSupport {
     public void update(Routing.Rules rules) {
 
     }
-
     void access() {
         counter.inc();
     }
@@ -59,18 +61,22 @@ public class MyServiceSupport extends HelidonRestServiceSupport {
         return counter.getCount();
     }
 
-    public static class Builder extends HelidonRestServiceSupport.Builder<MyServiceSupport, Builder> {
+    public static class Builder extends HelidonRestServiceSupport.Builder<MyMetricsServiceSupport, Builder> {
+
+        private ComponentMetricsSettings.Builder componentMetricsSettingsBuilder;
 
         public Builder() {
             super(Builder.class, "/myservice");
         }
 
+        public Builder componentMetricsSettings(ComponentMetricsSettings.Builder componentMetricsSettings) {
+            componentMetricsSettingsBuilder = componentMetricsSettings;
+            return this;
+        }
+
         @Override
-        public MyServiceSupport build() {
-            return new MyServiceSupport(this);
+        public MyMetricsServiceSupport build() {
+            return new MyMetricsServiceSupport(this);
         }
     }
-
-
-
 }
