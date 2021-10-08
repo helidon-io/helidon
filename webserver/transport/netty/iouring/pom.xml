@@ -22,17 +22,24 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.webserver.transport</groupId>
-        <artifactId>helidon-webserver-transport-project</artifactId>
+        <groupId>io.helidon.webserver.transport.netty</groupId>
+        <artifactId>helidon-webserver-transport-netty-project</artifactId>
         <version>2.4.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.webserver.transport.netty</groupId>
-    <artifactId>helidon-webserver-transport-netty-project</artifactId>
-    <name>Helidon WebServer Transport Netty Project</name>
-    <packaging>pom</packaging>
+    <artifactId>helidon-webserver-transport-netty-iouring</artifactId>
+    <name>Helidon WebServer Transport Netty io_uring</name>
 
-    <modules>
-        <module>epoll</module>
-        <module>iouring</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.netty.incubator</groupId>
+            <artifactId>netty-incubator-transport-native-io_uring</artifactId>
+            <classifier>linux-x86_64</classifier>
+        </dependency>
+
+    </dependencies>
+
 </project>
