@@ -62,14 +62,14 @@ public class MyMetricsServiceSupport extends HelidonRestServiceSupport {
 
     public static class Builder extends HelidonRestServiceSupport.Builder<MyMetricsServiceSupport, Builder> {
 
-        private ComponentMetricsSettings.Builder componentMetricsSettingsBuilder;
+        private ComponentMetricsSettings.Builder componentMetricsSettingsBuilder = ComponentMetricsSettings.builder();
 
         public Builder() {
             super(Builder.class, "/myservice");
         }
 
-        public Builder componentMetricsSettings(ComponentMetricsSettings.Builder componentMetricsSettings) {
-            componentMetricsSettingsBuilder = componentMetricsSettings;
+        public Builder componentMetricsSettings(ComponentMetricsSettings.Builder componentMetricsSettingsBuilder) {
+            componentMetricsSettingsBuilder = componentMetricsSettingsBuilder;
             return this;
         }
 

@@ -28,11 +28,6 @@ import io.helidon.config.metadata.ConfiguredOption;
 public interface ComponentMetricsSettings {
 
     /**
-     * Default {@code ComponentMetricsSettings}.
-     */
-    ComponentMetricsSettings DEFAULT = builder().build();
-
-    /**
      * Returns component metrics settings created from a {@code Config} node, by convention the {@code metrics} config
      * section within the component's own config section.
      * <p>Equivalent to {@code ComponentMetricsSettings.builder().config(config).build()}.</p>
@@ -41,7 +36,7 @@ public interface ComponentMetricsSettings {
      * @return new settings reflecting the config, using defaults as needed
      */
     static ComponentMetricsSettings create(Config config) {
-        return builder().config(config).build();
+        return builder(config).build();
     }
 
     /**

@@ -64,6 +64,20 @@ As with a metrics-dependent component, a metrics-capable component is written to
 It uses the metrics implementation _if it is present at runtime_ but functions successfully--just without updating or reporting metrics--if the runtime path does not include the Helidon metrics implementation.
 By writing a metrics-capable component, you let whoever packages or deploys your component with some other module decide whether to include the metrics implementation in that module.
 
+=== Understanding Metrics Behavior With and Without the Metrics Implementation
+
+When a metrics-dependent component or a metrics-capable component runs with the metrics implementation _present_ from the runtime path, metrics works like this:
+
+* The `RegistryFactory` static methods return fully-functional `RegistryFactory` instances.
+* Those `RegistryFactory` instances provide fully-functional `MetricRegistry` instances.
+* Those `MetricRegistry` instances return fully-featured metrics (counters, timers, etc.) which update their values.
+
+On the other hand, if the metrics implementation is _absent_ from the runtime path, the metrics returned from a `MetricRegistry` are _no-ops_. That is, those metrics _do not_ update their values.
+
+Metrics-capable code can register, look up, and remove metrics in the registries but should not expect metrics values to change.
+
+Further, the `/metrics` endpoint returns `404` with an explanatory message that metrics functionality is disabled.
+
 === Writing a Metrics-capable Component
 Writing metrics-capable code differs from writing metrics-dependent code in a few simple ways:
 
@@ -179,7 +193,7 @@ import io.helidon.metrics.api.ComponentMetricsSettings;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
-...
+    ...
     Config appConfig = Config.get(ConfigSources.classpath("application.yaml")); // <1>
     String obs = config.asString().orElse("normal"); // <2>
 

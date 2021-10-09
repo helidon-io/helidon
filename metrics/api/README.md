@@ -18,7 +18,7 @@ Helidon SE provides two related metrics components:
 
 The new module contains interfaces for `RegistryFactory` and 
 `MetricsSupport` which are API-compatible with their counterpart classes in `helidon-metrics`. 
-With minimal coding changes, components can be converted to metrics-capable.
+With minimal coding changes, components can be converted to become metrics-capable.
 
 ## Step-by-step Conversion
 
@@ -41,22 +41,30 @@ The interfaces in the new module are API-compatible with their counterparts in `
 
 ### Update the builder for your component
 
-1. Initialize
+1. Add a private field for the component metrics settings:
    ```
    private CompomentMetricsSettings.Builder componentMetricsSettingsBuilder = 
                    CompomentMetricsSettings.builder();
    ``` 
 2. Add a setter for that field.
+   ```
+   public Builder componentMetricSettings(ComponentMetricsSettings.Builder componentMetricsSettingsBuilder) {
+       this.componentMetricsSettingsBuilder = componentMetricsSettingsBuilder;
+       return this;
+   }
+   ```
 3. Add or augment a setter for `Config` so it includes this or the equivalent:
    ```
+   public Builder config(Config componentConfig) {
+   ...
    componentConfig
                 .get(ComponentMetricsSettings.Builder.METRICS_CONFIG_KEY)
-                .as(ComponentMetricsSettings::create)
+                .as(ComponentMetricsSettings::builder)
                 .ifPresent(this::componentMetricsSettings);
    ```
 
 ### Update the constructor   
-1. Get the correct `RegistryFactory` implementation:
+1. Get the correct `RegistryFactory` implementation, using the component settings:
    ```
    RegistryFactory rf = 
            RegistryFactory.getInstance(builder.componentMetricsSettingsBuilder.build());
@@ -64,7 +72,6 @@ The interfaces in the new module are API-compatible with their counterparts in `
 2. For whichever registry type or types your component uses, get and save the instances using (for example)
    ```
    MetricRegistry appRegistry = rf.getRegistry(MetricRegistry.Type.APPLICATION);
-   ...
    ```
 ### Use the saved registries   
 Expose those registries to the rest of your component and use them however your component requires.
