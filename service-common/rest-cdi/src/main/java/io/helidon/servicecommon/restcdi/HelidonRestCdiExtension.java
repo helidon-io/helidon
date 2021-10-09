@@ -52,7 +52,6 @@ import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
-import io.helidon.servicecommon.rest.RestServiceSettings;
 import io.helidon.webserver.Routing;
 
 import org.eclipse.microprofile.config.ConfigProvider;
