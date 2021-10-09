@@ -41,7 +41,7 @@ import io.helidon.webserver.cors.CrossOriginConfig;
  * </p>
  *
  */
-public abstract class HelidonRestServiceSupport implements Service {
+public abstract class HelidonRestServiceSupport implements RestServiceSupport, Service {
 
     private final String context;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
@@ -91,6 +91,7 @@ public abstract class HelidonRestServiceSupport implements Service {
      * @param defaultRules default routing rules (also accepts {@link io.helidon.webserver.Routing.Builder}
      * @param serviceEndpointRoutingRules actual rules (if different from default) for the service endpoint
      */
+    @Override
     public final void configureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules) {
         defaultRules.onNewWebServer(webserver -> {
             webServerStarted();

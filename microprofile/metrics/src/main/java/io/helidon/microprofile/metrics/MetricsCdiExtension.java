@@ -73,7 +73,7 @@ import io.helidon.common.Errors;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-import io.helidon.metrics.MetricsSupport;
+import io.helidon.metrics.api.MetricsSupport;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.metrics.MetricAnnotationInfo.RegistrationPrep;

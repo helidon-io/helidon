@@ -52,6 +52,7 @@ import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
+import io.helidon.servicecommon.rest.RestServiceSupport;
 import io.helidon.webserver.Routing;
 
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -80,9 +81,9 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  *         metrics and registers them with the appropriate metrics registry.</li>
  *     </ul>
  *
- * @param <T> concrete type of {@code HelidonRestServiceSupport} used
+ * @param <T> type of {@code RestServiceSupport} used
  */
-public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSupport> implements Extension {
+public abstract class HelidonRestCdiExtension<T extends RestServiceSupport> implements Extension {
 
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 

@@ -64,6 +64,7 @@
         <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>

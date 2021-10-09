@@ -74,11 +74,6 @@ class NoOpMetricsSupport implements MetricsSupport {
     private NoOpMetricsSupport(MetricsSettings metricsSettings) {
     }
 
-    @Override
-    public void update(Routing.Rules rules) {
-
-    }
-
     static class Builder implements MetricsSupport.Builder<NoOpMetricsSupport> {
 
         @Override

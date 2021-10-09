@@ -24,6 +24,19 @@ import org.eclipse.microprofile.metrics.Metric;
 public interface HelidonMetric extends Metric {
 
     /**
+     * Indicates if the specified metric is known to have been marked as deleted.
+     * <p>
+     *     This check makes sense only for metrics which implement {@link HelidonMetric}, which all Helidon-provided metrics do.
+     * </p>
+     *
+     * @param metric the metric to check
+     * @return true if the metrics implements {@code HelidonMetric} and also has been marked as deleted; false otherwise
+     */
+    static boolean isMarkedAsDeleted(Metric metric) {
+        return AbstractRegistry.isMarkedAsDeleted(metric);
+    }
+
+    /**
      * @return the metadata for the metric
      */
     Metadata metadata();

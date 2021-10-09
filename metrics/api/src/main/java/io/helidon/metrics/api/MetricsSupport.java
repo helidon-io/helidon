@@ -15,6 +15,8 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.config.Config;
+import io.helidon.servicecommon.rest.RestServiceSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 
@@ -39,7 +41,7 @@ import io.helidon.webserver.Service;
  *  req.context().get(MetricRegistry.class).ifPresent(reg -> reg.counter("myCounter").inc());
  * }</pre>
  */
-public interface MetricsSupport extends Service {
+public interface MetricsSupport extends RestServiceSupport, Service {
 
     /**
      * Creates a new {@code MetricsSupport} instance using default metrics settings.
@@ -61,6 +63,16 @@ public interface MetricsSupport extends Service {
     }
 
     /**
+     * Creates a new {@code MetricsSupport} instance using the specified configuration.
+     *
+     * @param config configuration to use
+     * @return new metrics support instance using the provided configuration
+     */
+    static MetricsSupport create(Config config) {
+        return MetricsSupportManager.create(MetricsSettings.create(config));
+    }
+
+    /**
      * Prepares the family of {@code /metrics} endpoints.
      * <p>
      *     By default, requests to the metrics endpoints trigger a 404 response with an explanatory message that metrics are
@@ -72,6 +84,28 @@ public interface MetricsSupport extends Service {
      */
     default void prepareMetricsEndpoints(String endpointContext, Routing.Rules serviceEndpointRoutingRules) {
         NoOpMetricsSupport.createEndpointForDisabledMetrics(endpointContext, serviceEndpointRoutingRules);
+    }
+
+    /**
+     * Prepares the endpoint which the service exposes.
+     *
+     * @param defaultRoutingRules routing rules for the default routing
+     * @param serviceEndpointRoutingRules routing rules (if different from default) for the service endpoint
+     */
+    default void configureEndpoint(Routing.Rules defaultRoutingRules, Routing.Rules serviceEndpointRoutingRules) {
+    }
+
+    /**
+     * Sets up vendor metrics routing using the specified routing name and routing builder.
+     *
+     * @param routingName routing name to use in setting up the vendor metrics
+     * @param routingBuilder routing builder to modify
+     */
+    default void configureVendorMetrics(String routingName, Routing.Builder routingBuilder) {
+    }
+
+    @Override
+    default void update(Routing.Rules rules) {
     }
 
     /**
