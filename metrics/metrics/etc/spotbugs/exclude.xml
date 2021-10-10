@@ -80,6 +80,14 @@
         <Class name="io.helidon.metrics.HelidonMetric" />
         <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
     </Match>
+    <Match>
+        <Class name="io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings" />
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+    </Match>
+    <Match>
+        <Class name="io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings$Builder" />
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+    </Match>
     <!-- -->
 
 </FindBugsFilter>

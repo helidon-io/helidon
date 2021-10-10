@@ -18,6 +18,7 @@ package io.helidon.examples.metrics.kpi;
 
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
@@ -29,12 +30,18 @@ import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.containsString;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+
+// end::[]
 
 public class MainTest {
 
@@ -77,31 +84,31 @@ public class MainTest {
                 .path("/greet")
                 .request(JsonObject.class)
                 .await();
-        assertEquals("Hello World!", jsonObject.getString("message"));
+        assertThat("Returned generic message", jsonObject.getString("message"), is("Hello World!"));
 
         jsonObject = webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
                 .await();
-        assertEquals("Hello Joe!", jsonObject.getString("message"));
+        assertThat("Returned personalized message", jsonObject.getString("message"), is("Hello Joe!"));
 
         response = webClient.put()
                 .path("/greet/greeting")
                 .submit(TEST_JSON_OBJECT)
                 .await();
-        assertEquals(204, response.status().code());
+        assertThat("Response status from setting greeting", response.status().code(), is(204));
 
         jsonObject = webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
                 .await();
-        assertEquals("Hola Joe!", jsonObject.getString("message"));
+        assertThat("Response statuc after changing greeting", jsonObject.getString("message"), is("Hola Joe!"));
 
         response = webClient.get()
                 .path("/metrics")
                 .request()
                 .await();
-        assertEquals(200, response.status().code());
+        assertThat("Response code from metrics", response.status().code(), is(200));
     }
 
     @Test
@@ -113,23 +120,29 @@ public class MainTest {
                 .request(String.class)
                 .await();
 
-        assertTrue(get.contains("Hello World!"));
+        assertThat("Response from generic greeting", get, containsString("Hello World!"));
 
         get = webClient.get()
                 .path("/greet/Joe")
                 .request(String.class)
                 .await();
 
-        assertTrue(get.contains("Hello Joe!"));
+        assertThat("Response body from personalized greeting", get, containsString("Hello Joe!"));
 
         String openMetricsOutput = webClient.get()
                 .path("/metrics/" + KPI_REGISTRY_TYPE.getName())
                 .request(String.class)
                 .await();
 
-        assertTrue(openMetricsOutput.contains(
-                "# TYPE " + KPI_REGISTRY_TYPE.getName() + "_requests_inFlight_current"),
-                "Returned KPI metrics contains inFlight");
+        assertThat("Returned metrics output",
+                   openMetricsOutput,
+                   chooseMatcher());
+    }
 
+    private static Matcher<String> chooseMatcher() {
+        Matcher<String> contains = containsString("# TYPE " + KPI_REGISTRY_TYPE.getName() + "_requests_inFlight_current");
+        return Main.USE_CONFIG
+                ? contains
+                : not(contains);
     }
 }
