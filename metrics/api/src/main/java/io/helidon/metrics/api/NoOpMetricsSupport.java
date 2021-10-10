@@ -68,16 +68,28 @@ class NoOpMetricsSupport implements MetricsSupport {
                         ));
     }
 
+    private final MetricsSettings metricsSettings;
+
+    @Override
+    public void configureEndpoint(Routing.Rules defaultRoutingRules, Routing.Rules serviceEndpointRoutingRules) {
+        createEndpointForDisabledMetrics(metricsSettings.restServiceSettings().webContext(), serviceEndpointRoutingRules);
+    }
+
     private NoOpMetricsSupport(Builder builder) {
+        this.metricsSettings = builder.metricsSettingsBuilder.build();
     }
 
     private NoOpMetricsSupport(MetricsSettings metricsSettings) {
+        this.metricsSettings = metricsSettings;
     }
 
     static class Builder implements MetricsSupport.Builder<NoOpMetricsSupport> {
 
+        private MetricsSettings.Builder metricsSettingsBuilder;
+
         @Override
         public NoOpMetricsSupport.Builder metricsSettings(MetricsSettings.Builder metricsSettingsBuilder) {
+            this.metricsSettingsBuilder = metricsSettingsBuilder;
             return this;
         }
 

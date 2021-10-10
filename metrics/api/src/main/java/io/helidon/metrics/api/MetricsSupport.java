@@ -92,8 +92,7 @@ public interface MetricsSupport extends RestServiceSupport, Service {
      * @param defaultRoutingRules routing rules for the default routing
      * @param serviceEndpointRoutingRules routing rules (if different from default) for the service endpoint
      */
-    default void configureEndpoint(Routing.Rules defaultRoutingRules, Routing.Rules serviceEndpointRoutingRules) {
-    }
+    void configureEndpoint(Routing.Rules defaultRoutingRules, Routing.Rules serviceEndpointRoutingRules);
 
     /**
      * Sets up vendor metrics routing using the specified routing name and routing builder.
