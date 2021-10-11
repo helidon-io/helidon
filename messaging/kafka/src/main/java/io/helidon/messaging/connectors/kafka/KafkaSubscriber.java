@@ -74,6 +74,7 @@ public class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void onNext(Message<V> message) {
         Objects.requireNonNull(message);
         List<CompletableFuture<Void>> futureList = new ArrayList<>(topics.size());
@@ -151,6 +152,7 @@ public class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
      * @param config configuration to load from
      * @return updated builder instance
      */
+    @SuppressWarnings("unchecked")
     public static <K, V> KafkaSubscriber<K, V> create(Config config) {
         return (KafkaSubscriber<K, V>) builder().config(config).build();
     }

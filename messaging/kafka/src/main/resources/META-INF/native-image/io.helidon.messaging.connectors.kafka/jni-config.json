@@ -1,6 +1,6 @@
 [
   {
-    "name": "com.github.luben.zstd.ZstdInputStream",
+    "name": "com.github.luben.zstd.ZstdOutputStreamNoFinalizer",
     "fields": [
       {
         "name": "dstPos"
@@ -11,7 +11,7 @@
     ]
   },
   {
-    "name": "com.github.luben.zstd.ZstdOutputStream",
+    "name": "com.github.luben.zstd.ZstdOutputStreamNoFinalizer",
     "fields": [
       {
         "name": "dstPos"
