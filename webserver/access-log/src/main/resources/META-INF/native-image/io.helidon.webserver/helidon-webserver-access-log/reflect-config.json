@@ -1,7 +1,0 @@
-[
-    {
-        "name": "io.helidon.webserver.accesslog.AccessLogHandler",
-        "allDeclaredConstructors": true,
-        "allPublicMethods": true
-    }
-]
