@@ -33,6 +33,10 @@
     <packaging>jar</packaging>
     <name>Helidon Messaging Kafka Connector</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
          <dependency>
             <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
