@@ -1,7 +1,0 @@
-"T Shirt Size"
-enum ShirtSize {
- Small
- Medium
- Large
- XLarge
-}
