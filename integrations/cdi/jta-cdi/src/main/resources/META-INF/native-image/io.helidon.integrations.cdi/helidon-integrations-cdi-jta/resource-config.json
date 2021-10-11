@@ -1,7 +1,0 @@
-{
-    "resources": [
-        {
-            "pattern": "io/helidon/integrations/jta/cdi/Messages.properties"
-        }
-    ]
-}
