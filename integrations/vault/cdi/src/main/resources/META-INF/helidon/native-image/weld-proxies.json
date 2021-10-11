@@ -1,8 +1,0 @@
-[
-    {
-        "bean-class": "io.helidon.integrations.vault.cdi.VaultCdiExtension",
-        "ifaces": [
-            "io.helidon.integrations.vault.Vault"
-        ]
-    }
-]

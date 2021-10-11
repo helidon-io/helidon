@@ -1,8 +1,0 @@
-[
-    {
-        "bean-class": "org.jboss.weld.module.jta.UserTransactionBean",
-        "ifaces": [
-            "javax.transaction.UserTransaction"
-        ]
-    }
-]
