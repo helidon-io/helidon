@@ -20,8 +20,8 @@ import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.metrics.MetricsSupport;
 import io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings;
+import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
