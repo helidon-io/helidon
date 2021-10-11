@@ -1,7 +1,0 @@
-{
-    "resources": [
-        {
-            "pattern": "META-INF/helidon/serial-config.properties"
-        }
-    ]
-}
