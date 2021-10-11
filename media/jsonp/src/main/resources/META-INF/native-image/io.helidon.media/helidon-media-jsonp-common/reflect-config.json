@@ -1,7 +1,0 @@
-[
-    {
-        "name": "org.glassfish.json.JsonProviderImpl",
-        "allPublicConstructors": true,
-        "allPublicMethods": true
-    }
-]
