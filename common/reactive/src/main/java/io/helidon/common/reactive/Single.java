@@ -33,6 +33,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -398,13 +399,10 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      */
     default Single<T> onCancel(Runnable onCancel) {
-        return new SingleTappedPublisher<>(this,
-                null,
-                null,
-                null,
-                null,
-                null,
-                onCancel);
+        return SingleTappedPublisher.builder(this)
+                .operatorName("Single.onCancel")
+                .onCancelCallback(onCancel)
+                .build();
     }
 
     /**
@@ -414,13 +412,10 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      */
     default Single<T> onComplete(Runnable onComplete) {
-        return new SingleTappedPublisher<>(this,
-                null,
-                null,
-                null,
-                onComplete,
-                null,
-                null);
+        return SingleTappedPublisher.builder(this)
+                .operatorName("Single.onComplete")
+                .onCompleteCallback(onComplete)
+                .build();
     }
 
     /**
@@ -430,13 +425,10 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      */
     default Single<T> onError(Consumer<? super Throwable> onErrorConsumer) {
-        return new SingleTappedPublisher<>(this,
-                null,
-                null,
-                onErrorConsumer,
-                null,
-                null,
-                null);
+        return SingleTappedPublisher.builder(this)
+                .operatorName("Single.onError")
+                .onErrorCallback(onErrorConsumer)
+                .build();
     }
 
     /**
@@ -508,13 +500,12 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      */
     default Single<T> onTerminate(Runnable onTerminate) {
-        return new SingleTappedPublisher<>(this,
-                null,
-                null,
-                e -> onTerminate.run(),
-                onTerminate,
-                null,
-                onTerminate);
+        return SingleTappedPublisher.builder(this)
+                .operatorName("Single.onTerminate")
+                .onErrorCallback(e -> onTerminate.run())
+                .onCancelCallback(onTerminate)
+                .onCompleteCallback(onTerminate)
+                .build();
     }
 
     /**
@@ -535,8 +526,61 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      */
     default Single<T> peek(Consumer<? super T> consumer) {
-        return new SingleTappedPublisher<>(this, null, consumer,
-                null, null, null, null);
+        return SingleTappedPublisher.builder(this)
+                .operatorName("Single.peek")
+                .onNextCallback(consumer)
+                .build();
+    }
+
+    /**
+     * Log all signals {@code onSubscribe}, {@code onNext},
+     * {@code onError}, {@code onComplete}, {@code cancel} and {@code request}
+     * coming to and from preceding operator.
+     *
+     * @return Multi
+     */
+    default Single<T> log() {
+        return Single.create(new LoggingPublisher<>(this, Level.INFO, false));
+    }
+
+    /**
+     * Log all signals {@code onSubscribe}, {@code onNext},
+     * {@code onError}, {@code onComplete}, {@code cancel} and {@code request}
+     * coming to and from preceding operator.
+     *
+     * @param level a logging level value
+     * @return Multi
+     */
+    default Single<T> log(Level level) {
+        return Single.create(new LoggingPublisher<>(this, level, false));
+    }
+
+    /**
+     * Log all signals {@code onSubscribe}, {@code onNext},
+     * {@code onError}, {@code onComplete}, {@code cancel} and {@code request}
+     * coming to and from preceding operator.
+     *
+     * @param level a logging level value
+     * @param loggerName custom logger name
+     * @return Multi
+     */
+    default Single<T> log(Level level, String loggerName) {
+        return Single.create(new LoggingPublisher<>(this, level, loggerName));
+    }
+
+    /**
+     * Log all signals {@code onSubscribe}, {@code onNext},
+     * {@code onError}, {@code onComplete}, {@code cancel} and {@code request}
+     * coming to and from preceding operator.
+     * <p>
+     * Enabled <b>trace</b> option has a negative impact on performance and should <b>NOT</b> be used in production.
+     *</p>
+     * @param level a logging level value
+     * @param trace if true position of operator is looked up from stack and logged
+     * @return Multi
+     */
+    default Single<T> log(Level level, boolean trace) {
+        return Single.create(new LoggingPublisher<>(this, level, trace));
     }
 
     /**
