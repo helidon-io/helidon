@@ -120,7 +120,7 @@ public class NarayanaClient implements CoordinatorClient {
                                                 + "'Long-Running-Action' header."))
                 )
                 .onErrorResumeWith(t -> connectionError("Unable to start LRA", t))
-                .peek(lraId -> logF("LRA started - LRAID: {1}", () -> List.of(lraId)))
+                .peek(lraId -> logF("LRA started - LRAID: {0} parent: {1}", lraId, parentLRA))
                 .first());
     }
 
@@ -134,7 +134,7 @@ public class NarayanaClient implements CoordinatorClient {
                 .flatMap(status -> {
                     switch (status.family()) {
                         case SUCCESSFUL:
-                            logF("LRA cancelled - LRAID: {1}", () -> List.of(lraId));
+                            logF("LRA cancelled - LRAID: {0}", lraId);
                             return Single.empty();
                         case CLIENT_ERROR:
                         default:
@@ -161,12 +161,13 @@ public class NarayanaClient implements CoordinatorClient {
                 .flatMap(status -> {
                     switch (status.family()) {
                         case SUCCESSFUL:
-                            logF("LRA closed - LRAID: {1}", () -> List.of(lraId));
+                            logF("LRA closed - LRAID: {0}", lraId);
                             return Single.empty();
                         case CLIENT_ERROR:
                         default:
-                            if (410 == status.code()) {
-                                logF("LRA already closed - LRAID: {1}", () -> List.of(lraId));
+                            // 404 can happen when coordinator already cleaned terminated lra's
+                            if (List.of(410, 404).contains(status.code())) {
+                                logF("LRA already closed - LRAID: {0}", lraId);
                                 return Single.empty();
                             }
                             return connectionError("Unable to close lra - LRAID: " + lraId, status.code());
@@ -198,7 +199,9 @@ public class NarayanaClient implements CoordinatorClient {
                             return connectionError(res.lastEndpointURI()
                                     + "Too late to join LRA - LRAID: " + lraId, 412);
                         case 404:
-                            return connectionError("Not found " + lraId, 404);
+                            // Narayana returns 404 for already terminated lras
+                        case 410:
+                            return connectionError("Not found " + lraId, 410);
                         case 200:
                             return Single.just(res
                                     .headers()
@@ -210,7 +213,7 @@ public class NarayanaClient implements CoordinatorClient {
                     }
                 })
                 .onErrorResumeWith(t -> connectionError("Unable to join LRA", t))
-                .peek(uri -> logF("Participant {0} joined - LRAID: {1}", () -> List.of(p, lraId)))
+                .peek(uri -> logF("Participant {0} joined - LRAID: {1}", p, lraId))
                 .first());
     }
 
@@ -225,10 +228,10 @@ public class NarayanaClient implements CoordinatorClient {
                         case 404:
                             LOGGER.log(Level.WARNING,
                                     "Participant {0} leaving LRA - Coordinator can't find id - LRAID: {1}",
-                                    new Object[]{p, lraId});
+                                    new Object[] {p, lraId});
                             return Single.empty();
                         case 200:
-                            logF("Participant {0} left - LRAID: {1}", () -> List.of(p, lraId));
+                            logF("Participant {0} left - LRAID: {1}", p, lraId);
                             return Single.empty();
                         default:
                             throw new IllegalStateException("Unexpected coordinator response " + res.status());
@@ -257,8 +260,7 @@ public class NarayanaClient implements CoordinatorClient {
                             return res
                                     .content()
                                     .as(LRAStatus.class)
-                                    .peek(status -> logF("LRA status {0} retrieved - LRAID: {1}",
-                                            () -> List.of(status, lraId)));
+                                    .peek(status -> logF("LRA status {0} retrieved - LRAID: {1}", status, lraId));
                         default:
                             throw new IllegalStateException("Unexpected coordinator response " + res.status());
                     }
@@ -298,13 +300,13 @@ public class NarayanaClient implements CoordinatorClient {
      */
     private String compensatorLinks(Participant p) {
         return Map.of(
-                        "compensate", p.compensate(),
-                        "complete", p.complete(),
-                        "forget", p.forget(),
-                        "leave", p.leave(),
-                        "after", p.after(),
-                        "status", p.status()
-                )
+                "compensate", p.compensate(),
+                "complete", p.complete(),
+                "forget", p.forget(),
+                "leave", p.leave(),
+                "after", p.after(),
+                "status", p.status()
+        )
                 .entrySet()
                 .stream()
                 .filter(e -> e.getValue().isPresent())
@@ -339,10 +341,8 @@ public class NarayanaClient implements CoordinatorClient {
         return Single.error(new CoordinatorConnectionException(message, cause, 500));
     }
 
-    private void logF(String msg, Supplier<List<?>> params) {
-        if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.log(Level.FINE, msg, params.get().toArray());
-        }
+    private void logF(String msg, Object... params) {
+        LOGGER.log(Level.FINE, msg, params);
     }
 }
 

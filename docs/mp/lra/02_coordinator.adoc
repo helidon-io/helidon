@@ -40,7 +40,7 @@ CAUTION: Experimental tool, usage in production is not advised.
 [source,bash]
 .Build and run Helidon LRA coordinator
 ----
-docker build -t helidon/lra-coordinator https://github.com/oracle/helidon.git:lra/coordinator/server
+docker build -t helidon/lra-coordinator https://github.com/oracle/helidon.git#:lra/coordinator/server
 docker run -dp 8070:8070 --name lra-coordinator --network="host" helidon/lra-coordinator
 ----
 

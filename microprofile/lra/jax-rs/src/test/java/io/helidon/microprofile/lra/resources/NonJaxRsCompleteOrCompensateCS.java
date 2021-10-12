@@ -18,6 +18,8 @@
 package io.helidon.microprofile.lra.resources;
 
 import java.net.URI;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import javax.inject.Inject;
 import javax.ws.rs.HeaderParam;
@@ -27,17 +29,17 @@ import javax.ws.rs.core.Response;
 
 import io.helidon.microprofile.lra.LoadBalancedCoordinatorTest;
 
-import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
-
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 
-@Path(CdiCompleteOrCompensate.PATH_BASE)
-public class CdiCompleteOrCompensate {
+import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
-    public static final String PATH_BASE = "cdi-complete-cancel";
+@Path(NonJaxRsCompleteOrCompensateCS.PATH_BASE)
+public class NonJaxRsCompleteOrCompensateCS {
+
+    public static final String PATH_BASE = "non-jax-rs-complete-cancel-cs";
     public static final String PATH_START_LRA = "start";
     public static final String PATH_COMPLETE = "complete";
     public static final String PATH_COMPENSATE = "compensate";
@@ -50,7 +52,7 @@ public class CdiCompleteOrCompensate {
 
     @PUT
     @LRA(value = LRA.Type.REQUIRES_NEW)
-    @Path(CdiCompleteOrCompensate.PATH_START_LRA)
+    @Path(NonJaxRsCompleteOrCompensateCS.PATH_START_LRA)
     public void start(
             @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
             @HeaderParam(Work.HEADER_KEY) Work work
@@ -60,14 +62,14 @@ public class CdiCompleteOrCompensate {
     }
 
     @Complete
-    public Response complete(URI lraId) {
+    public CompletionStage<Response> complete(URI lraId) {
         basicTest.getCompletable(CS_COMPLETE).complete(lraId);
-        return Response.ok(ParticipantStatus.Completed.name()).build();
+        return CompletableFuture.supplyAsync(() -> Response.ok(ParticipantStatus.Completed.name()).build());
     }
 
     @Compensate
-    public Response compensate(URI lraId) {
+    public CompletionStage<Response> compensate(URI lraId) {
         basicTest.getCompletable(CS_COMPENSATE).complete(lraId);
-        return Response.ok(ParticipantStatus.Compensated.name()).build();
+        return CompletableFuture.supplyAsync(() -> Response.ok(ParticipantStatus.Compensated.name()).build());
     }
 }
