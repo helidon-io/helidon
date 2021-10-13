@@ -154,7 +154,10 @@ final class CdiExecutableMethod extends AbstractExecutableMethod {
         for (String miAnnotationName : miAnnotationNames) {
             try {
                 Annotation annotation = miAnnotated.synthesize((Class<? extends Annotation>) Class.forName(miAnnotationName));
-                annotations.put(annotation.annotationType(), annotation);
+                if (annotation != null) {
+                    // annotation is present
+                    annotations.put(annotation.annotationType(), annotation);
+                }
             } catch (Throwable ignored) {
                 // this annotation is not on the classpath, we can ignore it
             }
