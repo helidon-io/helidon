@@ -21,7 +21,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -42,22 +41,17 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
-import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.security.providers.httpauth.HttpBasicOutboundConfig;
 import io.helidon.security.util.TokenHandler;
-import io.helidon.webclient.Proxy;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.security.WebClientSecurity;
-import io.helidon.webclient.tracing.WebClientTracing;
 
-import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 /**
@@ -297,7 +291,7 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * <tr>
  *     <td>{@code logout-endpoint-uri}</td>
  *     <td>From well known metadata endpoint</td>
- *     <td>Endpoint to redirect user to to log out from OIDC server.</td>
+ *     <td>Endpoint to redirect user to log out from OIDC server.</td>
  * </tr>
  * <tr>
  *     <td>{@code post-logout-uri}</td>
@@ -1006,7 +1000,7 @@ public final class OidcConfig {
      */
     @Configured(description = "Open ID Connect configuration")
     public static class Builder implements io.helidon.common.Builder<OidcConfig> {
-        private static final String DEFAULT_SERVER_TYPE = "@default";
+        static final String DEFAULT_SERVER_TYPE = "@default";
 
         private final OidcCookieHandler.Builder tokenCookieBuilder = OidcCookieHandler.builder()
                 .cookieName(DEFAULT_COOKIE_NAME);
@@ -1065,20 +1059,23 @@ public final class OidcConfig {
 
         @Override
         public OidcConfig build() {
-            fixServerType();
+            this.serverType = OidcUtil.fixServerType(serverType);
 
             Errors.Collector collector = Errors.collector();
 
-            validateExists(collector, clientId, "Client Id", "client-id");
-            validateExists(collector, clientSecret, "Client Secret", "client-secret");
-            validateExists(collector, identityUri, "Identity URI", "identity-uri");
+            OidcUtil.validateExists(collector, clientId, "Client Id", "client-id");
+            OidcUtil.validateExists(collector, clientSecret, "Client Secret", "client-secret");
+            OidcUtil.validateExists(collector, identityUri, "Identity URI", "identity-uri");
 
             // first set of validations
             collector.collect().checkValid();
             collector = Errors.collector();
 
-            WebClient.Builder webClientBuilder = webClientBaseBuilder();
-            ClientBuilder clientBuilder = clientBaseBuilder();
+            WebClient.Builder webClientBuilder = OidcUtil.webClientBaseBuilder(proxyProtocol,
+                                                                               proxyHost,
+                                                                               proxyPort,
+                                                                               clientTimeout);
+            ClientBuilder clientBuilder = OidcUtil.clientBaseBuilder(proxyProtocol, proxyHost, proxyPort);
 
             this.generalClient = clientBuilder.build();
             this.webClient = webClientBuilder.build();
@@ -1547,18 +1544,18 @@ public final class OidcConfig {
          * @param sameSite SameSite cookie attribute value
          * @return updated builder instance
          */
-        @ConfiguredOption(value = DEFAULT_COOKIE_SAME_SITE)
         public Builder cookieSameSite(String sameSite) {
             return cookieSameSite(SetCookie.SameSite.valueOf(sameSite.toUpperCase(Locale.ROOT)));
         }
 
         /**
          * When using cookie, used to set the SameSite cookie value. Can be
-         * "Strict" or "Lax"
+         * "Strict" or "Lax".
          *
          * @param sameSite SameSite cookie attribute
          * @return updated builder instance
          */
+        @ConfiguredOption(value = "LAX")
         public Builder cookieSameSite(SetCookie.SameSite sameSite) {
             this.tokenCookieBuilder.sameSite(sameSite);
             this.idTokenCookieBuilder.sameSite(sameSite);
@@ -1616,7 +1613,7 @@ public final class OidcConfig {
          * @param path the path to use as value of cookie "Path" attribute
          * @return updated builder instance
          */
-        @ConfiguredOption(value = DEFAULT_COOKIE_PATH)
+        @ConfiguredOption(value = OidcCookieHandler.Builder.DEFAULT_PATH)
         public Builder cookiePath(String path) {
             this.tokenCookieBuilder.path(path);
             this.idTokenCookieBuilder.path(path);
@@ -1892,7 +1889,7 @@ public final class OidcConfig {
 
         /**
          * Path to register web server for logout link.
-         * This should be used by application to redirect user to to logout the current user
+         * This should be used by application to redirect user to logout the current user
          * from Helidon based session (when using cookies and redirection).
          * This endpoint will logout user from Helidon session (remove Helidon cookies) and redirect user to
          * logout screen of the OIDC server.
@@ -1907,12 +1904,12 @@ public final class OidcConfig {
 
         /**
          * URI to redirect to once the logout process is done.
-         * The endpoint should not be protected by OIDC (as this would server no purpose, just to log the user in again).
+         * The endpoint should not be protected by OIDC (as this would serve no purpose, just to log the user in again).
          * This endpoint usually must be registered with the application as the allowed post-logout redirect URI.
          * Note that the URI should not contain any query parameters. You can obtain state using the
          * state query parameter that must be provided to {@link #logoutUri(String)}.
          *
-         * @param uri this will be used by teh OIDC server to redirect user to once logout is done
+         * @param uri this will be used by the OIDC server to redirect user to once logout is done
          * @return updated builder instance
          */
         public Builder postLogoutUri(URI uri) {
@@ -1975,59 +1972,6 @@ public final class OidcConfig {
 
         private void clientTimeoutMillis(long millis) {
             this.clientTimeout(Duration.ofMillis(millis));
-        }
-
-        private static void validateExists(Errors.Collector collector, Object value, String name, String configKey) {
-            // validate
-            if (value == null) {
-                collector.fatal(name + " must be configured (\"" + configKey + "\" key in config)");
-            }
-        }
-
-        private WebClient.Builder webClientBaseBuilder() {
-            WebClient.Builder webClientBuilder = WebClient.builder()
-                    .addService(WebClientTracing.create())
-                    .addMediaSupport(JsonpSupport.create())
-                    .connectTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS)
-                    .readTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
-
-            if (proxyHost != null) {
-                webClientBuilder.proxy(Proxy.builder()
-                                               .type(Proxy.ProxyType.HTTP)
-                                               .host(proxyProtocol + "://" + proxyHost)
-                                               .port(proxyPort)
-                                               .build());
-            }
-            return webClientBuilder;
-        }
-
-        private ClientBuilder clientBaseBuilder() {
-            ClientBuilder clientBuilder = ClientBuilder.newBuilder();
-
-            clientBuilder.property(OutboundConfig.PROPERTY_DISABLE_OUTBOUND, Boolean.TRUE);
-
-            if (proxyHost != null) {
-                clientBuilder.property(ClientProperties.PROXY_URI, proxyProtocol
-                        + "://"
-                        + proxyHost
-                        + ":"
-                        + proxyPort);
-            }
-
-            return clientBuilder;
-        }
-
-        private void fixServerType() {
-            if (null != serverType) {
-                // explicit server type
-                if (!"idcs".equals(serverType) && !DEFAULT_SERVER_TYPE.equals(serverType)) {
-                    LOGGER.warning("OIDC server-type is configured to " + serverType + ", currently only \"idcs\", and"
-                                           + " \"" + DEFAULT_SERVER_TYPE + "\" are supported");
-                    serverType = DEFAULT_SERVER_TYPE;
-                }
-            } else {
-                serverType = DEFAULT_SERVER_TYPE;
-            }
         }
     }
 }

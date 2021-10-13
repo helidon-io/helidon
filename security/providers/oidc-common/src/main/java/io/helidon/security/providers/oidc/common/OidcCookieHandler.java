@@ -159,7 +159,7 @@ public class OidcCookieHandler {
 
         for (String cookie : cookies) {
             //a=b; c=d; e=f
-            String[] cookieValues = cookie.split(";");
+            String[] cookieValues = cookie.split(";\\s?");
             for (String cookieValue : cookieValues) {
                 String trimmed = cookieValue.trim();
                 if (trimmed.startsWith(valuePrefix)) {

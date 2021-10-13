@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -216,7 +217,8 @@ public class JwtHeaders extends JwtClaims {
     /**
      * Audience claim.
      *
-     * @return audience or empty if claim is not defined
+     * @return audience or empty optional if claim is not defined; list would be empty if the audience claim is defined as
+     *                      an empty array
      */
     public Optional<List<String>> audience() {
         return audience;
@@ -442,12 +444,10 @@ public class JwtHeaders extends JwtClaims {
                 return List.of(((JsonString) jsonValue).getString());
             }
             if (jsonValue instanceof JsonArray) {
-                JsonArray array = (JsonArray) jsonValue;
-                List<String> result = new LinkedList<>();
-                for (JsonValue value : array) {
-                    result.add(KnownField.jsonToString(value));
-                }
-                return result;
+                return ((JsonArray) jsonValue)
+                        .stream()
+                        .map(KnownField::jsonToString)
+                        .collect(Collectors.toList());
             }
             throw new JwtException("Json value should have been a String or an array of Strings, but is " + jsonValue);
         }

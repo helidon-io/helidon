@@ -146,7 +146,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     private final Jwk defaultDecryptionJwk;
     private final Map<OutboundTarget, JwtOutboundTarget> targetToJwtConfig = new IdentityHashMap<>();
     private final String expectedIssuer;
-    private final String cookieProperty;
+    private final String cookiePrefix;
     private final boolean useCookie;
 
     private JwtAuthProvider(Builder builder) {
@@ -163,7 +163,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         this.expectedAudiences = builder.expectedAudiences;
         this.defaultJwk = builder.defaultJwk;
         this.expectedIssuer = builder.expectedIssuer;
-        this.cookieProperty = builder.cookieProperty;
+        this.cookiePrefix = builder.cookieProperty + "=";
         this.useCookie = builder.useCookie;
         this.decryptionKeys = builder.decryptionKeys;
         this.defaultDecryptionJwk = builder.defaultDecryptionJwk;
@@ -307,12 +307,11 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
         for (String cookie : cookies) {
             //a=b; c=d; e=f
-            String[] cookieValues = cookie.split(";");
+            String[] cookieValues = cookie.split(";\\s?");
             for (String cookieValue : cookieValues) {
                 String trimmed = cookieValue.trim();
-                if (trimmed.startsWith(cookieProperty)) {
-                    //We need to skip = sigh so we need to add +1
-                    return Optional.of(trimmed.substring(cookieProperty.length() + 1));
+                if (trimmed.startsWith(cookiePrefix)) {
+                    return Optional.of(trimmed.substring(cookiePrefix.length()));
                 }
             }
         }

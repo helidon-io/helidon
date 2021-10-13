@@ -92,10 +92,8 @@ final class OidcMetadata {
     }
 
     public Optional<String> getString(String key) {
-        if (oidcMetadata == null) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(oidcMetadata.getString(key, null));
+        return Optional.ofNullable(oidcMetadata)
+                .map(it -> it.getString(key, null));
     }
 
     static class Builder implements io.helidon.common.Builder<OidcMetadata> {
@@ -111,10 +109,8 @@ final class OidcMetadata {
 
         @Override
         public OidcMetadata build() {
-            if (metadata == null) {
-                if (enableRemoteLoad) {
-                    load();
-                }
+            if (metadata == null && enableRemoteLoad) {
+                load();
             }
             return new OidcMetadata(this);
         }
