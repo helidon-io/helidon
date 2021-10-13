@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MediaContextBuilder;
 import io.helidon.media.common.MediaSupport;
@@ -354,6 +356,7 @@ public interface WebServer {
      * WebServer builder class provides a convenient way to set up WebServer with multiple server
      * sockets and optional multiple routings.
      */
+    @Configured(root = true, prefix = "server", description = "Configuration of the HTTP server.")
     final class Builder implements io.helidon.common.Builder<WebServer>,
                                    SocketConfiguration.SocketConfigurationBuilder<Builder>,
                                    ParentingMediaContextBuilder<Builder>,
@@ -689,6 +692,7 @@ public interface WebServer {
          * @param config the additional named server socket configuration, never null
          * @return an updated builder
          */
+        @ConfiguredOption(key = "sockets", kind = ConfiguredOption.Kind.LIST)
         public Builder addSocket(SocketConfiguration config) {
             configurationBuilder.addSocket(config.name(), config);
             return this;
@@ -802,6 +806,7 @@ public interface WebServer {
          * @param workers a workers count
          * @return an updated builder
          */
+        @ConfiguredOption(key = "worker-count")
         public Builder workersCount(int workers) {
             configurationBuilder.workersCount(workers);
             return this;
@@ -814,6 +819,7 @@ public interface WebServer {
          * @return updated builder instance
          * @see io.helidon.common.HelidonFeatures
          */
+        @ConfiguredOption(key = "features.print-details", value = "false")
         public Builder printFeatureDetails(boolean shouldPrint) {
             configurationBuilder.printFeatureDetails(shouldPrint);
             return this;

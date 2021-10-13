@@ -13,21 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.lra;
-
-import java.util.Set;
-
-import javax.ws.rs.core.Application;
-
-import io.helidon.common.Reflected;
 
 /**
- * Register JaxRs resource for invoking CDI LRA methods.
+ * Annotation processor generating JSON metadata for configuration.
  */
-@Reflected
-public class ParticipantApp extends Application {
-    @Override
-    public Set<Class<?>> getClasses() {
-        return Set.of(ParticipantCdiResource.class);
-    }
+module io.helidon.config.metadata.processor {
+    requires java.compiler;
+
+    exports io.helidon.config.metadata.processor;
+
+    provides javax.annotation.processing.Processor with io.helidon.config.metadata.processor.ConfigMetadataProcessor;
 }

@@ -541,13 +541,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         }
 
         return Single.create(rcs.thenCompose(serviceRequest -> {
-            //Relative URI is used in request if no proxy set
-            URI requestURI = proxy == Proxy.noProxy() ? prepareRelativeURI() : finalUri;
+            URI requestUri = relativizeNoProxy(finalUri, proxy);
             requestId = serviceRequest.requestId();
             HttpHeaders headers = toNettyHttpHeaders();
             DefaultHttpRequest request = new DefaultHttpRequest(toNettyHttpVersion(httpVersion),
                                                                 toNettyMethod(method),
-                                                                requestURI.toASCIIString(),
+                                                                requestUri.toASCIIString(),
                                                                 headers);
             boolean keepAlive = HttpUtil.isKeepAlive(request);
 
@@ -676,16 +675,26 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return UriComponentEncoder.encode(fragment, UriComponentEncoder.Type.FRAGMENT);
     }
 
-    private URI prepareRelativeURI() {
-        String path = finalUri.getRawPath();
-        String fragment = finalUri.getRawFragment();
-        String query = finalUri.getRawQuery();
-        StringBuilder sb = new StringBuilder();
-        constructRelativeURI(sb, path, query, fragment);
-        return URI.create(sb.toString());
+
+    /**
+     * Relativize final URI if no proxy or if host in no-proxy list.
+     *
+     * @param finalUri the final URI
+     * @return possibly converted URI
+     */
+    static URI relativizeNoProxy(URI finalUri, Proxy proxy) {
+        if (proxy == Proxy.noProxy() || proxy.noProxyPredicate().apply(finalUri)) {
+            String path = finalUri.getRawPath();
+            String fragment = finalUri.getRawFragment();
+            String query = finalUri.getRawQuery();
+            StringBuilder sb = new StringBuilder();
+            constructRelativeURI(sb, path, query, fragment);
+            return URI.create(sb.toString());
+        }
+        return finalUri;
     }
 
-    private void constructRelativeURI(StringBuilder stringBuilder, String path, String query, String fragment) {
+    private static void constructRelativeURI(StringBuilder stringBuilder, String path, String query, String fragment) {
         if (path != null) {
             stringBuilder.append(path);
         }

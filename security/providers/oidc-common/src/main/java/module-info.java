@@ -35,6 +35,7 @@ module io.helidon.security.providers.oidc.common {
     requires io.helidon.webclient.tracing;
     requires io.helidon.media.jsonp;
     requires io.helidon.common.crypto;
+    requires static io.helidon.config.metadata;
 
     // these are deprecated and will be removed in 3.x
     requires jersey.client;

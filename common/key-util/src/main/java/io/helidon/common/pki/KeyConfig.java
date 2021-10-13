@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,8 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.configurable.ResourceException;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Configuration of keystore, certificates and keys. This class is not RSA specific, though it is tested with RSA keys only.
@@ -195,6 +197,7 @@ public final class KeyConfig {
      * @see KeyConfig#pemBuilder()
      * @see KeyConfig#fullBuilder()
      */
+    @Configured
     public static class Builder implements io.helidon.common.Builder<KeyConfig> {
         private PrivateKey explicitPrivateKey;
         private PublicKey explicitPublicKey;
@@ -285,6 +288,7 @@ public final class KeyConfig {
          * @param builder builder obtained from {@link KeyConfig#pemBuilder()}
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "pem")
         public Builder updateWith(PemBuilder builder) {
             builder.updateBuilder(this);
             return this;
@@ -296,6 +300,7 @@ public final class KeyConfig {
          * @param builder builder obtained from {@link KeyConfig#keystoreBuilder()} ()}
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "keystore")
         public Builder updateWith(KeystoreBuilder builder) {
             builder.updateBuilder(this);
             return this;
@@ -321,6 +326,7 @@ public final class KeyConfig {
      * Builder for resources from a java keystore (PKCS12, JKS etc.). Obtain an instance through {@link
      * KeyConfig#keystoreBuilder()}.
      */
+    @Configured(ignoreBuildMethod = true)
     public static final class KeystoreBuilder implements io.helidon.common.Builder<KeyConfig> {
         private static final String DEFAULT_KEYSTORE_TYPE = "PKCS12";
 
@@ -343,6 +349,7 @@ public final class KeyConfig {
          *
          * @return updated builder instance
          */
+        @ConfiguredOption(type = Boolean.class, value = "false")
         public KeystoreBuilder trustStore() {
             return trustStore(true);
         }
@@ -369,6 +376,7 @@ public final class KeyConfig {
          * @param keystore keystore resource, from file path, classpath, URL etc.
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "resource", required = true)
         public KeystoreBuilder keystore(Resource keystore) {
             this.keystoreStream.stream(keystore);
             return this;
@@ -381,6 +389,7 @@ public final class KeyConfig {
          * @param keystoreType keystore type to load the key
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "type", value = "PKCS12")
         public KeystoreBuilder keystoreType(String keystoreType) {
             this.keystoreType = keystoreType;
             return this;
@@ -404,6 +413,7 @@ public final class KeyConfig {
          * @param keystorePassword keystore password to use, calls {@link #keystorePassphrase(char[])}
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "passphrase")
         public KeystoreBuilder keystorePassphrase(String keystorePassword) {
             return keystorePassphrase(keystorePassword.toCharArray());
         }
@@ -414,6 +424,7 @@ public final class KeyConfig {
          * @param keyAlias alias of the key in the keystore
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "key.alias", value = "1")
         public KeystoreBuilder keyAlias(String keyAlias) {
             this.keyAlias = keyAlias;
             return this;
@@ -426,6 +437,7 @@ public final class KeyConfig {
          * @param alias alias under which the certificate is stored in the keystore
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "cert.alias")
         public KeystoreBuilder certAlias(String alias) {
             this.certAlias = alias;
             return this;
@@ -437,6 +449,7 @@ public final class KeyConfig {
          * @param alias alias of certificate chain in the keystore
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "cert-chain.alias")
         public KeystoreBuilder certChainAlias(String alias) {
             this.certChainAlias = alias;
             return this;
@@ -464,6 +477,7 @@ public final class KeyConfig {
          * @param privateKeyPassphrase pass-phrase of the key
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "key.passphrase")
         public KeystoreBuilder keyPassphrase(String privateKeyPassphrase) {
             return keyPassphrase(privateKeyPassphrase.toCharArray());
         }
@@ -632,6 +646,7 @@ public final class KeyConfig {
      * The only supported format is PKCS#8. If you have a different format, you must to transform it to PKCS8 PEM format (to
      * use this builder), or to PKCS#12 keystore format (and use {@link KeystoreBuilder}).
      */
+    @Configured(ignoreBuildMethod = true)
     public static final class PemBuilder implements io.helidon.common.Builder<KeyConfig> {
         private final StreamHolder privateKeyStream = new StreamHolder("privateKey");
         private final StreamHolder publicKeyStream = new StreamHolder("publicKey");
@@ -647,6 +662,7 @@ public final class KeyConfig {
          * @param resource key resource (file, classpath, URL etc.)
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "key.resource")
         public PemBuilder key(Resource resource) {
             privateKeyStream.stream(resource);
             return this;
@@ -683,6 +699,7 @@ public final class KeyConfig {
          * @param passphrase passphrase used to encrypt the private key
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "key.passphrase")
         public PemBuilder keyPassphrase(String passphrase) {
             return keyPassphrase(passphrase.toCharArray());
         }
@@ -693,6 +710,7 @@ public final class KeyConfig {
          * @param resource resource (e.g. classpath, file path, URL etc.)
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "cert-chain.resource")
         public PemBuilder certChain(Resource resource) {
             certChainStream.stream(resource);
             return this;

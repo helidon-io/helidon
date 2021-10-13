@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 import static java.util.Collections.singletonList;
 
@@ -215,6 +217,7 @@ public final class TokenHandler {
     /**
      * Fluent API builder to create {@link TokenHandler}.
      */
+    @Configured
     public static final class Builder implements io.helidon.common.Builder<TokenHandler> {
         private String tokenHeader;
         private String tokenPrefix;
@@ -230,6 +233,7 @@ public final class TokenHandler {
          * @param header header name (such as Authorization), case insensitive
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "header")
         public Builder tokenHeader(String header) {
             Objects.requireNonNull(header);
 
@@ -243,6 +247,7 @@ public final class TokenHandler {
          * @param prefix prefix of header value to strip from it, case insensitive
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "prefix")
         public Builder tokenPrefix(String prefix) {
             Objects.requireNonNull(prefix);
 
@@ -256,6 +261,7 @@ public final class TokenHandler {
          * @param pattern pattern to use to extract the token, first group will be used
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "regexp", type = String.class)
         public Builder tokenPattern(Pattern pattern) {
             Objects.requireNonNull(pattern);
 
@@ -296,6 +302,7 @@ public final class TokenHandler {
          * @param format Format according to {@link String#format(String, Object...)}, token will be a single string parameter
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "format")
         public Builder tokenFormat(String format) {
             this.tokenFormat = format;
             return this;

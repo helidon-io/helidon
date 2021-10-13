@@ -41,16 +41,17 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.microprofile.config.ConfigCdiExtension;
-import io.helidon.microprofile.lra.resources.CdiCompleteOrCompensate;
+import io.helidon.microprofile.lra.resources.NonJaxRsCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.CdiNestedCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.CommonAfter;
 import io.helidon.microprofile.lra.resources.DontEnd;
 import io.helidon.microprofile.lra.resources.JaxRsCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.JaxRsNestedCompleteOrCompensate;
+import io.helidon.microprofile.lra.resources.NonJaxRsCompleteOrCompensateCS;
+import io.helidon.microprofile.lra.resources.NonJaxRsCompleteOrCompensateSingle;
 import io.helidon.microprofile.lra.resources.Recovery;
 import io.helidon.microprofile.lra.resources.RecoveryStatus;
 import io.helidon.microprofile.lra.resources.StartAndAfter;
-import io.helidon.microprofile.lra.resources.TestApplication;
 import io.helidon.microprofile.lra.resources.Timeout;
 import io.helidon.microprofile.lra.resources.Work;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
@@ -96,9 +97,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 // LRA client
 @AddExtension(LraCdiExtension.class)
 // Test resources
-@AddBean(TestApplication.class)
 @AddBean(JaxRsCompleteOrCompensate.class)
-@AddBean(CdiCompleteOrCompensate.class)
+@AddBean(NonJaxRsCompleteOrCompensate.class)
+@AddBean(NonJaxRsCompleteOrCompensateCS.class)
+@AddBean(NonJaxRsCompleteOrCompensateSingle.class)
 @AddBean(StartAndAfter.class)
 @AddBean(DontEnd.class)
 @AddBean(Timeout.class)
@@ -201,34 +203,102 @@ public class LoadBalancedCoordinatorTest {
     }
 
     @Test
-    void cdiComplete(WebTarget target) throws Exception {
-        Response response = target.path(CdiCompleteOrCompensate.PATH_BASE)
-                .path(CdiCompleteOrCompensate.PATH_START_LRA)
+    void nonJaxRsComplete(WebTarget target) throws Exception {
+        Response response = target.path(NonJaxRsCompleteOrCompensate.PATH_BASE)
+                .path(NonJaxRsCompleteOrCompensate.PATH_START_LRA)
                 .request()
                 .header(Work.HEADER_KEY, Work.NOOP)
                 .async()
                 .put(Entity.text(""))
                 .get(TIMEOUT_SEC, TimeUnit.SECONDS);
         assertThat(response.getStatus(), AnyOf.anyOf(is(200), is(204)));
-        URI lraId = await(CdiCompleteOrCompensate.CS_START_LRA);
-        assertThat(await(CdiCompleteOrCompensate.CS_COMPLETE), is(lraId));
-        assertFalse(getCompletable(CdiCompleteOrCompensate.CS_COMPENSATE).isDone());
+        URI lraId = await(NonJaxRsCompleteOrCompensate.CS_START_LRA);
+        assertThat(await(NonJaxRsCompleteOrCompensate.CS_COMPLETE), is(lraId));
+        assertFalse(getCompletable(NonJaxRsCompleteOrCompensate.CS_COMPENSATE).isDone());
         assertLoadBalancerCalledProperly();
     }
 
     @Test
-    void cdiCompensate(WebTarget target) throws Exception {
-        Response response = target.path(CdiCompleteOrCompensate.PATH_BASE)
-                .path(CdiCompleteOrCompensate.PATH_START_LRA)
+    void nonJaxRsCompleteCS(WebTarget target) throws Exception {
+        Response response = target.path(NonJaxRsCompleteOrCompensateCS.PATH_BASE)
+                .path(NonJaxRsCompleteOrCompensateCS.PATH_START_LRA)
+                .request()
+                .header(Work.HEADER_KEY, Work.NOOP)
+                .async()
+                .put(Entity.text(""))
+                .get(TIMEOUT_SEC, TimeUnit.SECONDS);
+        assertThat(response.getStatus(), AnyOf.anyOf(is(200), is(204)));
+        URI lraId = await(NonJaxRsCompleteOrCompensateCS.CS_START_LRA);
+        assertThat(await(NonJaxRsCompleteOrCompensateCS.CS_COMPLETE), is(lraId));
+        assertFalse(getCompletable(NonJaxRsCompleteOrCompensateCS.CS_COMPENSATE).isDone());
+        assertLoadBalancerCalledProperly();
+    }
+
+    @Test
+    void nonJaxRsCompleteSingle(WebTarget target) throws Exception {
+        Response response = target.path(NonJaxRsCompleteOrCompensateSingle.PATH_BASE)
+                .path(NonJaxRsCompleteOrCompensateSingle.PATH_START_LRA)
+                .request()
+                .header(Work.HEADER_KEY, Work.NOOP)
+                .async()
+                .put(Entity.text(""))
+                .get(TIMEOUT_SEC, TimeUnit.SECONDS);
+        assertThat(response.getStatus(), AnyOf.anyOf(is(200), is(204)));
+        URI lraId = await(NonJaxRsCompleteOrCompensateSingle.CS_START_LRA);
+        assertThat(await(NonJaxRsCompleteOrCompensateSingle.CS_COMPLETE), is(lraId));
+        assertThat(await(NonJaxRsCompleteOrCompensateSingle.CS_AFTER_LRA), is(lraId));
+        assertThat(await(NonJaxRsCompleteOrCompensateSingle.CS_STATUS), is(lraId));
+        assertFalse(getCompletable(NonJaxRsCompleteOrCompensateSingle.CS_COMPENSATE).isDone());
+        assertLoadBalancerCalledProperly();
+    }
+
+    @Test
+    void nonJaxRsCompensate(WebTarget target) throws Exception {
+        Response response = target.path(NonJaxRsCompleteOrCompensate.PATH_BASE)
+                .path(NonJaxRsCompleteOrCompensate.PATH_START_LRA)
                 .request()
                 .header(Work.HEADER_KEY, Work.BOOM)
                 .async()
                 .put(Entity.text(""))
                 .get(TIMEOUT_SEC, TimeUnit.SECONDS);
         assertThat(response.getStatus(), is(500));
-        URI lraId = await(CdiCompleteOrCompensate.CS_START_LRA);
-        assertThat(await(CdiCompleteOrCompensate.CS_COMPENSATE), is(lraId));
-        assertFalse(getCompletable(CdiCompleteOrCompensate.CS_COMPLETE).isDone());
+        URI lraId = await(NonJaxRsCompleteOrCompensate.CS_START_LRA);
+        assertThat(await(NonJaxRsCompleteOrCompensate.CS_COMPENSATE), is(lraId));
+        assertFalse(getCompletable(NonJaxRsCompleteOrCompensate.CS_COMPLETE).isDone());
+        assertLoadBalancerCalledProperly();
+    }
+
+    @Test
+    void nonJaxRsCompensateCS(WebTarget target) throws Exception {
+        Response response = target.path(NonJaxRsCompleteOrCompensateCS.PATH_BASE)
+                .path(NonJaxRsCompleteOrCompensateCS.PATH_START_LRA)
+                .request()
+                .header(Work.HEADER_KEY, Work.BOOM)
+                .async()
+                .put(Entity.text(""))
+                .get(TIMEOUT_SEC, TimeUnit.SECONDS);
+        assertThat(response.getStatus(), is(500));
+        URI lraId = await(NonJaxRsCompleteOrCompensateCS.CS_START_LRA);
+        assertThat(await(NonJaxRsCompleteOrCompensateCS.CS_COMPENSATE), is(lraId));
+        assertFalse(getCompletable(NonJaxRsCompleteOrCompensateCS.CS_COMPLETE).isDone());
+        assertLoadBalancerCalledProperly();
+    }
+
+    @Test
+    void nonJaxRsCompensateSingle(WebTarget target) throws Exception {
+        Response response = target.path(NonJaxRsCompleteOrCompensateSingle.PATH_BASE)
+                .path(NonJaxRsCompleteOrCompensateSingle.PATH_START_LRA)
+                .request()
+                .header(Work.HEADER_KEY, Work.BOOM)
+                .async()
+                .put(Entity.text(""))
+                .get(TIMEOUT_SEC, TimeUnit.SECONDS);
+        assertThat(response.getStatus(), is(500));
+        URI lraId = await(NonJaxRsCompleteOrCompensateSingle.CS_START_LRA);
+        assertThat(await(NonJaxRsCompleteOrCompensateSingle.CS_COMPENSATE), is(lraId));
+        assertThat(await(NonJaxRsCompleteOrCompensateSingle.CS_AFTER_LRA), is(lraId));
+        assertThat(await(NonJaxRsCompleteOrCompensateSingle.CS_STATUS), is(lraId));
+        assertFalse(getCompletable(NonJaxRsCompleteOrCompensateSingle.CS_COMPLETE).isDone());
         assertLoadBalancerCalledProperly();
     }
 
@@ -300,7 +370,7 @@ public class LoadBalancedCoordinatorTest {
                 .get(TIMEOUT_SEC, TimeUnit.SECONDS);
 
         assertThat(response.getStatusInfo().getReasonPhrase(), response.getStatus(), isIn(endNestedLRAWork.expectedResponseStatuses()));
-        assertThat(UriBuilder.fromPath(response.getHeaderString(LRA_HTTP_CONTEXT_HEADER)).build(), is(nestedLraId));
+        assertThat(UriBuilder.fromUri(response.getHeaderString(LRA_HTTP_CONTEXT_HEADER)).build(), is(nestedLraId));
         assertThat(await(CdiNestedCompleteOrCompensate.CS_END_NESTED_LRA), is(nestedLraId));
         assertFalse(getCompletable(CdiNestedCompleteOrCompensate.CS_END_PARENT_LRA).isDone());
         if (endNestedLRAWork == Work.BOOM) {
@@ -409,11 +479,11 @@ public class LoadBalancedCoordinatorTest {
         assertThat(await(Recovery.CS_START_COMPENSATE_LRA), is(lraId));
         assertThat(await(Recovery.CS_COMPENSATE_FIRST), is(lraId));
         LocalDateTime first = LocalDateTime.now();
-        System.out.println("First compensate attempt after " + Duration.between(start, first));
+        LOGGER.fine("First compensate attempt after " + Duration.between(start, first));
         waitForRecovery(lraId);
         assertThat(await(Recovery.CS_COMPENSATE_SECOND), is(lraId));
         LocalDateTime second = LocalDateTime.now();
-        System.out.println("Second compensate attempt after " + Duration.between(first, second));
+        LOGGER.fine("Second compensate attempt after " + Duration.between(first, second));
         assertLoadBalancerCalledProperly();
     }
 
@@ -431,11 +501,11 @@ public class LoadBalancedCoordinatorTest {
         assertThat(await(Recovery.CS_START_COMPLETE_LRA), is(lraId));
         assertThat(await(Recovery.CS_COMPLETE_FIRST), is(lraId));
         LocalDateTime first = LocalDateTime.now();
-        System.out.println("First complete attempt after " + Duration.between(start, first));
+        LOGGER.fine("First complete attempt after " + Duration.between(start, first));
         waitForRecovery(lraId);
         assertThat(await(Recovery.CS_COMPLETE_SECOND), is(lraId));
         LocalDateTime second = LocalDateTime.now();
-        System.out.println("Second complete attempt after " + Duration.between(first, second));
+        LOGGER.fine("Second complete attempt after " + Duration.between(first, second));
         assertLoadBalancerCalledProperly();
     }
 
@@ -498,9 +568,10 @@ public class LoadBalancedCoordinatorTest {
     }
 
     private void waitForRecovery(URI lraId) {
+        URI coordinatorPath = coordinatorPath(lraId);
         for (int i = 0; i < 10; i++) {
             WebClient client = WebClient.builder()
-                    .baseUri(lraId)
+                    .baseUri(coordinatorPath)
                     .build();
 
             WebClientResponse response = client
@@ -515,11 +586,16 @@ public class LoadBalancedCoordinatorTest {
                     .await(TIMEOUT_SEC, TimeUnit.SECONDS);
             response.close();
             if (!recoveringLras.contains(lraId.toASCIIString())) {
-                System.out.println("LRA is no longer among those recovering " + lraId.toASCIIString());
+                LOGGER.fine("LRA is no longer among those recovering " + lraId.toASCIIString());
                 // intended LRA is not longer among those recovering
                 break;
             }
-            System.out.println("Waiting for recovery attempt #" + i + " LRA is still waiting: " + recoveringLras);
+            LOGGER.fine("Waiting for recovery attempt #" + i + " LRA is still waiting: " + recoveringLras);
         }
+    }
+
+    private URI coordinatorPath(URI lraId) {
+        String path = lraId.toASCIIString();
+        return UriBuilder.fromPath(path.substring(0, path.lastIndexOf('/'))).build();
     }
 }
