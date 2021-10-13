@@ -96,9 +96,9 @@
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.micrometer>1.6.6</version.lib.micrometer>
-        <version.lib.micronaut>2.2.0</version.lib.micronaut>
-        <version.lib.micronaut.data>2.2.0</version.lib.micronaut.data>
-        <version.lib.micronaut.sql>3.3.1</version.lib.micronaut.sql>
+        <version.lib.micronaut>2.5.13</version.lib.micronaut>
+        <version.lib.micronaut.data>2.5.0</version.lib.micronaut.data>
+        <version.lib.micronaut.sql>3.4.0</version.lib.micronaut.sql>
         <version.lib.microprofile-config>1.4</version.lib.microprofile-config>
         <version.lib.microprofile-fault-tolerance-api>2.1.1</version.lib.microprofile-fault-tolerance-api>
         <version.lib.microprofile-graphql>1.1.0</version.lib.microprofile-graphql>
