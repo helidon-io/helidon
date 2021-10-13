@@ -28,7 +28,7 @@
 
     <artifactId>helidon-integrations-jdbc-project</artifactId>
 
-    <name>Helidon Integrations JDBC</name>
+    <name>Helidon Integrations JDBC Project</name>
     <description>JDBC-related integrations</description>
 
     <properties>
