@@ -13,23 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.api;
+package io.helidon.metrics.api.spi;
+
+import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.RegistryFactory;
 
 /**
- * Provides {@link RegistryFactory} instances.
+ * Provides {@link io.helidon.metrics.api.RegistryFactory} instances.
  * <p>A component that contains an implementation of {@code RegistryFactoryProvider} should identify it using the service
  * loader mechanism.</p>
  */
 public interface RegistryFactoryProvider {
 
     /**
-     * Creates a new {@link RegistryFactory} according to the specified metrics settings.
+     * Creates a new {@link io.helidon.metrics.api.RegistryFactory} according to the specified metrics settings.
      * <p>
      *     Implementations of this method should assume that {@code MetricsSettings.isEnabled()} is {@code true} and do not
      *     need to check that themselves.
      * </p>
-     * @param metricsSettings the {@link MetricsSettings} to use in creating the new registry factory
-     * @return a new {@link RegistryFactory} based on the provided metrics settings
+     * @param metricsSettings the {@link io.helidon.metrics.api.MetricsSettings} to use in creating the new registry factory
+     * @return a new {@link io.helidon.metrics.api.RegistryFactory} based on the provided metrics settings
      */
     RegistryFactory create(MetricsSettings metricsSettings);
 }

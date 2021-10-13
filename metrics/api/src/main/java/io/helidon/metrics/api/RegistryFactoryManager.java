@@ -22,13 +22,14 @@ import java.util.logging.Logger;
 import io.helidon.common.LazyValue;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.metrics.api.spi.RegistryFactoryProvider;
 
 /**
  * Manages the creation, caching, and reuse of {@link RegistryFactory} instances according to provided metrics settings or
  * configuration.
  *
  * <p>
- * This class loads a {@link RegistryFactoryProvider} if available via the service loader mechanism,
+ * This class loads a {@link io.helidon.metrics.api.spi.RegistryFactoryProvider} if available via the service loader mechanism,
  * providing a default implementation otherwise (which will return {@code RegistryFactory} instances which yield
  * no-op metrics instances).
  * <p>

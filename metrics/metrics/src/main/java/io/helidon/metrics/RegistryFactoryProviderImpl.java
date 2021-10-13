@@ -16,11 +16,12 @@
 package io.helidon.metrics;
 
 import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.spi.RegistryFactoryProvider;
 
 /**
- * Full-featured metrics implementation of {@link io.helidon.metrics.api.RegistryFactoryProvider}.
+ * Full-featured metrics implementation of {@link io.helidon.metrics.api.spi.RegistryFactoryProvider}.
  */
-public class RegistryFactoryProviderImpl implements io.helidon.metrics.api.RegistryFactoryProvider {
+public class RegistryFactoryProviderImpl implements RegistryFactoryProvider {
 
     @Override
     public io.helidon.metrics.api.RegistryFactory create(MetricsSettings metricsSettings) {

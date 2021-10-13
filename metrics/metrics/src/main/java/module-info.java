@@ -15,6 +15,7 @@
  */
 
 import io.helidon.metrics.api.spi.MetricsSupportProvider;
+import io.helidon.metrics.api.spi.RegistryFactoryProvider;
 
 /**
  * Helidon Metrics implementation.
@@ -38,7 +39,7 @@ module io.helidon.metrics {
 
     exports io.helidon.metrics;
 
-    provides io.helidon.metrics.api.RegistryFactoryProvider with io.helidon.metrics.RegistryFactoryProviderImpl;
+    provides RegistryFactoryProvider with io.helidon.metrics.RegistryFactoryProviderImpl;
     provides MetricsSupportProvider with io.helidon.metrics.MetricsSupportProviderImpl;
 
     uses io.helidon.metrics.ExemplarService;

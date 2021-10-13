@@ -17,7 +17,7 @@
  * Defines the Helidon metrics API so Helidon metrics-capable components can implement metrics simply and without regard for
  * whether metrics is actually on the runtime path or not or is enabled or not.
  <p>
- *     The registry factories created and used at runtime are managed by a {@link io.helidon.metrics.api.RegistryFactoryProvider}.
+ *     The registry factories created and used at runtime are managed by a {@link io.helidon.metrics.api.spi.RegistryFactoryProvider}.
  *     This module provides one implementation ({@link io.helidon.metrics.api.NoOpRegistryFactory} which returns {@code
  *     RegistryFactory} instances which create no-op metrics. If the regular metrics implementation component is on the path at
  *     runtime, then the {@code RegistryFactoryProvider} furnished by that component will create fully functional registry

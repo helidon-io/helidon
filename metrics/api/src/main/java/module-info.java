@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import io.helidon.metrics.api.spi.RegistryFactoryProvider;
+
 /**
  * Helidon metrics API.
  */
@@ -32,7 +35,7 @@ module io.helidon.metrics.api {
     exports io.helidon.metrics.api;
     exports io.helidon.metrics.api.spi;
 
-    uses io.helidon.metrics.api.RegistryFactoryProvider;
+    uses RegistryFactoryProvider;
     uses io.helidon.metrics.api.spi.MetricsSupportProvider;
 
 }
