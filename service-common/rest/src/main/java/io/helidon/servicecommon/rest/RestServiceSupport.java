@@ -16,11 +16,12 @@
 package io.helidon.servicecommon.rest;
 
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.Service;
 
 /**
  * Required behavior (primarily required by {@code HelidonRestCdiExtension} of service support implementations.
  */
-public interface RestServiceSupport {
+public interface RestServiceSupport extends Service {
 
     /**
      * Configures service endpoint on the provided routing rules. This method

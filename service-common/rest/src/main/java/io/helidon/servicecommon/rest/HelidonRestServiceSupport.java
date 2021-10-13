@@ -41,7 +41,7 @@ import io.helidon.webserver.cors.CrossOriginConfig;
  * </p>
  *
  */
-public abstract class HelidonRestServiceSupport implements RestServiceSupport, Service {
+public abstract class HelidonRestServiceSupport implements RestServiceSupport {
 
     private final String context;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
