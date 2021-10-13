@@ -79,6 +79,13 @@ class ProxyTest {
                 is("/foo/bar"));
     }
 
+    @Test
+    void testDefaultProxyType() {
+        Config config = Config.create();
+        Proxy proxy = Proxy.create(config.get("proxy"));
+        assertThat(proxy.type(), is(Proxy.ProxyType.HTTP));
+    }
+
     private URI address(String host, int port) {
         return URI.create("http://" + host + ":" + port);
     }
