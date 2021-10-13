@@ -43,7 +43,6 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 // this class is not immutable, as we may need to update registries with configuration post creation
 // see Github issue #360
 public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
-//    private static final RegistryFactory INSTANCE = create();
 
     private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
     private final AtomicReference<MetricsSettings> metricsSettings;
