@@ -1,0 +1,88 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= JAX-RS Applications
+:h1Prefix: MP
+:description: Helidon MicroProfile JAX-RS applications
+:keywords: helidon, microprofile, micro-profile, jax-rs, applications
+
+NOTE: In this section we shall distinguish the notion of a JAX-RS `Application` subclass
+from a Helidon application. As we shall learn shortly, the latter may include zero or more
+of the former.
+
+The JAX-RS specification defines the notion of an `Application` subclass whose methods return
+resource and provider classes, singletons and properties. This is the mechanism developers
+can use to define what comprises a JAX-RS application. Unless otherwise stated by the runtime
+environment in which the JAX-RS application runs, every JAX-RS application must include
+exactly one `Application` subclass.
+
+Helidon provides an extension to JAX-RS in which 0 or more `Application` subclasses are allowed.
+If no `Application` subclasses are provided, then a so-called _synthetic_ subclass will be
+created automatically. This _synthetic_ subclass shall include all resource and provider
+classes discovered by Helidon. Most Helidon applications should simply rely on this mechanism
+in accordance to convention over configuration practices.
+
+== Discovery of JAX-RS beans
+
+With the help of CDI, Helidon scans for JAX-RS `Application` subclasses in your Helidon application.
+If none are found, a synthetic application will be created by gathering all resources and providers
+found during the discovery phase.
+
+The discovery phase is carried out as follows (in no particular order):
+
+1. Collect all beans that extend `Application`
+2. Collect all beans annotated with `@Path`
+3. Collect all beans annotated with `@Provider`
+
+If no `Application` subclasses are found, create a _synthetic_ `Application` subclass that includes
+all beans gathered in steps (2) and (3) and set the application path to be "/". If one or more
+`Application` subclasses are found, use those subclasses (and their application paths) and discard
+the collections in steps (2) and (3), in favor of calling the corresponding methods provided by
+the subclasses.
+
+== Access to Application instances
+
+JAX-RS provides access to the `Application` subclass instance via injection using `@Context`. This form
+of access is still supported in Helidon but is insufficient if two or more subclasses are present.
+Given that support for two or more `Application` subclasses is a Helidon extension, a new mechanism
+is provided via a `ServerRequest` 's context as shown next.
+
+[source,java]
+----
+import io.helidon.webserver.ServerRequest;
+
+@Path("myresource")
+public class MyResource {
+
+    @GET
+    public void get(@Context ServerRequest serverRequest) {
+        Application app = serverRequest.context().get(Application.class).get();
+        // ...
+    }
+}
+----
+
+Note that this approach effectively moves the scope of `Application` subclass instances to
+request scope in order to access the correct subclass for the resource method being
+executed.
+
+
+
+
+
+
