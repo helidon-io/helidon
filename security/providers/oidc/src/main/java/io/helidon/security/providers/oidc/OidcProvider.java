@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.io.StringReader;
 import java.lang.annotation.Annotation;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -72,6 +73,10 @@ import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.webclient.WebClientRequestBuilder;
+
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
 
 import static io.helidon.security.providers.oidc.common.OidcConfig.postJsonResponse;
 
@@ -234,6 +239,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         List<String> missingLocations = new LinkedList<>();
 
         Optional<String> token = Optional.empty();
+        Optional<String> idToken = Optional.empty();
 
         try {
             if (oidcConfig.useHeader()) {
@@ -255,8 +261,17 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             }
 
             if (oidcConfig.useCookie()) {
-                token = token
-                        .or(() -> findCookie(providerRequest.env().headers()));
+                Optional<String> cookieValue = findCookie(providerRequest.env().headers());
+                if(cookieValue.isPresent() && oidcConfig.putIdtokenInCookie()){
+                    JsonReader jr = Json.createReader(new StringReader(cookieValue.get()));
+                    JsonObject cookieJson = jr.readObject();
+                    jr.close();
+
+                    token = Optional.of(cookieJson.getString("access_token"));
+                    idToken = Optional.of(cookieJson.getString("id_token"));
+                }else {
+                    token = token.or(()->cookieValue);
+                }
 
                 if (token.isEmpty()) {
                     missingLocations.add("cookie");
@@ -268,7 +283,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         }
 
         if (token.isPresent()) {
-            return validateToken(providerRequest, token.get());
+            return validateToken(providerRequest, token.get(), idToken.orElse(token.get()));
         } else {
             LOGGER.finest(() -> "Missing token, could not find in either of: " + missingLocations);
             return CompletableFuture.completedFuture(errorResponse(providerRequest,
@@ -456,19 +471,29 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         return URLEncoder.encode(state, StandardCharsets.UTF_8);
     }
 
-    private CompletionStage<AuthenticationResponse> validateToken(ProviderRequest providerRequest, String token) {
-        SignedJwt signedJwt;
+    private CompletionStage<AuthenticationResponse> validateToken(ProviderRequest providerRequest, String token, String idToken) {
+        SignedJwt signedToken;
+        SignedJwt signedIdToken;
+        String tokenId = "Access";
         try {
-            signedJwt = SignedJwt.parseToken(token);
+            signedToken = SignedJwt.parseToken(token);
+            tokenId = "ID";
+            signedIdToken = SignedJwt.parseToken(idToken);
         } catch (Exception e) {
             //invalid token
-            LOGGER.log(Level.FINEST, "Could not parse inbound token", e);
-            return CompletableFuture.completedFuture(AuthenticationResponse.failed("Invalid token", e));
+            LOGGER.log(Level.FINEST, "Could not parse inbound "+tokenId+" token", e);
+            return CompletableFuture.completedFuture(AuthenticationResponse.failed("Invalid "+tokenId+" token", e));
         }
 
-        return jwtValidator.apply(signedJwt, Errors.collector())
+        // if token are not the same validate the id token
+        Errors.Collector errors = Errors.collector();
+        if(!token.equals(idToken)){
+            errors = jwtValidator.apply(signedIdToken,errors).await();
+        }
+
+        return jwtValidator.apply(signedToken, errors)
                 .map(it -> processValidationResult(providerRequest,
-                                                   signedJwt,
+                                                   signedToken,signedIdToken,
                                                    it))
                 .onErrorResume(t -> {
                     LOGGER.log(Level.FINEST, "Failed to validate request", t);
@@ -477,16 +502,19 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     }
 
     private AuthenticationResponse processValidationResult(ProviderRequest providerRequest,
-                                                           SignedJwt signedJwt,
+                                                           SignedJwt signedToken,
+                                                           SignedJwt signedIdToken,
                                                            Errors.Collector collector) {
-        Jwt jwt = signedJwt.getJwt();
+        Jwt jwtToken = signedToken.getJwt();
+        Jwt jwtIdToken = signedIdToken.getJwt();
         Errors errors = collector.collect();
-        Errors validationErrors = jwt.validate(oidcConfig.issuer(), oidcConfig.audience());
+        Errors validationErrors = jwtToken.validate(oidcConfig.issuer(), oidcConfig.audience());
+        validationErrors.addAll(jwtIdToken.validate(oidcConfig.issuer(), oidcConfig.audience()));
 
         if (errors.isValid() && validationErrors.isValid()) {
 
             errors.log(LOGGER);
-            Subject subject = buildSubject(jwt, signedJwt);
+            Subject subject = buildSubject(jwtToken, jwtIdToken, signedToken);
 
             Set<String> scopes = subject.grantsByType("scope")
                     .stream()
@@ -560,15 +588,15 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         return CompletableFuture.completedFuture(OutboundSecurityResponse.empty());
     }
 
-    private Subject buildSubject(Jwt jwt, SignedJwt signedJwt) {
-        Principal principal = buildPrincipal(jwt);
+    private Subject buildSubject(Jwt jwtToken, Jwt jwtIdToken, SignedJwt signedJwt) {
+        Principal principal = buildPrincipal(jwtIdToken);
 
         TokenCredential.Builder builder = TokenCredential.builder();
-        jwt.issueTime().ifPresent(builder::issueTime);
-        jwt.expirationTime().ifPresent(builder::expTime);
-        jwt.issuer().ifPresent(builder::issuer);
+        jwtToken.issueTime().ifPresent(builder::issueTime);
+        jwtToken.expirationTime().ifPresent(builder::expTime);
+        jwtToken.issuer().ifPresent(builder::issuer);
         builder.token(signedJwt.tokenContent());
-        builder.addToken(Jwt.class, jwt);
+        builder.addToken(Jwt.class, jwtToken);
         builder.addToken(SignedJwt.class, signedJwt);
 
         Subject.Builder subjectBuilder = Subject.builder()
@@ -576,11 +604,11 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 .addPublicCredential(TokenCredential.class, builder.build());
 
         if (useJwtGroups) {
-            Optional<List<String>> userGroups = jwt.userGroups();
+            Optional<List<String>> userGroups = jwtToken.userGroups();
             userGroups.ifPresent(groups -> groups.forEach(group -> subjectBuilder.addGrant(Role.create(group))));
         }
 
-        Optional<List<String>> scopes = jwt.scopes();
+        Optional<List<String>> scopes = jwtToken.scopes();
         scopes.ifPresent(scopeList -> scopeList.forEach(scope -> subjectBuilder.addGrant(Grant.builder()
                                                                                                  .name(scope)
                                                                                                  .type("scope")
