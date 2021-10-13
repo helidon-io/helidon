@@ -148,7 +148,7 @@ public class Proxy {
     }
 
     /**
-     * Get builder type. For testing purposes.
+     * Get proxy type. For testing purposes.
      *
      * @return the proxy type
      */
