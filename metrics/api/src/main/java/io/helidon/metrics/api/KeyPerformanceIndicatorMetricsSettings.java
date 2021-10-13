@@ -20,7 +20,11 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
- * Settings for KPI metrics.
+ * Settings for key performance indicator (KPI) metrics.
+ * <p>
+ *     The Helidon SE and MP metrics guides describe the KPI metrics and how to control them using config and this settings
+ *     interface.
+ * </p>
  */
 public interface KeyPerformanceIndicatorMetricsSettings {
 
