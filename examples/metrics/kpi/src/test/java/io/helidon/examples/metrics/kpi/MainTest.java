@@ -18,7 +18,6 @@ package io.helidon.examples.metrics.kpi;
 
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
@@ -40,8 +39,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-
-// end::[]
 
 public class MainTest {
 
