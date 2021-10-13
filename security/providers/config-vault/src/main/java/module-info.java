@@ -21,6 +21,7 @@ module io.helidon.security.providers.config.vault {
     requires io.helidon.security;
     requires io.helidon.common.crypto;
     requires io.helidon.config.encryption;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.security.providers.config.vault;
 

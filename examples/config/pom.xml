@@ -38,6 +38,7 @@
         <module>overrides</module>
         <module>sources</module>
         <module>profiles</module>
+        <module>metadata</module>
     </modules>
 
 </project>

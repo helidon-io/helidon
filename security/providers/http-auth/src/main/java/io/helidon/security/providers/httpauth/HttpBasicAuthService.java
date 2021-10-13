@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,10 @@ import io.helidon.security.spi.SecurityProviderService;
  * Basic authentication service.
  */
 public class HttpBasicAuthService implements SecurityProviderService {
+    static final String PROVIDER_CONFIG_KEY =  "http-basic-auth";
     @Override
     public String providerConfigKey() {
-        return "http-basic-auth";
+        return PROVIDER_CONFIG_KEY;
     }
 
     @Override

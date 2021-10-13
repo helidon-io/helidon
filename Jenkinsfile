@@ -65,6 +65,30 @@ pipeline {
                 junit testResults: '**/target/surefire-reports/*.xml'
               }
             }
+            stage('test-packaging-jar'){
+              agent {
+                label "linux"
+              }
+              steps {
+                sh 'etc/scripts/test-packaging-jar.sh'
+              }
+            }
+            stage('test-packaging-jlink'){
+              agent {
+                label "linux"
+              }
+              steps {
+                sh 'etc/scripts/test-packaging-jlink.sh'
+              }
+            }
+            stage('test-packaging-native'){
+              agent {
+                label "linux"
+              }
+              steps {
+                sh 'etc/scripts/test-packaging-native.sh'
+              }
+            }
           }
         }
       }

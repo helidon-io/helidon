@@ -82,6 +82,7 @@ ReactiveStreams.of("1", "2", "3", "4", "5")
 |onErrorResumeWithRsPublisher| When onError signal received continue emitting from supplied publisher
 |onComplete| Invoke supplied runnable when onComplete signal received
 |onTerminate| Invoke supplied runnable when onComplete or onError signal received
+|ifEmpty| Executes given `java.lang.Runnable` when stream is finished without value(empty stream).
 |to| Connect this stream to supplied subscriber
 |toList| Collect all intercepted items to List
 |collect| Collect all intercepted items with provided collector

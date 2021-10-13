@@ -108,7 +108,9 @@ class InspectionService {
         // implements
         for (DotName implementedInterfaceName : classInfo.interfaceNames()) {
             ClassInfo interfaceClass = index.getClassByName(implementedInterfaceName);
-            superClasses.addAll(getAllParents(interfaceClass));
+            if (interfaceClass != null) {
+                superClasses.addAll(getAllParents(interfaceClass));
+            }
         }
 
         return superClasses;

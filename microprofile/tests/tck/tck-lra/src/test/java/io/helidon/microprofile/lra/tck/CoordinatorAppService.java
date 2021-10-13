@@ -18,6 +18,8 @@
 package io.helidon.microprofile.lra.tck;
 
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Destroyed;
@@ -36,6 +38,8 @@ import io.helidon.microprofile.server.ServerCdiExtension;
 @ApplicationScoped
 public class CoordinatorAppService {
 
+    private static final Logger LOGGER = Logger.getLogger(CoordinatorAppService.class.getName());
+
     @Inject
     Config config;
 
@@ -43,12 +47,14 @@ public class CoordinatorAppService {
     ServerCdiExtension serverCdiExtension;
 
     LazyValue<URI> coordinatorUri = LazyValue.create(() -> {
+        CoordinatorDeployer.started().await(5, TimeUnit.SECONDS);
         // Check if external coordinator is set or use internal with random port
         int randomPort = serverCdiExtension.port(CoordinatorDeployer.COORDINATOR_ROUTING_NAME);
         String port = System.getProperty("lra.coordinator.port", String.valueOf(randomPort));
         String urlProperty = System.getProperty("lra.coordinator.url", "");
         // Maven can't set null
         urlProperty = urlProperty.isEmpty() ? "http://localhost:" + port + "/lra-coordinator" : urlProperty;
+        LOGGER.info("Using LRA Coordinator: " + urlProperty);
         return URI.create(urlProperty);
     });
 

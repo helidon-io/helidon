@@ -57,6 +57,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 
 import io.helidon.common.Reflected;
+import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.webserver.Service;
 
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.Compensate;
@@ -112,7 +114,7 @@ public class LraCdiExtension implements Extension {
                 Forget.class,
                 Status.class,
                 Application.class,
-                ParticipantCdiResource.class).forEach(c -> runtimeIndex(DotName.createSimple(c.getName())));
+                NonJaxRsResource.class).forEach(c -> runtimeIndex(DotName.createSimple(c.getName())));
 
         List<URL> indexFiles;
         try {
@@ -144,13 +146,12 @@ public class LraCdiExtension implements Extension {
 
     private void registerInternalBeans(@Observes BeforeBeanDiscovery event) {
         Stream.of(
-                        CoordinatorLocatorService.class,
-                        HandlerService.class,
-                        InspectionService.class,
-                        ParticipantApp.class,
-                        ParticipantCdiResource.class,
-                        ParticipantService.class
-                )
+                CoordinatorLocatorService.class,
+                HandlerService.class,
+                InspectionService.class,
+                NonJaxRsResource.class,
+                ParticipantService.class
+        )
                 .forEach(clazz -> event
                         .addAnnotatedType(clazz, "lra-" + clazz.getName())
                         .add(ApplicationScoped.Literal.INSTANCE)
@@ -205,6 +206,20 @@ public class LraCdiExtension implements Extension {
         }
     }
 
+    private void beforeServerStart(
+            @Observes
+            @Priority(PLATFORM_AFTER + 99)
+            @Initialized(ApplicationScoped.class) Object event,
+            BeanManager beanManager) {
+
+        NonJaxRsResource nonJaxRsResource = resolve(NonJaxRsResource.class, beanManager);
+        Service nonJaxRsParticipantService = nonJaxRsResource.createNonJaxRsParticipantResource();
+        beanManager.getExtension(ServerCdiExtension.class)
+                .serverRoutingBuilder()
+                .register(nonJaxRsResource.contextPath(), nonJaxRsParticipantService);
+
+    }
+
     private void ready(
             @Observes
             @Priority(PLATFORM_AFTER + 101)
@@ -217,8 +232,7 @@ public class LraCdiExtension implements Extension {
         }
 
         // ------------- Validate LRA participant methods -------------
-        InspectionService inspectionService =
-                lookup(beanManager.resolve(beanManager.getBeans(InspectionService.class)), beanManager);
+        InspectionService inspectionService = resolve(InspectionService.class, beanManager);
 
         for (ClassInfo classInfo : index.getKnownClasses()) {
 
@@ -281,6 +295,10 @@ public class LraCdiExtension implements Extension {
 
     public IndexView getIndex() {
         return index;
+    }
+
+    static <T> T resolve(Class<T> beanType, BeanManager bm) {
+        return lookup(bm.resolve(bm.getBeans(beanType)), bm);
     }
 
     @SuppressWarnings("unchecked")

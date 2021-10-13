@@ -116,8 +116,8 @@ class WebClientConfiguration {
      *
      * @return a new builder instance
      */
-    static Builder builder() {
-        return new Builder();
+    static Builder<?, ?> builder() {
+        return new Builder<>();
     }
 
     /**
@@ -125,8 +125,8 @@ class WebClientConfiguration {
      *
      * @return a new builder instance
      */
-    Builder derive() {
-        return new Builder().update(this);
+    Builder<?, ?> derive() {
+        return new Builder<>().update(this);
     }
 
     Optional<SslContext> sslContext() {
@@ -319,6 +319,7 @@ class WebClientConfiguration {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public T build() {
             return (T) new WebClientConfiguration(this);
         }

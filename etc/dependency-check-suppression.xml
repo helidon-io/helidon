@@ -143,4 +143,16 @@
    <cve>CVE-2021-28170</cve>
 </suppress>
 
+
+<!-- This file is being detected as an old version of Netty and raises false positives for
+     a number of old Netty CVEs.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: netty-incubator-transport-native-io_uring-0.0.8.Final-linux-x86_64.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.netty\.incubator/netty\-incubator\-transport\-native\-io_uring@.*$</packageUrl>
+   <cpe>cpe:/a:netty:netty</cpe>
+</suppress>
+
 </suppressions>

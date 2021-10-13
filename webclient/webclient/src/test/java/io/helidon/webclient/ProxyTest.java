@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,10 @@ import java.net.URI;
 import java.util.Set;
 import java.util.function.Function;
 
+import io.helidon.config.Config;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.webclient.WebClientRequestBuilderImpl.relativizeNoProxy;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -61,6 +63,27 @@ class ProxyTest {
                    fun.apply(address("[2001:db8:85a3:8d3:1319:8a2e:370:7348]", 445)),
                    is(false));
 
+    }
+
+    @Test
+    void testNoProxyHandlingPredicate() {
+        Config config = Config.create();
+        Proxy proxy = Proxy.create(config.get("proxy"));
+        assertThat(relativizeNoProxy(URI.create("http://localhost/foo"), proxy).toString(),
+                is("/foo"));
+        assertThat(relativizeNoProxy(URI.create("http://www.localhost/foo"), proxy).toString(),
+                is("http://www.localhost/foo"));
+        assertThat(relativizeNoProxy(URI.create("http://identity.oc9qadev.com/foo/bar"), proxy).toString(),
+                is("/foo/bar"));
+        assertThat(relativizeNoProxy(URI.create("http://identity.oci1234.oc9qadev.com/foo/bar"), proxy).toString(),
+                is("/foo/bar"));
+    }
+
+    @Test
+    void testDefaultProxyType() {
+        Config config = Config.create();
+        Proxy proxy = Proxy.create(config.get("proxy"));
+        assertThat(proxy.type(), is(Proxy.ProxyType.HTTP));
     }
 
     private URI address(String host, int port) {

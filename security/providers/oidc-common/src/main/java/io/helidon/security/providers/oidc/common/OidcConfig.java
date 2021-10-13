@@ -38,6 +38,8 @@ import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
@@ -940,6 +942,7 @@ public final class OidcConfig {
     /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link OidcConfig}.
      */
+    @Configured(description = "Open ID Connect configuration")
     public static class Builder implements io.helidon.common.Builder<OidcConfig> {
         private static final String DEFAULT_SERVER_TYPE = "@default";
 
@@ -1282,6 +1285,7 @@ public final class OidcConfig {
          *                 authenticate the user, defaults to true
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder redirect(boolean redirect) {
             this.redirect = redirect;
             return this;
@@ -1304,6 +1308,7 @@ public final class OidcConfig {
          * @param audience audience to validate
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder audience(String audience) {
             this.audience = audience;
             return this;
@@ -1315,6 +1320,7 @@ public final class OidcConfig {
          * @param issuer expected issuer to validate
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder issuer(String issuer) {
             this.issuer = issuer;
             return this;
@@ -1327,6 +1333,7 @@ public final class OidcConfig {
          * @param useJwk when set to true, jwk is used, when set to false, introspect endpoint is used
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder validateJwtWithJwk(Boolean useJwk) {
             this.validateJwtWithJwk = useJwk;
             return this;
@@ -1339,6 +1346,7 @@ public final class OidcConfig {
          * @param uri URI of introspection endpoint
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder introspectEndpointUri(URI uri) {
             validateJwtWithJwk(false);
             this.introspectUri = uri;
@@ -1353,6 +1361,7 @@ public final class OidcConfig {
          * @param scopes Space separated scopes to be required by default from OIDC server
          * @return updated builder instance
          */
+        @ConfiguredOption(value = DEFAULT_BASE_SCOPES)
         public Builder baseScopes(String scopes) {
             this.baseScopes = scopes;
             return this;
@@ -1367,6 +1376,7 @@ public final class OidcConfig {
          * @param useWellKnown whether to use well known location for OIDC metadata
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder oidcMetadataWellKnown(Boolean useWellKnown) {
             this.oidcMetadataWellKnown = useWellKnown;
             return this;
@@ -1379,6 +1389,7 @@ public final class OidcConfig {
          * @param resource Resource pointing to the JWK
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "sign-jwk.resource")
         public Builder signJwk(Resource resource) {
             validateJwtWithJwk(true);
             this.signJwk = JwkKeys.builder().resource(resource).build();
@@ -1404,6 +1415,7 @@ public final class OidcConfig {
          * @param resource resource pointing to the JSON structure
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "oidc-metadata.resource")
         public Builder oidcMetadata(Resource resource) {
             this.oidcMetadata = JSON.createReader(resource.stream()).readObject();
             return this;
@@ -1429,6 +1441,7 @@ public final class OidcConfig {
          * @param tokenHandler token handler to use
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "header-token")
         public Builder headerTokenHandler(TokenHandler tokenHandler) {
             this.headerHandler = tokenHandler;
             return this;
@@ -1440,6 +1453,7 @@ public final class OidcConfig {
          * @param useHeader set to true to use a header extracted with {@link #headerTokenHandler(TokenHandler)}
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "header-use", value = "false")
         public Builder useHeader(Boolean useHeader) {
             this.useHeader = useHeader;
             return this;
@@ -1453,6 +1467,7 @@ public final class OidcConfig {
          * @param audience audience, if provided, end with "/" to append the scope correctly
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder scopeAudience(String audience) {
             this.scopeAudience = audience;
             return this;
@@ -1465,6 +1480,7 @@ public final class OidcConfig {
          * @param sameSite SameSite cookie attribute value
          * @return updated builder instance
          */
+        @ConfiguredOption(value = DEFAULT_COOKIE_SAME_SITE)
         public Builder cookieSameSite(String sameSite) {
             this.cookieSameSite = sameSite;
             this.cookieSameSiteDefault = false;
@@ -1478,6 +1494,7 @@ public final class OidcConfig {
          * @param secure whether the cookie should be secure (true) or not (false)
          * @return updated builder instance
          */
+        @ConfiguredOption("false")
         public Builder cookieSecure(Boolean secure) {
             this.cookieSecure = secure;
             return this;
@@ -1490,6 +1507,7 @@ public final class OidcConfig {
          * @param httpOnly whether the cookie should be HttpOnly (true) or not (false)
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder cookieHttpOnly(Boolean httpOnly) {
             this.cookieHttpOnly = httpOnly;
             return this;
@@ -1503,6 +1521,7 @@ public final class OidcConfig {
          * @param age age in seconds
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder cookieMaxAgeSeconds(long age) {
             this.cookieMaxAge = age;
             return this;
@@ -1515,6 +1534,7 @@ public final class OidcConfig {
          * @param path the path to use as value of cookie "Path" attribute
          * @return updated builder instance
          */
+        @ConfiguredOption(value = DEFAULT_COOKIE_PATH)
         public Builder cookiePath(String path) {
             this.cookiePath = path;
             return this;
@@ -1541,6 +1561,7 @@ public final class OidcConfig {
          * @param domain domain to use as value of cookie "Domain" attribute
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder cookieDomain(String domain) {
             this.cookieDomain = domain;
             return this;
@@ -1553,6 +1574,7 @@ public final class OidcConfig {
          * @param uri the frontend URI, such as "http://my.server.com/myApp
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder frontendUri(String uri) {
             this.frontendUri = uri;
             return this;
@@ -1567,6 +1589,7 @@ public final class OidcConfig {
          * @param uri URI to use for token endpoint
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder tokenEndpointUri(URI uri) {
             this.tokenEndpointUri = uri;
             return this;
@@ -1584,6 +1607,7 @@ public final class OidcConfig {
          * @param tokenEndpointAuthentication authentication type
          * @return updated builder
          */
+        @ConfiguredOption(key = "token-endpoint-auth", value = "CLIENT_SECRET_BASIC")
         public Builder tokenEndpointAuthentication(ClientAuthentication tokenEndpointAuthentication) {
 
             switch (tokenEndpointAuthentication) {
@@ -1608,6 +1632,7 @@ public final class OidcConfig {
          * @param uri URI to use for token endpoint
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder authorizationEndpointUri(URI uri) {
             this.authorizationEndpointUri = uri;
             return this;
@@ -1620,6 +1645,7 @@ public final class OidcConfig {
          * @param cookieName name of a cookie
          * @return updated builder instance
          */
+        @ConfiguredOption(value = DEFAULT_COOKIE_NAME)
         public Builder cookieName(String cookieName) {
             this.cookieName = cookieName;
             return this;
@@ -1632,6 +1658,7 @@ public final class OidcConfig {
          * @param useCookie whether to use cookie to store JWT (true) or not (false))
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "cookie-use", value = "true")
         public Builder useCookie(Boolean useCookie) {
             this.useCookie = useCookie;
             return this;
@@ -1643,6 +1670,7 @@ public final class OidcConfig {
          * @param paramName name of the query parameter to expect
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "query-param-name", value = DEFAULT_PARAM_NAME)
         public Builder paramName(String paramName) {
             this.paramName = paramName;
             return this;
@@ -1656,6 +1684,7 @@ public final class OidcConfig {
          * @return updated builder instance
          * @see #paramName(String)
          */
+        @ConfiguredOption(key = "query-param-use", value = "false")
         public Builder useParam(Boolean useParam) {
             this.useParam = useParam;
             return this;
@@ -1667,6 +1696,7 @@ public final class OidcConfig {
          * @param uri full URI of an identity server (such as "http://tenantid.identity.oraclecloud.com")
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder identityUri(URI uri) {
             this.identityUri = uri;
             return this;
@@ -1679,6 +1709,7 @@ public final class OidcConfig {
          * @param protocol protocol to use (such as https)
          * @return updated builder instance
          */
+        @ConfiguredOption(value = DEFAULT_PROXY_PROTOCOL)
         public Builder proxyProtocol(String protocol) {
             this.proxyProtocol = protocol;
             return this;
@@ -1693,6 +1724,7 @@ public final class OidcConfig {
          * @see #proxyProtocol(String)
          * @see #proxyPort(int)
          */
+        @ConfiguredOption
         public Builder proxyHost(String proxyHost) {
             if ((null == proxyHost) || proxyHost.isEmpty()) {
                 this.proxyHost = null;
@@ -1709,6 +1741,7 @@ public final class OidcConfig {
          * @param proxyPort port of the proxy server to use
          * @return updated builder instance
          */
+        @ConfiguredOption("80")
         public Builder proxyPort(int proxyPort) {
             this.proxyPort = proxyPort;
             return this;
@@ -1720,6 +1753,7 @@ public final class OidcConfig {
          * @param clientId the client id of this application.
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder clientId(String clientId) {
             this.clientId = clientId;
             return this;
@@ -1733,6 +1767,7 @@ public final class OidcConfig {
          * @param clientSecret secret to use
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder clientSecret(String clientSecret) {
             this.clientSecret = clientSecret;
             return this;
@@ -1751,6 +1786,7 @@ public final class OidcConfig {
          * @param redirectUri the URI (path without protocol, host and port) used to redirect requests back to us
          * @return updated builder instance
          */
+        @ConfiguredOption(value = DEFAULT_REDIRECT_URI)
         public Builder redirectUri(String redirectUri) {
             this.redirectUri = redirectUri;
             return this;
@@ -1763,6 +1799,7 @@ public final class OidcConfig {
          * @param paramName name of the parameter used in the state parameter
          * @return updated builder instance
          */
+        @ConfiguredOption(value = DEFAULT_ATTEMPT_PARAM)
         public Builder redirectAttemptParam(String paramName) {
             this.redirectAttemptParam = paramName;
             return this;
@@ -1776,6 +1813,7 @@ public final class OidcConfig {
          * @param maxRedirects maximal number of redirects from Helidon to OIDC provider
          * @return updated builder instance
          */
+        @ConfiguredOption("5")
         public Builder maxRedirects(int maxRedirects) {
             this.maxRedirects = maxRedirects;
             return this;
@@ -1789,6 +1827,7 @@ public final class OidcConfig {
          * @param type Type of identity server. Currently supported is {@code idcs} or not configured (for default).
          * @return updated builder instance
          */
+        @ConfiguredOption(value = DEFAULT_SERVER_TYPE)
         public Builder serverType(String type) {
             this.serverType = type;
             return this;
@@ -1800,6 +1839,7 @@ public final class OidcConfig {
          * @param duration timeout
          * @return updated builder
          */
+        @ConfiguredOption(key = "client-timeout-millis", value = "30000")
         public Builder clientTimeout(Duration duration) {
             this.clientTimeout = duration;
             return this;
