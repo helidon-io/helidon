@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.json.Json;
 import javax.json.JsonObject;
 
 import io.helidon.common.http.FormParams;
@@ -256,8 +257,17 @@ public final class OidcSupport implements Service {
         res.headers().add(Http.Header.LOCATION, state);
 
         if (oidcConfig.useCookie()) {
-            res.headers()
-                    .add("Set-Cookie", oidcConfig.cookieName() + "=" + tokenValue + oidcConfig.cookieOptions());
+            if(oidcConfig.putIdtokenInCookie()){
+                JsonObject cookieValue = Json.createObjectBuilder()
+                        .add("access_token", tokenValue)
+                        .add( "id_token", json.getString("id_token"))
+                        .build();
+                res.headers()
+                        .add("Set-Cookie", oidcConfig.cookieName() + "=" + cookieValue.toString() + oidcConfig.cookieOptions());
+            }else {
+                res.headers()
+                        .add("Set-Cookie", oidcConfig.cookieName() + "=" + tokenValue + oidcConfig.cookieOptions());
+            }
         }
 
         res.send();

@@ -302,6 +302,7 @@ public final class OidcConfig {
     static final String DEFAULT_ATTEMPT_PARAM = "h_ra";
     static final int DEFAULT_MAX_REDIRECTS = 5;
     static final int DEFAULT_TIMEOUT_SECONDS = 30;
+    static final boolean DEFAULT_PUT_IDTOKEN_IN_COOKIE = false;
 
     private static final Logger LOGGER = Logger.getLogger(OidcConfig.class.getName());
     private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
@@ -340,6 +341,7 @@ public final class OidcConfig {
     private final WebClient appWebClient;
     private final URI introspectUri;
     private final Duration clientTimeout;
+    private final boolean putIdtokenInCookie;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
@@ -369,6 +371,7 @@ public final class OidcConfig {
         this.generalClient = builder.generalClient;
         this.tokenEndpointAuthentication = builder.tokenEndpointAuthentication;
         this.clientTimeout = builder.clientTimeout;
+        this.putIdtokenInCookie = builder.putIdtokenInCookie;
 
         if (tokenEndpointAuthentication == ClientAuthentication.CLIENT_SECRET_POST) {
             // we should only store this if required
@@ -588,6 +591,16 @@ public final class OidcConfig {
      */
     public String cookieOptions() {
         return cookieOptions;
+    }
+
+    /**
+     * Retruns flag to store id token in cookie and use to build principal
+     *
+     * @return put id token in cookie flag
+     * @see Builder#putIdtokenInCookie(boolean)
+     */
+    public boolean putIdtokenInCookie(){
+        return putIdtokenInCookie;
     }
 
     /**
@@ -942,6 +955,7 @@ public final class OidcConfig {
         private boolean cookieHttpOnly = DEFAULT_COOKIE_HTTP_ONLY;
         private boolean cookieSecure = DEFAULT_COOKIE_SECURE;
         private String cookieSameSite = DEFAULT_COOKIE_SAME_SITE;
+        private boolean putIdtokenInCookie = DEFAULT_PUT_IDTOKEN_IN_COOKIE;
 
         private boolean useParam = DEFAULT_PARAM_USE;
         private String paramName = DEFAULT_PARAM_NAME;
@@ -1215,6 +1229,7 @@ public final class OidcConfig {
             config.get("cookie-http-only").asBoolean().ifPresent(this::cookieHttpOnly);
             config.get("cookie-secure").asBoolean().ifPresent(this::cookieSecure);
             config.get("cookie-same-site").asString().ifPresent(this::cookieSameSite);
+            config.get("put-idtoken-in-cookie").asBoolean().ifPresent(this::putIdtokenInCookie);
             config.get("query-param-use").asBoolean().ifPresent(this::useParam);
             config.get("query-param-name").asString().ifPresent(this::paramName);
             config.get("header-use").asBoolean().ifPresent(this::useHeader);
@@ -1514,6 +1529,20 @@ public final class OidcConfig {
         @ConfiguredOption(value = DEFAULT_COOKIE_PATH)
         public Builder cookiePath(String path) {
             this.cookiePath = path;
+            return this;
+        }
+
+        /**
+         * By default only the access_token is stored in the cookie.  Depending on
+         * OIDC provider it may not contain all of the needed profile fields.  If
+         * set to true the id_token will also be stored in the cookie and used to
+         * build the principal.
+         *
+         * @param putIdtokenInCookie flag to store and use id_token from OIDC Provider
+         * @return updated builder instance
+         */
+        public Builder putIdtokenInCookie(boolean putIdtokenInCookie){
+            this.putIdtokenInCookie = putIdtokenInCookie;
             return this;
         }
 
