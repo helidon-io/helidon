@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+ * Helidon metrics API.
+ */
 module io.helidon.metrics.api {
 
     requires java.logging;
@@ -27,8 +30,9 @@ module io.helidon.metrics.api {
     requires io.helidon.config.metadata;
 
     exports io.helidon.metrics.api;
+    exports io.helidon.metrics.api.spi;
 
     uses io.helidon.metrics.api.RegistryFactoryProvider;
-    uses io.helidon.metrics.api.MetricsSupportProvider;
+    uses io.helidon.metrics.api.spi.MetricsSupportProvider;
 
 }

@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.metrics.api.spi.MetricsSupportProvider;
 
 /**
  * Loads the highest-priority implementation of {@link MetricsSupportProvider} via service loading or, if none is found, uses a

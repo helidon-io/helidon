@@ -15,6 +15,8 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.metrics.api.spi.MetricsSupportProvider;
+
 class NoOpMetricsSupportProviderImpl implements MetricsSupportProvider<NoOpMetricsSupport> {
 
     @Override

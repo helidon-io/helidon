@@ -16,7 +16,7 @@
 package io.helidon.metrics;
 
 import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.api.MetricsSupportProvider;
+import io.helidon.metrics.api.spi.MetricsSupportProvider;
 
 /**
  * Provider which furnishes a builder for {@link MetricsSupport} instances.

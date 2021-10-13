@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.api;
+package io.helidon.metrics.api.spi;
+
+import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.MetricsSupport;
 
 /**
- * Provider behavior for {@link MetricsSupport.Builder} instances (and, indirectly, for {@link MetricsSupport} instances).
+ * Provider behavior for {@link io.helidon.metrics.api.MetricsSupport.Builder} instances (and, indirectly, for {@link io.helidon.metrics.api.MetricsSupport} instances).
  *
- * @param <T> implementation type of {@link MetricsSupport}
+ * @param <T> implementation type of {@link io.helidon.metrics.api.MetricsSupport}
  */
 public interface MetricsSupportProvider<T extends MetricsSupport> {
 
