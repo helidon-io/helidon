@@ -26,7 +26,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-metrics-api</artifactId>
-    <name>Helidon Metrics API and Loader</name>
+    <name>Helidon Metrics API</name>
 
     <description>
         Loader for metrics implementation and a no-op implementation
