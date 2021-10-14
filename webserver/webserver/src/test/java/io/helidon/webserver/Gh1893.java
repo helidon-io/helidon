@@ -18,9 +18,11 @@ package io.helidon.webserver;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.common.http.Http;
 import io.helidon.webclient.WebClient;
+import io.helidon.webserver.BadRequestHandler.TransportResponse;
 import io.helidon.webserver.utils.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;
@@ -30,6 +32,8 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalToIgnoringCase;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
 
 /**
  * Problem Description
@@ -75,8 +79,14 @@ class Gh1893 {
                 .build();
     }
 
-    private static BadRequestHandler.TransportResponse badRequestHandler(BadRequestHandler.TransportRequest request, Throwable e) {
-        return BadRequestHandler.TransportResponse.builder()
+    private static TransportResponse badRequestHandler(BadRequestHandler.TransportRequest request, Throwable t) {
+        if (request.uri().equals("/redirect")) {
+            return TransportResponse.builder()
+                    .status(Http.Status.TEMPORARY_REDIRECT_307)
+                    .header(Http.Header.LOCATION, "/errorPage")
+                    .build();
+        }
+        return TransportResponse.builder()
                 .status(Http.ResponseStatus.create(Http.Status.BAD_REQUEST_400.code(),
                                                    CUSTOM_REASON_PHRASE))
                 .entity(CUSTOM_ENTITY)
@@ -113,6 +123,21 @@ class Gh1893 {
 
         assertThat(response, containsString("400 " + CUSTOM_REASON_PHRASE));
         assertThat(response, containsString(CUSTOM_ENTITY));
+    }
+
+    @Test
+    void testInvalidRequestWithRedirect() throws Exception {
+        // wrong content length
+        String response = SocketHttpClient.sendAndReceive("/redirect",
+                                                          Http.Method.GET,
+                                                          null,
+                                                          List.of(Http.Header.CONTENT_LENGTH + ": 47a"),
+                                                          webServer);
+
+        assertThat(SocketHttpClient.statusFromResponse(response), is(Http.Status.TEMPORARY_REDIRECT_307));
+
+        Map<String, String> headers = SocketHttpClient.headersFromResponse(response);
+        assertThat(headers, hasEntry(equalToIgnoringCase("Location"), is("/errorPage")));
     }
 
     @Test

@@ -147,7 +147,7 @@ public class PlainTest {
     public void getTest() throws Exception {
         String s = SocketHttpClient.sendAndReceive(Http.Method.GET, null, webServer);
         Map<String, String> headers = headersFromResponse(s);
-        assertThat(headers, hasEntry("connection", "keep-alive"));
+        assertThat(headers, hasEntry(equalToIgnoringCase("connection"), is("keep-alive")));
         assertThat(entityFromResponse(s, false), is("9\nIt works!\n0\n\n"));
     }
 
