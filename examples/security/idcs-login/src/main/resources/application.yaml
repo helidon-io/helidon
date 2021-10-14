@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ security:
   - abac:
     # Adds ABAC Provider - it does not require any configuration
   - oidc:
+      audience: "https://idcs-f936fc684541496a8b004edb789d59e1.identity.pint.oc9qadev.com:443"
       client-id: "${security.properties.idcs-client-id}"
       client-secret: "${security.properties.idcs-client-secret}"
       identity-uri: "${security.properties.idcs-uri}"
@@ -40,6 +41,8 @@ security:
       frontend-uri: "${security.properties.frontend-uri}"
       # support for non-public signature JWK (and maybe other IDCS specific handling)
       server-type: "idcs"
+      logout-enabled: true
+      post-logout-uri: "http://localhost:7987/loggedout"
   - idcs-role-mapper:
       multitenant: false
       oidc-config:
@@ -56,6 +59,6 @@ security:
         methods: ["get"]
         authenticate: true
         roles-allowed: ["my_admins"]
-        abac:
-          scopes: ["first_scope", "second_scope"]
+#        abac:
+#          scopes: ["first_scope", "second_scope"]
 

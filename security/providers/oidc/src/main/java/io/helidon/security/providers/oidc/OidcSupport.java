@@ -33,8 +33,10 @@ import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.security.providers.oidc.common.OidcCookieHandler;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.webserver.ResponseHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -119,11 +121,15 @@ public final class OidcSupport implements Service {
     private static final String DEFAULT_REDIRECT = "/index.html";
 
     private final OidcConfig oidcConfig;
+    private final OidcCookieHandler tokenCookieHandler;
+    private final OidcCookieHandler idTokenCookieHandler;
     private final boolean enabled;
 
     private OidcSupport(Builder builder) {
         this.oidcConfig = builder.oidcConfig;
         this.enabled = builder.enabled;
+        this.tokenCookieHandler = oidcConfig.tokenCookieHandler();
+        this.idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
     }
 
     /**
@@ -182,9 +188,47 @@ public final class OidcSupport implements Service {
     @Override
     public void update(Routing.Rules rules) {
         if (enabled) {
-            rules.get(oidcConfig.redirectUri(), this::processOidcRedirect)
-                    .any(this::addRequestAsHeader);
+            rules.get(oidcConfig.redirectUri(), this::processOidcRedirect);
+            if (oidcConfig.logoutEnabled()) {
+                rules.get(oidcConfig.logoutUri(), this::processLogout);
+            }
+            rules.any(this::addRequestAsHeader);
         }
+    }
+
+    private void processLogout(ServerRequest req, ServerResponse res) {
+        Optional<String> idTokenCookie = req.headers()
+                .cookies()
+                .first(idTokenCookieHandler.cookieName());
+
+        if (idTokenCookie.isEmpty()) {
+            LOGGER.finest("Logout request invoked without ID Token cookie");
+            res.status(Http.Status.FORBIDDEN_403)
+                    .send();
+            return;
+        }
+
+        String encryptedIdToken = idTokenCookie.get();
+
+        idTokenCookieHandler.decrypt(encryptedIdToken)
+                .forSingle(idToken -> {
+                    StringBuilder sb = new StringBuilder(oidcConfig.logoutEndpointUri()
+                                                                 + "?id_token_hint="
+                                                                 + idToken
+                                                                 + "&post_logout_redirect_uri=" + oidcConfig.postLogoutUri());
+
+                    req.queryParams().first("state")
+                            .ifPresent(it -> sb.append("&state=").append(it));
+
+                    ResponseHeaders headers = res.headers();
+                    headers.addCookie(tokenCookieHandler.removeCookie().build());
+                    headers.addCookie(idTokenCookieHandler.removeCookie().build());
+
+                    res.status(Http.Status.TEMPORARY_REDIRECT_307)
+                            .addHeader(Http.Header.LOCATION, sb.toString())
+                            .send();
+                })
+                .exceptionallyAccept(t -> sendError(res, t));
     }
 
     private void addRequestAsHeader(ServerRequest req, ServerResponse res) {
@@ -245,6 +289,8 @@ public final class OidcSupport implements Service {
 
     private String processJsonResponse(ServerRequest req, ServerResponse res, JsonObject json) {
         String tokenValue = json.getString("access_token");
+        String idToken = json.getString("id_token", null);
+
         //redirect to "state"
         String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
         res.status(Http.Status.TEMPORARY_REDIRECT_307);
@@ -256,13 +302,38 @@ public final class OidcSupport implements Service {
         res.headers().add(Http.Header.LOCATION, state);
 
         if (oidcConfig.useCookie()) {
-            res.headers()
-                    .add("Set-Cookie", oidcConfig.cookieName() + "=" + tokenValue + oidcConfig.cookieOptions());
+            ResponseHeaders headers = res.headers();
+
+            tokenCookieHandler.createCookie(tokenValue)
+                    .forSingle(builder -> {
+                        headers.addCookie(builder.build());
+                        if (idToken != null && oidcConfig.logoutEnabled()) {
+                            idTokenCookieHandler.createCookie(idToken)
+                                    .forSingle(it -> {
+                                        headers.addCookie(builder.build());
+                                        res.send();
+                                    })
+                                    .exceptionallyAccept(t -> sendError(res, t));
+                        } else {
+                            res.send();
+                        }
+                    })
+                    .exceptionallyAccept(t -> sendError(res, t));
+        } else {
+            res.send();
         }
 
-        res.send();
-
         return "done";
+    }
+
+    private void sendError(ServerResponse response, Throwable t) {
+        // we cannot send the response back, as we may expose information about internal workings
+        // of the security of this service
+        if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.log(Level.FINEST, "Failed to process OIDC request", t);
+        }
+        response.status(Http.Status.INTERNAL_SERVER_ERROR_500)
+                .send();
     }
 
     private Optional<String> processError(ServerResponse serverResponse, Http.ResponseStatus status, String entity) {

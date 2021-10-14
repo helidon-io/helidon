@@ -40,6 +40,7 @@ public class SetCookie {
     private final String path;
     private final boolean secure;
     private final boolean httpOnly;
+    private final SameSite sameSite;
 
     private SetCookie(Builder builder) {
         this.name = builder.name;
@@ -50,6 +51,7 @@ public class SetCookie {
         this.path = builder.path;
         this.secure = builder.secure;
         this.httpOnly = builder.httpOnly;
+        this.sameSite = builder.sameSite;
     }
 
     /**
@@ -192,6 +194,11 @@ public class SetCookie {
             result.append(PARAM_SEPARATOR);
             result.append("HttpOnly");
         }
+        if (sameSite != null) {
+            result.append(PARAM_SEPARATOR);
+            result.append("SameSite=");
+            result.append(sameSite.text());
+        }
         return result.toString();
     }
 
@@ -207,6 +214,7 @@ public class SetCookie {
         private String path;
         private boolean secure = false;
         private boolean httpOnly = false;
+        private SameSite sameSite;
 
         private Builder(String name, String value) {
             Objects.requireNonNull(name, "Parameter 'name' is null!");
@@ -316,6 +324,56 @@ public class SetCookie {
         public Builder httpOnly(boolean httpOnly) {
             this.httpOnly = httpOnly;
             return this;
+        }
+
+        /**
+         * The {@code SameSite} cookie parameter.
+         *
+         * @param sameSite same site type to use
+         * @return updated builder
+         */
+        public Builder sameSite(SameSite sameSite) {
+            this.sameSite = sameSite;
+            return this;
+        }
+    }
+
+    /**
+     * The SameSite attribute of the Set-Cookie HTTP response header allows you to declare if your cookie should be restricted
+     * to a first-party or same-site context.
+     */
+    public enum SameSite {
+        /**
+         * Cookies are not sent on normal cross-site subrequests (for example to load images or frames into a third party site)
+         * , but are sent when a user is navigating to the origin site (i.e., when following a link).
+         *
+         * This is the default cookie value if SameSite has not been explicitly specified in recent browser versions
+         */
+        LAX("Lax"),
+        /**
+         * Cookies will only be sent in a first-party context and not be sent along with requests initiated by third party
+         * websites.
+         */
+        STRICT("Strict"),
+        /**
+         * Cookies will be sent in all contexts, i.e. in responses to both first-party and cross-origin requests. If
+         * SameSite=None is set, the cookie Secure attribute must also be set (or the cookie will be blocked).
+         */
+        NONE("None");
+
+        private final String text;
+
+        SameSite(String text) {
+            this.text = text;
+        }
+
+        /**
+         * Text to write to the same site cookie param.
+         *
+         * @return text to send in cookie
+         */
+        public String text() {
+            return text;
         }
     }
 }

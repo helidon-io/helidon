@@ -55,6 +55,10 @@
             <artifactId>helidon-webclient-tracing</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-jsonp</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient-jaxrs</artifactId>
         </dependency>
@@ -77,6 +81,10 @@
             <artifactId>helidon-config-metadata-processor</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-crypto</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.bundles</groupId>
