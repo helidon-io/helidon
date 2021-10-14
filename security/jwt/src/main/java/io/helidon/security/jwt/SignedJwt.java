@@ -45,14 +45,14 @@ public final class SignedJwt {
     private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     private final String tokenContent;
-    private final JsonObject headerJson;
+    private final JwtHeaders headers;
     private final JsonObject payloadJson;
     private final byte[] signedBytes;
     private final byte[] signature;
 
-    private SignedJwt(String tokenContent, JsonObject headerJson, JsonObject payloadJson, byte[] signedBytes, byte[] signature) {
+    private SignedJwt(String tokenContent, JwtHeaders headers, JsonObject payloadJson, byte[] signedBytes, byte[] signature) {
         this.tokenContent = tokenContent;
-        this.headerJson = headerJson;
+        this.headers = headers;
         this.payloadJson = payloadJson;
         this.signedBytes = signedBytes;
         this.signature = signature;
@@ -112,7 +112,7 @@ public final class SignedJwt {
 
         String tokenContent = signedString + '.' + signatureBase64;
 
-        return new SignedJwt(tokenContent, headerJson, payloadJson, signedBytes, signature);
+        return new SignedJwt(tokenContent, jwt.headers(), payloadJson, signedBytes, signature);
     }
 
     private static SignedJwt sign(Jwt jwt, JwkKeys jwks, String alg) {
@@ -135,6 +135,9 @@ public final class SignedJwt {
      * Parse a token received over network. The expected content is
      * {@code header_base64.payload_base64.signature_base64} where base64 is
      * base64 URL encoding.
+     * Use this method if you have previous knowledge that this is a signed JWT, otherwise use
+     * {@link #parseToken(JwtHeaders, String)}.
+     *
      * This method does NO validation of content at all, only validates that
      * the content is correctly formatted:
      * <ul>
@@ -158,29 +161,69 @@ public final class SignedJwt {
             String signatureBase64 = matcher.group(3);
 
             // these all can fail
-            String headerJsonString = decode(headerBase64, collector, "JWT header");
-            String payloadJsonString = decode(payloadBase64, collector, "JWT payload");
-            byte[] signatureBytes = decodeBytes(signatureBase64, collector, "JWT signature");
-
-            // if failed, do not continue
-            collector.collect().checkValid();
-
-            String signedContent = headerBase64 + '.' + payloadBase64;
-
-            JsonObject headerJson = parseJson(headerJsonString, collector, headerBase64, "JWT header");
-            JsonObject contentJson = parseJson(payloadJsonString, collector, payloadBase64, "JWT payload");
-
-            collector.collect().checkValid();
-
-            return new SignedJwt(
-                    tokenContent,
-                    headerJson,
-                    contentJson,
-                    signedContent.getBytes(StandardCharsets.UTF_8),
-                    signatureBytes);
+            JwtHeaders headers = JwtHeaders.parseBase64(headerBase64, collector);
+            return parse(tokenContent, collector, headers, headerBase64, payloadBase64, signatureBase64);
         } else {
             throw new JwtException("Not a JWT token: " + tokenContent);
         }
+    }
+
+    /**
+     * Parse a token received over network. The expected content is
+     * {@code header_base64.payload_base64.signature_base64} where base64 is
+     * base64 URL encoding.
+     *
+     * This method does NO validation of content at all, only validates that
+     * the content is correctly formatted:
+     * <ul>
+     * <li>correct format of string (e.g. base64.base64.base64)</li>
+     * <li>each base64 part is actually base64 URL encoded</li>
+     * <li>header and payload are JSON objects</li>
+     * </ul>
+     *
+     * @param headers headers parsed previously (probably to decide whether to
+     *                use this or {@link io.helidon.security.jwt.EncryptedJwt})
+     * @param tokenContent String with the token
+     * @return a signed JWT instance that can be used to obtain the {@link #getJwt() instance}
+     *         and to {@link #verifySignature(JwkKeys)} verify} the signature
+     * @throws RuntimeException in case of invalid content, see {@link Errors.ErrorMessagesException}
+     */
+    public static SignedJwt parseToken(JwtHeaders headers, String tokenContent) {
+        Matcher matcher = JWT_PATTERN.matcher(tokenContent);
+        if (matcher.matches()) {
+            String headerBase64 = matcher.group(1);
+            String payloadBase64 = matcher.group(2);
+            String signatureBase64 = matcher.group(3);
+
+            return parse(tokenContent, Errors.collector(), headers, headerBase64, payloadBase64, signatureBase64);
+        } else {
+            throw new JwtException("Not a JWT token: " + tokenContent);
+        }
+    }
+
+    private static SignedJwt parse(String tokenContent,
+                                   Errors.Collector collector,
+                                   JwtHeaders headers,
+                                   String headerBase64,
+                                   String payloadBase64,
+                                   String signatureBase64) {
+        String payloadJsonString = decode(payloadBase64, collector, "JWT payload");
+        byte[] signatureBytes = decodeBytes(signatureBase64, collector, "JWT signature");
+
+        // if failed, do not continue
+        collector.collect().checkValid();
+
+        String signedContent = headerBase64 + '.' + payloadBase64;
+        JsonObject contentJson = parseJson(payloadJsonString, collector, payloadBase64, "JWT payload");
+
+        collector.collect().checkValid();
+
+        return new SignedJwt(
+                tokenContent,
+                headers,
+                contentJson,
+                signedContent.getBytes(StandardCharsets.UTF_8),
+                signatureBytes);
     }
 
     private static JsonObject parseJson(String jsonString, Errors.Collector collector, String base64, String description) {
@@ -233,7 +276,7 @@ public final class SignedJwt {
      * @return header json
      */
     JsonObject headerJson() {
-        return headerJson;
+        return headers.headerJson();
     }
 
     /**
@@ -270,7 +313,7 @@ public final class SignedJwt {
      * @throws RuntimeException in case one of the fields has invalid content (e.g. timestamp is invalid)
      */
     public Jwt getJwt() {
-        return new Jwt(headerJson, payloadJson);
+        return new Jwt(headers, payloadJson);
     }
 
     /**
@@ -295,13 +338,13 @@ public final class SignedJwt {
     public Errors verifySignature(JwkKeys keys, Jwk defaultJwk) {
         Errors.Collector collector = Errors.collector();
 
-        String alg = JwtUtil.getString(headerJson, "alg").orElse(null);
-        String kid = JwtUtil.getString(headerJson, "kid").orElse(null);
+        String alg = headers.algorithm().orElse(null);
+        String kid = headers.keyId().orElse(null);
 
         Jwk jwk = null;
         boolean jwtWithoutKidAndNoneAlg = false;
 
-        // TODO support multiple JWK unders same kid if different alg (see if spec allows this)
+        // TODO support multiple JWK under same kid if different alg (see if spec allows this)
         if (null == alg) {
             if (null == kid) {
                 if (defaultJwk == null) {
