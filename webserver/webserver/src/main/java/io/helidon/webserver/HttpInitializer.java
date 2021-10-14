@@ -65,7 +65,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     static final AttributeKey<Certificate[]> CLIENT_CERTIFICATE_CHAIN = AttributeKey.valueOf("client_certificate_chain");
 
     private final NettyWebServer webServer;
-    private final BadRequestHandler badRequestHandler;
+    private final DirectHandlers directHandlers;
     private final SocketConfiguration soConfig;
     private final Routing routing;
     private final AtomicBoolean clearLock = new AtomicBoolean();
@@ -89,12 +89,12 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
                     SslContext sslContext,
                     Routing routing,
                     NettyWebServer webServer,
-                    BadRequestHandler badRequestHandler) {
+                    DirectHandlers directHandlers) {
         this.soConfig = soConfig;
         this.routing = routing;
         this.sslContext = sslContext;
         this.webServer = webServer;
-        this.badRequestHandler = badRequestHandler;
+        this.directHandlers = directHandlers;
     }
 
     /**
@@ -216,7 +216,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
                                         this::clearQueues,
                                         requestDecoder,
                                         soConfig.maxPayloadSize(),
-                                        badRequestHandler));
+                                        directHandlers));
 
         // Cleanup queues as part of event loop
         ch.eventLoop().execute(this::clearQueues);

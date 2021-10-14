@@ -103,15 +103,15 @@ class NettyWebServer implements WebServer {
      * @param config a server configuration instance
      * @param routing       a default routing instance
      * @param namedRoutings the named routings of the configured additional server sockets. If there is no
- *                      named routing for a given named additional server socket configuration, a default
-     * @param badRequestHandler handler for bad requests to customize response
+*                      named routing for a given named additional server socket configuration, a default
+     * @param directHandlers handler to customize response for events bypassing routing
      */
     NettyWebServer(ServerConfiguration config,
                    Routing routing,
                    Map<String, Routing> namedRoutings,
                    MessageBodyWriterContext writerContext,
                    MessageBodyReaderContext readerContext,
-                   BadRequestHandler badRequestHandler) {
+                   DirectHandlers directHandlers) {
 
         Set<Map.Entry<String, SocketConfiguration>> sockets = config.sockets().entrySet();
 
@@ -153,7 +153,7 @@ class NettyWebServer implements WebServer {
                                                                sslContext,
                                                                namedRoutings.getOrDefault(name, routing),
                                                                this,
-                                                               badRequestHandler);
+                                                               directHandlers);
             initializers.put(name, childHandler);
             bootstrap.group(bossGroup, workerGroup)
                      .channelFactory(serverChannelFactory())

@@ -22,7 +22,7 @@ import java.util.Map;
 
 import io.helidon.common.http.Http;
 import io.helidon.webclient.WebClient;
-import io.helidon.webserver.BadRequestHandler.TransportResponse;
+import io.helidon.webserver.DirectHandler.TransportResponse;
 import io.helidon.webserver.utils.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;
@@ -67,7 +67,7 @@ class Gh1893 {
     static void startServer() {
         webServer = WebServer.builder()
                 .host("localhost")
-                .badRequestHandler(Gh1893::badRequestHandler)
+                .directHandler(Gh1893::badRequestHandler, DirectHandler.EventType.BAD_REQUEST)
                 .routing(Routing.builder()
                                  .get("/", (req, res) -> res.send("Hi")))
                 .build()
@@ -79,7 +79,10 @@ class Gh1893 {
                 .build();
     }
 
-    private static TransportResponse badRequestHandler(BadRequestHandler.TransportRequest request, Throwable t) {
+    private static TransportResponse badRequestHandler(DirectHandler.TransportRequest request,
+                                                       DirectHandler.EventType eventType,
+                                                       Http.ResponseStatus defaultStatus,
+                                                       String message) {
         if (request.uri().equals("/redirect")) {
             return TransportResponse.builder()
                     .status(Http.Status.TEMPORARY_REDIRECT_307)

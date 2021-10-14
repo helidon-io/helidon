@@ -41,7 +41,6 @@ import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.common.ParentingMediaContextBuilder;
-import io.helidon.webserver.BadRequestHandler.TransportResponse;
 
 import io.opentracing.Tracer;
 
@@ -377,7 +376,7 @@ public interface WebServer {
         private Transport transport;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
-        private BadRequestHandler badRequestHandler;
+        private DirectHandlers.Builder directHandlers = DirectHandlers.builder();
 
         private Builder() {
             readerContext = MessageBodyReaderContext.create(DEFAULT_MEDIA_SUPPORT.readerContext());
@@ -400,11 +399,6 @@ public interface WebServer {
             if (explicitConfig == null) {
                 explicitConfig = configurationBuilder.build();
             }
-            if (badRequestHandler == null) {
-                badRequestHandler = (request, throwable) -> TransportResponse.builder()
-                        .entity(throwable.getMessage())
-                        .build();
-            }
 
             String unpairedRoutings =
                     routings.keySet()
@@ -420,7 +414,7 @@ public interface WebServer {
                                                   routings,
                                                   writerContext,
                                                   readerContext,
-                                                  badRequestHandler);
+                                                  directHandlers.build());
 
             if (defaultRouting instanceof RequestRouting) {
                 ((RequestRouting) defaultRouting).fireNewWebServer(result);
@@ -834,20 +828,24 @@ public interface WebServer {
         }
 
         /**
-         * Provide a custom handler for bad requests.
+         * Provide a custom handler for events that bypass routing.
          * The handler can customize status, headers and message.
          * <p>
-         * Examples of bad request:
+         * Examples of bad request ({@link DirectHandler.EventType#BAD_REQUEST}:
          * <ul>
          *     <li>Invalid character in path</li>
          *     <li>Content-Length header set to a non-integer value</li>
          *     <li>Invalid first line of the HTTP request</li>
          * </ul>
-         * @param badRequestHandler custom handler to use
+         * @param handler direct handler to use
+         * @param types event types to handle with the provided handler
          * @return updated builder
          */
-        public Builder badRequestHandler(BadRequestHandler badRequestHandler) {
-            this.badRequestHandler = badRequestHandler;
+        public Builder directHandler(DirectHandler handler, DirectHandler.EventType... types) {
+            for (DirectHandler.EventType type : types) {
+                directHandlers.addHandler(type, handler);
+            }
+
             return this;
         }
     }

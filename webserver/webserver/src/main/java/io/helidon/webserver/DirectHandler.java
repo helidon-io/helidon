@@ -27,21 +27,47 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 
 /**
- * An error handler that is invoked when a bad request is identified.
+ * A handler that is invoked when a response is sent outside of routing.
+ * See {@link DirectHandler.EventType} to see which types
+ * of events are covered by this handler.
  */
 @FunctionalInterface
-public interface BadRequestHandler {
+public interface DirectHandler {
     /**
-     * Bad request handler, <b>MUST NOT block the current thread.</b>
+     * Handler of responses that bypass routing, <b>MUST NOT block the current thread.</b>
      * <p>
      * This method should be used to return custom status, header and possible entity (retrieved without blocking).
      * If there is a need to handle more details, please redirect the client to a proper endpoint to handle them.
      *
      * @param request request as received with as much known information as possible
+     * @param eventType type of the event
+     * @param defaultStatus default status expected to be returned
      * @param t throwable caught as part of processing with possible additional details about the reason of failure
      * @return response to use to return to original request
      */
-    TransportResponse handle(TransportRequest request, Throwable t);
+    default TransportResponse handle(TransportRequest request,
+                                     EventType eventType,
+                                     Http.ResponseStatus defaultStatus,
+                                     Throwable t) {
+        return handle(request, eventType, defaultStatus, t.getMessage());
+    }
+
+    /**
+     * Handler of responses that bypass routing, <b>MUST NOT block the current thread.</b>
+     * <p>
+     * This method should be used to return custom status, header and possible entity (retrieved without blocking).
+     * If there is a need to handle more details, please redirect the client to a proper endpoint to handle them.
+     *
+     * @param request request as received with as much known information as possible
+     * @param eventType type of the event
+     * @param defaultStatus default status expected to be returned
+     * @param message message expected to be used as a response entity - may be an empty string (no entity expected), never null
+     * @return response to use to return to original request
+     */
+    TransportResponse handle(TransportRequest request,
+                             EventType eventType,
+                             Http.ResponseStatus defaultStatus,
+                             String message);
 
     /**
      * Request information.
@@ -75,6 +101,25 @@ public interface BadRequestHandler {
          * @return headers or an empty map
          */
         Map<String, List<String>> headers();
+    }
+
+    /**
+     * Types of events that can be triggered outside of routing
+     * that immediately return a response.
+     */
+    enum EventType {
+        /**
+         * Bad request, such as invalid path, header.
+         */
+        BAD_REQUEST,
+        /**
+         * Payload is bigger than the configured maximal size.
+         */
+        PAYLOAD_TOO_LARGE,
+        /**
+         * Continue (see {@link Http.Status#CONTINUE_100}).
+         */
+        CONTINUE
     }
 
     /**
@@ -123,7 +168,7 @@ public interface BadRequestHandler {
         }
 
         /**
-         * Fluent API builder for {@link io.helidon.webserver.BadRequestHandler.TransportResponse}.
+         * Fluent API builder for {@link DirectHandler.TransportResponse}.
          */
         public static class Builder implements io.helidon.common.Builder<TransportResponse> {
             private final Map<String, List<String>> headers = new HashMap<>();
