@@ -81,9 +81,3 @@ public class MyResource {
 Note that this approach effectively moves the scope of `Application` subclass instances to
 request scope in order to access the correct subclass for the resource method being
 executed.
-
-
-
-
-
-
