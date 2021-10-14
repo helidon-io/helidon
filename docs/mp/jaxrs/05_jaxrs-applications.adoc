@@ -19,7 +19,7 @@
 = JAX-RS Applications
 :h1Prefix: MP
 :description: Helidon MicroProfile JAX-RS applications
-:keywords: helidon, microprofile, micro-profile, jax-rs, applications
+:keywords: helidon, microprofile, micro-profile, jax-rs, applications, jakarta, rest
 
 NOTE: In this section we shall distinguish the notion of a JAX-RS `Application` subclass
 from a Helidon application. As we shall learn shortly, the latter may include zero or more
@@ -50,7 +50,8 @@ The discovery phase is carried out as follows (in no particular order):
 3. Collect all beans annotated with `@Provider`
 
 If no `Application` subclasses are found, create a _synthetic_ `Application` subclass that includes
-all beans gathered in steps (2) and (3) and set the application path to be "/". If one or more
+all beans gathered in steps (2) and (3) and set the application path to be "/" &mdash;this is path
+normally defined using the `@ApplicationPath` annotation. If one or more
 `Application` subclasses are found, use those subclasses (and their application paths) and discard
 the collections in steps (2) and (3), in favor of calling the corresponding methods provided by
 the subclasses.
