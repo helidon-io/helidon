@@ -73,8 +73,8 @@
             <artifactId>microprofile-metrics-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver</artifactId>
+            <groupId>io.helidon.service-common</groupId>
+            <artifactId>helidon-service-common-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.service-common</groupId>

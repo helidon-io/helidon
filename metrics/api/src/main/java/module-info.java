@@ -27,10 +27,10 @@ module io.helidon.metrics.api {
     requires io.helidon.common.serviceloader;
     requires transitive io.helidon.config;
     requires transitive io.helidon.servicecommon.rest;
-    requires io.helidon.webserver;
 
     requires transitive microprofile.metrics.api;
     requires io.helidon.config.metadata;
+    requires io.helidon.servicecommon.core;
 
     exports io.helidon.metrics.api;
     exports io.helidon.metrics.api.spi;

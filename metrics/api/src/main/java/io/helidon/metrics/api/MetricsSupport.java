@@ -82,9 +82,7 @@ public interface MetricsSupport extends RestServiceSupport, Service {
      * @param endpointContext context (typically /metrics)
      * @param serviceEndpointRoutingRules routing rules to update with the disabled metrics endpoints
      */
-    default void prepareMetricsEndpoints(String endpointContext, Routing.Rules serviceEndpointRoutingRules) {
-        NoOpMetricsSupport.createEndpointForDisabledMetrics(endpointContext, serviceEndpointRoutingRules);
-    }
+    void prepareMetricsEndpoints(String endpointContext, Routing.Rules serviceEndpointRoutingRules);
 
     /**
      * Prepares the endpoint which the service exposes.

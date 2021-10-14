@@ -35,8 +35,6 @@ class MetricsSupportManager {
 
     private static final Logger LOGGER = Logger.getLogger(MetricsSupportManager.class.getName());
 
-    private static final NoOpMetricsSupportProviderImpl NO_OP_PROVIDER = new NoOpMetricsSupportProviderImpl();
-
     private static final LazyValue<MetricsSupportProvider<?>> LAZY_PROVIDER =
             LazyValue.create(MetricsSupportManager::loadMetricsSupportProvider);
 
@@ -44,12 +42,11 @@ class MetricsSupportManager {
     }
 
     private static MetricsSupportProvider<?> loadMetricsSupportProvider() {
-        MetricsSupportProvider<?> provider =
-                HelidonServiceLoader.builder(ServiceLoader.load(MetricsSupportProvider.class))
-                        .addService(NO_OP_PROVIDER, Integer.MAX_VALUE)
-                        .build()
-                        .asList()
-                        .get(0);
+        MetricsSupportProvider<?> provider = HelidonServiceLoader.builder(ServiceLoader.load(MetricsSupportProvider.class))
+                .addService(new LastChanceMetricsSupportProvider(), Integer.MAX_VALUE)
+                .build()
+                .asList()
+                .get(0);
         LOGGER.log(Level.INFO, "MetricsSupport provider: {0}", provider.getClass().getName());
         return provider;
     }
@@ -65,5 +62,18 @@ class MetricsSupportManager {
 
     static MetricsSupport create(MetricsSettings metricsSettings) {
         return LAZY_PROVIDER.get().create(metricsSettings);
+    }
+
+    private static class LastChanceMetricsSupportProvider implements MetricsSupportProvider<LastChanceMetricsSupport> {
+
+        @Override
+        public MetricsSupport.Builder<LastChanceMetricsSupport> builder() {
+            return new LastChanceMetricsSupport.Builder();
+        }
+
+        @Override
+        public LastChanceMetricsSupport create(MetricsSettings metricsSettings) {
+            return LastChanceMetricsSupport.create(metricsSettings);
+        }
     }
 }

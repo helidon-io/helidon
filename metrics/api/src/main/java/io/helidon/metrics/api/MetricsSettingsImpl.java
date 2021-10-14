@@ -16,7 +16,7 @@
 package io.helidon.metrics.api;
 
 import io.helidon.config.Config;
-import io.helidon.servicecommon.rest.RestServiceSettings;
+import io.helidon.servicecommon.core.RestServiceSettings;
 
 class MetricsSettingsImpl implements MetricsSettings {
 

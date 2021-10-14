@@ -27,6 +27,7 @@ module io.helidon.metrics {
     requires io.helidon.common.serviceloader;
     requires io.helidon.webserver.cors;
     requires transitive io.helidon.metrics.api;
+    requires io.helidon.metrics.minimal;
 
     requires transitive microprofile.metrics.api;
     requires java.management;

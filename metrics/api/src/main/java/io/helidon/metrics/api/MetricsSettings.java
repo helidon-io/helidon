@@ -18,7 +18,7 @@ package io.helidon.metrics.api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.servicecommon.rest.RestServiceSettings;
+import io.helidon.servicecommon.core.RestServiceSettings;
 
 /**
  * Settings which control behavior for metrics overall.

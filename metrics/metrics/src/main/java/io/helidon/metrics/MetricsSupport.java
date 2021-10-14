@@ -53,6 +53,7 @@ import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.minimal.MinimalMetricsSupport;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
@@ -422,7 +423,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         if (rf instanceof io.helidon.metrics.RegistryFactory) {
             setUpFullFeaturedEndpoint(serviceEndpointRoutingRules, (io.helidon.metrics.RegistryFactory) rf);
         } else {
-            io.helidon.metrics.api.MetricsSupport.super.prepareMetricsEndpoints(endpointContext, serviceEndpointRoutingRules);
+            MinimalMetricsSupport.createEndpointForDisabledMetrics(endpointContext, serviceEndpointRoutingRules);
         }
     }
 
@@ -578,7 +579,6 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         protected Config webContextConfig(Config config) {
             // align with health checks
             return DeprecatedConfig.get(config, "web-context", "context");
-
         }
 
         @Override

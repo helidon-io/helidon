@@ -12,20 +12,19 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
-package io.helidon.metrics.api;
+/**
+ * Minimal web service implementation for metrics.
+ */
+module io.helidon.metrics.minimal {
 
-import io.helidon.metrics.api.spi.MetricsSupportProvider;
+    requires java.logging;
+    requires io.helidon.servicecommon.core;
+    requires transitive io.helidon.metrics.api;
 
-class NoOpMetricsSupportProviderImpl implements MetricsSupportProvider<NoOpMetricsSupport> {
+    exports io.helidon.metrics.minimal;
 
-    @Override
-    public NoOpMetricsSupport.Builder builder() {
-        return NoOpMetricsSupport.builder();
-    }
-
-    @Override
-    public NoOpMetricsSupport create(MetricsSettings metricsSettings) {
-        return NoOpMetricsSupport.create(metricsSettings);
-    }
+    provides io.helidon.metrics.api.spi.MetricsSupportProvider
+            with io.helidon.metrics.minimal.MinimalMetricsSupportProviderImpl;
 }

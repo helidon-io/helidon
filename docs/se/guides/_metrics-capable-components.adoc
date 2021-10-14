@@ -64,7 +64,7 @@ As with a metrics-dependent component, a metrics-capable component is written to
 It uses the metrics implementation _if it is present at runtime_ but functions successfully--just without updating or reporting metrics--if the runtime path does not include the Helidon metrics implementation.
 By writing a metrics-capable component, you let whoever packages or deploys your component with some other module decide whether to include the metrics implementation in that module.
 
-=== Understanding Metrics Behavior With and Without the Metrics Implementation
+=== Understanding Metrics Behavior With and Without the Full Metrics Implementation
 
 When a metrics-dependent component or a metrics-capable component runs with the metrics implementation _present_ from the runtime path, metrics works like this:
 
@@ -148,14 +148,20 @@ public class UtilComponent {
 All other code in the component that registers metrics, looks them up, removes them, and updates their values, is written as if it were metrics-dependent code but using the `MetricRegistry` prepared by the builder.
 
 === Writing and Packaging Applications which Use Metrics-capable Components
-If the metrics implementation is absent from the runtime path, the metrics instances returned by the `MetricRegistry` will be no-ops: the metrics never update their values.
+You should be aware of some important facets of writing and packaging applications  which use metrics-capable components.
+
+==== "No-op" metrics
+
+If the runtime path does not include the full metrics implementation, the metrics instances returned by the `MetricRegistry` will be no-ops: the metrics never update their values.
 This means that metrics-capable code should not assume that the values of metrics change at runtime.
 
-Note that consumers of your component who _do_ want full-featured metrics support need to make sure that the Helidon metrics implementation is present at runtime.
-Adding a _runtime_ dependency on the Helidon metrics implementation module in their own Maven `pom.xml`, for example,  takes care of that.
+==== Including the Full Metrics Implementation
+
+If you create a metrics-capable component, note that consumers of your component who _do_ want full-featured metrics support need to make the full Helidon metrics implementation available for runtime.
+Adding a _runtime_ dependency on the Helidon metrics implementation module in their own Maven `pom.xml`, for example, takes care of that.
 
 [source,xml]
-.Dependencies for consumers of metrics-capable components _with_ full-featured metrics
+.Dependency on metrics-capable component forcing full-featured metrics
 ----
 <dependency>
     <groupId>your.system</groupId>
@@ -170,11 +176,47 @@ Adding a _runtime_ dependency on the Helidon metrics implementation module in th
 <1> Refers to your metrics-capable component.
 <2> Makes sure that the runtime path includes the full-featured Helidon metrics implementation.
 
+==== Including the Minimal Metrics Support Implementation
+The full metrics implementation `helidon-metrics` accepts requests to the `/metrics` endpoint and responds with the appropriate OpenMetrics (Prometheus) or JSON output.
+
+In addition, Helidon provides a minimal metrics support implementation in the `helidon-metrics-minimal` component.
+That implementation responds to any access to the metrics endpoint with `404` and a brief explanatory message.
+
+If you develop a metrics-capable Helidon component or a metrics-capable SE application, you should declare a runtime dependency on `helidon-metrics-minimal`.
+This makes sure that the app--or any app which depends on your component--includes the minimal implementation of metrics endpoint support.
+
+If both implementations are present at runtime, Helidon selects the full-featured one.
+
+Helidon's MicroProfile metrics component `helidon-microprofile-metrics` has its own runtime dependency on the minimal implementation, so you do not need to add one yourself to Helidon MP application `pom.xml` files.
+By default, Helidon MP applications use the full implementation, because Helidon's MP metrics depends also on the full metrics implementation.
+That said, a developer of a Helidon MP app _can_ explicitly exclude the dependency on the full implementation:
+[source,xml]
+.Explicit exclusion of `helidon-metrics`
+----
+<dependency>
+    <groupId>io.helidon.microprofile.bundles</groupId>
+    <artifactId>helidon-microprofile</artifactId>
+    <exclusions>
+        <exclusion>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+----
+
+The resulting Helidon MP app will use the minimal metrics support implementation.
+
+
 ==== An Example: Docker Images
-Here is an example showing how useful metrics-capable code can be. You (or others) could assemble a Docker image with your metrics-capable app as its top layer, built on a layer containing several Helidon modules including the metrics implementation.
+Here is an example showing how useful metrics-capable code can be.
+
+You (or others) could assemble a Docker image with your metrics-capable app as its top layer, built on a layer containing several Helidon modules including the full metrics implementation.
 When that Docker image runs, your app will run with full-featured metrics support.
 
 Separately, someone could build a similar Docker image which does not include the Helidon metrics implementation. In this Docker image, your app will run successfully but will not incur the overhead of actually updating the metrics it uses.
+
+Users can create different Docker images, some with full metrics support and some without, which all use a single version of your metrics-capable app which runs in either environment without change.
 
 === Writing the Consuming Application Code
 An application (or another component) which uses your `UtilComponent` would create an instance as follows:

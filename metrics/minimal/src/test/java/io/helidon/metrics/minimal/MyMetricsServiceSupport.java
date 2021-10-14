@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.api;
+package io.helidon.metrics.minimal;
 
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
+import io.helidon.metrics.api.ComponentMetricsSettings;
+import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Routing;
 
