@@ -17,6 +17,7 @@
 package io.helidon.webserver;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -190,8 +191,8 @@ public interface BadRequestHandler {
              * @return updated builder
              */
             public Builder entity(byte[] entity) {
-                this.entity = entity;
-                if (entity.length == 0) {
+                this.entity = Arrays.copyOf(entity, entity.length);
+                if (this.entity.length == 0) {
                     this.headers.remove(Http.Header.CONTENT_LENGTH);
                 } else {
                     this.header(Http.Header.CONTENT_LENGTH, String.valueOf(entity.length));
