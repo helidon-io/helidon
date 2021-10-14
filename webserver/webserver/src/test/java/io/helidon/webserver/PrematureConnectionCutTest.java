@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,12 +37,12 @@ import java.util.logging.Logger;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.anyOf;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 
 public class PrematureConnectionCutTest {
 
@@ -89,8 +90,8 @@ public class PrematureConnectionCutTest {
             // Wait for all threads to finish
             asyncRunner.await();
 
-            assertThat("All threads didn't finished in time, probably deadlocked.", asyncRunner.finishedThreads.get(), is(CALL_NUM));
-            assertThat("All exceptions didn't have been delivered, when connection closed.", exceptions.size(), is(CALL_NUM));
+            assertThat("All threads didn't finish in time, probably deadlocked.", asyncRunner.finishedThreads.get(), is(CALL_NUM));
+            assertThat("All exceptions were not delivered, when connection closed.", exceptions.size(), is(CALL_NUM));
 
             exceptions.forEach(e -> {
                 assertThat(e.getCause(), anyOf(
@@ -102,8 +103,10 @@ public class PrematureConnectionCutTest {
                 );
             });
         } finally {
-            Objects.requireNonNull(webServer).shutdown().await(TIMEOUT);
-            Objects.requireNonNull(asyncRunner).shutdown();
+            Optional.ofNullable(webServer)
+                    .ifPresent(ws -> ws.shutdown().await(TIMEOUT));
+            Optional.ofNullable(asyncRunner)
+                    .ifPresent(TestAsyncRunner::shutdown);
         }
     }
 
