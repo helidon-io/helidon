@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.logging.Logger;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -68,10 +69,11 @@ class MainTest {
 
     private static final String MODULE_NAME_MP = "io.helidon.tests.apps.bookstore.mp";
     private static final String MODULE_NAME_SE = "io.helidon.tests.apps.bookstore.se";
+    private static final Logger LOGGER = Logger.getLogger(MainTest.class.getName());
 
     @BeforeAll
     static void setup() throws Exception {
-        System.out.println("Using port number" + port);
+        LOGGER.info("Using port number" + port);
         healthUrl = new URL("http://localhost:" + port + "/health");
         appJarPathSE = Paths.get(appJarPathSE).normalize().toString();
         appJarPathMP = Paths.get(appJarPathMP).normalize().toString();
@@ -398,25 +400,34 @@ class MainTest {
      * @throws Exception on a failure
      */
     private void waitForApplication(URL url, boolean toBeUp) throws Exception {
-        long timeout = 10 * 1000; // 10 seconds should be enough to start/stop the server
+        long timeout = 15 * 1000; // 15 seconds should be enough to start/stop the server
         long now = System.currentTimeMillis();
         String operation = (toBeUp ? "start" : "stop");
 
-        HttpURLConnection conn;
+        HttpURLConnection conn = null;
         int responseCode;
         do {
-            System.out.println("Waiting for application to " + operation);
+            LOGGER.info("Waiting for application to " + operation);
             if ((System.currentTimeMillis() - now) > timeout) {
                 Assertions.fail("Application failed to " + operation);
             }
-            Thread.sleep(500);
             try {
                 conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(100);
+                conn.setConnectTimeout(500);
                 responseCode = conn.getResponseCode();
+                if (toBeUp && responseCode != 200) {
+                    LOGGER.info("Application returned bad health response  " + responseCode);
+                }
             } catch (Exception ex) {
+                if (toBeUp) {
+                    LOGGER.info("Failed to connect to application at " + url.toString() + ": " + ex.toString());
+                }
                 responseCode = -1;
             }
+            if (conn != null) {
+                conn.disconnect();
+            }
+            Thread.sleep(500);
         } while ((toBeUp && responseCode != 200) || (!toBeUp && responseCode != -1));
     }
 
