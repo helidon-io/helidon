@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,10 @@ import java.util.function.LongConsumer;
 /**
  * Intercept the calls to the various Flow interface methods and calls the appropriate
  * user callbacks.
+ *
  * @param <T> the element type of the sequence
  */
-public final class MultiTappedPublisher<T> implements Multi<T> {
+public final class MultiTappedPublisher<T> implements Multi<T>, NamedOperator {
 
     private final Multi<T> source;
 
@@ -43,37 +44,24 @@ public final class MultiTappedPublisher<T> implements Multi<T> {
 
     private final Runnable onCancelCallback;
 
-    MultiTappedPublisher(Multi<T> source,
-                         Consumer<? super Flow.Subscription> onSubscribeCallback,
-                         Consumer<? super T> onNextCallback,
-                         Consumer<? super Throwable> onErrorCallback,
-                         Runnable onCompleteCallback,
-                         LongConsumer onRequestCallback,
-                         Runnable onCancelCallback) {
-        this.source = source;
-        this.onSubscribeCallback = onSubscribeCallback;
-        this.onNextCallback = onNextCallback;
-        this.onErrorCallback = onErrorCallback;
-        this.onCompleteCallback = onCompleteCallback;
-        this.onRequestCallback = onRequestCallback;
-        this.onCancelCallback = onCancelCallback;
-    }
+    private final String operatorName;
 
     private MultiTappedPublisher(Builder<T> builder) {
-        this(builder.source,
-             builder.onSubscribeCallback,
-             builder.onNextCallback,
-             builder.onErrorCallback,
-             builder.onCompleteCallback,
-             builder.onRequestCallback,
-             builder.onCancelCallback);
+        this.source = builder.source;
+        this.onSubscribeCallback = builder.onSubscribeCallback;
+        this.onNextCallback = builder.onNextCallback;
+        this.onErrorCallback = builder.onErrorCallback;
+        this.onCompleteCallback = builder.onCompleteCallback;
+        this.onRequestCallback = builder.onRequestCallback;
+        this.onCancelCallback = builder.onCancelCallback;
+        this.operatorName = builder.operatorName;
     }
 
     /**
      * A builder to customize a multi tapped publisher instance.
      *
      * @param source source to wrap
-     * @param <T> type of the multi
+     * @param <T>    type of the multi
      * @return a new builder
      */
     public static <T> Builder<T> builder(Multi<T> source) {
@@ -84,74 +72,74 @@ public final class MultiTappedPublisher<T> implements Multi<T> {
     public void subscribe(Flow.Subscriber<? super T> subscriber) {
         Objects.requireNonNull(subscriber, "subscriber is null");
         source.subscribe(new MultiTappedSubscriber<>(subscriber,
-                                                     onSubscribeCallback, onNextCallback,
-                                                     onErrorCallback, onCompleteCallback,
-                                                     onRequestCallback, onCancelCallback));
+                onSubscribeCallback, onNextCallback,
+                onErrorCallback, onCompleteCallback,
+                onRequestCallback, onCancelCallback));
     }
 
     @Override
-    public Multi<T> onComplete(Runnable onTerminate) {
-        return new MultiTappedPublisher<>(
-                source,
-                onSubscribeCallback,
-                onNextCallback,
-                onErrorCallback,
-                RunnableChain.combine(onCompleteCallback, onTerminate),
-                onRequestCallback,
-                onCancelCallback
-        );
+    public Multi<T> onComplete(Runnable onComplete) {
+        return MultiTappedPublisher.builder(source)
+                .onSubscribeCallback(onSubscribeCallback)
+                .onNextCallback(onNextCallback)
+                .onErrorCallback(onErrorCallback)
+                .onCompleteCallback(RunnableChain.combine(onCompleteCallback, onComplete))
+                .onRequestCallback(onRequestCallback)
+                .onCancelCallback(onCancelCallback)
+                .build();
     }
 
     @Override
     public Multi<T> onError(Consumer<? super Throwable> onErrorConsumer) {
-        return new MultiTappedPublisher<>(
-                source,
-                onSubscribeCallback,
-                onNextCallback,
-                ConsumerChain.combine(onErrorCallback, onErrorConsumer),
-                onCompleteCallback,
-                onRequestCallback,
-                onCancelCallback
-        );
+        return MultiTappedPublisher.builder(source)
+                .onSubscribeCallback(onSubscribeCallback)
+                .onNextCallback(onNextCallback)
+                .onErrorCallback(ConsumerChain.combine(onErrorCallback, onErrorConsumer))
+                .onCompleteCallback(onCompleteCallback)
+                .onRequestCallback(onRequestCallback)
+                .onCancelCallback(onCancelCallback)
+                .build();
     }
 
     @Override
     public Multi<T> onTerminate(Runnable onTerminate) {
-        return new MultiTappedPublisher<>(
-                source,
-                onSubscribeCallback,
-                onNextCallback,
-                ConsumerChain.combine(onErrorCallback, e -> onTerminate.run()),
-                RunnableChain.combine(onCompleteCallback, onTerminate),
-                onRequestCallback,
-                RunnableChain.combine(onCancelCallback, onTerminate)
-        );
+        return MultiTappedPublisher.builder(source)
+                .onSubscribeCallback(onSubscribeCallback)
+                .onNextCallback(onNextCallback)
+                .onErrorCallback(ConsumerChain.combine(onErrorCallback, e -> onTerminate.run()))
+                .onCompleteCallback(RunnableChain.combine(onCompleteCallback, onTerminate))
+                .onRequestCallback(onRequestCallback)
+                .onCancelCallback(RunnableChain.combine(onCancelCallback, onTerminate))
+                .build();
     }
 
     @Override
     public Multi<T> peek(Consumer<? super T> consumer) {
-        return new MultiTappedPublisher<>(
-                source,
-                onSubscribeCallback,
-                ConsumerChain.combine(onNextCallback, consumer),
-                onErrorCallback,
-                onCompleteCallback,
-                onRequestCallback,
-                onCancelCallback
-        );
+        return MultiTappedPublisher.builder(source)
+                .onSubscribeCallback(onSubscribeCallback)
+                .onNextCallback(ConsumerChain.combine(onNextCallback, consumer))
+                .onErrorCallback(onErrorCallback)
+                .onCompleteCallback(onCompleteCallback)
+                .onRequestCallback(onRequestCallback)
+                .onCancelCallback(onCancelCallback)
+                .build();
     }
 
     @Override
     public Multi<T> onCancel(Runnable onCancel) {
-        return new MultiTappedPublisher<>(
-                source,
-                onSubscribeCallback,
-                onNextCallback,
-                onErrorCallback,
-                onCompleteCallback,
-                onRequestCallback,
-                RunnableChain.combine(onCancelCallback, onCancel)
-        );
+        return MultiTappedPublisher.builder(source)
+                .onSubscribeCallback(onSubscribeCallback)
+                .onNextCallback(onNextCallback)
+                .onErrorCallback(onErrorCallback)
+                .onCompleteCallback(onCompleteCallback)
+                .onRequestCallback(onRequestCallback)
+                .onCancelCallback(RunnableChain.combine(onCancelCallback, onCancel))
+                .build();
+    }
+
+    @Override
+    public String operatorName() {
+        return operatorName;
     }
 
     static final class MultiTappedSubscriber<T> implements Flow.Subscriber<T>, Flow.Subscription {
@@ -315,6 +303,7 @@ public final class MultiTappedPublisher<T> implements Multi<T> {
         private LongConsumer onRequestCallback;
         private Runnable onCancelCallback;
         private Consumer<? super Throwable> onErrorCallback;
+        private String operatorName = MultiTappedPublisher.class.getName();
 
         private Builder(Multi<T> source) {
             this.source = source;
@@ -323,6 +312,11 @@ public final class MultiTappedPublisher<T> implements Multi<T> {
         @Override
         public MultiTappedPublisher<T> build() {
             return new MultiTappedPublisher<>(this);
+        }
+
+        Builder<T> operatorName(String operatorName) {
+            this.operatorName = operatorName;
+            return this;
         }
 
         Builder<T> onSubscribeCallback(Consumer<? super Flow.Subscription> onSubscribeCallback) {
@@ -334,7 +328,7 @@ public final class MultiTappedPublisher<T> implements Multi<T> {
          * Subscription callback.
          *
          * @param onSubscribeCallback runnable to run when
-         *  {@link Flow.Subscriber#onSubscribe(java.util.concurrent.Flow.Subscription)} is called
+         *                            {@link Flow.Subscriber#onSubscribe(java.util.concurrent.Flow.Subscription)} is called
          * @return updated builder instance
          */
         public Builder<T> onSubscribeCallback(Runnable onSubscribeCallback) {
@@ -346,7 +340,7 @@ public final class MultiTappedPublisher<T> implements Multi<T> {
          * On next callback.
          *
          * @param onNextCallback runnable to run when
-         *  {@link Flow.Subscriber#onNext(Object)} is called
+         *                       {@link Flow.Subscriber#onNext(Object)} is called
          * @return updated builder instance
          */
         public Builder<T> onNextCallback(Consumer<? super T> onNextCallback) {
@@ -358,7 +352,7 @@ public final class MultiTappedPublisher<T> implements Multi<T> {
          * On complete callback.
          *
          * @param onCompleteCallback runnable to run when
-         *  {@link java.util.concurrent.Flow.Subscriber#onComplete()} is called
+         *                           {@link java.util.concurrent.Flow.Subscriber#onComplete()} is called
          * @return updated builder instance
          */
         public Builder<T> onCompleteCallback(Runnable onCompleteCallback) {
@@ -370,7 +364,7 @@ public final class MultiTappedPublisher<T> implements Multi<T> {
          * On request callback.
          *
          * @param onRequestCallback runnable to run when
-         *  {@link Flow.Subscription#request(long)} is called
+         *                          {@link Flow.Subscription#request(long)} is called
          * @return updated builder instance
          */
         public Builder<T> onRequestCallback(LongConsumer onRequestCallback) {
@@ -382,7 +376,7 @@ public final class MultiTappedPublisher<T> implements Multi<T> {
          * On cancel callback.
          *
          * @param onCancelCallback runnable to run when
-         *  {@link java.util.concurrent.Flow.Subscription#cancel()} is called
+         *                         {@link java.util.concurrent.Flow.Subscription#cancel()} is called
          * @return updated builder instance
          */
         public Builder<T> onCancelCallback(Runnable onCancelCallback) {
@@ -394,7 +388,7 @@ public final class MultiTappedPublisher<T> implements Multi<T> {
          * On error callback.
          *
          * @param onErrorCallback runnable to run when
-         *  {@link Flow.Subscriber#onError(Throwable)} is called
+         *                        {@link Flow.Subscriber#onError(Throwable)} is called
          * @return updated builder instance
          */
         public Builder<T> onErrorCallback(Consumer<? super Throwable> onErrorCallback) {

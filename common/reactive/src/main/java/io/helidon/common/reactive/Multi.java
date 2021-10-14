@@ -749,13 +749,10 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> onCancel(Runnable onCancel) {
-        return new MultiTappedPublisher<>(this,
-                null,
-                null,
-                null,
-                null,
-                null,
-                onCancel);
+        return MultiTappedPublisher.builder(this)
+                .operatorName("Multi.onCancel")
+                .onCancelCallback(onCancel)
+                .build();
     }
 
     /**
@@ -765,13 +762,10 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> onComplete(Runnable onComplete) {
-        return new MultiTappedPublisher<>(this,
-                null,
-                null,
-                null,
-                onComplete,
-                null,
-                null);
+        return MultiTappedPublisher.builder(this)
+                .operatorName("Multi.onComplete")
+                .onCompleteCallback(onComplete)
+                .build();
     }
 
     /**
@@ -781,13 +775,10 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> onError(Consumer<? super Throwable> onErrorConsumer) {
-        return new MultiTappedPublisher<>(this,
-                null,
-                null,
-                onErrorConsumer,
-                null,
-                null,
-                null);
+        return MultiTappedPublisher.builder(this)
+                .operatorName("Multi.onError")
+                .onErrorCallback(onErrorConsumer)
+                .build();
     }
 
     /**
@@ -839,13 +830,12 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> onTerminate(Runnable onTerminate) {
-        return new MultiTappedPublisher<>(this,
-                null,
-                null,
-                e -> onTerminate.run(),
-                onTerminate,
-                null,
-                onTerminate);
+        return MultiTappedPublisher.builder(this)
+                .operatorName("Multi.onTerminate")
+                .onErrorCallback(t -> onTerminate.run())
+                .onCompleteCallback(onTerminate)
+                .onCancelCallback(onTerminate)
+                .build();
     }
 
     /**
@@ -866,8 +856,10 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> peek(Consumer<? super T> consumer) {
-        return new MultiTappedPublisher<>(this, null, consumer,
-                null, null, null, null);
+        return MultiTappedPublisher.builder(this)
+                .operatorName("Multi.peek")
+                .onNextCallback(consumer)
+                .build();
     }
 
     /**
@@ -878,7 +870,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> log() {
-        return new MultiLoggingPublisher<>(this, Level.INFO, false);
+        return Multi.create(new LoggingPublisher<>(this, Level.INFO, false));
     }
 
     /**
@@ -890,7 +882,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> log(Level level) {
-        return new MultiLoggingPublisher<>(this, level, false);
+        return Multi.create(new LoggingPublisher<>(this, level, false));
     }
 
     /**
@@ -903,7 +895,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> log(Level level, String loggerName) {
-        return new MultiLoggingPublisher<>(this, level, loggerName);
+        return Multi.create(new LoggingPublisher<>(this, level, loggerName));
     }
 
     /**
@@ -918,7 +910,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> log(Level level, boolean trace) {
-        return new MultiLoggingPublisher<>(this, level, trace);
+        return Multi.create(new LoggingPublisher<>(this, level, trace));
     }
 
     /**

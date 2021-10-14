@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,16 +28,16 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-public class MultiLogTest {
+public class SingleLogTest {
 
     private static final Logger LOGGER = Logger.getLogger(LoggingPublisher.class.getName());
 
@@ -54,82 +54,67 @@ public class MultiLogTest {
     }
 
     @Test
-    void testLogWithComplete() throws IOException {
+    void testLogWithComplete() {
 
-        Multi.range(1, 5)
+        Single.just(1)
                 .log()
-                .collectList()
                 .await();
 
         assertLogs(Level.INFO,
                 "Multi\\.log\\([0-9]+\\)",
-                "MultiRangePublisher",
+                "SingleJust",
                 "log\\(\\)",
                 " ⇘ onSubscribe(...)",
                 " ⇗ request(Long.MAX_VALUE)",
                 " ⇘ onNext(1)",
-                " ⇘ onNext(2)",
-                " ⇘ onNext(3)",
-                " ⇘ onNext(4)",
-                " ⇘ onNext(5)",
                 " ⇘ onComplete()");
     }
 
     @Test
     void testLogWithCancel() throws IOException {
 
-        Multi.range(1, 5)
+        Single.just(1)
                 .log()
-                .limit(2)
-                .collectList()
-                .await();
+                .cancel();
 
         assertLogs(Level.INFO,
                 "Multi\\.log\\([0-9]+\\)",
-                "MultiRangePublisher",
+                "SingleJust",
                 "log\\(\\)",
                 " ⇘ onSubscribe(...)",
-                " ⇗ request(Long.MAX_VALUE)",
-                " ⇘ onNext(1)",
-                " ⇘ onNext(2)",
                 " ⇗ cancel()");
     }
 
     @Test
     void testLogWithCustomLogName() throws IOException {
 
-        String TEST_LOGGER_NAME =  "TEST_LOGGER";
+        String TEST_LOGGER_NAME = "TEST_LOGGER";
 
-        Multi.range(1, 5)
+        Single.just(1)
                 .log(Level.INFO, TEST_LOGGER_NAME)
-                .limit(2)
-                .collectList()
                 .await();
 
         assertLogs(Level.INFO,
                 "TEST_LOGGER",
-                "MultiRangePublisher",
+                "SingleJust",
                 "log\\(\\)",
                 " ⇘ onSubscribe(...)",
                 " ⇗ request(Long.MAX_VALUE)",
                 " ⇘ onNext(1)",
-                " ⇘ onNext(2)",
-                " ⇗ cancel()");
+                " ⇘ onComplete()");
     }
 
 
     @Test
     void testLogWithError() throws IOException {
 
-        Single<List<Integer>> single =
-                Multi.range(1, 5)
+        CompletionAwaitable<Void> single =
+                Single.just(1)
                         .peek(i -> {
-                            if (i > 2) {
-                                throw new RuntimeException("BOOM!");
-                            }
+                            throw new RuntimeException("BOOM!");
                         })
                         .log()
-                        .collectList();
+                        .ignoreElement();
 
 
         assertThat(
@@ -141,52 +126,41 @@ public class MultiLogTest {
 
         assertLogs(Level.INFO,
                 "Multi\\.log\\([0-9]+\\)",
-                "Multi.peek",
+                "Single.peek",
                 "log\\(\\)",
                 " ⇘ onSubscribe(...)",
                 " ⇗ request(Long.MAX_VALUE)",
-                " ⇘ onNext(1)",
-                " ⇘ onNext(2)",
                 " ⇘ onError(java.lang.RuntimeException: BOOM!)");
     }
 
     @Test
     void testLogWarningWithCancel() {
 
-        Multi.range(1, 5)
+        Single.just(1)
                 .log(Level.WARNING)
-                .limit(2)
-                .collectList()
-                .await();
+                .cancel()
+                .ignoreElement();
 
         assertLogs(Level.WARNING,
                 "Multi\\.log\\([0-9]+\\)",
-                "MultiRangePublisher",
+                "SingleJust",
                 "log\\(\\)",
                 " ⇘ onSubscribe(...)",
-                " ⇗ request(Long.MAX_VALUE)",
-                " ⇘ onNext(1)",
-                " ⇘ onNext(2)",
                 " ⇗ cancel()");
     }
 
     @Test
     void testLogTraceWithCancel() {
 
-        Multi.range(1, 5)
+        Single.just(1)
                 .log(Level.INFO, true)
-                .limit(2)
-                .collectList()
-                .await();
+                .cancel();
 
         assertLogs(Level.INFO,
-                "io\\.helidon\\.common\\.reactive\\.MultiLogTest\\.testLogTraceWithCancel\\(MultiLogTest\\.java:[0-9]+\\)",
-                "io.helidon.common.reactive.MultiLogTest",
-                "testLogTraceWithCancel\\(MultiLogTest\\.java:[0-9]+\\)",
+                "io\\.helidon\\.common\\.reactive\\.SingleLogTest\\.testLogTraceWithCancel\\(SingleLogTest\\.java:[0-9]+\\)",
+                "io.helidon.common.reactive.SingleLogTest",
+                "testLogTraceWithCancel\\(SingleLogTest\\.java:[0-9]+\\)",
                 " ⇘ onSubscribe(...)",
-                " ⇗ request(Long.MAX_VALUE)",
-                " ⇘ onNext(1)",
-                " ⇘ onNext(2)",
                 " ⇗ cancel()");
     }
 
